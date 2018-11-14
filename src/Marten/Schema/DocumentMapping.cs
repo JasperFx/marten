@@ -120,7 +120,7 @@ namespace Marten.Schema
 
         public EnumStorage EnumStorage
         {
-            get { return _storeOptions.Serializer().EnumStorage; }
+            get { return _storeOptions.EnumStorage; }
         }
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
@@ -543,7 +543,7 @@ namespace Marten.Schema
         public DuplicatedField DuplicateField(string memberName, string pgType = null)
         {
             var field = FieldFor(memberName);
-            var duplicate = new DuplicatedField(_storeOptions.Serializer().EnumStorage, field.Members);
+            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field.Members);
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -558,7 +558,7 @@ namespace Marten.Schema
         {
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions.Serializer().EnumStorage, members);
+            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, members);
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;
@@ -661,8 +661,7 @@ namespace Marten.Schema
             var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType);
 
             if (dbType.HasValue) duplicateField.DbType = dbType.Value;
-            
-            
+
             var indexDefinition = AddIndex(duplicateField.ColumnName);
             configure?.Invoke(indexDefinition);
         }

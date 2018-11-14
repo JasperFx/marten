@@ -35,12 +35,11 @@ namespace Marten.Testing
             var options = new StoreOptions();
             options.RegisterDocumentType<User>();
             options.RegisterDocumentType(typeof(Company));
-            options.RegisterDocumentTypes(new Type[] {typeof(Target), typeof(Issue)});
+            options.RegisterDocumentTypes(new Type[] { typeof(Target), typeof(Issue) });
 
             options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name).Select(x => x.DocumentType.Name)
                 .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
         }
-
 
         [Fact]
         public void default_logger_is_the_nullo()
@@ -94,7 +93,6 @@ namespace Marten.Testing
             store.Tenancy.ShouldBeOfType<DefaultTenancy>();
         }
 
-
         [Fact]
         public void default_ddl_rules()
         {
@@ -107,9 +105,10 @@ namespace Marten.Testing
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
         {
             public TenancyStyle TenancyStyle { get; }
-            public Type DocumentType { get; } = typeof (User);
+            public Type DocumentType { get; } = typeof(User);
             public Type TopLevelBaseType => DocumentType;
             public NpgsqlDbType IdType { get; }
+
             public NpgsqlCommand LoaderCommand(object id)
             {
                 throw new NotImplementedException();
@@ -172,21 +171,21 @@ namespace Marten.Testing
 
             public void Assign(ITenant tenant, User document, object id)
             {
-                document.Id = (Guid) id;
+                document.Id = (Guid)id;
             }
         }
 
         public class FakeCompanyStorage : IDocumentStorage, IdAssignment<Company>
         {
             public TenancyStyle TenancyStyle { get; }
-            public Type DocumentType { get; } = typeof (Company);
+            public Type DocumentType { get; } = typeof(Company);
             public Type TopLevelBaseType { get; } = typeof(Company);
             public NpgsqlDbType IdType { get; }
+
             public NpgsqlCommand LoaderCommand(object id)
             {
                 throw new NotImplementedException();
             }
-
 
             public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
             {
@@ -245,7 +244,7 @@ namespace Marten.Testing
 
             public void Assign(ITenant tenant, Company document, object id)
             {
-                document.Id = (Guid) id;
+                document.Id = (Guid)id;
             }
         }
 
@@ -318,6 +317,82 @@ namespace Marten.Testing
             {
                 options.AssertValidIdentifier(text);
             });
+        }
+
+        [Fact]
+        public void default_enum_storage_should_be_integer()
+        {
+            var storeOptions = new StoreOptions();
+
+            storeOptions.EnumStorage.ShouldBe(EnumStorage.AsInteger);
+        }
+
+        [Fact]
+        public void default_duplicated_field_enum_storage_should_be_the_same_as_enum_storage()
+        {
+            var storeOptions = new StoreOptions();
+
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
+        public void duplicated_field_enum_storage_should_be_the_same_as_enum_storage(EnumStorage enumStorage)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(enumStorage);
+
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+        }
+
+        [Fact]
+        public void duplicated_field_enum_storage_should_be_the_same_as_enum_storage_when_enum_storage_was_updated()
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+
+            //update EnumStorage
+            storeOptions.UseDefaultSerialization(EnumStorage.AsString);
+
+            storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+        }
+
+        [Fact]
+        public void enum_storage_should_not_change_when_duplicated_field_enum_storage_was_changed()
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+
+            //set DuplicatedFieldEnumStorage
+            storeOptions.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+
+            storeOptions.EnumStorage.ShouldBe(EnumStorage.AsInteger);
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsString);
+        }
+
+        [Fact]
+        public void duplicated_field_enum_storage_after_it_had_value_assigned_should_not_change_when_enum_storage_was_updated()
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+
+            //set DuplicatedFieldEnumStorage
+            storeOptions.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
+
+            //update EnumStorage
+            storeOptions.UseDefaultSerialization(EnumStorage.AsString);
+
+            storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
+            storeOptions.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);
+            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsInteger);
         }
 
         public void set_the_maximum_name_length()
