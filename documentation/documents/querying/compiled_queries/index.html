@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -39,6 +39,9 @@
             </li>
 		        <li>
 		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+		          <a href="/marten/migration_guide">Migration Guide</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -143,7 +146,7 @@ to express document queries in compiler-safe manner, but there is a non-trivial 
 <p>A sample usage of this type of query is shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class UserNamesForFirstName : ICompiledListQuery&lt;User, string&gt;&#xD;&#xA;{&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, IEnumerable&lt;string&gt;&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return q =&gt; q&#xD;&#xA;            .Where(x =&gt; x.FirstName == FirstName)&#xD;&#xA;            .Select(x =&gt; x.UserName);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="querying-for-included-documents">Querying for included documents</h2>
-<p>If you wish to use a compiled query for a document, using a <code>JOIN</code> so that the query will include another document, just as the <p class="bg-warning" style="padding:5px"><b>Unknown topic key 'documentation/documents/include'</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p> method does on a simple query, the compiled query would be constructed just like any other, using the <code>Include()</code> method
+<p>If you wish to use a compiled query for a document, using a <code>JOIN</code> so that the query will include another document, just as the <a href="/marten/documentation/documents/querying/include">Include()</a> method does on a simple query, the compiled query would be constructed just like any other, using the <code>Include()</code> method
 on the query:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void simple_compiled_include_for_a_single_document()&#xD;&#xA;{&#xD;&#xA;    var user = new User();&#xD;&#xA;    var issue = new Issue { AssigneeId = user.Id, Title = &quot;Garage Door is busted&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store&lt;object&gt;(user, issue);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};&#xD;&#xA;        var issue2 = query.Query(issueQuery);&#xD;&#xA;&#xD;&#xA;        issueQuery.Included.ShouldNotBeNull();&#xD;&#xA;        issueQuery.Included.Id.ShouldBe(user.Id);&#xD;&#xA;&#xD;&#xA;        issue2.ShouldNotBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class IssueByTitleWithAssignee : ICompiledQuery&lt;Issue&gt;&#xD;&#xA;{&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;    public User Included { get; private set; } = new User();&#xD;&#xA;    public JoinType JoinType { get; set; } = JoinType.Inner;&#xD;&#xA;&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;Issue&gt;, Issue&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return query =&gt; query&#xD;&#xA;            .Include&lt;Issue, IssueByTitleWithAssignee&gt;(x =&gt; x.AssigneeId, x =&gt; x.Included, JoinType)&#xD;&#xA;            .Single(x =&gt; x.Title == Title);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>In this example, the query has an <code>Included</code> property which will receive the included Assignee / <code>User</code>. The 'resulting' included property can only be
@@ -182,7 +185,7 @@ we handle Include queries.</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class FindJsonUserByUsername : ICompiledQuery&lt;User, string&gt;&#xD;&#xA;{&#xD;&#xA;    public string Username { get; set; }&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, string&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return query =&gt;&#xD;&#xA;                query.Where(x =&gt; Username == x.UserName)&#xD;&#xA;                    .AsJson().Single();&#xD;&#xA;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>And an example:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void a_single_item_compiled_query_AsJson()&#xD;&#xA;{&#xD;&#xA;    var user = theSession.Query(new FindJsonUserByUsername() {Username = &quot;jdm&quot;});&#xD;&#xA;&#xD;&#xA;    user.ShouldNotBeNull();&#xD;&#xA;    user.ShouldBe(_user1.ToJson());&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<p>(our ToJson method simply reuturns a string representation of the <code>User</code> instance in Json notation)</p>
+<p>(our <code>ToJson()</code> method simply returns a string representation of the <code>User</code> instance in Json notation)</p>
 
 			      	</div>
 

@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -39,6 +39,9 @@
             </li>
 		        <li>
 		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+		          <a href="/marten/migration_guide">Migration Guide</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -191,6 +194,10 @@ a field or property matching one of many supplied values:</p>
 <pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var users = theSession.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.IsOneOf(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>To find one of for an array you can use this strategy:</p>
 <pre><code class="language-csharp">&#xD;&#xA;// Finds all UserWithNicknames&#x27;s whose nicknames matches either &quot;Melinder&quot; or &quot;Norrland&quot;&#xD;&#xA;&#xD;&#xA;var nickNames = new[] {&quot;Melinder&quot;, &quot;Norrland&quot;};&#xD;&#xA;&#xD;&#xA;var users = session.Query&lt;UserWithNicknames&gt;()&#xD;&#xA;    .Where(x =&gt; x.Nicknames.Any(n =&gt; nickNames.Contains(n)));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<h2 id="issupersetof">IsSupersetOf</h2>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all Posts whose Tags is superset of&#xD;&#xA;// c#, json, or postgres&#xD;&#xA;var posts = theSession.Query&lt;Post&gt;()&#xD;&#xA;    .Where(x =&gt; x.Tags.IsSupersetOf(&quot;c#&quot;, &quot;json&quot;, &quot;postgres&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<h2 id="issubsetof">IsSubsetOf</h2>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all Posts whose Tags is subset of&#xD;&#xA;// c#, json, or postgres&#xD;&#xA;var posts = theSession.Query&lt;Post&gt;()&#xD;&#xA;    .Where(x =&gt; x.Tags.IsSubsetOf(&quot;c#&quot;, &quot;json&quot;, &quot;postgres&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="modulo-queries">Modulo Queries</h2>
 <p>Marten v0.8 added the ability to use the modulo operator in Linq queries:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_modulo()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 2});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 3});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 5});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 6});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number % 2 == 0 &amp;&amp; x.Color &lt; Colors.Green).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Number)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(2, 4);&#xD;&#xA;}&#xD;&#xA;</code></pre>

@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -39,6 +39,9 @@
             </li>
 		        <li>
 		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+		          <a href="/marten/migration_guide">Migration Guide</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -120,7 +123,7 @@ but for production usage when you may be querying event data before you append a
 <h3 id="appending-assertions">Appending &amp; Assertions</h3>
 <p><code>IEventStore.Append()</code> supports an overload taking in a parameter <code>int expectedVersion</code> that can be used to assert that events are inserted into the event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted and an <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.</p>
 <pre><code class="language-csharp">&#xD;&#xA;session.Events.StartStream(id, started);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xD;&#xA;// would be 3 after the append operation.&#xD;&#xA;session.Events.Append(id, 3, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre> 
-<h3 id="createstream-vs.append">CreateStream vs. Append</h3>
+<h3 id="startstream-vs.append">StartStream vs. Append</h3>
 <p>Both <code>StartStream</code> and <code>Append</code> can be used to start a new event stream. The difference with the methods is that <code>StartStream</code> always checks for existing stream and throws <code>ExistingStreamIdCollisionException</code> in case the stream already exists.</p>
 
 			      	</div>

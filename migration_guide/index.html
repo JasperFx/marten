@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Document Basics</title>
+		<title>Marten - Migration Guide</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -46,8 +46,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/identity" title="Document Identity">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/basics/persisting" title="Storing Documents and Unit Of Work">Next</a></li>
+		      	<li><a href="/marten/documentation" title="Documentation">Previous</a></li>
+		      	
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -62,7 +62,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Document Basics</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li class="active">Migration Guide</li></ol>
 		  	</nav>
 		  </div>
 
@@ -80,22 +80,40 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/identity">Document Identity</a></p>
+		        	
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation">Documentation</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Document Basics <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/basics/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Migration Guide <a href="https://github.com/jasperfx/marten/blob/master/documentation/migration_guide.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title: Document Basics-->
-<p>These are the most common tasks that you'll perform on a daily basis with Marten:</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a></li><li><a href="/marten/documentation/documents/basics/loading">Loading Documents by Id</a></li><li><a href="/marten/documentation/documents/basics/deleting">Deleting Documents</a></li><li><a href="/marten/documentation/documents/basics/bulk_insert">Bulk Insert</a></li><li><a href="/marten/documentation/documents/basics/initial_data">Initial Data</a></li></ul>
+			      		<!--Title:Migration Guide-->
+<!--Url:migration_guide-->
+<h1 id="key-changes-in-3.0.0">Key changes in 3.0.0</h1>
+<p>Main goal of this release was to accommodate the <strong>Npgsql 4.</strong>* dependency.</p>
+<p>Besides the usage of Npgsql 4, our biggest change was making the <strong>default schema object creation mode</strong> to <code>CreateOrUpdate</code>. Meaning that Marten even in its default mode will not drop any existing tables, even in development mode. You can still opt into the full &quot;sure, I’ll blow away a table and start over if it’s incompatible&quot; mode, but we felt like this option was safer after a few user problems were reported with the previous rules. See <a href="/marten/documentation/schema/migrations">Schema Migrations and Patches</a> for more information.</p>
+<p>We also aligned usage of <code>EnumStorage</code>. Previously, <a href="/marten/documentation/documents/customizing/duplicated_fields">Enum Duplicated Field</a> was always stored as <code>varchar</code>. Now it's using setting from <code>JsonSerializer</code> options - so by default it's <code>integer</code>. We felt that it's not consistent to have different default setting for Enums stored in json and in duplicated fields.</p>
+<p>See full list of the fixed issues on <a href="https://github.com/JasperFx/marten/milestone/26?closed=1">GitHub</a>.</p>
+<p>You can also read more in <a href="https://jeremydmiller.com/2018/09/27/marten-3-0-is-released-and-introducing-the-new-core-team/">Jeremy's blog post from</a>.</p>
+<h1 id="migration-from-2">Migration from 2.*</h1>
+<ul>
+<li>To keep Marten fully rebuilding your schema (so to allow Marten drop tables) set store options to:</li>
+</ul>
+<pre>
+AutoCreateSchemaObjects = AutoCreate.All
+</pre>
+<ul>
+<li>To keep <a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Enum Fields</a> being stored as <code>varchar</code> set store options to:</li>
+</ul>
+<pre>
+DuplicatedFieldEnumStorage = EnumStorage.AsString;
+</pre>
 
 			      	</div>
 
@@ -103,12 +121,12 @@
 
 			      	<nav class="related-links">
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/identity">Document Identity</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation">Documentation</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a>
+				        	
 
 				        </span>
 			      	</nav>

@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.0.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -39,6 +39,9 @@
             </li>
 		        <li>
 		          <a href="/marten/documentation">Documentation</a>
+		        </li>
+		        <li>
+		          <a href="/marten/migration_guide">Migration Guide</a>
 		        </li>
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -151,13 +154,13 @@ would look like this:</p>
 <p>Lastly, Marten can examine the document types themselves for a <code>public static ConfigureMarten()</code> method
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItself&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Alias = &quot;different&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItself&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Alias = &quot;different&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>The <code>DocumentMapping</code> type is the core configuration class representing how a document type is persisted or
 queried from within a Marten application. All the other configuration options end up writing to a
 <code>DocumentMapping</code> object.</p>
 <p>You can optionally take in the more specific <code>DocumentMapping&lt;T&gt;</code> for your document type to get at
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItselfSpecifically&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;    public string Name;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class ConfiguresItselfSpecifically&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;    public string Name;&#xD;&#xA;&#xD;&#xA;    public static void ConfigureMarten(DocumentMapping&lt;ConfiguresItselfSpecifically&gt; mapping)&#xD;&#xA;    {&#xD;&#xA;        mapping.Duplicate(x =&gt; x.Name);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 
 			      	</div>
 
