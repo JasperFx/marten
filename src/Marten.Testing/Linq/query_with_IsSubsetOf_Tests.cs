@@ -27,7 +27,7 @@ namespace Marten.Testing.Linq
 
         public void is_subset_of_example()
         {
-            // SAMPLE: is_superset_of
+            // SAMPLE: is_subset_of
             // Finds all Posts whose Tags is subset of
             // c#, json, or postgres
             var posts = theSession.Query<Post>()
