@@ -1,6 +1,6 @@
 language: csharp
 sudo: required
-dist: trusty
+dist: xenial
 mono: none
 dotnet: 2.1.400
 
@@ -9,12 +9,10 @@ env:
     - marten_testing_database="Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
 
 addons:
-  postgresql: "9.5"
-
-before_install:
-  - sudo apt-get install postgresql-9.5-plv8
-  - nvm install 6.0.0
-  - rvm default
+  postgresql: "10"
+  apt:
+    packages:
+      - postgresql-10-plv8
 
 install:
   - export DOTNET_CLI_TELEMETRY_OPTOUT=1
