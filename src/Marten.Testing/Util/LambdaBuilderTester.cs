@@ -90,6 +90,25 @@ namespace Marten.Testing.Util
             getter(target).ShouldBe(target.Inner.Number);
         }
 
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
+        public void can_build_getter_for_deep_enum_expression(EnumStorage enumStorage)
+        {
+            Expression<Func<Target, Colors>> expression = t => t.Inner.Color;
+
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var members = visitor.Members.ToArray();
+
+            var getter = LambdaBuilder.Getter<Target, Colors>(enumStorage, members);
+
+            var target = new Target { Inner = new Target { Color = Colors.Blue } };
+
+            getter(target).ShouldBe(target.Inner.Color);
+        }
+
         [Fact]
         public void can_get_the_Enum_GetName_method()
         {
