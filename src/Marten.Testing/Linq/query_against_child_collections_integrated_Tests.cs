@@ -33,6 +33,8 @@ namespace Marten.Testing.Linq
             targets[9].Children[0].Double = -1;
             targets[12].Children[0].Double = 10;
 
+            targets[10].Color = Colors.Green;
+
             var child = targets[10].Children[0];
             child.Color = Colors.Blue;
             child.Inner = new Target
@@ -107,14 +109,27 @@ namespace Marten.Testing.Linq
         [Theory]
         [InlineData(EnumStorage.AsInteger)]
         [InlineData(EnumStorage.AsString)]
+        public void can_query_on_enum_properties(EnumStorage enumStorage)
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
+            buildUpTargetData();
+
+            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Color == Colors.Green))
+                .Count()
+                .ShouldBeGreaterThanOrEqualTo(1);
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
         public void can_query_on_deep_enum_properties(EnumStorage enumStorage)
         {
             StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
             buildUpTargetData();
 
-            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Color == Colors.Blue))
-                .Single()
-                .Id.ShouldBe(targets[10].Id);
+            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Inner.Color == Colors.Blue))
+                .Count()
+                .ShouldBeGreaterThanOrEqualTo(1);
         }
 
         [Fact]
