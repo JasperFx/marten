@@ -440,6 +440,21 @@ namespace Marten.Schema
             }
         }
 
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="config">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <param name="configure">Optional action to further configure the full text index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public void AddFullTextIndex(string config = "english", Action<FullTextIndex> configure = null)
+        {
+            var index = new FullTextIndex(this, config);
+            configure?.Invoke(index);
+            Indexes.Add(index);
+        }
+
         public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
         {
             var field = FieldFor(memberName);

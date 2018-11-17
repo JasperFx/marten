@@ -209,6 +209,12 @@ namespace Marten
                 return this;
             }
 
+            public DocumentMappingExpression<T> FullTextIndex(string config = "english", Action<FullTextIndex> configure = null)
+            {
+                alter = m => m.AddFullTextIndex(config, configure);
+                return this;
+            }
+
             public DocumentMappingExpression<T> ForeignKey<TReference>(
                 Expression<Func<T, object>> expression,
                 Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
