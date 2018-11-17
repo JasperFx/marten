@@ -103,21 +103,29 @@ namespace Marten.Testing.Util
             getter(target).ShouldBe(target.Color);
         }
 
-        [Theory]
-        [InlineData(EnumStorage.AsInteger, typeof(int))]
-        [InlineData(EnumStorage.AsString, typeof(string))]
-        public void can_build_getter_for_deep_enum_expression(EnumStorage enumStorage, Type expectedType)
+        [Fact]
+        public void can_build_getter_for_deep_enum_expression_with_int_enum_storage()
+        {
+            canBuildGetterForDeepEnumExpression<int>(EnumStorage.AsInteger);
+        }
+
+        [Fact]
+        public void can_build_getter_for_deep_enum_expression_with_string_enum_storage()
+        {
+            canBuildGetterForDeepEnumExpression<string>(EnumStorage.AsString);
+        }
+
+        private static void canBuildGetterForDeepEnumExpression<T>(EnumStorage enumStorage)
         {
             Expression<Func<Target, object>> expression = t => t.Inner.Color;
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
             var members = visitor.Members.ToArray();
-            var getter = LambdaBuilder.Getter<Target, object>(enumStorage, members);
+            var getter = LambdaBuilder.Getter<Target, T>(enumStorage, members);
             var target = new Target { Inner = new Target { Color = Colors.Blue } };
 
-            getter(target).ShouldBeOfType(expectedType);
-            getter(target).ShouldBe(Convert.ChangeType(target.Inner.Color, expectedType));
+            getter(target).ShouldBeOfType(typeof(T));
         }
 
         [Fact]
