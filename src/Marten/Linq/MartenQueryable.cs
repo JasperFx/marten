@@ -107,7 +107,7 @@ namespace Marten.Linq
                 {
                     dictionary.Add(id, x);
                 }
-            });
+            }, joinType);
         }
 
         public IMartenQueryable<T> Stats(out QueryStatistics stats)
