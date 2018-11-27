@@ -20,55 +20,34 @@ namespace martenbuild
             Target("default", DependsOn("mocha", "test", "storyteller"));
 
             Target("clean", () =>
-            {
-                EnsureDirectoryDeleted("results");
-                EnsureDirectoryDeleted("artifacts");
-            });
+                EnsureDirectoriesDeleted("results", "artifacts"));
 
             Target("connection", () =>
-            {
-                File.WriteAllText("src/Marten.Testing/connection.txt", Environment.GetEnvironmentVariable("connection"));
-            });
+                File.WriteAllText("src/Marten.Testing/connection.txt", Environment.GetEnvironmentVariable("connection")));
 
             Target("install", () =>
-            {
-                RunNpm("install");
-            });
+                RunNpm("install"));
 
             Target("mocha", DependsOn("install"), () =>
-            {
-                RunNpm("run test");
-            });
+                RunNpm("run test"));
 
             Target("compile", DependsOn("clean"), () =>
-            {
-                Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}");
-            });
+                Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}"));
 
             Target("test", DependsOn("compile"), () =>
-            {
-                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build");
-            });
+                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
 
             Target("storyteller", DependsOn("compile"), () =>
-            {
-                Run("dotnet", $"run --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller");
-            });
+                Run("dotnet", $"run --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller"));
 
             Target("open_st", DependsOn("compile"), () =>
-            {
-                Run("dotnet", $"storyteller open --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller");
-            });
+                Run("dotnet", $"storyteller open --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller"));
 
             Target("docs-restore", () =>
-            {
-                Run("dotnet", "restore", "tools/stdocs");
-            });
+                Run("dotnet", "restore", "tools/stdocs"));
 
             Target("docs", DependsOn("docs-restore"), () =>
-            {
-                RunStoryTellerDocs($"run -d ../../documentation -c ../../src -v {BUILD_VERSION}");
-            });
+                RunStoryTellerDocs($"run -d ../../documentation -c ../../src -v {BUILD_VERSION}"));
 
             // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
             Target("publish", () =>
@@ -77,8 +56,7 @@ namespace martenbuild
 
                 if (!Directory.Exists(docTargetDir))
                 {
-                    InitializeDirectory(docTargetDir);
-                    Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {docTargetDir}");
+                    Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
 
                     // if you are not using git --global config, uncomment the block below, update and use it
                     // Run("git", "config user.email email_address", docTargetDir);
@@ -100,9 +78,7 @@ namespace martenbuild
             });
 
             Target("benchmarks", () =>
-            {
-                Run("dotnet", "run --project src/MartenBenchmarks --configuration Release");
-            });
+                Run("dotnet", "run --project src/MartenBenchmarks --configuration Release"));
 
             Target("recordbenchmarks", () =>
             {
@@ -115,37 +91,32 @@ namespace martenbuild
             });
 
             Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine"), project =>
-            {
-                Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release");
-            });
+                Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
 
             RunTargets(args);
         }
 
         private static string InitializeDirectory(string path)
         {
-            EnsureDirectoryDeleted(path);
+            EnsureDirectoriesDeleted(path);
             Directory.CreateDirectory(path);
             return path;
         }
 
-        private static void EnsureDirectoryDeleted(string path)
+        private static void EnsureDirectoriesDeleted(params string[] paths)
         {
-            if (Directory.Exists(path))
+            foreach (var path in paths)
             {
-                Directory.Delete(path, true);
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
             }
-        }
-
-        private static bool IsWindowsPlatform()
-        {
-            var platformId = Environment.OSVersion.Platform;
-            return platformId != PlatformID.Unix && platformId != PlatformID.MacOSX;
         }
 
         private static void RunNpm(string args)
         {
-            if (IsWindowsPlatform())
+            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
             {
                 Run("cmd.exe", $"/c npm {args}");
             }
