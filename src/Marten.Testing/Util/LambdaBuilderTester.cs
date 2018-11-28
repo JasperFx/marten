@@ -16,7 +16,7 @@ namespace Marten.Testing.Util
         [Fact]
         public void can_build_getter_for_property()
         {
-            var target = new Target {Number = 5};
+            var target = new Target { Number = 5 };
             var prop = ReflectionHelper.GetProperty<Target>(x => x.Number);
 
             var getter = LambdaBuilder.GetProperty<Target, int>(prop);
@@ -51,10 +51,8 @@ namespace Marten.Testing.Util
 
             setter(target, 11);
 
-
             target.Number.ShouldBe(11);
         }
-
 
         [Fact]
         public void can_build_setter_for_field()
@@ -64,7 +62,6 @@ namespace Marten.Testing.Util
             var field = typeof(GuyWithField).GetField("Id");
 
             var setter = LambdaBuilder.SetField<GuyWithField, Guid>(field);
-
 
             var newGuid = Guid.NewGuid();
 
@@ -88,6 +85,47 @@ namespace Marten.Testing.Util
             var target = Target.Random(true);
 
             getter(target).ShouldBe(target.Inner.Number);
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
+        public void can_build_getter_for_enum_expression(EnumStorage enumStorage)
+        {
+            Expression<Func<Target, Colors>> expression = t => t.Color;
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var members = visitor.Members.ToArray();
+            var getter = LambdaBuilder.Getter<Target, Colors>(enumStorage, members);
+
+            var target = new Target { Inner = new Target { Color = Colors.Blue } };
+            getter(target).ShouldBe(target.Color);
+        }
+
+        [Fact]
+        public void can_build_getter_for_deep_enum_expression_with_int_enum_storage()
+        {
+            canBuildGetterForDeepEnumExpression<int>(EnumStorage.AsInteger);
+        }
+
+        [Fact]
+        public void can_build_getter_for_deep_enum_expression_with_string_enum_storage()
+        {
+            canBuildGetterForDeepEnumExpression<string>(EnumStorage.AsString);
+        }
+
+        private static void canBuildGetterForDeepEnumExpression<T>(EnumStorage enumStorage)
+        {
+            Expression<Func<Target, object>> expression = t => t.Inner.Color;
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var members = visitor.Members.ToArray();
+            var getter = LambdaBuilder.Getter<Target, T>(enumStorage, members);
+            var target = new Target { Inner = new Target { Color = Colors.Blue } };
+
+            getter(target).ShouldBeOfType(typeof(T));
         }
 
         [Fact]

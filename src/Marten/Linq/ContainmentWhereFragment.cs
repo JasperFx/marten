@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -27,7 +28,7 @@ namespace Marten.Linq
         public ContainmentWhereFragment(ISerializer serializer, BinaryExpression binary, string wherePrefix = null)
             : this(serializer, new Dictionary<string, object>(), wherePrefix)
         {
-            CreateDictionaryForSearch(binary, _dictionary);
+            CreateDictionaryForSearch(binary, _dictionary, _serializer);
         }
 
         public void Apply(CommandBuilder builder)
@@ -45,16 +46,16 @@ namespace Marten.Linq
             return false;
         }
 
-        public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict)
+        public static void CreateDictionaryForSearch(BinaryExpression binary, IDictionary<string, object> dict, ISerializer serializer)
         {
             var expressionValue = binary.Right.Value();
             var memberExpression = binary.Left;
 
-            CreateDictionaryForSearch(dict, memberExpression, expressionValue);
+            CreateDictionaryForSearch(dict, memberExpression, expressionValue, serializer);
         }
 
         public static void CreateDictionaryForSearch(IDictionary<string, object> dict, Expression memberExpression,
-            object expressionValue)
+            object expressionValue, ISerializer serializer)
         {
             var visitor = new FindMembers();
             visitor.Visit(memberExpression);
@@ -65,7 +66,8 @@ namespace Marten.Linq
             {
                 var temp = new Dictionary<string, object>();
                 var member = members.Last();
-                var value = expressionValue;
+                var value = GetMemberValue(member, expressionValue, serializer.EnumStorage);
+
                 temp.Add(member.Name, value);
 
                 members.Reverse().Skip(1).Each(m => { temp = new Dictionary<string, object> {{m.Name, temp}}; });
@@ -76,7 +78,8 @@ namespace Marten.Linq
             else
             {
                 var member = members.Single();
-                var value = expressionValue;
+                var value = GetMemberValue(member, expressionValue, serializer.EnumStorage);
+
                 dict.Add(member.Name, value);
             }
         }
@@ -97,6 +100,20 @@ namespace Marten.Linq
 
 
             throw new NotSupportedException();
+        }
+
+        private static object GetMemberValue(MemberInfo member, object expressionValue, EnumStorage enumStorage)
+        {
+            var value = expressionValue;
+
+            var memberType = member.GetMemberType();
+
+            if (memberType.IsEnum && enumStorage == EnumStorage.AsString)
+            {
+                value = Enum.GetName(memberType, value);
+            }
+
+            return value;
         }
     }
 }

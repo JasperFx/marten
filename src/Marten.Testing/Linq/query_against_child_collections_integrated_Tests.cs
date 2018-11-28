@@ -33,17 +33,20 @@ namespace Marten.Testing.Linq
             targets[9].Children[0].Double = -1;
             targets[12].Children[0].Double = 10;
 
+            targets[10].Color = Colors.Green;
+
             var child = targets[10].Children[0];
+            child.Color = Colors.Blue;
             child.Inner = new Target
             {
-                Number = -2
+                Number = -2,
+                Color = Colors.Blue
             };
 
             theSession.Store(targets);
 
             theSession.SaveChanges();
         }
-
 
         [Fact]
         public void can_query_with_containment_operator()
@@ -103,6 +106,31 @@ namespace Marten.Testing.Linq
                 .Id.ShouldBe(targets[10].Id);
         }
 
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
+        public void can_query_on_enum_properties(EnumStorage enumStorage)
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
+            buildUpTargetData();
+
+            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Color == Colors.Green))
+                .Count()
+                .ShouldBeGreaterThanOrEqualTo(1);
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsInteger)]
+        [InlineData(EnumStorage.AsString)]
+        public void can_query_on_deep_enum_properties(EnumStorage enumStorage)
+        {
+            StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
+            buildUpTargetData();
+
+            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Inner.Color == Colors.Blue))
+                .Count()
+                .ShouldBeGreaterThanOrEqualTo(1);
+        }
 
         [Fact]
         public void Bug_503_child_collection_query_in_compiled_query()
@@ -164,8 +192,6 @@ namespace Marten.Testing.Linq
             }
         }
 
-
-
         [Fact]
         public void Bug_415_can_query_when_matched_value_has_quotes()
         {
@@ -184,7 +210,6 @@ namespace Marten.Testing.Linq
             }
         }
 
-
         public class Course
         {
             public Guid Id { get; set; }
@@ -199,8 +224,8 @@ namespace Marten.Testing.Linq
             public string Case { get; set; }
         }
 
-
         private Guid[] favAuthors = new Guid[] { Guid.NewGuid(), Guid.NewGuid() };
+
         private void buildAuthorData()
         {
             // test fixtures
@@ -254,7 +279,6 @@ namespace Marten.Testing.Linq
             });
             theSession.SaveChanges();
         }
-
 
         public class Article
         {
@@ -358,12 +382,10 @@ namespace Marten.Testing.Linq
             Exception<NotSupportedException>.ShouldBeThrownBy(() =>
             {
                 var res = theSession.Query<Article>()
-                    .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] {Guid.NewGuid()}).Any()))
+                    .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] { Guid.NewGuid() }).Any()))
                     .OrderBy(x => x.Long)
                     .ToList();
             });
-
-
         }
 
         [Fact]
@@ -396,7 +418,6 @@ namespace Marten.Testing.Linq
             public Guid Id;
 
             public List<int> Numbers;
-
         }
 
         public class DocWithLists2
@@ -404,7 +425,6 @@ namespace Marten.Testing.Linq
             public Guid Id;
 
             public IList<int> Numbers;
-
         }
 
         public class DocWithLists3
@@ -412,7 +432,6 @@ namespace Marten.Testing.Linq
             public Guid Id;
 
             public IEnumerable<int> Numbers;
-
         }
 
         [Fact]
@@ -421,7 +440,6 @@ namespace Marten.Testing.Linq
             var doc1 = new DocWithArrays { Numbers = new int[] { 1, 2, 3 } };
             var doc2 = new DocWithArrays { Numbers = new int[] { 3, 4, 5 } };
             var doc3 = new DocWithArrays { Numbers = new int[] { 5, 6, 7 } };
-
 
             theSession.Store(doc1, doc2, doc3);
 
@@ -439,7 +457,6 @@ namespace Marten.Testing.Linq
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
             var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
 
-
             theSession.Store(doc1);
             theSession.Store(doc2);
             theSession.Store(doc3);
@@ -449,6 +466,7 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -457,7 +475,6 @@ namespace Marten.Testing.Linq
             var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
             var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
-
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -476,7 +493,6 @@ namespace Marten.Testing.Linq
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
             var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f", "g" } };
 
-
             theSession.Store(doc1);
             theSession.Store(doc2);
             theSession.Store(doc3);
@@ -487,14 +503,12 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
         }
 
-
         [Fact]
         public void query_against_string_array_with_Count_method()
         {
             var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
             var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f", "g" } };
-
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -513,7 +527,6 @@ namespace Marten.Testing.Linq
             var doc2 = new DocWithArrays { Dates = new[] { DateTime.Today.AddDays(2), DateTime.Today.AddDays(3), DateTime.Today.AddDays(4) } };
             var doc3 = new DocWithArrays { Dates = new[] { DateTime.Today.AddDays(4), DateTime.Today.AddDays(5), DateTime.Today.AddDays(6) } };
 
-
             theSession.Store(doc1);
             theSession.Store(doc2);
             theSession.Store(doc3);
@@ -530,7 +543,6 @@ namespace Marten.Testing.Linq
             var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
             var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
-
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -549,8 +561,7 @@ namespace Marten.Testing.Linq
             var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
             var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7 } };
-            var doc4 = new DocWithLists { Numbers = new List<int> {  } };
-
+            var doc4 = new DocWithLists { Numbers = new List<int> { } };
 
             theSession.Store(doc1, doc2, doc3, doc4);
 
@@ -563,6 +574,7 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithLists>()
                 .Count(x => x.Numbers.Any()).ShouldBe(3);
         }
+
         // ENDSAMPLE
 
         // SAMPLE: query_against_number_list_with_count_method
@@ -573,7 +585,6 @@ namespace Marten.Testing.Linq
             var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
 
-
             theSession.Store(doc1);
             theSession.Store(doc2);
             theSession.Store(doc3);
@@ -583,6 +594,7 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithLists>()
                 .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -591,7 +603,6 @@ namespace Marten.Testing.Linq
             var doc1 = new DocWithLists { Numbers = new List<int> { 1, 2, 3 } };
             var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
-
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -610,7 +621,6 @@ namespace Marten.Testing.Linq
             var doc2 = new DocWithLists { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists { Numbers = new List<int> { 5, 6, 7, 8 } };
 
-
             theSession.Store(doc1);
             theSession.Store(doc2);
             theSession.Store(doc3);
@@ -621,14 +631,12 @@ namespace Marten.Testing.Linq
                 .Single(x => x.Numbers.Count > 3).Id.ShouldBe(doc3.Id);
         }
 
-
         [Fact]
         public void query_against_number_IList()
         {
             var doc1 = new DocWithLists2 { Numbers = new List<int> { 1, 2, 3 } };
             var doc2 = new DocWithLists2 { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists2 { Numbers = new List<int> { 5, 6, 7 } };
-
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -647,7 +655,6 @@ namespace Marten.Testing.Linq
             var doc2 = new DocWithLists3 { Numbers = new List<int> { 3, 4, 5 } };
             var doc3 = new DocWithLists3 { Numbers = new List<int> { 5, 6, 7 } };
 
-
             theSession.Store(doc1);
             theSession.Store(doc2);
             theSession.Store(doc3);
@@ -657,7 +664,6 @@ namespace Marten.Testing.Linq
             theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToArray()
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
-
 
         [Fact]
         public void naked_any_hit_without_predicate()

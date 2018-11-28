@@ -67,7 +67,7 @@ namespace Marten.Linq.Parsing
 			                            !(field is DuplicatedField)))
 			{
 				var dict = new Dictionary<string, object>();
-				ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery);
+				ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery, serializer);
 				return new ContainmentWhereFragment(serializer, dict);
 			}
 

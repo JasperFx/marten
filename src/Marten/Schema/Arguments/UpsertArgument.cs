@@ -18,7 +18,7 @@ namespace Marten.Schema.Arguments
             .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType) });
 
         protected static readonly MethodInfo _paramWithJsonBody = typeof(SprocCall)
-            .GetMethod("JsonBody", new[] { typeof(string), typeof(ArraySegment<char>)});
+            .GetMethod("JsonBody", new[] { typeof(string), typeof(ArraySegment<char>) });
 
         private MemberInfo[] _members;
         private string _postgresType;
@@ -63,7 +63,7 @@ namespace Marten.Schema.Arguments
         {
             var memberType = Members.Last().GetMemberType();
 
-            var value = LambdaBuilder.ToExpression(enumStorage, Members, document);
+            var value = LambdaBuilder.ToExpression(mapping.EnumStorage, Members, document);
 
             if (memberType.IsEnum)
             {

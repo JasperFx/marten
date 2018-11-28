@@ -115,18 +115,18 @@ namespace Marten.Util
                     var field = member.As<FieldInfo>();
                     body = Expression.Field(body, field);
                 }
+            }
 
-                var memberType = members.Last().GetMemberType();
-                if (memberType.GetTypeInfo().IsEnum)
+            var memberType = members.Last().GetMemberType();
+            if (memberType.GetTypeInfo().IsEnum)
+            {
+                if (enumStorage == EnumStorage.AsString)
                 {
-                    if (enumStorage == EnumStorage.AsString)
-                    {
-                        body = Expression.Call(_getEnumStringValue, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
-                    }
-                    else
-                    {
-                        body = Expression.Call(_getEnumIntValue, Expression.Convert(body, typeof(object)));
-                    }
+                    body = Expression.Call(_getEnumStringValue, Expression.Constant(memberType), Expression.Convert(body, typeof(object)));
+                }
+                else
+                {
+                    body = Expression.Call(_getEnumIntValue, Expression.Convert(body, typeof(object)));
                 }
             }
 
