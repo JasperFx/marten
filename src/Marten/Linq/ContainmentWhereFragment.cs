@@ -106,10 +106,11 @@ namespace Marten.Linq
         {
             var value = expressionValue;
 
-            if (member.MemberType is MemberTypes.Property && ((PropertyInfo)member).PropertyType.IsEnum
-                                                          && enumStorage == EnumStorage.AsString)
+            var memberType = member.GetMemberType();
+
+            if (memberType.IsEnum && enumStorage == EnumStorage.AsString)
             {
-                value = Enum.GetName(((PropertyInfo)member).PropertyType, value);
+                value = Enum.GetName(memberType, value);
             }
 
             return value;
