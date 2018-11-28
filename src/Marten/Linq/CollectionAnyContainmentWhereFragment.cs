@@ -91,7 +91,7 @@ namespace Marten.Linq
             else
             {
                 var search = new Dictionary<string, object>();
-                binaryExpressions.Each(x => gatherSearch(x, search));
+                binaryExpressions.Each(x => gatherSearch(x, search, _serializer));
 
                 if (_members.Length == 1)
                 {
@@ -125,16 +125,16 @@ namespace Marten.Linq
             return false;
         }
 
-        private static void gatherSearch(BinaryExpression x, Dictionary<string, object> search)
+        private static void gatherSearch(BinaryExpression x, Dictionary<string, object> search, ISerializer serializer)
         {
             if (x.NodeType == ExpressionType.AndAlso)
             {
-                if (x.Left is BinaryExpression) gatherSearch(x.Left.As<BinaryExpression>(), search);
-                if (x.Right is BinaryExpression) gatherSearch(x.Right.As<BinaryExpression>(), search);
+                if (x.Left is BinaryExpression) gatherSearch(x.Left.As<BinaryExpression>(), search, serializer);
+                if (x.Right is BinaryExpression) gatherSearch(x.Right.As<BinaryExpression>(), search, serializer);
             }
             else if (x.NodeType == ExpressionType.Equal)
             {
-                ContainmentWhereFragment.CreateDictionaryForSearch(x, search);
+                ContainmentWhereFragment.CreateDictionaryForSearch(x, search, serializer);
             }
             else
             {
