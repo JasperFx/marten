@@ -93,7 +93,7 @@ namespace martenbuild
             Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine"), project =>
                 Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
 
-            RunTargets(args);
+            RunTargetsAndExit(args);
         }
 
         private static string InitializeDirectory(string path)
