@@ -89,6 +89,7 @@ namespace Marten.Util
                 .Replace('\r', ' ')
                 .Replace('\t', ' ')
                 .ReplaceMultiSpace(" ")
+                .Replace(" ;", ";")
                 .Replace("SECURITY INVOKER", "")
                 .Replace("  ", " ")
                 .Replace("LANGUAGE plpgsql AS $function$", "")
