@@ -122,6 +122,10 @@ namespace Marten.Schema
 
             actual = actual.Replace("  ", " ") + ";";
 
+            // if column name being a PostgreSQL keyword, column is already wrapped with double quotes
+            // above regex and replace logic will result in additional double quotes, remove the same
+            actual = actual.Replace("\"\"", "\"");
+
             return ToDDL().EqualsIgnoreCase(actual);
         }
     }

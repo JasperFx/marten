@@ -13,6 +13,15 @@ namespace Marten.Testing
         public void end_to_end()
         {
             theStore.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("FirstName");
+            
+            
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection("host=localhost;database=test;password=password1;username=postgres");
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+                _.Schema.For<User>()
+                    .Duplicate(u => u.FirstName);
+            });
 
 
             var user1 = new User { FirstName = "Byron", LastName = "Scott" };
