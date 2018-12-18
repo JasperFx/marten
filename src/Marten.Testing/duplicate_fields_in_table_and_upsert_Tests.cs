@@ -13,8 +13,7 @@ namespace Marten.Testing
         public void end_to_end()
         {
             theStore.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("FirstName");
-
-
+            
             var user1 = new User { FirstName = "Byron", LastName = "Scott" };
             using (var session = theStore.OpenSession())
             {
