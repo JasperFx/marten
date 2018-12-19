@@ -21,6 +21,7 @@ namespace Marten.Schema
             MemberType = members.Last().GetMemberType();
 
             PgType = TypeMappings.GetPgType(MemberType, enumStorage);
+            _enumStorage = enumStorage;
         }
 
         public Type MemberType { get; }
