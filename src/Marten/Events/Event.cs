@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
 using Baseline;
 using Marten.Events.Projections;
 
@@ -102,6 +104,16 @@ namespace Marten.Events
             where TAggregate : class, new()
         {
             var step = aggregator.AggregatorFor<T>();
+            if (step == null) {
+                var parentClass = typeof(T).GetTypeInfo().BaseType;
+                if (parentClass != null && aggregator.EventTypes.Contains(parentClass)) {
+                    var aggregatorType = aggregator.GetType();
+                    MethodInfo method = aggregatorType.GetMethod("AggregatorFor");
+                    MethodInfo genericMethod = method.MakeGenericMethod(parentClass);
+                    dynamic newStep = genericMethod.Invoke(aggregator, null);
+                    newStep?.Apply(state, Data);
+                }
+            }
             if (step is IAggregationWithMetadata<TAggregate, T>)
             {
                 step.As<IAggregationWithMetadata<TAggregate, T>>()

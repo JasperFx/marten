@@ -150,6 +150,104 @@ namespace Marten.Testing.Events
 
             events.Count.ShouldBe(2);
         }
+
+        [Fact]
+        public async Task will_call_apply_for_base_class()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied) });
+
+                _.Events.AggregateFor<TestAggregateOnBase>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateOnBase>(id, new ChildEvent(), new NonInheritied(), new BaseEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateOnBase>(id);
+                proj.EventCount.ShouldBe(7);
+            }
+        }
+        [Fact]
+        public async Task will_call_apply_for_child_when_both_present()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied) });
+
+                _.Events.AggregateFor<TestAggregateBoth>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateBoth>(id, new ChildEvent(), new NonInheritied(), new BaseEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateBoth>(id);
+                proj.EventCount.ShouldBe(106);
+            }
+        }
+        [Fact]
+        public async Task will_not_call_apply_for_base_if_no_apply()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied) });
+
+                _.Events.AggregateFor<TestAggregateNoBase>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateNoBase>(id, new ChildEvent(), new NonInheritied(), new BaseEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateNoBase>(id);
+                proj.EventCount.ShouldBe(105);
+            }
+        }
+
+        public class BaseEvent {}
+        public class ChildEvent : BaseEvent {}
+        public class NonInheritied {}
+
+        public class TestAggregateOnBase {
+            public Guid Id { get; set; }
+            public int EventCount { get; set; } = 0;
+
+            public void Apply(BaseEvent e) {
+                EventCount++;
+            }
+            public void Apply(NonInheritied e) {
+                EventCount += 5;
+            }            
+        }
+
+        public class TestAggregateNoBase {
+            public Guid Id {get; set;}
+            public int EventCount { get; set; } = 0;
+
+            public void Apply(ChildEvent e) {
+                EventCount += 100;
+            }
+
+            public void Apply(NonInheritied e) {
+                EventCount += 5;
+            }
+        }
+
+        public class TestAggregateBoth {
+            public Guid Id {get; set;}
+            public int EventCount  { get; set; } = 0;
+            public void Apply(ChildEvent e) {
+                EventCount += 100;
+            }
+            public void Apply(BaseEvent e) {
+                EventCount += 1;
+            }
+            public void Apply(NonInheritied e) {
+                EventCount += 5;
+            }            
+        }
     }
     // ENDSAMPLE
 }
