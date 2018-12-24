@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
@@ -98,22 +99,81 @@ namespace Marten.Events
 
         object IEvent.Data => Data;
 
+        private dynamic FindAlternativeApplyStep<TAggregate>(Type type, IAggregator<TAggregate> aggregator, out Type castType) {
+            dynamic altStep = null;
+            castType = type;
+            var method = aggregator.GetType().GetMethod("AggregatorFor");
+            // Degenerate.  Check if Type is of type object.  If so, check for an apply method for object and return null
+            if (type == typeof(object)) {
+                if (aggregator.EventTypes.Contains(type)) {
+                    castType = typeof(object);
+                    var generic = method.MakeGenericMethod(type);
+                    altStep = generic.Invoke(aggregator, null);
+                    return altStep;
+                } else {
+                    return null;
+                }
+            }
+            // Get interfaces and check if type has any interfaces that can be used
+            var interfaces = type.GetInterfaces();
+            foreach (Type i in interfaces) {
+                if (aggregator.EventTypes.Contains(i)) {
+                    var generic = method.MakeGenericMethod(i);
+                    altStep = generic.Invoke(aggregator, null);
+                    castType = i;
+                    return altStep;
+                }
+            }
 
+            // Check base class
+            if (type.BaseType != null) {
+                if (aggregator.EventTypes.Contains(type.BaseType)) {
+                    var generic = method.MakeGenericMethod(type.BaseType);
+                    altStep = generic.Invoke(aggregator, null);
+                    castType = type.BaseType;
+                    return altStep;
+                } else {
+                    // start process over again on base type and walk all the way back to object if necessary.
+                    return FindAlternativeApplyStep<TAggregate>(type.BaseType, aggregator, out castType);
+                }
+            };
 
+            return altStep;
+        }
+
+        private bool IsIAggregationWithMetadata(dynamic step) {
+            var methodList = step?.GetType().GetMethods() as IEnumerable<MethodInfo>
+                ?? new List<MethodInfo>();
+            var paramList = methodList.Where(x => x.Name == "Apply").SelectMany(x => x.GetParameters());
+            return paramList.Any(x => x.ParameterType.AssemblyQualifiedName.StartsWith("Marten.Events.Event"));
+        }
+
+        public static Toutput CastEventData<Toutput>(object input) {
+            return (Toutput) input;
+        }
+
+        private dynamic CreateMetaDataEvent(Type castType, T data) {
+            MethodInfo castMethod = this.GetType().GetMethod("CastEventData").MakeGenericMethod(castType);
+            var newData = castMethod.Invoke(null, new object[] {data});
+            Type eventType = typeof(Event<>).MakeGenericType(castType);
+            dynamic evnt = Activator.CreateInstance(eventType, newData);
+            return evnt;
+        }
         public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new()
         {
             var step = aggregator.AggregatorFor<T>();
             if (step == null) {
-                var parentClass = typeof(T).GetTypeInfo().BaseType;
-                if (parentClass != null && aggregator.EventTypes.Contains(parentClass)) {
-                    var aggregatorType = aggregator.GetType();
-                    MethodInfo method = aggregatorType.GetMethod("AggregatorFor");
-                    MethodInfo genericMethod = method.MakeGenericMethod(parentClass);
-                    dynamic newStep = genericMethod.Invoke(aggregator, null);
+                Type castType;
+                dynamic newStep = FindAlternativeApplyStep<TAggregate>(typeof(T), aggregator, out castType);
+                if (IsIAggregationWithMetadata(newStep)) {
+                    var evnt = CreateMetaDataEvent(castType, Data);
+                    newStep?.Apply(state, evnt);
+                } else {
                     newStep?.Apply(state, Data);
                 }
             }
+
             if (step is IAggregationWithMetadata<TAggregate, T>)
             {
                 step.As<IAggregationWithMetadata<TAggregate, T>>()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Services;
 using Marten.Testing.Events.Projections;
 using Shouldly;
@@ -206,9 +207,145 @@ namespace Marten.Testing.Events
             }
         }
 
+        [Fact]
+        public async Task will_call_apply_with_interface()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied), typeof(DumbInterfaceEvent) });
+
+                _.Events.AggregateFor<TestAggregateInterface>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateInterface>(id, new ChildEvent(), new NonInheritied(), new BaseEvent(), new DumbInterfaceEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateInterface>(id);
+                proj.EventCount.ShouldBe(1000);
+            }
+        }
+
+        [Fact]
+        public async Task will_call_apply_with_object()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied), typeof(DumbInterfaceEvent) });
+
+                _.Events.AggregateFor<TestAggregateObject>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateObject>(id, new ChildEvent(), new NonInheritied(), new BaseEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateObject>(id);
+                proj.EventCount.ShouldBe(3000000);
+            }
+        }
+
+        [Fact]
+        public async Task will_call_interface_over_parent()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied), typeof(DumbInterfaceEvent) });
+
+                _.Events.AggregateFor<TestAggregateInterfaceOrBase>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateInterfaceOrBase>(id, new ChildEvent(), new NonInheritied(), new BaseEvent(), new DumbInterfaceEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateInterfaceOrBase>(id);
+                proj.EventCount.ShouldBe(1002);
+            }
+        }
+
+        [Fact]
+        public async Task will_call_apply_for_base_class_with_metadata()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied) });
+
+                _.Events.AggregateFor<TestAggregateMetaData>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateMetaData>(id, new ChildEvent(), new NonInheritied(), new BaseEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateMetaData>(id);
+                proj.EventCount.ShouldBe(20);
+            }
+        }
+
+        [Fact]
+        public async Task will_call_traverse_to_object_and_do_nothing()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventTypes(new[] { typeof(ChildEvent), typeof(BaseEvent), typeof(NonInheritied) });
+
+                _.Events.AggregateFor<TestAggregateInterface>();
+            });
+            using (var session = store.OpenSession()) {
+                var id = Guid.NewGuid();
+                session.Events.StartStream<TestAggregateInterface>(id, new ChildEvent(), new NonInheritied(), new BaseEvent());
+                await session.SaveChangesAsync();
+                var proj = await session.Events.AggregateStreamAsync<TestAggregateInterface>(id);
+                proj.EventCount.ShouldBe(0);
+            }
+        }                
+
         public class BaseEvent {}
         public class ChildEvent : BaseEvent {}
         public class NonInheritied {}
+
+        public class DumbInterfaceEvent : BaseEvent, DumbInterface {}
+
+        public interface DumbInterface {}
+
+        public class TestAggregateInterface {
+            public Guid Id {get; set;}
+            public int EventCount { get; set; } = 0;
+            public void Apply(DumbInterface e) {
+                EventCount += 1000;
+            }
+        }
+
+        public class TestAggregateInterfaceOrBase {
+            public Guid Id {get; set;}
+            public int EventCount { get; set; } = 0;
+            public void Apply(DumbInterface e) {
+                EventCount += 1000;
+            }
+            public void Apply(BaseEvent e) {
+                EventCount++;
+            }
+        }
+
+        public class TestAggregateMetaData {
+            public Guid Id { get; set; }
+            public int EventCount { get; set; } = 0;
+
+            public void Apply(Event<BaseEvent> e) {
+                EventCount += 10;
+            }
+        }        
+
+        public class TestAggregateObject {
+            public Guid Id { get; set; }
+            public int EventCount { get; set; } = 0;
+
+            public void Apply(object e) {
+                EventCount += 1000000;
+            }
+        }
 
         public class TestAggregateOnBase {
             public Guid Id { get; set; }
