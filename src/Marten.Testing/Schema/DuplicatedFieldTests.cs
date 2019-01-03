@@ -59,8 +59,15 @@ namespace Marten.Testing.Schema
             var constant = Expression.Constant((int)Colors.Blue);
 
             field.GetValue(constant).ShouldBe(Colors.Blue.ToString());
-
         }
 
+        [Theory]
+        [InlineData(EnumStorage.AsInteger, "color = (data ->> 'Color')::int")]
+        [InlineData(EnumStorage.AsString, "color = data ->> 'Color'")]
+        public void storage_is_set_when_passed_in(EnumStorage storageMode, string expectedUpdateFragment)
+        {
+            var field = DuplicatedField.For<Target>(storageMode, x => x.Color);
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+        }
     }
 }
