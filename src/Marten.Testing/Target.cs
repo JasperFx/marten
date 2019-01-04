@@ -133,6 +133,7 @@ namespace Marten.Testing
         public int? NullableNumber { get; set; }
         public DateTime? NullableDateTime { get; set; }
         public bool? NullableBoolean { get; set; }
+        public Colors? NullableColor { get; set; }
 
         public IDictionary<string,string> StringDict { get; set; }
 

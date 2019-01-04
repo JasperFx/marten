@@ -129,6 +129,23 @@ namespace Marten.Testing.Util
         }
 
         [Fact]
+        public void can_build_getter_for_null_deep_expression()
+        {
+            Expression<Func<Target, int>> expression = t => t.Inner.Number;
+
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var members = visitor.Members.ToArray();
+
+            var getter = LambdaBuilder.Getter<Target, int>(EnumStorage.AsInteger, members);
+
+            var target = Target.Random(false);
+
+            getter(target).ShouldBe(default(int));
+        }
+
+        [Fact]
         public void can_get_the_Enum_GetName_method()
         {
             typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public).ShouldNotBeNull();
