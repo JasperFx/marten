@@ -9,7 +9,7 @@
     <PackageId>Marten.CommandLine</PackageId>
     <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
     <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/JasperFX/marten/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -49,4 +49,15 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <!--SourceLink specific settings-->
+  <PropertyGroup>
+    <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.GitHub" Version="2.8.3" PrivateAssets="All" />
+  </ItemGroup>
 </Project>
