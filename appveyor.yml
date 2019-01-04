@@ -38,4 +38,4 @@ build_script:
 test: off
 
 artifacts:
-  - path: '**\Marten.*.nupkg' # find all NuGet packages recursively
+  - path: '**\Marten.*.*nupkg' # find all NuGet packages recursively
