@@ -20,6 +20,19 @@ namespace Marten.Util
             PgTypes = new Dictionary<Type, string>();
             TypeToNpgsqlDbType = new Dictionary<Type, NpgsqlDbType?>();
 
+            PopulateTypeMappings();
+        }
+
+        public static void RecalculateTypeMappings()
+        {
+            PgTypes.Clear();
+            TypeToNpgsqlDbType.Clear();
+
+            PopulateTypeMappings();
+        }
+
+        private static void PopulateTypeMappings()
+        {
             foreach (var mapping in NpgsqlConnection.GlobalTypeMapper.Mappings)
             {
                 foreach (var t in mapping.ClrTypes)
@@ -40,7 +53,7 @@ namespace Marten.Util
             // Default Npgsql mapping is 'numeric' but we are using 'decimal'
             PgTypes[typeof(decimal)] = "decimal";
             // Default Npgsql mappings is 'timestamp' but we are using 'timestamp without time zone'
-            PgTypes[typeof (DateTime)] = "timestamp without time zone";
+            PgTypes[typeof(DateTime)] = "timestamp without time zone";
         }
 
         public static string ConvertSynonyms(string type)
