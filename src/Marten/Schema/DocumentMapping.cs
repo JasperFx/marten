@@ -448,15 +448,29 @@ namespace Marten.Schema
         /// <summary>
         /// Adds a full text index
         /// </summary>
-        /// <param name="config">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
         /// <param name="configure">Optional action to further configure the full text index</param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
-        public void AddFullTextIndex(string config = "english", Action<FullTextIndex> configure = null)
+        public void AddFullTextIndex(string regConfig = "english", Action<FullTextIndex> configure = null)
         {
-            var index = new FullTextIndex(this, config);
+            var index = new FullTextIndex(this, regConfig);
             configure?.Invoke(index);
+            Indexes.Add(index);
+        }
+
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="members">Document fields that should be use by full text index</param>
+        /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public void AddFullTextIndex(MemberInfo[][] members, string regConfig = "english")
+        {
+            var index = new FullTextIndex(this, regConfig, members);
             Indexes.Add(index);
         }
 
@@ -755,10 +769,20 @@ namespace Marten.Schema
 
         public void UniqueIndex(params Expression<Func<T, object>>[] expressions)
         {
-            UniqueIndex(UniqueIndexType.Computed, expressions);
+            UniqueIndex(UniqueIndexType.Computed, null, expressions);
+        }
+
+        public void UniqueIndex(string indexName, params Expression<Func<T, object>>[] expressions)
+        {
+            UniqueIndex(UniqueIndexType.Computed, indexName, expressions);
         }
 
         public void UniqueIndex(UniqueIndexType indexType, params Expression<Func<T, object>>[] expressions)
+        {
+            UniqueIndex(indexType, null, expressions);
+        }
+
+        public void UniqueIndex(UniqueIndexType indexType, string indexName, params Expression<Func<T, object>>[] expressions)
         {
             AddUniqueIndex(
                 expressions
@@ -769,7 +793,42 @@ namespace Marten.Schema
                     return visitor.Members.ToArray();
                 })
                 .ToArray(),
-                indexType);
+                indexType,
+                indexName);
+        }
+
+        /// <summary>
+        /// Adds a full text index with default region config set to 'english'
+        /// </summary>
+        /// <param name="expressions">Document fields that should be use by full text index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public void FullTextIndex(params Expression<Func<T, object>>[] expressions)
+        {
+            FullTextIndex("english", expressions);
+        }
+
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <param name="expressions">Document fields that should be use by full text index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public void FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
+        {
+            AddFullTextIndex(
+                expressions
+                .Select(e =>
+                {
+                    var visitor = new FindMembers();
+                    visitor.Visit(e);
+                    return visitor.Members.ToArray();
+                })
+                .ToArray(),
+                regConfig);
         }
 
         public void ForeignKey<TReference>(

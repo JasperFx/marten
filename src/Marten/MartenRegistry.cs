@@ -187,12 +187,39 @@ namespace Marten
             /// <summary>
             /// Creates a unique index on this data member within the JSON data storage
             /// </summary>
-            /// <param name="isComputed"></param>
+            /// <param name="indexName">Name of the index</param>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UniqueIndex(string indexName, params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.UniqueIndex(indexName, expressions);
+
+                return this;
+            }
+
+            /// <summary>
+            /// Creates a unique index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="indexType">Type of the index</param>
             /// <param name="expressions"></param>
             /// <returns></returns>
             public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, params Expression<Func<T, object>>[] expressions)
             {
                 alter = m => m.UniqueIndex(indexType, expressions);
+
+                return this;
+            }
+
+            /// <summary>
+            /// Creates a unique index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="indexType">Type of the index</param>
+            /// <param name="indexName">Name of the index</param>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.UniqueIndex(indexType, indexName, expressions);
 
                 return this;
             }
@@ -212,6 +239,18 @@ namespace Marten
             public DocumentMappingExpression<T> FullTextIndex(string config = "english", Action<FullTextIndex> configure = null)
             {
                 alter = m => m.AddFullTextIndex(config, configure);
+                return this;
+            }
+
+            public DocumentMappingExpression<T> FullTextIndex(params Expression<Func<T, object>>[] expressions)
+            {
+                FullTextIndex("english", expressions);
+                return this;
+            }
+
+            public DocumentMappingExpression<T> FullTextIndex(string config, params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.FullTextIndex(config, expressions);
                 return this;
             }
 
