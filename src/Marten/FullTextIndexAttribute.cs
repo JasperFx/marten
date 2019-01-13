@@ -5,16 +5,16 @@ using System.Reflection;
 namespace Marten.Schema
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class FullTextSearchAttribute : MartenAttribute
+    public class FullTextIndexAttribute : MartenAttribute
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
             var membersGroupedByIndexName = member.DeclaringType.GetMembers()
-                .Where(mi => mi.GetCustomAttributes<FullTextSearchAttribute>().Any())
+                .Where(mi => mi.GetCustomAttributes<FullTextIndexAttribute>().Any())
                 .Select(mi => new
                 {
                     Member = mi,
-                    IndexInformation = mi.GetCustomAttributes<FullTextSearchAttribute>().First()
+                    IndexInformation = mi.GetCustomAttributes<FullTextIndexAttribute>().First()
                 })
                 .GroupBy(m => m.IndexInformation.IndexName ?? m.Member.Name)
                 .Where(mg => mg.Any(m => m.Member == member))
@@ -22,7 +22,8 @@ namespace Marten.Schema
 
             mapping.AddFullTextIndex(
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),
-                RegConfig);
+                regConfig: RegConfig,
+                indexName: IndexName);
         }
 
         /// <summary>
