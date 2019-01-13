@@ -250,6 +250,34 @@ namespace Marten.Testing.Acceptance
                     dataConfig: $"((data ->> '{nameof(Target.AnotherString)}'))"
                 );
         }
+
+        [Fact]
+        public void creating_multiple_full_text_index_with_different_regConfigs_and_custom_data_config_should_create_the_indexes_with_different_recConfigs()
+        {
+            const string frenchRegConfig = "french";
+            const string italianRegConfig = "italian";
+
+            StoreOptions(_ => _.Schema.For<Target>()
+                                      .FullTextIndex(frenchRegConfig, d => d.String)
+                                      .FullTextIndex(italianRegConfig, d => d.AnotherString));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_{frenchRegConfig}_idx_fts",
+                    regConfig: frenchRegConfig,
+                    dataConfig: $"((data ->> '{nameof(Target.String)}'))"
+                );
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_{italianRegConfig}_idx_fts",
+                    regConfig: italianRegConfig,
+                    dataConfig: $"((data ->> '{nameof(Target.AnotherString)}'))"
+                );
+        }
     }
 
     public static class FullTextIndexTestsExtension
