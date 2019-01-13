@@ -44,11 +44,11 @@ namespace Marten.Testing.Acceptance
             theStore.BulkInsert(data);
 
             var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Where(x => x.Name == "mt_doc_target_english_idx_fts")
+                              .Where(x => x.Name == "mt_doc_target_idx_fts")
                               .Select(x => x.DDL.ToLower())
                               .First();
 
-            ddl.ShouldContain("create index mt_doc_target_english_idx_fts");
+            ddl.ShouldContain("create index mt_doc_target_idx_fts");
             ddl.ShouldContain("on public.mt_doc_target");
             ddl.ShouldContain("to_tsvector");
         }
@@ -64,7 +64,7 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL.ToLower())
                               .First();
 
-            ddl.ShouldContain("mt_doc_target_english_idx_fts");
+            ddl.ShouldContain("mt_doc_target_idx_fts");
         }
 
         [Fact]

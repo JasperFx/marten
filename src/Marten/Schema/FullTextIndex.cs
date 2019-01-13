@@ -38,8 +38,10 @@ namespace Marten.Schema
                     _indexName = lowerValue.ToLowerInvariant();
                 else if (lowerValue?.IsNotEmpty() == true)
                     _indexName = DocumentMapping.MartenPrefix + lowerValue.ToLowerInvariant();
-                else
+                else if (_dataConfig != DefaultDataConfig)
                     _indexName = $"{_table.Name}_{_regConfig}_idx_fts";
+                else
+                    _indexName = $"{_table.Name}_idx_fts";
             }
         }
 
@@ -73,9 +75,11 @@ namespace Marten.Schema
 
         private static string GetDataConfig(DocumentMapping mapping, MemberInfo[][] members)
         {
-            return members
+            var dataConfig = members
                     .Select(m => $"({mapping.FieldFor(m).SqlLocator.Replace("d.", "")})")
-                    .Join(" ");
+                    .Join(", ");
+
+            return $"CONCAT({dataConfig})";
         }
     }
 }
