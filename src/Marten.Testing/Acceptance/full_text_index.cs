@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -35,6 +37,78 @@ namespace Marten.Testing.Acceptance
             store.Dispose();
 
             // ENDSAMPLE
+        }
+
+        [Fact]
+        public void should_search_with_default_configuration()
+        {
+            SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex());
+        }
+
+        [Fact]
+        public void should_search_for_specific_members()
+        {
+            SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName));
+        }
+
+        [Fact]
+        public void should_search_with_multipleIndexes()
+        {
+            const string frenchRegConfig = "french";
+            const string italianRegConfig = "italian";
+
+            StoreOptions(_ => _.Schema.For<User>()
+                                                     .FullTextIndex(italianRegConfig, d => d.FirstName)
+                                                     .FullTextIndex(frenchRegConfig, d => d.LastName));
+
+            const string searchFilter = "Lindsey";
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
+                session.Store(new User { FirstName = "Frank", LastName = searchFilter, UserName = "fzombo" });
+
+                session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
+                session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
+                session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
+                session.SaveChanges();
+
+                var italianResults = session.Search<User>(searchFilter, italianRegConfig);
+
+                italianResults.Count.ShouldBe(1);
+                italianResults.ShouldContain(u => u.FirstName == searchFilter);
+                italianResults.ShouldNotContain(u => u.LastName == searchFilter);
+
+                var frenchResults = session.Search<User>(searchFilter, frenchRegConfig);
+
+                frenchResults.Count.ShouldBe(1);
+                frenchResults.ShouldNotContain(u => u.FirstName == searchFilter);
+                frenchResults.ShouldContain(u => u.LastName == searchFilter);
+            }
+        }
+
+        private void SearchShouldBeSuccessfulFor(Action<StoreOptions> configure)
+        {
+            StoreOptions(configure);
+
+            const string searchFilter = "Lindsey";
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
+                session.Store(new User { FirstName = "Frank", LastName = searchFilter, UserName = "fzombo" });
+
+                session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
+                session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
+                session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
+                session.SaveChanges();
+
+                var results = session.Search<User>(searchFilter);
+
+                results.Count.ShouldBe(2);
+                results.ShouldContain(u => u.FirstName == searchFilter);
+                results.ShouldContain(u => u.LastName == searchFilter);
+            }
         }
 
         [Fact]

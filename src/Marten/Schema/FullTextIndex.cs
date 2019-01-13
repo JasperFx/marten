@@ -67,10 +67,10 @@ namespace Marten.Schema
             var ddl = index?.DDL.ToLowerInvariant();
             // Check for the existence of the 'to_tsvector' function, the correct table name, and the use of the data column
             return ddl?.Contains("to_tsvector") == true
-                && ddl.Contains(IndexName)
-                && ddl.Contains(_table.QualifiedName)
-                && ddl.Contains(_regConfig)
-                && ddl.Contains(_dataConfig);
+                && ddl?.Contains(IndexName) == true
+                && ddl?.Contains(_table.QualifiedName) == true
+                && ddl?.Contains(_regConfig) == true
+                && ddl?.Contains(_dataConfig) == true;
         }
 
         private static string GetDataConfig(DocumentMapping mapping, MemberInfo[][] members)
