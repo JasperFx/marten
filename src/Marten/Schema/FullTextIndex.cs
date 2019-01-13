@@ -30,19 +30,19 @@ namespace Marten.Schema
 
         public string IndexName
         {
-            get => _indexName;
-            set
+            get
             {
-                var lowerValue = value?.ToLowerInvariant();
+                var lowerValue = _indexName?.ToLowerInvariant();
                 if (lowerValue?.StartsWith(DocumentMapping.MartenPrefix) == true)
-                    _indexName = lowerValue.ToLowerInvariant();
+                    return lowerValue.ToLowerInvariant();
                 else if (lowerValue?.IsNotEmpty() == true)
-                    _indexName = DocumentMapping.MartenPrefix + lowerValue.ToLowerInvariant();
+                    return DocumentMapping.MartenPrefix + lowerValue.ToLowerInvariant();
                 else if (_dataConfig != DefaultDataConfig)
-                    _indexName = $"{_table.Name}_{_regConfig}_idx_fts";
+                    return $"{_table.Name}_{_regConfig}_idx_fts";
                 else
-                    _indexName = $"{_table.Name}_idx_fts";
+                    return $"{_table.Name}_idx_fts";
             }
+            set => _indexName = value;
         }
 
         public string RegConfig
@@ -77,9 +77,14 @@ namespace Marten.Schema
         {
             var dataConfig = members
                     .Select(m => $"({mapping.FieldFor(m).SqlLocator.Replace("d.", "")})")
-                    .Join(", ");
+                    .Join(" || ' ' || ");
 
-            return $"CONCAT({dataConfig})";
+            return $"({dataConfig})";
+        }
+
+        private void RefreshIndexName()
+        {
+            IndexName = _indexName;
         }
     }
 }

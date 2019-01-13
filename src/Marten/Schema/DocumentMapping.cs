@@ -453,11 +453,12 @@ namespace Marten.Schema
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
-        public void AddFullTextIndex(string regConfig = "english", Action<FullTextIndex> configure = null)
+        public FullTextIndex AddFullTextIndex(string regConfig = Marten.Schema.FullTextIndex.DefaultRegConfig, Action<FullTextIndex> configure = null)
         {
             var index = new FullTextIndex(this, regConfig);
             configure?.Invoke(index);
             Indexes.Add(index);
+            return index;
         }
 
         /// <summary>
@@ -468,10 +469,11 @@ namespace Marten.Schema
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
-        public void AddFullTextIndex(MemberInfo[][] members, string regConfig = "english")
+        public FullTextIndex AddFullTextIndex(MemberInfo[][] members, string regConfig = Marten.Schema.FullTextIndex.DefaultRegConfig)
         {
             var index = new FullTextIndex(this, regConfig, members);
             Indexes.Add(index);
+            return index;
         }
 
         public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
@@ -804,9 +806,23 @@ namespace Marten.Schema
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
-        public void FullTextIndex(params Expression<Func<T, object>>[] expressions)
+        public FullTextIndex FullTextIndex(params Expression<Func<T, object>>[] expressions)
         {
-            FullTextIndex("english", expressions);
+            return FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+        }
+
+        /// <summary>
+        /// Adds a full text index with default region config set to 'english'
+        /// </summary>
+        /// <param name="expressions">Document fields that should be use by full text index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public FullTextIndex FullTextIndex(Action<FullTextIndex> configure, params Expression<Func<T, object>>[] expressions)
+        {
+            var index = FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+            configure(index);
+            return index;
         }
 
         /// <summary>
@@ -817,9 +833,9 @@ namespace Marten.Schema
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
-        public void FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
+        public FullTextIndex FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
         {
-            AddFullTextIndex(
+            return AddFullTextIndex(
                 expressions
                 .Select(e =>
                 {

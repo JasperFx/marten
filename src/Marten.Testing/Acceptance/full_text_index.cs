@@ -1,4 +1,6 @@
 ﻿using System.Linq;
+using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Xunit;
 
@@ -121,6 +123,164 @@ namespace Marten.Testing.Acceptance
                               .First();
 
             ddl.ShouldContain("mt_i_have_prefix");
+        }
+
+        [Fact]
+        public void creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_with_default_regConfig_in_indexname_custom_data_configuration()
+        {
+            const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
+
+            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
+                index =>
+                {
+                    index.DataConfig = DataConfig;
+                }));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    dataConfig: DataConfig
+                );
+        }
+
+        [Fact]
+        public void creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
+        {
+            const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
+            const string RegConfig = "french";
+
+            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
+                index =>
+                {
+                    index.RegConfig = RegConfig;
+                    index.DataConfig = DataConfig;
+                }));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_{RegConfig}_idx_fts",
+                    regConfig: RegConfig,
+                    dataConfig: DataConfig
+                );
+        }
+
+        [Fact]
+        public void creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
+        {
+            const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
+            const string RegConfig = "french";
+            const string IndexName = "custom_index_name";
+
+            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
+                index =>
+                {
+                    index.DataConfig = DataConfig;
+                    index.RegConfig = RegConfig;
+                    index.IndexName = IndexName;
+                }));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_{IndexName}",
+                    regConfig: RegConfig,
+                    dataConfig: DataConfig
+                );
+        }
+
+        [Fact]
+        public void creating_a_full_text_index_with_single_member_should_create_the_index_with_default_regConfig_in_indexname_and_member_selectors()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    dataConfig: $"((data ->> '{nameof(Target.String)}'))"
+                );
+        }
+
+        [Fact]
+        public void creating_a_full_text_index_with_multiple_members_should_create_the_index_with_default_regConfig_in_indexname_and_members_selectors()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String, d => d.AnotherString));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    dataConfig: $"((data ->> '{nameof(Target.String)}') || ' ' || (data ->> '{nameof(Target.AnotherString)}'))"
+                );
+        }
+
+        [Fact]
+        public void creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
+        {
+            const string IndexName = "custom_index_name";
+            const string RegConfig = "french";
+
+            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
+                index =>
+                {
+                    index.IndexName = IndexName;
+                    index.RegConfig = RegConfig;
+                },
+            d => d.AnotherString));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_{IndexName}",
+                    regConfig: RegConfig,
+                    dataConfig: $"((data ->> '{nameof(Target.AnotherString)}'))"
+                );
+        }
+    }
+
+    public static class FullTextIndexTestsExtension
+    {
+        public static void ShouldContainIndexDefinitionFor<TDocument>(
+            this StorageFeatures storage,
+            string tableName = "public.mt_doc_target",
+            string indexName = "mt_doc_target_idx_fts",
+            string regConfig = "english",
+            string dataConfig = null)
+        {
+            var ddl = storage.MappingFor(typeof(TDocument)).Indexes
+                .Where(x => x.IndexName == indexName)
+                .Select(x => x.ToDDL())
+                .FirstOrDefault();
+
+            ddl.ShouldNotBeNull();
+
+            ddl.ShouldContain($"CREATE INDEX {indexName}");
+            ddl.ShouldContain($"ON {tableName}");
+            ddl.ShouldContain($"to_tsvector('{regConfig}', {dataConfig})");
+
+            if (regConfig != null)
+            {
+                ddl.ShouldContain(regConfig);
+            }
+
+            if (dataConfig != null)
+            {
+                ddl.ShouldContain(dataConfig);
+            }
         }
     }
 }

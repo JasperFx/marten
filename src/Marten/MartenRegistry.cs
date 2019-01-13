@@ -236,21 +236,33 @@ namespace Marten
                 return this;
             }
 
-            public DocumentMappingExpression<T> FullTextIndex(string config = "english", Action<FullTextIndex> configure = null)
+            public DocumentMappingExpression<T> FullTextIndex(string regConfig = Schema.FullTextIndex.DefaultRegConfig, Action<FullTextIndex> configure = null)
             {
-                alter = m => m.AddFullTextIndex(config, configure);
+                alter = m => m.AddFullTextIndex(regConfig, configure);
+                return this;
+            }
+
+            public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure)
+            {
+                alter = m => m.AddFullTextIndex(Schema.FullTextIndex.DefaultRegConfig, configure);
                 return this;
             }
 
             public DocumentMappingExpression<T> FullTextIndex(params Expression<Func<T, object>>[] expressions)
             {
-                FullTextIndex("english", expressions);
+                FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
                 return this;
             }
 
-            public DocumentMappingExpression<T> FullTextIndex(string config, params Expression<Func<T, object>>[] expressions)
+            public DocumentMappingExpression<T> FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.FullTextIndex(config, expressions);
+                alter = m => m.FullTextIndex(regConfig, expressions);
+                return this;
+            }
+
+            public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure, params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.FullTextIndex(configure, expressions);
                 return this;
             }
 
