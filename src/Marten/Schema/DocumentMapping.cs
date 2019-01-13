@@ -469,9 +469,12 @@ namespace Marten.Schema
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
         /// </remarks>
-        public FullTextIndex AddFullTextIndex(MemberInfo[][] members, string regConfig = FullTextIndex.DefaultRegConfig)
+        public FullTextIndex AddFullTextIndex(MemberInfo[][] members, string regConfig = FullTextIndex.DefaultRegConfig, string indexName = null)
         {
-            var index = new FullTextIndex(this, regConfig, members);
+            var index = new FullTextIndex(this, regConfig, members)
+            {
+                IndexName = indexName
+            };
             Indexes.Add(index);
             return index;
         }
