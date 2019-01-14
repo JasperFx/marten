@@ -10,6 +10,159 @@ namespace Marten.Testing.Acceptance
 {
     public class full_text_index : IntegratedFixture
     {
+        // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_default
+        public class UserProfile
+        {
+            public Guid Id { get; set; }
+
+            [FullTextIndex]
+            public string Information { get; set; }
+        }
+
+        // ENDSAMPLE
+
+        // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_custom_settings
+        public class UserDetails
+        {
+            private const string FullTextIndexName = "mt_custom_user_details_fts_idx";
+
+            public Guid Id { get; set; }
+
+            [FullTextIndex(IndexName = FullTextIndexName, RegConfig = "italian")]
+            public string Details { get; set; }
+        }
+
+        // ENDSAMPLE
+
+        // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_default
+        public class Article
+        {
+            public Guid Id { get; set; }
+
+            [FullTextIndex]
+            public string Heading { get; set; }
+
+            [FullTextIndex]
+            public string Number { get; set; }
+        }
+
+        // ENDSAMPLE
+
+        // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_custom_settings
+        public class BlogPost
+        {
+            public Guid Id { get; set; }
+
+            [FullTextIndex]
+            public string EnglishText { get; set; }
+
+            [FullTextIndex(RegConfig = "english")]
+            public string ItalianText { get; set; }
+
+            [FullTextIndex(RegConfig = "italian")]
+            public string FrenchText { get; set; }
+        }
+
+        // ENDSAMPLE
+
+        [Fact]
+        public void using_whole_document_full_text_index_through_store_options_with_default()
+        {
+            // SAMPLE: using_whole_document_full_text_index_through_store_options_with_default
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates
+                _.Schema.For<User>().FullTextIndex();
+            });
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void using_a_single_property_full_text_index_through_store_options_with_default()
+        {
+            // SAMPLE: using_a_single_property_full_text_index_through_store_options_with_default
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates
+                _.Schema.For<User>().FullTextIndex(d => d.FirstName);
+            });
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void using_a_single_property_full_text_index_through_store_options_with_custom_settings()
+        {
+            // SAMPLE: using_a_single_property_full_text_index_through_store_options_with_custom_settings
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates
+                _.Schema.For<User>().FullTextIndex(
+                    index =>
+                    {
+                        index.IndexName = "mt_custom_italian_user_fts_idx";
+                        index.RegConfig = "italian";
+                    },
+                    d => d.FirstName);
+            });
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void using_multiple_properties_full_text_index_through_store_options_with_default()
+        {
+            // SAMPLE: using_multiple_properties_full_text_index_through_store_options_with_default
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates
+                _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName);
+            });
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void using_multiple_properties_full_text_index_through_store_options_with_custom_settings()
+        {
+            // SAMPLE: using_multiple_properties_full_text_index_through_store_options_with_custom_settings
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates
+                _.Schema.For<User>().FullTextIndex(
+                    index =>
+                    {
+                        index.IndexName = "mt_custom_italian_user_fts_idx";
+                        index.RegConfig = "italian";
+                    },
+                    d => d.FirstName, d => d.LastName);
+            });
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void using_more_than_one_full_text_index_through_store_options_with_different_reg_config()
+        {
+            // SAMPLE: using_more_than_one_full_text_index_through_store_options_with_different_reg_config
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates
+                _.Schema.For<User>()
+                    .FullTextIndex(d => d.FirstName) //by default it will use "english"
+                    .FullTextIndex("italian", d => d.LastName);
+            });
+            // ENDSAMPLE
+        }
+
         [Fact]
         public void example()
         {

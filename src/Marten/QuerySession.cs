@@ -452,14 +452,14 @@ namespace Marten
         private string GetDataConfig<TDoc>(string regConfig)
         {
             if (!((DocumentStore as DocumentStore)?.Storage?.FindMapping(typeof(TDoc)) is DocumentMapping mapping))
-                return FullTextIndex.DefaultRegConfig;
+                return FullTextIndex.DefaultDataConfig;
 
             return mapping
                 .Indexes
                 .OfType<FullTextIndex>()
                 .Where(i => i.RegConfig == regConfig)
                 .Select(i => i.DataConfig)
-                .FirstOrDefault() ?? FullTextIndex.DefaultRegConfig;
+                .FirstOrDefault() ?? FullTextIndex.DefaultDataConfig;
         }
     }
 }

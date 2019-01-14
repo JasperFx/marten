@@ -8,7 +8,7 @@ namespace Marten.Schema
     public class FullTextIndex : IIndexDefinition
     {
         public const string DefaultRegConfig = "english";
-        private const string DefaultDataConfig = "data";
+        public const string DefaultDataConfig = "data";
 
         private string _regConfig;
         private string _dataConfig;
