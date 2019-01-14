@@ -458,7 +458,6 @@ namespace Marten
                 .Indexes
                 .OfType<FullTextIndex>()
                 .Where(i => i.RegConfig == regConfig)
-                .OrderBy(i => i.RegConfig)
                 .Select(i => i.DataConfig)
                 .FirstOrDefault() ?? FullTextIndex.DefaultRegConfig;
         }
