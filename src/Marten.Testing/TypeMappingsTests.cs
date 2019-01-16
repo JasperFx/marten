@@ -1,4 +1,6 @@
 ﻿using Marten.Util;
+using Npgsql;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
@@ -32,8 +34,21 @@ namespace Marten.Testing
             var inputString = "Darth        Maroon the   First";
             var expectedString = "Darth Maroon the First";
             inputString.ReplaceMultiSpace(" ").ShouldBe(expectedString);
-
-
         }
+
+        [Fact]
+        public void recalculates_mappings_when_asked()
+        {
+            var originalMapping = TypeMappings.GetPgType(typeof(MappingTarget), EnumStorage.AsString);
+            originalMapping.ShouldBe("jsonb");
+
+            NpgsqlConnection.GlobalTypeMapper.MapComposite<MappingTarget>("nvarchar");
+            TypeMappings.RecalculateTypeMappings();
+
+            var updatedMapping = TypeMappings.GetPgType(typeof(MappingTarget), EnumStorage.AsString);
+            updatedMapping.ShouldBe("nvarchar");
+        }
+
+        public class MappingTarget { }
     }
 }
