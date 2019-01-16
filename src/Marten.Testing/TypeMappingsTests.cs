@@ -48,7 +48,6 @@ namespace Marten.Testing
             NpgsqlConnection.GlobalTypeMapper.MapComposite<MappedTarget>("varchar");
 
             TypeMappings.GetPgType(typeof(MappedTarget), EnumStorage.AsString).ShouldBe("varchar");
-            TypeMappings.GetPgType(typeof(MappedTarget), EnumStorage.AsString).ShouldBe("varchar");
             TypeMappings.GetPgType(typeof(UnmappedTarget), EnumStorage.AsString).ShouldBe("jsonb");
         }
 
