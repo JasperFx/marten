@@ -193,19 +193,19 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void should_search_with_default_configuration()
+        public void should_search_with_store_options_default_configuration()
         {
             SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex());
         }
 
         [Fact]
-        public void should_search_for_specific_members()
+        public void should_search_with_store_options_for_specific_members()
         {
             SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName));
         }
 
         [Fact]
-        public void should_search_with_multipleIndexes()
+        public void should_search_with_store_options_with_multipleIndexes()
         {
             const string frenchRegConfig = "french";
             const string italianRegConfig = "italian";
@@ -262,6 +262,12 @@ namespace Marten.Testing.Acceptance
                 results.ShouldContain(u => u.FirstName == searchFilter);
                 results.ShouldContain(u => u.LastName == searchFilter);
             }
+        }
+
+        [Fact]
+        private void should_search_using_a_single_property_full_text_index_through_attribute_with_custom_settings()
+        {
+            StoreOptions(_ => _.Schema.For<UserDetails>());
         }
 
         [Fact]
