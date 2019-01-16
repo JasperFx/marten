@@ -34,6 +34,14 @@ namespace Marten.Testing
             ShouldThrowExtensions.ShouldThrow<Exception>(() => TypeMappings.ToDbType(typeof(UnmappedTarget)));
         }
 
+
+        [Fact]
+        public void execute_get_pg_type_default_mappings_resolve()
+        {
+            TypeMappings.GetPgType(typeof(long), EnumStorage.AsString).ShouldBe("bigint");
+            TypeMappings.GetPgType(typeof(DateTime), EnumStorage.AsString).ShouldBe("timestamp without time zone");
+        }
+
         [Fact]
         public void execute_get_pg_type_custom_mappings_resolve_or_default_to_jsonb()
         {
@@ -74,12 +82,6 @@ namespace Marten.Testing
             var inputString = "Darth        Maroon the   First";
             var expectedString = "Darth Maroon the First";
             inputString.ReplaceMultiSpace(" ").ShouldBe(expectedString);
-        }
-
-        [Fact]
-        public void pull_default_clr_types_for_npgsql_type()
-        {
-            var npgsql = TypeMappings.ToDbType(typeof(string));
         }
     }
 }
