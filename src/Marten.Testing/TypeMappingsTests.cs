@@ -1,5 +1,8 @@
-﻿using Marten.Util;
+﻿using System;
+using System.Collections.Generic;
+using Marten.Util;
 using Npgsql;
+using Npgsql.TypeHandlers;
 using Npgsql.TypeMapping;
 using NpgsqlTypes;
 using Shouldly;
@@ -15,6 +18,43 @@ namespace Marten.Testing
             TypeMappings.ToDbType(typeof(int)).ShouldBe(NpgsqlDbType.Integer);
             TypeMappings.ToDbType(typeof(int?)).ShouldBe(NpgsqlDbType.Integer);
         }
+
+        [Fact]
+        public void execute_to_db_custom_mappings_resolve()
+        {
+            NpgsqlConnection.GlobalTypeMapper.AddMapping(new NpgsqlTypeMappingBuilder
+            {
+                PgTypeName = "varchar",
+                NpgsqlDbType = NpgsqlDbType.Varchar,
+                ClrTypes = new[] { typeof(MappedTarget) },
+                TypeHandlerFactory = new TextHandlerFactory()
+            }.Build());
+
+            TypeMappings.ToDbType(typeof(MappedTarget)).ShouldBe(NpgsqlDbType.Varchar);
+            ShouldThrowExtensions.ShouldThrow<Exception>(() => TypeMappings.ToDbType(typeof(UnmappedTarget)));
+        }
+
+        [Fact]
+        public void execute_get_pg_type_custom_mappings_resolve_or_default_to_jsonb()
+        {
+            NpgsqlConnection.GlobalTypeMapper.MapComposite<MappedTarget>("varchar");
+
+            TypeMappings.GetPgType(typeof(MappedTarget), EnumStorage.AsString).ShouldBe("varchar");
+            TypeMappings.GetPgType(typeof(MappedTarget), EnumStorage.AsString).ShouldBe("varchar");
+            TypeMappings.GetPgType(typeof(UnmappedTarget), EnumStorage.AsString).ShouldBe("jsonb");
+        }
+
+        [Fact]
+        public void execute_has_type_mapping_resolves_custom_types()
+        {
+            NpgsqlConnection.GlobalTypeMapper.MapComposite<MappedTarget>("varchar");
+
+            TypeMappings.HasTypeMapping(typeof(MappedTarget)).ShouldBeTrue();
+            TypeMappings.HasTypeMapping(typeof(UnmappedTarget)).ShouldBeFalse();
+        }
+
+        public class MappedTarget { }
+        public class UnmappedTarget { }
 
         [Fact]
         public void canonicizesql_supports_tabs_as_whitespace()
@@ -37,18 +77,9 @@ namespace Marten.Testing
         }
 
         [Fact]
-        public void recalculates_mappings_when_asked()
+        public void pull_default_clr_types_for_npgsql_type()
         {
-            var originalMapping = TypeMappings.GetPgType(typeof(MappingTarget), EnumStorage.AsString);
-            originalMapping.ShouldBe("jsonb");
-
-            NpgsqlConnection.GlobalTypeMapper.MapComposite<MappingTarget>("nvarchar");
-            TypeMappings.RecalculateTypeMappings();
-
-            var updatedMapping = TypeMappings.GetPgType(typeof(MappingTarget), EnumStorage.AsString);
-            updatedMapping.ShouldBe("nvarchar");
+            var npgsql = TypeMappings.ToDbType(typeof(string));
         }
-
-        public class MappingTarget { }
     }
 }

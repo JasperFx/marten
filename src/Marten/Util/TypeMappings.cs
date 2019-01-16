@@ -1,60 +1,52 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Baseline;
 using Npgsql;
+using Npgsql.TypeMapping;
 using NpgsqlTypes;
 
 namespace Marten.Util
 {
     public static class TypeMappings
     {
-        private static readonly Dictionary<Type, string> PgTypes;
-        private static readonly Dictionary<Type, NpgsqlDbType?> TypeToNpgsqlDbType;
+        private static readonly ConcurrentDictionary<Type, string> PgTypeMemo;
+        private static readonly ConcurrentDictionary<Type, NpgsqlDbType?> NpgsqlDbTypeMemo;
 
         static TypeMappings()
         {
-            // Create the CLR type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings
-            PgTypes = new Dictionary<Type, string>();
-            TypeToNpgsqlDbType = new Dictionary<Type, NpgsqlDbType?>();
-
-            PopulateTypeMappings();
-        }
-
-        public static void RecalculateTypeMappings()
-        {
-            PgTypes.Clear();
-            TypeToNpgsqlDbType.Clear();
-
-            PopulateTypeMappings();
-        }
-
-        private static void PopulateTypeMappings()
-        {
-            foreach (var mapping in NpgsqlConnection.GlobalTypeMapper.Mappings)
-            {
-                foreach (var t in mapping.ClrTypes)
+            // Initialize PgTypeMemo with Types which are not available in Npgsql mappings
+            PgTypeMemo = new ConcurrentDictionary<Type, string>(new Dictionary<Type, string>
                 {
-                    TypeToNpgsqlDbType[t] = mapping.NpgsqlDbType;
-                    PgTypes[t] = mapping.PgTypeName;
+                    { typeof(long), "bigint" },
+                    { typeof(string), "varchar" },
+                    { typeof(float), "decimal" },
+                    // Default Npgsql mapping is 'numeric' but we are using 'decimal'
+                    { typeof(decimal), "decimal" },
+                    // Default Npgsql mappings is 'timestamp' but we are using 'timestamp without time zone'
+                    { typeof(DateTime), "timestamp without time zone" }
                 }
-            }
-
-            // Update or add the following PgTypes mappings to be inline with what we had earlier
-            // This is not available in Npgsql mappings
-            PgTypes[typeof(long)] = "bigint";
-            // This is not available in Npgsql mappings
-            PgTypes[typeof(string)] = "varchar";
-            // This is not available in Npgsql mappings
-            PgTypes[typeof(float)] = "decimal";
-
-            // Default Npgsql mapping is 'numeric' but we are using 'decimal'
-            PgTypes[typeof(decimal)] = "decimal";
-            // Default Npgsql mappings is 'timestamp' but we are using 'timestamp without time zone'
-            PgTypes[typeof(DateTime)] = "timestamp without time zone";
+            );
+            NpgsqlDbTypeMemo = new ConcurrentDictionary<Type, NpgsqlDbType?>();
         }
+
+        // Lazily retrieve the CLR type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings.
+        // This is lazily calculated instead of precached because it allows consuming code to register
+        // custom npgsql mappings prior to execution.
+        private static string ResolvePgType(Type type)
+            => PgTypeMemo.GetOrAdd(type, t => GetTypeMapping(t)?.PgTypeName);
+
+        private static NpgsqlDbType? ResolveNpgsqlDbType(Type type)
+            => NpgsqlDbTypeMemo.GetOrAdd(type, t => GetTypeMapping(t)?.NpgsqlDbType);
+
+        private static NpgsqlTypeMapping GetTypeMapping(Type type)
+            => NpgsqlConnection
+                .GlobalTypeMapper
+                .Mappings
+                .FirstOrDefault(mapping => mapping.ClrTypes.Contains(type));
 
         public static string ConvertSynonyms(string type)
         {
@@ -138,7 +130,8 @@ namespace Marten.Util
         /// </summary>
         public static NpgsqlDbType ToDbType(Type type)
         {
-            if (TypeToNpgsqlDbType.TryGetValue(type, out NpgsqlDbType? npgsqlDbType))
+            var npgsqlDbType = ResolveNpgsqlDbType(type);
+            if (npgsqlDbType != null)
             {
                 return npgsqlDbType.Value;
             }
@@ -189,13 +182,10 @@ namespace Marten.Util
             if (memberType.IsConstructedGenericType)
             {
                 var templateType = memberType.GetGenericTypeDefinition();
-
-                if (PgTypes.ContainsKey(templateType)) return PgTypes[templateType];
-
-                return "jsonb";
+                return ResolvePgType(templateType) ?? "jsonb";
             }
 
-            return PgTypes.ContainsKey(memberType) ? PgTypes[memberType] : "jsonb";
+            return ResolvePgType(memberType) ?? "jsonb";
         }
 
         public static bool HasTypeMapping(Type memberType)
@@ -206,7 +196,7 @@ namespace Marten.Util
             }
 
             // more complicated later
-            return PgTypes.ContainsKey(memberType) || memberType.IsEnum;
+            return ResolvePgType(memberType) != null || memberType.IsEnum;
         }
 
         public static string ApplyCastToLocator(this string locator, EnumStorage enumStyle, Type memberType)
