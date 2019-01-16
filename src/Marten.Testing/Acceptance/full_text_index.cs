@@ -240,6 +240,44 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        [Fact]
+        public void should_search_by_tenant_with_tenancy_conjoined()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.TenancyStyle = TenancyStyle.Conjoined;
+                _.Policies.AllDocumentsAreMultiTenanted();
+
+                _.Schema.For<User>().FullTextIndex();
+            });
+
+            const string searchFilter = "Lindsey";
+
+            var tenants = new[] { "Tenant", "Other Tenant" };
+
+            foreach (var tenant in tenants)
+            {
+                using (var session = theStore.OpenSession(tenant))
+                {
+                    session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
+                    session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
+                    session.SaveChanges();
+                }
+            }
+
+            foreach (var tenant in tenants)
+            {
+                using (var session = theStore.OpenSession(tenant))
+                {
+                    var results = session.Search<User>(searchFilter);
+
+                    results.Count.ShouldBe(1);
+                    results.ShouldContain(u => u.FirstName == searchFilter);
+                    results.ShouldNotContain(u => u.LastName == searchFilter);
+                }
+            }
+        }
+
         private void SearchShouldBeSuccessfulFor(Action<StoreOptions> configure)
         {
             StoreOptions(configure);

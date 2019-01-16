@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
+using Marten.Schema;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Npgsql;
@@ -79,7 +80,6 @@ namespace Marten
         /// <returns></returns>
         Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken));
 
-
         // SAMPLE: querying_with_linq
         /// <summary>
         /// Use Linq operators to query the documents
@@ -88,6 +88,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         IMartenQueryable<T> Query<T>();
+
         // ENDSAMPLE
 
         /// <summary>
@@ -110,7 +111,7 @@ namespace Marten
         Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
 
         /// <summary>
-        /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the 
+        /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
         /// database for potentially performance
         /// </summary>
         /// <returns></returns>
@@ -120,7 +121,6 @@ namespace Marten
         /// The currently open Npgsql connection for this session. Use with caution.
         /// </summary>
         NpgsqlConnection Connection { get; }
-
 
         /// <summary>
         /// The session specific logger for this session. Can be set for better integration
@@ -137,7 +137,6 @@ namespace Marten
         /// The document store that created this session
         /// </summary>
         IDocumentStore DocumentStore { get; }
-
 
         /// <summary>
         /// A query that is compiled so a copy of the DbCommand can be used directly in subsequent requests.
@@ -157,7 +156,6 @@ namespace Marten
         /// <param name="token">A cancellation token</param>
         /// <returns>A task for a single item query result</returns>
         Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken));
-
 
         /// <summary>
         /// Load or find multiple documents by id
@@ -264,60 +262,60 @@ namespace Marten
         /// Performs a full text search against <typeparamref name="TDoc"/>
         /// </summary>
         /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="config">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        IReadOnlyList<TDoc> Search<TDoc>(string queryText, string config = "english");
+        IReadOnlyList<TDoc> Search<TDoc>(string queryText, string regConfig = FullTextIndex.DefaultRegConfig);
 
         /// <summary>
         /// Performs an asynchronous full text search against <typeparamref name="TDoc"/>
         /// </summary>
         /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="config">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string queryText, string config = "english", CancellationToken token = default);
+        Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string queryText, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
 
         /// <summary>
         /// Performs a full text search against <typeparamref name="TDoc"/> using the 'plainto_tsquery' search function
         /// </summary>
         /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="config">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string config = "english");
+        IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
 
         /// <summary>
         /// Performs an asynchronous full text search against <typeparamref name="TDoc"/> using the 'plainto_tsquery' function
         /// </summary>
         /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="config">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default);
+        Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
 
         /// <summary>
         /// Performs a full text search against <typeparamref name="TDoc"/> using the 'phraseto_tsquery' search function
         /// </summary>
         /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="config">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string config = "english");
+        IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
 
         /// <summary>
         /// Performs an asynchronous full text search against <typeparamref name="TDoc"/> using the 'phraseto_tsquery' search function
         /// </summary>
         /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="config">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
         /// <remarks>
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default);
+        Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
     }
 }
