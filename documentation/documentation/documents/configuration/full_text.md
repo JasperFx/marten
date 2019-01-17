@@ -3,7 +3,7 @@
 Full Text Indexes in Marten are built based on <[linkto:documentation/documents/configuration/gin_or_gist_index;title=Gin Indexes]> utilizing [Postgres built in Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). This enables the possibility to do more sophisticated searching through text fields.
 
 <div class="alert alert-warning">
-To use this feature, you will need to use PostgreSQL version 10.0 or above, as this is the first version that support text search function on jsonb column - this also the data type that Marten use to store it's data.
+To use this feature, you will need to use PostgreSQL version 10.0 or above, as this is the first version that support text search function on jsonb column - this is also the data type that Marten use to store it's data.
 </div>
 
 ## Definining Full Text Index through Store options
@@ -41,7 +41,7 @@ If you don't specify language (regConfig) - by default it will be created with '
 
 ## Defining Full Text  Index through Attribute
 
-Full Text  Indexes can be created using the `[Full Text Index]` attribute like this: 
+Full Text  Indexes can be created using the `[FullTextIndex]` attribute like this: 
 
 * single property
 
