@@ -29,3 +29,7 @@ If you don't want PLV8 (required for JavaScript transformations) related items i
 If you cannot obtain the desired diagnostic data through Marten's <[linkto:documentation/documents/diagnostics;title=diagnostics]>, consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).
 
 Lastly, if you feel that exposing the data should be the responsibility of Marten, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new).
+
+**Full text search gives me the error `function to_tsvector(unknown, jsonb) does not exist`**
+
+Ensure, that you are running PostgreSQL 10 or higher that support full text searching JSON and JSONB.
