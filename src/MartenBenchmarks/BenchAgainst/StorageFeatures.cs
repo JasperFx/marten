@@ -1,39 +1,42 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten;
 using Marten.Events;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Util;
 
-namespace Marten.Storage
+namespace MartenBenchmarks.BenchAgainst
 {
-    public class StorageFeatures
+    public class StorageFeaturesWithConcurrentDictionary
     {
         private readonly StoreOptions _options;
 
-        private readonly Ref<ImHashMap<Type, DocumentMapping>> _documentMappings =
-	        Ref.Of(ImHashMap<Type, DocumentMapping>.Empty);
+        private readonly ConcurrentDictionary<Type, DocumentMapping> _documentMappings =
+            new ConcurrentDictionary<Type, DocumentMapping>();
 
-        private readonly Ref<ImHashMap<Type, IDocumentMapping>> _mappings =
-	        Ref.Of(ImHashMap<Type, IDocumentMapping>.Empty);
+        private readonly ConcurrentDictionary<Type, IDocumentMapping> _mappings =
+            new ConcurrentDictionary<Type, IDocumentMapping>();
 
-        private readonly Ref<ImHashMap<Type, IDocumentStorage>> _documentTypes =
-	        Ref.Of(ImHashMap<Type, IDocumentStorage>.Empty);
+        private readonly ConcurrentDictionary<Type, IDocumentStorage> _documentTypes =
+            new ConcurrentDictionary<Type, IDocumentStorage>();
 
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
-        public StorageFeatures(StoreOptions options)
+        public StorageFeaturesWithConcurrentDictionary(StoreOptions options)
         {
             _options = options;
 
             SystemFunctions = new SystemFunctions(options);
 
-            Transforms = options.Transforms.As<Transforms.Transforms>();
+            Transforms = options.Transforms.As<Marten.Transforms.Transforms>();
         }
 
-        public Transforms.Transforms Transforms { get; }
+        public Marten.Transforms.Transforms Transforms { get; }
 
         /// <summary>
         /// Register custom storage features
@@ -69,53 +72,41 @@ namespace Marten.Storage
 
         public SystemFunctions SystemFunctions { get; }
 
-        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Value.Enumerate().Select(x => x.Value);
+        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Values;
 
-        public IEnumerable<IDocumentMapping> AllMappings => _documentMappings.Value.Enumerate().Select(x => x.Value).Union(_mappings.Value.Enumerate().Select(x => x.Value));
+        public IEnumerable<IDocumentMapping> AllMappings => _documentMappings.Values.Union(_mappings.Values);
 
         public DocumentMapping MappingFor(Type documentType)
-        {            
-            if (!_documentMappings.Value.TryFind(documentType, out var value))
-            {
-	            value = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);	            
-	            _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
-            }
-
-            return value;
+        {
+            return _documentMappings.GetOrAdd(documentType, type => typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType));
         }
 
         internal IDocumentMapping FindMapping(Type documentType)
         {
-	        if (!_mappings.Value.TryFind(documentType, out var value))
-	        {
-		        var subclass = AllDocumentMappings.SelectMany(x => x.SubClasses)
-				        .FirstOrDefault(x => x.DocumentType == documentType) as IDocumentMapping;
+            return _mappings.GetOrAdd(documentType, type =>
+            {
+                var subclass = AllDocumentMappings.SelectMany(x => x.SubClasses)
+                    .FirstOrDefault(x => x.DocumentType == type) as IDocumentMapping;
 
-		        value = subclass ?? MappingFor(documentType);		        
-		        _mappings.Swap(d => d.AddOrUpdate(documentType, value));
-	        }
-
-	        return value;
+                return subclass ?? MappingFor(documentType);
+            });
         }
 
         internal void AddMapping(IDocumentMapping mapping)
-        {                        
-            _mappings.Swap(d => d.AddOrUpdate(mapping.DocumentType, mapping));
-		}
+        {
+            _mappings[mapping.DocumentType] = mapping;
+        }
 
         public IDocumentStorage StorageFor(Type documentType)
         {
-	        if (!_documentTypes.Value.TryFind(documentType, out var value))
-	        {
-				var mapping = FindMapping(documentType);
+            return _documentTypes.GetOrAdd(documentType, type =>
+            {
+                var mapping = FindMapping(documentType);
 
-				assertNoDuplicateDocumentAliases();
+                assertNoDuplicateDocumentAliases();
 
-				value = mapping.BuildStorage(_options);
-				
-				_documentTypes.Swap(d => d.AddOrUpdate(documentType, value));
-	        }
-			return value;
+                return mapping.BuildStorage(_options);
+            });
         }
 
         private void assertNoDuplicateDocumentAliases()
@@ -165,15 +156,15 @@ namespace Marten.Storage
             _features[typeof(StreamState)] = _options.Events;
             _features[typeof(EventStream)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
-                        
-			_mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
 
-			foreach (var mapping in _documentMappings.Value.Enumerate().Select(x => x.Value))
+            _mappings[typeof(IEvent)] = new EventQueryMapping(_options);
+
+            foreach (var mapping in _documentMappings.Values)
             {
                 foreach (var subClass in mapping.SubClasses)
-                {                                        
-                    _mappings.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass));
-					_features[subClass.DocumentType] = subClass.Parent;
+                {
+                    _mappings[subClass.DocumentType] = subClass;
+                    _features[subClass.DocumentType] = subClass.Parent;
                 }
             }
         }
@@ -195,8 +186,8 @@ namespace Marten.Storage
         {
             yield return SystemFunctions;
 
-            var mappings = _documentMappings.Value
-				.Enumerate().Select(x => x.Value)                
+            var mappings = _documentMappings
+                .Values
                 .OrderBy(x => x.DocumentType.Name)
                 .TopologicalSort(m =>
                 {
@@ -237,7 +228,7 @@ namespace Marten.Storage
 
         internal bool SequenceIsRequired()
         {
-            return _documentMappings.Value.Enumerate().Select(x => x.Value).Any(x => x.IdStrategy.RequiresSequences);
+            return _documentMappings.Values.Any(x => x.IdStrategy.RequiresSequences);
         }
     }
 }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Jobs;
 using Marten.Testing.CodeTracker;
 
 namespace MartenBenchmarks
@@ -13,7 +12,7 @@ namespace MartenBenchmarks
     {
         public Dictionary<Guid, GithubProject> AllProjects { get; private set; } = new Dictionary<Guid, GithubProject>();
 
-        [Setup]
+        [GlobalSetup]
         public void Setup()
         {
             var fileSystem = new FileSystem();
