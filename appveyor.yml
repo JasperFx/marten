@@ -5,8 +5,6 @@ configuration: Release
 
 os: Visual Studio 2017
 
-skip_tags: true
-
 environment:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -39,3 +37,15 @@ test: off
 
 artifacts:
   - path: '**\Marten.*.*nupkg' # find all NuGet packages recursively
+
+deploy:
+  provider: NuGet
+  api_key:
+    secure: gcZQodwplC8EyShor3GPKubzIDADyqyM2hfSx2Zb6eHCaCQiNq5A1M/MTPBYgwd2
+  artifact: /.*\.nupkg/
+  on:
+    APPVEYOR_REPO_TAG: true
+
+# workaround to publish snupkg to NuGet (appveyor is yet to support publishing snupkg)
+after_deploy:
+  - ps: Get-ChildItem -Path *.snupkg -Recurse | % { dotnet nuget push $_.FullName -s https://api.nuget.org/v3/index.json -k $env:NUGET_DEPLOY_SECRET }
