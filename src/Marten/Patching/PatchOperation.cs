@@ -30,10 +30,26 @@ namespace Marten.Patching
         }
 
         // TODO -- come back and do this with a single command!
+        private const string VALUE_LOOKUP = "___VALUE___";
         public void ConfigureCommand(CommandBuilder builder)
         {
-            var patchJson = _serializer.ToCleanJson(_patch);
-            var patchParam = builder.AddJsonParameter(patchJson);
+            var patchParam = builder.AddJsonParameter(_serializer.ToCleanJson(_patch));
+            if (_patch.ContainsKey("value"))
+            {
+                var value = _serializer.ToJson(_patch["value"]);
+                var copy = new Dictionary<string, object>();
+                foreach (var item in _patch)
+                {
+                    copy.Add(item.Key, item.Value);
+                }
+                copy["value"] = VALUE_LOOKUP;
+
+                var patchJson = _serializer.ToCleanJson(copy);
+                var replacedValue = patchJson.Replace($"\"{VALUE_LOOKUP}\"", value);
+
+                patchParam = builder.AddJsonParameter(replacedValue);
+            }
+
             var versionParam = builder.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
 
             builder.Append("update ");
