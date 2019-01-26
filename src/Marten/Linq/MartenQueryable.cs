@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
+using Marten.Linq.WhereFragments;
+using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Storage;
@@ -47,13 +49,21 @@ namespace Marten.Linq
             return this.Select(x => x.TransformTo<T, TDoc>(transformName));
         }
 
-
         public IEnumerable<IIncludeJoin> Includes
         {
             get
             {
                 var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
                 return executor.Includes;
+            }
+        }
+
+        public IEnumerable<IWhereFragment> WhereFragments
+        {
+            get
+            {
+                var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+                return executor.WhereFragments;
             }
         }
 
@@ -88,7 +98,6 @@ namespace Marten.Linq
             return this;
         }
 
-
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
             JoinType joinType = JoinType.Inner)
         {
@@ -115,6 +124,15 @@ namespace Marten.Linq
             stats = new QueryStatistics();
             var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
             executor.Statistics = stats;
+
+            return this;
+        }
+
+        public IMartenQueryable<T> AddWhereFragment(IWhereFragment whereFragment)
+        {
+            var executor = Provider.As<MartenQueryProvider>().Executor.As<MartenQueryExecutor>();
+
+            executor.AddWhereFragment(whereFragment);
 
             return this;
         }
@@ -187,9 +205,8 @@ namespace Marten.Linq
         public LinqQuery<T> ToLinqQuery()
         {
             var query = MartenQueryParser.Flyweight.GetParsedQuery(Expression);
-            return new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics);
+            return new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics, WhereFragments.ToArray());
         }
-
 
         private IQueryHandler toDiagnosticHandler(FetchType fetchType)
         {
@@ -218,18 +235,59 @@ namespace Marten.Linq
             return CommandBuilder.ToCommand(Tenant, handler);
         }
 
-
         private Task<TResult> executeAsync<TResult>(Func<LinqQuery<T>, IQueryHandler<TResult>> source,
             CancellationToken token)
         {
             var query = ToQueryModel();
             Tenant.EnsureStorageExists(query.SourceType());
 
-            var linq = new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics);
+            var linq = new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics, WhereFragments.ToArray());
 
             var handler = source(linq);
 
             return Executor.Connection.FetchAsync(handler, Executor.IdentityMap.ForQuery(), Statistics, Tenant, token);
+        }
+
+        public IMartenQueryable<T> Search(string searchTerm, string regConfig = "english")
+        {
+            AddFullTextWhereFragment(searchTerm, regConfig, "to_tsquery");
+            return this;
+        }
+
+        public IMartenQueryable<T> PlainTextSearch(string searchTerm, string regConfig = "english")
+        {
+            AddFullTextWhereFragment(searchTerm, regConfig, "plainto_tsquery");
+            return this;
+        }
+
+        public IMartenQueryable<T> PhraseSearch(string searchTerm, string regConfig = "english")
+        {
+            AddFullTextWhereFragment(searchTerm, regConfig, "phraseto_tsquery");
+            return this;
+        }
+
+        private void AddFullTextWhereFragment(string searchTerm, string regConfig, string searchFunction)
+        {
+            var mapping = GetDocumentMapping();
+            AddWhereFragment(new FullTextWhereFragment(mapping, searchTerm, regConfig, searchFunction));
+        }
+
+        private DocumentMapping GetDocumentMapping()
+        {
+            return Store.Storage?.FindMapping(typeof(T)) as DocumentMapping;
+        }
+
+        private string GetDataConfig(DocumentMapping mapping, string regConfig)
+        {
+            if (mapping == null)
+                return FullTextIndex.DefaultDataConfig;
+
+            return mapping
+                .Indexes
+                .OfType<FullTextIndex>()
+                .Where(i => i.RegConfig == regConfig)
+                .Select(i => i.DataConfig)
+                .FirstOrDefault() ?? FullTextIndex.DefaultDataConfig;
         }
     }
 }

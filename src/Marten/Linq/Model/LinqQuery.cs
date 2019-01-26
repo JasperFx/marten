@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Baseline;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -13,16 +12,21 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
-
     public interface ILinqQuery
     {
         QueryModel Model { get; }
         Type SourceType { get; }
+
         void ConfigureCommand(CommandBuilder command);
+
         void ConfigureCommand(CommandBuilder command, int limit);
+
         void AppendWhere(CommandBuilder sql1);
+
         void ConfigureCount(CommandBuilder command);
+
         void ConfigureAny(CommandBuilder command);
+
         void ConfigureAggregate(CommandBuilder command, string @operator);
     }
 
@@ -35,7 +39,7 @@ namespace Marten.Linq.Model
         private readonly SelectManyQuery _subQuery;
         private ISelector<T> _innerSelector;
 
-        public LinqQuery(DocumentStore store, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
+        public LinqQuery(DocumentStore store, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats, IWhereFragment[] whereFragments)
         {
             Model = model;
             _store = store;
@@ -52,7 +56,6 @@ namespace Marten.Linq.Model
                     // TODO -- to be able to go recursive, have _subQuery start to read the BodyClauses
                     _subQuery = new SelectManyQuery(store, _mapping, model, i + 1);
 
-
                     break;
                 }
             }
@@ -60,7 +63,7 @@ namespace Marten.Linq.Model
             Selector = BuildSelector(joins, stats, _subQuery, joins);
             SourceType = Model.SourceType();
 
-            Where = buildWhereFragment();
+            Where = buildWhereFragment(whereFragments);
         }
 
         public ISelector<T> Selector { get; }
@@ -89,7 +92,6 @@ namespace Marten.Linq.Model
                     sql.Append(" from ");
                     sql.Append(_mapping.Table.QualifiedName);
                     sql.Append(" as d");
-
                 }
                 else
                 {
@@ -114,9 +116,7 @@ namespace Marten.Linq.Model
                 Model.ApplySkip(sql);
                 Model.ApplyTake(limit, sql);
             }
-
         }
-
 
         public void AppendWhere(CommandBuilder sql)
         {
@@ -169,8 +169,7 @@ namespace Marten.Linq.Model
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d");
 
-
-            new LinqQuery<bool>(_store, Model, new IIncludeJoin[0], null).AppendWhere(sql);
+            new LinqQuery<bool>(_store, Model, new IIncludeJoin[0], null, new IWhereFragment[0]).AppendWhere(sql);
         }
 
         public void ConfigureAggregate(CommandBuilder sql, string @operator)
@@ -186,7 +185,6 @@ namespace Marten.Linq.Model
 
             AppendWhere(sql);
         }
-
 
         public IQueryHandler<IReadOnlyList<T>> ToList()
         {
@@ -207,8 +205,6 @@ namespace Marten.Linq.Model
             }
         }
 
-
-
         private void writeOrderByFragment(CommandBuilder sql, Ordering clause)
         {
             var locator = _mapping.JsonLocator(clause.Expression);
@@ -220,18 +216,19 @@ namespace Marten.Linq.Model
             }
         }
 
-        private IWhereFragment buildWhereFragment()
+        private IWhereFragment buildWhereFragment(IWhereFragment[] whereFragments)
         {
             var bodies = bodyClauses();
 
             var wheres = bodies.OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
+            if (wheres.Length == 0)
+                return _mapping.DefaultWhereFragment().Append(whereFragments);
 
             var where = wheres.Length == 1
                 ? _store.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(_store.Parser, _mapping, "and", wheres);
 
-            return _mapping.FilterDocuments(Model, where);
+            return _mapping.FilterDocuments(Model, where).Append(whereFragments);
         }
 
         private IEnumerable<IBodyClause> bodyClauses()

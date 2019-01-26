@@ -192,7 +192,7 @@ namespace Marten.Services.BatchQuerying
 
             var query = QueryParser.GetParsedQuery(expression);
 
-            return AddItem(new LinqQuery<T>(_store, query, queryable.Includes.ToArray(), queryable.Statistics).ToList(), queryable.Statistics);
+            return AddItem(new LinqQuery<T>(_store, query, queryable.Includes.ToArray(), queryable.Statistics, queryable.WhereFragments.ToArray()).ToList(), queryable.Statistics);
         }
 
         public Task<T> First<T>(IMartenQueryable<T> queryable)

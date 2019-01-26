@@ -8,7 +8,6 @@ using Baseline;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
-using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
@@ -400,84 +399,32 @@ namespace Marten
 
         public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return DoFullTextSearch<TDoc>(searchTerm, regConfig, "to_tsquery");
+            return Query<TDoc>().Search(searchTerm, regConfig).ToList();
         }
 
         public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return DoFullTextSearchAsync<TDoc>(searchTerm, regConfig, "to_tsquery", token);
+            return Query<TDoc>().Search(searchTerm, regConfig).ToListAsync();
         }
 
         public IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return DoFullTextSearch<TDoc>(searchTerm, regConfig, "plainto_tsquery");
+            return Query<TDoc>().PlainTextSearch(searchTerm, regConfig).ToList();
         }
 
         public Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return DoFullTextSearchAsync<TDoc>(searchTerm, regConfig, "plainto_tsquery", token);
+            return Query<TDoc>().PlainTextSearch(searchTerm, regConfig).ToListAsync();
         }
 
         public IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return DoFullTextSearch<TDoc>(searchTerm, regConfig, "phraseto_tsquery");
+            return Query<TDoc>().PhraseSearch(searchTerm, regConfig).ToList();
         }
 
         public Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return DoFullTextSearchAsync<TDoc>(searchTerm, regConfig, "phraseto_tsquery", token);
-        }
-
-        private IReadOnlyList<TDoc> DoFullTextSearch<TDoc>(string searchTerm, string regConfig, string searchFunction)
-        {
-            assertNotDisposed();
-
-            var handler = GetFullTextSearchQueryHandler<TDoc>(searchTerm, regConfig, searchFunction);
-            return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
-        }
-
-        private Task<IReadOnlyList<TDoc>> DoFullTextSearchAsync<TDoc>(string searchTerm, string regConfig, string searchFunction, CancellationToken token)
-        {
-            assertNotDisposed();
-
-            var handler = GetFullTextSearchQueryHandler<TDoc>(searchTerm, regConfig, searchFunction);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
-        }
-
-        private IQueryHandler<IReadOnlyList<TDoc>> GetFullTextSearchQueryHandler<TDoc>(string searchTerm, string regConfig, string searchFunction)
-        {
-            var mapping = GetDocumentMapping<TDoc>();
-            var dataConfig = GetDataConfig(mapping, regConfig);
-            var tenantWhereClause = GetTenantWhereClause(mapping);
-
-            var sql = $"where {tenantWhereClause} to_tsvector('{regConfig}', {dataConfig}) @@ {searchFunction}('{regConfig}', '{searchTerm}')";
-            return new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
-        }
-
-        private DocumentMapping GetDocumentMapping<TDoc>()
-        {
-            return (DocumentStore as DocumentStore)?.Storage?.FindMapping(typeof(TDoc)) as DocumentMapping;
-        }
-
-        private string GetTenantWhereClause(DocumentMapping mapping)
-        {
-            if (mapping == null || mapping.TenancyStyle == TenancyStyle.Single)
-                return string.Empty;
-
-            return $"{mapping.Table.QualifiedName}.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName} and";
-        }
-
-        private string GetDataConfig(DocumentMapping mapping, string regConfig)
-        {
-            if (mapping == null)
-                return FullTextIndex.DefaultDataConfig;
-
-            return mapping
-                .Indexes
-                .OfType<FullTextIndex>()
-                .Where(i => i.RegConfig == regConfig)
-                .Select(i => i.DataConfig)
-                .FirstOrDefault() ?? FullTextIndex.DefaultDataConfig;
+            return Query<TDoc>().PhraseSearch(searchTerm, regConfig).ToListAsync();
         }
     }
 }
