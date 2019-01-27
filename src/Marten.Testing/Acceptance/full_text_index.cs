@@ -53,13 +53,15 @@ namespace Marten.Testing.Acceptance
         {
             public Guid Id { get; set; }
 
+            public string Category { get; set; }
+
             [FullTextIndex]
             public string EnglishText { get; set; }
 
-            [FullTextIndex(RegConfig = "english")]
+            [FullTextIndex(RegConfig = "italian")]
             public string ItalianText { get; set; }
 
-            [FullTextIndex(RegConfig = "italian")]
+            [FullTextIndex(RegConfig = "french")]
             public string FrenchText { get; set; }
         }
 
@@ -185,6 +187,33 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
 
                 var somebody = session.Search<User>("somebody");
+            }
+
+            store.Dispose();
+
+            // ENDSAMPLE
+        }
+
+        [Fact]
+        public void using_a_full_text_index_with_queryable()
+        {
+            // SAMPLE: using_a_full_text_index_with_queryable
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+            });
+
+            using (var session = store.OpenSession())
+            {
+                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Lorem ipsum", Category = "Travel" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Dolor sit", Category = "Travel" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Amet", Category = "LifeStyle" });
+                session.SaveChanges();
+
+                var somebody = session.Query<BlogPost>()
+                    .Where(blogPost => blogPost.Category == "Travel")
+                    .Search("Lorem ipsum")
+                    .ToList();
             }
 
             store.Dispose();

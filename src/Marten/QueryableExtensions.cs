@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Schema;
 using Marten.Services.Includes;
 using Npgsql;
 
@@ -26,7 +27,7 @@ namespace Marten
             return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
         }
 
-        #endregion
+        #endregion ToList
 
         #region Any
 
@@ -35,7 +36,6 @@ namespace Marten
             CancellationToken token = default(CancellationToken))
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
-
 
             return source.As<IMartenQueryable>().AnyAsync(token);
         }
@@ -51,7 +51,7 @@ namespace Marten
             return source.Where(predicate).AnyAsync(token);
         }
 
-        #endregion
+        #endregion Any
 
         #region Aggregate Functions
 
@@ -64,7 +64,6 @@ namespace Marten
             return source.Select(expression).As<IMartenQueryable>().SumAsync<TResult>(token);
         }
 
-
         public static Task<TResult> MaxAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
             CancellationToken token = default(CancellationToken))
@@ -73,7 +72,6 @@ namespace Marten
 
             return source.Select(expression).As<IMartenQueryable>().MaxAsync<TResult>(token);
         }
-
 
         public static Task<TResult> MinAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
@@ -93,7 +91,7 @@ namespace Marten
             return source.Select(expression).As<IMartenQueryable>().AverageAsync(token);
         }
 
-        #endregion
+        #endregion Aggregate Functions
 
         #region Count/LongCount/Sum
 
@@ -106,7 +104,6 @@ namespace Marten
             return source.As<IMartenQueryable>().CountAsync(token);
         }
 
-
         public static Task<int> CountAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
@@ -117,7 +114,6 @@ namespace Marten
 
             return source.Where(predicate).CountAsync(token);
         }
-
 
         public static Task<long> LongCountAsync<TSource>(
             this IQueryable<TSource> source,
@@ -139,7 +135,7 @@ namespace Marten
             return source.Where(predicate).LongCountAsync(token);
         }
 
-        #endregion
+        #endregion Count/LongCount/Sum
 
         #region First/FirstOrDefault
 
@@ -183,7 +179,7 @@ namespace Marten
             return source.Where(predicate).FirstOrDefaultAsync(token);
         }
 
-        #endregion
+        #endregion First/FirstOrDefault
 
         #region Single/SingleOrDefault
 
@@ -227,7 +223,7 @@ namespace Marten
             return source.Where(predicate).SingleOrDefaultAsync(token);
         }
 
-        #endregion
+        #endregion Single/SingleOrDefault
 
         #region Shared
 
@@ -236,13 +232,56 @@ namespace Marten
             var martenQueryable = queryable as IMartenQueryable<T>;
             if (martenQueryable == null)
             {
-                throw new InvalidOperationException($"{typeof (T)} is not IMartenQueryable<>");
+                throw new InvalidOperationException($"{typeof(T)} is not IMartenQueryable<>");
             }
 
             return martenQueryable;
         }
 
-        #endregion
+        #endregion Shared
+
+        #region FullTextSearch
+
+        /// <summary>
+        /// Performs a full text search against <typeparamref name="TDoc"/>
+        /// </summary>
+        /// <param name="searchTerm">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+        /// </remarks>
+        public static IQueryable<T> Search<T>(this IQueryable<T> queryable, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
+        {
+            return queryable.As<IMartenQueryable<T>>().Search(searchTerm, regConfig);
+        }
+
+        /// <summary>
+        /// Performs a full text search against <typeparamref name="TDoc"/> using the 'plainto_tsquery' search function
+        /// </summary>
+        /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+        /// </remarks>
+        public static IMartenQueryable<T> PlainTextSearch<T>(this IQueryable<T> queryable, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
+        {
+            return queryable.As<IMartenQueryable<T>>().PlainTextSearch(searchTerm, regConfig);
+        }
+
+        /// <summary>
+        /// Performs a full text search against <typeparamref name="TDoc"/> using the 'phraseto_tsquery' search function
+        /// </summary>
+        /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
+        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+        /// </remarks>
+        public static IMartenQueryable<T> PhraseSearch<T>(this IQueryable<T> queryable, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
+        {
+            return queryable.As<IMartenQueryable<T>>().PhraseSearch(searchTerm, regConfig);
+        }
+
+        #endregion FullTextSearch
 
         public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
         {
