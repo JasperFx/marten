@@ -361,20 +361,44 @@ namespace Marten.Testing.Events.Projections
             theSession.Events.StartStream<QuestParty>(streamId, started);
             theSession.SaveChanges();
 
-            var docoument = await theSession.LoadAsync<PersistedView>(streamId);
-            docoument.Events.Count.ShouldBe(1);
+            var document = await theSession.LoadAsync<PersistedView>(streamId);
+            document.Events.Count.ShouldBe(1);
 
             theSession.Events.StartStream<Monster>(slayed1);
             theSession.SaveChanges();
 
-            var docoument2 = await theSession.LoadAsync<PersistedView>(streamId);
-            docoument2.Events.Count.ShouldBe(1);
+            var document2 = await theSession.LoadAsync<PersistedView>(streamId);
+            document2.Events.Count.ShouldBe(1);
 
             theSession.Events.StartStream<QuestParty>(joined);
             theSession.SaveChanges();
 
-            var docoument3 = await theSession.LoadAsync<PersistedView>(streamId);
-            docoument3.Events.Count.ShouldBe(2);
+            var document3 = await theSession.LoadAsync<PersistedView>(streamId);
+            document3.Events.Count.ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task default_id_event_should_not_create_new_document()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEvent<QuestStarted>(e =>
+                    {
+                        return Guid.Empty;
+                    }, (view, @event) => view.Events.Add(@event));
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+
+            var document = await theSession.LoadAsync<PersistedView>(streamId);
+            document.ShouldBeNull();
+
+            var documentCount = await theSession.Query<PersistedView>().CountAsync();
+            documentCount.ShouldBe(0);
         }
     }
 

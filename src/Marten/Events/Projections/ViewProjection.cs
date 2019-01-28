@@ -839,7 +839,7 @@ namespace Marten.Events.Projections
                     streamEvent.Id,
                     streamEvent.Version,
                     // Inline projections don't have the timestamp set, set it manually
-                    timestamp == default(DateTime) ? DateTime.UtcNow : timestamp,
+                    timestamp == default ? DateTime.UtcNow : timestamp,
                     streamEvent.Sequence, 
                     streamEvent.StreamId, 
                     streamEvent.StreamKey, 
@@ -851,13 +851,19 @@ namespace Marten.Events.Projections
             if (handler.IdSelector != null)
             {
                 var viewId = handler.IdSelector(session, isProjectionEvent ? projectionEvent : streamEvent.Data, streamEvent.StreamId);
-                projections.Add(new EventProjection(handler, viewId, streamEvent, projectionEvent));
+                if (!EqualityComparer<TId>.Default.Equals(viewId, default))
+                {
+                    projections.Add(new EventProjection(handler, viewId, streamEvent, projectionEvent));
+                }
             }
             else
             {
                 foreach (var viewId in handler.IdsSelector(session, isProjectionEvent ? projectionEvent : streamEvent.Data, streamEvent.StreamId))
                 {
-                    projections.Add(new EventProjection(handler, viewId, streamEvent, projectionEvent));
+                    if (!EqualityComparer<TId>.Default.Equals(viewId, default))
+                    {
+                        projections.Add(new EventProjection(handler, viewId, streamEvent, projectionEvent));
+                    }
                 }
             }
         }
