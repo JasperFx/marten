@@ -17,7 +17,7 @@ namespace Marten.Schema
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
-        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime) : base(enumStorage, memberPath)
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true) : base(enumStorage, memberPath)
         {
             ColumnName = MemberName.ToTableAlias();
             this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
@@ -120,7 +120,7 @@ namespace Marten.Schema
 
         public string SqlLocator { get; set; }
 
-        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression)
+        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true)
         {
             var accessor = ReflectionHelper.GetAccessor(expression);
 
