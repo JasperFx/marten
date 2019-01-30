@@ -14,11 +14,13 @@ namespace Marten.Schema
     public class DuplicatedField : Field, IField
     {
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
+        private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
         public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime) : base(enumStorage, memberPath)
         {
             ColumnName = MemberName.ToTableAlias();
+            this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
 
             if (MemberType.IsEnum)
             {
@@ -41,8 +43,8 @@ namespace Marten.Schema
             }
             else if (MemberType.IsDateTime())
             {
-                PgType = useTimestampWithoutTimeZoneForDateTime ? "timestamp without time zone" : "timestamp with time zone";
-                DbType = useTimestampWithoutTimeZoneForDateTime ? NpgsqlDbType.Timestamp : NpgsqlDbType.TimestampTz;
+                PgType = this.useTimestampWithoutTimeZoneForDateTime ? "timestamp without time zone" : "timestamp with time zone";
+                DbType = this.useTimestampWithoutTimeZoneForDateTime ? NpgsqlDbType.Timestamp : NpgsqlDbType.TimestampTz;
             }
             else if (MemberType == typeof(DateTimeOffset) || MemberType == typeof(DateTimeOffset?))
             {
@@ -128,7 +130,7 @@ namespace Marten.Schema
                 throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
             }
 
-            return new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty });
+            return new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
         }
 
         // I say you don't need a ForeignKey

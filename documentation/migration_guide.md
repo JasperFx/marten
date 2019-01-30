@@ -26,3 +26,10 @@ AutoCreateSchemaObjects = AutoCreate.All
 <pre>
 DuplicatedFieldEnumStorage = EnumStorage.AsString;
 </pre>
+
+
+- To keep <[linkto:documentation/documents/configuration/duplicated_fields;title=Duplicated DateTime Fields]> being stored as `timestamp with time zone` set store options to:
+
+<pre>
+UseTimestampWithoutTimeZoneForDateTime = false;
+</pre>
