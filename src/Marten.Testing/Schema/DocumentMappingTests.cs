@@ -292,6 +292,20 @@ namespace Marten.Testing.Schema
             duplicatedField.DbType.ShouldBe(expectedNpgsqlDbType);
         }
 
+        [Theory]
+        [InlineData(true, NpgsqlDbType.Timestamp)]
+        [InlineData(false, NpgsqlDbType.TimestampTz)]
+        public void duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+
+            var mapping = new DocumentMapping<Target>(storeOptions);
+
+            var duplicatedField = mapping.DuplicateField(nameof(Target.Date));
+            duplicatedField.DbType.ShouldBe(expectedNpgsqlDbType);
+        }
+
         [Fact]
         public void find_field_for_immediate_field_that_is_not_duplicated()
         {

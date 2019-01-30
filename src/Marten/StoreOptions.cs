@@ -140,13 +140,22 @@ namespace Marten
         public EnumStorage EnumStorage => Serializer().EnumStorage;
 
         /// <summary>
-        ///     Sets Enum values stored as either integers or strings for DuplicatedField
+        ///     Sets Enum values stored as either integers or strings for DuplicatedField.
+        ///     Please use only for migration from Marten 2.*. It might be removed in the next major version.
         /// </summary>
+        [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next major version.")]
         public EnumStorage DuplicatedFieldEnumStorage
         {
             get { return _duplicatedFieldEnumStorage ?? EnumStorage; }
             set { _duplicatedFieldEnumStorage = value; }
         }
+
+        /// <summary>
+        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
+        ///     Please use only for migration from Marten 2.*. It might be removed in the next major version.
+        /// </summary>
+        [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next versions")]
+        public bool UseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
 
         internal void CreatePatching()
         {
@@ -294,7 +303,7 @@ namespace Marten
             {
                 mapping.Validate();
             }
-		}
+        }
 
         public ITenancy Tenancy { get; set; }
 

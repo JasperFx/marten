@@ -16,7 +16,7 @@ namespace Marten.Schema
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
         private string _columnName;
 
-        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath) : base(enumStorage, memberPath)
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime) : base(enumStorage, memberPath)
         {
             ColumnName = MemberName.ToTableAlias();
 
@@ -41,13 +41,8 @@ namespace Marten.Schema
             }
             else if (MemberType.IsDateTime())
             {
-                PgType = "timestamp without time zone";
-                DbType = NpgsqlDbType.Timestamp;
-            }
-            else if (MemberType.IsDateTime())
-            {
-                PgType = "timestamp without time zone";
-                DbType = NpgsqlDbType.Timestamp;
+                PgType = useTimestampWithoutTimeZoneForDateTime ? "timestamp without time zone" : "timestamp with time zone";
+                DbType = useTimestampWithoutTimeZoneForDateTime ? NpgsqlDbType.Timestamp : NpgsqlDbType.TimestampTz;
             }
             else if (MemberType == typeof(DateTimeOffset) || MemberType == typeof(DateTimeOffset?))
             {
