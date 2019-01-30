@@ -11,7 +11,7 @@ namespace Marten.Testing.Schema
 {
     public class DuplicatedFieldTests
     {
-        private DuplicatedField theField = new DuplicatedField(EnumStorage.AsInteger, new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName)});
+        private DuplicatedField theField = new DuplicatedField(EnumStorage.AsInteger, new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName) }, true);
 
         [Fact]
         public void default_role_is_search()
