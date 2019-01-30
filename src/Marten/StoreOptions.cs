@@ -154,7 +154,7 @@ namespace Marten
         ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
         ///     Please use only for migration from Marten 2.*. It might be removed in the next major version.
         /// </summary>
-        [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next versions")]
+        [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next major versions")]
         public bool UseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
 
         internal void CreatePatching()
