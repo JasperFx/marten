@@ -35,7 +35,7 @@ Or have Marten use a Guid value that you provide yourself:
 
 For stream identity (strings vs. Guids), see <[linkto:documentation/events/identity]>.
 
-Note that `StartStream` checks for and existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
+Note that `StartStream` checks for an existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
 
 ## Appending Events
 
