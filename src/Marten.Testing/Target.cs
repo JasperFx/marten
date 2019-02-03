@@ -120,6 +120,8 @@ namespace Marten.Testing
         public DateTime Date { get; set; }
         public DateTimeOffset DateOffset { get; set; }
 
+        public int Year => DateOffset.Year;
+
         public float Float;
 
         public int[] NumberArray { get; set; }
@@ -135,10 +137,9 @@ namespace Marten.Testing
         public bool? NullableBoolean { get; set; }
         public Colors? NullableColor { get; set; }
 
-        public IDictionary<string,string> StringDict { get; set; }
+        public IDictionary<string, string> StringDict { get; set; }
 
         public Guid UserId { get; set; }
-
     }
 
     public class Address

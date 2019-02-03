@@ -1,5 +1,4 @@
-﻿using System;
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +25,7 @@ namespace Marten.Linq
 
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            var raw = reader[0];
-            return raw == DBNull.Value ? default(T) : (T) raw;
+            return reader.IsDBNull(0) ? default : reader.GetFieldValue<T>(0);
         }
 
         public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
