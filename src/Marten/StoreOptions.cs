@@ -155,7 +155,7 @@ namespace Marten
         ///     Please use only for migration from Marten 2.*. It might be removed in the next major version.
         /// </summary>
         [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next major versions")]
-        public bool UseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
+        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
 
         internal void CreatePatching()
         {

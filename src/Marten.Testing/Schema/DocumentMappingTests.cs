@@ -298,7 +298,7 @@ namespace Marten.Testing.Schema
         public void duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
         {
             var storeOptions = new StoreOptions();
-            storeOptions.UseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+            storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
 
             var mapping = new DocumentMapping<Target>(storeOptions);
 
