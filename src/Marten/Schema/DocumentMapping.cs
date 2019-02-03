@@ -123,6 +123,11 @@ namespace Marten.Schema
             get { return _storeOptions.EnumStorage; }
         }
 
+        public EnumStorage DuplicatedFieldEnumStorage
+        {
+            get { return _storeOptions.DuplicatedFieldEnumStorage; }
+        }
+
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
         public string Alias
@@ -202,7 +207,7 @@ namespace Marten.Schema
 
             var closedType = resolverType.MakeGenericType(DocumentType);
 
-            return Activator.CreateInstance(closedType, options.Serializer(), this)
+            return Activator.CreateInstance(closedType, this)
                 .As<IDocumentStorage>();
         }
 

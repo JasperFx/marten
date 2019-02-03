@@ -12,8 +12,8 @@ namespace Marten.Schema
     {
         private readonly DocumentMapping _hierarchy;
 
-        public HierarchicalDocumentStorage(ISerializer serializer, DocumentMapping hierarchy)
-            : base(serializer, hierarchy)
+        public HierarchicalDocumentStorage(DocumentMapping hierarchy)
+            : base(hierarchy)
         {
             _hierarchy = hierarchy;
         }
@@ -24,7 +24,7 @@ namespace Marten.Schema
             var typeAlias = reader.GetString(startingIndex + 2);
 
             var version = reader.GetFieldValue<Guid>(startingIndex + 3);
-            
+
             var json = reader.GetTextReader(startingIndex);
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
@@ -38,12 +38,11 @@ namespace Marten.Schema
             var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
-            
+
             var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
             return map.Get<T>(id, _hierarchy.TypeFor(typeAlias), json, version);
         }
-
 
         public override T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
@@ -54,7 +53,7 @@ namespace Marten.Schema
             var actualType = _hierarchy.TypeFor(typeAlias);
 
             var version = reader.GetFieldValue<Guid>(3);
-            
+
             var json = reader.GetTextReader(0);
 
             return map.Get<T>(id, actualType, json, version);
@@ -71,7 +70,7 @@ namespace Marten.Schema
             var actualType = _hierarchy.TypeFor(typeAlias);
 
             var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
-            
+
             var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
 
             return map.Get<T>(id, actualType, json, version);
