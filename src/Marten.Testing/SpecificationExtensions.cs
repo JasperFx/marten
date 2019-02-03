@@ -59,7 +59,6 @@ namespace Marten.Testing
             actual.Any(expected).ShouldBeTrue();
         }
 
-
         public static void ShouldHaveTheSameElementsAs<T>(this IEnumerable<T> actual, IEnumerable<T> expected)
         {
             var actualList = (actual is IList) ? (IList)actual : actual.ToList();
@@ -149,7 +148,6 @@ namespace Marten.Testing
             actual.GetType().ShouldNotBe(expected);
         }
 
-
         public static IComparable ShouldBeGreaterThan(this IComparable arg1, IComparable arg2)
         {
             (arg1.CompareTo(arg2) > 0).ShouldBeTrue();
@@ -175,7 +173,6 @@ namespace Marten.Testing
             return actual;
         }
 
-
         public static void ShouldStartWith(this string actual, string expected)
         {
             actual.StartsWith(expected).ShouldBeTrue();
@@ -197,10 +194,22 @@ namespace Marten.Testing
 
             exception.ShouldNotBeNull("Expected {0} to be thrown.".ToFormat(exceptionType.FullName));
 
-
             return exception;
         }
 
+        public static void ShouldBeEqualWithDbPrecision(this DateTime actual, DateTime expected)
+        {
+            DateTime toDbPrecision(DateTime date) => new DateTime(date.Ticks / 100 * 100);
+
+            toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
+        }
+
+        public static void ShouldBeEqualWithDbPrecision(this DateTimeOffset actual, DateTimeOffset expected)
+        {
+            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 100 * 100, date.Offset);
+
+            toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
+        }
 
         public static void ShouldContain(this DbObjectName[] names, string qualifiedName)
         {
