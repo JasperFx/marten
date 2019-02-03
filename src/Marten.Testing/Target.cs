@@ -120,8 +120,6 @@ namespace Marten.Testing
         public DateTime Date { get; set; }
         public DateTimeOffset DateOffset { get; set; }
 
-        public int Year => DateOffset.Year;
-
         public float Float;
 
         public int[] NumberArray { get; set; }
