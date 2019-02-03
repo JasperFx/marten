@@ -21,7 +21,7 @@ namespace Marten.Testing.Linq
             theMapping = DocumentMapping.For<User>();
             var prop = ReflectionHelper.GetProperty<User>(x => x.FirstName);
 
-            theSelector = new SingleFieldSelector<string>(theMapping, new MemberInfo[] {prop});
+            theSelector = new SingleFieldSelector<string>(theMapping, new MemberInfo[] { prop });
         }
 
         [Fact]
@@ -30,7 +30,8 @@ namespace Marten.Testing.Linq
             var name = "Eric";
 
             var reader = Substitute.For<DbDataReader>();
-            reader[0].Returns(name);
+            reader.IsDBNull(0).Returns(false);
+            reader.GetFieldValue<string>(0).Returns(name);
 
             theSelector.Resolve(reader, null, null).ShouldBe(name);
         }
