@@ -18,14 +18,14 @@ namespace Marten.Linq.QueryHandlers
     {
         IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model);
 
-        IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] toArray, QueryStatistics statistics, IWhereFragment[] whereFragments);
+        IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] toArray, QueryStatistics statistics);
 
-        IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty, IWhereFragment[] whereFragments);
+        IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty);
 
         IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics statistics,
-            bool returnDefaultWhenEmpty, IWhereFragment[] whereFragments);
+            bool returnDefaultWhenEmpty);
 
-        IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats, IWhereFragment[] whereFragments);
+        IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats);
 
         IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, out QueryStatistics stats);
     }
@@ -40,43 +40,40 @@ namespace Marten.Linq.QueryHandlers
             _store = store;
         }
 
-        public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats,
-            IWhereFragment[] whereFragments)
+        public IQueryHandler<T> BuildHandler<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
-            return tryFindScalarQuery<T>(model, joins, stats, whereFragments) ??
-                   tryFindSingleQuery<T>(model, joins, stats, whereFragments) ?? listHandlerFor<T>(model, joins, stats, whereFragments);
+            return tryFindScalarQuery<T>(model, joins, stats) ??
+                   tryFindSingleQuery<T>(model, joins, stats) ?? listHandlerFor<T>(model, joins, stats);
         }
 
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model)
         {
-            return HandlerForScalarQuery<T>(model, new IIncludeJoin[0], null, new IWhereFragment[0]);
+            return HandlerForScalarQuery<T>(model, new IIncludeJoin[0], null);
         }
 
         // TODO -- going to have to do the ensure storage exists outside of this
         public IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] joins,
-            QueryStatistics statistics, IWhereFragment[] whereFragments)
+            QueryStatistics statistics)
         {
             _store.Tenancy.Default.EnsureStorageExists(model.SourceType());
 
-            return tryFindScalarQuery<T>(model, joins, statistics, whereFragments);
+            return tryFindScalarQuery<T>(model, joins, statistics);
         }
 
         // TODO -- going to have to do the ensure storage exists outside of this
         public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins,
             QueryStatistics statistics,
-            bool returnDefaultWhenEmpty,
-            IWhereFragment[] whereFragments)
+            bool returnDefaultWhenEmpty)
         {
             _store.Tenancy.Default.EnsureStorageExists(model.SourceType());
 
-            return tryFindSingleQuery<T>(model, joins, statistics, whereFragments);
+            return tryFindSingleQuery<T>(model, joins, statistics);
         }
 
         public IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins,
-            bool returnDefaultWhenEmpty,
-            IWhereFragment[] whereFragments)
+            bool returnDefaultWhenEmpty)
         {
-            return HandlerForSingleQuery<T>(model, joins, null, returnDefaultWhenEmpty, whereFragments);
+            return HandlerForSingleQuery<T>(model, joins, null, returnDefaultWhenEmpty);
         }
 
         public IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, out QueryStatistics stats)
@@ -97,11 +94,11 @@ namespace Marten.Linq.QueryHandlers
             return cachedQuery.CreateHandler<TOut>(query, _store.Serializer, out stats);
         }
 
-        private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats, IWhereFragment[] whereFragments)
+        private IQueryHandler<T> listHandlerFor<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             if (model.HasOperator<ToJsonArrayResultOperator>())
             {
-                var query = new LinqQuery<T>(_store, model, joins, stats, whereFragments);
+                var query = new LinqQuery<T>(_store, model, joins, stats);
                 return new JsonQueryHandler(query.As<LinqQuery<string>>()).As<IQueryHandler<T>>();
             }
 
@@ -116,34 +113,34 @@ namespace Marten.Linq.QueryHandlers
 
             // TODO -- WTH?
             return
-                Activator.CreateInstance(handlerType.MakeGenericType(elementType), _store, model, joins, stats, whereFragments)
+                Activator.CreateInstance(handlerType.MakeGenericType(elementType), _store, model, joins, stats)
                     .As<IQueryHandler<T>>();
         }
 
-        private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats, IWhereFragment[] whereFragments)
+        private IQueryHandler<T> tryFindScalarQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             if (model.HasOperator<CountResultOperator>() || model.HasOperator<LongCountResultOperator>())
-                return new LinqQuery<T>(_store, model, joins, stats, whereFragments).ToCount<T>();
+                return new LinqQuery<T>(_store, model, joins, stats).ToCount<T>();
 
             if (model.HasOperator<SumResultOperator>())
-                return AggregateQueryHandler<T>.Sum(new LinqQuery<T>(_store, model, joins, stats, whereFragments));
+                return AggregateQueryHandler<T>.Sum(new LinqQuery<T>(_store, model, joins, stats));
 
             if (model.HasOperator<AverageResultOperator>())
-                return AggregateQueryHandler<T>.Average(new LinqQuery<T>(_store, model, joins, stats, whereFragments));
+                return AggregateQueryHandler<T>.Average(new LinqQuery<T>(_store, model, joins, stats));
 
             if (model.HasOperator<AnyResultOperator>())
-                return new LinqQuery<T>(_store, model, joins, stats, whereFragments).ToAny().As<IQueryHandler<T>>();
+                return new LinqQuery<T>(_store, model, joins, stats).ToAny().As<IQueryHandler<T>>();
 
             return null;
         }
 
-        private IQueryHandler<T> tryFindSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats, IWhereFragment[] whereFragments)
+        private IQueryHandler<T> tryFindSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             var choice = model.FindOperators<ChoiceResultOperatorBase>().FirstOrDefault();
 
             if (choice == null) return null;
 
-            var query = new LinqQuery<T>(_store, model, joins, stats, whereFragments);
+            var query = new LinqQuery<T>(_store, model, joins, stats);
 
             if (choice is FirstResultOperator)
             {
@@ -205,7 +202,7 @@ namespace Marten.Linq.QueryHandlers
             // to create a StatsSelector decorator
             var stats = model.HasOperator<StatsResultOperator>() ? new QueryStatistics() : null;
 
-            var handler = _store.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats, new IWhereFragment[0]);
+            var handler = _store.HandlerFactory.BuildHandler<TOut>(model, includeJoins, stats);
 
             var cmd = CommandBuilder.ToCommand(_store.Tenancy.Default, handler);
             for (int i = 0; i < setters.Count && i < cmd.Parameters.Count; i++)

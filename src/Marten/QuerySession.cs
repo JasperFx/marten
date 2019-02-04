@@ -399,32 +399,32 @@ namespace Marten
 
         public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return Query<TDoc>().Search(searchTerm, regConfig).ToList();
+            return Query<TDoc>().Where(d => d.Search(searchTerm, regConfig)).ToList();
         }
 
         public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return Query<TDoc>().Search(searchTerm, regConfig).ToListAsync();
+            return Query<TDoc>().Where(d => d.Search(searchTerm, regConfig)).ToListAsync();
         }
 
         public IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return Query<TDoc>().PlainTextSearch(searchTerm, regConfig).ToList();
+            return Query<TDoc>().Where(d => d.PlainTextSearch(searchTerm, regConfig)).ToList();
         }
 
         public Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return Query<TDoc>().PlainTextSearch(searchTerm, regConfig).ToListAsync();
+            return Query<TDoc>().Where(d => d.PlainTextSearch(searchTerm, regConfig)).ToListAsync();
         }
 
         public IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return Query<TDoc>().PhraseSearch(searchTerm, regConfig).ToList();
+            return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToList();
         }
 
         public Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return Query<TDoc>().PhraseSearch(searchTerm, regConfig).ToListAsync();
+            return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToListAsync();
         }
     }
 }

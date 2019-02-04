@@ -13,7 +13,6 @@ namespace Marten.Linq
     public class MartenQueryExecutor : IQueryExecutor
     {
         private readonly IList<IIncludeJoin> _includes = new List<IIncludeJoin>();
-        private readonly IList<IWhereFragment> _whereFragments = new List<IWhereFragment>();
 
         public MartenQueryExecutor(IManagedConnection runner, DocumentStore store, IIdentityMap identityMap, ITenant tenant)
         {
@@ -24,7 +23,6 @@ namespace Marten.Linq
         }
 
         public IEnumerable<IIncludeJoin> Includes => _includes;
-        public IEnumerable<IWhereFragment> WhereFragments => _whereFragments;
 
         public IManagedConnection Connection { get; }
         public DocumentStore Store { get; }
@@ -36,7 +34,7 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteScalar<T>(QueryModel queryModel)
         {
             var handler = Store.HandlerFactory.HandlerForScalarQuery<T>(queryModel, Includes.ToArray(),
-                Statistics, WhereFragments.ToArray());
+                Statistics);
 
             if (handler == null)
                 throw new NotSupportedException("Not yet supporting these results: " +
@@ -48,7 +46,7 @@ namespace Marten.Linq
         T IQueryExecutor.ExecuteSingle<T>(QueryModel queryModel, bool returnDefaultWhenEmpty)
         {
             var handler = Store.HandlerFactory.HandlerForSingleQuery<T>(queryModel, _includes.ToArray(), Statistics,
-                returnDefaultWhenEmpty, WhereFragments.ToArray());
+                returnDefaultWhenEmpty);
 
             if (handler == null)
                 throw new NotSupportedException("Not yet supporting these results: " +
@@ -61,7 +59,7 @@ namespace Marten.Linq
         {
             Tenant.EnsureStorageExists(queryModel.SourceType());
 
-            var handler = new LinqQuery<T>(Store, queryModel, _includes.ToArray(), Statistics, _whereFragments.ToArray()).ToList();
+            var handler = new LinqQuery<T>(Store, queryModel, _includes.ToArray(), Statistics).ToList();
 
             return Connection.Fetch(handler, IdentityMap.ForQuery(), Statistics, Tenant);
         }
@@ -69,11 +67,6 @@ namespace Marten.Linq
         public void AddInclude(IIncludeJoin include)
         {
             _includes.Add(include);
-        }
-
-        public void AddWhereFragment(IWhereFragment whereFragment)
-        {
-            _whereFragments.Add(whereFragment);
         }
     }
 }

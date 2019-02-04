@@ -39,7 +39,7 @@ namespace Marten.Linq.Model
         private readonly SelectManyQuery _subQuery;
         private ISelector<T> _innerSelector;
 
-        public LinqQuery(DocumentStore store, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats, IWhereFragment[] whereFragments)
+        public LinqQuery(DocumentStore store, QueryModel model, IIncludeJoin[] joins, QueryStatistics stats)
         {
             Model = model;
             _store = store;
@@ -63,7 +63,7 @@ namespace Marten.Linq.Model
             Selector = BuildSelector(joins, stats, _subQuery, joins);
             SourceType = Model.SourceType();
 
-            Where = buildWhereFragment(whereFragments);
+            Where = buildWhereFragment();
         }
 
         public ISelector<T> Selector { get; }
@@ -169,7 +169,7 @@ namespace Marten.Linq.Model
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d");
 
-            new LinqQuery<bool>(_store, Model, new IIncludeJoin[0], null, new IWhereFragment[0]).AppendWhere(sql);
+            new LinqQuery<bool>(_store, Model, new IIncludeJoin[0], null).AppendWhere(sql);
         }
 
         public void ConfigureAggregate(CommandBuilder sql, string @operator)
@@ -216,19 +216,19 @@ namespace Marten.Linq.Model
             }
         }
 
-        private IWhereFragment buildWhereFragment(IWhereFragment[] whereFragments)
+        private IWhereFragment buildWhereFragment()
         {
             var bodies = bodyClauses();
 
             var wheres = bodies.OfType<WhereClause>().ToArray();
             if (wheres.Length == 0)
-                return _mapping.DefaultWhereFragment().Append(whereFragments);
+                return _mapping.DefaultWhereFragment();
 
             var where = wheres.Length == 1
                 ? _store.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(_store.Parser, _mapping, "and", wheres);
 
-            return _mapping.FilterDocuments(Model, where).Append(whereFragments);
+            return _mapping.FilterDocuments(Model, where);
         }
 
         private IEnumerable<IBodyClause> bodyClauses()

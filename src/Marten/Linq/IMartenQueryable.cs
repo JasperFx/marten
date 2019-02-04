@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.Model;
-using Marten.Schema;
 using Marten.Services.Includes;
 
 namespace Marten.Linq
@@ -15,8 +14,6 @@ namespace Marten.Linq
     public interface IMartenQueryable
     {
         IEnumerable<IIncludeJoin> Includes { get; }
-
-        IEnumerable<IWhereFragment> WhereFragments { get; }
 
         QueryStatistics Statistics { get; }
 
@@ -68,40 +65,8 @@ namespace Marten.Linq
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary, JoinType joinType = JoinType.Inner);
 
-        IMartenQueryable<T> AddWhereFragment(IWhereFragment whereFragment);
-
         IMartenQueryable<T> Stats(out QueryStatistics stats);
 
         LinqQuery<T> ToLinqQuery();
-
-        /// <summary>
-        /// Performs a full text search against <typeparamref name="TDoc"/>
-        /// </summary>
-        /// <param name="searchTerm">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
-        /// <remarks>
-        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
-        /// </remarks>
-        IMartenQueryable<T> Search(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
-
-        /// <summary>
-        /// Performs a full text search against <typeparamref name="TDoc"/> using the 'plainto_tsquery' search function
-        /// </summary>
-        /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
-        /// <remarks>
-        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
-        /// </remarks>
-        IMartenQueryable<T> PlainTextSearch(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
-
-        /// <summary>
-        /// Performs a full text search against <typeparamref name="TDoc"/> using the 'phraseto_tsquery' search function
-        /// </summary>
-        /// <param name="queryText">The text to search for.  May contain lexeme patterns used by PostgreSQL for full text searching</param>
-        /// <param name="regConfig">The dictionary config passed to the 'to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
-        /// <remarks>
-        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
-        /// </remarks>
-        IMartenQueryable<T> PhraseSearch(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
     }
 }
