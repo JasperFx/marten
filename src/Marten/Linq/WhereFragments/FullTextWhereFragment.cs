@@ -5,12 +5,12 @@ namespace Marten.Linq.WhereFragments
 {
     internal class FullTextWhereFragment : WhereFragment
     {
-        public FullTextWhereFragment(DocumentMapping mapping, string searchTerm, string regConfig, string searchFunction)
-            : base(GetFilter(mapping, searchTerm, regConfig, searchFunction))
+        public FullTextWhereFragment(DocumentMapping mapping, string searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
+            : base(GetFilter(mapping, searchFunction, searchTerm, regConfig))
         {
         }
 
-        private static string GetFilter(DocumentMapping mapping, string searchTerm, string regConfig, string searchFunction)
+        private static string GetFilter(DocumentMapping mapping, string searchFunction, string searchTerm, string regConfig)
         {
             var dataConfig = GetDataConfig(mapping, regConfig);
 

@@ -269,7 +269,7 @@ namespace Marten.Linq
         private void AddFullTextWhereFragment(string searchTerm, string regConfig, string searchFunction)
         {
             var mapping = GetDocumentMapping();
-            AddWhereFragment(new FullTextWhereFragment(mapping, searchTerm, regConfig, searchFunction));
+            AddWhereFragment(new FullTextWhereFragment(mapping, searchFunction, searchTerm, regConfig));
         }
 
         private DocumentMapping GetDocumentMapping()

@@ -212,7 +212,7 @@ namespace Marten.Testing.Acceptance
 
                 var somebody = session.Query<BlogPost>()
                     .Where(blogPost => blogPost.Category == "Travel")
-                    .Search("Lorem")
+                    .Where(blogPost => blogPost.Search("Lorem"))
                     .ToList();
             }
 
