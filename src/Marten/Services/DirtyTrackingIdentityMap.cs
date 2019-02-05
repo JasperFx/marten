@@ -31,7 +31,7 @@ namespace Marten.Services
 
         public IEnumerable<DocumentChange> DetectChanges()
         {
-            return Cache.SelectMany(x => x.Values.Where(_ => _.Origin == UnitOfWorkOrigin.Loaded).Select(_ => _.DetectChange())).Where(x => x != null).ToArray();
+            return Cache.Value.Enumerate().SelectMany(x => x.Value.Enumerate().Where(_ => _.Value.Origin == UnitOfWorkOrigin.Loaded).Select(_ => _.Value.DetectChange())).Where(x => x != null).ToArray();
         }
 
         public override void ClearChanges()

@@ -5,15 +5,17 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten;
 using Marten.Events;
 using Marten.Patching;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 
-namespace Marten.Services
+namespace MartenBenchmarks.BenchAgainst
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWorkBaseline : IUnitOfWork
     {
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
 
@@ -22,12 +24,12 @@ namespace Marten.Services
 
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>();
 
-        private readonly Ref<ImHashMap<Type, IList<IStorageOperation>>> _operations =
-            Ref.Of(ImHashMap<Type, IList<IStorageOperation>>.Empty);
+        private readonly ConcurrentDictionary<Type, IList<IStorageOperation>> _operations =
+            new ConcurrentDictionary<Type, IList<IStorageOperation>>();
 
         private readonly IList<IStorageOperation> _ancillaryOperations = new List<IStorageOperation>();
 
-        public UnitOfWork(DocumentStore store, ITenant tenant)
+        public UnitOfWorkBaseline(DocumentStore store, ITenant tenant)
         {
             _store = store;
             _tenant = tenant;
@@ -35,7 +37,7 @@ namespace Marten.Services
 
         public IEnumerable<IDeletion> Deletions()
         {
-            return _operations.Value.Enumerate().SelectMany(x => x.Value).OfType<IDeletion>();
+            return _operations.Values.SelectMany(x => x).OfType<IDeletion>();
         }
 
         public IEnumerable<IDeletion> DeletionsFor<T>()
@@ -50,7 +52,7 @@ namespace Marten.Services
 
         public IEnumerable<object> Updates()
         {
-            return _operations.Value.Enumerate().SelectMany(x => x.Value.OfType<UpsertDocument>().Select(u => u.Document))
+            return _operations.Values.SelectMany(x => x.OfType<UpsertDocument>().Select(u => u.Document))
                 .Union(detectTrackerChanges().Select(x => x.Document));
         }
 
@@ -61,7 +63,7 @@ namespace Marten.Services
 
         public IEnumerable<object> Inserts()
         {
-            return _operations.Value.Enumerate().SelectMany(x => x.Value).OfType<InsertDocument>().Select(x => x.Document);
+            return _operations.Values.SelectMany(x => x).OfType<InsertDocument>().Select(x => x.Document);
         }
 
         public IEnumerable<T> InsertsFor<T>()
@@ -80,8 +82,8 @@ namespace Marten.Services
         }
 
         public IEnumerable<PatchOperation> Patches()
-        {            
-            return _operations.Value.Enumerate().SelectMany(x => x.Value).OfType<PatchOperation>();
+        {
+            return _operations.OfType<PatchOperation>();
         }
 
         public void AddTracker(IDocumentTracker tracker)
@@ -113,12 +115,7 @@ namespace Marten.Services
         private IList<IStorageOperation> operationsFor(Type documentType)
         {
             var storageType = _tenant.StorageFor(documentType).TopLevelBaseType;
-            if (!_operations.Value.TryFind(storageType, out var value))
-            {
-                value = new List<IStorageOperation>();
-                _operations.Swap(o => o.AddOrUpdate(storageType, value));
-            }
-            return value;
+            return _operations.GetOrAdd(storageType, type => new List<IStorageOperation>());
         }
 
         public void Patch(PatchOperation patch)
@@ -173,7 +170,7 @@ namespace Marten.Services
             changes.Inserted.Fill(Inserts());
 
             changes.Streams.AddRange(_events.Values);
-            changes.Operations.AddRange(_operations.Value.Enumerate().SelectMany(x => x.Value));
+            changes.Operations.AddRange(_operations.Values.SelectMany(x => x));
             changes.Operations.AddRange(_ancillaryOperations);
 
             return changes;
@@ -192,16 +189,16 @@ namespace Marten.Services
 
         private DocumentChange[] determineChanges(UpdateBatch batch)
         {
-            var types = _operations.Value.Enumerate().Select(x => x.Key).TopologicalSort(GetTypeDependencies);
+            var types = _operations.Select(x => x.Key).TopologicalSort(GetTypeDependencies);
 
             foreach (var type in types)
             {
-                if (!_operations.Value.TryFind(type, out var value))
+                if (!_operations.ContainsKey(type))
                 {
                     continue;
                 }
 
-                foreach (var operation in value)
+                foreach (var operation in _operations[type])
                 {
                     // No Virginia, I do not approve of this but I'm pulling all my hair
                     // out as is trying to make this work
@@ -284,20 +281,20 @@ namespace Marten.Services
         }
 
         private void ClearChanges(DocumentChange[] changes)
-        {                        
-            _operations.Swap(o => ImHashMap<Type, IList<IStorageOperation>>.Empty);
+        {
+            _operations.Clear();
             _events.Clear();
             changes.Each(x => x.ChangeCommitted());
         }
 
         public bool HasAnyUpdates()
         {
-            return Updates().Any() || _events.Any() || _operations.Value.Enumerate().Any() || _ancillaryOperations.Any();
+            return Updates().Any() || _events.Any() || _operations.Any() || _ancillaryOperations.Any();
         }
 
         public bool Contains<T>(T entity)
         {
-            return _operations.Value.Enumerate().SelectMany(x => x.Value.OfType<DocumentStorageOperation>()).Any(x => object.ReferenceEquals(entity, x.Document));
+            return _operations.Values.SelectMany(x => x.OfType<DocumentStorageOperation>()).Any(x => object.ReferenceEquals(entity, x.Document));
         }
 
 
@@ -331,65 +328,4 @@ namespace Marten.Services
         }
     }
 
-    public abstract class DocumentStorageOperation : IStorageOperation
-    {
-        public UpdateStyle UpdateStyle { get; }
-
-        protected DocumentStorageOperation(UpdateStyle updateStyle, object document)
-        {
-            Document = document ?? throw new ArgumentNullException(nameof(document));
-            UpdateStyle = updateStyle;
-        }
-
-        public Type DocumentType => Document.GetType();
-
-        public object Document { get; }
-
-        public void ConfigureCommand(CommandBuilder builder)
-        {
-        }
-
-        public void AddParameters(IBatchCommand batch)
-        {
-        }
-
-        public string TenantOverride { get; set; }
-
-
-        public bool Persist(UpdateBatch batch, ITenant tenant)
-        {
-            var upsert = tenant.StorageFor(Document.GetType());
-            upsert.RegisterUpdate(TenantOverride, UpdateStyle, batch, Document);
-
-            return true;
-        }
-    }
-
-    public class UpsertDocument : DocumentStorageOperation
-    {
-        public UpsertDocument(object document) : base(UpdateStyle.Upsert, document)
-        {
-        }
-
-        public UpsertDocument(object document, string tenantId) : this(document)
-        {
-            TenantOverride = tenantId;
-        }
-
-        
-    }
-
-    public class UpdateDocument : DocumentStorageOperation
-    {
-        public UpdateDocument(object document) : base(UpdateStyle.Update, document)
-        {
-        }
-    }
-
-    public class InsertDocument : DocumentStorageOperation
-    {
-        public InsertDocument(object document) : base(UpdateStyle.Insert, document)
-        {
-        }
-    }
 }

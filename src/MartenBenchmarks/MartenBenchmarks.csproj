@@ -13,7 +13,7 @@
     <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.10.14" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
   </ItemGroup>
 
 </Project>
