@@ -23,7 +23,7 @@ namespace Marten.Services
         private readonly IList<IDocumentTracker> _trackers = new List<IDocumentTracker>();
 
         private readonly Ref<ImHashMap<Type, IList<IStorageOperation>>> _operations =
-	        Ref.Of(ImHashMap<Type, IList<IStorageOperation>>.Empty);
+            Ref.Of(ImHashMap<Type, IList<IStorageOperation>>.Empty);
 
         private readonly IList<IStorageOperation> _ancillaryOperations = new List<IStorageOperation>();
 
@@ -82,7 +82,7 @@ namespace Marten.Services
         public IEnumerable<PatchOperation> Patches()
         {            
             return _operations.Value.Enumerate().SelectMany(x => x.Value).OfType<PatchOperation>();
-		}
+        }
 
         public void AddTracker(IDocumentTracker tracker)
         {
@@ -115,10 +115,10 @@ namespace Marten.Services
             var storageType = _tenant.StorageFor(documentType).TopLevelBaseType;
             if (!_operations.Value.TryFind(storageType, out var value))
             {
-	            value = new List<IStorageOperation>();				
-				_operations.Swap(o => o.AddOrUpdate(storageType, value));
+                value = new List<IStorageOperation>();
+                _operations.Swap(o => o.AddOrUpdate(storageType, value));
             }
-			return value;
+            return value;
         }
 
         public void Patch(PatchOperation patch)

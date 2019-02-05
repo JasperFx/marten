@@ -14,13 +14,13 @@ namespace Marten.Storage
         private readonly StoreOptions _options;
 
         private readonly Ref<ImHashMap<Type, DocumentMapping>> _documentMappings =
-	        Ref.Of(ImHashMap<Type, DocumentMapping>.Empty);
+            Ref.Of(ImHashMap<Type, DocumentMapping>.Empty);
 
         private readonly Ref<ImHashMap<Type, IDocumentMapping>> _mappings =
-	        Ref.Of(ImHashMap<Type, IDocumentMapping>.Empty);
+            Ref.Of(ImHashMap<Type, IDocumentMapping>.Empty);
 
         private readonly Ref<ImHashMap<Type, IDocumentStorage>> _documentTypes =
-	        Ref.Of(ImHashMap<Type, IDocumentStorage>.Empty);
+            Ref.Of(ImHashMap<Type, IDocumentStorage>.Empty);
 
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
@@ -77,8 +77,8 @@ namespace Marten.Storage
         {            
             if (!_documentMappings.Value.TryFind(documentType, out var value))
             {
-	            value = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);	            
-	            _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
+                value = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
+                _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
             }
 
             return value;
@@ -86,36 +86,36 @@ namespace Marten.Storage
 
         internal IDocumentMapping FindMapping(Type documentType)
         {
-	        if (!_mappings.Value.TryFind(documentType, out var value))
-	        {
-		        var subclass = AllDocumentMappings.SelectMany(x => x.SubClasses)
-				        .FirstOrDefault(x => x.DocumentType == documentType) as IDocumentMapping;
+            if (!_mappings.Value.TryFind(documentType, out var value))
+            {
+                var subclass = AllDocumentMappings.SelectMany(x => x.SubClasses)
+                    .FirstOrDefault(x => x.DocumentType == documentType) as IDocumentMapping;
 
-		        value = subclass ?? MappingFor(documentType);		        
-		        _mappings.Swap(d => d.AddOrUpdate(documentType, value));
-	        }
+                value = subclass ?? MappingFor(documentType);
+                _mappings.Swap(d => d.AddOrUpdate(documentType, value));
+            }
 
-	        return value;
+            return value;
         }
 
         internal void AddMapping(IDocumentMapping mapping)
         {                        
             _mappings.Swap(d => d.AddOrUpdate(mapping.DocumentType, mapping));
-		}
+        }
 
         public IDocumentStorage StorageFor(Type documentType)
         {
-	        if (!_documentTypes.Value.TryFind(documentType, out var value))
-	        {
-				var mapping = FindMapping(documentType);
+            if (!_documentTypes.Value.TryFind(documentType, out var value))
+            {
+                var mapping = FindMapping(documentType);
 
-				assertNoDuplicateDocumentAliases();
+                assertNoDuplicateDocumentAliases();
 
-				value = mapping.BuildStorage(_options);
-				
-				_documentTypes.Swap(d => d.AddOrUpdate(documentType, value));
-	        }
-			return value;
+                value = mapping.BuildStorage(_options);
+
+                _documentTypes.Swap(d => d.AddOrUpdate(documentType, value));
+            }
+            return value;
         }
 
         private void assertNoDuplicateDocumentAliases()
@@ -166,14 +166,14 @@ namespace Marten.Storage
             _features[typeof(EventStream)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
                         
-			_mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
+            _mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
 
-			foreach (var mapping in _documentMappings.Value.Enumerate().Select(x => x.Value))
+            foreach (var mapping in _documentMappings.Value.Enumerate().Select(x => x.Value))
             {
                 foreach (var subClass in mapping.SubClasses)
                 {                                        
                     _mappings.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass));
-					_features[subClass.DocumentType] = subClass.Parent;
+                    _features[subClass.DocumentType] = subClass.Parent;
                 }
             }
         }
@@ -196,7 +196,7 @@ namespace Marten.Storage
             yield return SystemFunctions;
 
             var mappings = _documentMappings.Value
-				.Enumerate().Select(x => x.Value)                
+                .Enumerate().Select(x => x.Value)
                 .OrderBy(x => x.DocumentType.Name)
                 .TopologicalSort(m =>
                 {

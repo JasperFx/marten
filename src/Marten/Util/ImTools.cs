@@ -76,7 +76,7 @@ namespace Marten.Util
         /// <summary>Returns source enumerable if it is array, otherwise converts source to array.</summary>
         public static T[] ToArrayOrSelf<T>(this IEnumerable<T> source) =>
             source == null ? Empty<T>() : 
-            (source as T[] ?? (((source as ICollection<T>)?.Count ?? 0) == 0 ? Empty<T>() : source.ToArray()));
+                (source as T[] ?? (((source as ICollection<T>)?.Count ?? 0) == 0 ? Empty<T>() : source.ToArray()));
 
         /// <summary>Returns new array consisting from all items from source array then all items from added array.
         /// If source is null or empty, then added array will be returned.
@@ -297,8 +297,8 @@ namespace Marten.Util
                 var condition1 = condition(source[1]);
                 return condition0 && condition1 ? new[] { source[0], source[1] }
                     : condition0 ? new[] { source[0] }
-                        : condition1 ? new[] { source[1] }
-                            : Empty<T>();
+                    : condition1 ? new[] { source[1] }
+                    : Empty<T>();
             }
 
             var matchStart = 0;
@@ -357,9 +357,9 @@ namespace Marten.Util
                 var condition0 = condition(source[0]);
                 var condition1 = condition(source[1]);
                 return condition0 && condition1 ? new[] { map(source[0]), map(source[1]) }
-                : condition0 ? new[] { map(source[0]) }
-                : condition1 ? new[] { map(source[1]) }
-                : Empty<R>();
+                    : condition0 ? new[] { map(source[0]) }
+                    : condition1 ? new[] { map(source[1]) }
+                    : Empty<R>();
             }
 
             var matchStart = 0;
@@ -598,7 +598,7 @@ namespace Marten.Util
             unchecked
             {
                 return ((object)Key == null ? 0 : Key.GetHashCode() * 397)
-                     ^ ((object)Value == null ? 0 : Value.GetHashCode());
+                       ^ ((object)Value == null ? 0 : Value.GetHashCode());
             }
         }
     }

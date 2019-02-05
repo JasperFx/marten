@@ -24,7 +24,7 @@ namespace Marten.Services
         }
 
         protected Ref<ImHashMap<Type, ImHashMap<object, TCacheValue>>> Cache { get; }
-	        = Ref.Of(ImHashMap<Type, ImHashMap<object, TCacheValue>>.Empty);
+            = Ref.Of(ImHashMap<Type, ImHashMap<object, TCacheValue>>.Empty);
 
         public ISerializer Serializer { get; }
 
@@ -35,36 +35,36 @@ namespace Marten.Services
 
         public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
         {
-			
-	        if (Cache.Value.TryFind(typeof(T), out var t) && t.TryFind(id, out var value))
-	        {
-		        return FromCache<T>(value);
-	        }
 
-	        if (version.HasValue)
-		        Versions.Store<T>(id, version.Value);
+            if (Cache.Value.TryFind(typeof(T), out var t) && t.TryFind(id, out var value))
+            {
+                return FromCache<T>(value);
+            }
 
-	        var document = Serializer.FromJson(concreteType, json);
+            if (version.HasValue)
+                Versions.Store<T>(id, version.Value);
 
-	        _listeners.Each(listener => listener.DocumentLoaded(id, document));
+            var document = Serializer.FromJson(concreteType, json);
 
-	        var cacheValue = ToCache(id, concreteType, document, json);
+            _listeners.Each(listener => listener.DocumentLoaded(id, document));
 
-	        Cache.Swap(c => c.AddOrUpdate(typeof(T),
-		        (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).AddOrUpdate(id, cacheValue)));	        
+            var cacheValue = ToCache(id, concreteType, document, json);
+
+            Cache.Swap(c => c.AddOrUpdate(typeof(T),
+                (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).AddOrUpdate(id, cacheValue)));
 
             return FromCache<T>(cacheValue);
         }
 
         public void Remove<T>(object id)
         {	        
-	        Cache.Swap(c => c.AddOrUpdate(typeof(T),
-		        (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).Remove(id)));
-		}
+            Cache.Swap(c => c.AddOrUpdate(typeof(T),
+                (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).Remove(id)));
+        }
 
         public void RemoveAllOfType(Type type)
         {
-	        Cache.Swap(c => c.AddOrUpdate(type, ImHashMap<object, TCacheValue>.Empty));			
+            Cache.Swap(c => c.AddOrUpdate(type, ImHashMap<object, TCacheValue>.Empty));
         }
 
         public void Store<T>(object id, T entity, Guid? version = null)
@@ -72,8 +72,8 @@ namespace Marten.Services
             if (version.HasValue)
                 Versions.Store<T>(id, version.Value);
             
-			if (Cache.Value.TryFind(typeof(T), out var dictionary) && dictionary.TryFind(id, out var value))
-			{
+            if (Cache.Value.TryFind(typeof(T), out var dictionary) && dictionary.TryFind(id, out var value))
+            {
                 var existing = FromCache<T>(value);
                 if (existing != null && !ReferenceEquals(existing, entity))
                     throw new InvalidOperationException(
@@ -85,19 +85,19 @@ namespace Marten.Services
             var cacheValue = ToCache(id, typeof(T), entity, null, UnitOfWorkOrigin.Stored);
             
             Cache.Swap(c => c.AddOrUpdate(typeof(T),
-	            (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).AddOrUpdate(id, cacheValue)));
-		}
+                (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).AddOrUpdate(id, cacheValue)));
+        }
 
         public bool Has<T>(object id)
         {
-	        return Cache.Value.TryFind(typeof(T), out var dict) && dict.TryFind(id, out _);
+            return Cache.Value.TryFind(typeof(T), out var dict) && dict.TryFind(id, out _);
         }
 
         public T Retrieve<T>(object id)
         {            
             if (Cache.Value.TryFind(typeof(T), out var dict) && dict.TryFind(id, out var value))
             {
-	            return FromCache<T>(value);
+                return FromCache<T>(value);
             }
             return default(T);
         }
@@ -115,7 +115,7 @@ namespace Marten.Services
 
         protected IEnumerable<TCacheValue> allCachedValues()
         {
-	        return Cache.Value.Enumerate().SelectMany(x => x.Value.Enumerate().Select(t => t.Value));
+            return Cache.Value.Enumerate().SelectMany(x => x.Value.Enumerate().Select(t => t.Value));
         }
 
         protected abstract TCacheValue ToCache(object id, Type concreteType, object document, TextReader json,

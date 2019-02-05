@@ -7,7 +7,7 @@ using Marten.Services;
 
 namespace MartenBenchmarks.BenchAgainst
 {
-	public class IdentityMapBaseline : IdentityMapWithConcurrentDictionary<object>
+    public class IdentityMapBaseline : IdentityMapWithConcurrentDictionary<object>
     {
         public IdentityMapBaseline(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
             : base(serializer, listeners)

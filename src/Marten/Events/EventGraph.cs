@@ -19,11 +19,11 @@ namespace Marten.Events
 
     public class EventGraph : IFeatureSchema
     {
-	    private readonly Ref<ImHashMap<string, IAggregator>> _aggregateByName =
-		    Ref.Of(ImHashMap<string, IAggregator>.Empty);
+        private readonly Ref<ImHashMap<string, IAggregator>> _aggregateByName =
+            Ref.Of(ImHashMap<string, IAggregator>.Empty);
 
-	    private readonly Ref<ImHashMap<Type, IAggregator>> _aggregates =
-		    Ref.Of(ImHashMap<Type, IAggregator>.Empty);
+        private readonly Ref<ImHashMap<Type, IAggregator>> _aggregates =
+            Ref.Of(ImHashMap<Type, IAggregator>.Empty);
 
         private readonly ConcurrentCache<string, EventMapping> _byEventName = new ConcurrentCache<string, EventMapping>();
         private readonly ConcurrentCache<Type, EventMapping> _events = new ConcurrentCache<Type, EventMapping>();
@@ -74,7 +74,7 @@ namespace Marten.Events
 
         public IEnumerable<IAggregator> AllAggregates()
         {
-	        return _aggregates.Value.Enumerate().Select(x => x.Value);
+            return _aggregates.Value.Enumerate().Select(x => x.Value);
         }
 
         public EventMapping EventMappingFor(string eventType)
@@ -108,13 +108,13 @@ namespace Marten.Events
 
         public IAggregator<T> AggregateFor<T>() where T : class, new()
         {
-	        if (!_aggregates.Value.TryFind(typeof(T), out var aggregator))
-	        {
-		        Options.Storage.MappingFor(typeof(T));
-		        aggregator = _aggregatorLookup.Lookup<T>();
-		        _aggregates.Swap(a => a.AddOrUpdate(typeof(T), aggregator));
-	        }
-	        return aggregator.As<IAggregator<T>>();
+            if (!_aggregates.Value.TryFind(typeof(T), out var aggregator))
+            {
+                Options.Storage.MappingFor(typeof(T));
+                aggregator = _aggregatorLookup.Lookup<T>();
+                _aggregates.Swap(a => a.AddOrUpdate(typeof(T), aggregator));
+            }
+            return aggregator.As<IAggregator<T>>();
         }
 
         public Type AggregateTypeFor(string aggregateTypeName)
@@ -132,7 +132,7 @@ namespace Marten.Events
             
             _aggregateByName.Swap(a => a.AddOrUpdate(aggregateTypeName, aggregate));
 
-			return aggregate.AggregateType;
+            return aggregate.AggregateType;
         }
 
         public ProjectionCollection InlineProjections { get; }
@@ -141,13 +141,13 @@ namespace Marten.Events
 
         public string AggregateAliasFor(Type aggregateType)
         {
-	        if (!_aggregates.Value.TryFind(aggregateType, out var aggregator))
-	        {
-		        aggregator = _aggregatorLookup.Lookup(aggregateType);
-		        _aggregates.Swap(a => a.AddOrUpdate(aggregateType, aggregator));
-	        }
+            if (!_aggregates.Value.TryFind(aggregateType, out var aggregator))
+            {
+                aggregator = _aggregatorLookup.Lookup(aggregateType);
+                _aggregates.Swap(a => a.AddOrUpdate(aggregateType, aggregator));
+            }
 
-	        return aggregator.Alias;
+            return aggregator.Alias;
         }
 
         public IProjection ProjectionFor(Type viewType)
@@ -227,9 +227,9 @@ namespace Marten.Events
         {
             if (!_dotnetTypeNames.Value.TryFind(type, out var value))
             {
-	            value = $"{type.FullName}, {type.GetTypeInfo().Assembly.GetName().Name}";
-				
-				_dotnetTypeNames.Swap(d => d.AddOrUpdate(type, value));
+                value = $"{type.FullName}, {type.GetTypeInfo().Assembly.GetName().Name}";
+
+                _dotnetTypeNames.Swap(d => d.AddOrUpdate(type, value));
             }
 
             return value;
