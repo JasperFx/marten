@@ -8,65 +8,65 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
+    // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_default
+    public class UserProfile
+    {
+        public Guid Id { get; set; }
+
+        [FullTextIndex]
+        public string Information { get; set; }
+    }
+
+    // ENDSAMPLE
+
+    // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_custom_settings
+    public class UserDetails
+    {
+        private const string FullTextIndexName = "mt_custom_user_details_fts_idx";
+
+        public Guid Id { get; set; }
+
+        [FullTextIndex(IndexName = FullTextIndexName, RegConfig = "italian")]
+        public string Details { get; set; }
+    }
+
+    // ENDSAMPLE
+
+    // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_default
+    public class Article
+    {
+        public Guid Id { get; set; }
+
+        [FullTextIndex]
+        public string Heading { get; set; }
+
+        [FullTextIndex]
+        public string Text { get; set; }
+    }
+
+    // ENDSAMPLE
+
+    // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_custom_settings
+    public class BlogPost
+    {
+        public Guid Id { get; set; }
+
+        public string Category { get; set; }
+
+        [FullTextIndex]
+        public string EnglishText { get; set; }
+
+        [FullTextIndex(RegConfig = "italian")]
+        public string ItalianText { get; set; }
+
+        [FullTextIndex(RegConfig = "french")]
+        public string FrenchText { get; set; }
+    }
+
+    // ENDSAMPLE
+
     public class full_text_index : IntegratedFixture
     {
-        // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_default
-        public class UserProfile
-        {
-            public Guid Id { get; set; }
-
-            [FullTextIndex]
-            public string Information { get; set; }
-        }
-
-        // ENDSAMPLE
-
-        // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_custom_settings
-        public class UserDetails
-        {
-            private const string FullTextIndexName = "mt_custom_user_details_fts_idx";
-
-            public Guid Id { get; set; }
-
-            [FullTextIndex(IndexName = FullTextIndexName, RegConfig = "italian")]
-            public string Details { get; set; }
-        }
-
-        // ENDSAMPLE
-
-        // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_default
-        public class Article
-        {
-            public Guid Id { get; set; }
-
-            [FullTextIndex]
-            public string Heading { get; set; }
-
-            [FullTextIndex]
-            public string Number { get; set; }
-        }
-
-        // ENDSAMPLE
-
-        // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_custom_settings
-        public class BlogPost
-        {
-            public Guid Id { get; set; }
-
-            public string Category { get; set; }
-
-            [FullTextIndex]
-            public string EnglishText { get; set; }
-
-            [FullTextIndex(RegConfig = "italian")]
-            public string ItalianText { get; set; }
-
-            [FullTextIndex(RegConfig = "french")]
-            public string FrenchText { get; set; }
-        }
-
-        // ENDSAMPLE
-
         [Fact]
         public void using_whole_document_full_text_index_through_store_options_with_default()
         {
@@ -576,6 +576,89 @@ namespace Marten.Testing.Acceptance
                     indexName: $"mt_doc_target_{italianRegConfig}_idx_fts",
                     regConfig: italianRegConfig,
                     dataConfig: $"((data ->> '{nameof(Target.AnotherString)}'))"
+                );
+        }
+
+        [Fact]
+        public void using_a_single_property_full_text_index_through_attribute_with_default()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<UserProfile>());
+
+            theStore.BulkInsert(new[] { new UserProfile { Id = Guid.NewGuid(), Information = "test" } });
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<UserProfile>(
+                    tableName: "public.mt_doc_userprofile",
+                    indexName: $"mt_doc_userprofile_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    regConfig: FullTextIndex.DefaultRegConfig,
+                    dataConfig: $"((data ->> '{nameof(UserProfile.Information)}'))"
+                );
+        }
+
+        [Fact]
+        public void using_a_single_property_full_text_index_through_attribute_with_custom_settings()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<UserDetails>());
+
+            theStore.BulkInsert(new[] { new UserDetails { Id = Guid.NewGuid(), Details = "test" } });
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<UserDetails>(
+                    tableName: "public.mt_doc_userdetails",
+                    indexName: "mt_custom_user_details_fts_idx",
+                    regConfig: "italian",
+                    dataConfig: $"((data ->> '{nameof(UserDetails.Details)}'))"
+                );
+        }
+
+        [Fact]
+        public void using_multiple_properties_full_text_index_through_attribute_with_default()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<Article>());
+
+            theStore.BulkInsert(new[] { new Article { Id = Guid.NewGuid(), Heading = "test", Text = "test" } });
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Article>(
+                    tableName: "public.mt_doc_article",
+                    indexName: $"mt_doc_article_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    regConfig: FullTextIndex.DefaultRegConfig,
+                    dataConfig: $"((data ->> '{nameof(Article.Heading)}') || ' ' || (data ->> '{nameof(Article.Text)}'))"
+                );
+        }
+
+        [Fact]
+        public void using_multiple_properties_full_text_index_through_attribute_with_custom_settings()
+        {
+            const string frenchRegConfig = "french";
+            const string italianRegConfig = "italian";
+
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            theStore.BulkInsert(new[] { new BlogPost { Id = Guid.NewGuid(), Category = "test", EnglishText = "test", FrenchText = "test", ItalianText = "test" } });
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<BlogPost>(
+                    tableName: "public.mt_doc_blogpost",
+                    indexName: $"mt_doc_blogpost_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    regConfig: FullTextIndex.DefaultRegConfig,
+                    dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
+                );
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<BlogPost>(
+                    tableName: "public.mt_doc_blogpost",
+                    indexName: $"mt_doc_blogpost_{frenchRegConfig}_idx_fts",
+                    regConfig: frenchRegConfig,
+                    dataConfig: $"((data ->> '{nameof(BlogPost.FrenchText)}'))"
+                );
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<BlogPost>(
+                    tableName: "public.mt_doc_blogpost",
+                    indexName: $"mt_doc_blogpost_{italianRegConfig}_idx_fts",
+                    regConfig: italianRegConfig,
+                    dataConfig: $"((data ->> '{nameof(BlogPost.ItalianText)}'))"
                 );
         }
     }

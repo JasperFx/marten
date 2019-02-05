@@ -16,7 +16,7 @@ namespace Marten.Schema
                     Member = mi,
                     IndexInformation = mi.GetCustomAttributes<FullTextIndexAttribute>().First()
                 })
-                .GroupBy(m => m.IndexInformation.IndexName ?? m.Member.Name)
+                .GroupBy(m => m.IndexInformation.IndexName ?? m.IndexInformation.RegConfig ?? m.Member.Name)
                 .Where(mg => mg.Any(m => m.Member == member))
                 .Single();
 

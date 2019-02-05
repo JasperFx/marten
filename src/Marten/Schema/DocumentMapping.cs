@@ -457,8 +457,8 @@ namespace Marten.Schema
         {
             var index = new FullTextIndex(this, regConfig);
             configure?.Invoke(index);
-            Indexes.Add(index);
-            return index;
+
+            return AddFullTextIndexIfDoesNotExist(index);
         }
 
         /// <summary>
@@ -475,7 +475,19 @@ namespace Marten.Schema
             {
                 IndexName = indexName
             };
+
+            return AddFullTextIndexIfDoesNotExist(index);
+        }
+
+        private FullTextIndex AddFullTextIndexIfDoesNotExist(FullTextIndex index)
+        {
+            var existing = Indexes.OfType<FullTextIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
+            if (existing != null)
+            {
+                return existing;
+            }
             Indexes.Add(index);
+
             return index;
         }
 
