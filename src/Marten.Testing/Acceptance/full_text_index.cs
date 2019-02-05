@@ -8,6 +8,21 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
+    // SAMPLE: using_a_full_text_index_through_attribute_on_class_with_default
+    [FullTextIndex]
+    public class Book
+    {
+        public Guid Id { get; set; }
+
+        public string Title { get; set; }
+
+        public string Author { get; set; }
+
+        public string Information { get; set; }
+    }
+
+    // ENDSAMPLE
+
     // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_default
     public class UserProfile
     {
@@ -426,7 +441,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_with_default_regConfig_in_indexname_custom_data_configuration()
+        public void creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
         {
             const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
 
@@ -441,7 +456,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Target>(
-                    indexName: $"mt_doc_target_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    indexName: $"mt_doc_target_idx_fts",
                     dataConfig: DataConfig
                 );
         }
@@ -497,7 +512,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void creating_a_full_text_index_with_single_member_should_create_the_index_with_default_regConfig_in_indexname_and_member_selectors()
+        public void creating_a_full_text_index_with_single_member_should_create_the_index_without_regConfig_in_indexname_and_member_selectors()
         {
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String));
 
@@ -506,13 +521,13 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Target>(
-                    indexName: $"mt_doc_target_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    indexName: $"mt_doc_target_idx_fts",
                     dataConfig: $"((data ->> '{nameof(Target.String)}'))"
                 );
         }
 
         [Fact]
-        public void creating_a_full_text_index_with_multiple_members_should_create_the_index_with_default_regConfig_in_indexname_and_members_selectors()
+        public void creating_a_full_text_index_with_multiple_members_should_create_the_index_without_regConfig_in_indexname_and_members_selectors()
         {
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String, d => d.AnotherString));
 
@@ -521,7 +536,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Target>(
-                    indexName: $"mt_doc_target_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    indexName: $"mt_doc_target_idx_fts",
                     dataConfig: $"((data ->> '{nameof(Target.String)}') || ' ' || (data ->> '{nameof(Target.AnotherString)}'))"
                 );
         }
@@ -580,6 +595,22 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void using_a_full_text_index_through_attribute_on_class_with_default()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<Book>());
+
+            theStore.BulkInsert(new[] { new Book { Id = Guid.NewGuid(), Author = "test", Information = "test", Title = "test" } });
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Book>(
+                    tableName: "public.mt_doc_book",
+                    indexName: $"mt_doc_book_idx_fts",
+                    regConfig: FullTextIndex.DefaultRegConfig,
+                    dataConfig: $"data"
+                );
+        }
+
+        [Fact]
         public void using_a_single_property_full_text_index_through_attribute_with_default()
         {
             StoreOptions(_ => _.RegisterDocumentType<UserProfile>());
@@ -589,7 +620,7 @@ namespace Marten.Testing.Acceptance
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<UserProfile>(
                     tableName: "public.mt_doc_userprofile",
-                    indexName: $"mt_doc_userprofile_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    indexName: $"mt_doc_userprofile_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(UserProfile.Information)}'))"
                 );
@@ -621,7 +652,7 @@ namespace Marten.Testing.Acceptance
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Article>(
                     tableName: "public.mt_doc_article",
-                    indexName: $"mt_doc_article_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    indexName: $"mt_doc_article_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(Article.Heading)}') || ' ' || (data ->> '{nameof(Article.Text)}'))"
                 );
@@ -640,7 +671,7 @@ namespace Marten.Testing.Acceptance
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
                     tableName: "public.mt_doc_blogpost",
-                    indexName: $"mt_doc_blogpost_{FullTextIndex.DefaultRegConfig}_idx_fts",
+                    indexName: $"mt_doc_blogpost_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
                 );

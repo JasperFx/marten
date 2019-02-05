@@ -4,9 +4,14 @@ using System.Reflection;
 
 namespace Marten.Schema
 {
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
     public class FullTextIndexAttribute : MartenAttribute
     {
+        public override void Modify(DocumentMapping mapping)
+        {
+            mapping.AddFullTextIndex(regConfig: RegConfig, (index) => { index.IndexName = IndexName; });
+        }
+
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
             var membersGroupedByIndexName = member.DeclaringType.GetMembers()

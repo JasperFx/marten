@@ -37,7 +37,7 @@ namespace Marten.Schema
                     return lowerValue.ToLowerInvariant();
                 else if (lowerValue?.IsNotEmpty() == true)
                     return DocumentMapping.MartenPrefix + lowerValue.ToLowerInvariant();
-                else if (_dataConfig != DefaultDataConfig)
+                else if (_regConfig != DefaultRegConfig)
                     return $"{_table.Name}_{_regConfig}_idx_fts";
                 else
                     return $"{_table.Name}_idx_fts";
