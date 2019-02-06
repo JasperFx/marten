@@ -2,7 +2,7 @@
 {
     public class PlainTextSearch : FullTextSearchMethodCallParser
     {
-        public PlainTextSearch() : base(nameof(LinqExtensions.Search), "plainto_tsquery")
+        public PlainTextSearch() : base(nameof(LinqExtensions.PlainTextSearch), "plainto_tsquery")
         {
         }
     }

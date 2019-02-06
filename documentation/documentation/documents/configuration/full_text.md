@@ -43,9 +43,13 @@ If you don't specify language (regConfig) - by default it will be created with '
 
 Full Text  Indexes can be created using the `[FullTextIndex]` attribute like this: 
 
+* one index for whole document - by setting attribute on the class all document properties values will be indexed
+
+<[sample:using_a_full_text_index_through_attribute_on_class_with_default]>
+
 * single property
 
-<[sample:using_a_single_property_full_text_index_through_attribute_with_default]>
+<[sample:using_a_single_property_full_text_index_through_store_options_with_default]>
 
 <div class="alert alert-info">
 If you don't specify regConfig - by default it will be created with 'english' value.
@@ -53,16 +57,20 @@ If you don't specify regConfig - by default it will be created with 'english' va
 
 * single property with custom settings
 
-<[sample:using_a_single_property_full_text_index_through_attribute_with_custom_settings]>
+<[sample:using_a_single_property_full_text_index_through_store_options_with_custom_settings]>
 
 * multiple properties
 
-<[sample:using_multiple_properties_full_text_index_through_attribute_with_default]>
+<[sample:using_multiple_properties_full_text_index_through_store_options_with_default]>
 
 <div class="alert alert-info">
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
 </div>
 
-* multiple properties with custom settings
+* one index for multiple properties with custom settings
 
-<[sample:using_multiple_properties_full_text_index_through_attribute_with_custom_settings]>
+<[sample:using_multiple_properties_full_text_index_through_store_options_with_custom_settings]>
+
+* multiple indexes for multiple properties with custom settings
+
+<[sample:using_more_than_one_full_text_index_through_store_options_with_different_reg_config]>

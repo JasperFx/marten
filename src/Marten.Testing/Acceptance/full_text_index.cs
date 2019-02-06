@@ -232,8 +232,80 @@ namespace Marten.Testing.Acceptance
             }
 
             store.Dispose();
-
             // ENDSAMPLE
+        }
+
+        [Fact]
+        public void search_in_query_sample()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: search_in_query_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.Search("somefilter"))
+                    .ToList();
+                // ENDSAMPLE
+            }
+        }
+
+        [Fact]
+        public void plain_text_search_in_query_sample()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: plain_search_in_query_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.PlainTextSearch("somefilter"))
+                    .ToList();
+                // ENDSAMPLE
+            }
+        }
+
+        [Fact]
+        public void phrase_search_in_query_sample()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: phrase_search_in_query_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.PhraseSearch("somefilter"))
+                    .ToList();
+                // ENDSAMPLE
+            }
+        }
+
+        [Fact]
+        public void text_search_combined_with_other_query_sample()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: text_search_combined_with_other_query_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.Category == "LifeStyle")
+                    .Where(x => x.PhraseSearch("somefilter"))
+                    .ToList();
+                // ENDSAMPLE
+            }
+        }
+
+        [Fact]
+        public void text_search_with_non_default_regConfig_sample()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: text_search_with_non_default_regConfig_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.PhraseSearch("somefilter", "italian"))
+                    .ToList();
+                // ENDSAMPLE
+            }
         }
 
         [Fact]
