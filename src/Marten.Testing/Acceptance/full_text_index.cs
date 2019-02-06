@@ -298,6 +298,7 @@ namespace Marten.Testing.Acceptance
         public void text_search_with_non_default_regConfig_sample()
         {
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
             using (var session = theStore.OpenSession())
             {
                 // SAMPLE: text_search_with_non_default_regConfig_sample

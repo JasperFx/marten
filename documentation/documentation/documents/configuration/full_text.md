@@ -21,7 +21,7 @@ If you don't specify language (regConfig) - by default it will be created with '
 
 * single property - there is possibility to specify specific property to be indexed
 
-<[sample:using_a_single_property_computed_Full Text _index_through_store_options]>
+<[sample:using_a_single_property_full_text_index_through_store_options_with_default]>
 
 * single property with custom settings
 
