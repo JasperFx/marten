@@ -27,13 +27,13 @@ You need to enable the PLV8 extension inside of PostgreSQL for running JavaScrip
 
 Ensure the following:
 
-- The login you are using to connect to your databasee is a member of the `postgres` role
+- The login you are using to connect to your database is a member of the `postgres` role
 - An environment variable of `marten_testing_database` is set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings ).
 
 _Help with PSQL/PLV8_
 
 - On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
-- On unix, see [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for an automated Docker solution
+- On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
 
 Once you have the codebase and the connection string file, run the rake script or use the dotnet CLI to restore and build the solution.
 
