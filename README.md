@@ -17,7 +17,7 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 2.0+**
+**1. .NET Core SDK 2.1**
 
 Available [here](https://www.microsoft.com/net/download/core)
 
