@@ -91,13 +91,11 @@ dotnet restore src\Marten.sln
 dotnet build src\Marten.sln
 
 # running tests for a specific target framework
-dotnet test src\Marten.Testing\Marten.Testing.csproj --framework netcoreapp2.0
+dotnet run -p martenbuild.csproj -- test
 
 # mocha tests
-npm install
-npm run test
+dotnet run -p martenbuild.csproj -- mocha
 
 # running documentation website locally
-dotnet restore docs.csproj
-dotnet stdocs run
+dotnet run -p martenbuild.csproj -- docs
 ```
