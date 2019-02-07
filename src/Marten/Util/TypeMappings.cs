@@ -13,34 +13,51 @@ namespace Marten.Util
 {
     public static class TypeMappings
     {
-        private static readonly ConcurrentDictionary<Type, string> PgTypeMemo;
-        private static readonly ConcurrentDictionary<Type, NpgsqlDbType?> NpgsqlDbTypeMemo;
+        private static readonly Ref<ImHashMap<Type, string>> PgTypeMemo;
+        private static readonly Ref<ImHashMap<Type, NpgsqlDbType?>> NpgsqlDbTypeMemo;
 
         static TypeMappings()
         {
             // Initialize PgTypeMemo with Types which are not available in Npgsql mappings
-            PgTypeMemo = new ConcurrentDictionary<Type, string>(new Dictionary<Type, string>
-                {
-                    { typeof(long), "bigint" },
-                    { typeof(string), "varchar" },
-                    { typeof(float), "decimal" },
-                    // Default Npgsql mapping is 'numeric' but we are using 'decimal'
-                    { typeof(decimal), "decimal" },
-                    // Default Npgsql mappings is 'timestamp' but we are using 'timestamp without time zone'
-                    { typeof(DateTime), "timestamp without time zone" }
-                }
-            );
-            NpgsqlDbTypeMemo = new ConcurrentDictionary<Type, NpgsqlDbType?>();
+            PgTypeMemo = Ref.Of(ImHashMap<Type, string>.Empty);
+
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(long), "bigint"));
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(string), "varchar"));
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(float), "decimal"));
+
+            // Default Npgsql mapping is 'numeric' but we are using 'decimal'
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(decimal), "decimal"));
+
+            // Default Npgsql mappings is 'timestamp' but we are using 'timestamp without time zone'
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(DateTime), "timestamp without time zone"));
+
+            NpgsqlDbTypeMemo = Ref.Of(ImHashMap<Type, NpgsqlDbType?>.Empty);
         }
 
         // Lazily retrieve the CLR type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings.
         // This is lazily calculated instead of precached because it allows consuming code to register
         // custom npgsql mappings prior to execution.
         private static string ResolvePgType(Type type)
-            => PgTypeMemo.GetOrAdd(type, t => GetTypeMapping(t)?.PgTypeName);
+        {
+            if (PgTypeMemo.Value.TryFind(type, out var value)) return value;
+
+            value = GetTypeMapping(type)?.PgTypeName;
+
+            PgTypeMemo.Swap(d => d.AddOrUpdate(type, value));
+
+            return value;
+        }
 
         private static NpgsqlDbType? ResolveNpgsqlDbType(Type type)
-            => NpgsqlDbTypeMemo.GetOrAdd(type, t => GetTypeMapping(t)?.NpgsqlDbType);
+        {
+            if (NpgsqlDbTypeMemo.Value.TryFind(type, out var value)) return value;
+
+            value = GetTypeMapping(type)?.NpgsqlDbType;
+
+            NpgsqlDbTypeMemo.Swap(d => d.AddOrUpdate(type, value));
+
+            return value;
+        }
 
         private static NpgsqlTypeMapping GetTypeMapping(Type type)
             => NpgsqlConnection
