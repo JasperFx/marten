@@ -5,12 +5,19 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
+    public enum FullTextSearchFunction
+    {
+        to_tsquery,
+        plainto_tsquery,
+        phraseto_tsquery
+    }
+
     public abstract class FullTextSearchMethodCallParser : IMethodCallParser
     {
         private readonly string methodName;
-        private readonly string searchFunction;
+        private readonly FullTextSearchFunction searchFunction;
 
-        protected FullTextSearchMethodCallParser(string methodName, string searchFunction)
+        protected FullTextSearchMethodCallParser(string methodName, FullTextSearchFunction searchFunction)
         {
             this.methodName = methodName;
             this.searchFunction = searchFunction;

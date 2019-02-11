@@ -2,7 +2,7 @@
 {
     public class Search : FullTextSearchMethodCallParser
     {
-        public Search() : base(nameof(LinqExtensions.Search), "to_tsquery")
+        public Search() : base(nameof(LinqExtensions.Search), FullTextSearchFunction.to_tsquery)
         {
         }
     }

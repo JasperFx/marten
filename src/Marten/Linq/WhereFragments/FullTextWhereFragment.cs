@@ -1,20 +1,40 @@
 ﻿using System.Linq;
+using Marten.Linq.Parsing;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Linq.WhereFragments
 {
-    internal class FullTextWhereFragment : WhereFragment
+    internal class FullTextWhereFragment : IWhereFragment
     {
-        public FullTextWhereFragment(DocumentMapping mapping, string searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
-            : base(GetFilter(mapping, searchFunction, searchTerm, regConfig))
+        private readonly string _regConfig;
+        private readonly string _dataConfig;
+        private readonly FullTextSearchFunction _searchFunction;
+        private readonly string _searchTerm;
+
+        private string Sql => $"to_tsvector('{_regConfig}', {_dataConfig}) @@ {_searchFunction}('{_regConfig}', '{_searchTerm}')";
+
+        public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
+            _regConfig = regConfig;
+            _dataConfig = GetDataConfig(mapping, regConfig);
+            _searchFunction = searchFunction;
+            _searchTerm = searchTerm;
         }
 
-        private static string GetFilter(DocumentMapping mapping, string searchFunction, string searchTerm, string regConfig)
+        public void Apply(CommandBuilder builder)
         {
-            var dataConfig = GetDataConfig(mapping, regConfig);
+            var sql = $"to_tsvector(:argRegConfig::regconfig, {_dataConfig}) @@ {_searchFunction}(:argRegConfig::regconfig, :argSearchTerm)";
 
-            return $"to_tsvector('{regConfig}', {dataConfig}) @@ {searchFunction}('{regConfig}', '{searchTerm}')";
+            builder.AddNamedParameter("argRegConfig", _regConfig);
+            builder.AddNamedParameter("argSearchTerm", _searchTerm);
+
+            builder.Append(sql);
+        }
+
+        public bool Contains(string sqlText)
+        {
+            return Sql.Contains(sqlText);
         }
 
         private static string GetDataConfig(DocumentMapping mapping, string regConfig)
