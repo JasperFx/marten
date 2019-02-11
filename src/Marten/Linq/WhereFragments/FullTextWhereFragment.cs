@@ -12,7 +12,7 @@ namespace Marten.Linq.WhereFragments
         private readonly FullTextSearchFunction _searchFunction;
         private readonly string _searchTerm;
 
-        private string Sql => $"to_tsvector('{_regConfig}', {_dataConfig}) @@ {_searchFunction}('{_regConfig}', '{_searchTerm}')";
+        private string Sql => $"to_tsvector(:argRegConfig::regconfig, {_dataConfig}) @@ {_searchFunction}(:argRegConfig::regconfig, :argSearchTerm)";
 
         public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
@@ -24,12 +24,10 @@ namespace Marten.Linq.WhereFragments
 
         public void Apply(CommandBuilder builder)
         {
-            var sql = $"to_tsvector(:argRegConfig::regconfig, {_dataConfig}) @@ {_searchFunction}(:argRegConfig::regconfig, :argSearchTerm)";
-
             builder.AddNamedParameter("argRegConfig", _regConfig);
             builder.AddNamedParameter("argSearchTerm", _searchTerm);
 
-            builder.Append(sql);
+            builder.Append(Sql);
         }
 
         public bool Contains(string sqlText)
