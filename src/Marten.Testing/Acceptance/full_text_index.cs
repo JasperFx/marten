@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
@@ -82,7 +83,6 @@ namespace Marten.Testing.Acceptance
 
     public class full_text_index : IntegratedFixture
     {
-        [Fact]
         public void using_whole_document_full_text_index_through_store_options_with_default()
         {
             // SAMPLE: using_whole_document_full_text_index_through_store_options_with_default
@@ -96,7 +96,6 @@ namespace Marten.Testing.Acceptance
             // ENDSAMPLE
         }
 
-        [Fact]
         public void using_a_single_property_full_text_index_through_store_options_with_default()
         {
             // SAMPLE: using_a_single_property_full_text_index_through_store_options_with_default
@@ -110,7 +109,6 @@ namespace Marten.Testing.Acceptance
             // ENDSAMPLE
         }
 
-        [Fact]
         public void using_a_single_property_full_text_index_through_store_options_with_custom_settings()
         {
             // SAMPLE: using_a_single_property_full_text_index_through_store_options_with_custom_settings
@@ -130,7 +128,6 @@ namespace Marten.Testing.Acceptance
             // ENDSAMPLE
         }
 
-        [Fact]
         public void using_multiple_properties_full_text_index_through_store_options_with_default()
         {
             // SAMPLE: using_multiple_properties_full_text_index_through_store_options_with_default
@@ -144,7 +141,6 @@ namespace Marten.Testing.Acceptance
             // ENDSAMPLE
         }
 
-        [Fact]
         public void using_multiple_properties_full_text_index_through_store_options_with_custom_settings()
         {
             // SAMPLE: using_multiple_properties_full_text_index_through_store_options_with_custom_settings
@@ -164,7 +160,6 @@ namespace Marten.Testing.Acceptance
             // ENDSAMPLE
         }
 
-        [Fact]
         public void using_more_than_one_full_text_index_through_store_options_with_different_reg_config()
         {
             // SAMPLE: using_more_than_one_full_text_index_through_store_options_with_different_reg_config
@@ -181,9 +176,9 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void example()
+        public void using_full_text_query_through_query_session()
         {
-            // SAMPLE: using-a-full-text-index
+            // SAMPLE: using_full_text_query_through_query_session
             var store = DocumentStore.For(_ =>
                                           {
                                               _.Connection(ConnectionSource.ConnectionString);
@@ -191,6 +186,7 @@ namespace Marten.Testing.Acceptance
                                               // Create the full text index
                                               _.Schema.For<User>().FullTextIndex();
                                           });
+            IReadOnlyList<User> result;
 
             using (var session = store.OpenSession())
             {
@@ -201,44 +197,29 @@ namespace Marten.Testing.Acceptance
                 session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
                 session.SaveChanges();
 
-                var somebody = session.Search<User>("somebody");
+                result = session.Search<User>("somebody");
             }
 
             store.Dispose();
 
             // ENDSAMPLE
-        }
 
-        [Fact]
-        public void using_a_full_text_index_with_queryable()
-        {
-            // SAMPLE: using_a_full_text_index_with_queryable
-            var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-            });
-
-            using (var session = store.OpenSession())
-            {
-                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Lorem ipsum", Category = "Travel" });
-                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Dolor sit", Category = "Travel" });
-                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Amet", Category = "LifeStyle" });
-                session.SaveChanges();
-
-                var somebody = session.Query<BlogPost>()
-                    .Where(blogPost => blogPost.Category == "Travel")
-                    .Where(blogPost => blogPost.Search("Lorem"))
-                    .ToList();
-            }
-
-            store.Dispose();
-            // ENDSAMPLE
+            result.Count().ShouldBe(1);
         }
 
         [Fact]
         public void search_in_query_sample()
         {
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
+                session.SaveChanges();
+            }
 
             using (var session = theStore.OpenSession())
             {
@@ -247,6 +228,9 @@ namespace Marten.Testing.Acceptance
                     .Where(x => x.Search("somefilter"))
                     .ToList();
                 // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
             }
         }
 
@@ -255,6 +239,15 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
+                session.SaveChanges();
+            }
+
             using (var session = theStore.OpenSession())
             {
                 // SAMPLE: plain_search_in_query_sample
@@ -262,12 +255,26 @@ namespace Marten.Testing.Acceptance
                     .Where(x => x.PlainTextSearch("somefilter"))
                     .ToList();
                 // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
             }
         }
 
         [Fact]
         public void phrase_search_in_query_sample()
         {
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
+                session.SaveChanges();
+            }
+
             using (var session = theStore.OpenSession())
             {
                 // SAMPLE: phrase_search_in_query_sample
@@ -275,6 +282,9 @@ namespace Marten.Testing.Acceptance
                     .Where(x => x.PhraseSearch("somefilter"))
                     .ToList();
                 // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
             }
         }
 
@@ -282,6 +292,16 @@ namespace Marten.Testing.Acceptance
         public void text_search_combined_with_other_query_sample()
         {
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter", Category = "LifeStyle" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter", Category = "Other" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter", Category = "LifeStyle" });
+                session.SaveChanges();
+            }
 
             using (var session = theStore.OpenSession())
             {
@@ -291,6 +311,9 @@ namespace Marten.Testing.Acceptance
                     .Where(x => x.PhraseSearch("somefilter"))
                     .ToList();
                 // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
             }
         }
 
@@ -299,6 +322,15 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter" });
+                session.Store(new BlogPost { Id = expectedId, ItalianText = "somefilter" });
+                session.SaveChanges();
+            }
+
             using (var session = theStore.OpenSession())
             {
                 // SAMPLE: text_search_with_non_default_regConfig_sample
@@ -306,6 +338,9 @@ namespace Marten.Testing.Acceptance
                     .Where(x => x.PhraseSearch("somefilter", "italian"))
                     .ToList();
                 // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
             }
         }
 
