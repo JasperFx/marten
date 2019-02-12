@@ -213,7 +213,7 @@ Use `TenantIsOneOf` to query on a selected list of tenants.
 
 ## Text Search
 
-Postgres constains built in [Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define <[linkto:documentation/documents/configuration/full_text;title=Full Text Indexes]> and perform queries on them.
+Postgres contains built in [Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define <[linkto:documentation/documents/configuration/full_text;title=Full Text Indexes]> and perform queries on them.
 Currently three types of full Text Search functions are supported:
 
 * regular Search (to_tsquery)
@@ -232,7 +232,7 @@ All types of Text Searches can be combined with other Linq queries
 
 <[sample:text_search_combined_with_other_query_sample]>
 
-They alow also to specify language (regConfig) of the text search query (by default `english` is being used)
+They allow also to specify language (regConfig) of the text search query (by default `english` is being used)
 
 <[sample:text_search_with_non_default_regConfig_sample]>
 

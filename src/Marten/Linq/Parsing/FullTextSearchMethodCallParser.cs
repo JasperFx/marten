@@ -38,7 +38,7 @@ namespace Marten.Linq.Parsing
                 throw new ArgumentException("Search Term needs to be string", "searchTerm");
 
             if (expression.Arguments.Count > 2 && expression.Arguments[2].Type != typeof(string))
-                throw new ArgumentException("Reg config needs to be string", "searchTerm");
+                throw new ArgumentException("Reg config needs to be string", "regConfig");
 
             var searchTerm = (string)expression.Arguments[1].Value();
 
