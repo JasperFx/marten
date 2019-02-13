@@ -54,20 +54,10 @@ namespace martenbuild
             {
                 const string docTargetDir = "doc-target";
 
-                if (!Directory.Exists(docTargetDir))
-                {
-                    Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
-
-                    // if you are not using git --global config, uncomment the block below, update and use it
-                    // Run("git", "config user.email email_address", docTargetDir);
-                    // Run("git", "config user.name your_name", docTargetDir);
-                }
-                else
-                {
-                    Run("git", "checkout --force", docTargetDir);
-                    Run("git", "clean -xfd", docTargetDir);
-                    Run("git", "pull origin master", docTargetDir);
-                }
+                Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
+                // if you are not using git --global config, un-comment the block below, update and use it
+                // Run("git", "config user.email user_email", docTargetDir);
+                // Run("git", "config user.name user_name", docTargetDir);
 
                 RunStoryTellerDocs(
                     $"export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten");
@@ -109,9 +99,22 @@ namespace martenbuild
             {
                 if (Directory.Exists(path))
                 {
-                    Directory.Delete(path, true);
+                    var dir = new DirectoryInfo(path);
+                    DeleteDirectory(dir);
                 }
             }
+        }
+
+        private static void DeleteDirectory(DirectoryInfo baseDir)
+        {
+            baseDir.Attributes = FileAttributes.Normal;
+            foreach (var childDir in baseDir.GetDirectories())
+                DeleteDirectory(childDir);
+
+            foreach (var file in baseDir.GetFiles())
+                file.IsReadOnly = false;
+
+            baseDir.Delete(true);
         }
 
         private static void RunNpm(string args)
