@@ -40,6 +40,7 @@ namespace Marten
         }
 
         public ISerializer Serializer { get; }
+
         public Guid? VersionFor<TDoc>(TDoc entity)
         {
             var id = _store.Storage.StorageFor(typeof(TDoc)).Identity(entity);
@@ -274,7 +275,6 @@ namespace Marten
                 var resolver = storage.As<IDocumentStorage<TDoc>>();
                 var cmd = storage.LoadByArrayCommand(keys);
                 cmd.AddTenancy(_parent.Tenant);
-                
 
                 var list = new List<TDoc>();
 
@@ -353,7 +353,6 @@ namespace Marten
 
         public int RequestCount => _connection.RequestCount;
 
-
         ~QuerySession()
         {
             Dispose();
@@ -398,50 +397,34 @@ namespace Marten
             return loadAsync<T>(id, token);
         }
 
-        public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string config = "english")
+        public IReadOnlyList<TDoc> Search<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return DoFullTextSearch<TDoc>(searchTerm, config, "to_tsquery");
+            return Query<TDoc>().Where(d => d.Search(searchTerm, regConfig)).ToList();
         }
 
-        public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default)
+        public Task<IReadOnlyList<TDoc>> SearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return DoFullTextSearchAsync<TDoc>(searchTerm, config, "to_tsquery", token);
+            return Query<TDoc>().Where(d => d.Search(searchTerm, regConfig)).ToListAsync();
         }
 
-        public IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string config = "english")
+        public IReadOnlyList<TDoc> PlainTextSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return DoFullTextSearch<TDoc>(searchTerm, config, "plainto_tsquery");
+            return Query<TDoc>().Where(d => d.PlainTextSearch(searchTerm, regConfig)).ToList();
         }
 
-        public Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default)
+        public Task<IReadOnlyList<TDoc>> PlainTextSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return DoFullTextSearchAsync<TDoc>(searchTerm, config, "plainto_tsquery", token);
+            return Query<TDoc>().Where(d => d.PlainTextSearch(searchTerm, regConfig)).ToListAsync();
         }
 
-        public IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string config = "english")
+        public IReadOnlyList<TDoc> PhraseSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return DoFullTextSearch<TDoc>(searchTerm, config, "phraseto_tsquery");
+            return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToList();
         }
 
-        public Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string config = "english", CancellationToken token = default)
+        public Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return DoFullTextSearchAsync<TDoc>(searchTerm, config, "phraseto_tsquery", token);
-        }
-
-        private IReadOnlyList<TDoc> DoFullTextSearch<TDoc>(string searchTerm, string config, string searchFunction)
-        {
-            assertNotDisposed();
-            var sql = $"where to_tsvector('{config}', data) @@ {searchFunction}('{config}', '{searchTerm}')";
-            var handler = new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
-            return _connection.Fetch(handler, _identityMap.ForQuery(), null, Tenant);
-        }
-
-        private Task<IReadOnlyList<TDoc>> DoFullTextSearchAsync<TDoc>(string searchTerm, string config, string searchFunction, CancellationToken token)
-        {
-            assertNotDisposed();
-            var sql = $"where to_tsvector('{config}', data) @@ {searchFunction}('{config}', '{searchTerm}')";
-            var handler = new UserSuppliedQueryHandler<TDoc>(_store, sql, new object[0]);
-            return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
+            return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToListAsync();
         }
     }
 }

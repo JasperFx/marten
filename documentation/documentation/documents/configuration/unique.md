@@ -6,7 +6,7 @@ Marten supports both <[linkto:documentation/documents/configuration/duplicated_f
 
 ## Definining Unique Index through Store options
 
-Unique Indexes can be created using the fluent interface off of `StoreOptions` like this: 
+Unique Indexes can be created using the fluent interface of `StoreOptions` like this: 
 
 1. **Computed**:
 * single property

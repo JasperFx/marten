@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Baseline;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -13,16 +12,21 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
-
     public interface ILinqQuery
     {
         QueryModel Model { get; }
         Type SourceType { get; }
+
         void ConfigureCommand(CommandBuilder command);
+
         void ConfigureCommand(CommandBuilder command, int limit);
+
         void AppendWhere(CommandBuilder sql1);
+
         void ConfigureCount(CommandBuilder command);
+
         void ConfigureAny(CommandBuilder command);
+
         void ConfigureAggregate(CommandBuilder command, string @operator);
     }
 
@@ -51,7 +55,6 @@ namespace Marten.Linq.Model
                 {
                     // TODO -- to be able to go recursive, have _subQuery start to read the BodyClauses
                     _subQuery = new SelectManyQuery(store, _mapping, model, i + 1);
-
 
                     break;
                 }
@@ -89,7 +92,6 @@ namespace Marten.Linq.Model
                     sql.Append(" from ");
                     sql.Append(_mapping.Table.QualifiedName);
                     sql.Append(" as d");
-
                 }
                 else
                 {
@@ -114,9 +116,7 @@ namespace Marten.Linq.Model
                 Model.ApplySkip(sql);
                 Model.ApplyTake(limit, sql);
             }
-
         }
-
 
         public void AppendWhere(CommandBuilder sql)
         {
@@ -169,7 +169,6 @@ namespace Marten.Linq.Model
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d");
 
-
             new LinqQuery<bool>(_store, Model, new IIncludeJoin[0], null).AppendWhere(sql);
         }
 
@@ -186,7 +185,6 @@ namespace Marten.Linq.Model
 
             AppendWhere(sql);
         }
-
 
         public IQueryHandler<IReadOnlyList<T>> ToList()
         {
@@ -207,8 +205,6 @@ namespace Marten.Linq.Model
             }
         }
 
-
-
         private void writeOrderByFragment(CommandBuilder sql, Ordering clause)
         {
             var locator = _mapping.JsonLocator(clause.Expression);
@@ -225,7 +221,8 @@ namespace Marten.Linq.Model
             var bodies = bodyClauses();
 
             var wheres = bodies.OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return _mapping.DefaultWhereFragment();
+            if (wheres.Length == 0)
+                return _mapping.DefaultWhereFragment();
 
             var where = wheres.Length == 1
                 ? _store.Parser.ParseWhereFragment(_mapping, wheres.Single().Predicate)

@@ -8,7 +8,6 @@ using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
-using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
@@ -67,7 +66,7 @@ namespace Marten.Linq
             new StringEndsWith(),
             new StringStartsWith(),
             new StringEquals(),
-			new SimpleEqualsParser(),
+            new SimpleEqualsParser(),
 
             // Added
             new IsOneOf(),
@@ -95,18 +94,23 @@ namespace Marten.Linq
             new MatchesSqlParser(),
 
             // dictionaries
-            new DictionaryExpressions()
+            new DictionaryExpressions(),
+
+            // full text search
+            new Search(),
+            new PhraseSearch(),
+            new PlainTextSearch()
         };
 
         private static readonly object[] _supplementalParsers = new[]
         {
-            new SimpleBinaryComparisonExpressionParser(), 
+            new SimpleBinaryComparisonExpressionParser(),
         };
 
         private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
-            
+
             var isSubQuery = isValueExpressionOnRight
                 ? binary.Left is SubQueryExpression
                 : binary.Right is SubQueryExpression;
@@ -126,7 +130,7 @@ namespace Marten.Linq
             if (parser != null)
             {
                 var where = parser.Parse(mapping, _serializer, binary);
-                
+
                 return where;
             }
 

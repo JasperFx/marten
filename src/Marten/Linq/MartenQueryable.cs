@@ -47,7 +47,6 @@ namespace Marten.Linq
             return this.Select(x => x.TransformTo<T, TDoc>(transformName));
         }
 
-
         public IEnumerable<IIncludeJoin> Includes
         {
             get
@@ -87,7 +86,6 @@ namespace Marten.Linq
 
             return this;
         }
-
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list,
             JoinType joinType = JoinType.Inner)
@@ -190,7 +188,6 @@ namespace Marten.Linq
             return new LinqQuery<T>(Store, query, Includes.ToArray(), Statistics);
         }
 
-
         private IQueryHandler toDiagnosticHandler(FetchType fetchType)
         {
             switch (fetchType)
@@ -217,7 +214,6 @@ namespace Marten.Linq
 
             return CommandBuilder.ToCommand(Tenant, handler);
         }
-
 
         private Task<TResult> executeAsync<TResult>(Func<LinqQuery<T>, IQueryHandler<TResult>> source,
             CancellationToken token)

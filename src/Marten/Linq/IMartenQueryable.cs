@@ -16,21 +16,32 @@ namespace Marten.Linq
         IEnumerable<IIncludeJoin> Includes { get; }
 
         QueryStatistics Statistics { get; }
+
         Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token);
+
         Task<bool> AnyAsync(CancellationToken token);
+
         Task<int> CountAsync(CancellationToken token);
+
         Task<long> CountLongAsync(CancellationToken token);
+
         Task<TResult> FirstAsync<TResult>(CancellationToken token);
+
         Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token);
+
         Task<TResult> SingleAsync<TResult>(CancellationToken token);
+
         Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token);
 
         Task<TResult> SumAsync<TResult>(CancellationToken token);
+
         Task<TResult> MinAsync<TResult>(CancellationToken token);
+
         Task<TResult> MaxAsync<TResult>(CancellationToken token);
+
         Task<double> AverageAsync(CancellationToken token);
 
-        /// <param name="configureExplain">Configure EXPLAIN options as documented in <see href="https://www.postgresql.org/docs/9.6/static/sql-explain.html">EXPLAIN documentation</see></param>        
+        /// <param name="configureExplain">Configure EXPLAIN options as documented in <see href="https://www.postgresql.org/docs/9.6/static/sql-explain.html">EXPLAIN documentation</see></param>
         QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions> configureExplain = null);
 
         /// <summary>
@@ -42,7 +53,6 @@ namespace Marten.Linq
         /// <returns></returns>
         IQueryable<TDoc> TransformTo<TDoc>(string transformName);
     }
-
 
     public interface IMartenQueryable<T> : IQueryable<T>, IMartenQueryable
     {

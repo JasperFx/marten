@@ -26,7 +26,7 @@ namespace Marten
             return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
         }
 
-        #endregion
+        #endregion ToList
 
         #region Any
 
@@ -35,7 +35,6 @@ namespace Marten
             CancellationToken token = default(CancellationToken))
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
-
 
             return source.As<IMartenQueryable>().AnyAsync(token);
         }
@@ -51,7 +50,7 @@ namespace Marten
             return source.Where(predicate).AnyAsync(token);
         }
 
-        #endregion
+        #endregion Any
 
         #region Aggregate Functions
 
@@ -64,7 +63,6 @@ namespace Marten
             return source.Select(expression).As<IMartenQueryable>().SumAsync<TResult>(token);
         }
 
-
         public static Task<TResult> MaxAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
             CancellationToken token = default(CancellationToken))
@@ -73,7 +71,6 @@ namespace Marten
 
             return source.Select(expression).As<IMartenQueryable>().MaxAsync<TResult>(token);
         }
-
 
         public static Task<TResult> MinAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
@@ -93,7 +90,7 @@ namespace Marten
             return source.Select(expression).As<IMartenQueryable>().AverageAsync(token);
         }
 
-        #endregion
+        #endregion Aggregate Functions
 
         #region Count/LongCount/Sum
 
@@ -106,7 +103,6 @@ namespace Marten
             return source.As<IMartenQueryable>().CountAsync(token);
         }
 
-
         public static Task<int> CountAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
@@ -117,7 +113,6 @@ namespace Marten
 
             return source.Where(predicate).CountAsync(token);
         }
-
 
         public static Task<long> LongCountAsync<TSource>(
             this IQueryable<TSource> source,
@@ -139,7 +134,7 @@ namespace Marten
             return source.Where(predicate).LongCountAsync(token);
         }
 
-        #endregion
+        #endregion Count/LongCount/Sum
 
         #region First/FirstOrDefault
 
@@ -183,7 +178,7 @@ namespace Marten
             return source.Where(predicate).FirstOrDefaultAsync(token);
         }
 
-        #endregion
+        #endregion First/FirstOrDefault
 
         #region Single/SingleOrDefault
 
@@ -227,7 +222,7 @@ namespace Marten
             return source.Where(predicate).SingleOrDefaultAsync(token);
         }
 
-        #endregion
+        #endregion Single/SingleOrDefault
 
         #region Shared
 
@@ -236,13 +231,13 @@ namespace Marten
             var martenQueryable = queryable as IMartenQueryable<T>;
             if (martenQueryable == null)
             {
-                throw new InvalidOperationException($"{typeof (T)} is not IMartenQueryable<>");
+                throw new InvalidOperationException($"{typeof(T)} is not IMartenQueryable<>");
             }
 
             return martenQueryable;
         }
 
-        #endregion
+        #endregion Shared
 
         public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
         {
