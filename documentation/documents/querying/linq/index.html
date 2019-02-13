@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -97,7 +97,7 @@
 <!--Url:linq-->
 <p>Marten uses the <a href="https://github.com/re-motion/Relinq">Relinq library</a> to support a subset of the normal Linq operators. Linq queries are done with
 Marten using the <code>IQuerySession.Query&lt;T&gt;()</code> or <code>IDocumentSession.Query&lt;T&gt;()</code> method to return an <a href="https://msdn.microsoft.com/en-us/library/system.linq.iqueryable(v=vs.100).aspx">IQueryable</a> for the document type <code>T</code>.</p>
-<pre><code class="language-csharp">&#xD;&#xA;IMartenQueryable&lt;T&gt; Query&lt;T&gt;();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;IMartenQueryable&lt;T&gt; Query&lt;T&gt;();&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>To query for all documents of a type - not that you would do this very often outside of testing - use the <code>Query&lt;T&gt;()</code> method like this:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void get_all_documents_of_a_type(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Calling ToArray() just forces the query to be executed&#xD;&#xA;    var targets = session.Query&lt;Target&gt;().ToArray();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="basic-operators">Basic Operators</h2>
@@ -157,12 +157,12 @@ using the <code>&amp;&amp;</code> operator:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void select_a_single_value(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Single()/SingleOrDefault() will throw exceptions if more than &#xD;&#xA;    // one result is returned from the database&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).Single();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).SingleOrDefault();&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).First();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).FirstOrDefault();&#xD;&#xA;&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).Last();&#xD;&#xA;    session.Query&lt;Target&gt;().Where(x =&gt; x.Number == 5).OrderBy(x =&gt; x.Date).LastOrDefault();&#xD;&#xA;&#xD;&#xA;    // Using the query inside of Single/Last/First is supported as well&#xD;&#xA;    session.Query&lt;Target&gt;().Single(x =&gt; x.Number == 5);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="querying-within-value-ienumerables">Querying within Value IEnumerables</h2>
 <p>As of now, Marten allows you to do &quot;contains&quot; searches within Arrays, Lists &amp; ILists of primitive values like string or numbers:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public void query_against_string_array()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithArrays { Strings = new string[] { &quot;a&quot;, &quot;b&quot;, &quot;c&quot; } };&#xD;&#xA;    var doc2 = new DocWithArrays { Strings = new string[] { &quot;c&quot;, &quot;d&quot;, &quot;e&quot; } };&#xD;&#xA;    var doc3 = new DocWithArrays { Strings = new string[] { &quot;d&quot;, &quot;e&quot;, &quot;f&quot; } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1);&#xD;&#xA;    theSession.Store(doc2);&#xD;&#xA;    theSession.Store(doc3);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithArrays&gt;().Where(x =&gt; x.Strings.Contains(&quot;c&quot;)).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public void query_against_string_array()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithArrays { Strings = new string[] { &quot;a&quot;, &quot;b&quot;, &quot;c&quot; } };&#xD;&#xA;    var doc2 = new DocWithArrays { Strings = new string[] { &quot;c&quot;, &quot;d&quot;, &quot;e&quot; } };&#xD;&#xA;    var doc3 = new DocWithArrays { Strings = new string[] { &quot;d&quot;, &quot;e&quot;, &quot;f&quot; } };&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1);&#xD;&#xA;    theSession.Store(doc2);&#xD;&#xA;    theSession.Store(doc3);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithArrays&gt;().Where(x =&gt; x.Strings.Contains(&quot;c&quot;)).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_against_number_list_with_any()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithLists { Numbers = new List&lt;int&gt; { 1, 2, 3 } };&#xD;&#xA;    var doc2 = new DocWithLists { Numbers = new List&lt;int&gt; { 3, 4, 5 } };&#xD;&#xA;    var doc3 = new DocWithLists { Numbers = new List&lt;int&gt; { 5, 6, 7 } };&#xD;&#xA;    var doc4 = new DocWithLists { Numbers = new List&lt;int&gt; {  } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1, doc2, doc3, doc4);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;().Where(x =&gt; x.Numbers.Any(_ =&gt; _ == 3)).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);&#xD;&#xA;&#xD;&#xA;    // Or without any predicate&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;()&#xD;&#xA;        .Count(x =&gt; x.Numbers.Any()).ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_against_number_list_with_any()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithLists { Numbers = new List&lt;int&gt; { 1, 2, 3 } };&#xD;&#xA;    var doc2 = new DocWithLists { Numbers = new List&lt;int&gt; { 3, 4, 5 } };&#xD;&#xA;    var doc3 = new DocWithLists { Numbers = new List&lt;int&gt; { 5, 6, 7 } };&#xD;&#xA;    var doc4 = new DocWithLists { Numbers = new List&lt;int&gt; { } };&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1, doc2, doc3, doc4);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;().Where(x =&gt; x.Numbers.Any(_ =&gt; _ == 3)).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);&#xD;&#xA;&#xD;&#xA;    // Or without any predicate&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;()&#xD;&#xA;        .Count(x =&gt; x.Numbers.Any()).ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>As of 1.2, you can also query against the <code>Count()</code> or <code>Length</code> of a child collection with the normal comparison
 operators (<code>==</code>, <code>&gt;</code>, <code>&gt;=</code>, etc.):</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_against_number_list_with_count_method()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithLists { Numbers = new List&lt;int&gt; { 1, 2, 3 } };&#xD;&#xA;    var doc2 = new DocWithLists { Numbers = new List&lt;int&gt; { 3, 4, 5 } };&#xD;&#xA;    var doc3 = new DocWithLists { Numbers = new List&lt;int&gt; { 5, 6, 7, 8 } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1);&#xD;&#xA;    theSession.Store(doc2);&#xD;&#xA;    theSession.Store(doc3);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;()&#xD;&#xA;        .Single(x =&gt; x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_against_number_list_with_count_method()&#xD;&#xA;{&#xD;&#xA;    var doc1 = new DocWithLists { Numbers = new List&lt;int&gt; { 1, 2, 3 } };&#xD;&#xA;    var doc2 = new DocWithLists { Numbers = new List&lt;int&gt; { 3, 4, 5 } };&#xD;&#xA;    var doc3 = new DocWithLists { Numbers = new List&lt;int&gt; { 5, 6, 7, 8 } };&#xD;&#xA;&#xD;&#xA;    theSession.Store(doc1);&#xD;&#xA;    theSession.Store(doc2);&#xD;&#xA;    theSession.Store(doc3);&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;DocWithLists&gt;()&#xD;&#xA;        .Single(x =&gt; x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="selectmany">SelectMany()</h2>
 <p>Marten 1.2 adds the ability to use the <code>SelectMany()</code> operator to issue queries against child collections. You can use
 <code>SelectMany()</code> against primitive collections like so:</p>
@@ -207,6 +207,25 @@ a field or property matching one of many supplied values:</p>
 <h2 id="tenantisoneof">TenantIsOneOf</h2>
 <p>Use <code>TenantIsOneOf</code> to query on a selected list of tenants.</p>
 <pre><code class="language-csharp">&#xD;&#xA;// query data for a selected list of tenants&#xD;&#xA;var actual = query.Query&lt;Target&gt;().Where(x =&gt; x.TenantIsOneOf(&quot;Green&quot;, &quot;Red&quot;) &amp;&amp; x.Flag)&#xD;&#xA;                  .OrderBy(x =&gt; x.Id).Select(x =&gt; x.Id).ToArray();&#xD;&#xA;</code></pre>
+<h2 id="text-search">Text Search</h2>
+<p>Postgres contains built in <a href="https://www.postgresql.org/docs/10/textsearch-controls.html">Text Search functions</a>. They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define <a href="/marten/documentation/documents/customizing/full_text">Full Text Indexes</a> and perform queries on them.
+Currently three types of full Text Search functions are supported:</p>
+<ul>
+<li>regular Search (to_tsquery)</li>
+</ul>
+<pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.Search(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
+<ul>
+<li>plain text Search (plainto_tsquery)</li>
+</ul>
+<pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.PlainTextSearch(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
+<ul>
+<li>phrase Search (phraseto_tsquery)</li>
+</ul>
+<pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.PhraseSearch(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
+<p>All types of Text Searches can be combined with other Linq queries</p>
+<pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.Category == &quot;LifeStyle&quot;)&#xD;&#xA;    .Where(x =&gt; x.PhraseSearch(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
+<p>They allow also to specify language (regConfig) of the text search query (by default <code>english</code> is being used)</p>
+<pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.PhraseSearch(&quot;somefilter&quot;, &quot;italian&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
 <h2 id="supported-types">Supported Types</h2>
 <p>At this point, Marten's Linq support has been tested against these .Net types:</p>
 <ol>

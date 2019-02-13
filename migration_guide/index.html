@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -113,6 +113,12 @@ AutoCreateSchemaObjects = AutoCreate.All
 </ul>
 <pre>
 DuplicatedFieldEnumStorage = EnumStorage.AsString;
+</pre>
+<ul>
+<li>To keep <a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated DateTime Fields</a> being stored as <code>timestamp with time zone</code> set store options to:</li>
+</ul>
+<pre>
+DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = false;
 </pre>
 
 			      	</div>

@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.1.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.4.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -137,6 +137,8 @@
 <p><strong>Marten isn't giving me the diagnostic data that I need</strong></p>
 <p>If you cannot obtain the desired diagnostic data through Marten's <a href="/marten/documentation/documents/diagnostics">diagnostics</a>, consider using the <a href="https://www.npgsql.org/doc/logging.html">Npgsql logging facilities</a>, by hooking into <code>NpgsqlLogManager.Provider</code>, or by using the <a href="https://www.npgsql.org/doc/performance.html">performance counters exposed by Npgsql</a>.</p>
 <p>Lastly, if you feel that exposing the data should be the responsibility of Marten, consider <a href="https://github.com/JasperFx/marten/issues/new">filing a feature request</a>.</p>
+<p><strong>Full text search gives me the error <code>function to_tsvector(unknown, jsonb) does not exist</code></strong></p>
+<p>Ensure, that you are running PostgreSQL 10 or higher that support full text searching JSON and JSONB.</p>
 
 			      	</div>
 
