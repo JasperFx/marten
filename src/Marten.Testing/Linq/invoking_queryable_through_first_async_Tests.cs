@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
-using Marten.Services;
-using Xunit;
 using System.Threading.Tasks;
-using Marten.Util;
+using Marten.Services;
+using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {

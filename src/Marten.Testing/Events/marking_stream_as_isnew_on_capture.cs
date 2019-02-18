@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
@@ -28,7 +29,6 @@ namespace Marten.Testing.Events
 
             theSession.PendingChanges.Streams().Single().IsNew.ShouldBeTrue();
         }
-
 
         [Fact]
         public void should_be_existing_stream_on_append_event()

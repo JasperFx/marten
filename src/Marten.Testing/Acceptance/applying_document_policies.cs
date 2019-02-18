@@ -1,4 +1,5 @@
 ﻿using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance

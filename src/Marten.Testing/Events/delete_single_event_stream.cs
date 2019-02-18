@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Events;
 using Marten.Storage;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events

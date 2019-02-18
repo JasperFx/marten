@@ -100,16 +100,6 @@ namespace Marten.Testing
             }
         }
 
-        public static void ShouldBeFalse(this bool condition)
-        {
-            condition.ShouldBe(false);
-        }
-
-        public static void ShouldBeTrue(this bool condition)
-        {
-            condition.ShouldBe(true);
-        }
-
         public static void ShouldBeNull(this object anObject)
         {
             anObject.ShouldBe(null);

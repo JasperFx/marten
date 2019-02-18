@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline.Reflection;
 using Marten.Linq.Compiled;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq.Compiled

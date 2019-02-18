@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -29,12 +30,12 @@ namespace Marten.Schema
             {
                 SqlLocator = $"{dataLocator} ->> '{memberName}'";
             }
-            else if (memberType == typeof(DateTime) || memberType == typeof(DateTime?))
+            else if (TimespanTypes.Contains(memberType))
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
-            else if (memberType == typeof(DateTimeOffset) || memberType == typeof(DateTimeOffset?))
+            else if (TimespanZTypes.Contains(memberType))
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamptz({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
@@ -108,9 +109,28 @@ namespace Marten.Schema
 
         public bool ShouldUseContainmentOperator()
         {
-            return MemberType.IsOneOf(typeof(DateTime), typeof(DateTime?), typeof(DateTimeOffset),
-                typeof(DateTimeOffset?));
+            return ContainmentOperatorTypes.Contains(MemberType);
         }
+
+        public static List<Type> ContainmentOperatorTypes = new List<Type>
+        {
+            typeof(DateTime),
+            typeof(DateTime?),
+            typeof(DateTimeOffset),
+            typeof(DateTimeOffset?)
+        };
+
+        public static List<Type> TimespanTypes = new List<Type>
+        {
+            typeof(DateTime),
+            typeof(DateTime?)
+        };
+
+        public static List<Type> TimespanZTypes = new List<Type>
+        {
+            typeof(DateTimeOffset),
+            typeof(DateTimeOffset?)
+        };
 
         public string LocatorFor(string rootTableAlias)
         {

@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Util;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Storage
@@ -58,8 +58,6 @@ namespace Marten.Testing.Storage
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-
-
             var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.DotNetTypeColumn).ShouldBeTrue();
@@ -89,8 +87,6 @@ namespace Marten.Testing.Storage
             var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
-
-
         }
     }
 }

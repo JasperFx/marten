@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -11,7 +12,7 @@ namespace Marten.Testing.Bugs
         {
             var store1 = TestingDocumentStore.DefaultSchema();
             store1.BulkInsert(Target.GenerateRandomData(5).ToArray());
-            store1.BulkInsert(new [] { new User()});
+            store1.BulkInsert(new[] { new User() });
             store1.Tenancy.Default.DbObjects.DocumentTables().Any().ShouldBeTrue();
 
             var store2 = TestingDocumentStore.For(_ =>
@@ -22,8 +23,6 @@ namespace Marten.Testing.Bugs
             store2.BulkInsert(Target.GenerateRandomData(5).ToArray());
             store2.BulkInsert(new[] { new User() });
             store2.Tenancy.Default.DbObjects.DocumentTables().Any().ShouldBeTrue();
-
-
 
             store1.Advanced.Clean.CompletelyRemoveAll();
             store1.Tenancy.Default.DbObjects.DocumentTables().Any().ShouldBeFalse();

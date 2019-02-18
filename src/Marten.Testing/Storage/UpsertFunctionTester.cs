@@ -6,6 +6,7 @@ using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Util;
 using Npgsql;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Storage
@@ -41,7 +42,6 @@ namespace Marten.Testing.Storage
 
             table.ConfigureQueryCommand(builder);
             cmd.CommandText = builder.ToString();
-
 
             try
             {
@@ -82,8 +82,8 @@ namespace Marten.Testing.Storage
         {
             var function = new UpsertFunction(theMapping);
             var sql = $@"
-select count(*) 
-from pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid 
+select count(*)
+from pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid
 where ns.nspname = 'testbed' and pg_proc.proname = '{function.Identifier.Name}';";
 
             var count = _conn.CreateCommand(sql).ExecuteScalar().As<long>();

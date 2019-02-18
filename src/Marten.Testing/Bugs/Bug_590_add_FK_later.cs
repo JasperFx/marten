@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
