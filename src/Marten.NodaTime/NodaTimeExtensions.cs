@@ -1,4 +1,4 @@
-﻿using Marten.Linq.Parsing;
+﻿using Marten.NodaTime.Linq.Parsing;
 using Marten.Schema;
 using Marten.Services;
 using NodaTime;
@@ -9,7 +9,7 @@ namespace Marten.NodaTime
 {
     public static class NodaTimeExtensions
     {
-        public static void UseNodaTime(this StoreOptions storeOptions)
+        public static void UseNodaTime(this StoreOptions storeOptions, bool shouldConfigureJsonNetSerializer = true)
         {
             NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
 
@@ -29,10 +29,12 @@ namespace Marten.NodaTime
             //JsonLocatorField.TimespanZTypes.Add(typeof(OffsetDateTime));
             //JsonLocatorField.TimespanZTypes.Add(typeof(OffsetDateTime?));
 
-            var serializer = new JsonNetSerializer();
-            serializer.Customize(s => s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
-
-            storeOptions.Serializer(serializer);
+            if (shouldConfigureJsonNetSerializer)
+            {
+                var serializer = storeOptions.Serializer();
+                (serializer as JsonNetSerializer)?.Customize(s => s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+                storeOptions.Serializer(serializer);
+            }
         }
     }
 }
