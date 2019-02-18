@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -45,14 +46,12 @@ namespace Marten.Testing.Bugs
             var directory = AppContext.BaseDirectory.AppendPath("sql");
             var fileSystem = new FileSystem();
             fileSystem.CleanDirectory(directory);
-            
+
             theStore.Schema.WriteDDLByType(directory);
 
             fileSystem.FindFiles(directory, FileSet.Shallow("*.sql"))
                 .Any(x => x.EndsWith("mt_streams.sql"))
                 .ShouldBeFalse();
-
-            
         }
     }
 }

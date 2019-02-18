@@ -2,6 +2,7 @@
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -18,7 +19,6 @@ namespace Marten.Testing.Schema
             }).As<DocumentStore>();
 
             store1.Tenancy.Default.EnsureStorageExists(typeof(User));
-
 
             var store2 = TestingDocumentStore.For(_ =>
             {
@@ -54,6 +54,5 @@ namespace Marten.Testing.Schema
 
             functionBody.Body.ShouldContain("mt_doc_user");
         }
-
     }
 }

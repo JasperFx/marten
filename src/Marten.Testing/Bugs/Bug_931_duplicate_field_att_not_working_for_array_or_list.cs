@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Marten.Schema;
 using Marten.Storage;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -35,4 +36,4 @@ namespace Marten.Testing.Bugs
         [DuplicateField(PgType = "varchar[]")]
         public List<string> ListTags { get; set; }
     }
-}   
+}

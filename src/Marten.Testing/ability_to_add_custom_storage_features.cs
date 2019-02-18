@@ -1,9 +1,8 @@
-﻿using Marten.Schema;
-using Marten.Storage;
-using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Marten.Schema;
+using Marten.Storage;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing
@@ -16,7 +15,7 @@ namespace Marten.Testing
             StoreOptions(_ =>
             {
                 _.Storage.Add<FakeStorage>();
-            });   
+            });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
             theStore.Tenancy.Default.DbObjects.SchemaTables().Any(x => x.Name == "mt_fake_table")
@@ -31,9 +30,9 @@ namespace Marten.Testing
                 // Creates a new instance of FakeStorage and
                 // passes along the current StoreOptions
                 _.Storage.Add<FakeStorage>();
-                
+
                 // or
-                
+
                 _.Storage.Add(new FakeStorage(_));
             });
             // ENDSAMPLE
@@ -49,11 +48,12 @@ namespace Marten.Testing
 
         protected override IEnumerable<ISchemaObject> schemaObjects()
         {
-            var table = new Table(new DbObjectName(Options.DatabaseSchemaName,"mt_fake_table"));
+            var table = new Table(new DbObjectName(Options.DatabaseSchemaName, "mt_fake_table"));
             table.AddColumn("name", "varchar");
 
             yield return table;
         }
     }
+
     // ENDSAMPLE
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -11,7 +12,6 @@ namespace Marten.Testing.Bugs
         public void should_create_an_index_for_the_fk()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(DocWithFK));
-
 
             var table = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(DocWithFK));
             table.ActualIndices.ContainsKey("mt_doc_docwithfk_idx_user_id").ShouldBeTrue();

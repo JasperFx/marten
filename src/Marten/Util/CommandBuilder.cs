@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Marten.Linq.QueryHandlers;
-using Npgsql;
-using NpgsqlTypes;
 using Baseline;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Storage;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace Marten.Util
 {
-    public class CommandBuilder  : IDisposable
+    public class CommandBuilder : IDisposable
     {
         public static readonly string TenantIdArg = ":" + TenantIdArgument.ArgName;
 
@@ -78,6 +78,7 @@ namespace Marten.Util
 
         // TEMP -- will shift this to being pooled later
         private readonly StringBuilder _sql = new StringBuilder();
+
         private readonly NpgsqlCommand _command;
 
         public CommandBuilder(NpgsqlCommand command)
@@ -131,13 +132,9 @@ namespace Marten.Util
             _sql.Clear();
         }
 
-        
-
         public void Dispose()
         {
-
         }
-
 
         public void AddParameters(object parameters)
         {
@@ -146,6 +143,7 @@ namespace Marten.Util
 
         public NpgsqlParameter AddParameter(object value, NpgsqlDbType? dbType = null)
         {
+            dbType = dbType ?? TypeMappings.ToDbType(value.GetType());
             return _command.AddParameter(value, dbType);
         }
 

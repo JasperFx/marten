@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using Baseline;
 using Marten.Linq;
-using Marten.Schema;
 using Marten.Services;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -28,8 +26,6 @@ namespace Marten.Testing.Schema
             var results = theSession.Query<Target>().Where(x => x.Inner.Number == thirdTarget.Inner.Number).ToArray();
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
-
-
         }
 
         [Fact]
@@ -50,7 +46,6 @@ namespace Marten.Testing.Schema
             var results = queryable.ToArray();
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
-
 
             queryable.ToCommand(FetchType.FetchMany).CommandText
                 .ShouldContain("inner_date = :arg0");

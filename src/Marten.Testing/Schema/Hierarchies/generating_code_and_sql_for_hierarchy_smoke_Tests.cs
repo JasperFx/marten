@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema.Hierarchies
@@ -13,9 +14,9 @@ namespace Marten.Testing.Schema.Hierarchies
         public generating_code_and_sql_for_hierarchy_smoke_Tests()
         {
             theHierarchy = DocumentMapping.For<Squad>();
-            theHierarchy.AddSubClass(typeof (BasketballTeam));
-            theHierarchy.AddSubClass(typeof (BaseballTeam));
-            theHierarchy.AddSubClass(typeof (FootballTeam));
+            theHierarchy.AddSubClass(typeof(BasketballTeam));
+            theHierarchy.AddSubClass(typeof(BaseballTeam));
+            theHierarchy.AddSubClass(typeof(FootballTeam));
         }
 
         [Fact]
@@ -29,7 +30,6 @@ namespace Marten.Testing.Schema.Hierarchies
 
             sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
-        
 
         [Fact]
         public void can_generate_upsert_function_with_security_definer()
@@ -83,7 +83,6 @@ namespace Marten.Testing.Schema.Hierarchies
 
             sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(current_version uuid, doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
-
     }
 
     public class generating_code_and_sql_for_hierarchy_smoke_Tests_on_other_database_schema
@@ -98,15 +97,14 @@ namespace Marten.Testing.Schema.Hierarchies
             theHierarchy.AddSubClass(typeof(FootballTeam));
         }
 
-		[Fact]
-		public void contains_index_for_documenttype_column()
-		{
-		    var table = new DocumentTable(theHierarchy);
+        [Fact]
+        public void contains_index_for_documenttype_column()
+        {
+            var table = new DocumentTable(theHierarchy);
             table.Indexes.Any(x => x.IndexName == $"mt_doc_squad_idx_{DocumentMapping.DocumentTypeColumn}").ShouldBeTrue();
+        }
 
-		}
-
-		[Fact]
+        [Fact]
         public void can_generate_upsert_function_for_95()
         {
             var writer = new StringWriter();
@@ -129,7 +127,6 @@ namespace Marten.Testing.Schema.Hierarchies
 
             sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
-
     }
 
     public class Squad
@@ -138,6 +135,8 @@ namespace Marten.Testing.Schema.Hierarchies
     }
 
     public class BasketballTeam : Squad { }
+
     public class FootballTeam : Squad { }
+
     public class BaseballTeam : Squad { }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Marten.Storage;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -13,7 +13,6 @@ namespace Marten.Testing.Acceptance
         {
             theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default)
                     .Any(x => x is Marten.Transforms.Transforms).ShouldBeTrue();
-
         }
 
         [Fact]
@@ -26,7 +25,6 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default)
                     .Any(x => x is Marten.Transforms.Transforms).ShouldBeFalse();
-
         }
 
         [Fact]
@@ -54,8 +52,6 @@ namespace Marten.Testing.Acceptance
             {
                 _.PLV8Enabled = false;
             });
-            
-            
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
