@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Marten.Linq.Parsing
+namespace Marten.NodaTime.Linq.Parsing
 {
     /// <summary>
     /// Implement !Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>, <see cref="DateTime"/>, <see cref="DateTimeOffset"/>.

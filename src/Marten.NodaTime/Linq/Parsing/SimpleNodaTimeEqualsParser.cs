@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 using NodaTime;
 
-namespace Marten.Linq.Parsing
+namespace Marten.NodaTime.Linq.Parsing
 {
     /// <summary>
     /// Implement Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>, <see cref="DateTime"/>, <see cref="DateTimeOffset"/>.
