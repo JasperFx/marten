@@ -143,7 +143,6 @@ namespace Marten.Util
 
         public NpgsqlParameter AddParameter(object value, NpgsqlDbType? dbType = null)
         {
-            dbType = dbType ?? TypeMappings.ToDbType(value.GetType());
             return _command.AddParameter(value, dbType);
         }
 
