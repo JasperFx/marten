@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +14,11 @@ namespace Marten.Util
     {
         private static readonly Ref<ImHashMap<Type, string>> PgTypeMemo;
         private static readonly Ref<ImHashMap<Type, NpgsqlDbType?>> NpgsqlDbTypeMemo;
+        private static readonly Ref<ImHashMap<NpgsqlDbType, Type[]>> TypeMemo;
+
+        public static List<Type> ContainmentOperatorTypes { get; } = new List<Type>();
+        public static List<Type> TimespanTypes { get; } = new List<Type>();
+        public static List<Type> TimespanZTypes { get; } = new List<Type>();
 
         static TypeMappings()
         {
@@ -32,6 +36,17 @@ namespace Marten.Util
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(DateTime), "timestamp without time zone"));
 
             NpgsqlDbTypeMemo = Ref.Of(ImHashMap<Type, NpgsqlDbType?>.Empty);
+
+            TypeMemo = Ref.Of(ImHashMap<NpgsqlDbType, Type[]>.Empty);
+
+            AddTimespanTypes(NpgsqlDbType.Timestamp, ResolveTypes(NpgsqlDbType.Timestamp));
+            AddTimespanTypes(NpgsqlDbType.TimestampTz, ResolveTypes(NpgsqlDbType.TimestampTz));
+        }
+
+        public static void RegisterMapping(Type type, string pgType, NpgsqlDbType? npgsqlDbType)
+        {
+            PgTypeMemo.Swap(d => d.AddOrUpdate(type, pgType));
+            NpgsqlDbTypeMemo.Swap(d => d.AddOrUpdate(type, npgsqlDbType));
         }
 
         // Lazily retrieve the CLR type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings.
@@ -59,11 +74,28 @@ namespace Marten.Util
             return value;
         }
 
+        internal static Type[] ResolveTypes(NpgsqlDbType npgsqlDbType)
+        {
+            if (TypeMemo.Value.TryFind(npgsqlDbType, out var values)) return values;
+
+            values = GetTypeMapping(npgsqlDbType)?.ClrTypes;
+
+            TypeMemo.Swap(d => d.AddOrUpdate(npgsqlDbType, values));
+
+            return values;
+        }
+
         private static NpgsqlTypeMapping GetTypeMapping(Type type)
             => NpgsqlConnection
                 .GlobalTypeMapper
                 .Mappings
                 .FirstOrDefault(mapping => mapping.ClrTypes.Contains(type));
+
+        private static NpgsqlTypeMapping GetTypeMapping(NpgsqlDbType type)
+            => NpgsqlConnection
+                .GlobalTypeMapper
+                .Mappings
+                .FirstOrDefault(mapping => mapping.NpgsqlDbType == type);
 
         public static string ConvertSynonyms(string type)
         {
@@ -225,6 +257,26 @@ namespace Marten.Util
 
             // Treat "unknown" PgTypes as jsonb (this way null checks of arbitary depth won't fail on cast).
             return "CAST({0} as {1})".ToFormat(locator, GetPgType(memberType, enumStyle));
+        }
+
+        private static Type GetNullableType(Type type)
+        {
+            // Use Nullable.GetUnderlyingType() to remove the Nullable<T> wrapper if type is already nullable.
+            type = Nullable.GetUnderlyingType(type) ?? type; // avoid type becoming null
+            if (type.IsValueType)
+                return typeof(Nullable<>).MakeGenericType(type);
+            else
+                return type;
+        }
+
+        public static void AddTimespanTypes(NpgsqlDbType npgsqlDbType, params Type[] types)
+        {
+            var timespanTypesList = (npgsqlDbType == NpgsqlDbType.Timestamp) ? TimespanTypes : TimespanZTypes;
+            var typesWithNullables = types.Union(types.Select(t => GetNullableType(t))).Where(t => !timespanTypesList.Contains(t)).ToList();
+
+            timespanTypesList.AddRange(typesWithNullables);
+
+            ContainmentOperatorTypes.AddRange(typesWithNullables);
         }
 
         public static bool IsDate(this object value)
