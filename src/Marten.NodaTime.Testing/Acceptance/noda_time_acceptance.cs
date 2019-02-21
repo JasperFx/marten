@@ -53,6 +53,13 @@ namespace Marten.NodaTime.Testing.Acceptance
             {
                 var results = new List<TargetWithDates>
                 {
+                    // DateTime
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime < dateTime.AddDays(1)),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime <= dateTime.AddDays(1)),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime > dateTime.AddDays(-1)),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime >= dateTime.AddDays(-1)),
+
                     // LocalDate
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate == localDateTime.Date),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate < localDateTime.Date.PlusDays(1)),

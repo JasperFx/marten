@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -30,12 +29,12 @@ namespace Marten.Schema
             {
                 SqlLocator = $"{dataLocator} ->> '{memberName}'";
             }
-            else if (TimespanTypes.Contains(memberType))
+            else if (TypeMappings.TimespanTypes.Contains(memberType))
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
             }
-            else if (TimespanZTypes.Contains(memberType))
+            else if (TypeMappings.TimespanZTypes.Contains(memberType))
             {
                 SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamptz({dataLocator} ->> '{memberName}')";
                 SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
@@ -109,33 +108,23 @@ namespace Marten.Schema
 
         public bool ShouldUseContainmentOperator()
         {
-            return ContainmentOperatorTypes.Contains(MemberType);
+            return TypeMappings.ContainmentOperatorTypes.Contains(MemberType);
         }
-
-        public static List<Type> ContainmentOperatorTypes = new List<Type>
-        {
-            typeof(DateTime),
-            typeof(DateTime?),
-            typeof(DateTimeOffset),
-            typeof(DateTimeOffset?)
-        };
-
-        public static List<Type> TimespanTypes = new List<Type>
-        {
-            typeof(DateTime),
-            typeof(DateTime?)
-        };
-
-        public static List<Type> TimespanZTypes = new List<Type>
-        {
-            typeof(DateTimeOffset),
-            typeof(DateTimeOffset?)
-        };
 
         public string LocatorFor(string rootTableAlias)
         {
             // Super hokey.
             return SqlLocator.Replace("d.", rootTableAlias + ".");
+        }
+
+        private static Type GetNullableType(Type type)
+        {
+            // Use Nullable.GetUnderlyingType() to remove the Nullable<T> wrapper if type is already nullable.
+            type = Nullable.GetUnderlyingType(type) ?? type; // avoid type becoming null
+            if (type.IsValueType)
+                return typeof(Nullable<>).MakeGenericType(type);
+            else
+                return type;
         }
     }
 }
