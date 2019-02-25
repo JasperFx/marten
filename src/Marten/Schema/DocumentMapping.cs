@@ -513,7 +513,7 @@ namespace Marten.Schema
 
             var duplicateField = DuplicateField(members);
 
-            var foreignKey = new ForeignKeyDefinition(duplicateField.ColumnName, this, referenceMapping);
+            var foreignKey = new DocumentReferenceForeignKeyDefinition(duplicateField.ColumnName, this, referenceMapping);
             ForeignKeys.Add(foreignKey);
 
             return foreignKey;
@@ -892,6 +892,17 @@ namespace Marten.Schema
 
             var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
             indexConfiguration?.Invoke(indexDefinition);
+        }
+
+        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var duplicateField = DuplicateField(visitor.Members.ToArray());
+
+            var foreignKey = new ForeignReferenceForeignKeyDefinition(duplicateField.ColumnName, this, schemaName, tableName, columnName);
+            ForeignKeys.Add(foreignKey);
         }
     }
 }
