@@ -36,6 +36,7 @@ namespace Marten.Services
                     {
                         planToReturn.PlanningTime = queryPlans[0].PlanningTime;
                         planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
+                        planToReturn.Command = cmd;
                     }
                     return planToReturn;
                 }

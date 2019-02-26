@@ -94,7 +94,7 @@ namespace Marten.Storage
         }
 
         public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
-            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int timeout = 30)
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int? timeout = null)
         {
             return _inner.OpenConnection(mode, isolationLevel, timeout);
         }

@@ -14,9 +14,9 @@ namespace Marten.Services
         public DocumentTracking Tracking { get; set; } = DocumentTracking.IdentityOnly;
 
         /// <summary>
-        /// Default to 30 seconds
+        /// If not specified, sessions default to Npgsql command timeout (30 seconds)
         /// </summary>
-        public int Timeout { get; set; } = 30;
+        public int? Timeout { get; set; }
 
         /// <summary>
         /// Default to IsolationLevel.ReadCommitted

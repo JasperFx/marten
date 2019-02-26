@@ -233,7 +233,7 @@ namespace Marten.Storage
         /// <param name="isolationLevel"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int timeout = 30)
+        public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int? timeout = null)
         {
             return new ManagedConnection(_factory, mode, _options.RetryPolicy(), isolationLevel, timeout);
         }
