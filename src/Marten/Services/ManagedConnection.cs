@@ -44,7 +44,7 @@ namespace Marten.Services
 
             _commandTimeout = options.Timeout ?? conn?.CommandTimeout;
 
-			_connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
+            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
             _retryPolicy = retryPolicy;
         }
 

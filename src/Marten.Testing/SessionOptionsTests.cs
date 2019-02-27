@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Baseline;
 using Marten.Services;
 using Npgsql;
@@ -50,72 +49,72 @@ public void ConfigureCommandTimeout(IDocumentStore store)
         [Fact]
         public void default_timeout_should_be_npgsql_default_ie_30()
         {
-	        var options = new SessionOptions();
+            var options = new SessionOptions();
 
-	        using (var query = theStore.QuerySession(options).As<QuerySession>())
-	        {
-		        var cmd = query.Query<FryGuy>().Explain();
-		        Assert.Equal(30, cmd.Command.CommandTimeout);
-	        }
+            using (var query = theStore.QuerySession(options).As<QuerySession>())
+            {
+                var cmd = query.Query<FryGuy>().Explain();
+                Assert.Equal(30, cmd.Command.CommandTimeout);
+            }
         }
 
 
-		// Remarks: this test was basically asserting nothing related before.
-		[Fact]		
+        // Remarks: this test was basically asserting nothing related before.
+        [Fact]		
         public void can_define_custom_timeout()
         {            
             var options = new SessionOptions() { Timeout = 15 };
 
             using (var query = theStore.QuerySession(options).As<QuerySession>())
             {
-	            var cmd = query.Query<FryGuy>().Explain();
-				Assert.Equal(15, cmd.Command.CommandTimeout);
+                var cmd = query.Query<FryGuy>().Explain();
+                Assert.Equal(15, cmd.Command.CommandTimeout);
             }
         }
 
         [Fact]
         public void can_define_custom_timeout_via_pgcstring()
         {
-	        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
-	        connectionStringBuilder.CommandTimeout = 1;
+            connectionStringBuilder.CommandTimeout = 1;
 
-	        var documentStore = DocumentStore.For(c =>
-	        {
-		        c.Connection(connectionStringBuilder.ToString());
-	        });
+            var documentStore = DocumentStore.For(c =>
+            {
+                c.Connection(connectionStringBuilder.ToString());
+            });
 
-	        using (var query = documentStore.OpenSession())
-	        {
-				var cmd = query.Query<FryGuy>().Explain();
-				Assert.Equal(1, cmd.Command.CommandTimeout);
-				Assert.Equal(1, query.Connection.CommandTimeout);
-	        }
+            using (var query = documentStore.OpenSession())
+            {
+                var cmd = query.Query<FryGuy>().Explain();
+                Assert.Equal(1, cmd.Command.CommandTimeout);
+                Assert.Equal(1, query.Connection.CommandTimeout);
+            }
         }
 
         [Fact]
         public void can_override_pgcstring_timeout_in_sessionoptions()
         {
-	        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
-	        connectionStringBuilder.CommandTimeout = 1;
+            connectionStringBuilder.CommandTimeout = 1;
 
-	        var documentStore = DocumentStore.For(c =>
-	        {
-		        c.Connection(connectionStringBuilder.ToString());
-	        });
+            var documentStore = DocumentStore.For(c =>
+            {
+                c.Connection(connectionStringBuilder.ToString());
+            });
 
-	        var options = new SessionOptions() { Timeout = 60 };
+            var options = new SessionOptions() { Timeout = 60 };
 
-			using (var query = documentStore.OpenSession(options))
-	        {
-		        var cmd = query.Query<FryGuy>().Explain();
-		        Assert.Equal(60, cmd.Command.CommandTimeout);
-		        Assert.Equal(1, query.Connection.CommandTimeout);
-	        }
+            using (var query = documentStore.OpenSession(options))
+            {
+                var cmd = query.Query<FryGuy>().Explain();
+                Assert.Equal(60, cmd.Command.CommandTimeout);
+                Assert.Equal(1, query.Connection.CommandTimeout);
+            }
         }
 
-		public class FryGuy
+        public class FryGuy
         {
             public Guid Id;
         }
