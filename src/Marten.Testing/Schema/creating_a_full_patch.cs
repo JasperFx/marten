@@ -1,5 +1,6 @@
 ﻿using Marten.Testing.Documents;
 using Xunit;
+using IssueAssigned = Marten.Testing.Events.IssueAssigned;
 
 namespace Marten.Testing.Schema
 {
@@ -40,5 +41,29 @@ namespace Marten.Testing.Schema
             }
         }
 
+        [Fact]
+        public void base_patch_should_drop_system_functions_correctly()
+        {
+            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
+            {
+                store.Advanced.Clean.CompletelyRemoveAll();
+            }
+
+            using (var store2 = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.AddEventType(typeof(IssueAssigned));
+            }))
+            {
+                var patch = store2.Schema.ToPatch();
+
+                patch.RollbackDDL.ShouldContain("drop function if exists public.mt_immutable_timestamp(text) cascade;");
+                patch.RollbackDDL.ShouldContain("drop function if exists public.mt_immutable_timestamptz(text) cascade;");
+                patch.RollbackDDL.ShouldContain("DROP FUNCTION IF EXISTS public.mt_transform_patch_doc(JSONB, JSONB);");
+
+                patch.RollbackDDL.ShouldContain("drop function if exists public.mt_append_event (uuid, varchar, varchar, uuid[], varchar[], jsonb[]);");
+                patch.RollbackDDL.ShouldContain("drop function if exists public.mt_mark_event_progression(varchar, bigint) cascade;");
+            }
+        }
     }
 }

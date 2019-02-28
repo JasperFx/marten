@@ -84,7 +84,7 @@ $$ LANGUAGE plpgsql;
         protected override string toDropSql()
         {
             var streamIdType = _events.GetStreamIdDBType();
-            return $"drop function if exists {Identifier} ({streamIdType}, varchar, varchar, uuid[], varchar[], jsonb[])";
+            return $"drop function if exists {Identifier} ({streamIdType}, varchar, varchar, uuid[], varchar[], jsonb[]);";
         }
     }
 
