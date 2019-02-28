@@ -19,7 +19,7 @@ namespace Marten.Schema
         {
             _args = args;
             _function = new DbObjectName(schema, functionName);
-            _dropSql = $"drop function if exists {schema}.{functionName}({args}) cascade";
+            _dropSql = $"drop function if exists {schema}.{functionName}({args}) cascade;";
 
             Name = functionName;
         }
