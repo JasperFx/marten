@@ -13,23 +13,23 @@ namespace Marten.Services
         private readonly int _commandTimeout;
         private readonly bool _ownsConnection;
 
-        public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, NpgsqlConnection connection, bool ownsConnection, NpgsqlTransaction transaction = null)
+        public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int? commandTimeout, NpgsqlConnection connection, bool ownsConnection, NpgsqlTransaction transaction = null)
         {
             _mode = mode;
-            _isolationLevel = isolationLevel;
-            _commandTimeout = commandTimeout;
+            _isolationLevel = isolationLevel;            
             _ownsConnection = ownsConnection;
             Transaction = transaction;
             Connection = connection;
+            _commandTimeout = commandTimeout ?? Connection.CommandTimeout;
         }
 
-        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int commandTimeout, bool ownsConnection)
+        public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int? commandTimeout, bool ownsConnection)
         {
             _mode = mode;
-            _isolationLevel = isolationLevel;
-            this._commandTimeout = commandTimeout;
+            _isolationLevel = isolationLevel;            
             _ownsConnection = ownsConnection;
             Connection = factory.Create();
+            _commandTimeout = commandTimeout ?? Connection.CommandTimeout;
         }
 
         public bool IsOpen => Connection.State != ConnectionState.Closed;

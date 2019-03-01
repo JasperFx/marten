@@ -13,7 +13,7 @@ namespace Marten.Services
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
-        private readonly int _commandTimeout;
+        private readonly int? _commandTimeout;
         private TransactionState _connection;
         private bool _ownsConnection;
         private IRetryPolicy _retryPolicy;
@@ -38,10 +38,11 @@ namespace Marten.Services
         {
             _ownsConnection = options.OwnsConnection;
             _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
-            _isolationLevel = options.IsolationLevel;
-            _commandTimeout = options.Timeout;
+            _isolationLevel = options.IsolationLevel;            
 
             var conn = options.Connection ?? options.Transaction?.Connection;
+
+            _commandTimeout = options.Timeout ?? conn?.CommandTimeout;
 
             _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
             _retryPolicy = retryPolicy;
@@ -58,7 +59,7 @@ namespace Marten.Services
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
         public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IRetryPolicy retryPolicy,
-            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30)
+            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int? commandTimeout = null)
         {
             _factory = factory;
             _mode = mode;

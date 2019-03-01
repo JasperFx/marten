@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
+using Npgsql;
 
 namespace Marten.Linq
 {
@@ -88,6 +89,11 @@ namespace Marten.Linq
         // Lifted these from QueryPlanContainer so as not to change the returned type alltogether :|
         public decimal PlanningTime { get; set; }        
         public decimal ExecutionTime { get; set; }
+        
+        /// <summary>
+        /// The command executed by Marten
+        /// </summary>
+        public NpgsqlCommand Command { get; set; }
     }
 
     class QueryPlanContainer
