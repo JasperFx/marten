@@ -141,5 +141,24 @@ where ns.nspname = 'testbed' and pg_proc.proname = '{function.Identifier.Name}';
             delta.AllNew.ShouldBeFalse();
             delta.HasChanged.ShouldBeTrue();
         }
+
+        [Fact]
+        public void restore_previous_function_in_rollback()
+        {
+            writeFunction();
+
+            theMapping.Duplicate(x => x.FirstName);
+            writeTable();
+
+            var function = new UpsertFunction(theMapping);
+
+            var ddlRules = new DdlRules();
+            var delta = function.FetchDelta(_conn, ddlRules);
+
+            var patch = new SchemaPatch(ddlRules);
+            delta.WritePatch(patch);
+
+            patch.RollbackDDL.ShouldContain(delta.Actual.Body);
+        }
     }
 }

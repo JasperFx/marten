@@ -88,7 +88,7 @@ AND    n.nspname = :{schemaParam};
                 return null;
             }
 
-            var upsertDefinition = reader.GetString(0);
+            var existingFunction = reader.GetString(0);
 
             reader.NextResult();
             var drops = new List<string>();
@@ -97,9 +97,9 @@ AND    n.nspname = :{schemaParam};
                 drops.Add(reader.GetString(0));
             }
 
-            if (upsertDefinition == null) return null;
+            if (existingFunction == null) return null;
 
-            var actualBody = new FunctionBody(Identifier, drops.ToArray(), upsertDefinition);
+            var actualBody = new FunctionBody(Identifier, drops.ToArray(), existingFunction.TrimEnd() + ";");
 
             var expectedBody = ToBody(rules);
 
