@@ -75,6 +75,27 @@ namespace Marten.Services
         /// </summary>
         /// <returns></returns>
         IEnumerable<PatchOperation> Patches();
+
+        /// <summary>
+        /// All the storage operations that will be executed when this session is committed
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IStorageOperation> Operations();
+
+        /// <summary>
+        /// All the storage operations that will be executed for documents of type T when this
+        /// session is committed
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IStorageOperation> OperationsFor<T>();
+
+        /// <summary>
+        /// All the storage operations that will be executed for documents of type T when this
+        /// session is committed
+        /// </summary>
+        /// <param name="documentType"></param>
+        /// <returns></returns>
+        IEnumerable<IStorageOperation> OperationsFor(Type documentType);
     
     }
 }
