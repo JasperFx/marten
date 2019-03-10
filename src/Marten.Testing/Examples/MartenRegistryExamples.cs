@@ -69,6 +69,9 @@ namespace Marten.Testing.Examples
             // the Postgresql database type for the column
             For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50)");
 
+            // Add constraints to the duplicated field
+            For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50) NOT NULL");
+
             // Customize the index on the duplicated field
             // for FirstName
             For<User>().Duplicate(x => x.FirstName, configure: idx =>
