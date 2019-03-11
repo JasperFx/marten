@@ -78,7 +78,7 @@ namespace Marten.Testing.Schema
             [DuplicateField(IndexMethod = IndexMethod.hash, IndexName = "idx_foo")]
             public string OtherName;
 
-            [DuplicateField(IndexOrder = SortOrder.Desc)]
+            [DuplicateField(IndexSortOrder = SortOrder.Desc)]
             public string YetAnotherName { get; set; }
             
             [DuplicateField(PgType = "timestamp")]
