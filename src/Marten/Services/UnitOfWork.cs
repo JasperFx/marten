@@ -84,6 +84,21 @@ namespace Marten.Services
             return _operations.Value.Enumerate().SelectMany(x => x.Value).OfType<PatchOperation>();
         }
 
+        public IEnumerable<IStorageOperation> Operations()
+        {
+            return _operations.Value.Enumerate().SelectMany(x => x.Value);
+        }
+
+        public IEnumerable<IStorageOperation> OperationsFor<T>()
+        {
+            return operationsFor(typeof(T));
+        }
+
+        public IEnumerable<IStorageOperation> OperationsFor(Type documentType)
+        {
+            return operationsFor(documentType);
+        }
+
         public void AddTracker(IDocumentTracker tracker)
         {
             _trackers.Fill(tracker);
