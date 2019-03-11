@@ -83,6 +83,13 @@ namespace Marten.Testing.Examples
             {
                 idx.IsUnique = true;
             });
+
+            // Customize the index on the duplicated field
+            // for LastName to be in descending order
+            For<User>().Duplicate(x => x.LastName, configure: idx =>
+            {
+                idx.SortOrder = SortOrder.Desc;
+            });
         }
     }
 
