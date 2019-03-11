@@ -20,6 +20,8 @@ namespace Marten.Schema
 
         public IndexMethod Method { get; set; } = IndexMethod.btree;
 
+        public SortOrder SortOrder { get; set; } = SortOrder.Asc;
+
         public bool IsUnique { get; set; }
 
         public bool IsConcurrent { get; set; }
@@ -61,6 +63,13 @@ namespace Marten.Schema
             }
 
             var columns = _columns.Select(column => $"\"{column}\"").Join(", ");
+
+            // Only the B-tree index type supports modifying the sort order, and ascending is the default
+            if (Method == IndexMethod.btree && SortOrder == SortOrder.Desc)
+            {
+                columns += " DESC";
+            }
+            
             if (Expression.IsEmpty())
             {
                 index += $" ({columns})";

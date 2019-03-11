@@ -28,6 +28,12 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void default_sort_order_is_asc()
+        {
+            new IndexDefinition(mapping, "foo").SortOrder.ShouldBe(SortOrder.Asc);
+        }
+        
+        [Fact]
         public void default_unique_is_false()
         {
             new IndexDefinition(mapping, "foo").IsUnique.ShouldBeFalse();
@@ -67,6 +73,40 @@ namespace Marten.Testing.Schema
 
             definition.ToDDL()
                 .ShouldBe("CREATE INDEX mt_bar ON public.mt_doc_target (\"foo\");");
+        }
+        
+        [Fact]
+        public void generate_ddl_for_descending_sort_order()
+        {
+            var definition = new IndexDefinition(mapping, "foo");
+            definition.SortOrder = SortOrder.Desc;
+
+            definition.ToDDL()
+                .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON public.mt_doc_target (\"foo\" DESC);");
+        }
+        
+        [InlineData(IndexMethod.btree, true)]
+        [InlineData(IndexMethod.gin, false)]
+        [InlineData(IndexMethod.brin, false)]
+        [InlineData(IndexMethod.gist, false)]
+        [InlineData(IndexMethod.hash, false)]
+        [Theory]
+        public void sort_order_only_applied_for_btree_index(IndexMethod method, bool shouldUseSort)
+        {
+            var definition = new IndexDefinition(mapping, "foo");
+            definition.Method = method;
+            definition.SortOrder = SortOrder.Desc;
+
+            var ddl = definition.ToDDL();
+
+            if (shouldUseSort)
+            {
+                ddl.ShouldEndWith(" DESC);");
+            }
+            else
+            {
+                ddl.ShouldNotEndWith(" DESC);");
+            }
         }
 
         [Fact]

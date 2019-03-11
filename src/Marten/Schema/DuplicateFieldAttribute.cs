@@ -25,6 +25,8 @@ namespace Marten.Schema
             indexDefinition.Method = IndexMethod;
             if (IndexName.IsNotEmpty())
                 indexDefinition.IndexName = IndexName;
+            
+            indexDefinition.SortOrder = this.IndexSortOrder;
         }
 
         /// <summary>
@@ -47,5 +49,10 @@ namespace Marten.Schema
         /// Specify the name of the index explicity
         /// </summary>
         public string IndexName { get; set; } = null;
+
+        /// <summary>
+        /// Specifies the sort order of the index (only applicable to B-tree indexes)
+        /// </summary>
+        public SortOrder IndexSortOrder { get; set; } = SortOrder.Asc;
     }
 }
