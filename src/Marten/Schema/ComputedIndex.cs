@@ -87,6 +87,11 @@ namespace Marten.Schema
         /// </summary>
         public IndexMethod Method { get; set; } = IndexMethod.btree;
 
+        /// <summary>
+        /// Specifies the sort order of the index (only applicable to B-tree indexes)
+        /// </summary>
+        public SortOrder SortOrder { get; set; } = SortOrder.Asc;
+
         public string ToDDL()
         {
             var index = IsUnique ? "CREATE UNIQUE INDEX" : "CREATE INDEX";
@@ -102,7 +107,7 @@ namespace Marten.Schema
             {
                 index += $" USING {Method}";
             }
-
+            
             switch (Casing)
             {
                 case Casings.Upper:
@@ -116,6 +121,13 @@ namespace Marten.Schema
                 default:
                     index += $" ({_locator})";
                     break;
+            }
+            
+            // Only the B-tree index type supports modifying the sort order, and ascending is the default
+            if (Method == IndexMethod.btree && SortOrder == SortOrder.Desc)
+            {
+                index = index.Remove(index.Length - 1);
+                index += " DESC)";
             }
 
             if (Where.IsNotEmpty())
