@@ -102,9 +102,17 @@ namespace Marten.Testing.Acceptance
             // Toggle whether or not the index is a UNIQUE
             // index
             x.IsUnique = true;
-
+            
             // Partial index by supplying a condition
             x.Where = "(data ->> 'Number')::int > 10";
+        });
+        
+        // For B-tree indexes, it's also possible to change
+        // the sort order from the default of "ascending"
+        _.Schema.For<User>().Index(x => x.LastName, x =>
+        {
+            // Change the index method to "brin"
+            x.SortOrder = SortOrder.Desc;
         });
     });
             // ENDSAMPLE
@@ -128,10 +136,29 @@ namespace Marten.Testing.Acceptance
             
             ddl.ShouldContain("mt_doc_target_idx_number on");
             ddl.ShouldContain("mt_doc_target using brin");
-
-
         }
 
+        [Fact]
+        public void create_index_with_sort_order()
+        {
+            StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Number, x =>
+            {
+                x.SortOrder = SortOrder.Desc;
+            }));
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data.ToArray());
+
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
+                .Where(x => x.Name == "mt_doc_target_idx_number")
+                .Select(x => x.DDL.ToLower())
+                .First();
+            
+            ddl.ShouldContain("mt_doc_target_idx_number on");
+            ddl.ShouldContain("mt_doc_target");
+            ddl.ShouldEndWith(" DESC)", Case.Insensitive);
+        }
+        
         [Fact]
         public void create_multi_property_index()
         {
