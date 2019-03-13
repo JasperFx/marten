@@ -284,6 +284,37 @@ namespace Marten.Testing.Services.Includes
         }
 
         [Fact]
+        public void include_with_any_array_containment_where_for_a_single_document()
+        {
+            var user  = new User();
+            var issue1 = new Issue {AssigneeId = user.Id, Tags = new []{"DIY"}, Title = "Garage Door is busted"};
+            var issue2 = new Issue {AssigneeId = user.Id, Tags = new []{"TAG"}, Title = "Garage Door is busted"};
+            var issue3 = new Issue {AssigneeId = user.Id, Tags = new string[] { }, Title = "Garage Door is busted"};
+
+            var requestedTags = new[] {"DIY", "TAG"};
+
+            theSession.Store(user);
+            theSession.Store(issue1, issue2, issue3);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var users = new List<User>();
+                var issues = query.Query<Issue>()
+                                  .Include(x => x.AssigneeId, users)
+                                  .Where(x => x.Tags.Any(t => requestedTags.Contains(t)))
+                                  .ToList();
+
+                users.Count.ShouldBe(1);
+                users.ShouldContain(x => x.Id == user.Id);
+
+                issues.Count.ShouldBe(2);
+                issues.ShouldContain(x => x.Id == issue1.Id);
+                issues.ShouldContain(x => x.Id == issue2.Id);
+            }
+        }
+
+        [Fact]
         public void include_with_generic_type()
         {
             var user = new UserWithInterface { Id = Guid.NewGuid(), UserName = "Jens" };

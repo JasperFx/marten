@@ -197,7 +197,7 @@ namespace Marten.Linq
             if (!members.Any())
                 throwNotSupportedContains();
             var path = members.Select(m => m.Name).Join("'->'");
-            return $"data->'{path}' ?| :{fromParam.ParameterName}";
+            return $"d.data->'{path}' ?| :{fromParam.ParameterName}";
         }
 
         private void throwNotSupportedContains()
