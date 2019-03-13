@@ -55,6 +55,7 @@ namespace Marten.Storage
                     patch.Rollbacks.Apply(this, drop);
                 });
 
+                patch.Rollbacks.Apply(this, Actual.Body);
             }
         }
 
