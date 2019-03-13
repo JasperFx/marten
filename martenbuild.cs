@@ -32,9 +32,12 @@ namespace martenbuild
                 RunNpm("run test"));
 
             Target("compile", DependsOn("clean"), () =>
-                Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}"));
+                Run("dotnet", $"build src/Marten.sln --framework netcoreapp2.1 --configuration {configuration}"));
 
-            Target("test", DependsOn("compile"), () =>
+            Target("test-noda-time", DependsOn("compile"), () =>
+                Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
+
+            Target("test", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
 
             Target("storyteller", DependsOn("compile"), () =>
@@ -80,7 +83,7 @@ namespace martenbuild
                 }
             });
 
-            Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine"), project =>
+            Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime"), project =>
                 Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
 
             RunTargetsAndExit(args);
