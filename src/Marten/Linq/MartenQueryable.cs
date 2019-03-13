@@ -100,6 +100,9 @@ namespace Marten.Linq
 
             return Include<TInclude>(idSource, x =>
             {
+                if (x == null)
+                    return;
+
                 var id = storage.Identity(x).As<TKey>();
                 if (!dictionary.ContainsKey(id))
                 {

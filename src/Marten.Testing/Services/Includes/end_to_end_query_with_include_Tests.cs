@@ -477,6 +477,64 @@ namespace Marten.Testing.Services.Includes
         // ENDSAMPLE
 
         [Fact]
+        public void include_to_dictionary_using_inner_join()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
+
+            theSession.Store(user1,  user2);
+            theSession.Store(issue1, issue2, issue3, issue4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var dict = new Dictionary<Guid, User>();
+
+                var issues = query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+
+                dict.Count.ShouldBe(2);
+                dict.ContainsKey(user1.Id).ShouldBeTrue();
+                dict.ContainsKey(user2.Id).ShouldBeTrue();
+
+                issues.Length.ShouldBe(3);
+            }
+        }
+
+        [Fact]
+        public void include_to_dictionary_using_outer_join()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+            var issue4 = new Issue { AssigneeId = null, Title = "Garage Door is busted" };
+
+            theSession.Store(user1,  user2);
+            theSession.Store(issue1, issue2, issue3, issue4);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                var dict = new Dictionary<Guid, User>();
+
+                var issues = query.Query<Issue>().Include(x => x.AssigneeId, dict, JoinType.LeftOuter).ToArray();
+
+                dict.Count.ShouldBe(2);
+                dict.ContainsKey(user1.Id).ShouldBeTrue();
+                dict.ContainsKey(user2.Id).ShouldBeTrue();
+
+                issues.Length.ShouldBe(4);
+            }
+        }
+
+        [Fact]
         public async Task simple_include_for_a_single_document_async()
         {
             var user = new User();
