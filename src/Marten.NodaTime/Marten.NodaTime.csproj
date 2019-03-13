@@ -3,7 +3,7 @@
     <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
     <VersionPrefix>1.0.0</VersionPrefix>
     <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz</Authors>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Marten.NodaTime</AssemblyName>
     <PackageId>Marten.NodaTime</PackageId>
     <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
