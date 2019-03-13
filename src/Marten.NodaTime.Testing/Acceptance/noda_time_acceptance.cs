@@ -34,11 +34,11 @@ namespace Marten.NodaTime.Testing.Acceptance
         }
 
         [Fact]
-        public void can_query_document()
+        public void can_query_document_with_noda_time_types()
         {
             StoreOptions(_ => _.UseNodaTime());
 
-            var dateTime = new DateTime(636815202809001827);// DateTime.UtcNow;
+            var dateTime = DateTime.UtcNow;
             var localDateTime = LocalDateTime.FromDateTime(dateTime);
             var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
             var testDoc = TargetWithDates.Generate(dateTime);
@@ -53,13 +53,6 @@ namespace Marten.NodaTime.Testing.Acceptance
             {
                 var results = new List<TargetWithDates>
                 {
-                    // DateTime
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime < dateTime.AddDays(1)),
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime <= dateTime.AddDays(1)),
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime > dateTime.AddDays(-1)),
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime >= dateTime.AddDays(-1)),
-
                     // LocalDate
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate == localDateTime.Date),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDate < localDateTime.Date.PlusDays(1)),
@@ -89,14 +82,14 @@ namespace Marten.NodaTime.Testing.Acceptance
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime >= localDateTime.PlusSeconds(-1)),
 
                     //// Instant UTC
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC < instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC <= instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC > instantUTC.PlusTicks(-1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC >= instantUTC.PlusTicks(-1000)),
 
                     // Nullable Instant UTC
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000)),
@@ -104,6 +97,32 @@ namespace Marten.NodaTime.Testing.Acceptance
                 };
 
                 results.ShouldAllBe(x => x.Equals(testDoc));
+            }
+        }
+
+        [Fact]
+        public void cannot_query_document_clr_datetime_types()
+        {
+            StoreOptions(_ => _.UseNodaTime());
+
+            var dateTime = new DateTime(636815202809001827);// DateTime.UtcNow;
+            var localDateTime = LocalDateTime.FromDateTime(dateTime);
+            var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
+            var testDoc = TargetWithDates.Generate(dateTime);
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Insert(testDoc);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                Should.Throw<NotSupportedException>
+                (
+                    () => query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
+                    "The CLR type System.DateTime isn't natively supported by Npgsql or your PostgreSQL. To use it with a PostgreSQL composite you need to specify DataTypeName or to map it, please refer to the documentation."
+                );
             }
         }
     }
