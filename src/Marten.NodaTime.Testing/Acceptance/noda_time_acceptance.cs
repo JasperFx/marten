@@ -105,7 +105,7 @@ namespace Marten.NodaTime.Testing.Acceptance
         {
             StoreOptions(_ => _.UseNodaTime());
 
-            var dateTime = new DateTime(636815202809001827);// DateTime.UtcNow;
+            var dateTime = DateTime.UtcNow;
             var localDateTime = LocalDateTime.FromDateTime(dateTime);
             var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
             var testDoc = TargetWithDates.Generate(dateTime);
