@@ -34,7 +34,10 @@ namespace martenbuild
             Target("compile", DependsOn("clean"), () =>
                 Run("dotnet", $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}"));
 
-            Target("test-noda-time", DependsOn("compile"), () =>
+            Target("compile-noda-time", DependsOn("clean"), () =>
+                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}"));
+
+            Target("test-noda-time", DependsOn("compile-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
 
             Target("test", DependsOn("compile", "test-noda-time"), () =>
