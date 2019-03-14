@@ -49,6 +49,10 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
   <!--SourceLink specific settings-->
   <PropertyGroup>
     <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>

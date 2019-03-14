@@ -59,6 +59,9 @@
   <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
     <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
   </ItemGroup>
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
   <!--SourceLink specific settings-->
   <PropertyGroup>
     <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
