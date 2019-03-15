@@ -69,7 +69,7 @@ namespace Marten.Schema
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
-            PostgresType = PgType,
+            PostgresType = PgType.ToLower() == DbType.ToString().ToLower() ? PgType : DbType.ToString().ToLower(),
             Members = Members,
             DbType = DbType
         };
