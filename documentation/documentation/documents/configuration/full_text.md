@@ -49,7 +49,7 @@ Full Text  Indexes can be created using the `[FullTextIndex]` attribute like thi
 
 * single property
 
-<[sample:using_a_single_property_full_text_index_through_store_options_with_default]>
+<[sample:using_a_single_property_full_text_index_through_attribute_with_default]>
 
 <div class="alert alert-info">
 If you don't specify regConfig - by default it will be created with 'english' value.
@@ -57,20 +57,16 @@ If you don't specify regConfig - by default it will be created with 'english' va
 
 * single property with custom settings
 
-<[sample:using_a_single_property_full_text_index_through_store_options_with_custom_settings]>
+<[sample:using_a_single_property_full_text_index_through_attribute_with_custom_settings]>
 
 * multiple properties
 
-<[sample:using_multiple_properties_full_text_index_through_store_options_with_default]>
+<[sample:using_multiple_properties_full_text_index_through_attribute_with_default]>
 
 <div class="alert alert-info">
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
 </div>
 
-* one index for multiple properties with custom settings
-
-<[sample:using_multiple_properties_full_text_index_through_store_options_with_custom_settings]>
-
 * multiple indexes for multiple properties with custom settings
 
-<[sample:using_more_than_one_full_text_index_through_store_options_with_different_reg_config]>
+<[sample:using_multiple_properties_full_text_index_through_attribute_with_custom_settings]>
