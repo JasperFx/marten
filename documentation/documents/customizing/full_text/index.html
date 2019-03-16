@@ -136,29 +136,25 @@ If you don't specify language (regConfig) - by default it will be created with '
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().FullTextIndex(d =&gt; d.FirstName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class UserProfile&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex]&#xD;&#xA;    public string Information { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 If you don't specify regConfig - by default it will be created with 'english' value.
 </div>
 <ul>
 <li>single property with custom settings</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().FullTextIndex(&#xD;&#xA;        index =&gt;&#xD;&#xA;        {&#xD;&#xA;            index.IndexName = &quot;mt_custom_italian_user_fts_idx&quot;;&#xD;&#xA;            index.RegConfig = &quot;italian&quot;;&#xD;&#xA;        },&#xD;&#xA;        d =&gt; d.FirstName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class UserDetails&#xD;&#xA;{&#xD;&#xA;    private const string FullTextIndexName = &quot;mt_custom_user_details_fts_idx&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex(IndexName = FullTextIndexName, RegConfig = &quot;italian&quot;)]&#xD;&#xA;    public string Details { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().FullTextIndex(d =&gt; d.FirstName, d =&gt; d.LastName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Article&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex]&#xD;&#xA;    public string Heading { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex]&#xD;&#xA;    public string Text { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
 </div>
 <ul>
-<li>one index for multiple properties with custom settings</li>
-</ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().FullTextIndex(&#xD;&#xA;        index =&gt;&#xD;&#xA;        {&#xD;&#xA;            index.IndexName = &quot;mt_custom_italian_user_fts_idx&quot;;&#xD;&#xA;            index.RegConfig = &quot;italian&quot;;&#xD;&#xA;        },&#xD;&#xA;        d =&gt; d.FirstName, d =&gt; d.LastName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<ul>
 <li>multiple indexes for multiple properties with custom settings</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;()&#xD;&#xA;        .FullTextIndex(d =&gt; d.FirstName) //by default it will use &quot;english&quot;&#xD;&#xA;        .FullTextIndex(&quot;italian&quot;, d =&gt; d.LastName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class BlogPost&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Category { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex]&#xD;&#xA;    public string EnglishText { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex(RegConfig = &quot;italian&quot;)]&#xD;&#xA;    public string ItalianText { get; set; }&#xD;&#xA;&#xD;&#xA;    [FullTextIndex(RegConfig = &quot;french&quot;)]&#xD;&#xA;    public string FrenchText { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 
 			      	</div>
 
