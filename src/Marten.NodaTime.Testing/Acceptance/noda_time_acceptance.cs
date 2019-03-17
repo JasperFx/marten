@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Marten.NodaTime.Testing.TestData;
 using Marten.Testing;
@@ -11,6 +12,34 @@ namespace Marten.NodaTime.Testing.Acceptance
 {
     public class noda_time_acceptance : IntegratedFixture
     {
+        public void noda_time_default_setup()
+        {
+            // SAMPLE: noda_time_default_setup
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // sets up NodaTime handling
+                _.UseNodaTime()
+            });
+            // ENDSAMPLE
+        }
+
+        public void noda_time_setup_without_json_net_serializer_configuration()
+        {
+            // SAMPLE: noda_time_setup_without_json_net_serializer_configuration
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                _.Serializer<CustomJsonSerializer>();
+
+                // sets up NodaTime handling
+                _.UseNodaTime(shouldConfigureJsonNetSerializer: false)
+            });
+            // ENDSAMPLE
+        }
+
         [Fact]
         public void can_insert_document()
         {
@@ -123,6 +152,38 @@ namespace Marten.NodaTime.Testing.Acceptance
                     () => query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
                     "The CLR type System.DateTime isn't natively supported by Npgsql or your PostgreSQL. To use it with a PostgreSQL composite you need to specify DataTypeName or to map it, please refer to the documentation."
                 );
+            }
+        }
+
+        private class CustomJsonSerializer : ISerializer
+        {
+            public EnumStorage EnumStorage => throw new NotImplementedException();
+
+            public Casing Casing => throw new NotImplementedException();
+
+            public T FromJson<T>(TextReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public object FromJson(Type type, TextReader reader)
+            {
+                throw new NotImplementedException();
+            }
+
+            public string ToCleanJson(object document)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void ToJson(object document, TextWriter writer)
+            {
+                throw new NotImplementedException();
+            }
+
+            public string ToJson(object document)
+            {
+                throw new NotImplementedException();
             }
         }
     }
