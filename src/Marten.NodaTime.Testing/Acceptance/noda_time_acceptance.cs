@@ -20,7 +20,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 _.Connection(ConnectionSource.ConnectionString);
 
                 // sets up NodaTime handling
-                _.UseNodaTime()
+                _.UseNodaTime();
             });
             // ENDSAMPLE
         }
@@ -35,7 +35,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 _.Serializer<CustomJsonSerializer>();
 
                 // sets up NodaTime handling
-                _.UseNodaTime(shouldConfigureJsonNetSerializer: false)
+                _.UseNodaTime(shouldConfigureJsonNetSerializer: false);
             });
             // ENDSAMPLE
         }
