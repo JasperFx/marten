@@ -55,7 +55,14 @@ namespace Marten.Schema
             {
                 DbType = TypeMappings.ToDbType(MemberType);
             }
+
+            OriginalPgType = PgType;
         }
+
+        /// <summary>
+        /// Use original pgType from member type for upsert argument
+        /// </summary>
+        public string OriginalPgType { get; set; }
 
         /// <summary>
         /// Used to override the assigned DbType used by Npgsql when a parameter
@@ -69,7 +76,7 @@ namespace Marten.Schema
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
-            PostgresType = PgType.ToLower() == DbType.ToString().ToLower() ? PgType : DbType.ToString().ToLower(),
+            PostgresType = PgType == OriginalPgType ? PgType : OriginalPgType,
             Members = Members,
             DbType = DbType
         };
