@@ -81,10 +81,10 @@ namespace Marten.Storage
 
             var systemUpdates = new string[] { $"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
-                .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
+                .Select(x => $"\"{x.Column}\" = {(x.CustomTypeOfDuplicatedField == null ? x.Arg : (x.Arg + "::" + x.CustomTypeOfDuplicatedField))}").Concat(systemUpdates).Join(", ");
 
             var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new[] { DocumentMapping.LastModifiedColumn }).Join(", ");
-            var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new[] { "transaction_timestamp()" }).Join(", ");
+            var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.CustomTypeOfDuplicatedField == null ? x.Arg : (x.Arg + "::" + x.CustomTypeOfDuplicatedField)).Concat(new[] { "transaction_timestamp()" }).Join(", ");
 
             var whereClauses = new List<string>();
 

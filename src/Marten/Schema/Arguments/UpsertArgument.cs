@@ -54,6 +54,8 @@ namespace Marten.Schema.Arguments
 
         public NpgsqlDbType DbType { get; set; }
 
+        public string CustomTypeOfDuplicatedField { get; set; }
+
         public string ArgumentDeclaration()
         {
             return $"{Arg} {PostgresType}";

@@ -78,7 +78,8 @@ namespace Marten.Schema
             Column = ColumnName.ToLower(),
             PostgresType = OriginalPgType,
             Members = Members,
-            DbType = DbType
+            DbType = DbType,
+            CustomTypeOfDuplicatedField = PgType == OriginalPgType ? null : PgType
         };
 
         public string SelectionLocator => SqlLocator;
