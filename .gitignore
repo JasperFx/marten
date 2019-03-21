@@ -226,3 +226,5 @@ BenchmarkDotNet.Artifacts
 *.DS_Store
 
 stresults.htm
+
+*.ncrunch*
