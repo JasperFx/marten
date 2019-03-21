@@ -7,11 +7,9 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-
     public class UniqueIndexMultiTenantTests
     {
         public const string UniqueSqlState = "23505";
-
 
         private class Project
         {
