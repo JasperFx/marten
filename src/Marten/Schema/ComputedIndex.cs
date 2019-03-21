@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Storage;
@@ -113,7 +114,7 @@ namespace Marten.Schema
                 index += $" USING {Method}";
             }
 
-	        if (IsMultiTenanted)
+            if (IsScopedPerTenant)
             {
                 _locator = $"{_locator}, tenant_id";
             }
