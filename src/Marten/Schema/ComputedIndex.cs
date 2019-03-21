@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Storage;
@@ -87,8 +88,11 @@ namespace Marten.Schema
         /// </summary>
         public IndexMethod Method { get; set; } = IndexMethod.btree;
 
-        public bool IsMultiTenanted { get;set; }
-		
+        /// <summary>
+        /// Specifies whether the unique index applies per tenant
+        /// </summary>
+        public bool IsScopedPerTenant { get; set; }
+
         public string ToDDL()
         {
             var index = IsUnique ? "CREATE UNIQUE INDEX" : "CREATE INDEX";
@@ -105,7 +109,7 @@ namespace Marten.Schema
                 index += $" USING {Method}";
             }
 
-            if (IsMultiTenanted)
+            if (IsScopedPerTenant)
             {
                 _locator = $"{_locator}, tenant_id";
             }
