@@ -233,7 +233,7 @@ namespace Marten
             /// <param name="isScopedPerTenant">Whether the unique index applies on a per tenant basis</param>
             /// <param name="expressions"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, bool isScopedPerTenant=false, params Expression<Func<T, object>>[] expressions)
+            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, bool isScopedPerTenant = false, params Expression<Func<T, object>>[] expressions)
             {
                 alter = m => m.UniqueIndex(indexType, indexName, isScopedPerTenant, expressions);
 
