@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -24,6 +25,7 @@ namespace Marten.Schema
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),
                 IndexType,
                 IndexName,
+                IsScopedPerTenant,
                 IndexMethod);
         }
 
@@ -46,5 +48,10 @@ namespace Marten.Schema
         /// Specify Index type
         /// </summary>
         public UniqueIndexType IndexType = UniqueIndexType.Computed;
+
+        /// <summary>
+        /// Specify Tenancy for unique index
+        /// </summary>
+        public bool IsScopedPerTenant = false;
     }
 }

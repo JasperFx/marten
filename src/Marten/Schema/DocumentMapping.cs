@@ -410,8 +410,12 @@ namespace Marten.Schema
             return index;
         }
 
-        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members, UniqueIndexType indexType = UniqueIndexType.Computed, string indexName = null, IndexMethod indexMethod = IndexMethod.btree)
+        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members,UniqueIndexType indexType = UniqueIndexType.Computed,  string indexName = null, bool isScopedPerTenant = false, IndexMethod indexMethod = IndexMethod.btree)
         {
+            //todo: this doesn't work for attribute based index as the documents TenancyStyle appears to be set after the index is created - so when we test below it thinks the TenancyStyle is Single!
+            //if (isScopedPerTenant && TenancyStyle != TenancyStyle.Conjoined)
+            //    throw new InvalidOperationException($"DocumentMapping for {DocumentType.FullName} is not configured for Conjoined Tenancy");
+
             if (indexType == UniqueIndexType.DuplicatedField)
             {
                 var fields = members.Select(memberPath => DuplicateField(memberPath)).ToList();
@@ -420,6 +424,7 @@ namespace Marten.Schema
                 index.IndexName = indexName;
                 index.Method = indexMethod;
                 index.IsUnique = true;
+                index.IsScopedPerTenant = isScopedPerTenant;
 
                 return index;
             }
@@ -432,7 +437,7 @@ namespace Marten.Schema
                     Method = indexMethod,
                     IndexName = indexName,
                     IsUnique = true,
-                    IsMultiTenanted = (indexType == UniqueIndexType.Tenanted && this.TenancyStyle == TenancyStyle.Conjoined)
+                    IsScopedPerTenant = isScopedPerTenant
                 };
 
                 var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
@@ -800,19 +805,25 @@ namespace Marten.Schema
             UniqueIndex(indexType, null, expressions);
         }
 
-        public void UniqueIndex(UniqueIndexType indexType, string indexName, params Expression<Func<T, object>>[] expressions)
+        public void UniqueIndex(UniqueIndexType indexType,  string indexName,params Expression<Func<T, object>>[] expressions)
+        {
+            UniqueIndex(indexType, indexName, false,expressions);
+        }
+
+        public void UniqueIndex(UniqueIndexType indexType,  string indexName, bool isScopedPerTenant, params Expression<Func<T, object>>[] expressions)
         {
             AddUniqueIndex(
                 expressions
-                .Select(e =>
-                {
-                    var visitor = new FindMembers();
-                    visitor.Visit(e);
-                    return visitor.Members.ToArray();
-                })
-                .ToArray(),
+                    .Select(e =>
+                    {
+                        var visitor = new FindMembers();
+                        visitor.Visit(e);
+                        return visitor.Members.ToArray();
+                    })
+                    .ToArray(),
                 indexType,
-                indexName);
+                indexName, 
+                isScopedPerTenant);
         }
 
         /// <summary>
@@ -877,5 +888,6 @@ namespace Marten.Schema
             var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
             indexConfiguration?.Invoke(indexDefinition);
         }
+
     }
 }

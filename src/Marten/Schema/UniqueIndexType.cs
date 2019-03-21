@@ -3,7 +3,6 @@
     public enum UniqueIndexType
     {
         DuplicatedField,
-        Computed,
-        Tenanted
+        Computed
     }
 }
