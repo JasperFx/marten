@@ -25,39 +25,22 @@ namespace Marten.Testing.Schema
             public string Name { get; set; }
         }
 
-        private class Project2 : Project { } //used for duplicatedfield index tests
+        private class ProjectUsingDuplicateField : Project { } //used for duplicatedfield index tests
 
         //used for attributes index tests
-        private class Project3 : Project
+        private class ProjectWithUniqueCodePerTenant : Project
         {
             [UniqueIndex(IsScopedPerTenant = true, IndexType = UniqueIndexType.Computed)]
             public string Code { get; set; }
-        } 
-
-        //private class BadProject : Project { } //used for bad index tests
-
-        //[Fact]
-        //public void given_document_is_not_tenanted_do_not_allow_tenanted_indexes()
-        //{
-        //    var e = Assert.Throws<InvalidOperationException>(() =>
-        //    {
-        //        DocumentStore.For(_ =>
-        //            {
-        //                //note that BadProject is not configured for multi-tenancy
-        //                _.Schema.For<BadProject>().UniqueIndex(UniqueIndexType.Computed, "bad_index_name", true, x => x.Name);
-        //            });
-        //    });
-
-        //    e.Message.ShouldContain("BadProject is not configured for Conjoined Tenancy");
-        //}
+        }   
 
         [Fact]
         public void given_two_documents_for_different_tenants_succeeds_using_attribute()
         {
             var store = DocumentStore.For(_ =>
             {
-                //index definition set on attribute of Project3 
-                _.Schema.For<Project3>().MultiTenanted();
+                //index definition set on attribute of ProjectWithUniqueCodePerTenant 
+                _.Schema.For<ProjectWithUniqueCodePerTenant>().MultiTenanted();
                 
                 _.Connection(ConnectionSource.ConnectionString);
 
@@ -65,10 +48,10 @@ namespace Marten.Testing.Schema
 
             using (var session = store.OpenSession())
             {
-                session.Store(new Project3 { Code = "ABC" });
+                session.Store(new ProjectWithUniqueCodePerTenant { Code = "ABC" });
                 session.SaveChanges();
 
-                session.Store(new Project3 { Code = "ABC" });
+                session.Store(new ProjectWithUniqueCodePerTenant { Code = "ABC" });
 
                 try
                 {
@@ -141,8 +124,8 @@ namespace Marten.Testing.Schema
         {
             var store = DocumentStore.For(_ =>
             {
-                _.Schema.For<Project2>().MultiTenanted();
-                _.Schema.For<Project2>().UniqueIndex(UniqueIndexType.DuplicatedField, "ix_duplicated_field_name", true, x => x.Name); //have to pass in index name
+                _.Schema.For<ProjectUsingDuplicateField>().MultiTenanted();
+                _.Schema.For<ProjectUsingDuplicateField>().UniqueIndex(UniqueIndexType.DuplicatedField, "ix_duplicated_field_name", true, x => x.Name); //have to pass in index name
                 _.Connection(ConnectionSource.ConnectionString);
 
             });
@@ -150,10 +133,10 @@ namespace Marten.Testing.Schema
             //default tenant unique constraints still work
             using (var session = store.OpenSession())
             {
-                session.Store(new Project2 { Name = "Project A" });
+                session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
                 session.SaveChanges();
 
-                session.Store(new Project2 { Name = "Project A" });
+                session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
 
                 try
                 {
@@ -168,16 +151,16 @@ namespace Marten.Testing.Schema
             //but tenant abc can add a project with the same name
             using (var session = store.OpenSession("abc"))
             {
-                session.Store(new Project2 { Name = "Project A" });
+                session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
                 session.SaveChanges();
             }
 
             //as can tenant def, but only once within the tenant
             using (var session = store.OpenSession("def"))
             {
-                session.Store(new Project2 { Name = "Project A" });
+                session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
                 session.SaveChanges();
-                session.Store(new Project2 { Name = "Project A" });
+                session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
 
                 try
                 {
