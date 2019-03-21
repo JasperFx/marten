@@ -25,8 +25,8 @@ namespace Marten.Schema
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),
                 IndexType,
                 IndexName,
-                IsScopedPerTenant,
-                IndexMethod);
+                IndexMethod, 
+                IsScopedPerTenant);
         }
 
         /// <summary>
