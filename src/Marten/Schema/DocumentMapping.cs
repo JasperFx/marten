@@ -431,7 +431,8 @@ namespace Marten.Schema
                 {
                     Method = indexMethod,
                     IndexName = indexName,
-                    IsUnique = true
+                    IsUnique = true,
+                    IsMultiTenanted = (indexType == UniqueIndexType.Tenanted && this.TenancyStyle == TenancyStyle.Conjoined)
                 };
 
                 var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);

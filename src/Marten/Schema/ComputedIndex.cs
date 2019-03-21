@@ -9,7 +9,7 @@ namespace Marten.Schema
     public class ComputedIndex : IIndexDefinition
     {
         private readonly MemberInfo[][] _members;
-        private readonly string _locator;
+        private string _locator;
         private readonly DbObjectName _table;
         private string _indexName;
 
@@ -92,6 +92,11 @@ namespace Marten.Schema
         /// </summary>
         public SortOrder SortOrder { get; set; } = SortOrder.Asc;
 
+        /// <summary>
+        /// Specifies the unique index is scoped to the tenant
+        /// </summary>
+        public bool IsMultiTenanted { get;set; }
+
         public string ToDDL()
         {
             var index = IsUnique ? "CREATE UNIQUE INDEX" : "CREATE INDEX";
@@ -106,6 +111,11 @@ namespace Marten.Schema
             if (Method != IndexMethod.btree)
             {
                 index += $" USING {Method}";
+            }
+
+	        if (IsMultiTenanted)
+            {
+                _locator = $"{_locator}, tenant_id";
             }
             
             switch (Casing)
