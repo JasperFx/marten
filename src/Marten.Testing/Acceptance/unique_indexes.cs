@@ -112,5 +112,22 @@ namespace Marten.Testing.Acceptance
             });
             // ENDSAMPLE
         }
+
+        [Fact]
+        public void example_using_a_per_tenant_scoped_unique_index()
+        {
+            // SAMPLE: per-tenant-unique-index
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                // This creates a duplicated field unique index on firstname, lastname and tenant_id
+                _.Schema.For<User>().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField,"index_name",true, x =>  x.FirstName, x=>x.LastName);
+
+                // This creates a computed unique index on client name and tenant_id
+                _.Schema.For<Client>().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, "index_name", true, x => x.Name);
+            });
+            // ENDSAMPLE
+        }
     }
 }

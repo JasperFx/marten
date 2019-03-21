@@ -225,6 +225,22 @@ namespace Marten
             }
 
             /// <summary>
+            /// Creates a unique index on this data member within the JSON data storage
+            /// </summary>
+            /// <param name="indexType">Type of the index</param>
+            /// <param name="indexTenancyStyle">Style of tenancy</param>
+            /// <param name="indexName">Name of the index</param>
+            /// <param name="isScopedPerTenant">Whether the unique index applies on a per tenant basis</param>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, bool isScopedPerTenant=false, params Expression<Func<T, object>>[] expressions)
+            {
+                alter = m => m.UniqueIndex(indexType, indexName, isScopedPerTenant, expressions);
+
+                return this;
+            }
+
+            /// <summary>
             /// Creates an index on the predefined Last Modified column
             /// </summary>
             /// <param name="configure"></param>

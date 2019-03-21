@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Marten.Storage;
@@ -45,6 +46,8 @@ namespace Marten.Schema
 
         public string Modifier { get; set; }
 
+        public bool IsScopedPerTenant { get; set; } = false;
+
         public IEnumerable<string> Columns => _columns;
 
         public string ToDDL()
@@ -64,6 +67,12 @@ namespace Marten.Schema
 
             var columns = _columns.Select(column => $"\"{column}\"").Join(", ");
 
+            if (IsScopedPerTenant)
+            {
+                columns += ", tenant_id";
+            }
+
+
             // Only the B-tree index type supports modifying the sort order, and ascending is the default
             if (Method == IndexMethod.btree && SortOrder == SortOrder.Desc)
             {
@@ -79,6 +88,8 @@ namespace Marten.Schema
                 index += $" ({Expression.Replace("?", columns)})";
             }
 
+         
+
             if (Modifier.IsNotEmpty())
             {
                 index += " " + Modifier;
@@ -86,6 +97,8 @@ namespace Marten.Schema
 
             return index + ";";
         }
+
+        
 
         public bool Matches(ActualIndex index)
         {
