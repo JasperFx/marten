@@ -96,7 +96,7 @@ namespace Marten.Schema
         /// <summary>
         /// Specifies the unique index is scoped to the tenant
         /// </summary>
-        public bool IsMultiTenanted { get;set; }
+        public bool IsScopedPerTenant { get;set; }
 
         public string ToDDL()
         {

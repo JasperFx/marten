@@ -27,6 +27,8 @@ namespace Marten.Schema
 
         public bool IsConcurrent { get; set; }
 
+        public bool IsScopedPerTenant { get; set; } = false;
+
         public string IndexName
         {
             get
@@ -45,8 +47,6 @@ namespace Marten.Schema
         public string Expression { get; set; }
 
         public string Modifier { get; set; }
-
-        public bool IsScopedPerTenant { get; set; } = false;
 
         public IEnumerable<string> Columns => _columns;
 
@@ -88,8 +88,6 @@ namespace Marten.Schema
                 index += $" ({Expression.Replace("?", columns)})";
             }
 
-         
-
             if (Modifier.IsNotEmpty())
             {
                 index += " " + Modifier;
@@ -97,8 +95,6 @@ namespace Marten.Schema
 
             return index + ";";
         }
-
-        
 
         public bool Matches(ActualIndex index)
         {
