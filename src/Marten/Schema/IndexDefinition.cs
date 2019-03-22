@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Marten.Storage;
 using Baseline;
+using Marten.Schema.Indexing.Unique;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -27,7 +27,7 @@ namespace Marten.Schema
 
         public bool IsConcurrent { get; set; }
 
-        public bool IsScopedPerTenant { get; set; } = false;
+        public TenancyScope TenancyScope { get; set; } = TenancyScope.Global;
 
         public string IndexName
         {
@@ -67,18 +67,17 @@ namespace Marten.Schema
 
             var columns = _columns.Select(column => $"\"{column}\"").Join(", ");
 
-            if (IsScopedPerTenant)
+            if (TenancyScope == TenancyScope.PerTenant)
             {
                 columns += ", tenant_id";
             }
-
 
             // Only the B-tree index type supports modifying the sort order, and ascending is the default
             if (Method == IndexMethod.btree && SortOrder == SortOrder.Desc)
             {
                 columns += " DESC";
             }
-            
+
             if (Expression.IsEmpty())
             {
                 index += $" ({columns})";

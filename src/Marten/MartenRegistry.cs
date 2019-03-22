@@ -6,6 +6,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using NpgsqlTypes;
 
@@ -230,12 +231,12 @@ namespace Marten
             /// <param name="indexType">Type of the index</param>
             /// <param name="indexTenancyStyle">Style of tenancy</param>
             /// <param name="indexName">Name of the index</param>
-            /// <param name="isScopedPerTenant">Whether the unique index applies on a per tenant basis</param>
+            /// <param name="tenancyScope">Whether the unique index applies on a per tenant basis</param>
             /// <param name="expressions"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, bool isScopedPerTenant = false, params Expression<Func<T, object>>[] expressions)
+            public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, TenancyScope tenancyScope = TenancyScope.Global, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.UniqueIndex(indexType, indexName, isScopedPerTenant, expressions);
+                alter = m => m.UniqueIndex(indexType, indexName, tenancyScope, expressions);
 
                 return this;
             }

@@ -10,6 +10,7 @@ using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Schema.Indexing.Unique;
 using Marten.Services.Includes;
 using Marten.Storage;
 using Marten.Util;
@@ -410,7 +411,7 @@ namespace Marten.Schema
             return index;
         }
 
-        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members,UniqueIndexType indexType = UniqueIndexType.Computed,  string indexName = null,  IndexMethod indexMethod = IndexMethod.btree, bool isScopedPerTenant = false)
+        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members, UniqueIndexType indexType = UniqueIndexType.Computed, string indexName = null, IndexMethod indexMethod = IndexMethod.btree, TenancyScope tenancyScope = TenancyScope.Global)
         {
             if (indexType == UniqueIndexType.DuplicatedField)
             {
@@ -420,7 +421,7 @@ namespace Marten.Schema
                 index.IndexName = indexName;
                 index.Method = indexMethod;
                 index.IsUnique = true;
-                index.IsScopedPerTenant = isScopedPerTenant;
+                index.TenancyScope = tenancyScope;
 
                 return index;
             }
@@ -433,7 +434,7 @@ namespace Marten.Schema
                     Method = indexMethod,
                     IndexName = indexName,
                     IsUnique = true,
-                    IsScopedPerTenant = isScopedPerTenant
+                    TenancyScope = tenancyScope
                 };
 
                 var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
@@ -801,12 +802,12 @@ namespace Marten.Schema
             UniqueIndex(indexType, null, expressions);
         }
 
-        public void UniqueIndex(UniqueIndexType indexType, string indexName,params Expression<Func<T, object>>[] expressions)
+        public void UniqueIndex(UniqueIndexType indexType, string indexName, params Expression<Func<T, object>>[] expressions)
         {
-            UniqueIndex(indexType, indexName, isScopedPerTenant:false,expressions);
+            UniqueIndex(indexType, indexName, tenancyScope: TenancyScope.Global, expressions);
         }
-        
-        public void UniqueIndex(UniqueIndexType indexType,  string indexName, bool isScopedPerTenant=false, params Expression<Func<T, object>>[] expressions)
+
+        public void UniqueIndex(UniqueIndexType indexType, string indexName, TenancyScope tenancyScope = TenancyScope.Global, params Expression<Func<T, object>>[] expressions)
         {
             AddUniqueIndex(
                 expressions
@@ -820,7 +821,7 @@ namespace Marten.Schema
                 indexType,
                 indexName,
                 IndexMethod.btree,
-                isScopedPerTenant);
+                tenancyScope);
         }
 
         /// <summary>
