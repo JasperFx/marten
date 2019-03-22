@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using Marten.Storage;
+using Marten.Schema.Indexing.Unique;
 
 namespace Marten.Schema
 {
@@ -25,8 +25,8 @@ namespace Marten.Schema
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),
                 IndexType,
                 IndexName,
-                IndexMethod, 
-                IsScopedPerTenant);
+                IndexMethod,
+                TenancyScope);
         }
 
         /// <summary>
@@ -52,6 +52,6 @@ namespace Marten.Schema
         /// <summary>
         /// Specify Tenancy for unique index
         /// </summary>
-        public bool IsScopedPerTenant = false;
+        public TenancyScope TenancyScope = TenancyScope.Global;
     }
 }

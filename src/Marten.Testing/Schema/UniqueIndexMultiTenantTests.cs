@@ -1,6 +1,6 @@
 ﻿using System;
 using Marten.Schema;
-using Marten.Storage;
+using Marten.Schema.Indexing.Unique;
 using Npgsql;
 using Shouldly;
 using Xunit;
@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
         private class ProjectUsingDuplicateField : Project { } //used for duplicatedfield index tests
 
         //used for attributes index tests
-        private class UniqueCodePerTenant 
+        private class UniqueCodePerTenant
         {
             public UniqueCodePerTenant()
             {
@@ -35,21 +35,20 @@ namespace Marten.Testing.Schema
 
             public Guid Id { get; set; }
 
-            [UniqueIndex(IsScopedPerTenant = true, IndexType = UniqueIndexType.Computed,IndexName = "ScopedPerTenant")]
+            [UniqueIndex(TenancyScope = TenancyScope.PerTenant, IndexType = UniqueIndexType.Computed, IndexName = "ScopedPerTenant")]
             public string Code { get; set; }
-        }   
+        }
 
         [Fact]
         public void given_two_documents_for_different_tenants_succeeds_using_attribute()
         {
             var store = DocumentStore.For(_ =>
             {
-                //index definition set on attribute of UniqueCodePerTenant 
+                //index definition set on attribute of UniqueCodePerTenant
                 _.Schema.For<UniqueCodePerTenant>().MultiTenanted();
-                
+
                 _.Connection(ConnectionSource.ConnectionString);
                 _.NameDataLength = 100;
-
             });
 
             using (var session = store.OpenSession())
@@ -76,7 +75,7 @@ namespace Marten.Testing.Schema
             var store = DocumentStore.For(_ =>
             {
                 _.Schema.For<Project>().MultiTenanted();
-                _.Schema.For<Project>().UniqueIndex(UniqueIndexType.Computed, "index_name",true,x => x.Name); //have to pass in index name
+                _.Schema.For<Project>().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name); //have to pass in index name
                 _.Connection(ConnectionSource.ConnectionString);
             });
 
@@ -131,14 +130,14 @@ namespace Marten.Testing.Schema
                 _.NameDataLength = 200;
                 _.Schema.For<ProjectUsingDuplicateField>().MultiTenanted();
                 _.Schema.For<ProjectUsingDuplicateField>().DocumentAlias("ProjectUsingDuplicateField");
-                _.Schema.For<ProjectUsingDuplicateField>().UniqueIndex(UniqueIndexType.DuplicatedField, "ix_duplicate_field", true, x => x.Name); //have to pass in index name
-                _.Connection(ConnectionSource.ConnectionString); 
+                _.Schema.For<ProjectUsingDuplicateField>().UniqueIndex(UniqueIndexType.DuplicatedField, "ix_duplicate_field", TenancyScope.PerTenant, x => x.Name); //have to pass in index name
+                _.Connection(ConnectionSource.ConnectionString);
             });
 
             //default tenant unique constraints still work
             using (var session = store.OpenSession())
             {
-                session.Store(new ProjectUsingDuplicateField {Name = "Project A"});
+                session.Store(new ProjectUsingDuplicateField { Name = "Project A" });
                 session.SaveChanges();
 
                 session.Store(new ProjectUsingDuplicateField { Name = "Project A" });

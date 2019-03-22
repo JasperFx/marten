@@ -1,7 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Util;
 
@@ -96,7 +96,7 @@ namespace Marten.Schema
         /// <summary>
         /// Specifies the unique index is scoped to the tenant
         /// </summary>
-        public bool IsScopedPerTenant { get;set; }
+        public TenancyScope TenancyScope { get; set; }
 
         public string ToDDL()
         {
@@ -114,11 +114,11 @@ namespace Marten.Schema
                 index += $" USING {Method}";
             }
 
-            if (IsScopedPerTenant)
+            if (TenancyScope == TenancyScope.PerTenant)
             {
                 _locator = $"{_locator}, tenant_id";
             }
-            
+
             switch (Casing)
             {
                 case Casings.Upper:
@@ -133,7 +133,7 @@ namespace Marten.Schema
                     index += $" ({_locator})";
                     break;
             }
-            
+
             // Only the B-tree index type supports modifying the sort order, and ascending is the default
             if (Method == IndexMethod.btree && SortOrder == SortOrder.Desc)
             {
