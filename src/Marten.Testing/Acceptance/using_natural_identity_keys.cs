@@ -22,6 +22,13 @@ namespace Marten.Testing.Acceptance
             var mapping = DocumentMapping.For<NonStandardWithProp>();
             mapping.IdMember.Name.ShouldBe(nameof(NonStandardWithProp.Name));
         }
+        
+        [Fact]
+        public void finds_the_right_id_member_for_doc_with_both_id_column_and_identity_attribute()
+        {
+            var mapping = DocumentMapping.For<IdAndIdentityAttDoc>();
+            mapping.IdMember.Name.ShouldBe(nameof(IdAndIdentityAttDoc.DocumentId));
+        }
 
         [Fact]
         public void can_persist_with_natural_key()
@@ -76,5 +83,13 @@ namespace Marten.Testing.Acceptance
         public string Name { get; set; }
 
         public DateTime Date { get; set; }
+    }
+
+    public class IdAndIdentityAttDoc
+    {
+        public Guid Id { get; set; }
+        
+        [Identity]
+        public Guid DocumentId { get; set; }
     }
 }
