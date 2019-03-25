@@ -50,12 +50,12 @@ namespace Marten.Util
 
         public static MemberInfo GetPublicPropertyOrField(this Type type, string memberName)
         {
-            return type.GetAllMembersFromTypeHierarchy(
+            return type.GetPublicMembersFromTypeHierarchy(
                 BindingFlags.GetProperty | BindingFlags.GetField
             ).Cast<MemberInfo>().FirstOrDefault(p => p.Name == memberName);
         }
 
-        public static MemberInfo[] GetAllMembersFromTypeHierarchy(this Type type, BindingFlags bindingFlags)
+        public static MemberInfo[] GetPublicMembersFromTypeHierarchy(this Type type, BindingFlags bindingFlags)
         {
             if (!type.IsInterface)
             {
