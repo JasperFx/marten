@@ -50,19 +50,23 @@ namespace Marten.Util
 
         public static MemberInfo GetPublicPropertyOrField(this Type type, string memberName)
         {
-            return type.GetPublicProperties().Cast<MemberInfo>().FirstOrDefault(p => p.Name == memberName)
-                ?? type.GetPublicFields().Cast<MemberInfo>().FirstOrDefault(p => p.Name == memberName);
+            return type.GetAllMembersFromTypeHierarchy(
+                BindingFlags.GetProperty | BindingFlags.GetField
+            ).Cast<MemberInfo>().FirstOrDefault(p => p.Name == memberName);
         }
 
-        public static FieldInfo[] GetPublicFields(this Type type)
+        public static MemberInfo[] GetAllMembersFromTypeHierarchy(this Type type, BindingFlags bindingFlags)
         {
             if (!type.IsInterface)
             {
-                return type.GetFields(BindingFlags.FlattenHierarchy
-                | BindingFlags.Public | BindingFlags.Instance);
+                return type.GetMembers(
+                    bindingFlags
+                    | BindingFlags.FlattenHierarchy
+                    | BindingFlags.Public
+                    | BindingFlags.Instance);
             }
 
-            var fieldInfos = new List<FieldInfo>();
+            var memberInfos = new List<MemberInfo>();
 
             var considered = new List<Type>();
             var queue = new Queue<Type>();
@@ -79,57 +83,19 @@ namespace Marten.Util
                     queue.Enqueue(subInterface);
                 }
 
-                var typeProperties = subType.GetFields(
-                    BindingFlags.FlattenHierarchy
+                var typeProperties = subType.GetMembers(
+                    bindingFlags
+                    | BindingFlags.FlattenHierarchy
                     | BindingFlags.Public
                     | BindingFlags.Instance);
 
                 var newPropertyInfos = typeProperties
-                    .Where(x => !fieldInfos.Contains(x));
+                    .Where(x => !memberInfos.Contains(x));
 
-                fieldInfos.InsertRange(0, newPropertyInfos);
+                memberInfos.InsertRange(0, newPropertyInfos);
             }
 
-            return fieldInfos.ToArray();
-        }
-
-        public static PropertyInfo[] GetPublicProperties(this Type type)
-        {
-            if (!type.IsInterface)
-            {
-                return type.GetProperties(BindingFlags.FlattenHierarchy
-                | BindingFlags.Public | BindingFlags.Instance);
-            }
-
-            var propertyInfos = new List<PropertyInfo>();
-
-            var considered = new List<Type>();
-            var queue = new Queue<Type>();
-            considered.Add(type);
-            queue.Enqueue(type);
-            while (queue.Count > 0)
-            {
-                var subType = queue.Dequeue();
-                foreach (var subInterface in subType.GetInterfaces())
-                {
-                    if (considered.Contains(subInterface)) continue;
-
-                    considered.Add(subInterface);
-                    queue.Enqueue(subInterface);
-                }
-
-                var typeProperties = subType.GetProperties(
-                    BindingFlags.FlattenHierarchy
-                    | BindingFlags.Public
-                    | BindingFlags.Instance);
-
-                var newPropertyInfos = typeProperties
-                    .Where(x => !propertyInfos.Contains(x));
-
-                propertyInfos.InsertRange(0, newPropertyInfos);
-            }
-
-            return propertyInfos.ToArray();
+            return memberInfos.ToArray();
         }
 
         public static string GetPrettyName(this Type t)
