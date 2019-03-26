@@ -6,6 +6,7 @@ using StoryTeller.Grammars.Tables;
 
 namespace Marten.Storyteller.Fixtures
 {
+    [Obsolete("Let's get rid of this soon as its moving to xUnit")]
     public abstract class MatchedFixture : MartenFixture
     {
         protected QueryList<IQueryable<Target>, IQueryable<Target>> Sync = new QueryList<IQueryable<Target>, IQueryable<Target>>(nameof(Sync), "");
