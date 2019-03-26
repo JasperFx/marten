@@ -17,9 +17,9 @@
     <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <LangVersion>7.2</LangVersion>k 
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
-
+  
   <!--SourceLink specific settings-->
   <PropertyGroup>
     <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
@@ -32,17 +32,14 @@
     <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
     <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
   </PropertyGroup>
-  
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <NoWarn>1591;1701;1702</NoWarn>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.0.0" />
     <PackageReference Include="Npgsql.NodaTime" Version="1.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="All" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Marten\Marten.csproj" />
   </ItemGroup>
