@@ -299,8 +299,15 @@ namespace Marten.Schema
 
         public static MemberInfo FindIdMember(Type documentType)
         {
-            return (MemberInfo)GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id") || x.HasAttribute<IdentityAttribute>())
-                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id") || x.HasAttribute<IdentityAttribute>());
+            // Order of finding id member should be
+            // 1) IdentityAttribute on property
+            // 2) IdentityAttribute on field
+            // 3) Id Property
+            // 4) Id field
+            return GetProperties(documentType).FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
+                   ?? documentType.GetFields().FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
+                   ?? (MemberInfo)GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
+                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
         }
 
         private static PropertyInfo[] GetProperties(Type type)
