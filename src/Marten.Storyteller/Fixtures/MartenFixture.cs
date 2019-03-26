@@ -12,6 +12,7 @@ using StructureMap;
 
 namespace Marten.Storyteller.Fixtures
 {
+    [Obsolete("Let's get rid of this soon as its moving to xUnit")]
     public abstract class MartenFixture : Fixture
     {
         protected readonly LightweightCache<Guid, string> IdToName = new LightweightCache<Guid, string>();

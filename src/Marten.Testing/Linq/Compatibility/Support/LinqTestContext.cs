@@ -34,8 +34,15 @@ namespace Marten.Testing.Linq.Compatibility.Support
             testCases.Add(comparison);
         }
 
+        protected static void ordered(Func<IQueryable<Target>, IQueryable<Target>> func)
+        {
+            var comparison = new TargetComparison(func) {Ordered = true};
 
-        private static string[] _methodNames = new string[] {"@where"};
+            testCases.Add(comparison);
+        }
+
+
+        private static string[] _methodNames = new string[] {"@where", nameof(ordered)};
         private static string[] _descriptions;
 
         protected static string[] readDescriptions()
