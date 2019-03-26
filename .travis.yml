@@ -7,6 +7,7 @@ dotnet: 2.1.400
 env:
   global:
     - marten_testing_database="Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
+    - config=Release  
 
 addons:
   postgresql: "10"
