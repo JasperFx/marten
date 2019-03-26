@@ -40,9 +40,24 @@ namespace Marten.Testing.Linq.Compatibility.Support
 
             testCases.Add(comparison);
         }
+        
+        protected static void unordered(Func<IQueryable<Target>, IQueryable<Target>> func)
+        {
+            var comparison = new TargetComparison(func) {Ordered = false};
+
+            testCases.Add(comparison);
+        }
+
+        protected static void selectInOrder<T>(Func<IQueryable<Target>, IQueryable<T>> selector)
+        {
+            var comparison = new OrderedSelectComparison<T>(selector);
+            testCases.Add(comparison);
+        }
+        
+        
 
 
-        private static string[] _methodNames = new string[] {"@where", nameof(ordered)};
+        private static string[] _methodNames = new string[] {"@where", nameof(ordered), nameof(unordered), nameof(selectInOrder)};
         private static string[] _descriptions;
 
         protected static string[] readDescriptions()
