@@ -131,7 +131,7 @@ namespace Marten.Util
                         Expression.Convert(accessor, typeof(object)));
             }
 
-            Expression PropertyOrField(Type memberType, Expression expr, string propertyOrFieldName)
+            Expression PropertyOrField(Expression expr, string propertyOrFieldName)
             {
                 if (!expr.Type.IsInterface)
                 {
@@ -159,7 +159,7 @@ namespace Marten.Util
                 (acc, member) =>
                 {
                     var memberType = member.GetMemberType();
-                    var accessor = PropertyOrField(memberType, acc.Accessor, member.Name);
+                    var accessor = PropertyOrField(acc.Accessor, member.Name);
                     return new
                     {
                         Accessor = memberType.GetTypeInfo().IsEnum
