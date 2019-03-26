@@ -1,0 +1,11 @@
+version: '3'
+services:
+  postgresql:
+    image: "clkao/postgres-plv8:latest"
+    ports:
+     - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+
