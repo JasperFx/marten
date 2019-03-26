@@ -131,16 +131,35 @@ namespace Marten.Util
                         Expression.Convert(accessor, typeof(object)));
             }
 
+            Expression PropertyOrField(Expression expr, string propertyOrFieldName)
+            {
+                if (!expr.Type.IsInterface)
+                {
+                    return Expression.PropertyOrField(expr, propertyOrFieldName);
+                }
+
+                var member = expr.Type.GetPublicPropertyOrField(propertyOrFieldName);
+
+                if (member is PropertyInfo)
+                {
+                    return Expression.Property(expr, member.As<PropertyInfo>());
+                }
+                else
+                {
+                    return Expression.Field(expr, member.As<FieldInfo>());
+                }
+            }
+
             // Build accessor and null checks expressions.
             var aggregatedExpressions = members.Aggregate(new
-                {
-                    Accessor = (Expression) target,
-                    NullChecks = NullCheck(target)
-                },
+            {
+                Accessor = (Expression)target,
+                NullChecks = NullCheck(target)
+            },
                 (acc, member) =>
                 {
                     var memberType = member.GetMemberType();
-                    var accessor = (Expression) Expression.PropertyOrField(acc.Accessor, member.Name);
+                    var accessor = PropertyOrField(acc.Accessor, member.Name);
                     return new
                     {
                         Accessor = memberType.GetTypeInfo().IsEnum

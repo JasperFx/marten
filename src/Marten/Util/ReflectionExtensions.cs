@@ -48,6 +48,56 @@ namespace Marten.Util
             return rawType.IsNullable() ? rawType.GetInnerTypeFromNullable() : rawType;
         }
 
+        public static MemberInfo GetPublicPropertyOrField(this Type type, string memberName)
+        {
+            return type.GetPublicMembersFromTypeHierarchy(
+                BindingFlags.GetProperty | BindingFlags.GetField
+            ).Cast<MemberInfo>().FirstOrDefault(p => p.Name == memberName);
+        }
+
+        public static MemberInfo[] GetPublicMembersFromTypeHierarchy(this Type type, BindingFlags bindingFlags)
+        {
+            if (!type.IsInterface)
+            {
+                return type.GetMembers(
+                    bindingFlags
+                    | BindingFlags.FlattenHierarchy
+                    | BindingFlags.Public
+                    | BindingFlags.Instance);
+            }
+
+            var memberInfos = new List<MemberInfo>();
+
+            var considered = new List<Type>();
+            var queue = new Queue<Type>();
+            considered.Add(type);
+            queue.Enqueue(type);
+            while (queue.Count > 0)
+            {
+                var subType = queue.Dequeue();
+                foreach (var subInterface in subType.GetInterfaces())
+                {
+                    if (considered.Contains(subInterface)) continue;
+
+                    considered.Add(subInterface);
+                    queue.Enqueue(subInterface);
+                }
+
+                var typeProperties = subType.GetMembers(
+                    bindingFlags
+                    | BindingFlags.FlattenHierarchy
+                    | BindingFlags.Public
+                    | BindingFlags.Instance);
+
+                var newPropertyInfos = typeProperties
+                    .Where(x => !memberInfos.Contains(x));
+
+                memberInfos.InsertRange(0, newPropertyInfos);
+            }
+
+            return memberInfos.ToArray();
+        }
+
         public static string GetPrettyName(this Type t)
         {
             if (!t.GetTypeInfo().IsGenericType)
@@ -94,7 +144,6 @@ namespace Marten.Util
 
             return instance.GetType().Namespace == null;
         }
-
 
         /// <summary>
         ///     Derives the full type name *as it would appear in C# code*
