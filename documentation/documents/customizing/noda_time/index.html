@@ -5,7 +5,7 @@
         <meta charset="utf-8">
         <meta name="generator" content="Bootply" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Metadata Indexes</title>
+		<title>Marten - Noda Time support</title>
 		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
 		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -46,8 +46,8 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing/gin_or_gist_index" title="Gin or Gist Indexes">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/noda_time" title="Noda Time support">Next</a></li>
+		      	<li><a href="/marten/documentation/documents/customizing/metadata_index" title="Metadata Indexes">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/customizing/unique" title="Unique Indexes">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
         <div class="form-group">
@@ -62,7 +62,7 @@
 
 		  <div class="container">
 		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Metadata Indexes</li></ol>
+		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Noda Time support</li></ol>
 		  	</nav>
 		  </div>
 
@@ -80,38 +80,40 @@
 
 		        </ul>
 
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/noda_time">Noda Time support</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a></p>
+		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/unique">Unique Indexes</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></p>
 
 		        </ul>
 		      </div><!--/left-->
 		      
 		      <!--right-->
 		      <div class="col-md-9">
-			      	<h1>Metadata Indexes <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/metadata_index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+			      	<h1>Noda Time support <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/noda_time.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 			      
 			      	<hr />
 
 			      	<div id="main-pane">
-			      		<!--Title:Metadata Indexes-->
-<p>The performance of specific queries that include <a href="/marten/documentation/schema/metadata">Metadata</a> columns
-Marten provides some predefined indexes you may optionally enable</p>
-<p>See also <a href="/marten/documentation/documents/querying/metadata_queries">Metadata Queries</a></p>
-<h2 id="last-modified">Last Modified</h2>
-<p>Should you be using the <code>ModifiedSince(DateTimeOffset)</code> or <code>ModifiedBefore(DateTimeOffset)</code> you can ask Marten to create
-an index on the document's <code>mt_last_modified</code> metadata column either using <code>IndexedLastModifiedAttribute</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[IndexedLastModified]&#xD;&#xA;public class Customer&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<p>Or by using the fluent interface:</p>
-<pre><code class="language-csharp">&#xD;&#xA;DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Schema.For&lt;User&gt;().IndexLastModified();&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<h2 id="soft-delete">Soft Delete</h2>
-<p>If using the <a href="/marten/documentation/documents/advanced/soft_deletes">Soft Deletes</a> functionality you can ask Marten
-to create a partial index on the deleted documents either using <code>SoftDeletedAttribute</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[SoftDeleted(Indexed = true)]&#xD;&#xA;public class IndexedSoftDeletedDoc&#xD;&#xA;{&#xD;&#xA;    public Guid Id;&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<p>Or by using the fluent interface:</p>
-<pre><code class="language-csharp">&#xD;&#xA;DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Schema.For&lt;User&gt;().SoftDeletedWithIndex();&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<p>This will help Postgres answer queries using <code>IsDeleted()</code>, <code>DeletedSince(DateTimeOffset)</code> and <code>DeletedBefore(DateTimeOffset)</code>
-much more efficiently, Postgres will only index documents when they are deleted, <code>mt_deleted = true</code>, which also means that the index
-does not need to be updated for any insert or update where <code>mt_deleted = false</code></p>
+			      		<!--title: Noda Time support-->
+<p>Noda Time is an alternative date and time API for .NET. It was written by Jon Skeet to solve many flaws of orginal .NET api. Since version 4.0 Npgsql supports and suggests it as recommended way of working with Date and Time.</p>
+<p>See more in:</p>
+<ul>
+<li><a href="https://www.npgsql.org/doc/types/nodatime.html">Npgsql documentation</a></li>
+<li><a href="https://nodatime.org/">NodaTime documentation</a></li>
+<li><a href="https://blog.nodatime.org/2011/08/what-wrong-with-datetime-anyway.html">Jon Skeet blog post about issues with DateTime</a></li>
+</ul>
+<h2 id="setup">Setup</h2>
+<p>Marten provides <strong>Marten.NodaTime</strong> plugin. That provides nessesary setup.</p>
+<p>Install it through the <a href="https://www.nuget.org/packages/Marten.NodaTime/">Nuget package</a>.</p>
+<pre><code>PM&gt; Install-Package Marten.NodaTime
+</code></pre>
+<p>Then call <code>UseNodaTime()</code> method in your <code>DocumentStore</code> setup:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // sets up NodaTime handling&#xD;&#xA;    _.UseNodaTime();&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<p>By default it also sets up the <code>JsonNetSerializer</code> options (see more details in <a href="https://nodatime.org/2.4.x/api/NodaTime.Serialization.JsonNet.Extensions.html">NodaTime documentation</a>).</p>
+<p>If you're using custom Json serializer or you'd like to maintain fully its configuration then you can set disable default configuration by setting <code>shouldConfigureJsonNetSerializer</code> parameter to <code>false</code>. By changing this setting you need to configure NodaTime Json serialization by yourself.</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.Serializer&lt;CustomJsonSerializer&gt;();&#xD;&#xA;&#xD;&#xA;    // sets up NodaTime handling&#xD;&#xA;    _.UseNodaTime(shouldConfigureJsonNetSerializer: false);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<div class="alert alert-warning">
+By using NodaTime plugin - you're opting out of DateTime type handling. Using DateTime in your Document will end up getting NotSupportedException exception.
+</div>
 
 			      	</div>
 
@@ -119,12 +121,12 @@ does not need to be updated for any insert or update where <code>mt_deleted = fa
 
 			      	<nav class="related-links">
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/gin_or_gist_index">Gin or Gist Indexes</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a>
 
 				        </span>
 				        <span class="pull-right">
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/noda_time">Noda Time support</a>
+				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/unique">Unique Indexes</a>
 
 				        </span>
 			      	</nav>

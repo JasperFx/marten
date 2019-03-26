@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.5.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -98,7 +98,8 @@
 <h2 id="conjoined-tenancy">Conjoined Tenancy</h2>
 <p>The conjoined (<code>TenancyStyle.Conjoined</code>) multi-tenancy in Marten is implemented by associating each record with a tenant identifier. As such, Marten does not guarantee or enforce data isolation via database access privileges.</p>
 <h3 id="effects-on-schema">Effects On Schema</h3>
-<p>Once enabled, <code>TenancyStyle.Conjoined</code> introduces a <code>tenant_id</code> column to Marten tables. This colum, of type <em>varchar</em> with the default value of <em>*DEFAULT*</em> (default tenancy), holds the tenant identifier associated with the record. Furthermore, Marten creates an index on this column by default.</p>
+<p>Once enabled, <code>TenancyStyle.Conjoined</code> introduces a <code>tenant_id</code> column to Marten tables. This colum, of type <em>varchar</em> with the default value of **DEFAULT** (default tenancy), holds the tenant identifier associated with the record. Furthermore, Marten creates an index on this column by default.</p>
+<p>A unique index may optionally be scoped per tenant (see [linkto:documentation/documents/configuration/unique]&gt;).</p>
 
 			      	</div>
 

@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.5.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -99,9 +99,9 @@
 <pre><code class="language-csharp">&#xD;&#xA;public interface IFeatureSchema&#xD;&#xA;{&#xD;&#xA;    IEnumerable&lt;Type&gt; DependentTypes();&#xD;&#xA;    &#xD;&#xA;    bool IsActive(StoreOptions options);&#xD;&#xA;    &#xD;&#xA;    ISchemaObject[] Objects { get; }&#xD;&#xA;    &#xD;&#xA;    Type StorageType { get; }&#xD;&#xA;&#xD;&#xA;    string Identifier { get; }&#xD;&#xA;&#xD;&#xA;    void WritePermissions(DdlRules rules, StringWriter writer);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple
 example that defines a custom table with one column:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class FakeStorage : FeatureSchemaBase&#xD;&#xA;{&#xD;&#xA;    public FakeStorage(StoreOptions options) : base(&quot;fake&quot;, options)&#xD;&#xA;    {&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    protected override IEnumerable&lt;ISchemaObject&gt; schemaObjects()&#xD;&#xA;    {&#xD;&#xA;        var table = new Table(new DbObjectName(Options.DatabaseSchemaName,&quot;mt_fake_table&quot;));&#xD;&#xA;        table.AddColumn(&quot;name&quot;, &quot;varchar&quot;);&#xD;&#xA;&#xD;&#xA;        yield return table;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class FakeStorage : FeatureSchemaBase&#xD;&#xA;{&#xD;&#xA;    public FakeStorage(StoreOptions options) : base(&quot;fake&quot;, options)&#xD;&#xA;    {&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    protected override IEnumerable&lt;ISchemaObject&gt; schemaObjects()&#xD;&#xA;    {&#xD;&#xA;        var table = new Table(new DbObjectName(Options.DatabaseSchemaName, &quot;mt_fake_table&quot;));&#xD;&#xA;        table.AddColumn(&quot;name&quot;, &quot;varchar&quot;);&#xD;&#xA;&#xD;&#xA;        yield return table;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Now, to actually apply this feature to your Marten applications, use this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Creates a new instance of FakeStorage and&#xD;&#xA;    // passes along the current StoreOptions&#xD;&#xA;    _.Storage.Add&lt;FakeStorage&gt;();&#xD;&#xA;    &#xD;&#xA;    // or&#xD;&#xA;    &#xD;&#xA;    _.Storage.Add(new FakeStorage(_));&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Creates a new instance of FakeStorage and&#xD;&#xA;    // passes along the current StoreOptions&#xD;&#xA;    _.Storage.Add&lt;FakeStorage&gt;();&#xD;&#xA;&#xD;&#xA;    // or&#xD;&#xA;&#xD;&#xA;    _.Storage.Add(new FakeStorage(_));&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Do note that when you use the <code>Add&lt;T&gt;()</code> syntax, Marten will pass along the current <code>StoreOptions</code> to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.</p>
 <p>While you <em>can</em> directly implement the <code>ISchemaObject</code> interface for something Marten doesn't already support, it's probably far easier to just configure one of the existing implementations shown in the following sections.</p>
 <ul>

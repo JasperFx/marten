@@ -30,7 +30,7 @@
         <nav class="navbar navbar-default navbar-fixed-top" role="banner">
 		  <div class="container">
 		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.4.0</a>
+		      <a href="/marten" class="navbar-brand">Marten 3.5.0</a>
 		    </div>
 		    <nav class="collapse navbar-collapse" role="navigation">
 		      <ul class="nav navbar-nav pull-right">
@@ -46,7 +46,7 @@
 		        <li>
 <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
 		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing/metadata_index" title="Metadata Indexes">Previous</a></li>
+		      	<li><a href="/marten/documentation/documents/customizing/noda_time" title="Noda Time support">Previous</a></li>
 		      	<li><a href="/marten/documentation/documents/json" title="Json Serialization">Next</a></li>
 		      </ul>
       <div class="navbar-form navbar-left" role="search">
@@ -81,7 +81,7 @@
 		        </ul>
 
 		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/json">Json Serialization</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a></p>
+		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/noda_time">Noda Time support</a></p>
 
 		        </ul>
 		      </div><!--/left-->
@@ -131,11 +131,11 @@ If you don't specify first parameter (index type) - by default it will be create
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;public class Account&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed)]&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Account&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed)]&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;public class Address&#xD;&#xA;{&#xD;&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xD;&#xA;    public string Street { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Address&#xD;&#xA;{&#xD;&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xD;&#xA;    public string Street { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.Computed, IndexName = UniqueIndexName)]&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 If you don't specify IndexType parameter - by default it will be created as computed index.
 </div>
@@ -145,20 +145,23 @@ If you don't specify IndexType parameter - by default it will be created as comp
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;public class Client&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Client&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;public class Person&#xD;&#xA;{&#xD;&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xD;&#xA;    public string SecondName { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Person&#xD;&#xA;{&#xD;&#xA;    private const string UniqueIndexName = &quot;sample_uidx_person&quot;;&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;&#xD;&#xA;    [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField, IndexName = UniqueIndexName)]&#xD;&#xA;    public string SecondName { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
 </div>
 <h2 id="defining-unique-index-through-index-customization">Defining Unique Index through Index customization</h2>
-<p>You have some ability to extend to Computed Index definition to be unique index  by passing a second Lambda <code>Action</code> into
+<p>You have some ability to extend to Computed Index definition to be unique index by passing a second Lambda <code>Action</code> into
 the <code>Index()</code> method and definining <code>IsUnique</code> property as <code>true</code> as shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // The second, optional argument to Index()&#xD;&#xA;    // allows you to customize the calculated index&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.Method = IndexMethod.brin;&#xD;&#xA;&#xD;&#xA;        // Force the index to be generated with casing rules&#xD;&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xD;&#xA;&#xD;&#xA;        // Override the index name if you want&#xD;&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is concurrent&#xD;&#xA;        // Default is false&#xD;&#xA;        x.IsConcurrent = true;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is a UNIQUE&#xD;&#xA;        // index&#xD;&#xA;        x.IsUnique = true;&#xD;&#xA;        &#xD;&#xA;        // Partial index by supplying a condition&#xD;&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xD;&#xA;    });&#xD;&#xA;    &#xD;&#xA;    // For B-tree indexes, it&#x27;s also possible to change&#xD;&#xA;    // the sort order from the default of &quot;ascending&quot;&#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.LastName, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.SortOrder = SortOrder.Desc;&#xD;&#xA;    });&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>Same can be configured for Duplicated Field:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class IndexExamples : MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public IndexExamples()&#xD;&#xA;    {&#xD;&#xA;        // Add a gin index to the User document type&#xD;&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xD;&#xA;&#xD;&#xA;        // Adds a basic btree index to the duplicated&#xD;&#xA;        // field for this property that also overrides&#xD;&#xA;        // the Postgresql database type for the column&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for FirstName&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xD;&#xA;            idx.Method = IndexMethod.hash;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for UserName to be unique&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IsUnique = true;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for LastName to be in descending order&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.LastName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.SortOrder = SortOrder.Desc;&#xD;&#xA;        });&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<h2 id="unique-index-per-tenant">Unique Index per Tenant</h2>
+<p>For tables which have been configured for <p class="bg-warning" style="padding:5px"><b>Unknown topic key '/documentation/documents/tenancy/'</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p>, index definitions may also be scoped per tenant.</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates a duplicated field unique index on firstname, lastname and tenant_id&#xD;&#xA;    _.Schema.For&lt;User&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.FirstName, x =&gt; x.LastName);&#xD;&#xA;&#xD;&#xA;    // This creates a computed unique index on client name and tenant_id&#xD;&#xA;    _.Schema.For&lt;Client&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.Name);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 
 			      	</div>
 
@@ -166,7 +169,7 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 
 			      	<nav class="related-links">
 				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/metadata_index">Metadata Indexes</a>
+				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/noda_time">Noda Time support</a>
 
 				        </span>
 				        <span class="pull-right">
