@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Patching;
 using Marten.Schema;
+using Marten.Services.Deletes;
 using Marten.Storage;
 using Marten.Util;
 
@@ -80,7 +81,7 @@ namespace Marten.Services
         }
 
         public IEnumerable<PatchOperation> Patches()
-        {            
+        {
             return _operations.Value.Enumerate().SelectMany(x => x.Value).OfType<PatchOperation>();
         }
 
@@ -198,7 +199,7 @@ namespace Marten.Services
         {
             var changes = buildChangeSet(batch);
 
-            await batch.ExecuteAsync(token).ConfigureAwait(false);            
+            await batch.ExecuteAsync(token).ConfigureAwait(false);
 
             ClearChanges(changes.Changes);
 
@@ -207,27 +208,22 @@ namespace Marten.Services
 
         private DocumentChange[] determineChanges(UpdateBatch batch)
         {
-            var types = _operations.Value.Enumerate().Select(x => x.Key).TopologicalSort(GetTypeDependencies);
+            var allOperations = _operations.Value.Enumerate().SelectMany(x => x.Value).ToList();
+            var types = _operations.Value.Enumerate().Select(x => x.Key).TopologicalSort(GetTypeDependencies).ToArray();
 
-            foreach (var type in types)
+            allOperations.Sort(new StorageOperationComparer(types));
+
+            foreach (var operation in allOperations)
             {
-                if (!_operations.Value.TryFind(type, out var value))
+                // No Virginia, I do not approve of this but I'm pulling all my hair
+                // out as is trying to make this work
+                if (operation is DocumentStorageOperation)
                 {
-                    continue;
+                    operation.As<DocumentStorageOperation>().Persist(batch, _tenant);
                 }
-
-                foreach (var operation in value)
+                else
                 {
-                    // No Virginia, I do not approve of this but I'm pulling all my hair
-                    // out as is trying to make this work
-                    if (operation is DocumentStorageOperation)
-                    {
-                        operation.As<DocumentStorageOperation>().Persist(batch, _tenant);
-                    }
-                    else
-                    {
-                        batch.Add(operation);
-                    }
+                    batch.Add(operation);
                 }
             }
 
@@ -294,12 +290,10 @@ namespace Marten.Services
                 var list = operationsFor(operation.DocumentType);
                 list.Add(operation);
             }
-
-
         }
 
         private void ClearChanges(DocumentChange[] changes)
-        {                        
+        {
             _operations.Swap(o => ImHashMap<Type, IList<IStorageOperation>>.Empty);
             _events.Clear();
             changes.Each(x => x.ChangeCommitted());
@@ -342,7 +336,73 @@ namespace Marten.Services
             {
                 operations.Remove(operation);
             }
-           
+        }
+
+        private class StorageOperationComparer : IComparer<IStorageOperation>
+        {
+            private readonly Type[] _topologicallyOrderedTypes;
+
+            public StorageOperationComparer(Type[] topologicallyOrderedTypes)
+            {
+                _topologicallyOrderedTypes = topologicallyOrderedTypes;
+            }
+
+            public int Compare(IStorageOperation x, IStorageOperation y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+
+                if (x?.DocumentType == null || y?.DocumentType == null)
+                {
+                    return 0;
+                }
+
+                // Maintain order if same document type and same operation
+                if (x.DocumentType == y.DocumentType && x.GetType() == y.GetType())
+                {
+                    return 0;
+                }
+
+                var xIndex = FindIndex(x);
+                var yIndex = FindIndex(y);
+
+                var xIsDelete = x is DeleteWhere || x is DeleteById;
+                var yIsDelete = y is DeleteWhere || y is DeleteById;
+
+                if (xIsDelete != yIsDelete)
+                {
+                    // Arbitrary order if one is a delete but the other is not, because this will force the sorting
+                    // to try and compare these documents against others and fall in to the below checks.
+                    return -1;
+                }
+
+                if (xIsDelete)
+                {
+                    // Both are deletes, so we need reverse topological order to inserts, updates and upserts
+                    return yIndex.CompareTo(xIndex);
+                }
+
+                // Both are inserts, updates or upserts so topological
+                return xIndex.CompareTo(yIndex);
+            }
+
+            private int FindIndex(IStorageOperation x)
+            {
+                // Will loop through up the inheritance chain until reaches the end or the index is found, used
+                // to handle inheritance as topologically sorted array may not have the subclasses listed
+                var documentType = x.DocumentType;
+                var index = 0;
+
+                do
+                {
+                    index = _topologicallyOrderedTypes.IndexOf(documentType);
+                    documentType = documentType.BaseType;
+                } while (index == -1 && documentType != null);
+
+                return index;
+            }
         }
     }
 
@@ -390,8 +450,6 @@ namespace Marten.Services
         {
             TenantOverride = tenantId;
         }
-
-        
     }
 
     public class UpdateDocument : DocumentStorageOperation
