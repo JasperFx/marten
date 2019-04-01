@@ -800,7 +800,25 @@ namespace Marten.Testing.Acceptance
                     dataConfig: $"((data ->> '{nameof(BlogPost.ItalianText)}'))"
                 );
         }
-    }
+
+        [Fact]
+        public void fts_index_comparison_must_take_into_account_automatic_cast()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Company>()
+                    .FullTextIndex(x => x.Name);
+            });
+
+            // Apply changes
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            // Look at updates after that
+            var patch = theStore.Schema.ToPatch();
+
+            Assert.DoesNotContain("drop index public.mt_doc_company_idx_fts", patch.UpdateDDL);
+        }    
+}
 
     public static class FullTextIndexTestsExtension
     {

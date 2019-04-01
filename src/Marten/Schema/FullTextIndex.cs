@@ -69,8 +69,9 @@ namespace Marten.Schema
             return ddl?.Contains("to_tsvector") == true
                 && ddl?.Contains(IndexName) == true
                 && ddl?.Contains(_table.QualifiedName) == true
-                && ddl?.Contains(_regConfig) == true
-                && ddl?.Contains(_dataConfig) == true;
+                && ddl?.Contains(_regConfig.ToLowerInvariant()) == true
+                // Leave optional parenthesis out of comparison. For the end, needed since for PG (10 and >), there is an automatic text cast, e.g. "(data ->> 'field::text)"                
+                && ddl?.Contains(_dataConfig.ToLowerInvariant().TrimStart('(').TrimEnd(' ', ')')) == true;
         }
 
         private static string GetDataConfig(DocumentMapping mapping, MemberInfo[][] members)
