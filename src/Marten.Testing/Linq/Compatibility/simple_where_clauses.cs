@@ -98,5 +98,12 @@ namespace Marten.Testing.Linq.Compatibility
         {
             return assertTestCase(description, Fixture.Store);
         }
+        
+        [Theory]
+        [MemberData(nameof(GetDescriptions))]
+        public Task with_duplicated_fields(string description)
+        {
+            return assertTestCase(description, Fixture.DuplicatedFieldStore);
+        }
     }
 }
