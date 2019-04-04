@@ -802,6 +802,23 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void wholedoc_fts_index_comparison_works()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>().FullTextIndex();
+            });
+
+            // Apply changes
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            // Look at updates after that
+            var patch = theStore.Schema.ToPatch();
+
+            Assert.DoesNotContain("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
+        }
+
+        [Fact]
         public void fts_index_comparison_must_take_into_account_automatic_cast()
         {
             StoreOptions(_ =>
@@ -817,8 +834,53 @@ namespace Marten.Testing.Acceptance
             var patch = theStore.Schema.ToPatch();
 
             Assert.DoesNotContain("drop index public.mt_doc_company_idx_fts", patch.UpdateDDL);
-        }    
-}
+        }
+
+        [Fact]
+        public void multifield_fts_index_comparison_must_take_into_account_automatic_cast()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>()
+                    .FullTextIndex(x => x.FirstName, x => x.LastName);
+            });
+
+            // Apply changes
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            // Look at updates after that
+            var patch = theStore.Schema.ToPatch();
+
+            Assert.DoesNotContain("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
+        }
+
+        [Fact]
+        public void modified_fts_index_comparison_must_generate_drop()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>()
+                    .FullTextIndex(x => x.FirstName);
+            });
+
+            // Apply changes
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+
+            // Change indexed fields
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+
+                _.Schema.For<User>()
+                    .FullTextIndex(x => x.FirstName, x => x.LastName);
+            });
+
+            // Look at updates after that
+            var patch = store.Schema.ToPatch();
+
+            Assert.Contains("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
+        }
+    }
 
     public static class FullTextIndexTestsExtension
     {
