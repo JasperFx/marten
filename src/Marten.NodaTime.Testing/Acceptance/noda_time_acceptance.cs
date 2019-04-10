@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.NodaTime.Testing.TestData;
 using Marten.Testing;
+using Marten.Testing.Events.Projections;
 using NodaTime;
 using Shouldly;
 using Xunit;
@@ -152,6 +154,29 @@ namespace Marten.NodaTime.Testing.Acceptance
                     () => query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
                     "The CLR type System.DateTime isn't natively supported by Npgsql or your PostgreSQL. To use it with a PostgreSQL composite you need to specify DataTypeName or to map it, please refer to the documentation."
                 );
+            }
+        }
+
+        [Fact]
+        public async Task can_append_and_query_events()
+        {
+            StoreOptions(_ => _.UseNodaTime());
+
+            var streamId = Guid.NewGuid();
+
+            var @event = new MonsterSlayed()
+            {
+                QuestId = Guid.NewGuid(),
+                Name = "test"
+            };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Events.Append(streamId, @event);
+                session.SaveChanges();
+
+                var streamState = session.Events.FetchStreamState(streamId);
+                var streamState2 = await session.Events.FetchStreamStateAsync(streamId);
             }
         }
 

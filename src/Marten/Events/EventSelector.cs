@@ -1,6 +1,5 @@
 using System;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -29,7 +28,7 @@ namespace Marten.Events
             var id = reader.GetGuid(0);
             var eventTypeName = reader.GetString(1);
             var version = reader.GetInt32(2);
-        
+
             var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
@@ -49,7 +48,7 @@ namespace Marten.Events
 
             var sequence = reader.GetFieldValue<long>(4);
             var stream = reader.GetFieldValue<Guid>(5);
-            var timestamp = reader.GetFieldValue<DateTimeOffset>(6);
+            var timestamp = reader.GetValue(6).MapToDateTimeOffet();
             var tenantId = reader.GetFieldValue<string>(7);
 
             var @event = EventStream.ToEvent(data);
@@ -60,7 +59,6 @@ namespace Marten.Events
             @event.Timestamp = timestamp;
             @event.TenantId = tenantId;
 
-
             return @event;
         }
 
@@ -69,7 +67,7 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
-           
+
             var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)
@@ -80,7 +78,7 @@ namespace Marten.Events
                     throw new UnknownEventTypeException(eventTypeName);
                 }
                 Type type;
-                try 
+                try
                 {
                     type = Events.TypeForDotNetName(dotnetTypeName);
                 }
@@ -112,7 +110,7 @@ namespace Marten.Events
 
         public string[] SelectFields()
         {
-            return new[] {"id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, DocumentMapping.DotNetTypeColumn};
+            return new[] { "id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, DocumentMapping.DotNetTypeColumn };
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
