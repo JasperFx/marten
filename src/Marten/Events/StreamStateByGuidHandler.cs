@@ -78,8 +78,8 @@ namespace Marten.Events
             var id = reader.GetFieldValue<T>(0);
             var version = reader.GetFieldValue<int>(1);
             var typeName = reader.IsDBNull(2) ? null : reader.GetFieldValue<string>(2);
-            var timestamp = reader.GetFieldValue<DateTime>(3);
-            var created = reader.GetFieldValue<DateTime>(4);
+            var timestamp = reader.GetValue(3).MapToDateTime();
+            var created = reader.GetValue(4).MapToDateTime();
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())

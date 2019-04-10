@@ -16,6 +16,9 @@ namespace Marten.Util
         private static readonly Ref<ImHashMap<Type, NpgsqlDbType?>> NpgsqlDbTypeMemo;
         private static readonly Ref<ImHashMap<NpgsqlDbType, Type[]>> TypeMemo;
 
+        public static Func<object, DateTime> CustomDateTimeMapping = null;
+        public static Func<object, DateTimeOffset> CustomDateTimeOffsetMapping = null;
+
         public static List<Type> ContainmentOperatorTypes { get; } = new List<Type>();
         public static List<Type> TimespanTypes { get; } = new List<Type>();
         public static List<Type> TimespanZTypes { get; } = new List<Type>();
@@ -285,6 +288,34 @@ namespace Marten.Util
             var type = value.GetType();
 
             return type == typeof(DateTime) || type == typeof(DateTime?);
+        }
+
+        internal static DateTime MapToDateTime(this object value)
+        {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            if (CustomDateTimeMapping != null)
+                return CustomDateTimeMapping(value);
+
+            if (value is DateTime)
+                return (DateTime)value;
+
+            throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTime", nameof(value));
+        }
+
+        internal static DateTimeOffset MapToDateTimeOffet(this object value)
+        {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            if (CustomDateTimeOffsetMapping != null)
+                return CustomDateTimeOffsetMapping(value);
+
+            if (value is DateTimeOffset)
+                return (DateTimeOffset)value;
+
+            throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTimeOffset", nameof(value));
         }
     }
 }

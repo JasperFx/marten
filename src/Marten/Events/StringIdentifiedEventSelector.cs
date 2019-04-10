@@ -42,13 +42,13 @@ namespace Marten.Events
                 var type = Events.TypeForDotNetName(dotnetTypeName);
                 mapping = Events.EventMappingFor(type);
             }
-            
+
             var dataJson = reader.GetTextReader(3);
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
             var sequence = reader.GetFieldValue<long>(4);
             var stream = reader.GetFieldValue<string>(5);
-            var timestamp = reader.GetFieldValue<DateTimeOffset>(6);
+            var timestamp = reader.GetValue(6).MapToDateTimeOffet();
             var tenantId = reader.GetFieldValue<string>(7);
 
             var @event = EventStream.ToEvent(data);
@@ -59,7 +59,6 @@ namespace Marten.Events
             @event.Timestamp = timestamp;
             @event.TenantId = tenantId;
 
-
             return @event;
         }
 
@@ -68,7 +67,7 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(2, token).ConfigureAwait(false);
-          
+
             var mapping = Events.EventMappingFor(eventTypeName);
 
             if (mapping == null)

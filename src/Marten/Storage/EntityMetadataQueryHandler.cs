@@ -33,8 +33,6 @@ namespace Marten.Storage
                 {DocumentMapping.DotNetTypeColumn, fieldIndex++}
             };
 
-
-
             var queryableDocument = _mapping.ToQueryableDocument();
             if (queryableDocument.SelectFields().Contains(DocumentMapping.DocumentTypeColumn))
                 _fields.Add(DocumentMapping.DocumentTypeColumn, fieldIndex++);
@@ -64,7 +62,7 @@ namespace Marten.Storage
             }
 
             sql.Append(" from ");
-            sql.Append((string) _mapping.Table.QualifiedName);
+            sql.Append((string)_mapping.Table.QualifiedName);
             sql.Append(" where id = :id");
 
             sql.AddNamedParameter("id", _id);
@@ -77,7 +75,7 @@ namespace Marten.Storage
             if (!reader.Read()) return null;
 
             var version = reader.GetFieldValue<Guid>(0);
-            var timestamp = reader.GetFieldValue<DateTime>(1);
+            var timestamp = reader.GetValue(1).MapToDateTime();
             var dotNetType = reader.GetFieldValue<string>(2);
             var docType = GetOptionalFieldValue<string>(reader, DocumentMapping.DocumentTypeColumn);
             var deleted = GetOptionalFieldValue<bool>(reader, DocumentMapping.DeletedColumn);
@@ -106,8 +104,6 @@ namespace Marten.Storage
             var deletedAt =
                 await GetOptionalFieldValueAsync<DateTime>(reader, DocumentMapping.DeletedAtColumn, null, token)
                     .ConfigureAwait(false);
-
-
 
             var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
             if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
