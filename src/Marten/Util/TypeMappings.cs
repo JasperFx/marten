@@ -311,7 +311,7 @@ namespace Marten.Util
             throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTime", nameof(value));
         }
 
-        internal static DateTimeOffset MapToDateTimeOffet(this object value)
+        internal static DateTimeOffset MapToDateTimeOffset(this object value)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
