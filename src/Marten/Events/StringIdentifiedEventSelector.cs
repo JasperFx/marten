@@ -48,7 +48,7 @@ namespace Marten.Events
 
             var sequence = reader.GetFieldValue<long>(4);
             var stream = reader.GetFieldValue<string>(5);
-            var timestamp = reader.GetValue(6).MapToDateTimeOffet();
+            var timestamp = reader.GetValue(6).MapToDateTimeOffset();
             var tenantId = reader.GetFieldValue<string>(7);
 
             var @event = EventStream.ToEvent(data);
