@@ -87,7 +87,7 @@ namespace Marten.Events
 
             var sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
             var stream = await reader.GetFieldValueAsync<string>(5, token).ConfigureAwait(false);
-            var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(6, token).ConfigureAwait(false);
+            var timestamp = (await reader.GetFieldValueAsync<object>(6, token).ConfigureAwait(false)).MapToDateTimeOffset();
             var tenantId = await reader.GetFieldValueAsync<string>(7, token).ConfigureAwait(false);
 
             var @event = EventStream.ToEvent(data);
