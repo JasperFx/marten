@@ -298,8 +298,11 @@ namespace Marten.Util
             if (CustomDateTimeMapping != null)
                 return CustomDateTimeMapping(value);
 
-            if (value is DateTime)
-                return (DateTime)value;
+            if (value is DateTimeOffset offset)
+                return offset.DateTime;
+
+            if (value is DateTime dateTime)
+                return dateTime;
 
             throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTime", nameof(value));
         }
@@ -312,8 +315,11 @@ namespace Marten.Util
             if (CustomDateTimeOffsetMapping != null)
                 return CustomDateTimeOffsetMapping(value);
 
-            if (value is DateTimeOffset)
-                return (DateTimeOffset)value;
+            if (value is DateTimeOffset offset)
+                return offset;
+
+            if (value is DateTime dateTime)
+                return new DateTimeOffset(dateTime);
 
             throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTimeOffset", nameof(value));
         }
