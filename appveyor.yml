@@ -6,6 +6,7 @@ configuration: Release
 os: Visual Studio 2017
 
 environment:
+  config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   marten_testing_database: "Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
