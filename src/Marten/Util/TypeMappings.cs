@@ -110,6 +110,7 @@ namespace Marten.Util
                     return "boolean";
 
                 case "integer":
+                case "serial":
                     return "int";
 
                 case "integer[]":
@@ -124,6 +125,12 @@ namespace Marten.Util
 
                 case "timestamp with time zone":
                     return "timestamptz";
+
+                case "array":
+                case "character varying[]":
+                case "varchar[]":
+                case "text[]":
+                    return "array";
             }
 
             return type;

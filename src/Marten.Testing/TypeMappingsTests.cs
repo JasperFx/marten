@@ -82,5 +82,21 @@ namespace Marten.Testing
             var expectedString = "Darth Maroon the First";
             inputString.ReplaceMultiSpace(" ").ShouldBe(expectedString);
         }
+
+        [Fact]
+        public void table_columns_should_match_raw_types()
+        {
+            var serialAsInt = new Marten.Storage.TableColumn("id", "serial");
+            serialAsInt.Equals(new Marten.Storage.TableColumn("id", "int"));
+
+            var varchararrAsArray = new Marten.Storage.TableColumn("comments", "varchar[]");
+            varchararrAsArray.Equals(new Marten.Storage.TableColumn("comments", "array"));
+
+            var charactervaryingAsArray = new Marten.Storage.TableColumn("comments", "character varying[]");
+            charactervaryingAsArray.Equals(new Marten.Storage.TableColumn("comments", "array"));
+
+            var textarrayAsArray = new Marten.Storage.TableColumn("comments", "text[]");
+            charactervaryingAsArray.Equals(new Marten.Storage.TableColumn("comments", "array"));
+        }
     }
 }

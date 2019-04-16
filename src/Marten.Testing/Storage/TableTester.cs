@@ -30,7 +30,8 @@ namespace Marten.Testing.Storage
 
             theTable.AddColumn("name", "text");
             theTable.AddColumn("number", "int");
-        }
+            theTable.AddColumn("rownum", "serial");
+        }    
 
         public void Dispose()
         {
@@ -97,7 +98,7 @@ namespace Marten.Testing.Storage
             existing.ShouldNotBeNull();
 
             existing.PrimaryKey.Name.ShouldBe("id");
-            existing.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number");
+            existing.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number", "rownum");
         }
 
 
@@ -109,7 +110,7 @@ namespace Marten.Testing.Storage
 
             var diff = theTable.FetchDelta(_conn);
             diff.ShouldNotBeNull();
-            diff.Matched.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number");
+            diff.Matched.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number", "rownum");
             diff.Missing.Length.ShouldBe(0);
             diff.Extras.Length.ShouldBe(0);
             diff.Different.Length.ShouldBe(0);
@@ -159,6 +160,19 @@ namespace Marten.Testing.Storage
             diff.Matches.ShouldBeFalse();
 
             diff.Different.Single().Name.ShouldBe("id");
+        }
+
+        [Fact]
+        public void matching_with_columns_same_name_and_synonymn_of_type()
+        {
+            //e.g. serial is an int
+            writeTable();
+
+            var existing = theTable.FetchExisting(_conn);
+            existing._columns.First(c => c.Name == "rownum").Type.ShouldBe("integer");
+
+            var diff = theTable.FetchDelta(_conn);
+            diff.Matches.ShouldBeTrue();
         }
 
        
