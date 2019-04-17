@@ -206,12 +206,34 @@ namespace Marten.Services
             return changes;
         }
 
+        private bool shouldSort(List<IStorageOperation> operations, out IComparer<IStorageOperation> comparer)
+        {
+            comparer = null;
+            if (operations.Count <= 1) return false;
+
+            if (operations.Select(x => x.DocumentType).Distinct().Count() == 1) return false;
+            
+            var types = _operations.Value.Enumerate().Select(x => x.Key).TopologicalSort(GetTypeDependencies).ToArray();
+
+            if (operations.OfType<IDeletion>().Any())
+            {
+                comparer = new StorageOperationWithDeletionsComparer(types);
+            }
+            else
+            {
+                comparer = new StorageOperationByTypeComparer(types);
+            }
+
+            return true;
+        }
+
         private DocumentChange[] determineChanges(UpdateBatch batch)
         {
             var allOperations = _operations.Value.Enumerate().SelectMany(x => x.Value).ToList();
-            var types = _operations.Value.Enumerate().Select(x => x.Key).TopologicalSort(GetTypeDependencies).ToArray();
-
-            allOperations.Sort(new StorageOperationComparer(types));
+            if (shouldSort(allOperations, out var comparer))
+            {
+                allOperations.Sort(comparer);
+            }
 
             foreach (var operation in allOperations)
             {
@@ -338,11 +360,11 @@ namespace Marten.Services
             }
         }
 
-        private class StorageOperationComparer : IComparer<IStorageOperation>
+        private class StorageOperationWithDeletionsComparer : IComparer<IStorageOperation>
         {
             private readonly Type[] _topologicallyOrderedTypes;
 
-            public StorageOperationComparer(Type[] topologicallyOrderedTypes)
+            public StorageOperationWithDeletionsComparer(Type[] topologicallyOrderedTypes)
             {
                 _topologicallyOrderedTypes = topologicallyOrderedTypes;
             }
@@ -385,6 +407,55 @@ namespace Marten.Services
                 }
 
                 // Both are inserts, updates or upserts so topological
+                return xIndex.CompareTo(yIndex);
+            }
+
+            private int FindIndex(IStorageOperation x)
+            {
+                // Will loop through up the inheritance chain until reaches the end or the index is found, used
+                // to handle inheritance as topologically sorted array may not have the subclasses listed
+                var documentType = x.DocumentType;
+                var index = 0;
+
+                do
+                {
+                    index = _topologicallyOrderedTypes.IndexOf(documentType);
+                    documentType = documentType.BaseType;
+                } while (index == -1 && documentType != null);
+
+                return index;
+            }
+        }
+        
+        private class StorageOperationByTypeComparer : IComparer<IStorageOperation>
+        {
+            private readonly Type[] _topologicallyOrderedTypes;
+
+            public StorageOperationByTypeComparer(Type[] topologicallyOrderedTypes)
+            {
+                _topologicallyOrderedTypes = topologicallyOrderedTypes;
+            }
+
+            public int Compare(IStorageOperation x, IStorageOperation y)
+            {
+                if (ReferenceEquals(x, y))
+                {
+                    return 0;
+                }
+
+                if (x?.DocumentType == null || y?.DocumentType == null)
+                {
+                    return 0;
+                }
+
+                if (x.DocumentType == y.DocumentType)
+                {
+                    return 0;
+                }
+
+                var xIndex = FindIndex(x);
+                var yIndex = FindIndex(y);
+
                 return xIndex.CompareTo(yIndex);
             }
 
@@ -450,6 +521,11 @@ namespace Marten.Services
         {
             TenantOverride = tenantId;
         }
+
+        public override string ToString()
+        {
+            return $"{GetType().Name}: {DocumentType.Name}";
+        }
     }
 
     public class UpdateDocument : DocumentStorageOperation
@@ -457,12 +533,22 @@ namespace Marten.Services
         public UpdateDocument(object document) : base(UpdateStyle.Update, document)
         {
         }
+        
+        public override string ToString()
+        {
+            return $"{GetType().Name}: {DocumentType.Name}";
+        }
     }
 
     public class InsertDocument : DocumentStorageOperation
     {
         public InsertDocument(object document) : base(UpdateStyle.Insert, document)
         {
+        }
+        
+        public override string ToString()
+        {
+            return $"{GetType().Name}: {DocumentType.Name}";
         }
     }
 }
