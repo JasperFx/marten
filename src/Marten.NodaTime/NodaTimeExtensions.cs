@@ -32,28 +32,32 @@ namespace Marten.NodaTime
 
         private static DateTime CustomDateTimeMapping(object value)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            if (value is DateTime)
-                return (DateTime)value;
-            if (value is Instant)
-                return ((Instant)value).ToDateTimeUtc();
-
-            throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTime", nameof(value));
+            switch (value)
+            {
+                case null:
+                    throw new ArgumentNullException(nameof(value));
+                case DateTime time:
+                    return time;
+                case Instant instant:
+                    return instant.ToDateTimeUtc();
+                default:
+                    throw new ArgumentException($"Cannot convert type {value.GetType()} to DateTime", nameof(value));
+            }
         }
 
         private static DateTimeOffset CustomDateTimeOffsetMapping(object value)
         {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            if (value is DateTimeOffset)
-                return (DateTimeOffset)value;
-            if (value is Instant)
-                return ((Instant)value).ToDateTimeOffset();
-
-            throw new ArgumentException($"Cannot convert type {value?.GetType()} to DateTimeOffset", nameof(value));
+            switch (value)
+            {
+                case null:
+                    throw new ArgumentNullException(nameof(value));
+                case DateTimeOffset offset:
+                    return offset;
+                case Instant instant:
+                    return instant.ToDateTimeOffset();
+                default:
+                    throw new ArgumentException($"Cannot convert type {value.GetType()} to DateTimeOffset", nameof(value));
+            }
         }
     }
 }
