@@ -17,7 +17,9 @@ namespace Marten.Linq.WhereFragments
         public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
             _regConfig = regConfig;
-            _dataConfig = GetDataConfig(mapping, regConfig);
+            
+            // TODO -- try to delete the damn d. prefix. 
+            _dataConfig = GetDataConfig(mapping, regConfig).Replace("data", "d.data");
             _searchFunction = searchFunction;
             _searchTerm = searchTerm;
         }
