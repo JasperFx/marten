@@ -13,6 +13,12 @@ Or, using paket:
 paket add nuget Marten
 </pre>
 
+Or, using .Net CLI
+
+<pre>
+dotnet add package Marten
+</pre>
+
 The next step is to get access to a PostgreSQL **9.5+** database schema. If you want to let Marten build database schema objects on the fly at development time, 
 make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements. 
 
