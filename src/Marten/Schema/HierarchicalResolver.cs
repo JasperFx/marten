@@ -20,8 +20,10 @@ namespace Marten.Schema
 
         public override T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
+            if (reader.IsDBNull(startingIndex)) return null;
+            
             var id = reader[startingIndex + 1];
-            var typeAlias = reader.GetString(startingIndex + 2);
+            var typeAlias = reader.GetFieldValue<string>(startingIndex + 2);
 
             var version = reader.GetFieldValue<Guid>(startingIndex + 3);
 
@@ -37,7 +39,7 @@ namespace Marten.Schema
 
             var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<Guid>(startingIndex + 3, token).ConfigureAwait(false);
 
             var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
