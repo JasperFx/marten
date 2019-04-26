@@ -56,6 +56,8 @@ Run just mocha tests | `build.cmd mocha` | `build.ps1 mocha` | `build.sh mocha` 
 Run StoryTeller tests | `build.cmd storyteller` | `build.ps1 storyteller` | `build.sh storyteller` | `dotnet run -p martenbuild.csproj -- storyteller`
 Open StoryTeller editor | `build.cmd open_st` | `build.ps1 open_st` | `build.sh open_st` | `dotnet run -p martenbuild.csproj -- open_st`
 Run documentation website locally | `build.cmd docs` | `build.ps1 docs` | `build.sh docs` | `dotnet run -p martenbuild.csproj -- docs`
+Publish docs | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run -p martenbuild.csproj -- publish-docs`
+Run benchmarks | `build.cmd benchmarks` | `build.ps1 benchmarks` | `build.sh benchmarks` | `dotnet run -p martenbuild.csproj -- benchmarks`
 
 > Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
 
