@@ -57,7 +57,7 @@ Run StoryTeller tests | `build.cmd storyteller` | `build.ps1 storyteller` | `bui
 Open StoryTeller editor | `build.cmd open_st` | `build.ps1 open_st` | `build.sh open_st` | `dotnet run -p martenbuild.csproj -- open_st`
 Run documentation website locally | `build.cmd docs` | `build.ps1 docs` | `build.sh docs` | `dotnet run -p martenbuild.csproj -- docs`
 
-Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
+> Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
 
 ### Mocha Specs
 
