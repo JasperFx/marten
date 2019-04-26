@@ -70,7 +70,7 @@ in a watched mode with growl turned on.
 
 ### Storyteller Specs
 
-Refer to build commands section to look up the commands to open the Storyteller editor or run the Storyteller specs.
+Refer to build commands section to look up the commands to open the StoryTeller editor or run the StoryTeller specs.
 
 ### Documentation
 
