@@ -68,34 +68,26 @@ Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
 > Note: content is published to the `gh-pages` branch of this repository by running the `publish-docs.cmd` command.
 
-### Rake Commands
+### Build Commands
 
-```
-# run restore, build and test
-rake
-
-# run all tests including mocha tests
-rake test
-
-# running documentation website locally
-rake docs
-```
+Description | Windows Commandline | PowerShell | Linux Shell
+---|---|---|---
+Run restore, build and test | `build.cmd` | `build.ps1`  | `build.sh`
+Run all tests including mocha tests | `build.cmd test` | `build.ps1 test` | `build.sh test`
+Run documentation website locally | `build.cmd docs` | `build.ps1 docs` | `build.sh docs`
 
 ### DotNet CLI Commands
 
 ```
-# restore nuget libraries
+# Restore NuGet libraries
 dotnet restore src\Marten.sln
 
-# build solution
+# Build solution
 dotnet build src\Marten.sln
 
-# running tests for a specific target framework
+# Run tests for a specific target framework
 dotnet run -p martenbuild.csproj -- test
 
-# mocha tests
-dotnet run -p martenbuild.csproj -- mocha
-
-# running documentation website locally
+# Run documentation website locally
 dotnet run -p martenbuild.csproj -- docs
 ```
