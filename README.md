@@ -42,60 +42,42 @@ You are now ready to contribute to Marten.
 ### Tooling
 
 * Unit Tests rely on [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly)
-* Rake is used for build automation. _It is not mandatory for development_.
+* [Bullseye](https://github.com/adamralph/bullseye) is used for build automation.
 * [Node.js](https://nodejs.org/en/) runs our Mocha specs.
 * [Storyteller](http://storyteller.github.io) for some of the data intensive automated tests
 
+### Build Commands
+
+Description | Windows Commandline | PowerShell | Linux Shell | DotNet CLI
+---|---|---|---|---
+Run restore, build and test | `build.cmd` | `build.ps1`  | `build.sh` | `dotnet build src\Marten.sln`
+Run all tests including mocha tests | `build.cmd test` | `build.ps1 test` | `build.sh test` | `dotnet run -p martenbuild.csproj -- test`
+Run just mocha tests | `build.cmd mocha` | `build.ps1 mocha` | `build.sh mocha` | `dotnet run -p martenbuild.csproj -- mocha`
+Run StoryTeller tests | `build.cmd storyteller` | `build.ps1 storyteller` | `build.sh storyteller` | `dotnet run -p martenbuild.csproj -- storyteller`
+Open StoryTeller editor | `build.cmd open_st` | `build.ps1 open_st` | `build.sh open_st` | `dotnet run -p martenbuild.csproj -- open_st`
+Run documentation website locally | `build.cmd docs` | `build.ps1 docs` | `build.sh docs` | `dotnet run -p martenbuild.csproj -- docs`
+Publish docs | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run -p martenbuild.csproj -- publish-docs`
+Run benchmarks | `build.cmd benchmarks` | `build.ps1 benchmarks` | `build.sh benchmarks` | `dotnet run -p martenbuild.csproj -- benchmarks`
+
+> Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
+
 ### Mocha Specs
 
-To run mocha tests use `rake mocha` or `npm run test`. There is also `npm run tdd` to run the mocha specifications
+Refer to the build commands section to look up the commands to run Mocha tests. There is also `npm run tdd` to run the mocha specifications
 in a watched mode with growl turned on. 
 
 > Note: remember to run `npm install`
 
 ### Storyteller Specs
 
-To open the Storyteller editor, use the command `rake open_st` from the command line or `rake storyeller` to run the Storyteller specs. If you don't want to use rake, you can launch the
-Storyteller editor *after compiling the solution* by the command `packages\storyteller\tools\st.exe open src/Marten.Testing`.
+Refer to build commands section to look up the commands to open the StoryTeller editor or run the StoryTeller specs.
 
 ### Documentation
 
-The documentation content is the markdown files in the `/documentation` directory directly under the project root. To run the documentation website locally with auto-refresh, either use the rake task `rake docs` or the batch script named `run-docs.cmd`. 
+The documentation content is the markdown files in the `/documentation` directory directly under the project root. To run the documentation website locally with auto-refresh, refer to the build commands section above.
 
 If you wish to insert code samples to a documentation page from the tests, wrap the code you wish to insert with
 `// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
-> Note: content is published to the `gh-pages` branch of this repository by running the `publish-docs.cmd` command.
-
-### Rake Commands
-
-```
-# run restore, build and test
-rake
-
-# run all tests including mocha tests
-rake test
-
-# running documentation website locally
-rake docs
-```
-
-### DotNet CLI Commands
-
-```
-# restore nuget libraries
-dotnet restore src\Marten.sln
-
-# build solution
-dotnet build src\Marten.sln
-
-# running tests for a specific target framework
-dotnet run -p martenbuild.csproj -- test
-
-# mocha tests
-dotnet run -p martenbuild.csproj -- mocha
-
-# running documentation website locally
-dotnet run -p martenbuild.csproj -- docs
-```
+> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.

@@ -58,7 +58,7 @@ namespace martenbuild
                 RunStoryTellerDocs($"run -d ../../documentation -c ../../src -v {BUILD_VERSION}"));
 
             // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
-            Target("publish", () =>
+            Target("publish-docs", () =>
             {
                 const string docTargetDir = "doc-target";
 
