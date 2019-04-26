@@ -287,6 +287,33 @@ namespace Marten.Testing.Acceptance
                 posts.Single().Id.ShouldBe(expectedId);
             }
         }
+        
+        [Fact]
+        public void web_search_in_query_sample()
+        {
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: phrase_search_in_query_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.WebSearch("somefilter"))
+                    .ToList();
+                // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
+            }
+        }
 
         [Fact]
         public void text_search_combined_with_other_query_sample()
