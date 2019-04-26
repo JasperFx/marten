@@ -331,7 +331,7 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: phrase_search_in_query_sample
+                // SAMPLE: web_search_in_query_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.WebSearch("somefilter"))
                     .ToList();
