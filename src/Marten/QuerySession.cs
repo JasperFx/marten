@@ -426,5 +426,15 @@ namespace Marten
         {
             return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToListAsync();
         }
+        
+        public IReadOnlyList<TDoc> WebSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
+        {
+            return Query<TDoc>().Where(d => d.WebSearch(searchTerm, regConfig)).ToList();
+        }
+
+        public Task<IReadOnlyList<TDoc>> WebSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
+        {
+            return Query<TDoc>().Where(d => d.WebSearch(searchTerm, regConfig)).ToListAsync();
+        }
     }
 }

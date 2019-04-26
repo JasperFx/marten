@@ -9,7 +9,8 @@ namespace Marten.Linq.Parsing
     {
         to_tsquery,
         plainto_tsquery,
-        phraseto_tsquery
+        phraseto_tsquery,
+        websearch_to_tsquery
     }
 
     public abstract class FullTextSearchMethodCallParser : IMethodCallParser
