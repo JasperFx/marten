@@ -80,4 +80,4 @@ If you wish to insert code samples to a documentation page from the tests, wrap 
 `// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
-> Note: content is published to the `gh-pages` branch of this repository by running the `publish-docs.cmd` command.
+> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
