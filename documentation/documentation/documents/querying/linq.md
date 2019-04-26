@@ -69,7 +69,7 @@ A shorthand for case-insensitive string matching is provided through `EqualsIgno
 
 <[sample:sample-linq-EqualsIgnoreCase]>
 
-This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type. 
+This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type.
 
 ## Count()
 
@@ -154,7 +154,7 @@ A few notes on the `SelectMany()` usage and limitations:
 * You can use any other Linq operator that Marten supports *after* the `SelectMany()` in a Linq query, including the `Stats()` and `Include()` operators
 * `Take()` and `Skip()` operators in a Linq query that contains a `SelectMany()` operator will always apply to the child collection database
   rather than the parent document regardless of the order in which the operators appear in the Linq query
-* You cannot use `SelectMany()` with both a `Distinct()` and a `Count()` operator at this point. 
+* You cannot use `SelectMany()` with both a `Distinct()` and a `Count()` operator at this point.
 
 ## Distinct()
 
@@ -227,6 +227,10 @@ Currently three types of full Text Search functions are supported:
 * phrase Search (phraseto_tsquery)
 
 <[sample:phrase_search_in_query_sample]>
+
+* web-style Search (websearch_to_tsquery, [supported from Postgres 11+](https://www.postgresql.org/docs/11/textsearch-controls.html))
+
+<[sample:web_search_in_query_sample]>
 
 All types of Text Searches can be combined with other Linq queries
 
