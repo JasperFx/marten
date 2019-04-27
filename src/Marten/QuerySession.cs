@@ -427,14 +427,14 @@ namespace Marten
             return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToListAsync();
         }
         
-        public IReadOnlyList<TDoc> WebSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
+        public IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
-            return Query<TDoc>().Where(d => d.WebSearch(searchTerm, regConfig)).ToList();
+            return Query<TDoc>().Where(d => d.WebStyleSearch(searchTerm, regConfig)).ToList();
         }
 
-        public Task<IReadOnlyList<TDoc>> WebSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
+        public Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default)
         {
-            return Query<TDoc>().Where(d => d.WebSearch(searchTerm, regConfig)).ToListAsync();
+            return Query<TDoc>().Where(d => d.WebStyleSearch(searchTerm, regConfig)).ToListAsync();
         }
     }
 }

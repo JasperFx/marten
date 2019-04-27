@@ -327,7 +327,7 @@ namespace Marten
         /// Supported from Postgres 11
         /// See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        IReadOnlyList<TDoc> WebSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+        IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
 
         /// <summary>
         /// Performs an asynchronous full text search against <typeparamref name="TDoc"/> using the 'websearch_to_tsquery' search function
@@ -339,6 +339,6 @@ namespace Marten
         /// Supported from Postgres 11
         /// See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        Task<IReadOnlyList<TDoc>> WebSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
     }
 }
