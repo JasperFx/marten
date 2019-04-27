@@ -195,7 +195,7 @@ namespace Marten
         /// Supported from Postgres 11
         /// See: https://www.postgresql.org/docs/11/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        public static bool WebSearch<T>(this T variable, string searchTerm)
+        public static bool WebStyleSearch<T>(this T variable, string searchTerm)
         {
             return true;
         }
@@ -209,7 +209,7 @@ namespace Marten
         /// Supported from Postgres 11
         /// See: https://www.postgresql.org/docs/11/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
-        public static bool WebSearch<T>(this T variable, string searchTerm, string regConfig)
+        public static bool WebStyleSearch<T>(this T variable, string searchTerm, string regConfig)
         {
             return true;
         }

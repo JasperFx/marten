@@ -306,7 +306,7 @@ namespace Marten.Testing.Acceptance
             {
                 // SAMPLE: web_search_in_query_sample
                 var posts = session.Query<BlogPost>()
-                    .Where(x => x.WebSearch("somefilter"))
+                    .Where(x => x.WebStyleSearch("somefilter"))
                     .ToList();
                 // ENDSAMPLE
 
