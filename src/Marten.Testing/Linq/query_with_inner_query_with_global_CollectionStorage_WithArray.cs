@@ -8,44 +8,41 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
-    public class query_with_inner_query_with_global_CollectionStorage_WithArray : IntegratedFixture
+    public class TypeWithInnerCollections
     {
-        public class TypeWithInnerCollections
+        public Guid Id { get; set; }
+        public string Flatten { get; set; }
+        public string[] Array { get; set; }
+        public List<string> List { get; set; }
+        public IList<string> IList { get; set; }
+
+        public IEnumerable<string> Enumerable { get; set; }
+
+        public IEnumerable<string> IEnumerableFromArray { get; set; }
+
+        public IEnumerable<string> IEnumerbaleFromList { get; set; }
+
+        public ICollection<string> ICollection { get; set; }
+
+        public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
+
+        public IReadOnlyCollection<TypeWithInnerCollections> IReadonlyCollectionOfInnerClasses { get; set; }
+
+        public static TypeWithInnerCollections Create(params string[] array)
         {
-            public Guid Id { get; set; }
-            public string Flatten { get; set; }
-            public string[] Array { get; set; }
-            public List<string> List { get; set; }
-            public IList<string> IList { get; set; }
-
-            public IEnumerable<string> Enumerable { get; set; }
-
-            public IEnumerable<string> IEnumerableFromArray { get; set; }
-
-            public IEnumerable<string> IEnumerbaleFromList { get; set; }
-
-            public ICollection<string> ICollection { get; set; }
-
-            public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
-
-            public IReadOnlyCollection<TypeWithInnerCollections> IReadonlyCollectionOfInnerClasses { get; set; }
-
-            public static TypeWithInnerCollections Create(params string[] array)
+            return new TypeWithInnerCollections()
             {
-                return new TypeWithInnerCollections()
-                {
-                    Id = Guid.NewGuid(),
-                    Flatten = array.Aggregate((i, j) => i + j),
-                    Array = array,
-                    List = array.ToList(),
-                    IList = array.ToList(),
-                    Enumerable = array.AsEnumerable(),
-                    IEnumerableFromArray = array,
-                    IEnumerbaleFromList = array.ToList(),
-                    ICollection = array.ToList(),
-                    IReadonlyCollection = array.ToList(),
-                    IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollections>
+                Id = Guid.NewGuid(),
+                Flatten = array.Aggregate((i, j) => i + j),
+                Array = array,
+                List = array.ToList(),
+                IList = array.ToList(),
+                Enumerable = array.AsEnumerable(),
+                IEnumerableFromArray = array,
+                IEnumerbaleFromList = array.ToList(),
+                ICollection = array.ToList(),
+                IReadonlyCollection = array.ToList(),
+                IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollections>
                     {
                         new TypeWithInnerCollections()
                         {
@@ -61,10 +58,13 @@ namespace Marten.Testing.Linq
                             IReadonlyCollection = array.ToList(),
                         }
                     }
-                };
-            }
+            };
         }
+    }
 
+    [ControlledQueryStoryteller]
+    public class query_with_inner_query_with_global_CollectionStorage_WithArray : IntegratedFixture
+    {
         private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]
         {
             TypeWithInnerCollections.Create("one", "two"),
