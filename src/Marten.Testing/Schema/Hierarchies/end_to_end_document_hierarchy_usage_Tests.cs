@@ -319,7 +319,6 @@ namespace Marten.Testing.Schema.Hierarchies
     public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T>
         where T : IIdentityMap
     {
-        private string _tenant;
         protected User user1 = new User {UserName = "A1", FirstName = "Justin", LastName = "Houston"};
         protected User user2 = new User {UserName = "B1", FirstName = "Tamba", LastName = "Hali"};
 
