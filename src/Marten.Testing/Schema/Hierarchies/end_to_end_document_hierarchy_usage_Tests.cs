@@ -282,6 +282,40 @@ namespace Marten.Testing.Schema.Hierarchies
         }
     }
 
+    public class query_through_mixed_population_Tests_tenanted: IntegratedFixture
+    {
+        public query_through_mixed_population_Tests_tenanted()
+        {
+            StoreOptions(
+            _ =>
+            {
+                _.Policies.AllDocumentsAreMultiTenanted();
+                _.Schema.For<User>().AddSubClass<SuperUser>().AddSubClass<AdminUser>().Duplicate(x => x.UserName);
+            });
+
+            loadData();
+        }
+
+        private void loadData()
+        {
+            using (var session = theStore.OpenSession("tenant_1"))
+            {
+                session.Store(new User(),new AdminUser());
+                session.SaveChanges();
+            }
+        }
+
+        [Fact]
+        public void query_tenanted_data_with_any_tenant_predicate()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var users = session.Query<AdminUser>().Where(u => u.AnyTenant()).ToArray();
+                users.Length.ShouldBeGreaterThan(0);
+            }
+        }
+    }
+
     public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T>
         where T : IIdentityMap
     {
