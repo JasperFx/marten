@@ -218,9 +218,10 @@ namespace Marten
         /// </summary>
         /// <param name="enumStyle"></param>
         /// <param name="casing">Casing style to be used in serialization</param>
-        public void UseDefaultSerialization(EnumStorage enumStyle = EnumStorage.AsInteger, Casing casing = Casing.Default)
+        /// <param name="collectionStorage">Allow to set collection storage as raw arrays (without explicit types)</param>
+        public void UseDefaultSerialization(EnumStorage enumStyle = EnumStorage.AsInteger, Casing casing = Casing.Default, CollectionStorage collectionStorage = CollectionStorage.Default)
         {
-            Serializer(new JsonNetSerializer { EnumStorage = enumStyle, Casing = casing });
+            Serializer(new JsonNetSerializer { EnumStorage = enumStyle, Casing = casing, CollectionStorage = collectionStorage });
         }
 
         /// <summary>

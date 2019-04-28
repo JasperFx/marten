@@ -10,66 +10,78 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_inner_query_with_attribute_typenamehandling_none : IntegratedFixture
+    public class query_with_inner_query : IntegratedFixture
     {
-        public class TypeWithInnerCollections
+        public class TypeWithInnerCollectionsWithJsonConverterAttribute
         {
             public Guid Id { get; set; }
             public string Flatten { get; set; }
             public string[] Array { get; set; }
-
-            [JsonProperty(ItemTypeNameHandling = TypeNameHandling.None)]
-            public IEnumerable<string> Enumerable { get; set; }
-
-            public IEnumerable<string> IEnumerableFromArray { get; set; }
-            public IEnumerable<string> IEnumerbaleFromList { get; set; }
             public List<string> List { get; set; }
             public IList<string> IList { get; set; }
-            public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
-            public IReadOnlyCollection<TypeWithInnerCollections> IReadonlyCollectionOfInnerClasses { get; set; }
 
-            public static TypeWithInnerCollections Create(params string[] array)
+            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+            public IEnumerable<string> Enumerable { get; set; }
+
+            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+            public IEnumerable<string> IEnumerableFromArray { get; set; }
+
+            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+            public IEnumerable<string> IEnumerbaleFromList { get; set; }
+
+            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+            public ICollection<string> ICollection { get; set; }
+
+            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+            public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
+
+            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+            public IReadOnlyCollection<TypeWithInnerCollectionsWithJsonConverterAttribute> IReadonlyCollectionOfInnerClasses { get; set; }
+
+            public static TypeWithInnerCollectionsWithJsonConverterAttribute Create(params string[] array)
             {
-                return new TypeWithInnerCollections()
+                return new TypeWithInnerCollectionsWithJsonConverterAttribute()
                 {
                     Id = Guid.NewGuid(),
-                    Array = array,
                     Flatten = array.Aggregate((i, j) => i + j),
+                    Array = array,
+                    List = array.ToList(),
+                    IList = array.ToList(),
                     Enumerable = array.AsEnumerable(),
                     IEnumerableFromArray = array,
                     IEnumerbaleFromList = array.ToList(),
-                    List = array.ToList(),
-                    IList = array.ToList(),
+                    ICollection = array.ToList(),
                     IReadonlyCollection = array.ToList(),
-                    IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollections>
+                    IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollectionsWithJsonConverterAttribute>
                     {
-                        new TypeWithInnerCollections()
+                        new TypeWithInnerCollectionsWithJsonConverterAttribute()
                         {
                             Id = Guid.NewGuid(),
-                            Array = array,
                             Flatten = array.Aggregate((i, j) => i + j),
-                            Enumerable = array.AsEnumerable(),
-                            IEnumerableFromArray = array,
-                            IEnumerbaleFromList = array.ToList(),
+                            Array = array,
                             List = array.ToList(),
                             IList = array.ToList(),
+                            Enumerable = array.AsEnumerable(),
+                            IEnumerableFromArray = array,
+                            ICollection = array.ToList(),
+                            IEnumerbaleFromList = array.ToList(),
                             IReadonlyCollection = array.ToList(),
                         }
                     }
                 };
             }
-        }
+        };
 
-        private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]
+        private static readonly TypeWithInnerCollectionsWithJsonConverterAttribute[] TestData = new TypeWithInnerCollectionsWithJsonConverterAttribute[]
         {
-            TypeWithInnerCollections.Create("one", "two"),
-            TypeWithInnerCollections.Create("two", "three"),
-            TypeWithInnerCollections.Create("four", "five"),
+            TypeWithInnerCollectionsWithJsonConverterAttribute.Create("one", "two"),
+            TypeWithInnerCollectionsWithJsonConverterAttribute.Create("two", "three"),
+            TypeWithInnerCollectionsWithJsonConverterAttribute.Create("four", "five"),
         };
 
         private const string SearchPhrase = "two";
 
-        public static readonly TheoryData<Expression<Func<TypeWithInnerCollections, bool>>> Predicates = new TheoryData<Expression<Func<TypeWithInnerCollections, bool>>>
+        public static readonly TheoryData<Expression<Func<TypeWithInnerCollectionsWithJsonConverterAttribute, bool>>> Predicates = new TheoryData<Expression<Func<TypeWithInnerCollectionsWithJsonConverterAttribute, bool>>>
         {
             x => x.Array.Contains(SearchPhrase),
             x => x.Enumerable.Contains(SearchPhrase),
@@ -77,6 +89,7 @@ namespace Marten.Testing.Linq
             x => x.IEnumerbaleFromList.Contains(SearchPhrase),
             x => x.List.Contains(SearchPhrase),
             x => x.IList.Contains(SearchPhrase),
+            x => x.ICollection.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Where(e => e == SearchPhrase).Any(),
             x => x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "onetwo").Any() || x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "twothree").Any()
@@ -84,13 +97,13 @@ namespace Marten.Testing.Linq
 
         [Theory]
         [MemberData(nameof(Predicates))]
-        public async Task can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
+        public async Task having_type_with_CollectionToArrayJsonConverter_can_query_against_array_of_string(Expression<Func<TypeWithInnerCollectionsWithJsonConverterAttribute, bool>> predicate)
         {
             SetupTestData();
 
             using (var query = theStore.QuerySession())
             {
-                var results = await query.Query<TypeWithInnerCollections>()
+                var results = await query.Query<TypeWithInnerCollectionsWithJsonConverterAttribute>()
                     .Where(predicate)
                     .ToListAsync();
 

@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Marten.Services;
-using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_inner_query_with_global_typenamehandling_none : IntegratedFixture
+    public class query_with_inner_query_with_global_CollectionStorage_WithArray : IntegratedFixture
     {
         public class TypeWithInnerCollections
         {
@@ -20,17 +18,17 @@ namespace Marten.Testing.Linq
             public string[] Array { get; set; }
             public List<string> List { get; set; }
             public IList<string> IList { get; set; }
-            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter<string>))]
+
             public IEnumerable<string> Enumerable { get; set; }
-            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter<string>))]
+
             public IEnumerable<string> IEnumerableFromArray { get; set; }
-            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter<string>))]
+
             public IEnumerable<string> IEnumerbaleFromList { get; set; }
-            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter<string>))]
+
             public ICollection<string> ICollection { get; set; }
-            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter<string>))]
+
             public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
-            [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter<TypeWithInnerCollections>))]
+
             public IReadOnlyCollection<TypeWithInnerCollections> IReadonlyCollectionOfInnerClasses { get; set; }
 
             public static TypeWithInnerCollections Create(params string[] array)
@@ -92,8 +90,12 @@ namespace Marten.Testing.Linq
 
         [Theory]
         [MemberData(nameof(Predicates))]
-        public async Task can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
+        public async Task having_store_options_with_CollectionStorage_AsArray_can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
         {
+            StoreOptions(options =>
+            {
+                options.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+            });
             SetupTestData();
 
             using (var query = theStore.QuerySession())

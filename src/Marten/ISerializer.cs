@@ -20,7 +20,6 @@ namespace Marten
         /// <returns></returns>
         string ToJson(object document);
 
-
         /// <summary>
         /// Deserialize a JSON string into an object of type T
         /// </summary>
@@ -52,7 +51,10 @@ namespace Marten
         EnumStorage EnumStorage { get; }
 
         Casing Casing { get; }
+
+        CollectionStorage CollectionStorage { get; }
     }
+
     // ENDSAMPLE
 
     public enum EnumStorage
@@ -66,5 +68,11 @@ namespace Marten
         Default,
         CamelCase,
         SnakeCase
+    }
+
+    public enum CollectionStorage
+    {
+        Default,
+        AsArray
     }
 }
