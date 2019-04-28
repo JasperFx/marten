@@ -189,6 +189,8 @@ namespace Marten.NodaTime.Testing.Acceptance
 
             public Casing Casing => throw new NotImplementedException();
 
+            public CollectionStorage CollectionStorage => throw new NotImplementedException();
+
             public T FromJson<T>(TextReader reader)
             {
                 throw new NotImplementedException();
