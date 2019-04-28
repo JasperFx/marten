@@ -10,7 +10,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_inner_query : IntegratedFixture
+    public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty : IntegratedFixture
     {
         public class TypeWithInnerCollectionsWithJsonConverterAttribute
         {
