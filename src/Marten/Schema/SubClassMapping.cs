@@ -102,7 +102,7 @@ namespace Marten.Schema
                 yield return DocumentMapping.ExcludeSoftDeletedDocuments();
             }
 
-            if (Parent.TenancyStyle == TenancyStyle.Conjoined)
+            if (Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
             {
                 yield return new TenantWhereFragment();
             }

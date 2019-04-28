@@ -282,9 +282,25 @@ namespace Marten.Testing.Schema.Hierarchies
         }
     }
 
+    public class query_through_mixed_population_Tests_tenanted : end_to_end_document_hierarchy_usage_Tests<IdentityMap>
+    {
+        public query_through_mixed_population_Tests_tenanted(): base("tenant_1")
+        {
+            loadData();
+        }
+
+        [Fact]
+        public void query_tenanted_data_with_any_tenant_predicate()
+        {
+            var users = theSession.Query<AdminUser>().Where(u => u.AnyTenant()).ToArray();
+            users.Length.ShouldBeGreaterThan(0);
+        }
+    }
+
     public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T>
         where T : IIdentityMap
     {
+        private string _tenant;
         protected User user1 = new User {UserName = "A1", FirstName = "Justin", LastName = "Houston"};
         protected User user2 = new User {UserName = "B1", FirstName = "Tamba", LastName = "Hali"};
 
@@ -320,20 +336,25 @@ namespace Marten.Testing.Schema.Hierarchies
             Role = "Master"
         };
 
-        protected end_to_end_document_hierarchy_usage_Tests()
+        protected end_to_end_document_hierarchy_usage_Tests(string tenant=Marten.Storage.Tenancy.DefaultTenantId)
         {
+            _tenant = tenant;
+                
             StoreOptions(
                 _ =>
                 {
+                    _.Policies.AllDocumentsAreMultiTenanted();
                     _.Schema.For<User>().AddSubClass<SuperUser>().AddSubClass<AdminUser>().Duplicate(x => x.UserName);
                 });
         }
 
         protected void loadData()
         {
-            theSession.Store(user1, user2, admin1, admin2, super1, super2);
-
-            theSession.SaveChanges();
+            using (var session = theStore.OpenSession(_tenant))
+            {
+                session.Store(user1, user2, admin1, admin2, super1, super2);
+                session.SaveChanges();
+            }
         }
     }
 }
