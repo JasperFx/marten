@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten.Services.Json;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
@@ -17,22 +18,22 @@ namespace Marten.Testing.Linq
         public List<string> List { get; set; }
         public IList<string> IList { get; set; }
 
-        [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+        [JsonConverter(typeof(JsonNetCollectionToArrayJsonConverter))]
         public IEnumerable<string> Enumerable { get; set; }
 
-        [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+        [JsonConverter(typeof(JsonNetCollectionToArrayJsonConverter))]
         public IEnumerable<string> IEnumerableFromArray { get; set; }
 
-        [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+        [JsonConverter(typeof(JsonNetCollectionToArrayJsonConverter))]
         public IEnumerable<string> IEnumerbaleFromList { get; set; }
 
-        [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+        [JsonConverter(typeof(JsonNetCollectionToArrayJsonConverter))]
         public ICollection<string> ICollection { get; set; }
 
-        [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+        [JsonConverter(typeof(JsonNetCollectionToArrayJsonConverter))]
         public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
 
-        [JsonConverter(typeof(Marten.Util.CollectionToArrayJsonConverter))]
+        [JsonConverter(typeof(JsonNetCollectionToArrayJsonConverter))]
         public IReadOnlyCollection<TypeWithInnerCollectionsWithJsonConverterAttribute> IReadonlyCollectionOfInnerClasses { get; set; }
 
         public static TypeWithInnerCollectionsWithJsonConverterAttribute Create(params string[] array)

@@ -3,17 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace Marten.Util
+namespace Marten.Services.Json
 {
     /// <summary>
     /// Serialize collection type property to JSON array using a custom Newtonsoft.Json JsonConverter
     /// Note that without using custom `JsonConverter`, `Newtonsoft.Json` stores it as $type and $value.
     /// Or you may need to resort to `Newtonsoft.Json.TypeNameHandling.None` which has its own side-effects
     /// </summary>
-    /// <typeparam name="T">Type of the collection</typeparam>
-    public class CollectionToArrayJsonConverter : JsonConverter
+    public class JsonNetCollectionToArrayJsonConverter : JsonConverter
     {
-        public static CollectionToArrayJsonConverter Instance = new CollectionToArrayJsonConverter();
+        public static JsonNetCollectionToArrayJsonConverter Instance = new JsonNetCollectionToArrayJsonConverter();
 
         private readonly static List<Type> _types = new List<Type>
         {
