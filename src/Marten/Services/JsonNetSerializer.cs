@@ -129,7 +129,7 @@ namespace Marten.Services
         }
 
         /// <summary>
-        /// Specify whether properties in the JSON document should use Camel or Pascal casing.
+        /// Specify whether collections should be stored as json arrays (without type names)
         /// </summary>
         public CollectionStorage CollectionStorage
         {

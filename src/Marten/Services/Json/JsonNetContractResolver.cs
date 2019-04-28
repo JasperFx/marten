@@ -27,9 +27,9 @@ namespace Marten.Services.Json
         {
             var property = base.CreateProperty(member, memberSerialization);
 
-            if (CollectionStorage == CollectionStorage.AsArray && CollectionToArrayJsonConverter.Instance.CanConvert(property.PropertyType))
+            if (CollectionStorage == CollectionStorage.AsArray && JsonNetCollectionToArrayJsonConverter.Instance.CanConvert(property.PropertyType))
             {
-                property.Converter = CollectionToArrayJsonConverter.Instance;
+                property.Converter = JsonNetCollectionToArrayJsonConverter.Instance;
             }
             return property;
         }
