@@ -162,6 +162,8 @@ namespace Marten.NodaTime.Testing.Acceptance
         {
             StoreOptions(_ => _.UseNodaTime());
 
+            var startDate = DateTime.UtcNow;
+
             var streamId = Guid.NewGuid();
 
             var @event = new MonsterSlayed()
@@ -177,6 +179,7 @@ namespace Marten.NodaTime.Testing.Acceptance
 
                 var streamState = session.Events.FetchStreamState(streamId);
                 var streamState2 = await session.Events.FetchStreamStateAsync(streamId);
+                var streamState3 = session.Events.FetchStream(streamId, timestamp: startDate);
             }
         }
 
