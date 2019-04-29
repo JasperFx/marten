@@ -26,7 +26,7 @@ namespace Marten.Testing.Schema
                 "REFERENCES public.mt_doc_user (id);");
 
             new ForeignKeyDefinition("user_id", _issueMapping, _userMapping).ToDDL()
-                .ShouldBe(expected);
+                                                                            .ShouldBe(expected);
         }
 
         [Fact]
@@ -41,6 +41,25 @@ namespace Marten.Testing.Schema
                 "REFERENCES schema2.mt_doc_user (id);");
 
             new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema).ToDDL()
+                                                                                                .ShouldBe(expected);
+        }
+    }
+
+    public class ExternalForeignKeyDefinitionTests
+    {
+        private readonly DocumentMapping _userMapping = DocumentMapping.For<User>();
+
+        [Fact]
+        public void generate_ddl()
+        {
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE public.mt_doc_user",
+                "ADD CONSTRAINT mt_doc_user_user_id_fkey FOREIGN KEY (user_id)",
+                "REFERENCES external_schema.external_table (external_id);");
+
+            new ExternalForeignKeyDefinition("user_id", _userMapping,
+                    "external_schema", "external_table", "external_id")
+                .ToDDL()
                 .ShouldBe(expected);
         }
     }
