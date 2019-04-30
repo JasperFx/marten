@@ -36,8 +36,8 @@ public class Bug_1258_cannot_derive_updates_for_objects : IntegratedFixture
             using (var session = theStore.OpenSession())
             {
                 var cmd = new NpgsqlCommand(@"
-                    DROP CAST (text AS cust_type);
-                    DROP CAST (cust_type AS text);
+                    DROP CAST IF EXISTS (text AS cust_type);
+                    DROP CAST IF EXISTS (cust_type AS text);
                     DROP OPERATOR CLASS IF EXISTS cust_type_ops USING btree;
                     DROP OPERATOR IF EXISTS ~=~ (cust_type, cust_type);
                     DROP OPERATOR IF EXISTS ~<>~ (cust_type, cust_type);
