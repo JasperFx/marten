@@ -171,7 +171,7 @@ namespace Marten.Storage
             var nameParam = builder.AddParameter(Identifier.Name).ParameterName;
 
             builder.Append($@"
-select column_name, data_type, character_maximum_length 
+select column_name, data_type, character_maximum_length, udt_name
 from information_schema.columns where table_schema = :{schemaParam} and table_name = :{nameParam}
 order by ordinal_position;
 
@@ -385,6 +385,11 @@ where
             while (reader.Read())
             {
                 var column = new TableColumn(reader.GetString(0), reader.GetString(1));
+
+                if (column.Type.Equals("user-defined"))
+                {
+                    column.Type = reader.GetString(3);
+                }
 
                 if (!reader.IsDBNull(2))
                 {
