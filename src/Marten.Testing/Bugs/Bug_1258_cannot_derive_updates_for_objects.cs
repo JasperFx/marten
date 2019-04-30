@@ -36,6 +36,8 @@ public class Bug_1258_cannot_derive_updates_for_objects : IntegratedFixture
             using (var session = theStore.OpenSession())
             {
                 var cmd = new NpgsqlCommand(@"
+                    DROP CAST (text AS cust_type);
+                    DROP CAST (cust_type AS text);
                     DROP OPERATOR CLASS IF EXISTS cust_type_ops USING btree;
                     DROP OPERATOR IF EXISTS ~=~ (cust_type, cust_type);
                     DROP OPERATOR IF EXISTS ~<>~ (cust_type, cust_type);
@@ -146,7 +148,10 @@ public class Bug_1258_cannot_derive_updates_for_objects : IntegratedFixture
                        OPERATOR 3 ~=~(cust_type,cust_type),
                        OPERATOR 4 ~>=~(cust_type,cust_type),
                        OPERATOR 5 ~>~(cust_type,cust_type),
-                       FUNCTION 1 cust_type_compare(cust_type,cust_type);", session.Connection);
+                       FUNCTION 1 cust_type_compare(cust_type,cust_type);
+
+                    CREATE CAST (text AS cust_type) WITH INOUT AS IMPLICIT;
+                    CREATE CAST (cust_type AS text) WITH INOUT AS IMPLICIT;", session.Connection);
                 cmd.ExecuteNonQuery();
             }
 
