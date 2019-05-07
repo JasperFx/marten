@@ -50,7 +50,7 @@ namespace Marten.Testing.Schema
         private readonly DocumentMapping _userMapping = DocumentMapping.For<User>();
 
         [Fact]
-        public void generate_ddl()
+        public void generate_ddl_without_cascade()
         {
             var expected = string.Join(Environment.NewLine,
                 "ALTER TABLE public.mt_doc_user",
@@ -58,7 +58,22 @@ namespace Marten.Testing.Schema
                 "REFERENCES external_schema.external_table (external_id);");
 
             new ExternalForeignKeyDefinition("user_id", _userMapping,
-                    "external_schema", "external_table", "external_id")
+                    "external_schema", "external_table", "external_id", false)
+                .ToDDL()
+                .ShouldBe(expected);
+        }
+
+        [Fact]
+        public void generate_ddl_with_cascade()
+        {
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE public.mt_doc_user",
+                "ADD CONSTRAINT mt_doc_user_user_id_fkey FOREIGN KEY (user_id)",
+                "REFERENCES external_schema.external_table (external_id)",
+                "ON DELETE CASCADE;");
+
+            new ExternalForeignKeyDefinition("user_id", _userMapping,
+                    "external_schema", "external_table", "external_id", true)
                 .ToDDL()
                 .ShouldBe(expected);
         }
