@@ -3,6 +3,7 @@ using Marten.Util;
 using Npgsql;
 using System;
 using System.Linq;
+using NpgsqlTypes;
 
 namespace Marten.Linq
 {
@@ -40,6 +41,7 @@ namespace Marten.Linq
 
     public class WhereFragment : CustomizableWhereFragment
     {
-        public WhereFragment(string sql, params object[] parameters) : base(sql, "?", parameters.Select(x => Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(x, null)).ToArray()) { }
+        public WhereFragment(string sql, params object[] parameters) : base(sql, "?", parameters.Select(x => Tuple.Create<object, NpgsqlDbType?>(x, TypeMappings.TryGetDbType(x.GetType()))).ToArray()) { }
+
     }
 }

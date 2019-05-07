@@ -25,6 +25,8 @@ namespace Marten.Util
             // Initialize PgTypeMemo with Types which are not available in Npgsql mappings
             PgTypeMemo = Ref.Of(ImHashMap<Type, string>.Empty);
 
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(uint), "oid"));
+
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(long), "bigint"));
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(string), "varchar"));
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(float), "decimal"));
@@ -41,6 +43,8 @@ namespace Marten.Util
 
             AddTimespanTypes(NpgsqlDbType.Timestamp, ResolveTypes(NpgsqlDbType.Timestamp));
             AddTimespanTypes(NpgsqlDbType.TimestampTz, ResolveTypes(NpgsqlDbType.TimestampTz));
+            
+            RegisterMapping(typeof(uint), "oid", NpgsqlDbType.Oid);
         }
 
         public static void RegisterMapping(Type type, string pgType, NpgsqlDbType? npgsqlDbType)
@@ -186,36 +190,80 @@ namespace Marten.Util
         /// </summary>
         public static NpgsqlDbType ToDbType(Type type)
         {
+            if (determineNpgsqlDbType(type, out var dbType)) return dbType;
+
+            throw new NotSupportedException("Can't infer NpgsqlDbType for type " + type);
+        }
+
+        public static NpgsqlDbType? TryGetDbType(Type type)
+        {
+            if (determineNpgsqlDbType(type, out var dbType)) return dbType;
+
+            return null;
+        }
+
+        private static bool determineNpgsqlDbType(Type type, out NpgsqlDbType dbType)
+        {
             var npgsqlDbType = ResolveNpgsqlDbType(type);
             if (npgsqlDbType != null)
             {
-                return npgsqlDbType.Value;
+                {
+                    dbType = npgsqlDbType.Value;
+                    return true;
+                }
             }
 
-            if (type.IsNullable()) return ToDbType(type.GetInnerTypeFromNullable());
+            if (type.IsNullable())
+            {
+                dbType = ToDbType(type.GetInnerTypeFromNullable());
+                return true;
+            }
 
-            if (type.IsEnum) return NpgsqlDbType.Integer;
+            if (type.IsEnum)
+            {
+                dbType = NpgsqlDbType.Integer;
+                return true;
+            }
 
             if (type.IsArray)
             {
                 if (type == typeof(byte[]))
-                    return NpgsqlDbType.Bytea;
-                return NpgsqlDbType.Array | ToDbType(type.GetElementType());
+                {
+                    dbType = NpgsqlDbType.Bytea;
+                    return true;
+                }
+
+                {
+                    dbType = NpgsqlDbType.Array | ToDbType(type.GetElementType());
+                    return true;
+                }
             }
 
             var typeInfo = type.GetTypeInfo();
 
-            var ilist = typeInfo.ImplementedInterfaces.FirstOrDefault(x => x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>));
+            var ilist = typeInfo.ImplementedInterfaces.FirstOrDefault(x =>
+                x.GetTypeInfo().IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>));
             if (ilist != null)
-                return NpgsqlDbType.Array | ToDbType(ilist.GetGenericArguments()[0]);
+            {
+                dbType = NpgsqlDbType.Array | ToDbType(ilist.GetGenericArguments()[0]);
+                return true;
+            }
 
             if (typeInfo.IsGenericType && type.GetGenericTypeDefinition() == typeof(NpgsqlRange<>))
-                return NpgsqlDbType.Range | ToDbType(type.GetGenericArguments()[0]);
+            {
+                dbType = NpgsqlDbType.Range | ToDbType(type.GetGenericArguments()[0]);
+                return true;
+            }
 
             if (type == typeof(DBNull))
-                return NpgsqlDbType.Unknown;
+            {
+                dbType = NpgsqlDbType.Unknown;
+                return true;
+            }
 
-            throw new NotSupportedException("Can't infer NpgsqlDbType for type " + type);
+            dbType = NpgsqlDbType.Bit;
+
+            return false;
         }
 
         public static string GetPgType(Type memberType, EnumStorage enumStyle)
