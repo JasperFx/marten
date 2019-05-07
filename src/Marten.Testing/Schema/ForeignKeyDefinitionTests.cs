@@ -30,6 +30,20 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
+        public void generate_ddl_with_cascade()
+        {
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE public.mt_doc_issue",
+                "ADD CONSTRAINT mt_doc_issue_user_id_fkey FOREIGN KEY (user_id)",
+                "REFERENCES public.mt_doc_user (id)",
+                "ON DELETE CASCADE;");
+
+            new ForeignKeyDefinition("user_id", _issueMapping, _userMapping, true)
+                .ToDDL()
+                .ShouldBe(expected);
+        }
+
+        [Fact]
         public void generate_ddl_on_other_schema()
         {
             var issueMappingOtherSchema = DocumentMapping.For<Issue>("schema1");
@@ -42,6 +56,23 @@ namespace Marten.Testing.Schema
 
             new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema).ToDDL()
                                                                                                 .ShouldBe(expected);
+        }
+
+        [Fact]
+        public void generate_ddl_on_other_schema_with_cascade()
+        {
+            var issueMappingOtherSchema = DocumentMapping.For<Issue>("schema1");
+            var userMappingOtherSchema = DocumentMapping.For<User>("schema2");
+
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE schema1.mt_doc_issue",
+                "ADD CONSTRAINT mt_doc_issue_user_id_fkey FOREIGN KEY (user_id)",
+                "REFERENCES schema2.mt_doc_user (id)",
+                "ON DELETE CASCADE;");
+
+            new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema, true)
+                .ToDDL()
+                .ShouldBe(expected);
         }
     }
 
