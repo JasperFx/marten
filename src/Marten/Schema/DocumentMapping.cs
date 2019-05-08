@@ -501,19 +501,19 @@ namespace Marten.Schema
             return index;
         }
 
-        public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType, bool cascadeDeletes = false)
+        public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
         {
             var field = FieldFor(memberName);
-            return AddForeignKey(field.Members, referenceType, cascadeDeletes);
+            return AddForeignKey(field.Members, referenceType);
         }
 
-        public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType, bool cascadeDeletes = false)
+        public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType)
         {
             var referenceMapping = _storeOptions.Storage.MappingFor(referenceType);
 
             var duplicateField = DuplicateField(members);
 
-            var foreignKey = new ForeignKeyDefinition(duplicateField.ColumnName, this, referenceMapping, cascadeDeletes);
+            var foreignKey = new ForeignKeyDefinition(duplicateField.ColumnName, this, referenceMapping);
             ForeignKeys.Add(foreignKey);
 
             return foreignKey;
@@ -894,7 +894,7 @@ namespace Marten.Schema
             indexConfiguration?.Invoke(indexDefinition);
         }
 
-        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName, bool cascadeDeletes,
+        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName,
                                Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
         {
             var visitor = new FindMembers();
@@ -902,7 +902,7 @@ namespace Marten.Schema
 
             var duplicateField = DuplicateField(visitor.Members.ToArray());
 
-            var foreignKey = new ExternalForeignKeyDefinition(duplicateField.ColumnName, this, schemaName, tableName, columnName, cascadeDeletes);
+            var foreignKey = new ExternalForeignKeyDefinition(duplicateField.ColumnName, this, schemaName, tableName, columnName);
             foreignKeyConfiguration?.Invoke(foreignKey);
             ForeignKeys.Add(foreignKey);
         }

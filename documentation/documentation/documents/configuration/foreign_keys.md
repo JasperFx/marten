@@ -32,6 +32,30 @@ In the `Issue` referencing `User` example above, this means that if you create a
 `Issue` in the same session, when you call `IDocumentSession.SaveChanges()/SaveChangesAsync()`, Marten will know
 to save the new user first so that the issue will not fail with referential integrity violations.
 
+## Foreign Keys to non-Marten tables
+
+Marten can also create a foreign key to tables that are not managed by Marten.  Continuing the our sample
+of `Issue`, we can create a foreign key from our `Issue` to our external bug tracking system:
+
+<[sample:configure-external-foreign-key]>
+
+With the configuration above, Marten will generate a foreign key constraint from the `Issue` to a table in the 
+`bug-tracker` schema called `bugs` on the `id` column.  The constraint would be defined as:
+
+<pre>
+ALTER TABLE public.mt_doc_issue
+ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (bug_id)
+REFERENCES bug-tracker.bugs (id);
+</pre>
+
+## Cascading deletes
+
+Marten can also cascade deletes on the foreign keys that it creates.  The `ForeignKeyDefinition` has a 
+`CascadeDeletes` property that indicates whether the foreign key should enable cascading deletes.  One way
+to enable this is to use a configuration function like:
+
+<[sample:cascade_deletes_with_config_func]>
+
 ## Configuring with Attributes
 
 You can optionally configure properties or fields as foreign key relationships with the `[ForeignKey]` attribute:

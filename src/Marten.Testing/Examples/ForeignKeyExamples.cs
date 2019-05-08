@@ -35,5 +35,18 @@ var store = DocumentStore.For(_ =>
 });
             // ENDSAMPLE
         }
+
+        public void cascade_deletes_1()
+        {
+            // SAMPLE: cascade_deletes_with_config_func
+var store = DocumentStore.For(_ =>
+{
+  _.Connection("some database connection");
+
+  _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
+});
+            // ENDSAMPLE
+
+        }
     }
 }

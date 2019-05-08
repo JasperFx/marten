@@ -13,11 +13,10 @@ namespace Marten.Schema
         private readonly Func<ForeignKeyDefinition, string> _fkeyColumnRefFunc;
         private readonly Func<ForeignKeyDefinition, string> _fkeyExtraFunc;
 
-        public ForeignKeyDefinition(string columnName, DocumentMapping parent, DocumentMapping reference, bool cascadeDeletes = false)
+        public ForeignKeyDefinition(string columnName, DocumentMapping parent, DocumentMapping reference)
             : this(columnName, parent, fkd => reference.Table.QualifiedName, fkd => "(id)", GenerateOnDeleteClause)
         {
             _reference = reference;
-            CascadeDeletes = cascadeDeletes;
         }
 
         protected ForeignKeyDefinition(string columnName, DocumentMapping parent, Func<ForeignKeyDefinition, string> fkeyTableRefFunc,
@@ -67,11 +66,10 @@ namespace Marten.Schema
     public class ExternalForeignKeyDefinition : ForeignKeyDefinition
     {
         public ExternalForeignKeyDefinition(string columnName, DocumentMapping parent, string externalSchemaName, string externalTableName,
-                                            string externalColumnName, bool cascadeDeletes = false)
+                                            string externalColumnName)
             : base(columnName, parent, _ => $"{externalSchemaName}.{externalTableName}", _ => $"({externalColumnName})",
                 GenerateOnDeleteClause)
         {
-            CascadeDeletes = cascadeDeletes;
         }
     }
 }

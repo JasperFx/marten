@@ -38,7 +38,8 @@ namespace Marten.Testing.Schema
                 "REFERENCES public.mt_doc_user (id)",
                 "ON DELETE CASCADE;");
 
-            new ForeignKeyDefinition("user_id", _issueMapping, _userMapping, true)
+            new ForeignKeyDefinition("user_id", _issueMapping, _userMapping)
+                { CascadeDeletes = true }
                 .ToDDL()
                 .ShouldBe(expected);
         }
@@ -70,7 +71,8 @@ namespace Marten.Testing.Schema
                 "REFERENCES schema2.mt_doc_user (id)",
                 "ON DELETE CASCADE;");
 
-            new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema, true)
+            new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema)
+                { CascadeDeletes = true }
                 .ToDDL()
                 .ShouldBe(expected);
         }
@@ -89,7 +91,7 @@ namespace Marten.Testing.Schema
                 "REFERENCES external_schema.external_table (external_id);");
 
             new ExternalForeignKeyDefinition("user_id", _userMapping,
-                    "external_schema", "external_table", "external_id", false)
+                    "external_schema", "external_table", "external_id")
                 .ToDDL()
                 .ShouldBe(expected);
         }
@@ -104,7 +106,8 @@ namespace Marten.Testing.Schema
                 "ON DELETE CASCADE;");
 
             new ExternalForeignKeyDefinition("user_id", _userMapping,
-                    "external_schema", "external_table", "external_id", true)
+                    "external_schema", "external_table", "external_id")
+                { CascadeDeletes = true }
                 .ToDDL()
                 .ShouldBe(expected);
         }
