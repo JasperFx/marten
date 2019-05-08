@@ -13,6 +13,8 @@ namespace Marten.Testing.Bugs
             // SAMPLE: configuring-initial-data
             var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = "Bug962";
+                
                 _.Connection(ConnectionSource.ConnectionString);
 
                 // Add as many implementations of IInitialData as you need
