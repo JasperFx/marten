@@ -293,6 +293,14 @@ namespace Marten
                 return this;
             }
 
+            public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName,
+                                                           bool cascadeDeletes = false, Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
+            {
+                alter = m => m.ForeignKey(expression, schemaName, tableName, columnName, cascadeDeletes, foreignKeyConfiguration);
+
+                return this;
+            }
+
             /// <summary>
             /// Overrides the Hilo sequence increment and "maximum low" number for document types that
             /// use numeric id's and the Hilo Id assignment

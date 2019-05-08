@@ -893,8 +893,9 @@ namespace Marten.Schema
             var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
             indexConfiguration?.Invoke(indexDefinition);
         }
-        
-        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName, bool cascadeDeletes)
+
+        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName, bool cascadeDeletes,
+                               Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);
@@ -902,6 +903,7 @@ namespace Marten.Schema
             var duplicateField = DuplicateField(visitor.Members.ToArray());
 
             var foreignKey = new ExternalForeignKeyDefinition(duplicateField.ColumnName, this, schemaName, tableName, columnName, cascadeDeletes);
+            foreignKeyConfiguration?.Invoke(foreignKey);
             ForeignKeys.Add(foreignKey);
         }
     }
