@@ -20,7 +20,20 @@ var store = DocumentStore.For(_ =>
 
             //var sql = store.Schema.ToDDL();
             //Console.WriteLine(sql);
+        }
 
+        public void external_fkey()
+        {
+            // SAMPLE: configure-external-foreign-key
+var store = DocumentStore.For(_ =>
+{
+  _.Connection("some database connection");
+
+  // Here we create a foreign key to table that is not 
+  // created or managed by marten
+  _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bug-tracker", "bugs", "id");
+});
+            // ENDSAMPLE
         }
     }
 }

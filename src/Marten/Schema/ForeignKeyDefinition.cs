@@ -14,9 +14,10 @@ namespace Marten.Schema
         private readonly Func<ForeignKeyDefinition, string> _fkeyExtraFunc;
 
         public ForeignKeyDefinition(string columnName, DocumentMapping parent, DocumentMapping reference, bool cascadeDeletes = false)
-            : this(columnName, parent, fkd => reference.Table.QualifiedName, fkd => "(id)", fkd => cascadeDeletes ? "ON DELETE CASCADE" : string.Empty)
+            : this(columnName, parent, fkd => reference.Table.QualifiedName, fkd => "(id)", GenerateOnDeleteClause)
         {
             _reference = reference;
+            CascadeDeletes = cascadeDeletes;
         }
 
         protected ForeignKeyDefinition(string columnName, DocumentMapping parent, Func<ForeignKeyDefinition, string> fkeyTableRefFunc,
@@ -36,6 +37,8 @@ namespace Marten.Schema
         }
 
         public string ColumnName { get; }
+
+        public bool CascadeDeletes { get; set; }
 
         public Type ReferenceDocumentType => _reference?.DocumentType;
 
@@ -57,15 +60,18 @@ namespace Marten.Schema
             sb.Append(";");
             return sb.ToString();
         }
+
+        protected static string GenerateOnDeleteClause(ForeignKeyDefinition fkd) => fkd.CascadeDeletes ? "ON DELETE CASCADE" : string.Empty;
     }
 
     public class ExternalForeignKeyDefinition : ForeignKeyDefinition
     {
         public ExternalForeignKeyDefinition(string columnName, DocumentMapping parent, string externalSchemaName, string externalTableName,
-                                            string externalColumnName, bool cascadeDeletes)
+                                            string externalColumnName, bool cascadeDeletes = false)
             : base(columnName, parent, _ => $"{externalSchemaName}.{externalTableName}", _ => $"({externalColumnName})",
-                _ => cascadeDeletes ? "ON DELETE CASCADE" : string.Empty)
+                GenerateOnDeleteClause)
         {
+            CascadeDeletes = cascadeDeletes;
         }
     }
 }
