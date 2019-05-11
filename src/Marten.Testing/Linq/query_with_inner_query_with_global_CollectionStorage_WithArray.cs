@@ -28,6 +28,8 @@ namespace Marten.Testing.Linq
 
         public IReadOnlyCollection<TypeWithInnerCollections> IReadonlyCollectionOfInnerClasses { get; set; }
 
+        public TypeWithInnerCollections Child { get; set; }
+
         public static TypeWithInnerCollections Create(params string[] array)
         {
             return new TypeWithInnerCollections()
@@ -42,6 +44,19 @@ namespace Marten.Testing.Linq
                 IEnumerbaleFromList = array.ToList(),
                 ICollection = array.ToList(),
                 IReadonlyCollection = array.ToList(),
+                Child = new TypeWithInnerCollections()
+                {
+                    Id = Guid.NewGuid(),
+                    Flatten = array.Aggregate((i, j) => i + j),
+                    Array = array,
+                    List = array.ToList(),
+                    IList = array.ToList(),
+                    Enumerable = array.AsEnumerable(),
+                    IEnumerableFromArray = array,
+                    IEnumerbaleFromList = array.ToList(),
+                    ICollection = array.ToList(),
+                    IReadonlyCollection = array.ToList(),
+                },
                 IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollections>
                     {
                         new TypeWithInnerCollections()
@@ -56,6 +71,19 @@ namespace Marten.Testing.Linq
                             ICollection = array.ToList(),
                             IEnumerbaleFromList = array.ToList(),
                             IReadonlyCollection = array.ToList(),
+                            Child = new TypeWithInnerCollections()
+                            {
+                                Id = Guid.NewGuid(),
+                                Flatten = array.Aggregate((i, j) => i + j),
+                                Array = array,
+                                List = array.ToList(),
+                                IList = array.ToList(),
+                                Enumerable = array.AsEnumerable(),
+                                IEnumerableFromArray = array,
+                                IEnumerbaleFromList = array.ToList(),
+                                ICollection = array.ToList(),
+                                IReadonlyCollection = array.ToList(),
+                            }
                         }
                     }
             };
@@ -70,6 +98,11 @@ namespace Marten.Testing.Linq
             TypeWithInnerCollections.Create("one", "two"),
             TypeWithInnerCollections.Create("two", "three"),
             TypeWithInnerCollections.Create("four", "five"),
+        };
+
+        private static readonly TypeWithInnerCollections[] TestDataWithInnerCollections = new TypeWithInnerCollections[]
+        {
+            TypeWithInnerCollections.Create("one", "two"),
         };
 
         private const string SearchPhrase = "two";
@@ -88,6 +121,14 @@ namespace Marten.Testing.Linq
             x => x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "onetwo").Any() || x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "twothree").Any()
         };
 
+        public static readonly TheoryData<Expression<Func<TypeWithInnerCollections, bool>>> PredicatesWithInnerCollections = new TheoryData<Expression<Func<TypeWithInnerCollections, bool>>>
+        {
+            x => x.IReadonlyCollectionOfInnerClasses.Any(c => Marten.Util.StringExtensionMethods.Contains(c.Flatten, "onetwo", StringComparison.OrdinalIgnoreCase)),
+            x => Marten.Util.StringExtensionMethods.Contains(x.Child.Flatten, "onetwo", StringComparison.OrdinalIgnoreCase),
+            x => x.IReadonlyCollectionOfInnerClasses.Any(c => c.IReadonlyCollectionOfInnerClasses != null),
+            x => x.IReadonlyCollectionOfInnerClasses.Any(c => c.IReadonlyCollectionOfInnerClasses.Any())
+        };
+
         [Theory]
         [MemberData(nameof(Predicates))]
         public async Task having_store_options_with_CollectionStorage_AsArray_can_query_against_array_of_string(Expression<Func<TypeWithInnerCollections, bool>> predicate)
@@ -96,7 +137,7 @@ namespace Marten.Testing.Linq
             {
                 options.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
             });
-            SetupTestData();
+            SetupTestData(TestData);
 
             using (var query = theStore.QuerySession())
             {
@@ -109,11 +150,32 @@ namespace Marten.Testing.Linq
             }
         }
 
-        private void SetupTestData()
+        [Theory]
+        [MemberData(nameof(PredicatesWithInnerCollections))]
+        public async Task having_store_options_with_CollectionStorage_AsArray_can_query_against_inner_collections(Expression<Func<TypeWithInnerCollections, bool>> predicate)
+        {
+            StoreOptions(options =>
+            {
+                options.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+            });
+            SetupTestData(TestDataWithInnerCollections);
+
+            using (var query = theStore.QuerySession())
+            {
+                var results = await query.Query<TypeWithInnerCollections>()
+                    .Where(predicate)
+                    .ToListAsync();
+
+                results.Count.ShouldBe(1);
+                results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
+            }
+        }
+
+        private void SetupTestData(params TypeWithInnerCollections[] testData)
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(TestData);
+                session.Store(testData);
                 session.SaveChanges();
             }
         }
