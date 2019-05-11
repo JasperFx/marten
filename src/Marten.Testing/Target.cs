@@ -45,6 +45,7 @@ namespace Marten.Testing
             target.String = _strings[_random.Next(0, 10)];
             target.AnotherString = _otherStrings[_random.Next(0, 10)];
             target.Number = _random.Next();
+            target.AnotherNumber = _random.Next();
 
             target.Flag = _random.Next(0, 10) > 5;
 
@@ -101,6 +102,9 @@ namespace Marten.Testing
         public Guid Id { get; set; }
 
         public int Number { get; set; }
+
+        public int AnotherNumber { get; set; }
+
         public long Long { get; set; }
         public string String { get; set; }
         public string AnotherString { get; set; }
