@@ -16,7 +16,6 @@ namespace MartenBenchmarks
         }
 
         [Benchmark]
-        [MemoryDiagnoser]
         public void BulkInsertDocuments()
         {
             BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsFor(typeof(Target));

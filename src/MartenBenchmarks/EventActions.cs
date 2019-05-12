@@ -8,6 +8,7 @@ using Marten.Testing.CodeTracker;
 namespace MartenBenchmarks
 {
     [SimpleJob(warmupCount: 2)]
+    [MemoryDiagnoser]
     public class EventActions
     {
         public Dictionary<Guid, GithubProject> AllProjects { get; private set; } = new Dictionary<Guid, GithubProject>();
@@ -23,7 +24,7 @@ namespace MartenBenchmarks
                 folder = folder.ParentDirectory();
             }
 
-            folder = folder.AppendPath("Marten.Testing","CodeTracker");
+            folder = folder.AppendPath("Marten.Testing", "CodeTracker");
 
             var files = fileSystem.FindFiles(folder, FileSet.Shallow("*.json"));
 
@@ -35,13 +36,9 @@ namespace MartenBenchmarks
 
                 Console.WriteLine($"Loaded {project.OrganizationName}{project.ProjectName} from JSON");
             }
-
-
         }
 
-        
         [Benchmark]
-        [MemoryDiagnoser]
         public void AppendEvents()
         {
             var events = AllProjects.SelectMany(x => x.Value.Events).Take(1000).ToArray();
@@ -51,7 +48,5 @@ namespace MartenBenchmarks
                 session.SaveChanges();
             }
         }
-
-
     }
 }

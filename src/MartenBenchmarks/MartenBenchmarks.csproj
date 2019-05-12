@@ -11,9 +11,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
+    <ProjectReference Include="..\Marten\Marten.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
   </ItemGroup>
-
 </Project>
