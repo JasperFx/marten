@@ -34,8 +34,8 @@ namespace Marten.Linq.Parsing
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, BinaryExpression expression)
         {
-            var areBothMemberExpresions = !expression.Left.IsValueExpression() && !expression.Right.IsValueExpression();
-            var isValueExpressionOnRight = areBothMemberExpresions || expression.Right.IsValueExpression();
+            var areBothMemberExpressions = !expression.Left.IsValueExpression() && !expression.Right.IsValueExpression();
+            var isValueExpressionOnRight = areBothMemberExpressions || expression.Right.IsValueExpression();
             var jsonLocatorExpression = isValueExpressionOnRight ? expression.Left : expression.Right;
             var valueExpression = isValueExpressionOnRight ? expression.Right : expression.Left;
 
