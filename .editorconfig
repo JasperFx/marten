@@ -61,7 +61,7 @@ dotnet_style_readonly_field = true:warning
 dotnet_style_object_initializer = true:warning
 dotnet_style_collection_initializer = true:warning
 dotnet_style_explicit_tuple_names = true:suggestion
-dotnet_style_null_propagation = true:warning
+dotnet_style_null_propagation = true
 dotnet_style_coalesce_expression = true:warning
 dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
 dotnet_style_prefer_inferred_tuple_names = true:suggestion
@@ -75,7 +75,7 @@ dotnet_style_prefer_conditional_expression_over_return = true:silent
 ###############################
 
 # Style Definitions
-dotnet_naming_style.pascal_case_style.capitalization             = pascal_case
+dotnet_naming_style.pascal_case_style.capitalization              = pascal_case
 
 # Use PascalCase for constant fields
 dotnet_naming_rule.constant_fields_should_be_pascal_case.severity = suggestion
@@ -126,13 +126,13 @@ csharp_style_inlined_variable_declaration = true:warning
 ###############################
 
 # New line preferences
-csharp_new_line_before_open_brace = all:warning
-csharp_new_line_before_else = true:warning
-csharp_new_line_before_catch = true:warning
-csharp_new_line_before_finally = true:warning
-csharp_new_line_before_members_in_object_initializers = true:warning
-csharp_new_line_before_members_in_anonymous_types = true:warning
-csharp_new_line_between_query_expression_clauses = true:warning
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
 
 # Indentation preferences
 csharp_indent_case_contents = true:warning
