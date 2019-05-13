@@ -17,7 +17,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.Storyteller", "Marte
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.NodaTime", "Marten.NodaTime\Marten.NodaTime.csproj", "{7B9552F4-9102-4A89-A150-C2F916CFF11E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.NodaTime.Testing", "Marten.NodaTime.Testing\Marten.NodaTime.Testing.csproj", "{1B5F9030-63ED-49B2-B001-F58E899CCA5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.NodaTime.Testing", "Marten.NodaTime.Testing\Marten.NodaTime.Testing.csproj", "{1B5F9030-63ED-49B2-B001-F58E899CCA5F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5A91B8F9-52F8-4322-BE34-E3A281902BEC}"
+	ProjectSection(SolutionItems) = preProject
+		..\.editorconfig = ..\.editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
