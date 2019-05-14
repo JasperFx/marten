@@ -12,22 +12,6 @@ trim_trailing_whitespace = true
 max_line_length = off
 trim_trailing_whitespace = false
 
-[*.cs]
-csharp_indent_case_contents = true:warning
-csharp_indent_switch_labels = true:warning
-csharp_space_after_cast = false:warning
-csharp_space_after_keywords_in_control_flow_statements = true:warning
-csharp_space_between_method_declaration_parameter_list_parentheses = false:warning
-csharp_space_between_method_call_parameter_list_parentheses = false:warning
-csharp_space_before_colon_in_inheritance_clause = false:warning
-csharp_space_after_colon_in_inheritance_clause = true:warning
-csharp_space_around_binary_operators = before_and_after:warning
-csharp_space_between_method_declaration_empty_parameter_list_parentheses = false:warning
-csharp_space_between_method_call_name_and_opening_parenthesis = false:warning
-csharp_space_between_method_call_empty_parameter_list_parentheses = false:warning
-csharp_preserve_single_line_statements = false:warning
-csharp_preserve_single_line_blocks = true:warning
-
 ###############################
 # .NET Coding Conventions     #
 ###############################
