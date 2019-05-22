@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using Marten.Schema;
@@ -10,9 +10,17 @@ namespace Marten.Storage
     {
         public DbObjectName Identifier { get; }
 
+        private long? _startWith;
+
         public Sequence(DbObjectName identifier)
         {
             Identifier = identifier;
+        }
+
+        public Sequence(DbObjectName identifier, long startWith)
+        {
+            Identifier = identifier;
+            _startWith = startWith;
         }
 
         public DbObjectName Owner { get; set; }
@@ -25,7 +33,7 @@ namespace Marten.Storage
 
         public void Write(DdlRules rules, StringWriter writer)
         {
-            writer.WriteLine($"CREATE SEQUENCE {Identifier};");
+            writer.WriteLine($"CREATE SEQUENCE {Identifier}{(_startWith.HasValue ? $" START {_startWith.Value}" : string.Empty)};");
 
             if (Owner != null)
             {

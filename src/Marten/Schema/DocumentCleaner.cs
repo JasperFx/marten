@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Baseline;
 using Marten.Services;
@@ -27,6 +27,12 @@ FROM   pg_proc p
 LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
+
+        public static readonly string DropAllSequencesSql = @"SELECT format('DROP SEQUENCE %s.%s;'
+             ,s.schemaname
+             ,s.sequencename)
+FROM   pg_sequences s
+WHERE  s.sequencename like 'mt_%' and s.schemaname = ANY(?);";
 
         private readonly StoreOptions _options;
         private readonly ITenant _tenant;
@@ -89,7 +95,10 @@ AND    n.nspname = '{1}';";
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var drops = connection.GetStringList(DropAllFunctionSql, new object[] { _options.Storage.AllSchemaNames() });
+                var allSchemas = new object[] {_options.Storage.AllSchemaNames()};
+
+                var drops = connection.GetStringList(DropAllFunctionSql, allSchemas)
+                    .Concat(connection.GetStringList(DropAllSequencesSql, allSchemas));
                 drops.Each(drop => connection.Execute(drop));
                 connection.Commit();
 
