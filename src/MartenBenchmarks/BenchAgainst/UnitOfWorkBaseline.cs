@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +15,7 @@ using Marten.Util;
 
 namespace MartenBenchmarks.BenchAgainst
 {
-    public class UnitOfWorkBaseline : IUnitOfWork
+    public class UnitOfWorkBaseline: IUnitOfWork
     {
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
 
@@ -96,7 +96,6 @@ namespace MartenBenchmarks.BenchAgainst
             _trackers.Remove(tracker);
         }
 
-
         public void StoreStream(EventStream stream)
         {
             _events[stream.Id] = stream;
@@ -130,7 +129,6 @@ namespace MartenBenchmarks.BenchAgainst
             var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new UpsertDocument(x)));
-
         }
 
         public void StoreUpdates<T>(params T[] documents)
@@ -138,7 +136,6 @@ namespace MartenBenchmarks.BenchAgainst
             var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new UpdateDocument(x)));
-
         }
 
         public void StoreInserts<T>(params T[] documents)
@@ -147,7 +144,6 @@ namespace MartenBenchmarks.BenchAgainst
 
             list.AddRange(documents.Select(x => new InsertDocument(x)));
         }
-
 
         public ChangeSet ApplyChanges(UpdateBatch batch)
         {
@@ -180,7 +176,7 @@ namespace MartenBenchmarks.BenchAgainst
         {
             var changes = buildChangeSet(batch);
 
-            await batch.ExecuteAsync(token).ConfigureAwait(false);            
+            await batch.ExecuteAsync(token).ConfigureAwait(false);
 
             ClearChanges(changes.Changes);
 
@@ -276,8 +272,6 @@ namespace MartenBenchmarks.BenchAgainst
                 var list = operationsFor(operation.DocumentType);
                 list.Add(operation);
             }
-
-
         }
 
         private void ClearChanges(DocumentChange[] changes)
@@ -297,13 +291,10 @@ namespace MartenBenchmarks.BenchAgainst
             return _operations.Values.SelectMany(x => x.OfType<DocumentStorageOperation>()).Any(x => object.ReferenceEquals(entity, x.Document));
         }
 
-
-
         public IEnumerable<T> NonDocumentOperationsOf<T>() where T : IStorageOperation
         {
             return _ancillaryOperations.OfType<T>();
         }
-
 
         public bool HasStream(string stream)
         {
@@ -324,8 +315,21 @@ namespace MartenBenchmarks.BenchAgainst
             {
                 operations.Remove(operation);
             }
-           
+        }
+
+        public IEnumerable<IStorageOperation> Operations()
+        {
+            return _operations.Values.AsEnumerable().SelectMany(x => x);
+        }
+
+        public IEnumerable<IStorageOperation> OperationsFor<T>()
+        {
+            return operationsFor(typeof(T));
+        }
+
+        public IEnumerable<IStorageOperation> OperationsFor(Type documentType)
+        {
+            return operationsFor(documentType);
         }
     }
-
 }
