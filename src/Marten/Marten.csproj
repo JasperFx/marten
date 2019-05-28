@@ -1,84 +1,83 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-    <VersionPrefix>3.5.0</VersionPrefix>
-    <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz</Authors>
-    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
-    <AssemblyName>Marten</AssemblyName>
-    <PackageId>Marten</PackageId>
-    <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
-    <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
-    <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
-    <LangVersion>7.2</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-    <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6/1.0.1/lib/net46/</FrameworkPathOverride>
-    <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamptz.sql" />
-    <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
-    <EmbeddedResource Include="Schema\SQL\mt_patching.js" />
-    <EmbeddedResource Include="Schema\SQL\mt_mark_event_progression.sql" />
-    <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamp.sql" />
-    <EmbeddedResource Include="Schema\SQL\mt_stream.sql" />
-    <EmbeddedResource Include="Schema\SQL\mt_get_next_hi.sql" />
-    <EmbeddedResource Include="Schema\SchemaObjects.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="Npgsql" Version="4.0.6" />
-    <PackageReference Include="Npgsql.Json.NET" Version="4.0.6" />
-    <PackageReference Include="Remotion.Linq" Version="2.2.0" />
-    <PackageReference Include="Baseline" Version="1.5.0" />
-    <PackageReference Include="System.Memory" Version="4.5.2" />
-    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
-    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
-    <Reference Include="System.Data" />
-    <Reference Include="System.Threading.Tasks" />
-    <Reference Include="System" />
-    <Reference Include="System.Runtime" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <Reference Include="System.Transactions" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-    <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
-  </ItemGroup>
-  <PropertyGroup>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <!--SourceLink specific settings-->
-  <PropertyGroup>
-    <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
-    <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-    <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <NoWarn>1591;1701;1702</NoWarn>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="All" />
-  </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
+        <VersionPrefix>3.5.0</VersionPrefix>
+        <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz</Authors>
+        <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+        <AssemblyName>Marten</AssemblyName>
+        <PackageId>Marten</PackageId>
+        <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
+        <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+        <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+        <LangVersion>7.2</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
+        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6/1.0.1/lib/net46/</FrameworkPathOverride>
+        <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamptz.sql" />
+        <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
+        <EmbeddedResource Include="Schema\SQL\mt_patching.js" />
+        <EmbeddedResource Include="Schema\SQL\mt_mark_event_progression.sql" />
+        <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamp.sql" />
+        <EmbeddedResource Include="Schema\SQL\mt_stream.sql" />
+        <EmbeddedResource Include="Schema\SQL\mt_get_next_hi.sql" />
+        <EmbeddedResource Include="Schema\SchemaObjects.sql" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+        <PackageReference Include="Npgsql" Version="4.0.7" />
+        <PackageReference Include="Npgsql.Json.NET" Version="4.0.7" />
+        <PackageReference Include="Remotion.Linq" Version="2.2.0" />
+        <PackageReference Include="Baseline" Version="1.5.0" />
+        <PackageReference Include="System.Memory" Version="4.5.3" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
+        <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+        <Reference Include="System.Data" />
+        <Reference Include="System.Threading.Tasks" />
+        <Reference Include="System" />
+        <Reference Include="System.Runtime" />
+        <Reference Include="Microsoft.CSharp" />
+        <Reference Include="System.Transactions" />
+    </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+        <Reference Include="System.Transactions" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
+        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+    </ItemGroup>
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+    <!--SourceLink specific settings-->
+    <PropertyGroup>
+        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
+        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
+        <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <NoWarn>1591;1701;1702</NoWarn>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="All" />
+    </ItemGroup>
 </Project>
