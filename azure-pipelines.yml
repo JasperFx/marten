@@ -9,17 +9,14 @@ resources:
   containers:
     - container: pg11
       image: ionx/postgres-plv8:11.1
-      options: --name postgres
       ports:
         - 5432:5432
     - container: pg10
       image: ionx/postgres-plv8:10.6
-      options: --name postgres
       ports:
         - 5432:5432
     - container: pg9.6
       image: clkao/postgres-plv8:9.6
-      options: --name postgres
       ports:
         - 5432:5432
 
