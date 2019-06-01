@@ -1,19 +1,92 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- master
+  batch: true
+  branches:
+    include:
+      - master
+      - refs/tags/*
 
-pool:
-  vmImage: 'ubuntu-latest'
+resources:
+  containers:
+    - container: pg11
+      image: ionx/postgres-plv8:11.1
+      options: --name postgres
+      ports:
+        - 5432:5432
+    - container: pg10
+      image: ionx/postgres-plv8:10.6
+      options: --name postgres
+      ports:
+        - 5432:5432
+    - container: pg9.6
+      image: clkao/postgres-plv8:9.6
+      options: --name postgres
+      ports:
+        - 5432:5432
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  config: Release
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  dotnet_core_version: 2.1.400
+  node_version: 10.x
+  pg_db: marten_test
+  marten_testing_database: "Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+jobs:
+  - job: Build
+    timeoutInMinutes: 20
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      matrix:
+        pg9.6:
+          postgresService: pg9.6
+        pg10:
+          postgresService: pg10
+        pg11:
+          postgresService: pg11
+    services:
+      postgres: $[ variables['postgresService'] ]
+    steps:
+      - task: DotNetCoreInstaller@0
+        displayName: Install .Net Core
+        inputs:
+          version: $(dotnet_core_version)
+      - task: NodeTool@0
+        displayName: Install Node.js
+        inputs:
+          versionSpec: $(node_version)
+      - script: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME psql -U postgres -c 'create database $(pg_db);'
+          docker exec $PG_CONTAINER_NAME psql -U postgres -d $(pg_db) -c "create extension if not exists plv8;"
+        displayName: Create db and add plv8 extension
+      - script: ./build.sh ci
+        displayName: Build
+  # Publish job will be enabled later
+  # - job: Publish
+  #   dependsOn: Build
+  #   # run publish only if all build jobs succeed and a GitHub tag is created
+  #   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+  #   pool:
+  #     vmImage: 'ubuntu-latest'
+  #   steps:
+  #     - task: DotNetCoreInstaller@0
+  #       displayName: Install .Net Core
+  #       inputs:
+  #         version: $(dotnet_core_version)
+  #     - script: ./build.sh pack
+  #       displayName: Create NuGet Packages
+  #     - task: NuGetCommand@2
+  #       displayName: Publish packages to NuGet
+  #       inputs:
+  #         command: 'push'
+  #         nuGetFeedType: 'external'
+  #         packagesToPush: '$(Build.Repository.LocalPath)/artifacts/*.nupkg'
+  #         publishFeedCredentials: 'NuGetServiceConnection'
+  #     - task: NuGetCommand@2
+  #       displayName: Publish symbol packages to NuGet
+  #       inputs:
+  #         command: 'push'
+  #         packagesToPush: '$(Build.Repository.LocalPath)/artifacts/*.snupkg'
+  #         publishFeedCredentials: 'NuGetServiceConnection'
