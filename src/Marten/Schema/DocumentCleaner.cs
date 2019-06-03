@@ -97,8 +97,14 @@ WHERE  s.sequencename like 'mt_%' and s.schemaname = ANY(?);";
 
                 var allSchemas = new object[] {_options.Storage.AllSchemaNames()};
 
-                var drops = connection.GetStringList(DropAllFunctionSql, allSchemas)
-                    .Concat(connection.GetStringList(DropAllSequencesSql, allSchemas));
+                var drops = connection.GetStringList(DropAllFunctionSql, allSchemas);
+
+                // pg_sequences only available from 10 and above
+                if (connection.Connection.PostgreSqlVersion.Major >= 10)
+                {
+                    drops.Append(connection.GetStringList(DropAllSequencesSql, allSchemas));
+                }
+
                 drops.Each(drop => connection.Execute(drop));
                 connection.Commit();
 
