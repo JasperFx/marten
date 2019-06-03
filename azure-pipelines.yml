@@ -16,7 +16,7 @@ resources:
       ports:
         - 5432:5432
     - container: pg9.6
-      image: clkao/postgres-plv8:9.6
+      image: clkao/postgres-plv8:9.6-1.4
       ports:
         - 5432:5432
 
@@ -55,7 +55,7 @@ jobs:
           versionSpec: $(node_version)
       - script: |
           PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
-          docker exec $PG_CONTAINER_NAME psql -U postgres -c 'create database $(pg_db);'
+          docker exec $PG_CONTAINER_NAME psql -U postgres -c "create database $(pg_db);"
           docker exec $PG_CONTAINER_NAME psql -U postgres -d $(pg_db) -c "create extension if not exists plv8;"
         displayName: Create db and add plv8 extension
       - script: ./build.sh ci
