@@ -31,7 +31,7 @@ variables:
 
 jobs:
   - job: Build
-    timeoutInMinutes: 20
+    # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'
     strategy:
