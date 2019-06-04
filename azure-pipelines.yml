@@ -16,7 +16,7 @@ resources:
       ports:
         - 5432:5432
     - container: pg9.6
-      image: clkao/postgres-plv8:9.6-1.4
+      image: mysticmind/postgres-plv8:9.6-1.4
       ports:
         - 5432:5432
 
