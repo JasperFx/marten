@@ -72,4 +72,4 @@ jobs:
         displayName: Publish Benchmark results
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-          artifactName: drop
+          artifactName: benchmarks
