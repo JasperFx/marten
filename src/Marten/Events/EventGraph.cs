@@ -53,6 +53,15 @@ namespace Marten.Events
 
         public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
+        /// <summary>
+        ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the streams table
+        /// </summary>
+        /// <remkarks>
+        ///     Not using this can result in race conditions in a concurrent environment that lead to
+        ///       event version mismatches between the event and stream version numbers
+        /// </remkarks>
+        public bool UseAppendEventForUpdateLock { get; set; } = false;
+
         internal StoreOptions Options { get; }
 
         internal DbObjectName Table => new DbObjectName(DatabaseSchemaName, "mt_events");
@@ -197,7 +206,7 @@ namespace Marten.Events
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
 
-                    new AppendEventFunction(this),
+                    new AppendEventFunction(this, UseAppendEventForUpdateLock),
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
                 };
             }
