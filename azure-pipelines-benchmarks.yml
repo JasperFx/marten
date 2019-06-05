@@ -58,7 +58,6 @@ jobs:
       - script: ./build.sh ci      
       - script: ./build.sh benchmarks
         displayName: BuildAndBenchmark
-      - powershell: gci env:* | sort-object name | Format-Table -AutoSize | Out-File $env:BUILD_ARTIFACTSTAGINGDIRECTORY/environment-variables.txt
       - task: CopyFiles@2
         displayName: Copy Benchmark results
         inputs:
