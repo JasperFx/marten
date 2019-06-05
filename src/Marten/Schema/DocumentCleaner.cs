@@ -29,10 +29,10 @@ WHERE  p.proname = '{0}'
 AND    n.nspname = '{1}';";
 
         public static readonly string DropAllSequencesSql = @"SELECT format('DROP SEQUENCE %s.%s;'
-             ,s.schemaname
-             ,s.sequencename)
-FROM   pg_sequences s
-WHERE  s.sequencename like 'mt_%' and s.schemaname = ANY(?);";
+             ,s.sequence_schema
+             ,s.sequence_name)
+FROM   information_schema.sequences s
+WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
 
         private readonly StoreOptions _options;
         private readonly ITenant _tenant;
