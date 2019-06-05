@@ -20,12 +20,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.NodaTime.Testing", "Marten.NodaTime.Testing\Marten.NodaTime.Testing.csproj", "{1B5F9030-63ED-49B2-B001-F58E899CCA5F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MartenBenchmarks", "MartenBenchmarks\MartenBenchmarks.csproj", "{8F7354B7-AAAE-4DD0-AA86-805F50F7850D}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5A91B8F9-52F8-4322-BE34-E3A281902BEC}"
 	ProjectSection(SolutionItems) = preProject
 		..\.editorconfig = ..\.editorconfig
 	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MartenBenchmarks", "MartenBenchmarks\MartenBenchmarks.csproj", "{D84C0871-4ABC-45BF-A30F-61FC40A6E6D9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -36,7 +36,7 @@
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
         <PackageReference Include="Npgsql" Version="4.0.7" />
         <PackageReference Include="Npgsql.Json.NET" Version="4.0.7" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
