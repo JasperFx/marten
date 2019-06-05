@@ -61,29 +61,6 @@ jobs:
         displayName: Create db and add plv8 extension
       - script: ./build.sh ci
         displayName: Build
-  - job: Benchmark
-    # timeoutInMinutes: 20
-    pool:
-      vmImage: 'ubuntu-latest'
-    services:
-      postgres: $[ variables['postgresService'] ]
-    steps:
-      - task: DotNetCoreInstaller@0
-        displayName: Install .Net Core
-        inputs:
-          version: $(dotnet_core_version)
-      - task: NodeTool@0
-        displayName: Install Node.js
-        inputs:
-          versionSpec: $(node_version)
-      - script: |
-          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
-          docker exec $PG_CONTAINER_NAME psql -U postgres -c "create database $(pg_db);"
-          docker exec $PG_CONTAINER_NAME psql -U postgres -d $(pg_db) -c "create extension if not exists plv8;"
-          docker exec $PG_CONTAINER_NAME psql -U postgres -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
-        displayName: Create db and add plv8 extension
-      - script: ./build.sh ci
-        displayName: Benchmark
   # Publish job will be enabled later
   # - job: Publish
   #   dependsOn: Build
