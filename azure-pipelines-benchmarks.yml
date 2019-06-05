@@ -1,9 +1,5 @@
-trigger:
-  batch: true
-  branches:
-    include:
-      - master
-      - refs/tags/*
+# A pipeline with no CI trigger
+trigger: none
 
 resources:
   containers:
@@ -61,30 +57,15 @@ jobs:
         displayName: Create db and add plv8 extension
       - script: ./build.sh ci
         displayName: Build
-  # Publish job will be enabled later
-  # - job: Publish
-  #   dependsOn: Build
-  #   # run publish only if all build jobs succeed and a GitHub tag is created
-  #   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-  #   pool:
-  #     vmImage: 'ubuntu-latest'
-  #   steps:
-  #     - task: DotNetCoreInstaller@0
-  #       displayName: Install .Net Core
-  #       inputs:
-  #         version: $(dotnet_core_version)
-  #     - script: ./build.sh pack
-  #       displayName: Create NuGet Packages
-  #     - task: NuGetCommand@2
-  #       displayName: Publish packages to NuGet
-  #       inputs:
-  #         command: 'push'
-  #         nuGetFeedType: 'external'
-  #         packagesToPush: '$(Build.Repository.LocalPath)/artifacts/*.nupkg'
-  #         publishFeedCredentials: 'NuGetServiceConnection'
-  #     - task: NuGetCommand@2
-  #       displayName: Publish symbol packages to NuGet
-  #       inputs:
-  #         command: 'push'
-  #         packagesToPush: '$(Build.Repository.LocalPath)/artifacts/*.snupkg'
-  #         publishFeedCredentials: 'NuGetServiceConnection'
+  - job: Benchmark
+    dependsOn: Build
+    # run publish only if all build jobs succeed and a github tag is created
+    condition: succeeded()
+    pool:
+      vmimage: 'ubuntu-latest'
+    steps:
+      - task: DotNetCoreInstaller@0
+        displayName: Install .Net Core
+        inputs:
+          version: $(dotnet_core_version)
+      - script: ./build.sh benchmark
