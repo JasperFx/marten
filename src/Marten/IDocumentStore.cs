@@ -127,7 +127,7 @@ namespace Marten
         ///     Opens a read-only IQuerySession to the current document store for efficient
         ///     querying without any underlying object tracking.
         /// </summary>
-        /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>        
+        /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>
         /// <returns></returns>
         IQuerySession QuerySession(SessionOptions options);
 
@@ -158,6 +158,11 @@ namespace Marten
         EventGraph Events { get; }
         ITenancy Tenancy { get; }
 
+        /// <summary>
+        /// Method to fetch Postgres server version
+        /// </summary>
+        /// <returns>Returns version</returns>
+        Version GetPostgresVersion();
 
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);
     }

@@ -34,7 +34,7 @@ namespace Marten
         public static DocumentStore For(string connectionString)
         {
             return For(_ =>
-            {                
+            {
                 _.Connection(connectionString);
             });
         }
@@ -115,6 +115,7 @@ namespace Marten
         private readonly IMartenLogger _logger;
         private readonly MemoryPool<char> _writerPool;
         private readonly IRetryPolicy _retryPolicy;
+        private Version _postgreSqlVersion;
 
         public StorageFeatures Storage => Options.Storage;
 
@@ -344,6 +345,24 @@ namespace Marten
             }
 
             return new Daemon(this, Tenancy.Default, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
+        }
+
+        /// <summary>
+        /// Method to fetch Postgres server version
+        /// </summary>
+        /// <returns>Returns version</returns>
+        public Version GetPostgresVersion()
+        {
+            if (_postgreSqlVersion != null) return _postgreSqlVersion;
+
+            var tenant = Tenancy.Default;
+
+            using (var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly))
+            {
+                _postgreSqlVersion = connection.Connection.PostgreSqlVersion;
+            }
+
+            return _postgreSqlVersion;
         }
     }
 }
