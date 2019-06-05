@@ -60,10 +60,13 @@ jobs:
         displayName: BuildAndBenchmark
       - powershell: gci env:* | sort-object name | Format-Table -AutoSize | Out-File $env:BUILD_ARTIFACTSTAGINGDIRECTORY/environment-variables.txt
       - task: CopyFiles@2
+        displayName: Copy Benchmark results
         inputs:
           sourceFolder: '$(Build.SourcesDirectory)'
           contents: 'src/MartenBenchmarks/bin/$(BuildConfiguration)/netcoreapp2.1/BenchmarkDotNet.Artifacts/results/?(*.html|*.md|*.csv)'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
       - task: PublishBuildArtifacts@1
+        displayName: Publish Benchmark results
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
           artifactName: drop
