@@ -1,4 +1,4 @@
-﻿
+
 
 DROP TABLE IF EXISTS {databaseSchema}.mt_streams CASCADE;
 CREATE TABLE {databaseSchema}.mt_streams (
@@ -39,7 +39,7 @@ DECLARE
 	seq int;
 	return_value int[];
 BEGIN
-	select version into event_version from {databaseSchema}.mt_streams where id = stream;
+	select version into event_version from {databaseSchema}.mt_streams where id = stream for update;
 	if event_version IS NULL then
 		event_version = 0;
 		insert into {databaseSchema}.mt_streams (id, type, version, timestamp) values (stream, stream_type, 0, now());
