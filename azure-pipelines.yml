@@ -58,7 +58,7 @@ jobs:
       - script: ./build.sh ci
         displayName: Build
   - job: Benchmark
-    dependson: Build
+    dependsOn: Build
     # run publish only if all build jobs succeed and a github tag is created
     condition: succeeded()
     pool:
