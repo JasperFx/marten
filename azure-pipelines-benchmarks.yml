@@ -26,16 +26,16 @@ variables:
   marten_testing_database: "Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
 
 jobs:
-  - job: Build
+  - job: BuildAndBenchmark
     # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'
     strategy:
       matrix:
-        pg9.6:
-          postgresService: pg9.6
-        pg10:
-          postgresService: pg10
+        # pg9.6:
+          # postgresService: pg9.6
+        # pg10:
+          # postgresService: pg10
         pg11:
           postgresService: pg11
     services:
@@ -55,17 +55,6 @@ jobs:
           docker exec $PG_CONTAINER_NAME psql -U postgres -d $(pg_db) -c "create extension if not exists plv8;"
           docker exec $PG_CONTAINER_NAME psql -U postgres -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
         displayName: Create db and add plv8 extension
-      - script: ./build.sh ci
-        displayName: Build
-  - job: Benchmark
-    dependsOn: Build
-    # run publish only if all build jobs succeed and a github tag is created
-    condition: succeeded()
-    pool:
-      vmimage: 'ubuntu-latest'
-    steps:
-      - task: DotNetCoreInstaller@0
-        displayName: Install .Net Core
-        inputs:
-          version: $(dotnet_core_version)
+      - script: ./build.sh ci      
       - script: ./build.sh benchmark
+        displayName: BuildAndBenchmark
