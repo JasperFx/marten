@@ -62,7 +62,6 @@ jobs:
       - task: CopyFiles@2
         displayName: Copy Benchmark results
         inputs:
-          sourceFolder: '$(Build.SourcesDirectory)'
           Contents: |
            src\MartenBenchmarks\bin\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
            src\MartenBenchmarks\bin\**\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
