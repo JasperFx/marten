@@ -64,8 +64,8 @@ jobs:
     pool:
       vmimage: 'ubuntu-latest'
     steps:
-      - task: dotnetcoreinstaller@0
-        displayname: install .net core
+      - task: DotNetCoreInstaller@0
+        displayName: Install .Net Core
         inputs:
           version: $(dotnet_core_version)
       - script: ./build.sh benchmark
