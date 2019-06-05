@@ -63,7 +63,10 @@ jobs:
         displayName: Copy Benchmark results
         inputs:
           sourceFolder: '$(Build.SourcesDirectory)'
-          contents: 'src/MartenBenchmarks/bin/$(BuildConfiguration)/netcoreapp2.1/BenchmarkDotNet.Artifacts/results/?(*.html|*.md|*.csv)'
+          Contents: |
+           src\MartenBenchmarks\bin\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
+           src\MartenBenchmarks\bin\**\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
+           src\MartenBenchmarks\bin\**\**\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
           TargetFolder: '$(Build.ArtifactStagingDirectory)'
       - task: PublishBuildArtifacts@1
         displayName: Publish Benchmark results
