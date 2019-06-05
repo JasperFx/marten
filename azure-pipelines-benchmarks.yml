@@ -57,8 +57,9 @@ jobs:
         displayName: Create db and add plv8 extension
       - script: ./build.sh ci      
       - script: ./build.sh benchmarks
+        displayName: BuildAndBenchmark
       - powershell: gci env:* | sort-object name | Format-Table -AutoSize | Out-File $env:BUILD_ARTIFACTSTAGINGDIRECTORY/environment-variables.txt
-      - task: CopyBenchmarkResults
+      - task: CopyFiles@2
         inputs:
           sourceFolder: '$(Build.SourcesDirectory)'
           contents: 'src/MartenBenchmarks/bin/$(BuildConfiguration)/netcoreapp2.1/BenchmarkDotNet.Artifacts/results/?(*.html|*.md|*.csv)'
@@ -66,4 +67,3 @@ jobs:
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
           artifactName: drop
-        displayName: BuildAndBenchmark
