@@ -7,7 +7,7 @@ namespace Marten.Testing
         [Fact]
         public void can_fetch_postgres_server_version()
         {
-            var pgVersion = theStore.GetPostgresVersion();
+            var pgVersion = theStore.Diagnostics.GetPostgresVersion();
             pgVersion.ShouldNotBeNull();
         }
     }

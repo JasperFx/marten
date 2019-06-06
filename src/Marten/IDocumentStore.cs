@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
@@ -157,12 +156,6 @@ namespace Marten
 
         EventGraph Events { get; }
         ITenancy Tenancy { get; }
-
-        /// <summary>
-        /// Method to fetch Postgres server version
-        /// </summary>
-        /// <returns>Returns version</returns>
-        Version GetPostgresVersion();
 
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);
     }
