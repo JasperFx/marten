@@ -206,7 +206,7 @@ namespace Marten.Events
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
 
-                    new AppendEventFunction(this, UseAppendEventForUpdateLock),
+                    new AppendEventFunction(this),
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
                 };
             }
