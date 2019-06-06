@@ -10,7 +10,7 @@ namespace Marten.Events
         private readonly EventGraph _events;
         private readonly bool _useAppendEventForUpdateLock;
 
-        public AppendEventFunction(EventGraph events, bool useAppendEventForUpdateLock) : base(new DbObjectName(events.DatabaseSchemaName, "mt_append_event"))
+        public AppendEventFunction(EventGraph events, bool useAppendEventForUpdateLock = false) : base(new DbObjectName(events.DatabaseSchemaName, "mt_append_event"))
         {
             _events = events;
             _useAppendEventForUpdateLock = useAppendEventForUpdateLock;
