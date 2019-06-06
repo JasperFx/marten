@@ -5,10 +5,10 @@ using Marten.Testing;
 namespace MartenBenchmarks
 {
     [SimpleJob(warmupCount: 2)]
+    [MemoryDiagnoser]
     public class DocumentActions
     {
         public static Target[] Docs = Target.GenerateRandomData(100).ToArray();
-
 
         [GlobalSetup]
         public void Setup()
@@ -17,8 +17,6 @@ namespace MartenBenchmarks
         }
 
         [Benchmark]
-        [MemoryDiagnoser]
-        
         public void InsertDocuments()
         {
             using (var session = BenchmarkStore.Store.OpenSession())
@@ -27,7 +25,5 @@ namespace MartenBenchmarks
                 session.SaveChanges();
             }
         }
-
-
     }
 }

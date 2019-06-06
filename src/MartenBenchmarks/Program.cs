@@ -1,5 +1,4 @@
-﻿using BenchmarkDotNet.Running;
-using MartenBenchmarks.Benchmarks;
+using BenchmarkDotNet.Running;
 
 namespace MartenBenchmarks
 {
@@ -10,19 +9,17 @@ namespace MartenBenchmarks
             //BenchmarkStore.Store.Advanced.Clean.DeleteAllDocuments();
             //BenchmarkStore.Store.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            //BenchmarkRunner.Run<StorageFeatureBench>();
-            //BenchmarkRunner.Run<IdentityMapBench>();
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+            //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 
-            return;
+            //return;
             BenchmarkRunner.Run<DocumentActions>();
             BenchmarkRunner.Run<BulkLoading>();
             BenchmarkRunner.Run<LinqActions>();
             BenchmarkRunner.Run<EventActions>();
 
-            BenchmarkRunner.Run<StorageFeatureBench>();
-            BenchmarkRunner.Run<IdentityMapBench>();
-            BenchmarkRunner.Run<UnitOfWorkBench>();
+            //BenchmarkRunner.Run<StorageFeatureBench>();
+            //BenchmarkRunner.Run<IdentityMapBench>();
+            //BenchmarkRunner.Run<UnitOfWorkBench>();
         }
     }
 }

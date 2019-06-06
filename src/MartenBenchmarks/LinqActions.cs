@@ -11,7 +11,7 @@ using Marten.Testing;
 namespace MartenBenchmarks
 {
     [SimpleJob(warmupCount: 2)]
-
+    [MemoryDiagnoser]
     public class LinqActions
     {
         [GlobalSetup]
@@ -26,7 +26,6 @@ namespace MartenBenchmarks
         }
 
         [Benchmark]
-        [MemoryDiagnoser]
         public void CreateLinqCommand()
         {
             using (var session = BenchmarkStore.Store.OpenSession())
@@ -38,7 +37,6 @@ namespace MartenBenchmarks
         }
 
         [Benchmark]
-        [MemoryDiagnoser]
         public void RunLinqQuery()
         {
             using (var query = BenchmarkStore.Store.OpenSession())
@@ -49,7 +47,6 @@ namespace MartenBenchmarks
         }
 
         [Benchmark]
-        [MemoryDiagnoser]
         public void CompiledQueries()
         {
             using (var query = BenchmarkStore.Store.OpenSession())

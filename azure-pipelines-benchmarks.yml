@@ -1,0 +1,73 @@
+# A pipeline with no CI trigger
+trigger: none
+
+resources:
+  containers:
+    - container: pg11
+      image: ionx/postgres-plv8:11.1
+      ports:
+        - 5432:5432
+    - container: pg10
+      image: ionx/postgres-plv8:10.6
+      ports:
+        - 5432:5432
+    - container: pg9.6
+      image: mysticmind/postgres-plv8:9.6-1.4
+      ports:
+        - 5432:5432
+
+variables:
+  config: Release
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  dotnet_core_version: 2.1.400
+  node_version: 10.x
+  pg_db: marten_test
+  marten_testing_database: "Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
+
+jobs:
+  - job: BuildAndBenchmark
+    # timeoutInMinutes: 20
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      matrix:
+        # pg9.6:
+          # postgresService: pg9.6
+        # pg10:
+          # postgresService: pg10
+        pg11:
+          postgresService: pg11
+    services:
+      postgres: $[ variables['postgresService'] ]
+    steps:
+      - task: DotNetCoreInstaller@0
+        displayName: Install .Net Core
+        inputs:
+          version: $(dotnet_core_version)
+      - task: NodeTool@0
+        displayName: Install Node.js
+        inputs:
+          versionSpec: $(node_version)
+      - script: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME psql -U postgres -c "create database $(pg_db);"
+          docker exec $PG_CONTAINER_NAME psql -U postgres -d $(pg_db) -c "create extension if not exists plv8;"
+          docker exec $PG_CONTAINER_NAME psql -U postgres -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
+        displayName: Create db and add plv8 extension
+      - script: ./build.sh ci      
+      - script: ./build.sh benchmarks
+        displayName: BuildAndBenchmark
+      - task: CopyFiles@2
+        displayName: Copy Benchmark results
+        inputs:
+          Contents: |
+           src\MartenBenchmarks\bin\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
+           src\MartenBenchmarks\bin\**\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
+           src\MartenBenchmarks\bin\**\**\**\BenchmarkDotNet.Artifacts\results\?(*.html|*.md|*.csv)
+          TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      - task: PublishBuildArtifacts@1
+        displayName: Publish Benchmark results
+        inputs:
+          pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: benchmarks
