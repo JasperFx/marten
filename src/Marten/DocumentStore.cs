@@ -34,7 +34,7 @@ namespace Marten
         public static DocumentStore For(string connectionString)
         {
             return For(_ =>
-            {                
+            {
                 _.Connection(connectionString);
             });
         }

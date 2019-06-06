@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
@@ -127,7 +126,7 @@ namespace Marten
         ///     Opens a read-only IQuerySession to the current document store for efficient
         ///     querying without any underlying object tracking.
         /// </summary>
-        /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>        
+        /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>
         /// <returns></returns>
         IQuerySession QuerySession(SessionOptions options);
 
@@ -157,7 +156,6 @@ namespace Marten
 
         EventGraph Events { get; }
         ITenancy Tenancy { get; }
-
 
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);
     }

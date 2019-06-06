@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Linq;
+﻿using System;
 using Marten.Linq;
 using Npgsql;
 
@@ -27,5 +26,11 @@ namespace Marten
         /// <param name="query"></param>
         /// <returns></returns>
         QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query);
+
+        /// <summary>
+        /// Method to fetch Postgres server version
+        /// </summary>
+        /// <returns>Returns version</returns>
+        Version GetPostgresVersion();
     }
 }
