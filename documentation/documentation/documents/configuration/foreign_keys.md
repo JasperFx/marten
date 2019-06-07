@@ -34,7 +34,7 @@ to save the new user first so that the issue will not fail with referential inte
 
 ## Foreign Keys to non-Marten tables
 
-Marten can also create a foreign key to tables that are not managed by Marten.  Continuing the our sample
+Marten can also create a foreign key to tables that are not managed by Marten. Continuing the our sample
 of `Issue`, we can create a foreign key from our `Issue` to our external bug tracking system:
 
 <[sample:configure-external-foreign-key]>
