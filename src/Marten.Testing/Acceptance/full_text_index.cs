@@ -308,6 +308,41 @@ namespace Marten.Testing.Acceptance
         }
 
         [SkippableFact]
+        public void web_search_in_query_sample()
+        {
+            // web search is available in only PG11
+            var requiredMinimumPgVersion = Version.Parse("11.0");
+            var hasRequiredMinimumPgVersion =
+                theStore.Diagnostics.GetPostgresVersion().CompareTo(requiredMinimumPgVersion) >= 0;
+            var skipReason = $"Test skipped, minimum Postgres version required is {requiredMinimumPgVersion}";
+
+            Skip.IfNot(hasRequiredMinimumPgVersion, skipReason);
+
+            StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+            var expectedId = Guid.NewGuid();
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
+                session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.OpenSession())
+            {
+                // SAMPLE: web_search_in_query_sample
+                var posts = session.Query<BlogPost>()
+                    .Where(x => x.WebStyleSearch("somefilter"))
+                    .ToList();
+                // ENDSAMPLE
+
+                posts.Count.ShouldBe(1);
+                posts.Single().Id.ShouldBe(expectedId);
+            }
+        }
+
+        [SkippableFact]
         public void text_search_combined_with_other_query_sample()
         {
             Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);

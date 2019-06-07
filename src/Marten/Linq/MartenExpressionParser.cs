@@ -99,7 +99,8 @@ namespace Marten.Linq
             // full text search
             new Search(),
             new PhraseSearch(),
-            new PlainTextSearch()
+            new PlainTextSearch(),
+            new WebStyleSearch()
         };
 
         private static readonly object[] _supplementalParsers = new[]

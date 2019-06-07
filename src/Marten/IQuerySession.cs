@@ -317,5 +317,28 @@ namespace Marten
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
         Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+        
+        /// <summary>
+        /// Performs a full text search against <typeparamref name="TDoc"/> using the 'websearch_to_tsquery' search function
+        /// </summary>
+        /// <param name="searchTerm">The text to search for.  Uses an alternative syntax to the other search functions, similar to the one used by web search engines</param>
+        /// <param name="regConfig">The dictionary config passed to the 'websearch_to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <remarks>
+        /// Supported from Postgres 11
+        /// See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+        /// </remarks>
+        IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig);
+
+        /// <summary>
+        /// Performs an asynchronous full text search against <typeparamref name="TDoc"/> using the 'websearch_to_tsquery' search function
+        /// </summary>
+        /// <param name="searchTerm">The text to search for.  Uses an alternative syntax to the other search functions, similar to the one used by web search engines</param>
+        /// <param name="regConfig">The dictionary config passed to the 'websearch_to_tsquery' function, must match the config parameter used by <seealso cref="DocumentMapping.AddFullTextIndex(string)"/></param>
+        /// <param name="token"></param>
+        /// <remarks>
+        /// Supported from Postgres 11
+        /// See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+        /// </remarks>
+        Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
     }
 }
