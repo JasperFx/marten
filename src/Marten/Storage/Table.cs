@@ -215,13 +215,23 @@ WHERE
   NOT nspname LIKE 'pg%' AND 
   i.relname like 'mt_%';
 
-select constraint_name 
-from information_schema.table_constraints as c
-where 
-  c.constraint_name LIKE 'mt_%' and 
-  c.constraint_type = 'FOREIGN KEY' and 
-  c.table_schema = :{schemaParam} and
-  c.table_name = :{nameParam};
+SELECT c.conname                                     AS constraint_name,
+       c.contype                                     AS constraint_type,
+       sch.nspname                                   AS schema_name,
+       tbl.relname                                   AS table_name,
+       ARRAY_AGG(col.attname ORDER BY u.attposition) AS columns,
+       pg_get_constraintdef(c.oid)                   AS definition
+FROM pg_constraint c
+       JOIN LATERAL UNNEST(c.conkey) WITH ORDINALITY AS u(attnum, attposition) ON TRUE
+       JOIN pg_class tbl ON tbl.oid = c.conrelid
+       JOIN pg_namespace sch ON sch.oid = tbl.relnamespace
+       JOIN pg_attribute col ON (col.attrelid = tbl.oid AND col.attnum = u.attnum)
+WHERE 
+	c.conname like 'mt_%' and
+	c.contype = 'f' and
+	sch.nspname = :{schemaParam} and
+	tbl.relname = :{nameParam}
+GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
 
 ");
         }
@@ -292,7 +302,8 @@ where
             delta.IndexChanges.Each(x => patch.Updates.Apply(this, x));
             delta.IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
 
-            delta.MissingForeignKeys.Each(x => patch.Updates.Apply(this, x.ToDDL()));
+            delta.ForeignKeyChanges.Each(x => patch.Updates.Apply(this, x));
+            delta.ForeignKeyRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
 
             return SchemaPatchDifference.Update;
         }
@@ -325,18 +336,18 @@ where
             return existing;
         }
 
-        public List<string> ActualForeignKeys { get; set; } = new List<string>();
+        public List<ActualForeignKey> ActualForeignKeys { get; set; } = new List<ActualForeignKey>();
 
         public Dictionary<string, ActualIndex> ActualIndices { get; set; } = new Dictionary<string, ActualIndex>();
 
 
-        private static List<string> readConstraints(DbDataReader reader)
+        private List<ActualForeignKey> readConstraints(DbDataReader reader)
         {
             reader.NextResult();
-            var constraints = new List<string>();
+            var constraints = new List<ActualForeignKey>();
             while (reader.Read())
             {
-                constraints.Add(reader.GetString(0));
+                constraints.Add(new ActualForeignKey(Identifier, reader.GetString(0), reader.GetString(5)));
             }
 
             return constraints;
