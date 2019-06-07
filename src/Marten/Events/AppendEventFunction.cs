@@ -40,7 +40,7 @@ DECLARE
     actual_tenant varchar;
 	return_value int[];
 BEGIN
-	select version into event_version from {databaseSchema}.mt_streams where {streamsWhere};
+	select version into event_version from {databaseSchema}.mt_streams where {streamsWhere}{(_events.UseAppendEventForUpdateLock ? " for update" : string.Empty)};
 	if event_version IS NULL then
 		event_version = 0;
 		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, 0, now(), tenantid);

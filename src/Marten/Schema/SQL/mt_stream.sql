@@ -1,4 +1,4 @@
-﻿
+
 
 DROP TABLE IF EXISTS {databaseSchema}.mt_streams CASCADE;
 CREATE TABLE {databaseSchema}.mt_streams (

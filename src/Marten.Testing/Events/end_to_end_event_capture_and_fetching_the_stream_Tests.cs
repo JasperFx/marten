@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -643,7 +643,41 @@ namespace Marten.Testing.Events
             );
         }
 
-        private static DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanShema = true)
+        [Theory]
+        [MemberData("SessionParams")]
+        public void capture_immutable_events_with_for_update_lock(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
+        {
+            var store = InitStore(tenancyStyle, useAppendEventForUpdateLock: true);
+
+            var id = Guid.NewGuid();
+
+            When.CalledForEach(tenants, (tenantId, index) =>
+            {
+                var immutableEvent = new ImmutableEvent(id, "some-name");
+
+                using (var session = store.OpenSession(tenantId, sessionType))
+                {
+                    session.Events.Append(id, immutableEvent);
+                    session.SaveChanges();
+                }
+
+                using (var session = store.OpenSession(tenantId, sessionType))
+                {
+                    var streamEvents = session.Events.FetchStream(id);
+
+                    streamEvents.Count.ShouldBe(1);
+                    var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();
+
+                    @event.Id.ShouldBe(id);
+                    @event.Name.ShouldBe("some-name");
+                }
+            }).ShouldThrowIf(
+                (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
+            );
+        }
+
+
+        private static DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanShema = true, bool useAppendEventForUpdateLock = false)
         {
             var databaseSchema = $"end_to_end_event_capture_{tenancyStyle.ToString().ToLower()}";
 
@@ -651,6 +685,7 @@ namespace Marten.Testing.Events
             {
                 _.Events.DatabaseSchemaName = databaseSchema;
                 _.Events.TenancyStyle = tenancyStyle;
+                _.Events.UseAppendEventForUpdateLock = useAppendEventForUpdateLock;
 
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
