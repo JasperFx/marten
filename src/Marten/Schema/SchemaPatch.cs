@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
@@ -191,7 +192,7 @@ namespace Marten.Schema
                 using (var reader = cmd.ExecuteReader())
                 {
                     apply(schemaObjects[0], autoCreate, reader);
-                    for (int i = 1; i < schemaObjects.Length; i++)
+                    for (var i = 1; i < schemaObjects.Length; i++)
                     {
                         reader.NextResult();
                         apply(schemaObjects[i], autoCreate, reader);
@@ -200,7 +201,7 @@ namespace Marten.Schema
             }
             catch (Exception e)
             {
-                throw new MartenCommandException(cmd, e);
+                throw MartenCommandExceptionFactory.Create(cmd, e);
             }
 
             AssertPatchingIsValid(autoCreate);
