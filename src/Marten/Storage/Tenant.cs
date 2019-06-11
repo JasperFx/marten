@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
@@ -138,7 +139,7 @@ namespace Marten.Storage
                         }
                         catch (Exception e)
                         {
-                            throw new MartenCommandException(cmd, e);
+                            throw MartenCommandExceptionFactory.Create(cmd, e);
                         }
                     }
                     else if (patch.Difference == SchemaPatchDifference.None)

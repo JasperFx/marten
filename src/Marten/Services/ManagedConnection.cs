@@ -3,6 +3,7 @@ using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Exceptions;
 using Npgsql;
 
 namespace Marten.Services
@@ -221,7 +222,7 @@ namespace Marten.Services
 
             if (e is NpgsqlException)
             {
-                throw new MartenCommandException(cmd, e);
+                throw MartenCommandExceptionFactory.Create(cmd, e);
             }
         }
 
@@ -400,5 +401,6 @@ namespace Marten.Services
     public static class PostgresErrorCodes
     {
         public const string SerializationFailure = "40001";
+        public const string FunctionDoesNotExist = "42883";
     }
 }

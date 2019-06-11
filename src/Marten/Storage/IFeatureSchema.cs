@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Marten.Exceptions;
 using Marten.Util;
 using Npgsql;
 
@@ -142,7 +143,7 @@ namespace Marten.Storage
             }
             catch (Exception e)
             {
-                throw new MartenCommandException(cmd, e);
+                throw MartenCommandExceptionFactory.Create(cmd, e);
             }
         }
     }
