@@ -10,11 +10,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_insert_document_with_null_value_of_foregin_key()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var issue = new Issue();
 
@@ -24,11 +20,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_insert_document_with_existing_value_of_foregin_key()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var user = new User();
             using (var session = theStore.OpenSession())
@@ -45,11 +37,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void cannot_insert_document_with_non_existing_value_of_foregin_key()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var issue = new Issue { AssigneeId = Guid.NewGuid() };
 
@@ -66,11 +54,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_update_document_with_existing_value_of_foregin_key_to_other_existing_value()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var user = new User();
             var otherUser = new User();
@@ -91,11 +75,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_update_document_with_existing_value_of_foregin_key_to_null()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var user = new User();
             var otherUser = new User();
@@ -116,11 +96,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void cannot_update_document_with_existing_value_of_foregin_key_to_not_existing()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var user = new User();
             var otherUser = new User();
@@ -148,11 +124,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_delete_document_with_foreign_key()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(true);
 
             var user = new User();
             var issue = new Issue { AssigneeId = user.Id };
@@ -180,11 +152,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_delete_document_that_is_referenced_by_foreignkey_with_cascadedeletes_from_other_document()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(true);
 
             var user = new User();
             var issue = new Issue { AssigneeId = user.Id };
@@ -212,11 +180,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void cannot_delete_document_that_is_referenced_by_foreignkey_without_cascadedeletes_from_other_document()
         {
-            StoreOptions(options =>
-            {
-                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-            });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            ConfigureForeignKeyWithCascadingDeletes(false);
 
             var user = new User();
             var issue = new Issue { AssigneeId = user.Id };
@@ -242,6 +206,15 @@ namespace Marten.Testing.Acceptance
                 query.Load<Issue>(issue.Id).ShouldNotBeNull();
                 query.Load<User>(user.Id).ShouldNotBeNull();
             }
+        }
+
+        private void ConfigureForeignKeyWithCascadingDeletes(bool hasCascadeDeletes)
+        {
+            StoreOptions(options =>
+            {
+                options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = hasCascadeDeletes);
+            });
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
         }
 
         private void ShouldProperlySave(Issue issue)
