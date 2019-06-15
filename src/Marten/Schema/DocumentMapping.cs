@@ -879,6 +879,13 @@ namespace Marten.Schema
                 regConfig);
         }
 
+        /// <summary>
+        /// Adds foreign key index to other marten document
+        /// </summary>
+        /// <typeparam name="TReference">Document type</typeparam>
+        /// <param name="expression">Field selector</param>
+        /// <param name="foreignKeyConfiguration">customize foreign key configuration</param>
+        /// <param name="indexConfiguration">customize index configuration</param>
         public void ForeignKey<TReference>(
             Expression<Func<T, object>> expression,
             Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
@@ -894,9 +901,23 @@ namespace Marten.Schema
             indexConfiguration?.Invoke(indexDefinition);
         }
 
-        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName,
-                               Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
+        /// <summary>
+        /// Adds foreign key index to non-marten table
+        /// </summary>
+        /// <param name="expression">Field selector</param>
+        /// <param name="tableName">external table name</param>
+        /// <param name="columnName">referenced column to external table</param>
+        /// <param name="schemaName">external table schema name, if not provided then DatabaseSchemaName from store options will be used</param>
+        /// <param name="foreignKeyConfiguration">customize foreign key configuration</param>
+        public void ForeignKey(
+            Expression<Func<T, object>> expression,
+            string tableName,
+            string columnName,
+            string schemaName = null,
+            Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
         {
+            schemaName = schemaName ?? DatabaseSchemaName;
+
             var visitor = new FindMembers();
             visitor.Visit(expression);
 

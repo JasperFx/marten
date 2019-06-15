@@ -159,7 +159,6 @@ namespace Marten.Storage
 
         public List<TableColumn> PrimaryKeys { get; } = new List<TableColumn>();
 
-
         public void WriteDropStatement(DdlRules rules, StringWriter writer)
         {
             writer.WriteLine($"DROP TABLE IF EXISTS {Identifier} CASCADE;");
@@ -178,12 +177,11 @@ order by ordinal_position;
 select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
 from pg_index i
 join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
-where attrelid = (select pg_class.oid 
-                  from pg_class 
+where attrelid = (select pg_class.oid
+                  from pg_class
                   join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
                   where n.nspname = :{schemaParam} and relname = :{nameParam})
-and i.indisprimary; 
-
+and i.indisprimary;
 
 SELECT
   U.usename                AS user_name,
@@ -212,7 +210,7 @@ FROM pg_index AS idx
   JOIN pg_user AS U ON i.relowner = U.usesysid
 WHERE
   nspname = :{schemaParam} AND
-  NOT nspname LIKE 'pg%' AND 
+  NOT nspname LIKE 'pg%' AND
   i.relname like 'mt_%';
 
 SELECT c.conname                                     AS constraint_name,
@@ -226,7 +224,7 @@ FROM pg_constraint c
        JOIN pg_class tbl ON tbl.oid = c.conrelid
        JOIN pg_namespace sch ON sch.oid = tbl.relnamespace
        JOIN pg_attribute col ON (col.attrelid = tbl.oid AND col.attnum = u.attnum)
-WHERE 
+WHERE
 	c.conname like 'mt_%' and
 	c.contype = 'f' and
 	sch.nspname = :{schemaParam} and
@@ -280,6 +278,10 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
             {
                 if (autoCreate == AutoCreate.All)
                 {
+                    delta.ForeignKeyMissing.Each(x => patch.Updates.Apply(this, x));
+                    delta.ForeignKeyRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+                    delta.ForeignKeyMissingRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+
                     Write(patch.Rules, patch.UpWriter);
 
                     return SchemaPatchDifference.Create;
@@ -304,6 +306,7 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
 
             delta.ForeignKeyChanges.Each(x => patch.Updates.Apply(this, x));
             delta.ForeignKeyRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+            delta.ForeignKeyMissingRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
 
             return SchemaPatchDifference.Update;
         }
@@ -314,7 +317,6 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
             var pks = readPrimaryKeys(reader);
             var indexes = readIndexes(reader);
             var constraints = readConstraints(reader);
-
 
             if (!columns.Any()) return null;
 
@@ -332,14 +334,12 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
             existing.ActualIndices = indexes;
             existing.ActualForeignKeys = constraints;
 
-
             return existing;
         }
 
         public List<ActualForeignKey> ActualForeignKeys { get; set; } = new List<ActualForeignKey>();
 
         public Dictionary<string, ActualIndex> ActualIndices { get; set; } = new Dictionary<string, ActualIndex>();
-
 
         private List<ActualForeignKey> readConstraints(DbDataReader reader)
         {
@@ -372,8 +372,6 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
 
                     dict.Add(index.Name, index);
                 }
-
-
             }
 
             return dict;
@@ -444,7 +442,7 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (!obj.GetType().CanBeCastTo<Table>()) return false;
-            return Equals((Table) obj);
+            return Equals((Table)obj);
         }
 
         public override int GetHashCode()
