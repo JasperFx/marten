@@ -8,11 +8,12 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-public class Bug_1258_cannot_derive_updates_for_objects : IntegratedFixture
+    public class Bug_1258_cannot_derive_updates_for_objects: IntegratedFixture
     {
         [Fact]
         public void can_properly_detect_changes_when_user_defined_type()
         {
+            theStore.Advanced.Clean.CompletelyRemoveAll();
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
@@ -118,7 +119,7 @@ public class Bug_1258_cannot_derive_updates_for_objects : IntegratedFixture
                        RIGHTARG = cust_type,
                        COMMUTATOR = ~>=~,
                        NEGATOR = ~>~
-                    ); 
+                    );
                     CREATE OPERATOR ~<~ (
                        PROCEDURE = cust_type_lt,
                        LEFTARG = cust_type,

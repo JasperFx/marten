@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Session
 {
-    public class document_session_find_json_async_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class document_session_find_json_async_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: find-json-by-id-async
         [Fact]
@@ -19,8 +19,9 @@ namespace Marten.Testing.Session
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var json = await theSession.Json.FindByIdAsync<Issue>(issue.Id).ConfigureAwait(false);
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
+
         // ENDSAMPLE
 
         [Fact]
