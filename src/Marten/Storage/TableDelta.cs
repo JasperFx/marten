@@ -87,7 +87,7 @@ namespace Marten.Storage
                     ForeignKeyChanges.Add($"ALTER TABLE {schemaName}.{tableName} DROP CONSTRAINT {actualFkey.Name}; {fkey.ToDDL()};");
                     ForeignKeyRollbacks.Add($"ALTER TABLE {schemaName}.{tableName} DROP CONSTRAINT {fkey.KeyName}; ALTER TABLE {schemaName}.{tableName} ADD CONSTRAINT {actualFkey.Name} {actualFkey.DDL};");
                 }
-                else // The foreign key is missing
+                else if (actualFkey == null)// The foreign key is missing
                 {
                     ForeignKeyChanges.Add(fkey.ToDDL());
                     ForeignKeyRollbacks.Add($"ALTER TABLE {schemaName}.{tableName} DROP CONSTRAINT {fkey.KeyName};");
@@ -116,11 +116,16 @@ namespace Marten.Storage
         {
             get
             {
-                if (Missing.Any()) return false;
-                if (Extras.Any()) return false;
-                if (Different.Any()) return false;
-                if (IndexChanges.Any()) return false;
-                if (ForeignKeyChanges.Any()) return false;
+                if (Missing.Any())
+                    return false;
+                if (Extras.Any())
+                    return false;
+                if (Different.Any())
+                    return false;
+                if (IndexChanges.Any())
+                    return false;
+                if (ForeignKeyChanges.Any())
+                    return false;
 
                 return true;
             }

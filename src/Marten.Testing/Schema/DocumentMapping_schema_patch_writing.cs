@@ -1,11 +1,11 @@
-﻿using Marten.Schema;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Util;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentMapping_schema_patch_writing : IntegratedFixture
+    public class DocumentMapping_schema_patch_writing: IntegratedFixture
     {
         [Fact]
         public void creates_the_table_in_update_ddl_if_all_new()
@@ -332,7 +332,7 @@ namespace Marten.Testing.Schema
         }
 
         [Fact]
-        public void can_add_update_foreignkeys_toexternaltable_without_cascade_delete_that_were_added_asdocument_and_does_not_exist()
+        public void can_add_foreignkeys_toexternaltable_and_delete_that_were_added_asdocument_and_does_not_exist()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             CreateNonMartenTable();
@@ -364,14 +364,14 @@ namespace Marten.Testing.Schema
                 patch.RollbackDDL.ShouldContain(@"DROP CONSTRAINT mt_doc_issue_bug_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
 
                 patch.RollbackDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
-                    REFERENCES mt_doc_user(id)", StringComparisonOption.NormalizeWhitespaces);
+                    REFERENCES mt_doc_user(id);", StringComparisonOption.NormalizeWhitespaces);
 
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
             }
         }
 
         [Fact]
-        public void can_add_foreignkeys_todocuments_without_cascade_delete_that_were_added_asexternaltable_and_does_not_exist()
+        public void can_add_foreignkeys_todocuments_and_delete_that_were_added_asexternaltable_and_does_not_exist()
         {
             theStore.Advanced.Clean.CompletelyRemoveAll();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -403,7 +403,166 @@ namespace Marten.Testing.Schema
 
                 patch.RollbackDDL.ShouldContain(@"DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
                 patch.RollbackDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (bug_id)
-                    REFERENCES bugtracker.bugs(bugid)", StringComparisonOption.NormalizeWhitespaces);
+                    REFERENCES bugtracker.bugs(bugid);", StringComparisonOption.NormalizeWhitespaces);
+
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+        }
+
+        [Fact]
+        public void can_add_foreignkeys_toexternaltable_and_keep_that_were_added_asdocument_and_exists()
+        {
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            CreateNonMartenTable();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
+            }))
+            {
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.UpdateDDL.ShouldNotContain("DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.UpdateDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (bug_id)
+                    REFERENCES bugtracker.bugs (bugid)
+                    ON DELETE CASCADE;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldContain(@"DROP CONSTRAINT mt_doc_issue_bug_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldNotContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES mt_doc_user(id);", StringComparisonOption.NormalizeWhitespaces);
+
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+        }
+
+        [Fact]
+        public void can_add_foreignkeys_todocuments_and_keep_that_were_added_asexternaltable_and_exists()
+        {
+            theStore.Advanced.Clean.CompletelyRemoveAll();
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            CreateNonMartenTable();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+            }))
+            {
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.UpdateDDL.ShouldNotContain("DROP CONSTRAINT mt_doc_issue_bug_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.UpdateDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES public.mt_doc_user (id)
+                    ON DELETE CASCADE;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldContain(@"DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+                patch.RollbackDDL.ShouldNotContain(@"ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES bugtracker.bugs(bugid);", StringComparisonOption.NormalizeWhitespaces);
+
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+        }
+
+        [Fact]
+        public void can_replace_foreignkeys_from_todocuments_to_asexternaltable()
+        {
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            CreateNonMartenTable();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
+            }))
+            {
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey(i => i.AssigneeId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.UpdateDDL.ShouldContain("DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.UpdateDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES bugtracker.bugs (bugid)
+                    ON DELETE CASCADE;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldContain("DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES mt_doc_user(id);", StringComparisonOption.NormalizeWhitespaces);
+
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+        }
+
+        [Fact]
+        public void can_replace_foreignkeys_from_asexternaltable_to_todocuments()
+        {
+            theStore.Advanced.Clean.CompletelyRemoveAll();
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            CreateNonMartenTable();
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey(i => i.AssigneeId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+            }))
+            {
+                store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
+            }))
+            {
+                var patch = store.Schema.ToPatch();
+
+                patch.UpdateDDL.ShouldContain("DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.UpdateDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES public.mt_doc_user (id)
+                    ON DELETE CASCADE;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldContain("DROP CONSTRAINT mt_doc_issue_assignee_id_fkey;", StringComparisonOption.NormalizeWhitespaces);
+
+                patch.RollbackDDL.ShouldContain(@"ADD CONSTRAINT mt_doc_issue_assignee_id_fkey FOREIGN KEY (assignee_id)
+                    REFERENCES bugtracker.bugs(bugid);", StringComparisonOption.NormalizeWhitespaces);
 
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
             }
