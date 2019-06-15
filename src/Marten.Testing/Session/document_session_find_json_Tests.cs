@@ -18,7 +18,7 @@ namespace Marten.Testing.Session
             theSession.SaveChanges();
 
             var json = theSession.Json.FindById<Issue>(issue.Id);
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BlogId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
 
         // ENDSAMPLE
