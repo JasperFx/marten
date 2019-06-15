@@ -13,14 +13,28 @@ namespace Marten.Schema
         private readonly Func<ForeignKeyDefinition, string> _fkeyColumnRefFunc;
         private readonly Func<ForeignKeyDefinition, string> _fkeyExtraFunc;
 
-        public ForeignKeyDefinition(string columnName, DocumentMapping parent, DocumentMapping reference)
-            : this(columnName, parent, fkd => reference.Table.QualifiedName, fkd => "(id)", GenerateOnDeleteClause)
+        public ForeignKeyDefinition(
+            string columnName,
+            DocumentMapping parent,
+            DocumentMapping reference
+        ) : this(
+            columnName,
+            parent,
+            fkd => reference.Table.QualifiedName,
+            fkd => "(id)",
+            GenerateOnDeleteClause
+        )
         {
             _reference = reference;
         }
 
-        protected ForeignKeyDefinition(string columnName, DocumentMapping parent, Func<ForeignKeyDefinition, string> fkeyTableRefFunc,
-                                       Func<ForeignKeyDefinition, string> fkeyColumnRefFunc, Func<ForeignKeyDefinition, string> fkeyExtraFunc)
+        protected ForeignKeyDefinition(
+            string columnName,
+            DocumentMapping parent,
+            Func<ForeignKeyDefinition, string> fkeyTableRefFunc,
+            Func<ForeignKeyDefinition, string> fkeyColumnRefFunc,
+            Func<ForeignKeyDefinition, string> fkeyExtraFunc
+        )
         {
             ColumnName = columnName;
             _parent = parent;
@@ -50,7 +64,7 @@ namespace Marten.Schema
             sb.Append($"REFERENCES {_fkeyTableRefFunc.Invoke(this)} {_fkeyColumnRefFunc.Invoke(this)}");
 
             var extra = _fkeyExtraFunc?.Invoke(this);
-            if(extra.IsNotEmpty())
+            if (extra.IsNotEmpty())
             {
                 sb.AppendLine();
                 sb.Append(extra);
@@ -65,10 +79,19 @@ namespace Marten.Schema
 
     public class ExternalForeignKeyDefinition : ForeignKeyDefinition
     {
-        public ExternalForeignKeyDefinition(string columnName, DocumentMapping parent, string externalSchemaName, string externalTableName,
-                                            string externalColumnName)
-            : base(columnName, parent, _ => $"{externalSchemaName}.{externalTableName}", _ => $"({externalColumnName})",
-                GenerateOnDeleteClause)
+        public ExternalForeignKeyDefinition(
+            string columnName,
+            DocumentMapping parent,
+            string externalSchemaName,
+            string externalTableName,
+            string externalColumnName
+        ) : base(
+            columnName,
+            parent,
+            _ => $"{externalSchemaName}.{externalTableName}",
+            _ => $"({externalColumnName})",
+            GenerateOnDeleteClause
+        )
         {
         }
     }

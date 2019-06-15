@@ -1,5 +1,4 @@
-﻿using System;
-using Marten.Testing.Documents;
+﻿using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
 {
@@ -31,9 +30,9 @@ namespace Marten.Testing.Examples
                      {
                          _.Connection("some database connection");
 
-                         // Here we create a foreign key to table that is not 
+                         // Here we create a foreign key to table that is not
                          // created or managed by marten
-                         _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bug-tracker", "bugs", "id");
+                         _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "id");
                      });
             // ENDSAMPLE
         }

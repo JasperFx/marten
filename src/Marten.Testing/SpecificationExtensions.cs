@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
@@ -152,13 +153,23 @@ namespace Marten.Testing
             return aString;
         }
 
-        public static void ShouldContain(this string actual, string expected)
+        public static void ShouldContain(this string actual, string expected, StringComparisonOption options = StringComparisonOption.Default)
         {
+            if (options == StringComparisonOption.NormalizeWhitespaces)
+            {
+                actual = Regex.Replace(actual, @"\s+", " ");
+                expected = Regex.Replace(expected, @"\s+", " ");
+            }
             actual.Contains(expected).ShouldBeTrue($"Actual: {actual}{Environment.NewLine}Expected: {expected}");
         }
 
-        public static string ShouldNotContain(this string actual, string expected)
+        public static string ShouldNotContain(this string actual, string expected, StringComparisonOption options = StringComparisonOption.NormalizeWhitespaces)
         {
+            if (options == StringComparisonOption.NormalizeWhitespaces)
+            {
+                actual = Regex.Replace(actual, @"\s+", " ");
+                expected = Regex.Replace(expected, @"\s+", " ");
+            }
             actual.Contains(expected).ShouldBeFalse($"Actual: {actual}{Environment.NewLine}Expected: {expected}");
             return actual;
         }
@@ -208,5 +219,11 @@ namespace Marten.Testing
             var function = DbObjectName.Parse(qualifiedName);
             names.ShouldContain(function);
         }
+    }
+
+    public enum StringComparisonOption
+    {
+        Default,
+        NormalizeWhitespaces
     }
 }
