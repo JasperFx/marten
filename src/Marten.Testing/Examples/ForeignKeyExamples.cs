@@ -37,7 +37,7 @@ namespace Marten.Testing.Examples
             // ENDSAMPLE
         }
 
-        public void cascade_deletes_1()
+        public void cascade_deletes_with_config_func()
         {
             // SAMPLE: cascade_deletes_with_config_func
             var store = DocumentStore
