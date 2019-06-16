@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -8,7 +8,7 @@ namespace Marten.Testing.Acceptance
     public class foreign_keys: IntegratedFixture
     {
         [Fact]
-        public void can_insert_document_with_null_value_of_foregin_key()
+        public void can_insert_document_with_null_value_of_foreign_key()
         {
             ConfigureForeignKeyWithCascadingDeletes(false);
 
@@ -18,7 +18,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void can_insert_document_with_existing_value_of_foregin_key()
+        public void can_insert_document_with_existing_value_of_foreign_key()
         {
             ConfigureForeignKeyWithCascadingDeletes(false);
 
@@ -35,7 +35,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void cannot_insert_document_with_non_existing_value_of_foregin_key()
+        public void cannot_insert_document_with_non_existing_value_of_foreign_key()
         {
             ConfigureForeignKeyWithCascadingDeletes(false);
 
@@ -52,7 +52,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void can_update_document_with_existing_value_of_foregin_key_to_other_existing_value()
+        public void can_update_document_with_existing_value_of_foreign_key_to_other_existing_value()
         {
             ConfigureForeignKeyWithCascadingDeletes(false);
 
@@ -73,7 +73,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void can_update_document_with_existing_value_of_foregin_key_to_null()
+        public void can_update_document_with_existing_value_of_foreign_key_to_null()
         {
             ConfigureForeignKeyWithCascadingDeletes(false);
 
@@ -94,7 +94,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void cannot_update_document_with_existing_value_of_foregin_key_to_not_existing()
+        public void cannot_update_document_with_existing_value_of_foreign_key_to_not_existing()
         {
             ConfigureForeignKeyWithCascadingDeletes(false);
 
