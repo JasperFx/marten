@@ -125,17 +125,8 @@ namespace martenbuild
             baseDir.Delete(true);
         }
 
-        private static void RunNpm(string args)
-        {
-            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
-            {
-                Run("cmd.exe", $"/c npm {args}");
-            }
-            else
-            {
-                Run("npm", args);
-            }
-        }
+        private static void RunNpm(string args) =>
+            Run("npm", args, windowsName: "cmd.exe", windowsArgs: $"/c npm {args}");
 
         private static void RunStoryTellerDocs(string args)
         {
