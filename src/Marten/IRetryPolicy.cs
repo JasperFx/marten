@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marten
 {
     /// <summary>
-    /// Interface defining the retry policy for handling NpgqlException with git statustransient failures
+    /// Interface defining the retry policy for handling NpgqlException with transient failures
     /// </summary>
     public interface IRetryPolicy
     {
