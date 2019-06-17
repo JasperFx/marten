@@ -96,3 +96,9 @@ just understand what kinds of operations are being chatty in the first place. To
 <[sample:using_request_count]>
 
 At this point, Marten does not have any built in support for asserting requests per session thresholds like other tools. While I think that we are uncomfortable with that functionality ever being turned on in production, it should be easily feasible to build those kinds of automated threshold testing like "fail the test if there were more than 25 requests issued for any given HTTP request."
+
+## Getting PostgreSQL server version
+
+Marten provides a helper method to fetch the PostgreSQL server version exposed via `IDocumentStore.Diagnostics`. This is helpful to enable feature toggles based on features available in PostgreSQL versions or perform any diagnostics.
+
+<[sample:get_postgres_version]>
