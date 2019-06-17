@@ -29,13 +29,24 @@ namespace Marten
         /// <summary>
         /// Creates MartenCommandException based on the command and innerException information with formatted message.
         /// </summary>
-        /// <param name="command">failded Postgres command</param>
+        /// <param name="command">failed Postgres command</param>
         /// <param name="innerException">internal exception details</param>
-        /// <param name="prefix">optional prefix that will be added to message</param>
+        public MartenCommandException(NpgsqlCommand command, Exception innerException)
+            : base(ToMessage(command) + innerException.Message, innerException)
+        {
+            Command = command;
+        }
+
+        /// <summary>
+        /// Creates MartenCommandException based on the command and innerException information with formatted message.
+        /// </summary>
+        /// <param name="command">failed Postgres command</param>
+        /// <param name="innerException">internal exception details</param>
+        /// <param name="prefix">prefix that will be added to message</param>
         public MartenCommandException(
             NpgsqlCommand command,
             Exception innerException,
-            string prefix = null
+            string prefix
         ) : base(ToMessage(command, prefix) + innerException.Message, innerException)
         {
             Command = command;

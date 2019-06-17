@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Marten.Services;
 using Npgsql;
 
@@ -30,20 +31,19 @@ namespace Marten.Exceptions
             out MartenCommandNotSupportedException notSupportedException
         )
         {
-            var postgresException = innerException as PostgresException;
-            if (postgresException?.SqlState != PostgresErrorCodes.FunctionDoesNotExist || !postgresException.Message.Contains("tsvector"))
+            var knownCause = KnownExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(innerException));
+
+            if (knownCause != null)
             {
-                notSupportedException = null;
-                return false;
+                notSupportedException = new MartenCommandNotSupportedException(knownCause.Reason, command, innerException, knownCause.Description);
+
+                return true;
             }
 
-            notSupportedException = new MartenCommandNotSupportedException
-            (
-                NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10,
-                command,
-                innerException
-            );
-            return true;
+            notSupportedException = null;
+            return false;
         }
     }
+
+
 }
