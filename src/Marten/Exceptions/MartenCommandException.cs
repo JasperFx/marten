@@ -20,10 +20,15 @@ namespace Marten
             return $"Marten Command Failure:\n{prefix}{command.CommandText}\n\n";
         }
 
+        public MartenCommandException(NpgsqlCommand command, Exception innerException) : base(ToMessage(command) + innerException.Message, innerException)
+        {
+            Command = command;
+        }
+
         public MartenCommandException(
             NpgsqlCommand command,
             Exception innerException,
-            string prefix = null
+            string prefix
         ) : base(ToMessage(command, prefix) + innerException.Message, innerException)
         {
             Command = command;
