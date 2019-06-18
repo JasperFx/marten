@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.NodaTime.Testing.Acceptance
 {
-    public class noda_time_acceptance : IntegratedFixture
+    public class noda_time_acceptance: IntegratedFixture
     {
         public void noda_time_default_setup()
         {
@@ -183,7 +183,39 @@ namespace Marten.NodaTime.Testing.Acceptance
             }
         }
 
-        private class CustomJsonSerializer : ISerializer
+        [Fact]
+        public void bug_1276_can_select_instant()
+        {
+            StoreOptions(_ => _.UseNodaTime());
+
+            var dateTime = DateTime.UtcNow;
+            var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
+            var testDoc = TargetWithDates.Generate(dateTime);
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Insert(testDoc);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var resulta = query.Query<TargetWithDates>()
+                    .Where(c => c.Id == testDoc.Id)
+                    .Single();
+
+                var result = query.Query<TargetWithDates>()
+                    .Where(c => c.Id == testDoc.Id)
+                    .Select(c => new { c.Id, c.InstantUTC })
+                    .Single();
+
+                result.ShouldNotBeNull();
+                result.Id.ShouldBe(testDoc.Id);
+                ShouldBeEqualWithDbPrecision(result.InstantUTC, instantUTC);
+            }
+        }
+
+        private class CustomJsonSerializer: ISerializer
         {
             public EnumStorage EnumStorage => throw new NotImplementedException();
 
@@ -215,6 +247,13 @@ namespace Marten.NodaTime.Testing.Acceptance
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private static void ShouldBeEqualWithDbPrecision(Instant actual, Instant expected)
+        {
+            Instant toDbPrecision(Instant date) => Instant.FromUnixTimeMilliseconds(date.ToUnixTimeMilliseconds() / 100 * 100);
+
+            toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
     }
 }

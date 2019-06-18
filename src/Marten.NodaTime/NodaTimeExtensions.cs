@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Services;
 using Marten.Util;
 using NodaTime;
@@ -27,7 +27,11 @@ namespace Marten.NodaTime
             if (shouldConfigureJsonNetSerializer)
             {
                 var serializer = storeOptions.Serializer();
-                (serializer as JsonNetSerializer)?.Customize(s => s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb));
+                (serializer as JsonNetSerializer)?.Customize(s =>
+                {
+                    s.Converters.Add(InstantJsonConverter.Instance);
+                    s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                });
                 storeOptions.Serializer(serializer);
             }
         }
