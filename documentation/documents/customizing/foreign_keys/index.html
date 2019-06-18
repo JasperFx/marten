@@ -99,10 +99,10 @@ where they still add value? In this case, Marten allows for a special kind of &q
 that also adds a foreign key constraint to enforce referential integrity between document types.</p>
 <p>One of our sample document types in Marten is the <code>Issue</code> class that has
 a couple properties that link to the id's of related <code>User</code> documents:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string[] Tags { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Number { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? AssigneeId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? ReporterId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string[] Tags { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Number { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? AssigneeId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? ReporterId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? BugId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>If I want to enforce referential integrity between the <code>Issue</code> document and the <code>User</code> documents,
 I can use this syntax shown below to configure Marten:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;    // In the following line of code, I&#x27;m setting&#xD;&#xA;    // up a foreign key relationship to the User document&#xD;&#xA;    _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(_ =&gt;&#xD;&#xA;         {&#xD;&#xA;             _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;             // In the following line of code, I&#x27;m setting&#xD;&#xA;             // up a foreign key relationship to the User document&#xD;&#xA;             _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId);&#xD;&#xA;         });&#xD;&#xA;</code></pre>
 <p>With the configuration above, Marten will make an <code>assignee_id</code> field in the database table and build a
 foreign key constraint to the <code>User</code> document like so:</p>
 <pre>
@@ -117,6 +117,22 @@ CREATE INDEX mt_doc_issue_idx_assignee_id ON public.mt_doc_issue ("assignee_id")
 In the <code>Issue</code> referencing <code>User</code> example above, this means that if you create a new <code>User</code> and a new
 <code>Issue</code> in the same session, when you call <code>IDocumentSession.SaveChanges()/SaveChangesAsync()</code>, Marten will know
 to save the new user first so that the issue will not fail with referential integrity violations.</p>
+<h2 id="foreign-keys-to-non-marten-tables">Foreign Keys to non-Marten tables</h2>
+<p>Marten can also create a foreign key to tables that are not managed by Marten. Continuing the our sample
+of <code>Issue</code>, we can create a foreign key from our <code>Issue</code> to our external bug tracking system:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(_ =&gt;&#xD;&#xA;         {&#xD;&#xA;             _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;             // Here we create a foreign key to table that is not&#xD;&#xA;             // created or managed by marten&#xD;&#xA;             _.Schema.For&lt;Issue&gt;().ForeignKey(i =&gt; i.BugId, &quot;bugtracker&quot;, &quot;bugs&quot;, &quot;id&quot;);&#xD;&#xA;         });&#xD;&#xA;</code></pre>
+<p>With the configuration above, Marten will generate a foreign key constraint from the <code>Issue</code> to a table in the
+<code>bug-tracker</code> schema called <code>bugs</code> on the <code>id</code> column.  The constraint would be defined as:</p>
+<pre>
+ALTER TABLE public.mt_doc_issue
+ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (bug_id)
+REFERENCES bug-tracker.bugs (id);
+</pre>
+<h2 id="cascading-deletes">Cascading deletes</h2>
+<p>Marten can also cascade deletes on the foreign keys that it creates.  The <code>ForeignKeyDefinition</code> has a
+<code>CascadeDeletes</code> property that indicates whether the foreign key should enable cascading deletes.  One way
+to enable this is to use a configuration function like:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(_ =&gt;&#xD;&#xA;         {&#xD;&#xA;             _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;             _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId, fkd =&gt; fkd.CascadeDeletes = true);&#xD;&#xA;         });&#xD;&#xA;</code></pre>
 <h2 id="configuring-with-attributes">Configuring with Attributes</h2>
 <p>You can optionally configure properties or fields as foreign key relationships with the <code>[ForeignKey]</code> attribute:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [ForeignKey(typeof(User))]&#xD;&#xA;    public Guid UserId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? OtherUserId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>

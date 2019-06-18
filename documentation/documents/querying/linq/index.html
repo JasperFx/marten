@@ -222,6 +222,10 @@ Currently three types of full Text Search functions are supported:</p>
 <li>phrase Search (phraseto_tsquery)</li>
 </ul>
 <pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.PhraseSearch(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
+<ul>
+<li>web-style Search (websearch_to_tsquery, <a href="https://www.postgresql.org/docs/11/textsearch-controls.html">supported from Postgres 11+</a>)</li>
+</ul>
+<pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.WebStyleSearch(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
 <p>All types of Text Searches can be combined with other Linq queries</p>
 <pre><code class="language-csharp">&#xD;&#xA;var posts = session.Query&lt;BlogPost&gt;()&#xD;&#xA;    .Where(x =&gt; x.Category == &quot;LifeStyle&quot;)&#xD;&#xA;    .Where(x =&gt; x.PhraseSearch(&quot;somefilter&quot;))&#xD;&#xA;    .ToList();&#xD;&#xA;</code></pre>
 <p>They allow also to specify language (regConfig) of the text search query (by default <code>english</code> is being used)</p>

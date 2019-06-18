@@ -148,6 +148,9 @@ PlanWidth: 36
 just understand what kinds of operations are being chatty in the first place. To that end, Marten exposes the request count for each <code>IQuerySession</code> or <code>IDocumentSession</code> that simply tells you how many commands have been issued to Postgresql by that session:</p>
 <pre><code class="language-csharp">&#xD;&#xA;using (var session = theStore.QuerySession())&#xD;&#xA;{&#xD;&#xA;    var users = session.Query&lt;User&gt;().ToList();&#xD;&#xA;    var count = session.Query&lt;User&gt;().Count();&#xD;&#xA;    var any = session.Query&lt;User&gt;().Any();&#xD;&#xA;&#xD;&#xA;    session.RequestCount.ShouldBe(3);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>At this point, Marten does not have any built in support for asserting requests per session thresholds like other tools. While I think that we are uncomfortable with that functionality ever being turned on in production, it should be easily feasible to build those kinds of automated threshold testing like &quot;fail the test if there were more than 25 requests issued for any given HTTP request.&quot;</p>
+<h2 id="getting-postgresql-server-version">Getting PostgreSQL server version</h2>
+<p>Marten provides a helper method to fetch the PostgreSQL server version exposed via <code>IDocumentStore.Diagnostics</code>. This is helpful to enable feature toggles based on features available in PostgreSQL versions or perform any diagnostics.</p>
+<pre><code class="language-csharp">&#xD;&#xA;var pgVersion = theStore.Diagnostics.GetPostgresVersion();&#xD;&#xA;</code></pre>
 
 			      	</div>
 
