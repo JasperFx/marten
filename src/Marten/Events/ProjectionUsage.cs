@@ -1,5 +1,3 @@
-using System;
-
 namespace Marten.Events
 {
     public class ProjectionUsage

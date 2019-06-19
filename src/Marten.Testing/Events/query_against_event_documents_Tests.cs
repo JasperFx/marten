@@ -1,18 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Marten.Events;
 using Marten.Services;
 using Marten.Util;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
-    public class query_against_event_documents_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_against_event_documents_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         private MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         private MembersDeparted departed1 = new MembersDeparted { Members = new[] { "Thom" } };
@@ -37,6 +32,7 @@ namespace Marten.Testing.Events
             theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
                 .Single().Id.ShouldBe(departed2.Id);
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -155,13 +151,14 @@ namespace Marten.Testing.Events
         }
 
         // SAMPLE: example_of_querying_for_event_data
-public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
-{
-    var events = session.Events.QueryAllRawEvents()
-        .Where(x => x.StreamId == stream)
-        .OrderBy(x => x.Sequence)
-        .ToList();
-}
+        public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
+        {
+            var events = session.Events.QueryAllRawEvents()
+                .Where(x => x.StreamId == stream)
+                .OrderBy(x => x.Sequence)
+                .ToList();
+        }
+
         // ENDSAMPLE
 
         [Fact]
@@ -177,7 +174,6 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
             var past = now.AddSeconds(-1);
 
             var results = theSession.Events.QueryAllRawEvents().Where(x => x.Timestamp > past).ToList();
-                
 
             results.Count.ShouldBe(4);
         }
@@ -190,11 +186,8 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
 
             theSession.SaveChanges();
 
-            
-
             var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
             var now = new DateTimeOffset(dbNow).AddSeconds(5);
-           
 
             var all = theSession.Events.QueryAllRawEvents().ToList();
 
@@ -203,7 +196,6 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
 
             results.Count.ShouldBe(4);
         }
-
 
         [Fact]
         public void can_fetch_events_by_sequence()

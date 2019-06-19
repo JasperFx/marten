@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class UpsertFunction : Function
+    public class UpsertFunction: Function
     {
         private readonly bool _disableConcurrency;
         protected readonly string _primaryKeyConstraintName;
@@ -22,7 +22,8 @@ namespace Marten.Storage
         public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false) : base(identifier ?? mapping.UpsertFunction)
         {
             _disableConcurrency = disableConcurrency;
-            if (mapping == null) throw new ArgumentNullException(nameof(mapping));
+            if (mapping == null)
+                throw new ArgumentNullException(nameof(mapping));
 
             _tableName = mapping.Table;
 

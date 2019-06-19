@@ -2,9 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using Marten;
 using Marten.Events;
-using Marten.Testing;
 using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
@@ -19,13 +17,11 @@ namespace Marten.Testing.Events
             DocumentTracking.DirtyTracking
         };
 
-
         [Theory]
         [MemberData("SessionTypes")]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back(DocumentTracking sessionType)
         {
             var store = InitStore();
-
 
             using (var session = store.OpenSession(sessionType))
             {
@@ -55,7 +51,6 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
-
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: start-stream-with-aggregate-type
@@ -84,7 +79,6 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
-
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: start-stream-with-aggregate-type
@@ -96,7 +90,6 @@ namespace Marten.Testing.Events
                 // ENDSAMPLE
 
                 var streamEvents = await Queryable.Where<IEvent>(session.Events.QueryAllRawEvents(), x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
-
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -114,7 +107,6 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
-
             using (var session = store.OpenSession(sessionType))
             {
                 // SAMPLE: start-stream-with-aggregate-type
@@ -127,7 +119,6 @@ namespace Marten.Testing.Events
 
                 var streamEvents = Queryable.Where<IEvent>(session.Events.QueryAllRawEvents(), x => x.StreamId == id).OrderBy(x => x.Version).ToList();
 
-
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
@@ -137,7 +128,6 @@ namespace Marten.Testing.Events
                 streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
             }
         }
-
 
         [Theory]
         [MemberData("SessionTypes")]
@@ -468,7 +458,6 @@ namespace Marten.Testing.Events
             }
         }
 
-
         [Theory]
         [MemberData("SessionTypes")]
         public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
@@ -536,7 +525,6 @@ namespace Marten.Testing.Events
             }
         }
 
-
         [Theory]
         [MemberData("SessionTypes")]
         public void capture_immutable_events(DocumentTracking sessionType)
@@ -563,8 +551,6 @@ namespace Marten.Testing.Events
                 @event.Name.ShouldBe("some-name");
             }
         }
-
-
 
         private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)
         {

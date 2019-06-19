@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -19,9 +18,9 @@ namespace Marten.Testing.Examples
                 _.Listeners.Add(new TimestampListener());
             }))
             {
-                var doc1s = new Doc1[] {new Doc1(), new Doc1(), };
-                var doc2s = new Doc2[] {new Doc2(), new Doc2(), };
-                var doc3s = new Doc3[] {new Doc3(), new Doc3(), };
+                var doc1s = new Doc1[] { new Doc1(), new Doc1(), };
+                var doc2s = new Doc2[] { new Doc2(), new Doc2(), };
+                var doc3s = new Doc3[] { new Doc3(), new Doc3(), };
 
                 using (var session = store.OpenSession())
                 {
@@ -39,7 +38,7 @@ namespace Marten.Testing.Examples
         }
     }
 
-    public class TimestampListener : DocumentSessionListenerBase
+    public class TimestampListener: DocumentSessionListenerBase
     {
         public override void BeforeSaveChanges(IDocumentSession session)
         {
@@ -51,22 +50,18 @@ namespace Marten.Testing.Examples
         {
             return Task.Factory.StartNew(() => BeforeSaveChanges(session));
         }
-
     }
 
-    public class Doc1 : BaseEntity
+    public class Doc1: BaseEntity
     {
-        
     }
 
-    public class Doc2 : BaseEntity
+    public class Doc2: BaseEntity
     {
-        
     }
 
-    public class Doc3 : BaseEntity
+    public class Doc3: BaseEntity
     {
-        
     }
 
     public class BaseEntity

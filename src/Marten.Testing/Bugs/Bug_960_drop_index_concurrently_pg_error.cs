@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Xunit;
 
@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
         public string Field2 { get; set; }
     }
 
-    public class Bug_960_drop_index_concurrently_pg_error : IntegratedFixture
+    public class Bug_960_drop_index_concurrently_pg_error: IntegratedFixture
     {
         /// <summary>
         /// Fix for PG error "0A000: DROP INDEX CONCURRENTLY must be first action in transaction"
@@ -49,7 +49,6 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Important>().Index(x => x.Field2);
             });
 
-            
             using (var session = store2.LightweightSession())
             {
                 await session.Query<Important>()

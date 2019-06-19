@@ -8,7 +8,7 @@ namespace Marten.Linq.Parsing
         /// <summary>
         /// Can this parser create a Sql where clause
         /// from part of a Linq expression
-        /// </summary>        
+        /// </summary>
         bool Matches(T expression);
 
         /// <summary>

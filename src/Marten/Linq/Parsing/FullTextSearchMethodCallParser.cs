@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using Marten.Linq.WhereFragments;
 using Marten.Schema;
@@ -13,7 +13,7 @@ namespace Marten.Linq.Parsing
         websearch_to_tsquery
     }
 
-    public abstract class FullTextSearchMethodCallParser : IMethodCallParser
+    public abstract class FullTextSearchMethodCallParser: IMethodCallParser
     {
         private readonly string methodName;
         private readonly FullTextSearchFunction searchFunction;

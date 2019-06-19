@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Events.Projections;
 using Marten.Testing.CodeTracker;
 using Shouldly;
@@ -11,7 +11,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void consumes_the_event()
         {
-            new OneForOneProjection<Commit,CommitView>(new CommitViewTransform())
+            new OneForOneProjection<Commit, CommitView>(new CommitViewTransform())
                 .Consumes.Single()
                 .ShouldBe(typeof(Commit));
         }

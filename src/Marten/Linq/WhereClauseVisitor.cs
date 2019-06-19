@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,7 +11,7 @@ namespace Marten.Linq
 {
     public partial class MartenExpressionParser
     {
-        public class WhereClauseVisitor : RelinqExpressionVisitor
+        public class WhereClauseVisitor: RelinqExpressionVisitor
         {
             private readonly IQueryableDocument _mapping;
             private readonly MartenExpressionParser _parent;
@@ -58,7 +58,6 @@ namespace Marten.Linq
                     return null;
                 }
 
-
                 throw new NotSupportedException($"Marten does not support the BinaryExpression {binary} (yet).");
             }
 
@@ -74,7 +73,6 @@ namespace Marten.Linq
 
                     return null;
                 }
-
 
                 throw new NotSupportedException(
                     $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
@@ -101,7 +99,6 @@ namespace Marten.Linq
 
                         return null;
                 }
-
 
                 return base.VisitUnary(node);
             }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
@@ -100,7 +100,7 @@ namespace Marten.Patching
         void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0);
 
         /// <summary>
-        /// Insert an element at the designated index to a child collection on the persisted document 
+        /// Insert an element at the designated index to a child collection on the persisted document
         /// if the value does not already exist at that index
         /// </summary>
         /// <typeparam name="TElement"></typeparam>

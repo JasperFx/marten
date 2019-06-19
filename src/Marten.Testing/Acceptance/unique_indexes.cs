@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
 using Marten.Testing.Documents;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class unique_indexes : IntegratedFixture
+    public class unique_indexes: IntegratedFixture
     {
         // SAMPLE: using_a_single_property_computed_unique_index_through_attribute
         public class Account

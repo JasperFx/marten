@@ -7,7 +7,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class DocJsonBodyArgument : UpsertArgument
+    public class DocJsonBodyArgument: UpsertArgument
     {
         private static readonly MethodInfo _serializer = ReflectionHelper.GetProperty<UpdateBatch>(x => x.Serializer).GetMethod;
         private static readonly MethodInfo _getWriter = typeof(UpdateBatch).GetMethod(nameof(UpdateBatch.GetWriter));
@@ -15,7 +15,7 @@ namespace Marten.Schema.Arguments
         private static readonly MethodInfo _tojson = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson), new[] { typeof(object) });
         private static readonly MethodInfo _tojsonWithWriter = typeof(ISerializer).GetMethod(nameof(ISerializer.ToJson), new[] { typeof(object), typeof(CharArrayTextWriter) });
 
-        static readonly MethodInfo _writerToSegment = ReflectionHelper.GetMethod<CharArrayTextWriter>(x => x.ToCharSegment());
+        private static readonly MethodInfo _writerToSegment = ReflectionHelper.GetMethod<CharArrayTextWriter>(x => x.ToCharSegment());
 
         public DocJsonBodyArgument()
         {
@@ -44,7 +44,7 @@ namespace Marten.Schema.Arguments
                 return Expression.Block(new[] { writer, segment },
                     Expression.Assign(writer, Expression.Call(updateBatch, _getWriter)),
                     Expression.Call(serializer, _tojsonWithWriter, doc, writer),
-                    Expression.Assign(segment, Expression.Call(writer,_writerToSegment)),
+                    Expression.Assign(segment, Expression.Call(writer, _writerToSegment)),
                     Expression.Call(call, _paramWithJsonBody, argName, segment)
                 );
             }

@@ -7,7 +7,7 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
-    public class FindMembers : RelinqExpressionVisitor
+    public class FindMembers: RelinqExpressionVisitor
     {
         public static MemberInfo Member<T>(Expression<Func<T, object>> expression)
         {

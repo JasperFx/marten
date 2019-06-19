@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Marten.Pagination
 {
@@ -30,6 +30,7 @@ namespace Marten.Pagination
         /// </summary>
 
         long PageSize { get; }
+
         /// <summary>
         /// Gets number of pages
         /// </summary>

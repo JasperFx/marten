@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -11,7 +11,8 @@ namespace Marten.Events
     {
         public static IEvent ToEvent(object @event)
         {
-            if (@event == null) throw new ArgumentNullException(nameof(@event));
+            if (@event == null)
+                throw new ArgumentNullException(nameof(@event));
 
             return typeof(Event<>).CloseAndBuildAs<IEvent>(@event, @event.GetType());
         }

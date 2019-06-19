@@ -13,7 +13,7 @@ using Remotion.Linq.Clauses;
 
 namespace Marten.Transforms
 {
-    public class DocumentTransforms : IDocumentTransforms
+    public class DocumentTransforms: IDocumentTransforms
     {
         private readonly DocumentStore _store;
         private readonly ITenant _tenant;
@@ -40,7 +40,6 @@ namespace Marten.Transforms
                     where.Apply(sql);
                 }
             });
-
 
             using (var conn = _tenant.OpenConnection())
             {
@@ -94,8 +93,6 @@ namespace Marten.Transforms
                 }
             });
 
-
-
             using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
@@ -131,7 +128,6 @@ namespace Marten.Transforms
             return whereFragment;
         }
 
-
         public void Document<T>(string transformName, string id)
         {
             transformOne<T>(transformName, id);
@@ -149,7 +145,6 @@ namespace Marten.Transforms
 
                 sql.AddNamedParameter("id", id);
             });
-
 
             using (var conn = _tenant.OpenConnection())
             {

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Marten.Services;
 using Baseline;
+using Marten.Services;
 using Marten.Storage;
 
 namespace Marten.Schema
@@ -12,6 +12,7 @@ namespace Marten.Schema
     {
         private const string BeginScript = @"DO $$
 BEGIN";
+
         private const string EndScript = @"END
 $$;
 ";
@@ -20,14 +21,16 @@ $$;
 
         public DatabaseSchemaGenerator(ITenant tenant)
         {
-            if (tenant == null) throw new ArgumentNullException(nameof(tenant));
+            if (tenant == null)
+                throw new ArgumentNullException(nameof(tenant));
 
             _tenant = tenant;
         }
 
         public void Generate(StoreOptions options, string[] schemaNames)
         {
-            if (schemaNames == null) throw new ArgumentNullException(nameof(schemaNames));
+            if (schemaNames == null)
+                throw new ArgumentNullException(nameof(schemaNames));
 
             var sql = GenerateScript(options, schemaNames);
             if (sql != null)
@@ -41,13 +44,15 @@ $$;
 
         public static string GenerateScript(StoreOptions options, IEnumerable<string> schemaNames)
         {
-            if (schemaNames == null) throw new ArgumentNullException(nameof(schemaNames));
+            if (schemaNames == null)
+                throw new ArgumentNullException(nameof(schemaNames));
 
             var names = schemaNames
                  .Distinct()
                  .Where(name => name != StoreOptions.DefaultDatabaseSchemaName).ToList();
 
-            if (!names.Any()) return null ;
+            if (!names.Any())
+                return null;
 
             using (var writer = new StringWriter())
             {
@@ -76,7 +81,6 @@ $$;
       EXECUTE 'CREATE SCHEMA {databaseSchemaName}';
     END IF;
 ");
-
         }
     }
 }

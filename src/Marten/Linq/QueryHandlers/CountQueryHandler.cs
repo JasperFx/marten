@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 using Marten.Linq.Model;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class CountQueryHandler<T> : IQueryHandler<T>
+    public class CountQueryHandler<T>: IQueryHandler<T>
     {
         private readonly ILinqQuery _query;
 
@@ -36,8 +35,8 @@ namespace Marten.Linq.QueryHandlers
         public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);
-            return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false) 
-                ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false) 
+            return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
+                ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false)
                 : default(T);
         }
     }

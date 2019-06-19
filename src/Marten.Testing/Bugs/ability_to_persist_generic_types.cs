@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Services;
 using Xunit;
 
@@ -10,9 +10,10 @@ namespace Marten.Testing.Bugs
     }
 
     public class TypeA { }
+
     public class TypeB { }
 
-    public class ability_to_persist_generic_types : DocumentSessionFixture<NulloIdentityMap>
+    public class ability_to_persist_generic_types: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void can_persist_and_load_generic_types()
@@ -26,23 +27,23 @@ namespace Marten.Testing.Bugs
 
             var doc2A = theSession.Load<GenericTypeToPersist<TypeA>>(doc1A.Id);
             var doc2B = theSession.Load<GenericTypeToPersist<TypeA>>(doc2A.Id);
-            doc2A.ShouldNotBeNull();            
+            doc2A.ShouldNotBeNull();
             doc2B.ShouldNotBeNull();
         }
     }
 
-    public class ability_to_persist_nested_generic_types : DocumentSessionFixture<NulloIdentityMap>
+    public class ability_to_persist_nested_generic_types: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void can_persist_and_load_generic_types()
         {
             var doc1 = new NestedGenericTypeToPersist<TypeA>();
-            
-            theSession.Store(doc1);            
+
+            theSession.Store(doc1);
             theSession.SaveChanges();
 
-            var doc2 = theSession.Load<NestedGenericTypeToPersist<TypeA>>(doc1.Id);            
-            doc2.ShouldNotBeNull();            
+            var doc2 = theSession.Load<NestedGenericTypeToPersist<TypeA>>(doc1.Id);
+            doc2.ShouldNotBeNull();
         }
 
         public class NestedGenericTypeToPersist<T>

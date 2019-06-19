@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -9,7 +8,7 @@ using Marten.Util;
 
 namespace Marten.Transforms
 {
-    public class TransformToJsonSelector : ISelector<string>
+    public class TransformToJsonSelector: ISelector<string>
     {
         private readonly IQueryableDocument _document;
         private readonly string _fieldName;
@@ -32,7 +31,7 @@ namespace Marten.Transforms
 
         public string[] SelectFields()
         {
-            return new[] {_fieldName};
+            return new[] { _fieldName };
         }
 
         public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)

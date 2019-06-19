@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using Marten.Services;
 using Xunit;
@@ -16,7 +16,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class Bug_616_not_possible_to_use_Serializable_transactions : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_616_not_possible_to_use_Serializable_transactions: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void conccurent_write_should_throw_an_exception()
@@ -36,7 +36,8 @@ namespace Marten.Testing.Bugs
 
                 session1.SaveChanges();
 
-                Assert.Throws<ConcurrentUpdateException>(() => {
+                Assert.Throws<ConcurrentUpdateException>(() =>
+                {
                     session2.SaveChanges();
                 });
             }

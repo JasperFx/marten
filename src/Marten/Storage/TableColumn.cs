@@ -8,8 +8,10 @@ namespace Marten.Storage
     {
         public TableColumn(string name, string type)
         {
-            if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
-            if (string.IsNullOrEmpty(type)) throw new ArgumentOutOfRangeException(nameof(type));
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentOutOfRangeException(nameof(name));
+            if (string.IsNullOrEmpty(type))
+                throw new ArgumentOutOfRangeException(nameof(type));
             Name = name.ToLower();
             Type = type.ToLower();
         }
@@ -29,7 +31,6 @@ namespace Marten.Storage
             return Type.Split('(')[0].Trim();
         }
 
-
         public string Directive { get; set; }
 
         protected bool Equals(TableColumn other)
@@ -40,17 +41,20 @@ namespace Marten.Storage
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (!obj.GetType().CanBeCastTo<TableColumn>()) return false;
-            return Equals((TableColumn) obj);
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (!obj.GetType().CanBeCastTo<TableColumn>())
+                return false;
+            return Equals((TableColumn)obj);
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                return (Name.GetHashCode()*397) ^ Type.GetHashCode();
+                return (Name.GetHashCode() * 397) ^ Type.GetHashCode();
             }
         }
 

@@ -6,12 +6,12 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq
 {
-    public class StatsExpressionNode : ResultOperatorExpressionNodeBase
+    public class StatsExpressionNode: ResultOperatorExpressionNodeBase
     {
         public LambdaExpression Stats { get; set; }
 
         public static MethodInfo[] SupportedMethods =
-            typeof (CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.Stats)).ToArray();
+            typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.Stats)).ToArray();
 
         public StatsExpressionNode(
             MethodCallExpressionParseInfo parseInfo, LambdaExpression stats)

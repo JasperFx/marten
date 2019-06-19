@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async
 {
-    public class StoreProgress : IDaemonUpdate
+    public class StoreProgress: IDaemonUpdate
     {
         private readonly Type _viewType;
         private readonly EventPage _page;

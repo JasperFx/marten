@@ -6,7 +6,7 @@ namespace Marten.Schema
     /// Allows you to duplicate storage with other classes of the same name
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class StructuralTypedAttribute : MartenAttribute
+    public class StructuralTypedAttribute: MartenAttribute
     {
         public override void Modify(DocumentMapping mapping)
         {

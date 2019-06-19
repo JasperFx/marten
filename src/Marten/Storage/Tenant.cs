@@ -17,7 +17,7 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    public class Tenant : ITenant
+    public class Tenant: ITenant
     {
         private readonly ConcurrentDictionary<Type, bool> _checks = new ConcurrentDictionary<Type, bool>();
         private readonly IConnectionFactory _factory;
@@ -33,7 +33,6 @@ namespace Marten.Storage
             _factory = factory;
 
             resetSequences();
-
         }
 
         private void resetSequences()
@@ -43,7 +42,6 @@ namespace Marten.Storage
                 var sequences = new SequenceFactory(_options, this);
 
                 generateOrUpdateFeature(typeof(SequenceFactory), sequences);
-
 
                 return sequences;
             });
@@ -73,15 +71,16 @@ namespace Marten.Storage
 
         public void EnsureStorageExists(Type featureType)
         {
-            if (_options.AutoCreateSchemaObjects == AutoCreate.None) return;
+            if (_options.AutoCreateSchemaObjects == AutoCreate.None)
+                return;
 
             ensureStorageExists(new List<Type>(), featureType);
         }
 
         private void ensureStorageExists(IList<Type> types, Type featureType)
         {
-            if (_checks.ContainsKey(featureType)) return;
-
+            if (_checks.ContainsKey(featureType))
+                return;
 
             // TODO -- ensure the system type here too?
             var feature = _features.FindFeature(featureType);
@@ -99,7 +98,8 @@ namespace Marten.Storage
             }
 
             // Preventing cyclic dependency problems
-            if (types.Contains(featureType)) return;
+            if (types.Contains(featureType))
+                return;
 
             types.Fill(featureType);
 
@@ -110,10 +110,8 @@ namespace Marten.Storage
 
             // TODO -- might need to do a lock here.
             generateOrUpdateFeature(featureType, feature);
-
         }
 
-        
         private readonly object _updateLock = new object();
 
         private void generateOrUpdateFeature(Type featureType, IFeatureSchema feature)
@@ -201,7 +199,6 @@ namespace Marten.Storage
 
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
 
-
         public IBulkLoader<T> BulkLoaderFor<T>()
         {
             EnsureStorageExists(typeof(T));
@@ -211,12 +208,12 @@ namespace Marten.Storage
 
                 var mapping = MappingFor(typeof(T)).Root as DocumentMapping;
 
-                if (mapping == null) throw new ArgumentOutOfRangeException("Marten cannot do bulk inserts on documents of type " + typeof(T).FullName);
+                if (mapping == null)
+                    throw new ArgumentOutOfRangeException("Marten cannot do bulk inserts on documents of type " + typeof(T).FullName);
 
                 return new BulkLoader<T>(_options.Serializer(), mapping, assignment);
             }).As<IBulkLoader<T>>();
         }
-
 
         public void MarkAllFeaturesAsChecked()
         {
@@ -247,7 +244,6 @@ namespace Marten.Storage
             return _factory.Create();
         }
 
-
         /// <summary>
         ///     Set the minimum sequence number for a Hilo sequence for a specific document type
         ///     to the specified floor. Useful for migrating data between databases
@@ -269,7 +265,8 @@ namespace Marten.Storage
         /// <returns></returns>
         public DocumentMetadata MetadataFor<T>(T entity)
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
 
             var mapping = MappingFor(typeof(T));
             var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
@@ -290,7 +287,8 @@ namespace Marten.Storage
         public async Task<DocumentMetadata> MetadataForAsync<T>(T entity,
             CancellationToken token = default(CancellationToken))
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
 
             var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
                 MappingFor(typeof(T)));

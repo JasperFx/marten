@@ -1,6 +1,4 @@
-﻿using System;
-using Marten.Testing.Documents;
-using Marten.Testing.Schema;
+using System;
 
 namespace Marten.Testing.Examples
 {
@@ -9,7 +7,6 @@ namespace Marten.Testing.Examples
         // SAMPLE: load_by_id
         public void load_by_id(IDocumentSession session)
         {
-            
             var userId = Guid.NewGuid();
 
             // Load a single document identified by a Guid
@@ -21,15 +18,15 @@ namespace Marten.Testing.Examples
             // Another overload for documents identified by strings
             var doc2 = session.Load<StringDoc>("Hank");
 
-
             // Load multiple documents by a group of id's
             var users = session.LoadMany<User>(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
-            var ids = new Guid[] {Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()};
+            var ids = new Guid[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
 
             // If you already have an array of id values
             var users2 = session.LoadMany<User>(ids);
-        } 
+        }
+
         // ENDSAMPLE
     }
 }

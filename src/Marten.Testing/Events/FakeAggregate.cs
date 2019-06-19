@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Testing.Events
 {
@@ -26,7 +26,6 @@ namespace Marten.Testing.Events
     {
         public string Name { get; set; }
     }
-
 
     public class EventD
     {

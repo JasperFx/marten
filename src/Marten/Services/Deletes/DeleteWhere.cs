@@ -1,13 +1,11 @@
 using System;
-using System.Text;
 using Marten.Linq;
-using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Services.Deletes
 {
-    public class DeleteWhere : IDeletion
+    public class DeleteWhere: IDeletion
     {
         private readonly IWhereFragment _where;
         private readonly TenancyStyle _tenancyStyle;

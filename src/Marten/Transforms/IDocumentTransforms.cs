@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 
 namespace Marten.Transforms
@@ -38,8 +38,11 @@ namespace Marten.Transforms
         void Tenants<T>(string transformName, params string[] tenantIds);
 
         void Document<T>(string transformName, string id);
+
         void Document<T>(string transformName, int id);
+
         void Document<T>(string transformName, long id);
+
         void Document<T>(string transformName, Guid id);
     }
 }

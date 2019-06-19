@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Events.Projections.Async
 {
-    public class Daemon : IDaemon
+    public class Daemon: IDaemon
     {
         private readonly DocumentStore _store;
         private readonly ITenant _tenant;
@@ -82,8 +82,6 @@ namespace Marten.Events.Projections.Async
 
             _tracks[viewType].Start(lifecycle);
         }
-
-
 
         public void Dispose()
         {
@@ -276,7 +274,8 @@ namespace Marten.Events.Projections.Async
                     using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
                     {
                         var any = await reader.ReadAsync(tkn).ConfigureAwait(false);
-                        if (!any) return 0;
+                        if (!any)
+                            return 0;
 
                         if (await reader.IsDBNullAsync(0, tkn).ConfigureAwait(false))
                         {

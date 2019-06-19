@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class marking_stream_as_isnew_on_capture : DocumentSessionFixture<NulloIdentityMap>
+    public class marking_stream_as_isnew_on_capture: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void isnew_on_start_stream()

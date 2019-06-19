@@ -1,10 +1,11 @@
-﻿using System.Text;
+using System.Text;
 
 namespace Marten.Linq
 {
-    internal sealed class ConfigureExplainExpressions : IConfigureExplainExpressions
-    {       
+    internal sealed class ConfigureExplainExpressions: IConfigureExplainExpressions
+    {
         private readonly StringBuilder toOptions = new StringBuilder();
+
         public IConfigureExplainExpressions Analyze()
         {
             toOptions.Append("ANALYZE,");

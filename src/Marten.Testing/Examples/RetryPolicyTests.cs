@@ -85,9 +85,10 @@ namespace Marten.Testing.Examples
             }
         }
     }
+
     // ENDSAMPLE
 
-    public sealed class RetryPolicyTests : IntegratedFixture
+    public sealed class RetryPolicyTests: IntegratedFixture
     {
         [Fact]
         public void CanPlugInRetryPolicyThatRetriesOnException()

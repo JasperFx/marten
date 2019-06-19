@@ -6,7 +6,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten.Linq
 {
-    public class MartenQueryProvider : QueryProviderBase
+    public class MartenQueryProvider: QueryProviderBase
     {
         private readonly Type _queryableType;
 
@@ -19,7 +19,7 @@ namespace Marten.Linq
         public override IQueryable<T> CreateQuery<T>(Expression expression)
         {
             return
-                (IQueryable<T>) Activator.CreateInstance(_queryableType.MakeGenericType(typeof (T)), this, expression);
+                (IQueryable<T>)Activator.CreateInstance(_queryableType.MakeGenericType(typeof(T)), this, expression);
         }
     }
 }

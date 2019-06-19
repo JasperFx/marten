@@ -9,7 +9,7 @@ namespace Marten
         /// Sorts in ascending order, from smallest to largest
         /// </summary>
         Asc,
-    
+
         /// <summary>
         /// Sorts in descending order, from largest to smallest
         /// </summary>

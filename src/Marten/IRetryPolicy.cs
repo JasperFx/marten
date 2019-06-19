@@ -40,11 +40,11 @@ namespace Marten
         /// <returns></returns>
         Task<TResult> ExecuteAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken);
     }
-    
+
     /// <summary>
     /// Default implementation of IRetryPolicy
     /// </summary>
-    public class NulloRetryPolicy : IRetryPolicy
+    public class NulloRetryPolicy: IRetryPolicy
     {
         public void Execute(Action operation)
         {
@@ -67,4 +67,3 @@ namespace Marten
         }
     }
 }
-

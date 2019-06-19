@@ -11,7 +11,7 @@ using NpgsqlTypes;
 
 namespace Marten.Patching
 {
-    public class PatchOperation : IStorageOperation, NoDataReturnedCall
+    public class PatchOperation: IStorageOperation, NoDataReturnedCall
     {
         private readonly IQueryableDocument _document;
         private readonly IWhereFragment _fragment;
@@ -31,6 +31,7 @@ namespace Marten.Patching
 
         // TODO -- come back and do this with a single command!
         private const string VALUE_LOOKUP = "___VALUE___";
+
         public void ConfigureCommand(CommandBuilder builder)
         {
             var patchParam = builder.AddJsonParameter(_serializer.ToCleanJson(_patch));
@@ -84,7 +85,8 @@ namespace Marten.Patching
         private void applyUpdates(CommandBuilder builder, IWhereFragment where)
         {
             var fields = _document.DuplicatedFields;
-            if (!fields.Any()) return;
+            if (!fields.Any())
+                return;
 
             builder.Append(";update ");
             builder.Append(_document.Table.QualifiedName);

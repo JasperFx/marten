@@ -1,20 +1,17 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Testing;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
-using System.Collections.Generic;
 
 namespace Marten.Testing.Acceptance
 {
-    public class optimistic_concurrency : IntegratedFixture
+    public class optimistic_concurrency: IntegratedFixture
     {
-
-
         public void example_configuration()
         {
             // SAMPLE: configuring-optimistic-concurrency
@@ -29,14 +26,13 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_generate_the_upsert_smoke_test_with_95_style()
         {
-            StoreOptions(_ => {
+            StoreOptions(_ =>
+            {
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             });
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Issue));
         }
-
-
 
         [Fact]
         public void can_insert_with_optimistic_concurrency_95()
@@ -100,8 +96,6 @@ namespace Marten.Testing.Acceptance
             {
                 session.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
             }
-
-
         }
 
         [Fact]
@@ -129,7 +123,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-
         // SAMPLE: update_with_stale_version_standard
         [Fact]
         public void update_with_stale_version_standard()
@@ -155,7 +148,6 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 session2.SaveChanges();
 
-
                 var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
                 {
                     session1.SaveChanges();
@@ -174,10 +166,9 @@ namespace Marten.Testing.Acceptance
             {
                 query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
             }
-
         }
-        // ENDSAMPLE
 
+        // ENDSAMPLE
 
         [Fact]
         public void overwrite_with_stale_version_standard()
@@ -209,9 +200,7 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 session2.SaveChanges();
 
-
                 session1.SaveChanges();
-
             }
             finally
             {
@@ -223,9 +212,7 @@ namespace Marten.Testing.Acceptance
             {
                 query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
             }
-
         }
-
 
         [Fact]
         public async Task update_with_stale_version_standard_async()
@@ -251,7 +238,6 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 await session2.SaveChangesAsync().ConfigureAwait(false);
 
-
                 var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
                 {
                     await session1.SaveChangesAsync().ConfigureAwait(false);
@@ -270,10 +256,7 @@ namespace Marten.Testing.Acceptance
             {
                 (await query.LoadAsync<CoffeeShop>(doc1.Id).ConfigureAwait(false)).Name.ShouldBe("Dominican Joe's");
             }
-
         }
-
-
 
         [Fact]
         public void can_do_multiple_updates_in_a_row_standard()
@@ -303,7 +286,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-
         [Fact]
         public async Task can_do_multiple_updates_in_a_row_standard_async()
         {
@@ -331,8 +313,6 @@ namespace Marten.Testing.Acceptance
                 (await query.LoadAsync<CoffeeShop>(doc1.Id).ConfigureAwait(false)).Name.ShouldBe("Cafe Medici");
             }
         }
-
-
 
         [Fact]
         public void update_multiple_docs_at_a_time_happy_path()
@@ -414,7 +394,6 @@ namespace Marten.Testing.Acceptance
                 var doc22 = session.Load<CoffeeShop>(doc2.Id);
                 doc22.Name = "Dominican Joe's";
 
-
                 using (var other = theStore.DirtyTrackedSession())
                 {
                     other.Load<CoffeeShop>(doc1.Id).Name = "Genuine Joe's";
@@ -431,8 +410,6 @@ namespace Marten.Testing.Acceptance
                 ex.InnerExceptions.OfType<ConcurrencyException>().Count().ShouldBe(2);
             }
         }
-
-
 
         [Fact]
         public async Task update_multiple_docs_at_a_time_sad_path_async()
@@ -453,7 +430,6 @@ namespace Marten.Testing.Acceptance
 
                 var doc22 = await session.LoadAsync<CoffeeShop>(doc2.Id).ConfigureAwait(false);
                 doc22.Name = "Dominican Joe's";
-
 
                 using (var other = theStore.DirtyTrackedSession())
                 {
@@ -499,6 +475,7 @@ namespace Marten.Testing.Acceptance
                     .ShouldBe("Mozart's");
             }
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -538,7 +515,6 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-
             using (var session = theStore.OpenSession())
             {
                 doc1.Name = "Mozart's";
@@ -551,8 +527,6 @@ namespace Marten.Testing.Acceptance
                     session.SaveChanges();
                 });
             }
-
-
         }
 
         [Fact]
@@ -564,7 +538,6 @@ namespace Marten.Testing.Acceptance
                 session.Store(doc1);
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
-
 
             using (var session = theStore.OpenSession())
             {
@@ -578,10 +551,7 @@ namespace Marten.Testing.Acceptance
                     await session.SaveChangesAsync().ConfigureAwait(false);
                 });
             }
-
-
         }
-
 
         [Fact]
         public async Task can_update_and_delete_related_documents()
@@ -602,7 +572,6 @@ namespace Marten.Testing.Acceptance
                 var emp = session.Load<CoffeeShopEmployee>(emp1.Id);
                 var doc = session.Load<CoffeeShop>(doc1.Id);
 
-                
                 doc.Employees.Remove(emp.Id);
                 session.Delete(emp);
 
@@ -628,7 +597,6 @@ namespace Marten.Testing.Acceptance
             {
                 var emp = session.Load<CoffeeShopEmployee>(emp1.Id);
                 var doc = session.Load<CoffeeShop>(doc1.Id);
-
 
                 doc.Employees.Remove(emp.Id);
                 session.Delete(emp);
@@ -658,12 +626,14 @@ namespace Marten.Testing.Acceptance
 
     // SAMPLE: UseOptimisticConcurrencyAttribute
     [UseOptimisticConcurrency]
-    public class CoffeeShop : Shop
+    public class CoffeeShop: Shop
     {
         // Guess where I'm at as I code this?
         public string Name { get; set; } = "Starbucks";
+
         public ICollection<Guid> Employees { get; set; } = new List<Guid>();
     }
+
     // ENDSAMPLE
 
     [SoftDeleted]
@@ -673,5 +643,4 @@ namespace Marten.Testing.Acceptance
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; }
     }
-
 }

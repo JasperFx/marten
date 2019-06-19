@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +10,7 @@ using Npgsql;
 
 namespace Marten
 {
-    public interface IQuerySession : IDisposable
+    public interface IQuerySession: IDisposable
     {
         /// <summary>
         /// Find or load a single document of type T by a string id
@@ -317,7 +317,7 @@ namespace Marten
         /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
         Task<IReadOnlyList<TDoc>> PhraseSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
-        
+
         /// <summary>
         /// Performs a full text search against <typeparamref name="TDoc"/> using the 'websearch_to_tsquery' search function
         /// </summary>

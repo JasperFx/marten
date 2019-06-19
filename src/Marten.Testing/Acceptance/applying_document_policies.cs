@@ -1,10 +1,10 @@
-﻿using Marten.Testing.Documents;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class applying_document_policies : IntegratedFixture
+    public class applying_document_policies: IntegratedFixture
     {
         public applying_document_policies()
         {

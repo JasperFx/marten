@@ -1,4 +1,3 @@
-using System.Text;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Storage;
@@ -10,6 +9,7 @@ namespace Marten.Services.Includes
     {
         string JoinText { get; }
         string TableAlias { get; }
+
         ISelector<TSearched> WrapSelector<TSearched>(StorageFeatures storage, ISelector<TSearched> inner);
 
         void AppendJoin(CommandBuilder sql, string rootTableAlias, IQueryableDocument document);

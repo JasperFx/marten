@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -14,7 +14,7 @@ namespace Marten.Storage
     /// <summary>
     /// Model a database table in Postgresql
     /// </summary>
-    public class Table : ISchemaObject, IEnumerable<TableColumn>
+    public class Table: ISchemaObject, IEnumerable<TableColumn>
     {
         public readonly List<TableColumn> _columns = new List<TableColumn>();
 
@@ -252,7 +252,8 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
         public TableDelta FetchDelta(NpgsqlConnection conn)
         {
             var actual = FetchExisting(conn);
-            if (actual == null) return null;
+            if (actual == null)
+                return null;
 
             return new TableDelta(this, actual);
         }
@@ -318,7 +319,8 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
             var indexes = readIndexes(reader);
             var constraints = readConstraints(reader);
 
-            if (!columns.Any()) return null;
+            if (!columns.Any())
+                return null;
 
             var existing = new Table(Identifier);
             foreach (var column in columns)
@@ -360,7 +362,8 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
             reader.NextResult();
             while (reader.Read())
             {
-                if (reader.IsDBNull(2)) continue;
+                if (reader.IsDBNull(2))
+                    continue;
 
                 var schemaName = reader.GetString(1);
                 var tableName = reader.GetString(2);
@@ -439,9 +442,12 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (!obj.GetType().CanBeCastTo<Table>()) return false;
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (!obj.GetType().CanBeCastTo<Table>())
+                return false;
             return Equals((Table)obj);
         }
 

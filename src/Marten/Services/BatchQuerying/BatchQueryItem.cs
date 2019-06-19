@@ -1,15 +1,12 @@
-using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
-using Npgsql;
 
 namespace Marten.Services.BatchQuerying
 {
-    public class BatchQueryItem<T> : IBatchQueryItem
+    public class BatchQueryItem<T>: IBatchQueryItem
     {
         private readonly IQueryHandler<T> _handler;
 
@@ -22,7 +19,6 @@ namespace Marten.Services.BatchQuerying
         }
 
         public QueryStatistics Stats { get; }
-
 
         public TaskCompletionSource<T> Completion { get; }
         public Task<T> Result => Completion.Task;
@@ -40,6 +36,5 @@ namespace Marten.Services.BatchQuerying
             var result = _handler.Handle(reader, map, Stats);
             Completion.SetResult(result);
         }
-
     }
 }

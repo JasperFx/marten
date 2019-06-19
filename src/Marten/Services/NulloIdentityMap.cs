@@ -6,7 +6,7 @@ using Baseline;
 
 namespace Marten.Services
 {
-    public class NulloIdentityMap : IIdentityMap
+    public class NulloIdentityMap: IIdentityMap
     {
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
 

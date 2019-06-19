@@ -5,7 +5,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public class IsInGenericEnumerable : IMethodCallParser
+    public class IsInGenericEnumerable: IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {

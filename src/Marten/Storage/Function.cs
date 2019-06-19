@@ -10,7 +10,7 @@ namespace Marten.Storage
     /// <summary>
     /// Base class for an ISchemaObject manager for a Postgresql function
     /// </summary>
-    public abstract class Function : ISchemaObject
+    public abstract class Function: ISchemaObject
     {
         public DbObjectName Identifier { get; }
 
@@ -32,7 +32,7 @@ namespace Marten.Storage
             var nameParam = builder.AddParameter(Identifier.Name).ParameterName;
 
             builder.Append($@"
-SELECT pg_get_functiondef(pg_proc.oid) 
+SELECT pg_get_functiondef(pg_proc.oid)
 FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = :{schemaParam} and proname = :{nameParam};
 
 SELECT format('DROP FUNCTION %s.%s(%s);'
@@ -40,7 +40,7 @@ SELECT format('DROP FUNCTION %s.%s(%s);'
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
-LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = :{nameParam}
 AND    n.nspname = :{schemaParam};
 ");
@@ -97,7 +97,8 @@ AND    n.nspname = :{schemaParam};
                 drops.Add(reader.GetString(0));
             }
 
-            if (existingFunction == null) return null;
+            if (existingFunction == null)
+                return null;
 
             var actualBody = new FunctionBody(Identifier, drops.ToArray(), existingFunction.TrimEnd() + ";");
 
@@ -113,7 +114,7 @@ AND    n.nspname = :{schemaParam};
             var writer = new StringWriter();
             Write(rules, writer);
 
-            return new FunctionBody(Identifier, new string[] {dropSql}, writer.ToString());
+            return new FunctionBody(Identifier, new string[] { dropSql }, writer.ToString());
         }
 
         /// <summary>

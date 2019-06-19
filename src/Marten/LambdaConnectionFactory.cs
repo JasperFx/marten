@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace Marten
 {
-    public class LambdaConnectionFactory : IConnectionFactory
+    public class LambdaConnectionFactory: IConnectionFactory
     {
         private readonly Func<NpgsqlConnection> _source;
 

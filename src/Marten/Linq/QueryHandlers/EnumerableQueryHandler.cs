@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -11,7 +11,7 @@ using Remotion.Linq;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class EnumerableQueryHandler<T> : IQueryHandler<IEnumerable<T>>
+    public class EnumerableQueryHandler<T>: IQueryHandler<IEnumerable<T>>
     {
         private readonly IQueryHandler<IReadOnlyList<T>> _inner;
 

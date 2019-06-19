@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Services;
 using Shouldly;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_561_negation_of_query_on_contains : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_561_negation_of_query_on_contains: DocumentSessionFixture<NulloIdentityMap>
     {
         public Bug_561_negation_of_query_on_contains()
         {
@@ -27,7 +27,6 @@ namespace Marten.Testing.Bugs
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
             // ENDSAMPLE
-
         }
 
         [Fact]
@@ -42,15 +41,14 @@ namespace Marten.Testing.Bugs
         {
             theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
                 .ShouldBe(1);
-
         }
     }
 
-    public class Bug_561_negation_of_query_on_contains_with_camel_casing : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_561_negation_of_query_on_contains_with_camel_casing: DocumentSessionFixture<NulloIdentityMap>
     {
         public Bug_561_negation_of_query_on_contains_with_camel_casing()
         {
-            StoreOptions(_ => _.UseDefaultSerialization(casing:Casing.CamelCase));
+            StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
             var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
@@ -69,7 +67,6 @@ namespace Marten.Testing.Bugs
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
             // ENDSAMPLE
-
         }
 
         [Fact]
@@ -84,7 +81,6 @@ namespace Marten.Testing.Bugs
         {
             theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
                 .ShouldBe(1);
-
         }
     }
 

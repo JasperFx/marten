@@ -1,4 +1,3 @@
-
 using System;
 
 namespace Marten.Schema
@@ -49,9 +48,12 @@ namespace Marten.Schema
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj.GetType() != this.GetType())
+                return false;
             return Equals((DbObjectName)obj);
         }
 
@@ -68,7 +70,7 @@ namespace Marten.Schema
             var parts = qualifiedName.Split('.');
             if (parts.Length == 1)
             {
-                return new string[] {StoreOptions.DefaultDatabaseSchemaName, qualifiedName};
+                return new string[] { StoreOptions.DefaultDatabaseSchemaName, qualifiedName };
             }
 
             if (parts.Length != 2)
@@ -78,7 +80,5 @@ namespace Marten.Schema
             }
             return parts;
         }
-
-
     }
 }

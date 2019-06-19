@@ -6,7 +6,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public class SimpleBinaryComparisonExpressionParser : IExpressionParser<BinaryExpression>
+    public class SimpleBinaryComparisonExpressionParser: IExpressionParser<BinaryExpression>
     {
         private readonly string _isOperator;
         private readonly string _wherePrefix;

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Marten.Events.Projections.Async
@@ -40,7 +40,8 @@ namespace Marten.Events.Projections.Async
         {
             for (int i = 0; i < sequences.Count - 1; i++)
             {
-                if (sequences[i + 1] - sequences[i] != 1) return false;
+                if (sequences[i + 1] - sequences[i] != 1)
+                    return false;
             }
 
             return true;
@@ -64,9 +65,11 @@ namespace Marten.Events.Projections.Async
         {
             var candidate = NextKnownSequence > 0 ? NextKnownSequence - 1 : LastKnownSequence;
 
-            if (candidate > 0) return candidate;
+            if (candidate > 0)
+                return candidate;
 
-            if (Sequences.Any()) return Sequences.Last();
+            if (Sequences.Any())
+                return Sequences.Last();
 
             return From;
         }
@@ -110,15 +113,17 @@ namespace Marten.Events.Projections.Async
 
         public bool IsSequential()
         {
-            if (!Sequences.Any()) return false;
+            if (!Sequences.Any())
+                return false;
 
             var startsAfterFrom = Sequences[0] - From == 1;
-            return startsAfterFrom && IsCompletelySequential(Sequences) ;
+            return startsAfterFrom && IsCompletelySequential(Sequences);
         }
 
         public bool CanContinueProcessing(IList<long> previous)
         {
-            if (IsSequential()) return true;
+            if (IsSequential())
+                return true;
 
             return (Sequences ?? new List<long>()).SequenceEqual(previous);
         }

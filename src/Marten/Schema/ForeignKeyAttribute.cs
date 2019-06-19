@@ -4,7 +4,7 @@ using System.Reflection;
 namespace Marten.Schema
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class ForeignKeyAttribute : MartenAttribute
+    public class ForeignKeyAttribute: MartenAttribute
     {
         private readonly Type _referenceType;
 
@@ -17,8 +17,6 @@ namespace Marten.Schema
         {
             var fkDefinition = mapping.AddForeignKey(member.Name, _referenceType);
             mapping.AddIndex(fkDefinition.ColumnName);
-            
-
         }
     }
 }

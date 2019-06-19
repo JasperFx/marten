@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
 using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Projections.Async;
@@ -12,14 +11,11 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
 {
-    public class FetcherTests : IntegratedFixture
+    public class FetcherTests: IntegratedFixture
     {
-
         public FetcherTests()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
-
-            
         }
 
         [Fact]
@@ -29,7 +25,7 @@ namespace Marten.Testing.Events.Projections.Async
 
             for (int i = 0; i < 500; i++)
             {
-                list.Add(new MembersJoined {Day = i, Location = Guid.NewGuid().ToString(), Members = new string[] {Guid.NewGuid().ToString()}});
+                list.Add(new MembersJoined { Day = i, Location = Guid.NewGuid().ToString(), Members = new string[] { Guid.NewGuid().ToString() } });
             }
 
             using (var session = theStore.LightweightSession())
@@ -44,7 +40,7 @@ namespace Marten.Testing.Events.Projections.Async
                 LeadingEdgeBuffer = 0.Seconds()
             };
 
-            using (var data = new Fetcher(theStore, settings, options, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), new Type[] {typeof(MembersJoined)}))
+            using (var data = new Fetcher(theStore, settings, options, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), new Type[] { typeof(MembersJoined) }))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -84,7 +80,7 @@ namespace Marten.Testing.Events.Projections.Async
                 LeadingEdgeBuffer = 0.Seconds()
             };
 
-            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new StubErrorHandler(), new Type[] {typeof(MembersDeparted), typeof(ArrivedAtLocation)}))
+            using (var data = new Fetcher(theStore, settings, new AsyncOptions(), Substitute.For<IDaemonLogger>(), new StubErrorHandler(), new Type[] { typeof(MembersDeparted), typeof(ArrivedAtLocation) }))
             {
                 var page = await data.FetchNextPage(0).ConfigureAwait(false);
 
@@ -94,7 +90,6 @@ namespace Marten.Testing.Events.Projections.Async
                 all.OfType<Event<MembersDeparted>>().Any().ShouldBeTrue();
                 all.OfType<Event<ArrivedAtLocation>>().Any().ShouldBeTrue();
             }
-
         }
 
         [Fact]
@@ -149,9 +144,7 @@ namespace Marten.Testing.Events.Projections.Async
                         .ShouldHaveTheSameElementsAs(stream.Events.Select(x => x.Id));
                 }
             }
-
         }
-
 
         [Fact]
         public async Task able_to_page_events()
@@ -169,7 +162,7 @@ namespace Marten.Testing.Events.Projections.Async
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            var types = new Type[] {typeof(MembersJoined)};
+            var types = new Type[] { typeof(MembersJoined) };
 
             var settings = new DaemonSettings
             {
@@ -191,6 +184,5 @@ namespace Marten.Testing.Events.Projections.Async
                 events3.Length.ShouldBe(100);
             }
         }
-
     }
 }

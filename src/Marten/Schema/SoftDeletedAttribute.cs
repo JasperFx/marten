@@ -6,12 +6,13 @@ namespace Marten.Schema
     /// Marks a document type as "soft deleted"
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class SoftDeletedAttribute : MartenAttribute
+    public class SoftDeletedAttribute: MartenAttribute
     {
         public override void Modify(DocumentMapping mapping)
         {
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
-            if (!Indexed) return;
+            if (!Indexed)
+                return;
             mapping.AddDeletedAtIndex();
         }
 

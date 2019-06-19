@@ -7,7 +7,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DocumentCleaner : IDocumentCleaner
+    public class DocumentCleaner: IDocumentCleaner
     {
         public static string DropAllFunctionSql = @"
 SELECT format('DROP FUNCTION %s.%s(%s);'
@@ -95,7 +95,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
                 schemaTables
                     .Each(tableName => { connection.Execute($"DROP TABLE IF EXISTS {tableName} CASCADE;"); });
 
-                var allSchemas = new object[] {_options.Storage.AllSchemaNames()};
+                var allSchemas = new object[] { _options.Storage.AllSchemaNames() };
 
                 var drops = connection.GetStringList(DropAllFunctionSql, allSchemas)
                     .Concat(connection.GetStringList(DropAllSequencesSql, allSchemas));

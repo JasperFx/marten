@@ -6,14 +6,14 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq
 {
-    public class IncludeExpressionNode : ResultOperatorExpressionNodeBase
+    public class IncludeExpressionNode: ResultOperatorExpressionNodeBase
     {
         public LambdaExpression IdSource { get; set; }
         public LambdaExpression Callback { get; set; }
         public ConstantExpression JoinType { get; set; }
 
         public static MethodInfo[] SupportedMethods =
-            typeof (CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.Include)).ToArray();
+            typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.Include)).ToArray();
 
         public IncludeExpressionNode(
             MethodCallExpressionParseInfo parseInfo, LambdaExpression idSource, LambdaExpression callback,
@@ -28,7 +28,7 @@ namespace Marten.Linq
         protected override ResultOperatorBase CreateResultOperator(
             ClauseGenerationContext clauseGenerationContext)
         {
-            return new IncludeResultOperator(IdSource,Callback,JoinType);
+            return new IncludeResultOperator(IdSource, Callback, JoinType);
         }
 
         public override Expression Resolve(

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,9 +19,8 @@ namespace Marten.Linq.QueryHandlers
         Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token);
     }
 
-    public interface IQueryHandler<T> : IQueryHandler, IReaderHandler<T>
+    public interface IQueryHandler<T>: IQueryHandler, IReaderHandler<T>
     {
         Type SourceType { get; }
     }
-
 }

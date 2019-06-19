@@ -1,9 +1,9 @@
-﻿using Marten.Events;
+using Marten.Events;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class patch_writing : IntegratedFixture
+    public class patch_writing: IntegratedFixture
     {
         [Fact]
         public void generate_the_patch_with_drop_if_does_not_exist()

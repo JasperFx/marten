@@ -9,7 +9,7 @@ using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    internal class CachedQueryHandler<T> : IQueryHandler<T>
+    internal class CachedQueryHandler<T>: IQueryHandler<T>
     {
         private readonly object _model;
         private readonly NpgsqlCommand _template;

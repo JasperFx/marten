@@ -1,4 +1,4 @@
-﻿using Marten.Schema;
+using Marten.Schema;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
@@ -25,7 +25,7 @@ namespace Marten.Testing.Examples
     }
 
     // SAMPLE: MyMartenRegistry
-    public class MyMartenRegistry : MartenRegistry
+    public class MyMartenRegistry: MartenRegistry
     {
         public MyMartenRegistry()
         {
@@ -57,7 +57,7 @@ namespace Marten.Testing.Examples
     // ENDSAMPLE
 
     // SAMPLE: IndexExamples
-    public class IndexExamples : MartenRegistry
+    public class IndexExamples: MartenRegistry
     {
         public IndexExamples()
         {

@@ -7,13 +7,16 @@ namespace Marten.Events.Projections
     {
         Type AggregateType { get; }
         string Alias { get; }
+
         bool AppliesTo(EventStream stream);
     }
 
-    public interface IAggregator<T> : IAggregator
+    public interface IAggregator<T>: IAggregator
     {
         IAggregation<T, TEvent> AggregatorFor<TEvent>();
+
         T Build(IEnumerable<IEvent> events, IDocumentSession session);
+
         T Build(IEnumerable<IEvent> events, IDocumentSession session, T state);
 
         Type[] EventTypes { get; }

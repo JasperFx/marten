@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -46,7 +46,7 @@ namespace Marten.Util
 
             AddTimespanTypes(NpgsqlDbType.Timestamp, ResolveTypes(NpgsqlDbType.Timestamp));
             AddTimespanTypes(NpgsqlDbType.TimestampTz, ResolveTypes(NpgsqlDbType.TimestampTz));
-            
+
             RegisterMapping(typeof(uint), "oid", NpgsqlDbType.Oid);
         }
 
@@ -61,7 +61,8 @@ namespace Marten.Util
         // custom npgsql mappings prior to execution.
         private static string ResolvePgType(Type type)
         {
-            if (PgTypeMemo.Value.TryFind(type, out var value)) return value;
+            if (PgTypeMemo.Value.TryFind(type, out var value))
+                return value;
 
             value = GetTypeMapping(type)?.PgTypeName;
 
@@ -72,7 +73,8 @@ namespace Marten.Util
 
         private static NpgsqlDbType? ResolveNpgsqlDbType(Type type)
         {
-            if (NpgsqlDbTypeMemo.Value.TryFind(type, out var value)) return value;
+            if (NpgsqlDbTypeMemo.Value.TryFind(type, out var value))
+                return value;
 
             value = GetTypeMapping(type)?.NpgsqlDbType;
 
@@ -83,7 +85,8 @@ namespace Marten.Util
 
         internal static Type[] ResolveTypes(NpgsqlDbType npgsqlDbType)
         {
-            if (TypeMemo.Value.TryFind(npgsqlDbType, out var values)) return values;
+            if (TypeMemo.Value.TryFind(npgsqlDbType, out var values))
+                return values;
 
             values = GetTypeMapping(npgsqlDbType)?.ClrTypes;
 
@@ -193,14 +196,16 @@ namespace Marten.Util
         /// </summary>
         public static NpgsqlDbType ToDbType(Type type)
         {
-            if (determineNpgsqlDbType(type, out var dbType)) return dbType;
+            if (determineNpgsqlDbType(type, out var dbType))
+                return dbType;
 
             throw new NotSupportedException("Can't infer NpgsqlDbType for type " + type);
         }
 
         public static NpgsqlDbType? TryGetDbType(Type type)
         {
-            if (determineNpgsqlDbType(type, out var dbType)) return dbType;
+            if (determineNpgsqlDbType(type, out var dbType))
+                return dbType;
 
             return null;
         }

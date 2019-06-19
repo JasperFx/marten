@@ -1,18 +1,16 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Linq.SoftDeletes;
-using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Util;
 using Shouldly;
 using Xunit;
-using System.Collections.Generic;
 
 namespace Marten.Testing.Acceptance
 {
-    public class soft_deletes : IntegratedFixture
+    public class soft_deletes: IntegratedFixture
     {
-
         public soft_deletes()
         {
             StoreOptions(_ =>
@@ -27,7 +25,6 @@ namespace Marten.Testing.Acceptance
         {
             using (var session = theStore.OpenSession())
             {
-
                 var user = new User();
                 session.Store(user);
                 session.SaveChanges();
@@ -56,7 +53,6 @@ namespace Marten.Testing.Acceptance
         {
             using (var session = theStore.OpenSession())
             {
-
                 var user = new User();
                 session.Store(user);
                 session.SaveChanges();
@@ -131,6 +127,7 @@ namespace Marten.Testing.Acceptance
                 .ToList().Single().UserName.ShouldBe("foo");
             }
         }
+
         // ENDSAMPLE
 
         // SAMPLE: query_maybe_soft_deleted_docs
@@ -162,6 +159,7 @@ namespace Marten.Testing.Acceptance
                     .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
             }
         }
+
         // ENDSAMPLE
 
         // SAMPLE: query_is_soft_deleted_docs
@@ -193,6 +191,7 @@ namespace Marten.Testing.Acceptance
                     .Single().ShouldBe("bar");
             }
         }
+
         // ENDSAMPLE
 
         // SAMPLE: query_soft_deleted_since
@@ -220,6 +219,7 @@ namespace Marten.Testing.Acceptance
                     .ToList().ShouldHaveTheSameElementsAs("jack");
             }
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -281,7 +281,6 @@ namespace Marten.Testing.Acceptance
                     .ToList().Single().UserName.ShouldBe("foo");
             }
         }
-
 
         [Fact]
         public void sub_level_of_hierarchy()
@@ -354,7 +353,6 @@ namespace Marten.Testing.Acceptance
                     .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo");
             }
         }
-
 
         [Fact]
         public void sub_level_of_hierarchy_is_deleted()

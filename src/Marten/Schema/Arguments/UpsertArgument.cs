@@ -29,7 +29,8 @@ namespace Marten.Schema.Arguments
             get => _postgresType;
             set
             {
-                if (value == null) throw new ArgumentNullException();
+                if (value == null)
+                    throw new ArgumentNullException();
 
                 _postgresType = value.Contains("(")
                     ? value.Split('(')[0].Trim()

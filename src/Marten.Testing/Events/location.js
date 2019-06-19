@@ -1,11 +1,11 @@
-﻿var mt_transforms = require('mt_transforms');
+var mt_transforms = require('mt_transforms');
 mt_transforms.transform({
     timing: 'inline',
     name: 'location',
 
     // TODO -- like to capture the EventStream here.
-    members_joined: function(evt, metadata) {
-        return {Day: evt.Day, Location: evt.Location, Quest: metadata.stream}
+    members_joined: function (evt, metadata) {
+        return { Day: evt.Day, Location: evt.Location, Quest: metadata.stream }
     },
 
     members_departed: function (evt, metadata) {

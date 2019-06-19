@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Reflection;
 using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Schema.Identity
 {
-    public class IdAssigner<TDoc, TId> : IdAssignment<TDoc>
+    public class IdAssigner<TDoc, TId>: IdAssignment<TDoc>
     {
         private readonly IIdGenerator<TId> _generator;
         private readonly Func<TDoc, TId> _getter;
@@ -41,7 +41,7 @@ namespace Marten.Schema.Identity
 
         public void Assign(ITenant tenant, TDoc document, object id)
         {
-            _setter?.Invoke(document, (TId) id);
+            _setter?.Invoke(document, (TId)id);
         }
     }
 }

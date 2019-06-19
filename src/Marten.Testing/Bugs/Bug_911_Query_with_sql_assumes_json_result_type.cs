@@ -1,4 +1,4 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using Marten.Linq;
 using Marten.Services;
 using NSubstitute;

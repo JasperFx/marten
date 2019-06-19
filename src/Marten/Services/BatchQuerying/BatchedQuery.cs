@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,7 +13,7 @@ using Npgsql;
 
 namespace Marten.Services.BatchQuerying
 {
-    public class BatchedQuery : IBatchedQuery, IBatchEvents
+    public class BatchedQuery: IBatchedQuery, IBatchEvents
     {
         private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
         private readonly IIdentityMap _identityMap;
@@ -66,7 +66,8 @@ namespace Marten.Services.BatchQuerying
         {
             var map = _identityMap.ForQuery();
 
-            if (!_items.Any()) return;
+            if (!_items.Any())
+                return;
 
             var command = buildCommand();
             await _runner.ExecuteAsync(command, async (cmd, tk) =>
@@ -96,7 +97,8 @@ namespace Marten.Services.BatchQuerying
         {
             var map = _identityMap.ForQuery();
 
-            if (!_items.Any()) return;
+            if (!_items.Any())
+                return;
 
             var command = buildCommand();
             _runner.Execute(command, cmd =>
@@ -250,7 +252,7 @@ namespace Marten.Services.BatchQuerying
             return AddItem(AggregateQueryHandler<double>.Average(linqQuery), null);
         }
 
-        public class BatchLoadByKeys<TDoc> : IBatchLoadByKeys<TDoc> where TDoc : class
+        public class BatchLoadByKeys<TDoc>: IBatchLoadByKeys<TDoc> where TDoc : class
         {
             private readonly BatchedQuery _parent;
 

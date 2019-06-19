@@ -6,7 +6,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class IdField : IField
+    public class IdField: IField
     {
         private readonly MemberInfo _idMember;
 
@@ -15,11 +15,12 @@ namespace Marten.Schema
             _idMember = idMember;
         }
 
-        public MemberInfo[] Members => new[] {_idMember};
+        public MemberInfo[] Members => new[] { _idMember };
         public string MemberName => _idMember.Name;
         public string SqlLocator { get; } = "d.id";
         public string SelectionLocator { get; } = "d.id";
         public string ColumnName { get; } = "id";
+
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
         {
             // Nothing
@@ -31,6 +32,7 @@ namespace Marten.Schema
         }
 
         public Type MemberType => _idMember.GetMemberType();
+
         public bool ShouldUseContainmentOperator()
         {
             return false;

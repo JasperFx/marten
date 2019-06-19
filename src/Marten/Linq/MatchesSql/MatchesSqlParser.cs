@@ -1,4 +1,3 @@
-﻿using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
@@ -7,10 +6,10 @@ using Marten.Schema;
 
 namespace Marten.Linq.MatchesSql
 {
-    public class MatchesSqlParser : IMethodCallParser
+    public class MatchesSqlParser: IMethodCallParser
     {
         private static readonly MethodInfo _sqlMethod =
-            typeof(MatchesSqlExtensions).GetMethod(nameof(MatchesSqlExtensions.MatchesSql), new [] { typeof(object), typeof(string), typeof(object[]) });
+            typeof(MatchesSqlExtensions).GetMethod(nameof(MatchesSqlExtensions.MatchesSql), new[] { typeof(object), typeof(string), typeof(object[]) });
 
         private static readonly MethodInfo _fragmentMethod =
             typeof(MatchesSqlExtensions).GetMethod(nameof(MatchesSqlExtensions.MatchesSql), new[] { typeof(object), typeof(IWhereFragment) });

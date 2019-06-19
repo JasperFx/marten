@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Newtonsoft.Json;
+
 //using Octokit;
 using FileMode = System.IO.FileMode;
 
@@ -27,8 +28,6 @@ namespace Marten.Testing.CodeTracker
             var json = new FileSystem().ReadStringFromFile(file);
 
             return serializer.Deserialize<GithubProject>(new JsonTextReader(new StringReader(json)));
-
-
         }
 
         public GithubProject()
@@ -49,7 +48,6 @@ namespace Marten.Testing.CodeTracker
         }
 
         public readonly Guid Id = Guid.NewGuid();
-
 
         public string OrganizationName { get; set; }
         public string ProjectName { get; set; }
@@ -83,7 +81,6 @@ namespace Marten.Testing.CodeTracker
                     Timestamp = issue.ClosedAt.Value,
                     Number = issue.Number
                 });
-
 
                 if (_random.Next(0, 10) > 8)
                 {
@@ -149,7 +146,6 @@ namespace Marten.Testing.CodeTracker
                 {
                     session.Events.Append(Id, page);
 
-
                     if (createEventGaps)
                     {
                         for (int i = 0; i < 200; i++)
@@ -167,12 +163,10 @@ namespace Marten.Testing.CodeTracker
 
                 Thread.Sleep(pause);
             }
-
         }
     }
 
     public class PlaceHolder
     {
-        
     }
 }

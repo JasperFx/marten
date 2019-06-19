@@ -8,7 +8,7 @@ using Marten.Services;
 
 namespace Marten.Events
 {
-    public class EventStreamVersioningCallback : ICallback
+    public class EventStreamVersioningCallback: ICallback
     {
         private readonly EventStream _stream;
 

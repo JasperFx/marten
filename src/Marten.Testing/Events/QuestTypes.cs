@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using Baseline;
-using Marten.Events;
 
 namespace Marten.Testing.Events
 {
@@ -12,7 +11,6 @@ namespace Marten.Testing.Events
     // SAMPLE: sample-events
     public class ArrivedAtLocation
     {
-
         public int Day { get; set; }
 
         public string Location { get; set; }
@@ -25,7 +23,6 @@ namespace Marten.Testing.Events
 
     public class MembersJoined
     {
-
         public MembersJoined()
         {
         }
@@ -50,7 +47,6 @@ namespace Marten.Testing.Events
             return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
         }
     }
-
 
     public class QuestStarted
     {
@@ -107,6 +103,7 @@ namespace Marten.Testing.Events
             return $"Members {Members.Join(", ")} escaped from {Location}";
         }
     }
+
     // ENDSAMPLE
 
     public class Issue
@@ -140,7 +137,6 @@ namespace Marten.Testing.Events
     {
         public string Key { get; }
         public string Name { get; private set; }
-
 
         public ImmutableEvent2(string key, string name)
         {

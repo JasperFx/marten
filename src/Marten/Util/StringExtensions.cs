@@ -1,6 +1,6 @@
-﻿using System;
-using Npgsql;
+using System;
 using Newtonsoft.Json.Serialization;
+using Npgsql;
 
 namespace Marten.Util
 {
@@ -56,6 +56,7 @@ namespace Marten.Util
         }
 
         private static readonly SnakeCaseNamingStrategy _snakeCaseNamingStrategy = new SnakeCaseNamingStrategy();
+
         public static string ToSnakeCase(this string s)
         {
             return _snakeCaseNamingStrategy.GetPropertyName(s, false);
@@ -67,8 +68,10 @@ namespace Marten.Util
             {
                 case Casing.CamelCase:
                     return s.ToCamelCase();
+
                 case Casing.SnakeCase:
                     return s.ToSnakeCase();
+
                 default:
                     return s;
             }

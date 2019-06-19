@@ -10,7 +10,6 @@ namespace Marten.Services
         {
             _entity = entity;
             Json = json;
-            
         }
 
         public object Id => _entity.Id;

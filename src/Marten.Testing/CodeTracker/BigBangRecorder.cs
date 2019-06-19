@@ -11,7 +11,6 @@ namespace Marten.Testing.CodeTracker
 
             var recorder = new GithubDataRecorder(new Credentials("jeremydmiller", "Jasper1974"), directory);
 
-
             //recorder.RecordProject("JasperFx", "alba").Wait();
             //recorder.RecordProject("JasperFx", "marten").Wait();
             //recorder.RecordProject("JasperFx", "baseline").Wait();

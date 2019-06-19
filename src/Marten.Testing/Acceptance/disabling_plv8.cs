@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Testing.Documents;
 using Shouldly;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class disabling_plv8 : IntegratedFixture
+    public class disabling_plv8: IntegratedFixture
     {
         [Fact]
         public void active_features_includes_transforms_with_plv8_enabled()

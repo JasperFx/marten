@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using System.Linq.Expressions;
-using Baseline;
 using Baseline.Reflection;
+using Marten.Events;
 using Marten.Events.Projections;
 using Xunit;
-using Marten.Events;
 
 namespace Marten.Testing.Events.Projections
 {
@@ -17,13 +14,12 @@ namespace Marten.Testing.Events.Projections
         {
             Expression<Action<QuestParty, MembersJoined>> apply = (p, j) => p.Apply(j);
 
-
             var joined = ReflectionHelper.GetMethod<QuestParty>(x => x.Apply(new MembersJoined()));
 
             var joinedStep = new AggregationStep<QuestParty, MembersJoined>(joined);
 
             var party = new QuestParty();
-            var joinedEvent = new MembersJoined {Members = new []{"Wolverine", "Cyclops", "Nightcrawler"}};
+            var joinedEvent = new MembersJoined { Members = new[] { "Wolverine", "Cyclops", "Nightcrawler" } };
 
             joinedStep.Apply(party, joinedEvent);
 
@@ -34,7 +30,6 @@ namespace Marten.Testing.Events.Projections
         public void can_build_aggregation_step_for_an_event_apply_method()
         {
             Expression<Action<QuestPartyWithEvents, MembersJoined>> apply = (p, j) => p.Apply(new Event<MembersJoined>(j));
-
 
             var joined = ReflectionHelper.GetMethod<QuestPartyWithEvents>(x => x.Apply(new Event<MembersJoined>(new MembersJoined())));
 
@@ -48,6 +43,4 @@ namespace Marten.Testing.Events.Projections
             party.Members.ShouldHaveTheSameElementsAs(joinedEvent.Members);
         }
     }
-
-
 }

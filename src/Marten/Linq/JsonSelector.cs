@@ -1,11 +1,11 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 
 namespace Marten.Linq
 {
-    public class JsonSelector : BasicSelector, ISelector<string>
+    public class JsonSelector: BasicSelector, ISelector<string>
     {
         public JsonSelector() : base("data")
         {
@@ -13,7 +13,6 @@ namespace Marten.Linq
 
         public JsonSelector(string field) : base(field)
         {
-            
         }
 
         public string Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

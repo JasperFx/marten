@@ -1,4 +1,3 @@
-using System;
 using Marten.Schema;
 
 namespace Marten
@@ -11,11 +10,11 @@ namespace Marten
         {
             _store = store;
         }
+
         /// <summary>
         ///     Used to remove document data and tables from the current Postgresql database
         /// </summary>
         public IDocumentCleaner Clean => _store.Tenancy.Cleaner;
-
 
         public ISerializer Serializer => _store.Serializer;
     }

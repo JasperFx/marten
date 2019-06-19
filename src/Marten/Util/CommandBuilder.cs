@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Util
 {
-    public class CommandBuilder : IDisposable
+    public class CommandBuilder: IDisposable
     {
         public static readonly string TenantIdArg = ":" + TenantIdArgument.ArgName;
 
@@ -49,7 +49,8 @@ namespace Marten.Util
 
         public static NpgsqlCommand ToBatchCommand(ITenant tenant, IEnumerable<IQueryHandler> handlers)
         {
-            if (handlers.Count() == 1) return ToCommand(tenant, handlers.Single());
+            if (handlers.Count() == 1)
+                return ToCommand(tenant, handlers.Single());
 
             var wholeStatement = new StringBuilder();
             var command = new NpgsqlCommand();

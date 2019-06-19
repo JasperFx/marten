@@ -7,13 +7,12 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Transforms
 {
-    public class TransformToJsonNode : ResultOperatorExpressionNodeBase
+    public class TransformToJsonNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
             typeof(TransformExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(x => x.Name == nameof(TransformExtensions.TransformToJson)).ToArray();
 
         private readonly TransformToJsonResultOperator _operator;
-
 
         public TransformToJsonNode(MethodCallExpressionParseInfo parseInfo, Expression transform, Expression optionalSelector) : base(parseInfo, transform as LambdaExpression, optionalSelector as LambdaExpression)
         {

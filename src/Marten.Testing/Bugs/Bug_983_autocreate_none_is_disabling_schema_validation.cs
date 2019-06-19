@@ -1,9 +1,9 @@
-﻿using Marten.Schema;
+using Marten.Schema;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_983_autocreate_none_is_disabling_schema_validation : IntegratedFixture
+    public class Bug_983_autocreate_none_is_disabling_schema_validation: IntegratedFixture
     {
         public class Document
         {
@@ -24,9 +24,6 @@ namespace Marten.Testing.Bugs
             {
                 theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
-
-
         }
-
     }
 }

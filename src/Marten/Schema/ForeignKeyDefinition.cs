@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using Baseline;
 
@@ -77,7 +77,7 @@ namespace Marten.Schema
         protected static string GenerateOnDeleteClause(ForeignKeyDefinition fkd) => fkd.CascadeDeletes ? "ON DELETE CASCADE" : string.Empty;
     }
 
-    public class ExternalForeignKeyDefinition : ForeignKeyDefinition
+    public class ExternalForeignKeyDefinition: ForeignKeyDefinition
     {
         public ExternalForeignKeyDefinition(
             string columnName,

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1247_end_to_end_query_with_include_and_document_hierarchy_Tests : end_to_end_document_hierarchy_usage_Tests<IdentityMap>
+    public class Bug_1247_end_to_end_query_with_include_and_document_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests<IdentityMap>
     {
         [Fact]
         public void include_to_list_using_outer_join()
@@ -42,7 +42,7 @@ namespace Marten.Testing.Bugs
                 issues.Length.ShouldBe(4);
             }
         }
-        
+
         [Fact]
         public async Task include_to_list_using_outer_join_async()
         {

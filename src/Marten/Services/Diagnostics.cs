@@ -1,14 +1,11 @@
 using System;
-using Baseline;
 using Marten.Linq;
-using Marten.Schema;
-using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services
 {
-    public class Diagnostics : IDiagnostics
+    public class Diagnostics: IDiagnostics
     {
         private readonly DocumentStore _store;
         private Version _postgreSqlVersion;
@@ -17,7 +14,6 @@ namespace Marten.Services
         {
             _store = store;
         }
-
 
         /// <summary>
         /// Preview the database command that will be executed for this compiled query
@@ -58,7 +54,8 @@ namespace Marten.Services
         /// <returns>Returns version</returns>
         public Version GetPostgresVersion()
         {
-            if (_postgreSqlVersion != null) return _postgreSqlVersion;
+            if (_postgreSqlVersion != null)
+                return _postgreSqlVersion;
 
             using (var conn = _store.Tenancy.Default.OpenConnection())
             {

@@ -4,7 +4,7 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
-    public class StreamsTable : Table
+    public class StreamsTable: Table
     {
         public StreamsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_streams"))
         {

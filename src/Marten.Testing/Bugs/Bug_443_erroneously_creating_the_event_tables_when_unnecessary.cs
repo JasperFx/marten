@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Baseline;
 using Marten.Testing.Documents;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_443_erroneously_creating_the_event_tables_when_unnecessary : IntegratedFixture
+    public class Bug_443_erroneously_creating_the_event_tables_when_unnecessary: IntegratedFixture
     {
         [Fact]
         public void event_table_should_not_be_there_if_unused()

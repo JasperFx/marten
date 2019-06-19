@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -9,13 +9,17 @@ namespace Marten.Services.BatchQuerying
     public interface ITransformedBatchQueryable<TValue>
     {
         Task<IReadOnlyList<TValue>> ToList();
+
         Task<TValue> First();
+
         Task<TValue> FirstOrDefault();
+
         Task<TValue> Single();
+
         Task<TValue> SingleOrDefault();
     }
 
-    public class TransformedBatchQueryable<TValue> : ITransformedBatchQueryable<TValue>
+    public class TransformedBatchQueryable<TValue>: ITransformedBatchQueryable<TValue>
     {
         private readonly BatchedQuery _parent;
         private readonly IMartenQueryable<TValue> _inner;
@@ -46,7 +50,6 @@ namespace Marten.Services.BatchQuerying
             return _parent.FirstOrDefault<TValue>(_inner);
         }
 
-
         public Task<TValue> Single()
         {
             return _parent.Single<TValue>(_inner);
@@ -56,6 +59,5 @@ namespace Marten.Services.BatchQuerying
         {
             return _parent.SingleOrDefault<TValue>(_inner);
         }
-
     }
 }

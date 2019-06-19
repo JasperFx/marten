@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +6,7 @@ using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class SequenceFactory : ISequences
+    public class SequenceFactory: ISequences
     {
         private readonly StoreOptions _options;
         private readonly ITenant _tenant;
@@ -47,6 +47,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public Type StorageType { get; } = typeof(SequenceFactory);
         public string Identifier { get; } = "hilo";
+
         public void WritePermissions(DdlRules rules, StringWriter writer)
         {
             // Nothing
@@ -66,7 +67,6 @@ namespace Marten.Schema.Identity.Sequences
             return _sequences.GetOrAdd(documentType,
                 type => new HiloSequence(_tenant, _options, documentType.Name, settings));
         }
-
 
         public override string ToString()
         {

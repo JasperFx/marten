@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using Marten.Schema;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_986_duplicated_fields_with_int_array : IntegratedFixture
+    public class Bug_986_duplicated_fields_with_int_array: IntegratedFixture
     {
         [Fact]
         public void can_insert_new_docs()

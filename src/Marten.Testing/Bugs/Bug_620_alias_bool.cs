@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using Marten.Schema;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_620_alias_bool 
+    public class Bug_620_alias_bool
     {
         [Fact]
         public void can_canonicize_bool()
@@ -24,7 +24,6 @@ namespace Marten.Testing.Bugs
             {
                 store2.Schema.AssertDatabaseMatchesConfiguration();
             }
-
         }
     }
 

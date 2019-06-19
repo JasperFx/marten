@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -55,7 +55,7 @@ namespace Marten.Testing.Events.Projections.Async
         /// A projection which uses multiple streams and manages several document types: main Read Model it's builiding and
         /// a side-readmodel used as a kind of helper
         /// </summary>
-        public class OrderProjection : DocumentsProjection
+        public class OrderProjection: DocumentsProjection
         {
             internal class CompanySideReadModel
             {
@@ -139,7 +139,7 @@ namespace Marten.Testing.Events.Projections.Async
         }
     }
 
-    public class MultidocumentProjectionTests : IntegratedFixture
+    public class MultidocumentProjectionTests: IntegratedFixture
     {
         private static readonly Guid Company1Id = new Guid("5713D147-8D8E-499A-8CDF-ECEFF867D810");
         private static readonly Guid Company2Id = new Guid("18F5DE28-6027-4638-9D4F-496A5F29FB22");

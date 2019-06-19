@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -7,29 +7,28 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class event_store_with_string_identifiers_for_stream : IntegratedFixture
+    public class event_store_with_string_identifiers_for_stream: IntegratedFixture
     {
         public event_store_with_string_identifiers_for_stream()
-        {            
+        {
             StoreOptions(storeOptions =>
             {
                 // SAMPLE: eventstore-configure-stream-identity
                 storeOptions.Events.StreamIdentity = StreamIdentity.AsString;
                 storeOptions.Events.AsyncProjections.AggregateStreamsWith<QuestPartyWithStringIdentifier>();
                 // ENDSAMPLE
-            });            
+            });
         }
 
         [Fact]
         public void use_string_id_if_as_string_identifiers()
         {
-            var events = new EventGraph(new StoreOptions()) {StreamIdentity = StreamIdentity.AsString};
+            var events = new EventGraph(new StoreOptions()) { StreamIdentity = StreamIdentity.AsString };
 
             var table = new StreamsTable(events);
 
             table.PrimaryKey.Type.ShouldBe("varchar");
             table.First().Name.ShouldBe("id");
-
         }
 
         [Fact]
@@ -124,7 +123,7 @@ namespace Marten.Testing.Events
         {
             using (var session = theStore.OpenSession())
             {
-                session.Events.Append("First", new MembersJoined{Members = new string[]{"Bill"}}, new MembersJoined());
+                session.Events.Append("First", new MembersJoined { Members = new string[] { "Bill" } }, new MembersJoined());
                 session.Events.Append("Second", new MembersJoined(), new MembersJoined(), new MembersJoined());
                 await session.SaveChangesAsync();
             }

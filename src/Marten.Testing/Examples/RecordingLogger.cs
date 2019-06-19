@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Marten.Services;
 using Npgsql;
 
 namespace Marten.Testing.Examples
 {
-    public class RecordingLogger : IMartenSessionLogger
+    public class RecordingLogger: IMartenSessionLogger
     {
-        public readonly IList<NpgsqlCommand> Commands = new List<NpgsqlCommand>(); 
+        public readonly IList<NpgsqlCommand> Commands = new List<NpgsqlCommand>();
 
         public void LogSuccess(NpgsqlCommand command)
         {

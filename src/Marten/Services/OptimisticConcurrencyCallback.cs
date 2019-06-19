@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Services
 {
-    public class OptimisticConcurrencyCallback<T> : ICallback
+    public class OptimisticConcurrencyCallback<T>: ICallback
     {
         private readonly ConcurrencyChecks _mode;
         private readonly object _id;
@@ -69,8 +69,6 @@ namespace Marten.Services
             }
 
             checkAndStoreVersions(exceptions, success);
-
-
         }
     }
 }

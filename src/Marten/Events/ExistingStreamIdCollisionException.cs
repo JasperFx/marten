@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Events
 {
-    public class ExistingStreamIdCollisionException : Exception
+    public class ExistingStreamIdCollisionException: Exception
     {
         public object Id { get; }
 

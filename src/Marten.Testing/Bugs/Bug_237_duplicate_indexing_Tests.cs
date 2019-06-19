@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_237_duplicate_indexing_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_237_duplicate_indexing_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void save()

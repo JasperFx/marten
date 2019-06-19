@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -17,7 +16,7 @@ namespace Marten
             throw new NotImplementedException();
         }
 
-        public static IMartenQueryable<T> Include<T, TQuery>(this IQueryable<T> queryable, Expression<Func<T, object>> idSource, Func<TQuery,object> callback,
+        public static IMartenQueryable<T> Include<T, TQuery>(this IQueryable<T> queryable, Expression<Func<T, object>> idSource, Func<TQuery, object> callback,
             JoinType joinType = JoinType.Inner)
         {
             throw new NotImplementedException();
@@ -26,7 +25,7 @@ namespace Marten
         public static IMartenQueryable<T> Stats<T, TQuery>(this IQueryable<T> queryable, Expression<Func<TQuery, QueryStatistics>> stats)
         {
             throw new NotImplementedException();
-        } 
+        }
 
         public static IQueryable<string> AsJson<T>(this IMartenQueryable<T> queryable)
         {
@@ -45,7 +44,7 @@ namespace Marten
 
         public static string ToJsonArray<T>(this IQueryable<T> queryable)
         {
-            return $"[{queryable.Select(x=>x.AsJson()).ToArray().Join(",")}]";
+            return $"[{queryable.Select(x => x.AsJson()).ToArray().Join(",")}]";
         }
 
         public static string ToJsonArray<T>(this IOrderedQueryable<T> queryable)
@@ -55,7 +54,7 @@ namespace Marten
 
         public static async Task<string> ToJsonArrayAsync<T>(this IQueryable<T> queryable)
         {
-            var jsonStrings = await queryable.Select(x=>x.AsJson()).ToListAsync().ConfigureAwait(false);
+            var jsonStrings = await queryable.Select(x => x.AsJson()).ToListAsync().ConfigureAwait(false);
             return $"[{jsonStrings.Join(",")}]";
         }
     }

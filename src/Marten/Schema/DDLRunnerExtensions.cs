@@ -1,6 +1,3 @@
-using System;
-using Baseline;
-
 namespace Marten.Schema
 {
     public static class DDLRunnerExtensions
@@ -17,7 +14,5 @@ namespace Marten.Schema
 
             runner.Apply(subject, sql);
         }
-
-
     }
 }

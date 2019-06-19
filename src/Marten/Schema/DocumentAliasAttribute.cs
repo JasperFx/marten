@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 
 namespace Marten.Schema
 {
     /// <summary>
-    /// Used to alter the document type alias with Marten to 
+    /// Used to alter the document type alias with Marten to
     /// avoid naming collisions in the underlying Postgresql
     /// schema from similarly named document
     /// types
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class DocumentAliasAttribute : MartenAttribute
+    public class DocumentAliasAttribute: MartenAttribute
     {
         private readonly string _alias;
 

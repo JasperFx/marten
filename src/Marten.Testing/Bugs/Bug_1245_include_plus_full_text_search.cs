@@ -54,7 +54,7 @@ namespace Marten.Testing.Bugs
             var userDictionary = new Dictionary<Guid, User>();
             using (var session = theStore.OpenSession())
             {
-                for( var i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     var newUser = new User(Guid.NewGuid(), $"Test user {i}");
                     var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
@@ -73,7 +73,6 @@ namespace Marten.Testing.Bugs
 
                 query.ShouldNotBeNull();
             }
-
         }
 
         [SkippableFact]
@@ -85,7 +84,7 @@ namespace Marten.Testing.Bugs
             var userDictionary = new Dictionary<Guid, User>();
             using (var session = theStore.OpenSession())
             {
-                for( var i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     var newUser = new User(Guid.NewGuid(), $"Test user {i}");
                     var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
@@ -104,9 +103,6 @@ namespace Marten.Testing.Bugs
 
                 query.ShouldNotBeNull();
             }
-
         }
-
     }
-
 }

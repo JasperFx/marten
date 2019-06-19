@@ -6,7 +6,7 @@ using Marten.Patching;
 
 namespace Marten.Services
 {
-    public class ChangeSet : IChangeSet
+    public class ChangeSet: IChangeSet
     {
         public readonly IList<object> Updated = new List<object>();
         public readonly IList<object> Inserted = new List<object>();
@@ -18,7 +18,6 @@ namespace Marten.Services
         IEnumerable<object> IChangeSet.Inserted => Inserted;
 
         IEnumerable<IDeletion> IChangeSet.Deleted => Operations.OfType<IDeletion>();
-        
 
         public DocumentChange[] Changes;
 
@@ -34,6 +33,7 @@ namespace Marten.Services
         }
 
         IEnumerable<PatchOperation> IChangeSet.Patches => Operations.OfType<PatchOperation>();
+
         public IEnumerable<EventStream> GetStreams()
         {
             return Streams;

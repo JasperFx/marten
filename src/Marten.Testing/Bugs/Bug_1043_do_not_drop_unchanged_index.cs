@@ -1,17 +1,18 @@
-﻿using Marten.Schema;
+using Marten.Schema;
 using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1043_do_not_drop_unchanged_index : IntegratedFixture
+    public class Bug_1043_do_not_drop_unchanged_index: IntegratedFixture
     {
         [Fact]
         public void do_not_drop_unchanged_index()
         {
             EnableCommandLogging = true;
 
-            StoreOptions(_ => {
+            StoreOptions(_ =>
+            {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
                 _.Schema.For<Bug1043.Thing>().Index(x => x.Name, x =>

@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Linq;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_717_permutation_of_Linq_queries : IntegratedFixture
+    public class Bug_717_permutation_of_Linq_queries: IntegratedFixture
     {
         [Fact]
         public void do_not_blow_up()
@@ -24,7 +24,6 @@ namespace Marten.Testing.Bugs
                 }
             };
 
-
             using (var session = theStore.LightweightSession())
             {
                 //first store the item in the database
@@ -35,7 +34,6 @@ namespace Marten.Testing.Bugs
 
                 /*------------------------------------------------------------------*/
                 //getting an Exception while trying to execute this query
-
 
                 var entity1 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity1.StringValues.Any());
 
@@ -61,15 +59,11 @@ namespace Marten.Testing.Bugs
                 var entity3 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity1.StringValues.Contains("item1"));
                 //System.NotSupportedException: 'Specified method is not supported.'
 
-
                 var entity4 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity2.InnerEntities.Any(n => n.MyEnum == SomeEnums.TestEnum1));
                 //System.NotImplementedException: 'The method or operation is not implemented.'
                 /*------------------------------------------------------------------*/
             }
         }
-    
-
-
 
         public class MainEntity
         {

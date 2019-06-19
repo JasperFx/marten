@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -17,15 +17,14 @@ namespace Marten.Linq
         void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping);
     }
 
-
-    public interface ISelector<T> : ISelector
+    public interface ISelector<T>: ISelector
     {
         T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats);
 
         Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token);
     }
 
-    public class StandInSelector<T> : ISelector<T>
+    public class StandInSelector<T>: ISelector<T>
     {
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {

@@ -1,15 +1,14 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Schema;
 using Marten.Services;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class optimistic_concurrency_with_subclass_hierarchies : IntegratedFixture
+    public class optimistic_concurrency_with_subclass_hierarchies: IntegratedFixture
     {
         public optimistic_concurrency_with_subclass_hierarchies()
         {
@@ -45,7 +44,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-
         [Fact]
         public void can_update_with_optimistic_concurrency()
         {
@@ -69,8 +67,6 @@ namespace Marten.Testing.Acceptance
             {
                 session.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
             }
-
-
         }
 
         [Fact]
@@ -98,8 +94,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-
-
         [Fact]
         public void update_with_stale_version()
         {
@@ -124,7 +118,6 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 session2.SaveChanges();
 
-
                 var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
                 {
                     session1.SaveChanges();
@@ -143,7 +136,6 @@ namespace Marten.Testing.Acceptance
             {
                 query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
             }
-
         }
 
         [Fact]
@@ -170,7 +162,6 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 await session2.SaveChangesAsync().ConfigureAwait(false);
 
-
                 var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
                 {
                     await session1.SaveChangesAsync().ConfigureAwait(false);
@@ -189,7 +180,6 @@ namespace Marten.Testing.Acceptance
             {
                 (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
             }
-
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -6,7 +6,7 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    public class TenantSchema : IDocumentSchema
+    public class TenantSchema: IDocumentSchema
     {
         private readonly StorageFeatures _features;
         private readonly Tenant _tenant;
@@ -29,7 +29,7 @@ namespace Marten.Storage
             new FileSystem().WriteStringToFile(filename, sql);
         }
 
-        public void WriteDDLByType(string directory, bool transactionalScript=true)
+        public void WriteDDLByType(string directory, bool transactionalScript = true)
         {
             var system = new FileSystem();
 
@@ -38,7 +38,6 @@ namespace Marten.Storage
 
             var features = _features.AllActiveFeatures(_tenant).ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, features);
-
 
             foreach (var feature in features)
             {
@@ -92,7 +91,6 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-
         public void WritePatch(string filename, bool withSchemas = true, bool transactionalScript = true)
         {
             if (!Path.IsPathRooted(filename))
@@ -132,7 +130,7 @@ namespace Marten.Storage
 
         public void AssertDatabaseMatchesConfiguration()
         {
-            var patch = ToPatch(false, withAutoCreateAll:true);
+            var patch = ToPatch(false, withAutoCreateAll: true);
 
             if (patch.UpdateDDL.Trim().IsNotEmpty())
             {
@@ -201,11 +199,7 @@ namespace Marten.Storage
                         patch.WriteUpdateFile(file, transactionalScript);
                     }
                 }
-
             }
-
-
-
         }
     }
 }

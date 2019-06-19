@@ -1,29 +1,25 @@
-using System;
-using Marten.Events;
-using Marten.Schema;
-using Marten.Testing.Documents;
-using Marten.Util;
-using Shouldly;
-using Xunit;
 using System.Collections.Generic;
 using System.Linq;
-
+using Marten.Testing.Documents;
+using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-	public class Bug_1060_invalid_cast_exception_on_doc_with_subclass : IntegratedFixture
-	{
-		[Fact]
-		public void can_issue_query_on_doc_hierarchy_with_include()
-		{
-            StoreOptions(_ => {
+    public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: IntegratedFixture
+    {
+        [Fact]
+        public void can_issue_query_on_doc_hierarchy_with_include()
+        {
+            StoreOptions(_ =>
+            {
                 _.Schema.For<User>()
                                  .AddSubClass<SuperUser>()
-                                 .AddSubClass<AdminUser>(); 
-                _.Schema.For<Issue>(); 
+                                 .AddSubClass<AdminUser>();
+                _.Schema.For<Issue>();
             });
 
-            var user = new User { Id = System.Guid.NewGuid() }; 
+            var user = new User { Id = System.Guid.NewGuid() };
             var admin = new AdminUser { Id = System.Guid.NewGuid() };
             var issue = new Issue { Id = System.Guid.NewGuid(), ReporterId = user.Id };
             var issue2 = new Issue { Id = System.Guid.NewGuid(), ReporterId = admin.Id };
@@ -48,11 +44,11 @@ namespace Marten.Testing.Bugs
                                          .ToList();
 
                 // validate for parent document (base class)
-                users.Count(p => p!=null).ShouldBe(2);
+                users.Count(p => p != null).ShouldBe(2);
 
                 // validate for subclass document
-                admins.Count(p => p!=null).ShouldBe(1);
+                admins.Count(p => p != null).ShouldBe(1);
             }
-		}
-	}
+        }
+    }
 }

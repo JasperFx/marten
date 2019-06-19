@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_432_querying_with_UTC_times_with_offset : IntegratedFixture
+    public class Bug_432_querying_with_UTC_times_with_offset: IntegratedFixture
     {
         public Bug_432_querying_with_UTC_times_with_offset(ITestOutputHelper output) : base(output)
         {

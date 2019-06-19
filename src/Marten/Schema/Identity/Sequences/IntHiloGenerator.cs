@@ -3,7 +3,7 @@ using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class IntHiloGenerator : IIdGenerator<int>
+    public class IntHiloGenerator: IIdGenerator<int>
     {
         private readonly Type _documentType;
 

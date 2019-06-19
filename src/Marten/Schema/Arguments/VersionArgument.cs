@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
@@ -6,7 +6,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class VersionArgument : UpsertArgument
+    public class VersionArgument: UpsertArgument
     {
         public const string ArgName = "docVersion";
 
@@ -37,7 +37,7 @@ namespace Marten.Schema.Arguments
             }
             else if (mapping.VersionMember is FieldInfo)
             {
-                var fieldAccess = Expression.Field(document, (FieldInfo) mapping.VersionMember);
+                var fieldAccess = Expression.Field(document, (FieldInfo)mapping.VersionMember);
                 var fieldSetter = Expression.Assign(fieldAccess, value);
 
                 return Expression.Block(fieldSetter, writeExpression);

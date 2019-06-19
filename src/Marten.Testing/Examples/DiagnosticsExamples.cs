@@ -1,11 +1,9 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Testing.Documents;
 using Shouldly;
-using StructureMap;
 
 namespace Marten.Testing.Examples
 {
@@ -20,13 +18,12 @@ namespace Marten.Testing.Examples
 
     // ENDSAMPLE
 
-    public class DiagnosticsExamples : IntegratedFixture
+    public class DiagnosticsExamples: IntegratedFixture
     {
         public void use_diagnostics()
         {
-            // Marten is NOT coupled to StructureMap, but we 
+            // Marten is NOT coupled to StructureMap, but we
             // use it in our test suite for convenience
-
 
             // SAMPLE: preview_linq_command
             // store is the active IDocumentStore
@@ -35,7 +32,6 @@ namespace Marten.Testing.Examples
 
             Debug.WriteLine(cmd.CommandText);
             // ENDSAMPLE
-
 
             // SAMPLE: preview_linq_explain_plan
             // Explain() is an extension method off of IQueryable<T>
@@ -50,10 +46,8 @@ namespace Marten.Testing.Examples
             // ENDSAMPLE
         }
 
-
         public void use_request_count()
         {
-
             // SAMPLE: using_request_count
             using (var session = theStore.QuerySession())
             {

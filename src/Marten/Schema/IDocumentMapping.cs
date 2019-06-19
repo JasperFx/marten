@@ -33,7 +33,6 @@ namespace Marten.Schema
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-
             var field = mapping.FieldFor(visitor.Members);
 
             return field.SqlLocator;

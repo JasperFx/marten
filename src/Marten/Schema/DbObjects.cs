@@ -8,7 +8,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class DbObjects : IDbObjects
+    public class DbObjects: IDbObjects
     {
         private readonly ITenant _tenant;
         private readonly StorageFeatures _features;
@@ -47,7 +47,6 @@ namespace Marten.Schema
             var tablePattern = DocumentMapping.MartenPrefix + "%";
             var tables = _tenant.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
 
-
             return tables;
         }
 
@@ -85,7 +84,7 @@ FROM pg_index AS idx
     ON i.relam = am.oid
   JOIN pg_namespace AS NS ON i.relnamespace = NS.OID
   JOIN pg_user AS U ON i.relowner = U.usesysid
-WHERE 
+WHERE
 ns.nspname = ANY(?) AND
 NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
 ";
@@ -93,9 +92,9 @@ NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
             Func<DbDataReader, ActualIndex> transform =
                 r => new ActualIndex(DbObjectName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
-	        var schemaNames = _features.AllSchemaNames();
+            var schemaNames = _features.AllSchemaNames();
 
-			return _tenant.Fetch(sql, transform, (object)schemaNames);
+            return _tenant.Fetch(sql, transform, (object)schemaNames);
         }
 
         public IEnumerable<ActualIndex> IndexesFor(DbObjectName table)
@@ -106,14 +105,14 @@ NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
         public FunctionBody DefinitionForFunction(DbObjectName function)
         {
             var sql = @"
-SELECT pg_get_functiondef(pg_proc.oid) 
+SELECT pg_get_functiondef(pg_proc.oid)
 FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = :schema and proname = :function;
 SELECT format('DROP FUNCTION %s.%s(%s);'
              ,n.nspname
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
 FROM   pg_proc p
-LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace 
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname = :function
 AND    n.nspname = :schema;
 ";
@@ -121,7 +120,6 @@ AND    n.nspname = :schema;
             using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();
-
 
                 try
                 {
@@ -131,8 +129,9 @@ AND    n.nspname = :schema;
 
                     using (var reader = cmd.ExecuteReader())
                     {
-                        if (!reader.Read()) return null;
-   
+                        if (!reader.Read())
+                            return null;
+
                         var definition = reader.GetString(0);
 
                         reader.NextResult();
@@ -151,8 +150,6 @@ AND    n.nspname = :schema;
                     conn.Close();
                 }
             }
-
-
         }
 
         public ForeignKeyConstraint[] AllForeignKeys()
@@ -194,11 +191,11 @@ AND    n.nspname = :schema;
 select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
 from pg_index i
 join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
-where attrelid = (select pg_class.oid 
-                  from pg_class 
+where attrelid = (select pg_class.oid
+                  from pg_class
                   join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
                   where n.nspname = ? and relname = ?)
-and i.indisprimary; 
+and i.indisprimary;
 ";
 
             return _tenant.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();

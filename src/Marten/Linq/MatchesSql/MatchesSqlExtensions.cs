@@ -1,5 +1,3 @@
-﻿using System;
-
 namespace Marten.Linq.MatchesSql
 {
     public static class MatchesSqlExtensions

@@ -6,7 +6,7 @@ using Baseline;
 
 namespace Marten.Events.Projections.Async
 {
-    public class TracingLogger : IDaemonLogger
+    public class TracingLogger: IDaemonLogger
     {
         private readonly Action<string> _writeline;
 
