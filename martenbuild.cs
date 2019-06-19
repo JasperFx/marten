@@ -51,11 +51,8 @@ namespace martenbuild
             Target("open_st", DependsOn("compile"), () =>
                 Run("dotnet", $"storyteller open --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller"));
 
-            Target("docs-restore", () =>
-                Run("dotnet", "restore", "tools/stdocs"));
-
-            Target("docs", DependsOn("docs-restore"), () =>
-                RunStoryTellerDocs($"run -d ../../documentation -c ../../src -v {BUILD_VERSION}"));
+            Target("docs", () =>
+                Run("dotnet", $"stdocs run -d documentation -c src -v {BUILD_VERSION}"));
 
             // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
             Target("publish-docs", () =>
@@ -67,8 +64,7 @@ namespace martenbuild
                 // Run("git", "config user.email user_email", docTargetDir);
                 // Run("git", "config user.name user_name", docTargetDir);
 
-                RunStoryTellerDocs(
-                    $"export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten");
+                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
 
                 Run("git", "add --all", docTargetDir);
                 Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
@@ -127,11 +123,5 @@ namespace martenbuild
 
         private static void RunNpm(string args) =>
             Run("npm", args, windowsName: "cmd.exe", windowsArgs: $"/c npm {args}");
-
-        private static void RunStoryTellerDocs(string args)
-        {
-            Run("dotnet", "restore", "tools/stdocs");
-            Run("dotnet", $"stdocs {args}", "tools/stdocs");
-        }
     }
 }
