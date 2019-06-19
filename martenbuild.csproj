@@ -16,4 +16,8 @@
     <PackageReference Include="Westwind.Utilities" Version="3.0.20.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-stdocs" Version="1.1.1" />
+  </ItemGroup>
+
 </Project>
