@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Testing.Linq.Compatibility.Support
 {
-    public class TargetComparison : LinqTestCase
+    public class TargetComparison: LinqTestCase
     {
         private readonly Func<IQueryable<Target>, IQueryable<Target>> _func;
 
@@ -29,7 +29,7 @@ namespace Marten.Testing.Linq.Compatibility.Support
                 expected = expected.OrderBy(x => x).ToArray();
                 actual = actual.OrderBy(x => x).ToArray();
             }
-            
+
             actual.ShouldHaveTheSameElementsAs(expected);
         }
     }

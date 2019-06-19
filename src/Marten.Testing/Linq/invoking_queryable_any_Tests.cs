@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_any_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_any_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void any_miss_with_query()

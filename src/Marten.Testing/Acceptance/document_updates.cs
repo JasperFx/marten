@@ -1,20 +1,18 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
-using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_updates : IntegratedFixture
+    public class document_updates: IntegratedFixture
     {
         [Fact]
         public void can_update_existing_documents()
         {
             var targets = Target.GenerateRandomData(99).ToArray();
             theStore.BulkInsert(targets);
-
 
             var theNewNumber = 54321;
             using (var session = theStore.OpenSession())
@@ -31,7 +29,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-
         [Fact]
         public void update_sad_path()
         {
@@ -44,8 +41,6 @@ namespace Marten.Testing.Acceptance
                     session.Update(target);
                     session.SaveChanges();
                 });
-
-
             }
         }
 
@@ -61,8 +56,6 @@ namespace Marten.Testing.Acceptance
                     session.Update(target);
                     await session.SaveChangesAsync();
                 });
-
-
             }
         }
     }

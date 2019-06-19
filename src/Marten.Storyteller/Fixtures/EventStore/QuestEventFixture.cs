@@ -6,7 +6,7 @@ using StoryTeller;
 namespace Marten.Storyteller.Fixtures.EventStore
 {
     [Hidden]
-    public class QuestEventFixture : Fixture
+    public class QuestEventFixture: Fixture
     {
         private List<object> _events;
 
@@ -18,21 +18,21 @@ namespace Marten.Storyteller.Fixtures.EventStore
         [FormatAs("Members {names} joined the quest on day {day} at {location}")]
         public void MembersJoinedAt(string[] names, int day, string location)
         {
-            var @event = new MembersJoined {Day = day, Members = names, Location = location};
+            var @event = new MembersJoined { Day = day, Members = names, Location = location };
             _events.Add(@event);
         }
 
         [FormatAs("Members {names} departed the quest on day {day} at {location}")]
         public void MembersDepartedAt(string[] names, int day, string location)
         {
-            var @event = new MembersDeparted {Day = day, Members = names, Location = location};
+            var @event = new MembersDeparted { Day = day, Members = names, Location = location };
             _events.Add(@event);
         }
 
         [FormatAs("The quest party arrived at {location} on day {day}")]
         public void Arrived(string location, int day)
         {
-            var @event = new ArrivedAtLocation {Day = day, Location = location};
+            var @event = new ArrivedAtLocation { Day = day, Location = location };
             _events.Add(@event);
         }
 

@@ -1,4 +1,4 @@
-﻿using Marten;
+using Marten;
 using Marten.CommandLine;
 using Marten.Testing;
 using Marten.Testing.Documents;
@@ -30,6 +30,6 @@ namespace SampleConsoleApp
             return options;
         }
     }
-    // ENDSAMPLE
 
+    // ENDSAMPLE
 }

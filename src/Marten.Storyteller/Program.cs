@@ -1,7 +1,5 @@
-﻿using System;
-using System.Threading;
+using System;
 using System.Threading.Tasks;
-using Baseline.Dates;
 using Marten.Testing.AsyncDaemon;
 using Shouldly;
 using StoryTeller;
@@ -26,16 +24,15 @@ namespace Marten.Storyteller
                 Console.WriteLine(results.Counts);
 
                 //results = runner.Run("Event Store / Async Daemon / Rebuild Projection");
-               
+
                 //Console.WriteLine(results.Counts);
-                
+
                 runner.OpenResultsInBrowser();
             }
         }
     }
 
-
-    public class MartenSystem : SimpleSystem
+    public class MartenSystem: SimpleSystem
     {
         private AsyncDaemonTestHelper _daemonHelper;
 
@@ -43,7 +40,6 @@ namespace Marten.Storyteller
         {
             ExceptionFormatting.AsText<ShouldAssertException>(x => x.Message);
         }
-
 
         public override void Dispose()
         {
@@ -62,7 +58,6 @@ namespace Marten.Storyteller
                 _daemonHelper = new AsyncDaemonTestHelper();
                 _daemonHelper.LoadAllProjects();
             });
-
         }
     }
 }

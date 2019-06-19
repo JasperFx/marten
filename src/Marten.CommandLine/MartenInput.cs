@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Baseline;
 using Oakton;
@@ -20,7 +20,8 @@ namespace Marten.CommandLine
 
         internal IDocumentStore CreateStore()
         {
-            if (Store != null) return Store;
+            if (Store != null)
+                return Store;
 
             if (ConnFlag.IsNotEmpty())
             {
@@ -46,9 +47,8 @@ namespace Marten.CommandLine
 
         public void WriteLogFileIfRequested()
         {
-            if (LogFlag.IsEmpty()) return;
-
-            
+            if (LogFlag.IsEmpty())
+                return;
 
             using (var stream = new FileStream(LogFlag, FileMode.Create))
             {

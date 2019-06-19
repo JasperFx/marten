@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using Marten;
@@ -42,11 +42,9 @@ namespace MartenBenchmarks.Benchmarks
             values = Enumerable.Range(0, ItemCount).Select(x => new BenchModel()).ToArray();
         }
 
-
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void Nop(object obj)
         {
-
         }
 
         [Benchmark(Baseline = true)]
@@ -62,7 +60,6 @@ namespace MartenBenchmarks.Benchmarks
                 Nop(v);
             }
         }
-
 
         [Benchmark]
         public void PopulateAndQueryUnitOfWorkWithImHashMap()

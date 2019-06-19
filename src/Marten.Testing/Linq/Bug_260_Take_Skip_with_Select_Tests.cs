@@ -1,5 +1,3 @@
-﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using Marten.Linq;
 using Marten.Services;
@@ -9,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [SelectionStoryteller]
-    public class Bug_260_Take_Skip_with_Select_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_260_Take_Skip_with_Select_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void return_the_correct_number_of_results()
@@ -22,9 +20,7 @@ namespace Marten.Testing.Linq
                 .Take(10)
                 .Select(entity => entity.Id);
 
-
             var cmd = queryable.ToCommand(FetchType.FetchMany);
-
 
             cmd.CommandText.ShouldContain("LIMIT :arg1");
 

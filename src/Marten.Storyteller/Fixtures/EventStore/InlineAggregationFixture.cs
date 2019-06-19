@@ -9,7 +9,7 @@ using StoryTeller.Grammars;
 
 namespace Marten.Storyteller.Fixtures.EventStore
 {
-    public class InlineAggregationFixture : Fixture
+    public class InlineAggregationFixture: Fixture
     {
         private readonly LightweightCache<string, Guid> _streams = new LightweightCache<string, Guid>();
         private IDocumentStore _store;

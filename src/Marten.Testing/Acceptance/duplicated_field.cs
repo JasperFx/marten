@@ -1,9 +1,9 @@
-﻿using Shouldly;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class duplicated_field : IntegratedFixture
+    public class duplicated_field: IntegratedFixture
     {
         [Fact]
         public void can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()

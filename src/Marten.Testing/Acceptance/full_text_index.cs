@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
@@ -81,7 +81,7 @@ namespace Marten.Testing.Acceptance
 
     // ENDSAMPLE
 
-    public class full_text_index : IntegratedFixture
+    public class full_text_index: IntegratedFixture
     {
         private readonly bool _hasRequiredMinimumPgVersion;
         private readonly string _skipReason;

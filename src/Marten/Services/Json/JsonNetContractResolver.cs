@@ -1,11 +1,10 @@
-﻿using System.Reflection;
-using Marten.Util;
+using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace Marten.Services.Json
 {
-    public class JsonNetContractResolver : DefaultContractResolver
+    public class JsonNetContractResolver: DefaultContractResolver
     {
         public Casing Casing { get; }
 

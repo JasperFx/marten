@@ -1,4 +1,4 @@
-﻿using Oakton;
+using Oakton;
 
 namespace Marten.CommandLine.Commands.Projection
 {

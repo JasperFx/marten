@@ -9,7 +9,7 @@ using Marten.Services;
 
 namespace MartenBenchmarks.BenchAgainst
 {
-    public abstract class IdentityMapWithConcurrentDictionary<TCacheValue> : IIdentityMap
+    public abstract class IdentityMapWithConcurrentDictionary<TCacheValue>: IIdentityMap
     {
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
 

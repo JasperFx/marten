@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq.Compatibility
 {
-    public class take_and_skip : LinqTestContext<DefaultQueryFixture, take_and_skip>
+    public class take_and_skip: LinqTestContext<DefaultQueryFixture, take_and_skip>
     {
         public take_and_skip(DefaultQueryFixture fixture) : base(fixture)
         {
@@ -18,7 +18,7 @@ namespace Marten.Testing.Linq.Compatibility
             ordered(docs => docs.OrderBy(x => x.Long).Take(20));
             ordered(docs => docs.OrderBy(x => x.Long).Skip(15));
         }
-        
+
         [Theory]
         [MemberData(nameof(GetDescriptions))]
         public Task run_query(string description)

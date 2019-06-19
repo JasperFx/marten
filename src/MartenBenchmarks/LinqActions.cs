@@ -56,7 +56,7 @@ namespace MartenBenchmarks
         }
     }
 
-    public class BlueTargets : ICompiledListQuery<Target>
+    public class BlueTargets: ICompiledListQuery<Target>
     {
         public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
         {
