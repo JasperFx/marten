@@ -4,6 +4,7 @@ using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -83,17 +84,6 @@ namespace Marten.Testing.Acceptance
 
     public class full_text_index: IntegratedFixture
     {
-        private readonly bool _hasRequiredMinimumPgVersion;
-        private readonly string _skipReason;
-
-        public full_text_index()
-        {
-            var requiredMinimumPgVersion = Version.Parse("10.0");
-            _hasRequiredMinimumPgVersion =
-                theStore.Diagnostics.GetPostgresVersion().CompareTo(requiredMinimumPgVersion) >= 0;
-            _skipReason = $"Test skipped, minimum Postgres version required is {requiredMinimumPgVersion}";
-        }
-
         public void using_whole_document_full_text_index_through_store_options_with_default()
         {
             // SAMPLE: using_whole_document_full_text_index_through_store_options_with_default
@@ -186,11 +176,9 @@ namespace Marten.Testing.Acceptance
             // ENDSAMPLE
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_full_text_query_through_query_session()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             // SAMPLE: using_full_text_query_through_query_session
             var store = DocumentStore.For(_ =>
                                           {
@@ -220,11 +208,9 @@ namespace Marten.Testing.Acceptance
             result.Count().ShouldBe(1);
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void search_in_query_sample()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
             var expectedId = Guid.NewGuid();
@@ -249,11 +235,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void plain_text_search_in_query_sample()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
             var expectedId = Guid.NewGuid();
@@ -278,11 +262,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void phrase_search_in_query_sample()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
             var expectedId = Guid.NewGuid();
@@ -307,17 +289,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "11.0")]
         public void web_search_in_query_sample()
         {
-            // web search is available in only PG11
-            var requiredMinimumPgVersion = Version.Parse("11.0");
-            var hasRequiredMinimumPgVersion =
-                theStore.Diagnostics.GetPostgresVersion().CompareTo(requiredMinimumPgVersion) >= 0;
-            var skipReason = $"Test skipped, minimum Postgres version required is {requiredMinimumPgVersion}";
-
-            Skip.IfNot(hasRequiredMinimumPgVersion, skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
             var expectedId = Guid.NewGuid();
@@ -342,11 +316,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void text_search_combined_with_other_query_sample()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
             var expectedId = Guid.NewGuid();
@@ -373,11 +345,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void text_search_with_non_default_regConfig_sample()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
             var expectedId = Guid.NewGuid();
@@ -402,25 +372,21 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void should_search_with_store_options_default_configuration()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
             SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex());
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void should_search_with_store_options_for_specific_members()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
             SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName));
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void should_search_with_store_options_with_multipleIndexes()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string frenchRegConfig = "french";
             const string italianRegConfig = "italian";
 
@@ -454,11 +420,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void should_search_by_tenant_with_tenancy_conjoined()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ =>
             {
                 _.Events.TenancyStyle = TenancyStyle.Conjoined;
@@ -518,19 +482,15 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         private void should_search_using_a_single_property_full_text_index_through_attribute_with_custom_settings()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<UserDetails>());
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_should_create_the_index_on_the_table()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex());
 
             var data = Target.GenerateRandomData(100).ToArray();
@@ -546,11 +506,9 @@ namespace Marten.Testing.Acceptance
             ddl.ShouldContain("to_tsvector");
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void not_specifying_an_index_name_should_generate_default_index_name()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex());
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
@@ -562,11 +520,9 @@ namespace Marten.Testing.Acceptance
             ddl.ShouldContain("mt_doc_target_idx_fts");
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void specifying_an_index_name_without_marten_prefix_should_prepend_prefix()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "doesnt_have_prefix"));
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
@@ -578,11 +534,9 @@ namespace Marten.Testing.Acceptance
             ddl.ShouldContain("mt_doesnt_have_prefix");
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void specifying_an_index_name_with_mixed_case_should_result_in_lower_case_name()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "Doesnt_Have_PreFix"));
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
@@ -594,11 +548,9 @@ namespace Marten.Testing.Acceptance
             ddl.ShouldContain("mt_doesnt_have_prefix");
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void specifying_an_index_name_with_marten_prefix_remains_unchanged()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "mt_i_have_prefix"));
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
@@ -610,11 +562,9 @@ namespace Marten.Testing.Acceptance
             ddl.ShouldContain("mt_i_have_prefix");
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void specifying_an_index_name_with_marten_prefix_and_mixed_case_results_in_lowercase_name()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "mT_I_hAve_preFIX"));
             var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data);
@@ -626,11 +576,9 @@ namespace Marten.Testing.Acceptance
             ddl.ShouldContain("mt_i_have_prefix");
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
 
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
@@ -649,11 +597,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
             const string RegConfig = "french";
 
@@ -675,11 +621,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string DataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
             const string RegConfig = "french";
             const string IndexName = "custom_index_name";
@@ -703,11 +647,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_with_single_member_should_create_the_index_without_regConfig_in_indexname_and_member_selectors()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String));
 
             var data = Target.GenerateRandomData(100).ToArray();
@@ -720,11 +662,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_with_multiple_members_should_create_the_index_without_regConfig_in_indexname_and_members_selectors()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String, d => d.AnotherString));
 
             var data = Target.GenerateRandomData(100).ToArray();
@@ -737,11 +677,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string IndexName = "custom_index_name";
             const string RegConfig = "french";
 
@@ -764,11 +702,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void creating_multiple_full_text_index_with_different_regConfigs_and_custom_data_config_should_create_the_indexes_with_different_recConfigs()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string frenchRegConfig = "french";
             const string italianRegConfig = "italian";
 
@@ -794,11 +730,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_a_full_text_index_through_attribute_on_class_with_default()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<Book>());
 
             theStore.BulkInsert(new[] { new Book { Id = Guid.NewGuid(), Author = "test", Information = "test", Title = "test" } });
@@ -812,11 +746,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_a_single_property_full_text_index_through_attribute_with_default()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<UserProfile>());
 
             theStore.BulkInsert(new[] { new UserProfile { Id = Guid.NewGuid(), Information = "test" } });
@@ -830,11 +762,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_a_single_property_full_text_index_through_attribute_with_custom_settings()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<UserDetails>());
 
             theStore.BulkInsert(new[] { new UserDetails { Id = Guid.NewGuid(), Details = "test" } });
@@ -848,11 +778,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_multiple_properties_full_text_index_through_attribute_with_default()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ => _.RegisterDocumentType<Article>());
 
             theStore.BulkInsert(new[] { new Article { Id = Guid.NewGuid(), Heading = "test", Text = "test" } });
@@ -866,11 +794,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_multiple_properties_full_text_index_through_attribute_with_custom_settings()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             const string frenchRegConfig = "french";
             const string italianRegConfig = "italian";
 
@@ -903,11 +829,9 @@ namespace Marten.Testing.Acceptance
                 );
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void wholedoc_fts_index_comparison_works()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().FullTextIndex();
@@ -922,11 +846,9 @@ namespace Marten.Testing.Acceptance
             Assert.DoesNotContain("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void fts_index_comparison_must_take_into_account_automatic_cast()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ =>
             {
                 _.Schema.For<Company>()
@@ -942,11 +864,9 @@ namespace Marten.Testing.Acceptance
             Assert.DoesNotContain("drop index public.mt_doc_company_idx_fts", patch.UpdateDDL);
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void multifield_fts_index_comparison_must_take_into_account_automatic_cast()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ =>
             {
                 _.Schema.For<User>()
@@ -962,11 +882,9 @@ namespace Marten.Testing.Acceptance
             Assert.DoesNotContain("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void modified_fts_index_comparison_must_generate_drop()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             StoreOptions(_ =>
             {
                 _.Schema.For<User>()
