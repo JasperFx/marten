@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class last_modified_queries : IntegratedFixture
+    public class last_modified_queries: IntegratedFixture
     {
         [Fact]
         public void query_modified_since_docs()

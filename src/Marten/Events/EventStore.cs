@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,7 +10,7 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
-    public class EventStore : IEventStore
+    public class EventStore: IEventStore
     {
         private readonly IDocumentSession _session;
         private readonly IManagedConnection _connection;
@@ -42,13 +42,15 @@ namespace Marten.Events
 
         private void ensureAsStringStorage()
         {
-            if (StreamIdentity == StreamIdentity.AsGuid) throw new InvalidOperationException("This Marten event store is configured to identify streams with Guids");
+            if (StreamIdentity == StreamIdentity.AsGuid)
+                throw new InvalidOperationException("This Marten event store is configured to identify streams with Guids");
             _tenant.EnsureStorageExists(typeof(EventStream));
         }
 
         private void ensureAsGuidStorage()
         {
-            if (StreamIdentity == StreamIdentity.AsString) throw new InvalidOperationException("This Marten event store is configured to identify streams with strings");
+            if (StreamIdentity == StreamIdentity.AsString)
+                throw new InvalidOperationException("This Marten event store is configured to identify streams with strings");
             _tenant.EnsureStorageExists(typeof(EventStream));
         }
 

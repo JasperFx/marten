@@ -1,13 +1,12 @@
-﻿using Shouldly;
 using System;
 using System.Linq;
-using Baseline;
 using Baseline.Dates;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_479_select_datetime_fields : IntegratedFixture
+    public class Bug_479_select_datetime_fields: IntegratedFixture
     {
         public Bug_479_select_datetime_fields()
         {
@@ -47,8 +46,6 @@ namespace Marten.Testing.Bugs
                 session.SaveChanges();
 
                 var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTimeOffset }).Single();
-
-                
 
                 date.Date.ShouldBe(doc.DateTimeOffset);
             }

@@ -1,8 +1,6 @@
-﻿using System.Diagnostics;
 using System.Linq;
 using Baseline;
 using Marten.Linq;
-using Marten.Linq.Compiled;
 
 namespace Marten.Transforms
 {

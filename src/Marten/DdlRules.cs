@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Baseline;
 
@@ -16,7 +16,6 @@ namespace Marten
 
         public readonly LightweightCache<string, DdlTemplate> Templates
             = new LightweightCache<string, DdlTemplate>(name => new DdlTemplate(name));
-
 
         /// <summary>
         ///     Alters the syntax used to create tables in DDL

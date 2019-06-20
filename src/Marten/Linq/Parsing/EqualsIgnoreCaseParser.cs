@@ -5,7 +5,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public class EqualsIgnoreCaseParser : IMethodCallParser
+    public class EqualsIgnoreCaseParser: IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {

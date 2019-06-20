@@ -1,11 +1,10 @@
-﻿using System;
-using System.Runtime.Serialization;
+using System;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async.ErrorHandling;
 
 namespace Marten.Testing.Events.Projections.Async.ErrorHandling
 {
-    public class FakeMonitoredActivity : IMonitoredActivity
+    public class FakeMonitoredActivity: IMonitoredActivity
     {
         public Exception StartError = null;
         public Exception StopError = null;
@@ -17,7 +16,8 @@ namespace Marten.Testing.Events.Projections.Async.ErrorHandling
         {
             WasStopped = true;
 
-            if (StopError != null) throw StopError;
+            if (StopError != null)
+                throw StopError;
 
             return Task.CompletedTask;
         }
@@ -26,11 +26,11 @@ namespace Marten.Testing.Events.Projections.Async.ErrorHandling
         {
             WasStarted = true;
 
-            if (StartError != null) throw StartError;
+            if (StartError != null)
+                throw StartError;
 
             return Task.CompletedTask;
         }
-
 
         public int Attempted = 0;
 

@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Testing.Documents;
-using Remotion.Linq.Clauses;
 
 namespace Marten.Testing.Examples
 {
@@ -50,6 +49,7 @@ namespace Marten.Testing.Examples
                     .Where(x => x.Names.Any(_ => searchNames.Contains(_)));
             }
         }
+
         // ENDSAMPLE
     }
 }

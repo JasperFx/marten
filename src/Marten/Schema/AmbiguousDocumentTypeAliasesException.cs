@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Schema
 {
-    public class AmbiguousDocumentTypeAliasesException : Exception
+    public class AmbiguousDocumentTypeAliasesException: Exception
     {
         public AmbiguousDocumentTypeAliasesException(string message) : base(message)
         {

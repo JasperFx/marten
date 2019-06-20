@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -9,23 +9,23 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_select_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_query_with_select_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: one_field_projection
         [Fact]
         public void use_select_in_query_for_one_field()
         {
-            theSession.Store(new User {FirstName = "Hank"});
-            theSession.Store(new User {FirstName = "Bill"});
-            theSession.Store(new User {FirstName = "Sam"});
-            theSession.Store(new User {FirstName = "Tom"});
+            theSession.Store(new User { FirstName = "Hank" });
+            theSession.Store(new User { FirstName = "Bill" });
+            theSession.Store(new User { FirstName = "Sam" });
+            theSession.Store(new User { FirstName = "Tom" });
 
             theSession.SaveChanges();
 
             theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
-
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -40,7 +40,6 @@ namespace Marten.Testing.Linq
 
             theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
                 .First().ShouldBe("Bill");
-
         }
 
         [Fact]
@@ -55,7 +54,6 @@ namespace Marten.Testing.Linq
 
             var names = await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync().ConfigureAwait(false);
             names.ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
-
         }
 
         [Fact]
@@ -68,7 +66,7 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName {Name = x.FirstName})
+            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
                 .ToArray()
                 .Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
@@ -90,7 +88,7 @@ namespace Marten.Testing.Linq
             theSession
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
-                
+
                 // Transform the User class to a different type
                 .Select(x => new UserName { Name = x.FirstName })
                 .AsJson()
@@ -98,8 +96,6 @@ namespace Marten.Testing.Linq
                 .ShouldBe("{\"Name\": \"Bill\"}");
             // ENDSAMPLE
         }
-
-
 
         // SAMPLE: get_first_projection
         [Fact]
@@ -116,6 +112,7 @@ namespace Marten.Testing.Linq
                 .FirstOrDefault()
                 .Name.ShouldBe("Bill");
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -128,12 +125,11 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-
             // SAMPLE:AsJson-plus-Select-2
             theSession
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
-                
+
                 // Transform to an anonymous type
                 .Select(x => new { Name = x.FirstName })
 
@@ -159,7 +155,6 @@ namespace Marten.Testing.Linq
                 .ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
         }
 
-
         [Fact]
         public async Task use_select_to_another_type_async()
         {
@@ -175,7 +170,6 @@ namespace Marten.Testing.Linq
                 .OrderBy(x => x.FirstName)
                 .Select(x => new UserName { Name = x.FirstName })
                 .ToListAsync().ConfigureAwait(false);
-
 
             users.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
@@ -199,7 +193,7 @@ namespace Marten.Testing.Linq
 
             users.ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
         }
-        
+
         // SAMPLE: anonymous_type_projection
         [Fact]
         public void use_select_to_transform_to_an_anonymous_type()
@@ -216,19 +210,20 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
+
         // ENDSAMPLE
 
         [Fact]
         public void use_select_with_multiple_fields_in_anonymous()
         {
-            theSession.Store(new User { FirstName = "Hank", LastName = "Aaron"});
-            theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer"});
-            theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell"});
-            theSession.Store(new User { FirstName = "Tom", LastName = "Chambers"});
+            theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
+            theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
+            theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
+            theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
             theSession.SaveChanges();
 
-            var users = theSession.Query<User>().Select(x => new {First = x.FirstName, Last = x.LastName}).ToList();
+            var users = theSession.Query<User>().Select(x => new { First = x.FirstName, Last = x.LastName }).ToList();
 
             users.Count.ShouldBe(4);
 
@@ -250,7 +245,7 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-            var users = theSession.Query<User>().Select(x => new User2{ First = x.FirstName, Last = x.LastName }).ToList();
+            var users = theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToList();
 
             users.Count.ShouldBe(4);
 
@@ -260,6 +255,7 @@ namespace Marten.Testing.Linq
                 x.Last.ShouldNotBeNull();
             });
         }
+
         // ENDSAMPLE
 
         public class User2
@@ -302,7 +298,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var users = theSession.Query<User>()
-                .Select(x => new UserDto(x.FirstName, x.LastName) {YearsOld = x.Age})
+                .Select(x => new UserDto(x.FirstName, x.LastName) { YearsOld = x.Age })
                 .ToList();
 
             users.Count.ShouldBe(4);
@@ -363,6 +359,7 @@ namespace Marten.Testing.Linq
 
             actual.ShouldHaveTheSameElementsAs(expected);
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -375,7 +372,7 @@ namespace Marten.Testing.Linq
 
             var actual = theSession.Query<Target>()
                 .Where(x => x.Id == target.Id)
-                .Select(x => new {x.Id, x.Number, InnerNumber = x.Inner.Number})
+                .Select(x => new { x.Id, x.Number, InnerNumber = x.Inner.Number })
                 .First();
 
             actual.Id.ShouldBe(target.Id);

@@ -1,9 +1,6 @@
-using System;
-
 namespace Marten.Services
 {
-    public interface IDeletion : IStorageOperation, NoDataReturnedCall
+    public interface IDeletion: IStorageOperation, NoDataReturnedCall
     {
-
     }
 }

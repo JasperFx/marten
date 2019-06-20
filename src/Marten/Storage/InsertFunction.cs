@@ -4,7 +4,7 @@ using Marten.Schema.Arguments;
 
 namespace Marten.Storage
 {
-    public class InsertFunction : UpsertFunction
+    public class InsertFunction: UpsertFunction
     {
         public InsertFunction(DocumentMapping mapping) : base(mapping, mapping.InsertFunction)
         {

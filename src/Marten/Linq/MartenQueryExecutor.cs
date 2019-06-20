@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -10,7 +10,7 @@ using Remotion.Linq;
 
 namespace Marten.Linq
 {
-    public class MartenQueryExecutor : IQueryExecutor
+    public class MartenQueryExecutor: IQueryExecutor
     {
         private readonly IList<IIncludeJoin> _includes = new List<IIncludeJoin>();
 

@@ -4,13 +4,12 @@ using System.Linq;
 
 namespace Marten.Testing.Linq.Compatibility.Support
 {
-
-    public abstract class TargetSchemaFixture : IDisposable
+    public abstract class TargetSchemaFixture: IDisposable
     {
         public readonly Target[] Documents = Target.GenerateRandomData(1000).ToArray();
-        
+
         private readonly IList<DocumentStore> _stores = new List<DocumentStore>();
-        
+
         public void Dispose()
         {
             foreach (var documentStore in _stores)
@@ -28,11 +27,11 @@ namespace Marten.Testing.Linq.Compatibility.Support
 
                 configure?.Invoke(x);
             });
-            
+
             store.Advanced.Clean.CompletelyRemoveAll();
-            
+
             store.BulkInsert(Documents);
-            
+
             _stores.Add(store);
 
             return store;

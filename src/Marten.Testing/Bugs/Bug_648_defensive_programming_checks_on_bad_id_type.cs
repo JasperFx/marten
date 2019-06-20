@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_648_defensive_programming_checks_on_bad_id_type : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_648_defensive_programming_checks_on_bad_id_type: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void try_to_load_a_guid_identified_type_with_wrong_type()

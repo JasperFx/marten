@@ -5,7 +5,7 @@ using Marten.Storage;
 namespace Marten.Events
 {
     // SAMPLE: AppendEventFunction
-    public class AppendEventFunction : Function
+    public class AppendEventFunction: Function
     {
         private readonly EventGraph _events;
 

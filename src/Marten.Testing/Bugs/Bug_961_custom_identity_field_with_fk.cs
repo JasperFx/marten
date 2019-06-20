@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_961_custom_identity_field_with_fk : IntegratedFixture
+    public class Bug_961_custom_identity_field_with_fk: IntegratedFixture
     {
         public class FkTarget
         {

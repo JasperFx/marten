@@ -12,7 +12,7 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class EntityMetadataQueryHandler : IQueryHandler<DocumentMetadata>
+    public class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
     {
         private readonly Dictionary<string, int> _fields;
         private readonly object _id;
@@ -72,7 +72,8 @@ namespace Marten.Storage
 
         public DocumentMetadata Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {
-            if (!reader.Read()) return null;
+            if (!reader.Read())
+                return null;
 
             var version = reader.GetFieldValue<Guid>(0);
             var timestamp = reader.GetValue(1).MapToDateTime();
@@ -94,7 +95,8 @@ namespace Marten.Storage
             CancellationToken token)
         {
             var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
-            if (!hasAny) return null;
+            if (!hasAny)
+                return null;
 
             var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var timestamp = await reader.GetFieldValueAsync<object>(1, token).ConfigureAwait(false);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_statistics : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_query_with_statistics: DocumentSessionFixture<NulloIdentityMap>
     {
         public invoking_query_with_statistics()
         {
@@ -18,7 +18,7 @@ namespace Marten.Testing.Linq
         }
 
         // SAMPLE: compiled-query-statistics
-        public class TargetPaginationQuery : ICompiledListQuery<Target>
+        public class TargetPaginationQuery: ICompiledListQuery<Target>
         {
             public TargetPaginationQuery(int pageNumber, int pageSize)
             {
@@ -36,6 +36,7 @@ namespace Marten.Testing.Linq
                     .Where(x => x.Number > 10).Skip(PageNumber).Take(PageSize);
             }
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -100,7 +101,6 @@ namespace Marten.Testing.Linq
             var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
             count.ShouldBeGreaterThan(0);
 
-
             QueryStatistics stats = null;
 
             var batch = theSession.CreateBatchQuery();
@@ -109,7 +109,6 @@ namespace Marten.Testing.Linq
                 .ToList();
 
             await batch.Execute().ConfigureAwait(false);
-
 
             (await list.ConfigureAwait(false)).Any().ShouldBeTrue();
 
@@ -121,7 +120,6 @@ namespace Marten.Testing.Linq
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
             count.ShouldBeGreaterThan(0);
-
 
             QueryStatistics stats = null;
 
@@ -170,7 +168,6 @@ namespace Marten.Testing.Linq
         {
             var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
             count.ShouldBeGreaterThan(0);
-
 
             QueryStatistics stats = null;
 

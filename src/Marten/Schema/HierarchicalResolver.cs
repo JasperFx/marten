@@ -8,7 +8,7 @@ using Npgsql;
 
 namespace Marten.Schema
 {
-    public class HierarchicalDocumentStorage<T> : DocumentStorage<T> where T : class
+    public class HierarchicalDocumentStorage<T>: DocumentStorage<T> where T : class
     {
         private readonly DocumentMapping _hierarchy;
 
@@ -20,8 +20,9 @@ namespace Marten.Schema
 
         public override T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
-            if (reader.IsDBNull(startingIndex)) return null;
-            
+            if (reader.IsDBNull(startingIndex))
+                return null;
+
             var id = reader[startingIndex + 1];
             var typeAlias = reader.GetFieldValue<string>(startingIndex + 2);
 
@@ -33,7 +34,8 @@ namespace Marten.Schema
 
         public override async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
+            if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false))
+                return null;
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
@@ -48,7 +50,8 @@ namespace Marten.Schema
 
         public override T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
-            if (!reader.Read()) return null;
+            if (!reader.Read())
+                return null;
 
             var typeAlias = reader.GetString(2);
 
@@ -65,7 +68,8 @@ namespace Marten.Schema
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
 
-            if (!found) return null;
+            if (!found)
+                return null;
 
             var typeAlias = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 

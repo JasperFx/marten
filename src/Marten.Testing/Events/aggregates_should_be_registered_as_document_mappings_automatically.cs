@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Events.Projections;
 using Marten.Testing.Events.Projections;
 using Shouldly;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class aggregates_should_be_registered_as_document_mappings_automatically : IntegratedFixture
+    public class aggregates_should_be_registered_as_document_mappings_automatically: IntegratedFixture
     {
         [Fact]
         public void aggregations_are_registered()
@@ -66,7 +66,6 @@ namespace Marten.Testing.Events
 
             theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(MonsterDefeated));
-
         }
 
         [Fact]
@@ -79,7 +78,6 @@ namespace Marten.Testing.Events
 
             theStore.Storage.AllMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(MonsterDefeated));
-
         }
     }
 }

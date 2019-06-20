@@ -3,7 +3,7 @@ using Marten.Services;
 
 namespace Marten.Schema
 {
-    public sealed class InsertExceptionTransform<T> : IExceptionTransform
+    public sealed class InsertExceptionTransform<T>: IExceptionTransform
     {
         private readonly object id;
         private readonly string tableName;
@@ -30,7 +30,7 @@ namespace Marten.Schema
         }
     }
 
-    public sealed class DocumentAlreadyExistsException : Exception
+    public sealed class DocumentAlreadyExistsException: Exception
     {
         public Type DocType { get; }
         public object Id { get; }

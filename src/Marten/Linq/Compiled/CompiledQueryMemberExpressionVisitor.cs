@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,18 +11,20 @@ using Marten.Util;
 
 namespace Marten.Linq.Compiled
 {
-    public class CompiledQueryMemberExpressionVisitor : ExpressionVisitor
+    public class CompiledQueryMemberExpressionVisitor: ExpressionVisitor
     {
         private static readonly IList<StringComparisonParser> _stringMethods
-            = new List<StringComparisonParser> {new StringContains(), new StringEndsWith(), new StringStartsWith()};
+            = new List<StringComparisonParser> { new StringContains(), new StringEndsWith(), new StringStartsWith() };
 
         public static bool IsContainmentMethod(MethodInfo method)
         {
-            if (method.Name == nameof(Enumerable.Any)) return true;
+            if (method.Name == nameof(Enumerable.Any))
+                return true;
 
             if (method.Name == nameof(Enumerable.Contains))
             {
-                if (method.DeclaringType == typeof(string)) return false;
+                if (method.DeclaringType == typeof(string))
+                    return false;
 
                 return true;
             }
@@ -34,7 +36,7 @@ namespace Marten.Linq.Compiled
         private readonly Type _queryType;
         private readonly ISerializer _serializer;
         private IField _lastMember;
-        private static readonly string[] _skippedMethods = new[] {nameof(CompiledQueryExtensions.Include),nameof(CompiledQueryExtensions.Stats), };
+        private static readonly string[] _skippedMethods = new[] { nameof(CompiledQueryExtensions.Include), nameof(CompiledQueryExtensions.Stats), };
         private StringComparisonParser _parser;
 
         public CompiledQueryMemberExpressionVisitor(IQueryableDocument mapping, Type queryType, ISerializer serializer)
@@ -60,20 +62,20 @@ namespace Marten.Linq.Compiled
                     ParameterSetters.Add(new ConstantDbParameterSetter(true));
                 }
             }
-			// This evaluation is added to support parameterized !Boolean queries
-			else if (node.NodeType == ExpressionType.Not && node.Operand is MemberExpression)
+            // This evaluation is added to support parameterized !Boolean queries
+            else if (node.NodeType == ExpressionType.Not && node.Operand is MemberExpression)
             {
-	            var operand = (MemberExpression) node.Operand;
-	            if (operand.Type == typeof(bool) && operand.NodeType == ExpressionType.MemberAccess)
-	            {
-		            // Parameterized to :column <> True, instead of :column = False.
-		            ParameterSetters.Add(new ConstantDbParameterSetter(true));
-	            }
+                var operand = (MemberExpression)node.Operand;
+                if (operand.Type == typeof(bool) && operand.NodeType == ExpressionType.MemberAccess)
+                {
+                    // Parameterized to :column <> True, instead of :column = False.
+                    ParameterSetters.Add(new ConstantDbParameterSetter(true));
+                }
             }
-			return base.VisitUnary(node);
+            return base.VisitUnary(node);
         }
 
-	    protected override Expression VisitMember(MemberExpression node)
+        protected override Expression VisitMember(MemberExpression node)
         {
             _lastMember = _mapping.FieldFor(new[] { node.Member });
 
@@ -86,16 +88,18 @@ namespace Marten.Linq.Compiled
                 case PropertyInfo _:
                     methodName = nameof(CreatePropertyParameterSetter);
                     break;
+
                 case FieldInfo _:
                     methodName = nameof(CreateFieldParameterSetter);
                     break;
+
                 default:
                     throw new NotSupportedException("Only Property or Field is supported for query parameter");
             }
             var method = GetType()
                 .GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
                 .MakeGenericMethod(_queryType);
-            ParameterSetters.Add((IDbParameterSetter) method.Invoke(this, new[] {node.Member}));
+            ParameterSetters.Add((IDbParameterSetter)method.Invoke(this, new[] { node.Member }));
 
             return base.VisitMember(node);
         }
@@ -116,9 +120,11 @@ namespace Marten.Linq.Compiled
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             // skip Visiting Include or Stats method members
-            if (_skippedMethods.Contains(node.Method.Name)) return node;
+            if (_skippedMethods.Contains(node.Method.Name))
+                return node;
 
-            if (node.Method.HasAttribute<SkipOnCompiledQueryParsingAttribute>()) return node;
+            if (node.Method.HasAttribute<SkipOnCompiledQueryParsingAttribute>())
+                return node;
 
             if (IsContainmentMethod(node.Method))
             {
@@ -153,7 +159,7 @@ namespace Marten.Linq.Compiled
             if (type.GetTypeInfo().IsEnum && _serializer.EnumStorage == EnumStorage.AsString)
             {
                 var original = getter;
-                
+
                 getter = o =>
                 {
                     var number = original(o);

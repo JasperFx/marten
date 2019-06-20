@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 using Marten.Linq.Model;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class OneResultHandler<T> : IQueryHandler<T>
+    public class OneResultHandler<T>: IQueryHandler<T>
     {
         private const string NoElementsMessage = "Sequence contains no elements";
         private const string MoreThanOneElementMessage = "Sequence contains more than one element";
@@ -39,7 +38,8 @@ namespace Marten.Linq.QueryHandlers
             var hasResult = reader.Read();
             if (!hasResult)
             {
-                if (_canBeNull) return default(T);
+                if (_canBeNull)
+                    return default(T);
 
                 throw new InvalidOperationException(NoElementsMessage);
             }
@@ -57,7 +57,8 @@ namespace Marten.Linq.QueryHandlers
             var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasResult)
             {
-                if (_canBeNull) return default(T);
+                if (_canBeNull)
+                    return default(T);
 
                 throw new InvalidOperationException(NoElementsMessage);
             }

@@ -1,5 +1,4 @@
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -11,7 +10,7 @@ using Npgsql;
 
 namespace Marten.Transforms
 {
-    public class TransformToTypeSelector<T> : ISelector<T>
+    public class TransformToTypeSelector<T>: ISelector<T>
     {
         private readonly IQueryableDocument _document;
         private readonly string _fieldName;

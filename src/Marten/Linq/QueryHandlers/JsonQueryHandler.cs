@@ -7,11 +7,10 @@ using Baseline;
 using Marten.Linq.Model;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class JsonQueryHandler : IQueryHandler<string>
+    public class JsonQueryHandler: IQueryHandler<string>
     {
         private readonly LinqQuery<string> _query;
 
@@ -19,7 +18,6 @@ namespace Marten.Linq.QueryHandlers
         {
             _query = query;
         }
-
 
         public Type SourceType => _query.SourceType;
 

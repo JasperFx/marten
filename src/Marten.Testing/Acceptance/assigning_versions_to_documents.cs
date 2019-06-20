@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
@@ -12,7 +10,6 @@ namespace Marten.Testing.Acceptance
 {
     public class assigning_versions_to_documents
     {
-
         [Fact]
         public void no_version_member_by_default()
         {
@@ -54,12 +51,9 @@ namespace Marten.Testing.Acceptance
                     .VersionMember.Name.ShouldBe(nameof(DocThatCouldBeVersioned.Revision));
             }
         }
-
-        
     }
 
-    
-    public class end_to_end_versioned_docs : IntegratedFixture
+    public class end_to_end_versioned_docs: IntegratedFixture
     {
         [Fact]
         public void save_initial_version_of_the_doc_and_see_the_initial_version_assigned()
@@ -148,8 +142,6 @@ namespace Marten.Testing.Acceptance
                 session1?.Dispose();
                 session2?.Dispose();
             }
-
- 
         }
 
         [Fact]
@@ -201,8 +193,6 @@ namespace Marten.Testing.Acceptance
                 session1?.Dispose();
                 session2?.Dispose();
             }
-
-
         }
 
         [Fact]
@@ -254,8 +244,6 @@ namespace Marten.Testing.Acceptance
                 session1?.Dispose();
                 session2?.Dispose();
             }
-
-
         }
 
         [Fact]
@@ -291,7 +279,6 @@ namespace Marten.Testing.Acceptance
                 doc.Version.ShouldNotBe(Guid.Empty);
             }
         }
-
     }
 
     public class DocThatCouldBeVersioned

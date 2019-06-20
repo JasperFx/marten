@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Schema;
 using Shouldly;
@@ -21,9 +21,9 @@ namespace Marten.Testing.Bugs
 
             using (var session1 = store1.OpenSession())
             {
-                session1.Store(new Team {Name = "Warriors"});
-                session1.Store(new Team {Name = "Spurs"});
-                session1.Store(new Team {Name = "Thunder"});
+                session1.Store(new Team { Name = "Warriors" });
+                session1.Store(new Team { Name = "Spurs" });
+                session1.Store(new Team { Name = "Thunder" });
 
                 session1.SaveChanges();
 

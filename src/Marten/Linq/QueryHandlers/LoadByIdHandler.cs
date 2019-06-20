@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
@@ -10,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class LoadByIdHandler<T> : IQueryHandler<T>
+    public class LoadByIdHandler<T>: IQueryHandler<T>
     {
         private readonly IDocumentStorage<T> storage;
         private readonly IQueryableDocument _mapping;
@@ -23,7 +22,7 @@ namespace Marten.Linq.QueryHandlers
             _id = id;
         }
 
-        public Type SourceType => typeof (T);
+        public Type SourceType => typeof(T);
 
         public void ConfigureCommand(CommandBuilder sql)
         {
@@ -40,7 +39,7 @@ namespace Marten.Linq.QueryHandlers
             sql.Append(" from ");
             sql.Append(_mapping.Table.QualifiedName);
             sql.Append(" as d where id = :");
-            
+
             var parameter = sql.AddParameter(_id);
             sql.Append(parameter.ParameterName);
 
@@ -57,7 +56,7 @@ namespace Marten.Linq.QueryHandlers
 
         public async Task<T> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
-            return await reader.ReadAsync(token).ConfigureAwait(false) 
+            return await reader.ReadAsync(token).ConfigureAwait(false)
                 ? await storage.ResolveAsync(0, reader, map, token).ConfigureAwait(false) : default(T);
         }
     }

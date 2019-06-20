@@ -7,7 +7,7 @@ using Remotion.Linq.Clauses;
 
 namespace Marten.Linq
 {
-    public class CompoundWhereFragment : IWhereFragment
+    public class CompoundWhereFragment: IWhereFragment
     {
         private readonly IList<IWhereFragment> _children = new List<IWhereFragment>();
         private readonly string _separator;
@@ -27,7 +27,8 @@ namespace Marten.Linq
 
         public void Apply(CommandBuilder builder)
         {
-            if (!_children.Any()) return;
+            if (!_children.Any())
+                return;
 
             var separator = $" {_separator} ";
 

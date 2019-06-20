@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using Baseline;
@@ -101,7 +101,6 @@ namespace Marten
                     reader.Close();
                 }
             });
-
 
             return list;
         }

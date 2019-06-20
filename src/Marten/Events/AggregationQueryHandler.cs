@@ -7,11 +7,10 @@ using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Events
 {
-    internal class AggregationQueryHandler<T> : IQueryHandler<T> where T : class, new()
+    internal class AggregationQueryHandler<T>: IQueryHandler<T> where T : class, new()
     {
         private readonly IAggregator<T> _aggregator;
         private readonly IEventQueryHandler _inner;
@@ -31,7 +30,7 @@ namespace Marten.Events
             _inner.ConfigureCommand(builder);
         }
 
-        public Type SourceType => typeof (IEvent);
+        public Type SourceType => typeof(IEvent);
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {

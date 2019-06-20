@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_605_unary_expressions_in_where_clause_of_compiled_query : IntegratedFixture
+    public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: IntegratedFixture
     {
         [Fact]
         public void with_flag_as_true()
@@ -31,17 +31,16 @@ namespace Marten.Testing.Bugs
 
                 results.Count().ShouldBe(15);
 
-
                 results.Select(x => x.Id)
                     .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
             }
         }
-        
+
         [Fact]
         public void with_flag_as_true_with_enum_as_string()
         {
             StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
-            
+
             var targets = Target.GenerateRandomData(1000).ToArray();
             theStore.BulkInsert(targets);
 
@@ -59,7 +58,6 @@ namespace Marten.Testing.Bugs
                     .ToList();
 
                 results.Count().ShouldBe(15);
-
 
                 results.Select(x => x.Id)
                     .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
@@ -87,14 +85,12 @@ namespace Marten.Testing.Bugs
 
                 results.Count().ShouldBe(15);
 
-
                 results.Select(x => x.Id)
                     .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
             }
         }
 
-
-        public class FlaggedTrueTargets : ICompiledListQuery<Target>
+        public class FlaggedTrueTargets: ICompiledListQuery<Target>
         {
             public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
@@ -112,7 +108,7 @@ namespace Marten.Testing.Bugs
             public int Take { get; set; } = 15;
         }
 
-        public class FlaggedFalseTargets : ICompiledListQuery<Target>
+        public class FlaggedFalseTargets: ICompiledListQuery<Target>
         {
             public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {

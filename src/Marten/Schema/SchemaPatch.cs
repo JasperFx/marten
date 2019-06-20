@@ -29,9 +29,6 @@ namespace Marten.Schema
         private readonly DDLRecorder _down = new DDLRecorder();
         private readonly IDDLRunner _liveRunner;
 
-
-
-
         public SchemaPatch(DdlRules rules)
         {
             Rules = rules;
@@ -39,7 +36,6 @@ namespace Marten.Schema
 
         public SchemaPatch(DdlRules rules, StringWriter upWriter) : this(rules, new DDLRecorder(upWriter))
         {
-            
         }
 
         public SchemaPatch(DdlRules rules, IDDLRunner liveRunner) : this(rules)
@@ -61,7 +57,8 @@ namespace Marten.Schema
         {
             get
             {
-                if (!Migrations.Any()) return SchemaPatchDifference.None;
+                if (!Migrations.Any())
+                    return SchemaPatchDifference.None;
 
                 if (Migrations.Any(x => x.Difference == SchemaPatchDifference.Invalid))
                 {
@@ -82,7 +79,7 @@ namespace Marten.Schema
             }
         }
 
-        public void WriteScript(TextWriter writer, Action<TextWriter> writeStep, bool transactionalScript=true)
+        public void WriteScript(TextWriter writer, Action<TextWriter> writeStep, bool transactionalScript = true)
         {
             if (transactionalScript)
             {
@@ -117,10 +114,10 @@ namespace Marten.Schema
         {
             using (var stream = new FileStream(file, FileMode.Create))
             {
-                var writer = new StreamWriter(stream) {AutoFlush = true};
+                var writer = new StreamWriter(stream) { AutoFlush = true };
 
                 WriteScript(writer, w => w.WriteLine(sql), transactionalScript);
-                
+
                 stream.Flush(true);
             }
         }
@@ -129,7 +126,6 @@ namespace Marten.Schema
         {
             WriteFile(file, UpdateDDL, transactionalScript);
         }
-
 
         public void WriteRollbackFile(string file, bool transactionalScript = true)
         {
@@ -146,12 +142,13 @@ namespace Marten.Schema
 
         public void AssertPatchingIsValid(AutoCreate autoCreate)
         {
-            if (autoCreate == AutoCreate.All) return;
+            if (autoCreate == AutoCreate.All)
+                return;
 
             var difference = Difference;
 
-            if (difference == SchemaPatchDifference.None) return;
-            
+            if (difference == SchemaPatchDifference.None)
+                return;
 
             if (difference == SchemaPatchDifference.Invalid)
             {
@@ -169,14 +166,15 @@ namespace Marten.Schema
             }
         }
 
-        
         public void Apply(NpgsqlConnection conn, AutoCreate autoCreate, ISchemaObject[] schemaObjects)
         {
-            if (!schemaObjects.Any()) return;
+            if (!schemaObjects.Any())
+                return;
 
             // Let folks just fail if anything is wrong.
             // Per https://github.com/JasperFx/marten/issues/711
-            if (autoCreate == AutoCreate.None) return;
+            if (autoCreate == AutoCreate.None)
+                return;
 
             var cmd = conn.CreateCommand();
             var builder = new CommandBuilder(cmd);
@@ -216,7 +214,7 @@ namespace Marten.Schema
 
         public void Apply(NpgsqlConnection connection, AutoCreate autoCreate, ISchemaObject schemaObject)
         {
-            Apply(connection, autoCreate, new ISchemaObject[] {schemaObject});
+            Apply(connection, autoCreate, new ISchemaObject[] { schemaObject });
         }
     }
 

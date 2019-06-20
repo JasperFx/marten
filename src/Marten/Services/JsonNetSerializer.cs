@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Baseline;
 using Marten.Services.Json;
@@ -7,7 +7,7 @@ using Newtonsoft.Json.Converters;
 
 namespace Marten.Services
 {
-    public class JsonNetSerializer : ISerializer
+    public class JsonNetSerializer: ISerializer
     {
         private readonly JsonSerializer _clean = new JsonSerializer
         {

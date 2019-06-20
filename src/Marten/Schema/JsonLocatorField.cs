@@ -8,7 +8,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class JsonLocatorField : Field, IField
+    public class JsonLocatorField: Field, IField
     {
         public static JsonLocatorField For<T>(EnumStorage enumStyle, Casing casing, Expression<Func<T, object>> expression)
         {

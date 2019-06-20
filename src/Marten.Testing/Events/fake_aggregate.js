@@ -1,10 +1,10 @@
-﻿var mt_transforms = require('mt_transforms');
+var mt_transforms = require('mt_transforms');
 mt_transforms.snapshot({
     name: 'fake_aggregate',
-    $init: function() {
-        return {ANames: [], BNames: [], CNames: [], DNames: []}
+    $init: function () {
+        return { ANames: [], BNames: [], CNames: [], DNames: [] }
     },
-    event_a: function(a, e) {
+    event_a: function (a, e) {
         a.ANames.push(e.Name);
     },
     event_b: function (a, e) {

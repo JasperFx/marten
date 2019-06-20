@@ -1,40 +1,36 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline.Dates;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
-using Marten.Testing.CodeTracker;
-using Xunit;
-using Xunit.Abstractions;
-using System.Linq;
-using Baseline.Dates;
 using Marten.Storage;
+using Marten.Testing.CodeTracker;
 using Marten.Util;
 using Shouldly;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.AsyncDaemon
 {
-    public class async_daemon_end_to_end : IntegratedFixture, IClassFixture<AsyncDaemonTestHelper>
+    public class async_daemon_end_to_end: IntegratedFixture, IClassFixture<AsyncDaemonTestHelper>
     {
-        
         public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output)
         {
             _testHelper = testHelper;
             _logger = new TracingLogger(output.WriteLine);
         }
-        
-//        public async_daemon_end_to_end()
-//        {
-//            _fixture = new AsyncDaemonFixture();
-//            _logger = new ConsoleDaemonLogger();
-//        }
+
+        //        public async_daemon_end_to_end()
+        //        {
+        //            _fixture = new AsyncDaemonFixture();
+        //            _logger = new ConsoleDaemonLogger();
+        //        }
 
         private readonly AsyncDaemonTestHelper _testHelper;
         private readonly IDaemonLogger _logger;
-
-
-        
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_on_other_schema_single_event()
@@ -60,7 +56,6 @@ namespace Marten.Testing.AsyncDaemon
             // ENDSAMPLE
 
             _testHelper.CompareActiveProjects(theStore);
-            
         }
 
         [Fact]
@@ -76,8 +71,6 @@ namespace Marten.Testing.AsyncDaemon
 
             _testHelper.PublishAllProjectEvents(theStore, true);
 
-
-
             // Really just kind of a smoke test here
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
             {
@@ -89,13 +82,8 @@ namespace Marten.Testing.AsyncDaemon
                 await daemon.Stop<ActiveProject>().ConfigureAwait(false);
 
                 daemon.Start<ActiveProject>(DaemonLifecycle.StopAtEndOfEventData);
-
             }
-
-
-
         }
-
 
         //[Fact] Not super duper reliable when running back to back
         public async Task do_a_complete_rebuild_of_the_active_projects_from_scratch_twice_on_other_schema()
@@ -121,8 +109,6 @@ namespace Marten.Testing.AsyncDaemon
 
             _testHelper.CompareActiveProjects(theStore);
         }
-
-
 
         [Fact]
         public async Task do_a_complete_rebuild_of_the_project_count_with_seq_id_gap_at_101()
@@ -197,10 +183,10 @@ namespace Marten.Testing.AsyncDaemon
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
-                
+
                 command.Sql($"select last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
                     .With("name", projection.GetEventProgressionName());
-                
+
                 using (var reader = await command.ExecuteReaderAsync().ConfigureAwait(false))
                 {
                     var any = await reader.ReadAsync().ConfigureAwait(false);
@@ -208,13 +194,13 @@ namespace Marten.Testing.AsyncDaemon
                     {
                         throw new Exception("No projection found");
                     }
-                    
+
                     var lastEncountered = await reader.GetFieldValueAsync<long>(0);
                     lastEncountered.ShouldBe(2);
                 }
             }
         }
-        
+
         [Fact]
         public async Task custom_projection_with_customKeyName_can_fetch_current_state()
         {
@@ -235,7 +221,7 @@ namespace Marten.Testing.AsyncDaemon
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
-                
+
                 command.Sql($"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (last_seq_id, name) values (:seq, :name)")
                     .With("seq", 1)
                     .With("name", projection.GetEventProgressionName())
@@ -259,16 +245,16 @@ namespace Marten.Testing.AsyncDaemon
             projection.Observed.ShouldHaveSingleItem().ShouldBe(2);
         }
 
-
-        public class ProjectCountProjection : IProjection
+        public class ProjectCountProjection: IProjection
         {
             public Guid Id { get; set; }
 
-            IDocumentSession _session;
+            private IDocumentSession _session;
 
             public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted) };
             public Type Produces { get; } = typeof(ProjectCountProjection);
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+
             public void Apply(IDocumentSession session, EventPage page)
             {
             }
@@ -289,7 +275,6 @@ namespace Marten.Testing.AsyncDaemon
 
             public void EnsureStorageExists(ITenant tenant)
             {
-                
             }
 
             public int ProjectCount { get; set; }
@@ -301,13 +286,14 @@ namespace Marten.Testing.AsyncDaemon
                 _session.Store(model);
             }
         }
-        
-        public class ProjectionWithCustomProjectionKeyName : IProjection, IHasCustomEventProgressionName
+
+        public class ProjectionWithCustomProjectionKeyName: IProjection, IHasCustomEventProgressionName
         {
             public Guid Id { get; set; }
 
             public Type[] Consumes { get; } = { typeof(ProjectStarted) };
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+
             public void Apply(IDocumentSession session, EventPage page)
             {
             }
@@ -327,21 +313,21 @@ namespace Marten.Testing.AsyncDaemon
             }
 
             public string Name => "Custom_projection_key_name";
-            
+
             public List<long> Observed { get; } = new List<long>();
         }
 
-        public class OccasionalErroringProjection : IProjection
+        public class OccasionalErroringProjection: IProjection
         {
             private readonly Random _random = new Random(5);
             private bool _failed;
 
-            public Type[] Consumes { get; } = new Type[] {typeof(ProjectStarted), typeof(IssueCreated), typeof(IssueClosed), typeof(Commit)};
+            public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted), typeof(IssueCreated), typeof(IssueClosed), typeof(Commit) };
             public Type Produces { get; } = typeof(FakeThing);
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+
             public void Apply(IDocumentSession session, EventPage page)
             {
-                
             }
 
             public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
@@ -359,7 +345,6 @@ namespace Marten.Testing.AsyncDaemon
 
             public void EnsureStorageExists(ITenant tenant)
             {
-                
             }
         }
 

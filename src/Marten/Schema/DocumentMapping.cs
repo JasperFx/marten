@@ -19,7 +19,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping : FieldCollection, IDocumentMapping, IQueryableDocument, IFeatureSchema
+    public class DocumentMapping: FieldCollection, IDocumentMapping, IQueryableDocument, IFeatureSchema
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -71,7 +71,8 @@ namespace Marten.Schema
                 }
                 else
                 {
-                    if (value.GetMemberType() != typeof(Guid)) throw new ArgumentOutOfRangeException(nameof(value), "The Version member has to be of type Guid");
+                    if (value.GetMemberType() != typeof(Guid))
+                        throw new ArgumentOutOfRangeException(nameof(value), "The Version member has to be of type Guid");
                     UseOptimisticConcurrency = true;
                     _versionMember = value;
                 }
@@ -136,7 +137,8 @@ namespace Marten.Schema
             get { return _alias; }
             set
             {
-                if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
+                if (value.IsEmpty())
+                    throw new ArgumentNullException(nameof(value));
 
                 _alias = value.ToLower();
             }
@@ -346,7 +348,8 @@ namespace Marten.Schema
 
         public string AliasFor(Type subclassType)
         {
-            if (subclassType == DocumentType) return BaseAlias;
+            if (subclassType == DocumentType)
+                return BaseAlias;
 
             var type = _subClasses.FirstOrDefault(x => x.DocumentType == subclassType);
             if (type == null)
@@ -360,7 +363,8 @@ namespace Marten.Schema
 
         public Type TypeFor(string alias)
         {
-            if (alias == BaseAlias) return DocumentType;
+            if (alias == BaseAlias)
+                return DocumentType;
 
             var subClassMapping = _subClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
             if (subClassMapping == null)
@@ -553,9 +557,11 @@ namespace Marten.Schema
         private bool idMemberIsSettable()
         {
             var field = IdMember as FieldInfo;
-            if (field != null) return field.IsPublic;
+            if (field != null)
+                return field.IsPublic;
             var property = IdMember as PropertyInfo;
-            if (property != null) return property.CanWrite && property.SetMethod != null;
+            if (property != null)
+                return property.CanWrite && property.SetMethod != null;
             return false;
         }
 
@@ -698,7 +704,7 @@ namespace Marten.Schema
         }
     }
 
-    public class DocumentMapping<T> : DocumentMapping
+    public class DocumentMapping<T>: DocumentMapping
     {
         public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
         {
@@ -721,7 +727,8 @@ namespace Marten.Schema
 
             var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType);
 
-            if (dbType.HasValue) duplicateField.DbType = dbType.Value;
+            if (dbType.HasValue)
+                duplicateField.DbType = dbType.Value;
 
             var indexDefinition = AddIndex(duplicateField.ColumnName);
             configure?.Invoke(indexDefinition);

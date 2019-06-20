@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -7,11 +7,9 @@ using Marten.Storage;
 
 namespace Marten.Transforms
 {
-    public class TransformFunction : Function
+    public class TransformFunction: Function
     {
         public static readonly string Prefix = "mt_transform_";
-
-
 
         public readonly IList<string> OtherArgs = new List<string>();
 
@@ -27,7 +25,7 @@ namespace Marten.Transforms
 
         private IEnumerable<string> allArgs()
         {
-            return new[] {"doc"}.Concat(OtherArgs);
+            return new[] { "doc" }.Concat(OtherArgs);
         }
 
         public override void Write(DdlRules rules, StringWriter writer)
@@ -40,7 +38,6 @@ namespace Marten.Transforms
         {
             return ToDropSignature();
         }
-
 
         public string ToDropSignature()
         {
@@ -70,7 +67,6 @@ CREATE OR REPLACE FUNCTION {Identifier}({signature}) RETURNS JSONB AS $$
 $$ LANGUAGE plv8 IMMUTABLE STRICT;
 ";
         }
-
 
         public static TransformFunction ForFile(StoreOptions options, string file, string name = null)
         {

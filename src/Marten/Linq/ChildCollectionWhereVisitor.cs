@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
@@ -10,9 +10,9 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
-    public class ChildCollectionWhereVisitor : RelinqExpressionVisitor
+    public class ChildCollectionWhereVisitor: RelinqExpressionVisitor
     {
-        public static readonly Type[] ValidOperators = new[] {typeof(AnyResultOperator), typeof(ContainsResultOperator)};
+        public static readonly Type[] ValidOperators = new[] { typeof(AnyResultOperator), typeof(ContainsResultOperator) };
 
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
@@ -25,8 +25,6 @@ namespace Marten.Linq
             _expression = expression;
             _query = expression.QueryModel;
             _registerFilter = registerFilter;
-
-            
         }
 
         public void Parse()
@@ -44,12 +42,10 @@ namespace Marten.Linq
             var queryType = _query.SourceType();
             var isPrimitive = TypeMappings.HasTypeMapping(queryType);
 
-
-
             Visit(_expression);
 
             // Simple types
-            
+
             if (isPrimitive)
             {
                 var contains = _query.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
@@ -76,7 +72,6 @@ namespace Marten.Linq
 
                 var @where = new CollectionAnyContainmentWhereFragment(members, _serializer, _expression);
                 _registerFilter(@where);
-
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Events.Projections;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class fetching_stream_state_before_aggregator_is_registered : IntegratedFixture
+    public class fetching_stream_state_before_aggregator_is_registered: IntegratedFixture
     {
         [Fact]
         public async Task bug_705_order_of_operation()
@@ -27,14 +27,10 @@ namespace Marten.Testing.Events
             {
                 var state = await query.Events.FetchStreamStateAsync(streamId);
                 var aggregate = await query.Events.AggregateStreamAsync<QuestParty>(streamId);
-                
-                
 
                 state.ShouldNotBeNull();
                 aggregate.ShouldNotBeNull();
             }
-
-
         }
 
         [Fact]
@@ -78,9 +74,8 @@ namespace Marten.Testing.Events
         public Guid Id;
     }
 
-
     // SAMPLE: fetching_stream_state
-    public class fetching_stream_state : DocumentSessionFixture<NulloIdentityMap>
+    public class fetching_stream_state: DocumentSessionFixture<NulloIdentityMap>
     {
         private Guid theStreamId;
 
@@ -92,8 +87,6 @@ namespace Marten.Testing.Events
             theStreamId = theSession.Events.StartStream<Quest>(joined, departed).Id;
             theSession.SaveChanges();
         }
-
-
 
         [Fact]
         public void can_fetch_the_stream_version_and_aggregate_type()
@@ -134,7 +127,6 @@ namespace Marten.Testing.Events
             state.Version.ShouldBe(2);
             state.AggregateType.ShouldBe(typeof(Quest));
             state.LastTimestamp.ShouldNotBe(DateTime.MinValue);
-
         }
 
         [Fact]
@@ -151,5 +143,6 @@ namespace Marten.Testing.Events
             events.Count.ShouldBe(2);
         }
     }
+
     // ENDSAMPLE
 }

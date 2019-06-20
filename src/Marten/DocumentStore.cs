@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,7 @@ namespace Marten
     /// <summary>
     /// The main entry way to using Marten
     /// </summary>
-    public class DocumentStore : IDocumentStore
+    public class DocumentStore: IDocumentStore
     {
         private readonly IQueryParser _parser = new MartenQueryParser();
 
@@ -259,6 +259,7 @@ namespace Marten
             {
                 case DocumentTracking.None:
                     return new NulloIdentityMap(Serializer, Options.Listeners.Concat(localListeners));
+
                 case DocumentTracking.IdentityOnly:
                     return new IdentityMap(Serializer, Options.Listeners.Concat(localListeners));
 

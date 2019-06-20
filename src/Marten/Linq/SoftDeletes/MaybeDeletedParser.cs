@@ -1,11 +1,11 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 
 namespace Marten.Linq.SoftDeletes
 {
-    public class MaybeDeletedParser : IMethodCallParser
+    public class MaybeDeletedParser: IMethodCallParser
     {
         private static readonly MethodInfo _method =
             typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.MaybeDeleted));

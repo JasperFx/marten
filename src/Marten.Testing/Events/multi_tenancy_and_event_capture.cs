@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Storage;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class multi_tenancy_and_event_capture : IntegratedFixture
+    public class multi_tenancy_and_event_capture: IntegratedFixture
     {
         public static TheoryData<TenancyStyle> TenancyStyles = new TheoryData<TenancyStyle>
         {

@@ -3,7 +3,7 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
-    public class EventProgressionTable : Table
+    public class EventProgressionTable: Table
     {
         public EventProgressionTable(string schemaName) : base(new DbObjectName(schemaName, "mt_event_progression"))
         {

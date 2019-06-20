@@ -6,7 +6,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public abstract class MethodCallParser<T> : IMethodCallParser
+    public abstract class MethodCallParser<T>: IMethodCallParser
     {
         private readonly MethodInfo _method;
 
@@ -19,7 +19,7 @@ namespace Marten.Linq.Parsing
         {
             // You cannot use the Equals() method on any Reflection objects, they
             // only check for reference equality. Ask me how I know that;)
-            return expression.Object?.Type == typeof (T) && expression.Method.Name == _method.Name;
+            return expression.Object?.Type == typeof(T) && expression.Method.Name == _method.Name;
         }
 
         public abstract IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);

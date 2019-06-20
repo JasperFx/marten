@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Schema.Indexing.Unique;
@@ -7,7 +7,7 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
-    public class ComputedIndex : IIndexDefinition
+    public class ComputedIndex: IIndexDefinition
     {
         private readonly MemberInfo[][] _members;
         private string _locator;

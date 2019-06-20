@@ -676,7 +676,6 @@ namespace Marten.Testing.Events
             );
         }
 
-
         private static DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanShema = true, bool useAppendEventForUpdateLock = false)
         {
             var databaseSchema = $"end_to_end_event_capture_{tenancyStyle.ToString().ToLower()}";

@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,14 +6,14 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq
 {
-    public class AsJsonExpressionNode : ResultOperatorExpressionNodeBase
+    public class AsJsonExpressionNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
-            typeof (CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.AsJson)).ToArray();
+            typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.AsJson)).ToArray();
 
         public AsJsonExpressionNode(
             MethodCallExpressionParseInfo parseInfo)
-            : base(parseInfo, null, null){}
+            : base(parseInfo, null, null) { }
 
         protected override ResultOperatorBase CreateResultOperator(
             ClauseGenerationContext clauseGenerationContext)

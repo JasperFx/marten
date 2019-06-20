@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Marten.Services;
 using Marten.Storage;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class lazy_loaded_projection : DocumentSessionFixture<IdentityMap>
+    public class lazy_loaded_projection: DocumentSessionFixture<IdentityMap>
     {
         public class Logger
         {
@@ -31,7 +31,7 @@ namespace Marten.Testing.Events.Projections
         }
 
         // SAMPLE: viewprojection-from-class-with-injection
-        public class PersistViewProjectionWithInjection : PersistViewProjection
+        public class PersistViewProjectionWithInjection: PersistViewProjection
         {
             private readonly Logger logger;
 

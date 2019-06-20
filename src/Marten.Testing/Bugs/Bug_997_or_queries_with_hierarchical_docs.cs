@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_997_or_queries_with_hierarchical_docs : IntegratedFixture
+    public class Bug_997_or_queries_with_hierarchical_docs: IntegratedFixture
     {
         public class User
         {
@@ -15,7 +15,7 @@ namespace Marten.Testing.Bugs
             public string DisplayName { get; set; }
         }
 
-        public class MegaUser : User
+        public class MegaUser: User
         {
         }
 
@@ -31,7 +31,7 @@ namespace Marten.Testing.Bugs
             var megaUser2 = new MegaUser() { DisplayName = "Robin", RealName = "Robin Robin" };
             var megaUser3 = new MegaUser() { DisplayName = "Marten", RealName = "Marten Marten" };
 
-            theStore.BulkInsert(new User[]{megaUser1, megaUser2, megaUser3});
+            theStore.BulkInsert(new User[] { megaUser1, megaUser2, megaUser3 });
 
             using (var session = theStore.QuerySession())
             {
@@ -39,8 +39,6 @@ namespace Marten.Testing.Bugs
                     .Where(_ => _.DisplayName == "Yann" || _.DisplayName == "Robin").OrderBy(x => x.DisplayName).Select(x => x.DisplayName)
                     .ToList()
                     .ShouldHaveTheSameElementsAs("Robin", "Yann");
-
-                
             }
         }
     }

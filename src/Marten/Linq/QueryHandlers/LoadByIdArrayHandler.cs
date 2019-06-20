@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
@@ -11,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class LoadByIdArrayHandler<T, TKey> : IQueryHandler<IList<T>>
+    public class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IList<T>>
     {
         private readonly IDocumentStorage<T> storage;
         private readonly IQueryableDocument _mapping;
@@ -25,7 +24,6 @@ namespace Marten.Linq.QueryHandlers
         }
 
         public Type SourceType => typeof(T);
-
 
         public void ConfigureCommand(CommandBuilder sql)
         {
@@ -52,7 +50,6 @@ namespace Marten.Linq.QueryHandlers
             {
                 sql.Append($" and {TenantWhereFragment.Filter}");
             }
-
         }
 
         public IList<T> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

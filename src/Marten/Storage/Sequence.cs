@@ -6,7 +6,7 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class Sequence : ISchemaObject
+    public class Sequence: ISchemaObject
     {
         public DbObjectName Identifier { get; }
 
@@ -39,7 +39,6 @@ namespace Marten.Storage
             {
                 writer.WriteLine($"ALTER SEQUENCE {Identifier} OWNED BY {Owner}.{OwnerColumn};");
             }
-            
         }
 
         public void WriteDropStatement(DdlRules rules, StringWriter writer)

@@ -1,5 +1,3 @@
-using System;
-
 namespace Marten.Events.Projections
 {
     // SAMPLE: ITransform
@@ -7,5 +5,6 @@ namespace Marten.Events.Projections
     {
         TView Transform(EventStream stream, Event<TEvent> input);
     }
+
     // ENDSAMPLE
 }

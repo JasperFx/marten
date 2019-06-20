@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Testing.Examples
 {
@@ -21,5 +21,6 @@ namespace Marten.Testing.Examples
         // "id" is accepted
         public int id { get; set; }
     }
+
     // ENDSAMPLE
 }

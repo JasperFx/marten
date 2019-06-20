@@ -1,5 +1,4 @@
 using System;
-using Baseline;
 using Baseline.Dates;
 using Marten.Events.Projections.Async.ErrorHandling;
 

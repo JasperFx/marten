@@ -7,7 +7,7 @@ using Shouldly;
 
 namespace Marten.Testing.Linq.Compatibility.Support
 {
-    public class OrderedSelectComparison<T> : LinqTestCase
+    public class OrderedSelectComparison<T>: LinqTestCase
     {
         private readonly Func<IQueryable<Target>, IQueryable<T>> _selector;
 
@@ -33,7 +33,7 @@ namespace Marten.Testing.Linq.Compatibility.Support
             {
                 var expectedJson = JsonConvert.SerializeObject(expected[i]);
                 var actualJson = JsonConvert.SerializeObject(actual[i]);
-                
+
                 if (!JToken.DeepEquals(JObject.Parse(expectedJson), JObject.Parse(actualJson)))
                 {
                     // This would you would assume throw

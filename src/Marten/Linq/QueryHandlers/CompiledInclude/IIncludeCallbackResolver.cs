@@ -12,7 +12,6 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
 
     public abstract class IncludeCallbackResolver
     {
-
         protected static PropertyInfo GetPropertyInfo(PropertyInfo property, IncludeResultOperator @operator)
         {
             var target = Expression.Parameter(property.DeclaringType, "target");

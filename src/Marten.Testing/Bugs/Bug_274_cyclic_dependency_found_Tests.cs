@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_274_cyclic_dependency_found_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_274_cyclic_dependency_found_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void save()
@@ -15,7 +15,6 @@ namespace Marten.Testing.Bugs
                     .ForeignKey<User>(x => x.AssigneeId)
                     .ForeignKey<User>(x => x.ReporterId);
             });
-
 
             theSession.Store(new Issue());
             theSession.SaveChanges();

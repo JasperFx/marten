@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -30,7 +30,7 @@ namespace Marten.Linq.Model
         void ConfigureAggregate(CommandBuilder command, string @operator);
     }
 
-    public class LinqQuery<T> : ILinqQuery
+    public class LinqQuery<T>: ILinqQuery
     {
         private readonly DocumentStore _store;
         private readonly IIncludeJoin[] _joins;
@@ -194,7 +194,8 @@ namespace Marten.Linq.Model
         private void writeOrderClause(CommandBuilder sql)
         {
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
-            if (!orders.Any()) return;
+            if (!orders.Any())
+                return;
 
             sql.Append(" order by ");
             writeOrderByFragment(sql, orders[0]);

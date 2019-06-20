@@ -1,15 +1,14 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Baseline;
 using Marten.Services;
 
 namespace Marten.Testing.Examples
 
 {
-
     // SAMPLE: writing_custom_session_listener
     // DocumentSessionListenerBase is a helper abstract class in Marten
     // with empty implementations of each method you may find helpful
-    public class SimpleSessionListener : DocumentSessionListenerBase
+    public class SimpleSessionListener: DocumentSessionListenerBase
     {
         public override void BeforeSaveChanges(IDocumentSession session)
         {

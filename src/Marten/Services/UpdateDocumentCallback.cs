@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Services
 {
-    public class UpdateDocumentCallback<T> : ICallback
+    public class UpdateDocumentCallback<T>: ICallback
     {
         public object Id { get; }
 
@@ -21,8 +21,6 @@ namespace Marten.Services
             {
                 throw new NonExistentDocumentException(typeof(T), Id);
             };
-
-            
         }
 
         public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
@@ -40,7 +38,7 @@ namespace Marten.Services
         }
     }
 
-    public class NonExistentDocumentException : Exception
+    public class NonExistentDocumentException: Exception
     {
         public Type DocType { get; }
         public object Id { get; }

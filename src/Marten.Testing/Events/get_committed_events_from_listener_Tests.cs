@@ -1,10 +1,6 @@
-﻿using Shouldly;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
@@ -60,7 +56,7 @@ namespace Marten.Testing.Events
 
             var id1 = Guid.NewGuid();
             var id2 = Guid.NewGuid();
-            
+
             using (var session = store.LightweightSession())
             {
                 session.Events.StartStream<Quest>(id1, new QuestStarted { Id = id1 });
@@ -75,7 +71,6 @@ namespace Marten.Testing.Events
 
                 events.Select(x => x.Data).OfType<QuestStarted>().Any(x => x.Id == id1).ShouldBeTrue();
                 events.Select(x => x.Data).OfType<QuestStarted>().Any(x => x.Id == id2).ShouldBeTrue();
-
             }
 
             using (var session = store.LightweightSession())

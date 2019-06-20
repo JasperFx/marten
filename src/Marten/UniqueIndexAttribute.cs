@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection;
 using Marten.Schema.Indexing.Unique;
@@ -6,7 +6,7 @@ using Marten.Schema.Indexing.Unique;
 namespace Marten.Schema
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class UniqueIndexAttribute : MartenAttribute
+    public class UniqueIndexAttribute: MartenAttribute
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {

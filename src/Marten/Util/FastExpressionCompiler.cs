@@ -1,4 +1,4 @@
-﻿/*
+/*
 The MIT License (MIT)
 
 Copyright (c) 2016 Maksim Volkau
@@ -83,7 +83,7 @@ namespace Marten.Util
             return paramTypes;
         }
 
-        /// <summary>Compiles expression to delegate by emitting the IL. 
+        /// <summary>Compiles expression to delegate by emitting the IL.
         /// If sub-expressions are not supported by emitter, then the method returns null.
         /// The usage should be calling the method, if result is null then calling the Expression.Compile.</summary>
         /// <param name="bodyExpr">Lambda body.</param>
@@ -520,7 +520,7 @@ namespace Marten.Util
             }
         }
 
-        #endregion
+        #endregion Closures
 
         #region Collect Bound Constants
 
@@ -694,7 +694,7 @@ namespace Marten.Util
             return true;
         }
 
-        #endregion
+        #endregion Collect Bound Constants
 
         /// <summary>Supports emitting of selected expressions, e.g. lambdaExpr are not supported yet.
         /// When emitter find not supported expression it will return false from <see cref="TryEmit"/>, so I could fallback
@@ -710,20 +710,28 @@ namespace Marten.Util
                 {
                     case ExpressionType.Parameter:
                         return EmitParameter((ParameterExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.Convert:
                         return EmitConvert((UnaryExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.ArrayIndex:
                         return EmitArrayIndex((BinaryExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.Constant:
                         return EmitConstant((ConstantExpression)expr, il, closure);
+
                     case ExpressionType.New:
                         return EmitNew((NewExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.NewArrayInit:
                         return EmitNewArray((NewArrayExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.MemberInit:
                         return EmitMemberInit((MemberInitExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.Call:
                         return EmitMethodCall((MethodCallExpression)expr, paramExprs, il, closure);
+
                     case ExpressionType.MemberAccess:
                         return EmitMemberAccess((MemberExpression)expr, paramExprs, il, closure);
 
@@ -788,15 +796,19 @@ namespace Marten.Util
                     case 0:
                         il.Emit(OpCodes.Ldarg_0);
                         break;
+
                     case 1:
                         il.Emit(OpCodes.Ldarg_1);
                         break;
+
                     case 2:
                         il.Emit(OpCodes.Ldarg_2);
                         break;
+
                     case 3:
                         il.Emit(OpCodes.Ldarg_3);
                         break;
+
                     default:
                         if (paramIndex <= byte.MaxValue)
                             il.Emit(OpCodes.Ldarg_S, (byte)paramIndex);
@@ -939,9 +951,9 @@ namespace Marten.Util
                     if (constantIndex == -1)
                         return false;
                     LoadClosureFieldOrItem(il, closure, constantIndex, e.Type);
-
                 }
-                else return false;
+                else
+                    return false;
 
                 // boxing the value type, otherwise we can get a strange result when 0 is treated as Null.
                 if (e.Type == typeof(object) && constantActualType.GetTypeInfo().IsValueType)
@@ -1084,7 +1096,7 @@ namespace Marten.Util
                     ForValueTypeStoreAndLoadValueAddress(il, methodOwnerExpr.Type);
                 }
 
-                if (e.Arguments.Count != 0 &&   
+                if (e.Arguments.Count != 0 &&
                     !EmitMany(e.Arguments, ps, il, closure))
                     return false;
 
@@ -1140,7 +1152,7 @@ namespace Marten.Util
                 while (nestedLambdaIndex >= 0 && nestedLambdas[nestedLambdaIndex].LambdaExpr != lambdaExpr)
                     --nestedLambdaIndex;
 
-                // Situation with not found lambda is not possible/exceptional - 
+                // Situation with not found lambda is not possible/exceptional -
                 // means that we somehow skipped the lambda expression while collecting closure info.
                 if (nestedLambdaIndex == -1)
                     return false;
@@ -1159,7 +1171,7 @@ namespace Marten.Util
                     nestedLambdaClosure.UsedParamExpressions == null)
                     return true;
 
-                // Sets closure param placeholder fields to the param values 
+                // Sets closure param placeholder fields to the param values
                 var nestedLambdaUsedParamExprs = nestedLambdaClosure.UsedParamExpressions;
                 for (var i = 0; i < nestedLambdaUsedParamExprs.Count; i++)
                 {
@@ -1243,22 +1255,27 @@ namespace Marten.Util
                     case ExpressionType.Equal:
                         il.Emit(OpCodes.Ceq);
                         break;
+
                     case ExpressionType.LessThan:
                         il.Emit(OpCodes.Clt);
                         break;
+
                     case ExpressionType.GreaterThan:
                         il.Emit(OpCodes.Cgt);
                         break;
+
                     case ExpressionType.NotEqual:
                         il.Emit(OpCodes.Ceq);
                         il.Emit(OpCodes.Ldc_I4_0);
                         il.Emit(OpCodes.Ceq);
                         break;
+
                     case ExpressionType.LessThanOrEqual:
                         il.Emit(OpCodes.Cgt);
                         il.Emit(OpCodes.Ldc_I4_0);
                         il.Emit(OpCodes.Ceq);
                         break;
+
                     case ExpressionType.GreaterThanOrEqual:
                         il.Emit(OpCodes.Clt);
                         il.Emit(OpCodes.Ldc_I4_0);
@@ -1323,33 +1340,43 @@ namespace Marten.Util
                     case -1:
                         il.Emit(OpCodes.Ldc_I4_M1);
                         break;
+
                     case 0:
                         il.Emit(OpCodes.Ldc_I4_0);
                         break;
+
                     case 1:
                         il.Emit(OpCodes.Ldc_I4_1);
                         break;
+
                     case 2:
                         il.Emit(OpCodes.Ldc_I4_2);
                         break;
+
                     case 3:
                         il.Emit(OpCodes.Ldc_I4_3);
                         break;
+
                     case 4:
                         il.Emit(OpCodes.Ldc_I4_4);
                         break;
+
                     case 5:
                         il.Emit(OpCodes.Ldc_I4_5);
                         break;
+
                     case 6:
                         il.Emit(OpCodes.Ldc_I4_6);
                         break;
+
                     case 7:
                         il.Emit(OpCodes.Ldc_I4_7);
                         break;
+
                     case 8:
                         il.Emit(OpCodes.Ldc_I4_8);
                         break;
+
                     default:
                         il.Emit(OpCodes.Ldc_I4, i);
                         break;

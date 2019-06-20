@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_aggregation_by_stream_with_multiples : DocumentSessionFixture<NulloIdentityMap>
+    public class inline_aggregation_by_stream_with_multiples: DocumentSessionFixture<NulloIdentityMap>
     {
         private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };

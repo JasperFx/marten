@@ -1,10 +1,9 @@
-﻿using System;
 using System.Linq.Expressions;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public class IsEmpty : IMethodCallParser
+    public class IsEmpty: IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {

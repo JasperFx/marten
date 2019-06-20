@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 #if NET46
 using System.Transactions;
 #endif
-using Marten.Services;
-using Shouldly;
-using Xunit;
 
 namespace Marten.Testing.Bugs
 {
@@ -18,7 +10,6 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void do_not_blow_up_with_too_many_open_connections()
         {
-
             for (int i = 0; i < 1000; i++)
             {
                 // this reaches 200, than crashes
@@ -39,7 +30,6 @@ namespace Marten.Testing.Bugs
             {
                 session.Query<EntityToSave>().Count().ShouldBe(1000);
             }
-            
         }
     }
 

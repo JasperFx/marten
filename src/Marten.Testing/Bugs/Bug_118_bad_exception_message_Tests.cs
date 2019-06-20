@@ -1,11 +1,11 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Linq;
 using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_118_bad_exception_message_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_118_bad_exception_message_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         public class TestClass
         {

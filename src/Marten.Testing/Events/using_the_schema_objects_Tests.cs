@@ -1,10 +1,7 @@
-﻿using System;
-using Baseline;
+using System;
 using Marten.Events;
-using Marten.Schema;
 using Marten.Testing.Events.Projections;
 using Shouldly;
-using StructureMap;
 using Xunit;
 
 namespace Marten.Testing.Events
@@ -20,8 +17,8 @@ namespace Marten.Testing.Events
             {
                 using (var session = store1.OpenSession())
                 {
-                    session.Events.StartStream<Quest>(id, new QuestStarted {Name = "Destroy the Orb"},
-                        new MonsterSlayed {Name = "Troll"}, new MonsterSlayed {Name = "Dragon"});
+                    session.Events.StartStream<Quest>(id, new QuestStarted { Name = "Destroy the Orb" },
+                        new MonsterSlayed { Name = "Troll" }, new MonsterSlayed { Name = "Dragon" });
                     session.SaveChanges();
                 }
             }
@@ -52,9 +49,8 @@ namespace Marten.Testing.Events
             {
                 // SAMPLE: override_schema_name_event_store
                 _.Events.DatabaseSchemaName = "event_store";
-                // ENDSAMPLE 
+                // ENDSAMPLE
             });
-
 
             store.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
 

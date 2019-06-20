@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Marten.Storage;
@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace Marten.Schema
 {
-    public sealed class DatabaseGenerator : IDatabaseCreationExpressions, IDatabaseGenerator
+    public sealed class DatabaseGenerator: IDatabaseCreationExpressions, IDatabaseGenerator
     {
         private string _maintenanceDbConnectionString;
         private readonly Dictionary<string, TenantDatabaseCreationExpressions> _configurationPerTenant = new Dictionary<string, TenantDatabaseCreationExpressions>();
@@ -17,7 +17,7 @@ namespace Marten.Schema
             _maintenanceDbConnectionString = maintenanceDbConnectionString ?? throw new ArgumentNullException(nameof(maintenanceDbConnectionString));
 
             return this;
-        }        
+        }
 
         public ITenantDatabaseCreationExpressions ForTenant(string tenantId = Tenancy.DefaultTenantId)
         {
@@ -25,8 +25,8 @@ namespace Marten.Schema
             _configurationPerTenant.Add(tenantId, configurator);
             return configurator;
         }
-    
-        private sealed class TenantDatabaseCreationExpressions : ITenantDatabaseCreationExpressions
+
+        private sealed class TenantDatabaseCreationExpressions: ITenantDatabaseCreationExpressions
         {
             private readonly StringBuilder _createOptions = new StringBuilder();
             public bool DropExistingDatabase { get; private set; }
@@ -184,7 +184,7 @@ namespace Marten.Schema
             }
             // INVALID CATALOG NAME (https://www.postgresql.org/docs/current/static/errcodes-appendix.html)
             catch (PostgresException e) when (e.SqlState == "3D000")
-            {                
+            {
                 return true;
             }
             return false;
@@ -213,7 +213,7 @@ namespace Marten.Schema
                 {
                     cmd.ExecuteNonQuery();
                     config.OnDbCreated?.Invoke(connection);
-                }                
+                }
                 finally
                 {
                     connection.Close();

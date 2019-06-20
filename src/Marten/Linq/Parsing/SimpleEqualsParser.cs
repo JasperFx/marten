@@ -12,7 +12,7 @@ namespace Marten.Linq.Parsing
     /// Implement Equals for <see cref="int"/>, <see cref="long"/>, <see cref="decimal"/>, <see cref="Guid"/>, <see cref="bool"/>, <see cref="DateTime"/>, <see cref="DateTimeOffset"/>.
     /// </summary>
     /// <remarks>Equals(object) calls into <see cref="Convert.ChangeType(object, Type)"/>. Equals(null) is converted to "is null" query.</remarks>
-    public class SimpleEqualsParser : IMethodCallParser
+    public class SimpleEqualsParser: IMethodCallParser
     {
         private static readonly List<Type> SupportedTypes = new List<Type> {
             typeof(int), typeof(long), typeof(decimal), typeof(Guid), typeof(bool)
@@ -47,7 +47,8 @@ namespace Marten.Linq.Parsing
             var locator = field.SqlLocator;
 
             var value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
-            if (value == null) throw new BadLinqExpressionException("Could not extract value from {0}.".ToFormat(expression), null);
+            if (value == null)
+                throw new BadLinqExpressionException("Could not extract value from {0}.".ToFormat(expression), null);
 
             object valueToQuery = value.Value;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
@@ -6,13 +6,12 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class DotNetTypeArgument : UpsertArgument
+    public class DotNetTypeArgument: UpsertArgument
     {
         private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");
 
         private static readonly MethodInfo _fullName =
             ReflectionHelper.GetProperty<Type>(x => x.FullName).GetMethod;
-
 
         public DotNetTypeArgument()
         {

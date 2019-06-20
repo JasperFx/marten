@@ -79,7 +79,8 @@ namespace Marten
         /// <returns></returns>
         public static bool IsEmpty<T>(this IEnumerable<T> enumerable)
         {
-            if (enumerable == null) return true;
+            if (enumerable == null)
+                return true;
 
             if (enumerable is string)
             {
@@ -186,7 +187,7 @@ namespace Marten
         {
             return true;
         }
-        
+
         /// <summary>
         /// Performs a full text search against <typeparamref name="T"/> using the 'websearch_to_tsquery' search function
         /// </summary>

@@ -1,6 +1,5 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Marten.Testing.Documents;
-using StructureMap;
 
 namespace Marten.Testing.Examples
 {
@@ -35,8 +34,8 @@ namespace Marten.Testing.Examples
             // or just see it
             var sql = store.Schema.ToDDL();
             Debug.WriteLine(sql);
-        } 
-        // ENDSAMPLE
+        }
 
+        // ENDSAMPLE
     }
 }

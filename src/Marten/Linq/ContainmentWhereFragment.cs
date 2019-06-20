@@ -4,19 +4,16 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
-using Marten.Schema;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Linq
 {
-    public class ContainmentWhereFragment : IWhereFragment
+    public class ContainmentWhereFragment: IWhereFragment
     {
         private readonly IDictionary<string, object> _dictionary;
         private readonly string _wherePrefix;
         private readonly ISerializer _serializer;
-
 
         public ContainmentWhereFragment(ISerializer serializer, IDictionary<string, object> dictionary, string wherePrefix = null)
         {
@@ -70,7 +67,7 @@ namespace Marten.Linq
 
                 temp.Add(member.Name, value);
 
-                members.Reverse().Skip(1).Each(m => { temp = new Dictionary<string, object> {{m.Name, temp}}; });
+                members.Reverse().Skip(1).Each(m => { temp = new Dictionary<string, object> { { m.Name, temp } }; });
 
                 var topMemberName = members.First().Name;
                 dict.Add(topMemberName, temp[topMemberName]);
@@ -91,13 +88,12 @@ namespace Marten.Linq
                 var array = Array.CreateInstance(value.GetType(), 1);
                 array.SetValue(value, 0);
 
-                var dict = new Dictionary<string, object> {{members.Last().Name, array}};
+                var dict = new Dictionary<string, object> { { members.Last().Name, array } };
 
-                members.Reverse().Skip(1).Each(m => { dict = new Dictionary<string, object> {{m.Name, dict}}; });
+                members.Reverse().Skip(1).Each(m => { dict = new Dictionary<string, object> { { m.Name, dict } }; });
 
                 return new ContainmentWhereFragment(serializer, dict);
             }
-
 
             throw new NotSupportedException();
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -51,9 +51,7 @@ namespace Marten.Testing.Events.Projections
 
             theAggregator.AppliesTo(new EventStream(Guid.NewGuid(), false).Add(new MonsterSlayed()))
                 .ShouldBeTrue();
-
         }
-
 
         [Fact]
         public void add_special_step()
@@ -68,12 +66,12 @@ namespace Marten.Testing.Events.Projections
         public void build_a_series_of_events()
         {
             var stream = new EventStream(Guid.NewGuid(), false)
-                .Add(new QuestStarted {Name = "Destroy the Ring"})
-                .Add(new MembersJoined {Members = new string[] {"Frodo", "Sam"}})
-                .Add(new MembersJoined {Members = new string[] {"Merry", "Pippin"}})
-                .Add(new MembersJoined {Members = new string[] {"Strider"}})
-                .Add(new MembersJoined {Members = new string[] {"Gandalf", "Boromir", "Gimli", "Legolas"}})
-                .Add(new MembersDeparted() {Members = new string[] {"Frodo", "Sam"}});
+                .Add(new QuestStarted { Name = "Destroy the Ring" })
+                .Add(new MembersJoined { Members = new string[] { "Frodo", "Sam" } })
+                .Add(new MembersJoined { Members = new string[] { "Merry", "Pippin" } })
+                .Add(new MembersJoined { Members = new string[] { "Strider" } })
+                .Add(new MembersJoined { Members = new string[] { "Gandalf", "Boromir", "Gimli", "Legolas" } })
+                .Add(new MembersDeparted() { Members = new string[] { "Frodo", "Sam" } });
 
             var party = theAggregator.Build(stream.Events, null);
 
@@ -82,7 +80,7 @@ namespace Marten.Testing.Events.Projections
             party.Members.ShouldHaveTheSameElementsAs("Merry", "Pippin", "Strider", "Gandalf", "Boromir", "Gimli", "Legolas");
         }
 
-        public class MonsterSlayer : IAggregation<QuestParty, MonsterSlayed>
+        public class MonsterSlayer: IAggregation<QuestParty, MonsterSlayed>
         {
             public void Apply(QuestParty aggregate, MonsterSlayed @event)
             {
@@ -90,8 +88,6 @@ namespace Marten.Testing.Events.Projections
             }
         }
     }
-
-
 
     public class Aggregator_with_Event_metadata_Tests
     {
@@ -137,7 +133,6 @@ namespace Marten.Testing.Events.Projections
 
             theAggregator.AppliesTo(new EventStream(Guid.NewGuid(), false).Add(new MonsterSlayed()))
                 .ShouldBeTrue();
-
         }
 
         [Fact]
@@ -157,7 +152,6 @@ namespace Marten.Testing.Events.Projections
 
             party.Members.ShouldHaveTheSameElementsAs("Merry", "Pippin", "Strider", "Gandalf", "Boromir", "Gimli", "Legolas");
         }
-
     }
 
     public class Aggregator_With_Provided_Aggregate_Object_Tests
@@ -194,7 +188,7 @@ namespace Marten.Testing.Events.Projections
 
             theAggregator.AppliesTo(stream).ShouldBeTrue();
         }
-        
+
         [Fact]
         public void uses_default_aggregate_constructor_if_no_instance_provided()
         {

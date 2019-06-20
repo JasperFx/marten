@@ -1,11 +1,11 @@
-﻿using System.Linq;
+using System.Linq;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
-using Marten.Testing.Documents;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_980_bulk_insert_with_subclass : IntegratedFixture
+    public class Bug_980_bulk_insert_with_subclass: IntegratedFixture
     {
         [Fact]
         public void can_do_a_bulk_insert_against_the_parent()

@@ -6,7 +6,7 @@ using Marten.Services;
 
 namespace Marten.Linq.QueryHandlers
 {
-    internal class StatsSelector<T> : BasicSelector, ISelector<T>
+    internal class StatsSelector<T>: BasicSelector, ISelector<T>
     {
         private readonly ISelector<T> _inner;
 

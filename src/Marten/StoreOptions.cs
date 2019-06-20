@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Baseline;
@@ -292,7 +292,8 @@ namespace Marten
                 throw new PostgresqlIdentifierInvalidException(name);
             if (name.IndexOf(' ') >= 0)
                 throw new PostgresqlIdentifierInvalidException(name);
-            if (name.Length < NameDataLength) return;
+            if (name.Length < NameDataLength)
+                return;
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
 
@@ -373,7 +374,7 @@ namespace Marten
         void Apply(DocumentMapping mapping);
     }
 
-    internal class LambdaDocumentPolicy : IDocumentPolicy
+    internal class LambdaDocumentPolicy: IDocumentPolicy
     {
         private readonly Action<DocumentMapping> _modify;
 

@@ -1,4 +1,4 @@
-﻿namespace Marten.Services.Events
+namespace Marten.Services.Events
 {
     public sealed class EventContracts
     {
@@ -11,9 +11,11 @@
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            return obj is EventContracts && Equals((EventContracts) obj);
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            return obj is EventContracts && Equals((EventContracts)obj);
         }
 
         public override int GetHashCode()
@@ -22,7 +24,7 @@
         }
 
         public static readonly EventContracts UnexpectedMaxEventIdForStream = new EventContracts("Unexpected MAX(id) for event stream");
-        
+
         public static implicit operator string(EventContracts item)
         {
             return item.Value;

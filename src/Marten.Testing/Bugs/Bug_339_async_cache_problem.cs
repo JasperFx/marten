@@ -1,11 +1,11 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_339_async_cache_problem : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_339_async_cache_problem: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public async Task pending_with_dirty_checks_async()

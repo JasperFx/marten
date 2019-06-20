@@ -6,7 +6,7 @@ namespace Marten.Schema
     /// Overrides the database schema name for the document type
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class DatabaseSchemaNameAttribute : MartenAttribute
+    public class DatabaseSchemaNameAttribute: MartenAttribute
     {
         private readonly string _name;
 

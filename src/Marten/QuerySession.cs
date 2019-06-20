@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten
 {
-    public class QuerySession : IQuerySession
+    public class QuerySession: IQuerySession
     {
         public ITenant Tenant { get; }
         private readonly IManagedConnection _connection;
@@ -53,7 +53,8 @@ namespace Marten
 
         protected void assertNotDisposed()
         {
-            if (_disposed) throw new ObjectDisposedException("This session has been disposed");
+            if (_disposed)
+                throw new ObjectDisposedException("This session has been disposed");
         }
 
         public IMartenQueryable<T> Query<T>()
@@ -105,7 +106,8 @@ namespace Marten
 
         private T load<T>(object id)
         {
-            if (id == null) throw new ArgumentNullException(nameof(id));
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
 
             assertNotDisposed();
 
@@ -119,7 +121,8 @@ namespace Marten
             var mapping = Tenant.MappingFor(typeof(T));
             if (id.GetType() != mapping.IdType)
             {
-                if (id.GetType() == typeof(int) && mapping.IdType == typeof(long)) return;
+                if (id.GetType() == typeof(int) && mapping.IdType == typeof(long))
+                    return;
 
                 throw new InvalidOperationException(
                     $"The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
@@ -199,7 +202,7 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        private class LoadByKeys<TDoc> : ILoadByKeys<TDoc>
+        private class LoadByKeys<TDoc>: ILoadByKeys<TDoc>
         {
             private readonly QuerySession _parent;
 
@@ -225,7 +228,8 @@ namespace Marten
                 var mapping = _parent.Tenant.MappingFor(typeof(TDoc));
                 if (typeof(TKey) != mapping.IdType)
                 {
-                    if (typeof(TKey) == typeof(int) && mapping.IdType == typeof(long)) return;
+                    if (typeof(TKey) == typeof(int) && mapping.IdType == typeof(long))
+                        return;
 
                     throw new InvalidOperationException(
                         $"The id type for {typeof(TDoc).FullName} is {mapping.IdType.Name}, but got {typeof(TKey).Name}");
@@ -360,7 +364,8 @@ namespace Marten
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
 
             _disposed = true;
             _connection?.Dispose();
@@ -426,7 +431,7 @@ namespace Marten
         {
             return Query<TDoc>().Where(d => d.PhraseSearch(searchTerm, regConfig)).ToListAsync();
         }
-        
+
         public IReadOnlyList<TDoc> WebStyleSearch<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
             return Query<TDoc>().Where(d => d.WebStyleSearch(searchTerm, regConfig)).ToList();

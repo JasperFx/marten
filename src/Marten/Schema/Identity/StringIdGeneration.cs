@@ -1,14 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
-    public class StringIdGeneration : IIdGeneration, IIdGenerator<string>
+    public class StringIdGeneration: IIdGeneration, IIdGenerator<string>
     {
-        public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(string)};
-
+        public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(string) };
 
         public IIdGenerator<T> Build<T>()
         {

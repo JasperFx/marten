@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -11,7 +11,7 @@ using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten
 {
-    public interface IDocumentStore : IDisposable
+    public interface IDocumentStore: IDisposable
     {
         /// <summary>
         ///     Information about the document and event storage
@@ -49,7 +49,6 @@ namespace Marten
         /// <param name="batchSize"></param>
         void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
 
-
         /// <summary>
         ///     Open a new IDocumentSession with the supplied DocumentTracking.
         ///     "IdentityOnly" is the default.
@@ -67,7 +66,6 @@ namespace Marten
         /// <returns></returns>
         IDocumentSession OpenSession(string tenantId, DocumentTracking tracking = DocumentTracking.IdentityOnly,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
-
 
         /// <summary>
         ///     Open a new IDocumentSession with the supplied DocumentTracking.
@@ -91,7 +89,6 @@ namespace Marten
         /// <returns></returns>
         IDocumentSession LightweightSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
-
         /// <summary>
         ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
         ///     dirty checking
@@ -99,14 +96,12 @@ namespace Marten
         /// <returns></returns>
         IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
-
         /// <summary>
         ///     Convenience method to create an IDocumentSession with both IdentityMap and automatic
         ///     dirty checking
         /// </summary>
         /// <returns></returns>
         IDocumentSession DirtyTrackedSession(string tenantId, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
-
 
         /// <summary>
         ///     Opens a read-only IQuerySession to the current document store for efficient
@@ -147,7 +142,6 @@ namespace Marten
         /// <param name="batchSize"></param>
         void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000);
-
 
         /// <summary>
         /// Use Javascript transformations to alter existing documents

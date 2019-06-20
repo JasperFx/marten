@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -55,7 +55,8 @@ namespace Marten.Util
 
         public static void AddParameters(this NpgsqlCommand command, object parameters)
         {
-            if (parameters == null) return;
+            if (parameters == null)
+                return;
 
             var parameterDictionary = parameters.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(parameters, null));
 
@@ -140,8 +141,10 @@ namespace Marten.Util
 
         public static NpgsqlCommand CallsSproc(this NpgsqlCommand cmd, DbObjectName function)
         {
-            if (cmd == null) throw new ArgumentNullException(nameof(cmd));
-            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (cmd == null)
+                throw new ArgumentNullException(nameof(cmd));
+            if (function == null)
+                throw new ArgumentNullException(nameof(function));
 
             cmd.CommandText = function.QualifiedName;
             cmd.CommandType = CommandType.StoredProcedure;

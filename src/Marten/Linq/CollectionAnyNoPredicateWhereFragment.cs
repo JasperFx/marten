@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
 using System.Reflection;
-using Baseline;
 using Marten.Util;
 using Remotion.Linq.Clauses.Expressions;
 
@@ -10,7 +7,7 @@ namespace Marten.Linq
     /// <summary>
     /// Handle Any() with JSONB_ARRAY_LENGTH introduced in PostgreSQL 9.4
     /// </summary>
-    public class CollectionAnyNoPredicateWhereFragment : IWhereFragment
+    public class CollectionAnyNoPredicateWhereFragment: IWhereFragment
     {
         private readonly MemberInfo[] _members;
         private readonly SubQueryExpression _expression;
@@ -31,7 +28,7 @@ namespace Marten.Linq
 
             builder.Append(" else '[]' end)) > 0");
         }
-     
+
         public bool Contains(string sqlText)
         {
             return false;

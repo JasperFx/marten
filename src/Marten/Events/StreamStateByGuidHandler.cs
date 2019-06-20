@@ -12,21 +12,21 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    internal class StreamStateByGuidHandler : StreamStateByIdHandler<Guid>
+    internal class StreamStateByGuidHandler: StreamStateByIdHandler<Guid>
     {
         public StreamStateByGuidHandler(EventGraph events, Guid streamId, string tenantId = null) : base(events, streamId, tenantId)
         {
         }
     }
 
-    internal class StreamStateByStringHandler : StreamStateByIdHandler<string>
+    internal class StreamStateByStringHandler: StreamStateByIdHandler<string>
     {
         public StreamStateByStringHandler(EventGraph events, string streamKey, string tenantId = null) : base(events, streamKey, tenantId)
         {
         }
     }
 
-    internal class StreamStateByIdHandler<T> : IQueryHandler<StreamState>, ISelector<StreamState>
+    internal class StreamStateByIdHandler<T>: IQueryHandler<StreamState>, ISelector<StreamState>
     {
         private readonly T _streamKey;
         private readonly EventGraph _events;

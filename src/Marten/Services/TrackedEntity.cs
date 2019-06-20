@@ -21,7 +21,7 @@ namespace Marten.Services
                 Document = _serializer.FromJson(documentType, json);
             }
             else if (document != null)
-            { 
+            {
                 _json = _serializer.ToJson(document);
             }
         }
@@ -32,7 +32,6 @@ namespace Marten.Services
         public object Document { get; }
         public UnitOfWorkOrigin Origin { get; set; } = UnitOfWorkOrigin.Loaded;
 
-
         public void ResetJson(string json)
         {
             Origin = UnitOfWorkOrigin.Loaded;
@@ -41,7 +40,8 @@ namespace Marten.Services
 
         public DocumentChange DetectChange()
         {
-            if (Document == null) return null;
+            if (Document == null)
+                return null;
 
             var newJson = _serializer.ToJson(Document);
             if (!JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))

@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Linq.Compatibility.Support;
 using Xunit;
 
 namespace Marten.Testing.Linq.Compatibility
 {
-    public class simple_where_clauses : LinqTestContext<DefaultQueryFixture, simple_where_clauses>
+    public class simple_where_clauses: LinqTestContext<DefaultQueryFixture, simple_where_clauses>
     {
         public simple_where_clauses(DefaultQueryFixture fixture) : base(fixture)
         {
@@ -88,9 +85,7 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => !(x.Number <= 3));
             @where(x => !(x.Number >= 3));
             @where(x => !(x.Number != 3));
-
         }
-
 
         [Theory]
         [MemberData(nameof(GetDescriptions))]
@@ -98,7 +93,7 @@ namespace Marten.Testing.Linq.Compatibility
         {
             return assertTestCase(description, Fixture.Store);
         }
-        
+
         [Theory]
         [MemberData(nameof(GetDescriptions))]
         public Task with_duplicated_fields(string description)

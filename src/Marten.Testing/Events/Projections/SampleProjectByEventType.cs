@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class SampleProjectByEventType : DocumentSessionFixture<NulloIdentityMap>
+    public class SampleProjectByEventType: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void CanProjectByEventType()
@@ -16,7 +16,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(storeOptions =>
             {
                 // We index our streams by strings
-                storeOptions.Events.StreamIdentity = StreamIdentity.AsString;                
+                storeOptions.Events.StreamIdentity = StreamIdentity.AsString;
 
                 // Build candles in 1 second windows
                 storeOptions.Events.InlineProjections.Add(new CandleProjection(TimeSpan.FromSeconds(1)));
@@ -58,7 +58,7 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    // SAMPLE: sample-type-candle   
+    // SAMPLE: sample-type-candle
     public sealed class Candle
     {
         public string Id { get; set; }
@@ -70,10 +70,11 @@ namespace Marten.Testing.Events.Projections
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
     }
+
     // ENDSAMPLE
 
     // SAMPLE: sample-candleprojection
-    public sealed class CandleProjection : ViewProjection<Candle, string>
+    public sealed class CandleProjection: ViewProjection<Candle, string>
     {
         public CandleProjection(int transactions)
         {
@@ -121,6 +122,7 @@ namespace Marten.Testing.Events.Projections
             candle.Close = tick.Price;
         }
     }
+
     // ENDSAMPLE
 
     // SAMPLE: sample-type-tick
@@ -129,7 +131,8 @@ namespace Marten.Testing.Events.Projections
         public Guid Id { get; set; }
         public readonly DateTime Time;
         public readonly decimal Price;
-        public readonly string Symbol;        
+        public readonly string Symbol;
+
         public Tick(DateTime time, string symbol, decimal price)
         {
             Time = time;
@@ -137,5 +140,6 @@ namespace Marten.Testing.Events.Projections
             Symbol = symbol;
         }
     }
+
     // ENDSAMPLE
 }

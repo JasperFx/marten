@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
-using Marten.Events;
 
 namespace Marten.Testing.Events.Projections
 {
@@ -26,7 +25,6 @@ namespace Marten.Testing.Events.Projections
 
         public IList<string> Slayed { get; } = new List<string>();
 
-
         public void Apply(MembersJoined joined)
         {
             _members.Fill(joined.Members);
@@ -42,7 +40,6 @@ namespace Marten.Testing.Events.Projections
             Name = started.Name;
         }
 
-
         public string Key { get; set; }
 
         public string Name { get; set; }
@@ -55,17 +52,19 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    public class QuestFinishingParty : QuestParty
+    public class QuestFinishingParty: QuestParty
     {
         private readonly string _exMachina;
 
-        public QuestFinishingParty() { }
+        public QuestFinishingParty()
+        {
+        }
 
         public QuestFinishingParty(string exMachina)
         {
             _exMachina = exMachina;
         }
-        
+
         public void Apply(MembersEscaped escaped)
         {
             if (_exMachina == null)
@@ -76,5 +75,6 @@ namespace Marten.Testing.Events.Projections
             _members.RemoveAll(x => escaped.Members.Contains(x));
         }
     }
+
     // ENDSAMPLE
 }

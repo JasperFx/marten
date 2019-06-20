@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -23,7 +23,6 @@ namespace Marten.Testing.Events.Projections
                 .ShouldNotBeNull();
 
             session.DidNotReceive().Load<QuestParty>(id);
-
         }
 
         [Fact]
@@ -32,7 +31,7 @@ namespace Marten.Testing.Events.Projections
             var session = Substitute.For<IDocumentSession>();
             var id = Guid.NewGuid();
 
-            var persisted = new QuestParty {Id = id};
+            var persisted = new QuestParty { Id = id };
 
             var finder = new AggregateFinder<QuestParty>();
 
@@ -50,28 +49,21 @@ namespace Marten.Testing.Events.Projections
 
             var finder = new AggregateFinder<QuestParty>();
 
-
             finder.Find(new EventStream(id, false), session)
                 .ShouldNotBeNull();
         }
-
-
-
     }
 
-    public class AggregateFinder_Async : DocumentSessionFixture<IdentityMap>
+    public class AggregateFinder_Async: DocumentSessionFixture<IdentityMap>
     {
         [Fact]
         public async Task find_when_stream_is_new_async()
         {
-
             var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
             (await finder.FindAsync(new EventStream(id, true), theSession, new CancellationToken()))
                 .ShouldNotBeNull();
-
-
         }
 
         [Fact]
@@ -85,7 +77,6 @@ namespace Marten.Testing.Events.Projections
 
             var finder = new AggregateFinder<QuestParty>();
 
-
             (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))
                 .ShouldBeTheSameAs(persisted);
         }
@@ -96,7 +87,6 @@ namespace Marten.Testing.Events.Projections
             var id = Guid.NewGuid();
 
             var finder = new AggregateFinder<QuestParty>();
-
 
             (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))
                 .ShouldNotBeNull();

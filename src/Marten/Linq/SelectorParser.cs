@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
@@ -24,7 +24,7 @@ namespace Marten.Linq
         TransformTo
     }
 
-    public class SelectorParser : RelinqExpressionVisitor
+    public class SelectorParser: RelinqExpressionVisitor
     {
         public static ISelector<T> ChooseSelector<T>(string dataLocator, ITenant tenant, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, ISerializer serializer, IIncludeJoin[] joins)
         {
@@ -39,7 +39,6 @@ namespace Marten.Linq
             {
                 return selectable.BuildSelector<T>(dataLocator, tenant, mapping);
             }
-
 
             if (subQuery != null)
             {
@@ -64,7 +63,6 @@ namespace Marten.Linq
 
                 return new WholeDocumentSelector<T>(mapping, resolver);
             }
-
 
             var visitor = new SelectorParser(query);
             visitor.Visit(query.SelectClause.Selector);
@@ -123,7 +121,8 @@ namespace Marten.Linq
 
         protected override Expression VisitNew(NewExpression expression)
         {
-            if (_target != null) return base.VisitNew(expression);
+            if (_target != null)
+                return base.VisitNew(expression);
 
             _target = new TargetObject(expression.Type);
 
@@ -153,9 +152,11 @@ namespace Marten.Linq
 
         public ISelector<T> ToSelector<T>(string dataLocator, ITenant tenant, IQueryableDocument mapping)
         {
-            if (_selectionType == SelectionType.AsJson && _target == null) return new JsonSelector().As<ISelector<T>>();
+            if (_selectionType == SelectionType.AsJson && _target == null)
+                return new JsonSelector().As<ISelector<T>>();
 
-            if (_selectionType == SelectionType.AsJson && _target != null) return _target.ToJsonSelector<T>(mapping);
+            if (_selectionType == SelectionType.AsJson && _target != null)
+                return _target.ToJsonSelector<T>(mapping);
 
             if (_selectionType == SelectionType.TransformToJson)
             {
@@ -167,7 +168,7 @@ namespace Marten.Linq
             {
                 var transform = tenant.TransformFor(_transformName);
 
-                return new TransformToTypeSelector<T>(dataLocator, transform, mapping );
+                return new TransformToTypeSelector<T>(dataLocator, transform, mapping);
             }
 
             if (_target == null || _target.Type != typeof(T))

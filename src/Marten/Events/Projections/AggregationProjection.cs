@@ -8,7 +8,7 @@ using Marten.Events.Projections.Async;
 namespace Marten.Events.Projections
 {
     // This is mostly tested through integration tests and in the Storyteller suite
-    public class AggregationProjection<T> : DocumentProjection<T>, IDocumentProjection where T : class, new()
+    public class AggregationProjection<T>: DocumentProjection<T>, IDocumentProjection where T : class, new()
     {
         private readonly IAggregationFinder<T> _finder;
         private readonly IAggregator<T> _aggregator;
@@ -51,10 +51,7 @@ namespace Marten.Events.Projections
             }
         }
 
-
-
         public Type[] Consumes => _aggregator.EventTypes;
-
 
         public EventStream[] MatchingStreams(EventPage streams)
         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Events.Projections.Async;
 using Oakton;
@@ -6,7 +6,7 @@ using Oakton;
 namespace Marten.CommandLine.Commands.Projection
 {
     [Description("Rebuilds all projections of specified kind")]
-    public class ProjectionCommand : MartenCommand<ProjectionInput>
+    public class ProjectionCommand: MartenCommand<ProjectionInput>
     {
         public ProjectionCommand()
         {
@@ -28,9 +28,11 @@ namespace Marten.CommandLine.Commands.Projection
             {
                 case ProjectionInput.ProjectionKind.async:
                     return store.BuildProjectionDaemon(logger: logger);
+
                 case ProjectionInput.ProjectionKind.inline:
                     return store.BuildProjectionDaemon(projections: store.Events.InlineProjections.ToArray(),
                         logger: GetDaemonLogger());
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(inputKind), inputKind, null);
             }

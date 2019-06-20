@@ -1,10 +1,10 @@
-﻿using Baseline;
-using Marten.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
+using Marten.Linq;
 
 namespace Marten.Pagination
 {
@@ -12,7 +12,7 @@ namespace Marten.Pagination
     /// Class to return The async paged list from a paged query.
     /// </summary>
     /// <typeparam name="T">Document Type</typeparam>
-    public class PagedList<T> : IPagedList<T>
+    public class PagedList<T>: IPagedList<T>
     {
         private readonly List<T> _items = new List<T>();
 
@@ -173,7 +173,7 @@ namespace Marten.Pagination
             // compute if the current page is last page
             IsLastPage = PageCount > 0 && PageNumber >= PageCount;
 
-            // compute one-based index of first item on a specific page 
+            // compute one-based index of first item on a specific page
             FirstItemOnPage = PageCount > 0 ? ((PageNumber - 1) * PageSize) + 1 : 0;
 
             // compute one-based index of last item on a specific page

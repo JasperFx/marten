@@ -10,7 +10,7 @@ namespace Marten.Schema
     /// for optimized searching
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class DuplicateFieldAttribute : MartenAttribute
+    public class DuplicateFieldAttribute: MartenAttribute
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
@@ -20,12 +20,12 @@ namespace Marten.Schema
             {
                 field.DbType = DbType;
             }
-            
+
             var indexDefinition = mapping.AddIndex(field.ColumnName);
             indexDefinition.Method = IndexMethod;
             if (IndexName.IsNotEmpty())
                 indexDefinition.IndexName = IndexName;
-            
+
             indexDefinition.SortOrder = this.IndexSortOrder;
         }
 
@@ -38,7 +38,7 @@ namespace Marten.Schema
         /// Use to override the NpgsqlDbType used when querying with a parameter
         /// against the property
         /// </summary>
-        public NpgsqlDbType DbType { get; set; } 
+        public NpgsqlDbType DbType { get; set; }
 
         /// <summary>
         /// Specifies the type of index to create

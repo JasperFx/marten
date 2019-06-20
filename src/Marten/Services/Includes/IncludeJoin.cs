@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+using System;
 using Baseline;
 using Marten.Linq;
 using Marten.Schema;
@@ -9,7 +8,7 @@ using Npgsql;
 
 namespace Marten.Services.Includes
 {
-    public class IncludeJoin<T> : IIncludeJoin
+    public class IncludeJoin<T>: IIncludeJoin
     {
         public const string InnerJoin = "INNER JOIN";
         public const string OuterJoin = "LEFT OUTER JOIN";
@@ -35,9 +34,8 @@ namespace Marten.Services.Includes
             var locator = document == null
                 ? _field.LocatorFor(rootTableAlias)
                 : document.FieldFor(_field.Members).LocatorFor(rootTableAlias);
-                
-            var joinOperator = JoinType == JoinType.Inner ? InnerJoin : OuterJoin;
 
+            var joinOperator = JoinType == JoinType.Inner ? InnerJoin : OuterJoin;
 
             sql.Append(joinOperator);
             sql.Append(" ");
@@ -64,7 +62,7 @@ namespace Marten.Services.Includes
             sql.Append(".id");
         }
 
-        public bool IsSoftDeleted { get;}
+        public bool IsSoftDeleted { get; }
 
         [Obsolete("remove this when we tackle moving ISelector to using StringBUilder's")]
         public string JoinText

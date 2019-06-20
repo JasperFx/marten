@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using Baseline;
 
 namespace Marten.Events.Projections
 {
     /// <summary>
     /// Default IAggregator lookup strategy. Defaults to <see cref="Aggregator{T}"/>
-    /// </summary>    
-    public sealed class AggregatorLookup : IAggregatorLookup
+    /// </summary>
+    public sealed class AggregatorLookup: IAggregatorLookup
     {
         private readonly Func<Type, IAggregator> factory;
-        
-        /// <param name="factory">Factory for resolving IAggregator for the supplied type</param>        
+
+        /// <param name="factory">Factory for resolving IAggregator for the supplied type</param>
         public AggregatorLookup(Func<Type, IAggregator> factory = null)
         {
             this.factory = factory;

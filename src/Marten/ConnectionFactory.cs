@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Npgsql;
 
 namespace Marten
@@ -6,7 +6,7 @@ namespace Marten
     /// <summary>
     /// Default, simple implementation of IConnectionFactory
     /// </summary>
-    public class ConnectionFactory : IConnectionFactory
+    public class ConnectionFactory: IConnectionFactory
     {
         private readonly Lazy<string> _connectionString;
 

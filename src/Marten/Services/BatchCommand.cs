@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Baseline;
-using Marten.Linq;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Util;
@@ -15,11 +12,12 @@ namespace Marten.Services
     public interface IBatchCommand
     {
         NpgsqlParameter AddParameter(object value, NpgsqlDbType dbType);
+
         ISerializer Serializer { get; }
         NpgsqlCommand Command { get; }
     }
 
-    public class BatchCommand : IBatchCommand
+    public class BatchCommand: IBatchCommand
     {
         private readonly ITenant _tenant;
         public ISerializer Serializer { get; }
@@ -63,7 +61,8 @@ namespace Marten.Services
 
         public SprocCall Sproc(DbObjectName function, ICallback callback = null, IExceptionTransform exceptionTransform = null)
         {
-            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (function == null)
+                throw new ArgumentNullException(nameof(function));
 
             var call = new SprocCall(this, function);
             AddCall(call, callback, exceptionTransform);

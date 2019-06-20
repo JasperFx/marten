@@ -1,6 +1,6 @@
-﻿using Xunit;
-using Marten.Services;
 using System.Linq;
+using Marten.Services;
+using Xunit;
 
 namespace Marten.Testing.Linq
 {
@@ -15,7 +15,7 @@ namespace Marten.Testing.Linq
         One
     }
 
-    public class Bug_1061_Registry : MartenRegistry
+    public class Bug_1061_Registry: MartenRegistry
     {
         public Bug_1061_Registry()
         {
@@ -26,7 +26,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata : IntegratedFixture
+    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: IntegratedFixture
     {
         [Fact]
         public void string_enum_serialization_does_not_work_with_ginindexjsondata()

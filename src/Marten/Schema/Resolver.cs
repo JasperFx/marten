@@ -17,7 +17,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class DocumentStorage<T> : IDocumentStorage<T> where T : class
+    public class DocumentStorage<T>: IDocumentStorage<T> where T : class
     {
         private readonly Func<T, object> _identity;
         private readonly string _loadArraySql;
@@ -112,7 +112,8 @@ namespace Marten.Schema
 
         public virtual T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
-            if (reader.IsDBNull(startingIndex)) return null;
+            if (reader.IsDBNull(startingIndex))
+                return null;
 
             var id = reader[startingIndex + 1];
 
@@ -127,7 +128,8 @@ namespace Marten.Schema
         public virtual async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
             CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false)) return null;
+            if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false))
+                return null;
 
             var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
 
@@ -141,7 +143,8 @@ namespace Marten.Schema
 
         public T Resolve(IIdentityMap map, IQuerySession session, object id)
         {
-            if (map.Has<T>(id)) return map.Retrieve<T>(id);
+            if (map.Has<T>(id))
+                return map.Retrieve<T>(id);
 
             var cmd = LoaderCommand(id);
             cmd.AddTenancy(session.Tenant);
@@ -154,7 +157,8 @@ namespace Marten.Schema
 
         public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
         {
-            if (map.Has<T>(id)) return map.Retrieve<T>(id);
+            if (map.Has<T>(id))
+                return map.Retrieve<T>(id);
 
             var cmd = LoaderCommand(id);
             cmd.AddTenancy(session.Tenant);
@@ -169,7 +173,8 @@ namespace Marten.Schema
         public virtual T Fetch(object id, DbDataReader reader, IIdentityMap map)
         {
             var found = reader.Read();
-            if (!found) return null;
+            if (!found)
+                return null;
 
             var version = reader.GetFieldValue<Guid>(2);
 
@@ -181,7 +186,8 @@ namespace Marten.Schema
         public virtual async Task<T> FetchAsync(object id, DbDataReader reader, IIdentityMap map, CancellationToken token)
         {
             var found = await reader.ReadAsync(token).ConfigureAwait(false);
-            if (!found) return null;
+            if (!found)
+                return null;
 
             var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
 

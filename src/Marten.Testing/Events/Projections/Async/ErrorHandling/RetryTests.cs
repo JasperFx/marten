@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async.ErrorHandling;
 using Shouldly;
@@ -23,14 +23,14 @@ namespace Marten.Testing.Events.Projections.Async.ErrorHandling
         [Fact]
         public async Task delegates_to_after_max_attempts_when_attempts_are_exceeded()
         {
-            var retry = new Retry(3) {AfterMaxAttempts = new FakeExceptionAction {Result = ExceptionAction.Stop} };
+            var retry = new Retry(3) { AfterMaxAttempts = new FakeExceptionAction { Result = ExceptionAction.Stop } };
 
             (await retry.Handle(new Exception(), 3, new FakeMonitoredActivity()).ConfigureAwait(false))
                 .ShouldBe(ExceptionAction.Stop);
         }
     }
 
-    public class FakeExceptionAction : IExceptionAction
+    public class FakeExceptionAction: IExceptionAction
     {
         public bool WasCalled = false;
 

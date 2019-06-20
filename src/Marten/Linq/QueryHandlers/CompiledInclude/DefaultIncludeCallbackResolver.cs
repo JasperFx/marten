@@ -5,7 +5,7 @@ using Baseline;
 
 namespace Marten.Linq.QueryHandlers.CompiledInclude
 {
-    public class DefaultIncludeCallbackResolver<TInclude, TDoc, TOut> : IncludeCallbackResolver, IIncludeCallbackResolver<TInclude>
+    public class DefaultIncludeCallbackResolver<TInclude, TDoc, TOut>: IncludeCallbackResolver, IIncludeCallbackResolver<TInclude>
     {
         private readonly ICompiledQuery<TDoc, TOut> _query;
         private readonly IncludeResultOperator _includeOperator;

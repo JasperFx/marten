@@ -8,7 +8,7 @@ namespace Marten.Schema
     /// or per document type customization to the document storage
     /// </summary>
     // SAMPLE: MartenAttribute
-    public abstract class MartenAttribute : Attribute
+    public abstract class MartenAttribute: Attribute
     {
         /// <summary>
         /// Customize Document storage at the document level
@@ -23,5 +23,6 @@ namespace Marten.Schema
         /// <param name="member"></param>
         public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
     }
+
     // ENDSAMPLE
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +10,7 @@ namespace Marten.Transforms
     public interface ITransforms
     {
         void LoadFile(string file, string name = null);
+
         void LoadDirectory(string directory);
 
         void LoadJavascript(string name, string script);
@@ -21,13 +22,12 @@ namespace Marten.Transforms
         IEnumerable<TransformFunction> AllFunctions();
     }
 
-    public class Transforms : ITransforms, IFeatureSchema
+    public class Transforms: ITransforms, IFeatureSchema
     {
         private readonly StoreOptions _options;
 
-        private readonly IDictionary<string, TransformFunction> _functions 
+        private readonly IDictionary<string, TransformFunction> _functions
             = new Dictionary<string, TransformFunction>();
-
 
         public Transforms(StoreOptions options)
         {
@@ -122,6 +122,7 @@ namespace Marten.Transforms
 
         public Type StorageType { get; } = typeof(Transforms);
         public string Identifier { get; } = "transforms";
+
         public void WritePermissions(DdlRules rules, StringWriter writer)
         {
             // Nothing

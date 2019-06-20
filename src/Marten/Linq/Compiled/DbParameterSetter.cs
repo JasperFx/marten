@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Baseline;
 using Marten.Linq.Parsing;
 using Marten.Util;
@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace Marten.Linq.Compiled
 {
-    internal class DbParameterSetter<TObject, TProperty> : IDbParameterSetter
+    internal class DbParameterSetter<TObject, TProperty>: IDbParameterSetter
     {
         private readonly Func<TObject, TProperty> _getter;
 
@@ -25,7 +25,6 @@ namespace Marten.Linq.Compiled
         public NpgsqlParameter AddParameter(object query, CommandBuilder command)
         {
             var newValue = _getter((TObject)query);
-
 
             if (Parser != null)
             {

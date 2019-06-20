@@ -7,7 +7,7 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class DocumentTable : Table
+    public class DocumentTable: Table
     {
         public DocumentTable(DocumentMapping mapping) : base(mapping.Table)
         {
@@ -87,9 +87,12 @@ namespace Marten.Storage
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj.GetType() != this.GetType())
+                return false;
             return Equals((DocumentTable)obj);
         }
 
@@ -99,14 +102,14 @@ namespace Marten.Storage
         }
     }
 
-    public abstract class SystemColumn : TableColumn
+    public abstract class SystemColumn: TableColumn
     {
         protected SystemColumn(string name, string type) : base(name, type)
         {
         }
     }
 
-    public class TenantIdColumn : SystemColumn
+    public class TenantIdColumn: SystemColumn
     {
         public new static readonly string Name = "tenant_id";
 
@@ -117,7 +120,7 @@ namespace Marten.Storage
         }
     }
 
-    public class DeletedColumn : SystemColumn
+    public class DeletedColumn: SystemColumn
     {
         public DeletedColumn() : base(DocumentMapping.DeletedColumn, "boolean")
         {
@@ -126,7 +129,7 @@ namespace Marten.Storage
         }
     }
 
-    public class DeletedAtColumn : SystemColumn
+    public class DeletedAtColumn: SystemColumn
     {
         public DeletedAtColumn() : base(DocumentMapping.DeletedAtColumn, "timestamp with time zone")
         {
@@ -135,7 +138,7 @@ namespace Marten.Storage
         }
     }
 
-    public class DocumentTypeColumn : SystemColumn
+    public class DocumentTypeColumn: SystemColumn
     {
         public DocumentTypeColumn(DocumentMapping mapping) : base(DocumentMapping.DocumentTypeColumn, "varchar")
         {
@@ -145,7 +148,7 @@ namespace Marten.Storage
         }
     }
 
-    public class LastModifiedColumn : SystemColumn
+    public class LastModifiedColumn: SystemColumn
     {
         public LastModifiedColumn() : base(DocumentMapping.LastModifiedColumn, "timestamp with time zone")
         {
@@ -154,7 +157,7 @@ namespace Marten.Storage
         }
     }
 
-    public class VersionColumn : SystemColumn
+    public class VersionColumn: SystemColumn
     {
         public VersionColumn() : base(DocumentMapping.VersionColumn, "uuid")
         {
@@ -163,7 +166,7 @@ namespace Marten.Storage
         }
     }
 
-    public class DotNetTypeColumn : SystemColumn
+    public class DotNetTypeColumn: SystemColumn
     {
         public DotNetTypeColumn() : base(DocumentMapping.DotNetTypeColumn, "varchar")
         {
@@ -171,7 +174,7 @@ namespace Marten.Storage
         }
     }
 
-    public class DuplicatedFieldColumn : TableColumn
+    public class DuplicatedFieldColumn: TableColumn
     {
         private readonly DuplicatedField _field;
 

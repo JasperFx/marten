@@ -1,4 +1,4 @@
-﻿namespace Marten
+namespace Marten
 {
     public enum BulkInsertMode
     {
@@ -16,6 +16,5 @@
         /// Will overwrite the values of any duplicate documents (last update wins)
         /// </summary>
         OverwriteExisting
-
     }
 }

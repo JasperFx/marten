@@ -1,8 +1,3 @@
-using System;
-using System.Linq;
-using System.Reflection;
-using Marten.Schema;
-using Marten.Storage;
 using Xunit;
 
 namespace Marten.Testing.Examples

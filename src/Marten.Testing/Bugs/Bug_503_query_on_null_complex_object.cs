@@ -1,10 +1,10 @@
-﻿using Shouldly;
 using System.Linq;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_503_query_on_null_complex_object : IntegratedFixture
+    public class Bug_503_query_on_null_complex_object: IntegratedFixture
     {
         [Fact]
         public void should_not_blow_up_when_querying_for_null_object()

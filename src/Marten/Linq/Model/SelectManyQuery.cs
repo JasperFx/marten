@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -25,7 +25,6 @@ namespace Marten.Linq.Model
         private readonly string _tableAlias;
         private readonly int _take;
 
-
         public SelectManyQuery(DocumentStore store, IQueryableDocument mapping, QueryModel query, int index)
         {
             Index = index;
@@ -44,7 +43,6 @@ namespace Marten.Linq.Model
             if (next != null)
                 throw new NotSupportedException("Not yet supporting SelectMany().SelectMany()");
             _take = _query.BodyClauses.Count - index;
-
 
             _tableAlias = "sub" + Index;
             _documentType = _field.MemberType.DeriveElementType();
@@ -87,7 +85,7 @@ namespace Marten.Linq.Model
                 }
 
                 if (typeof(T) == typeof(string))
-                    return (ISelector<T>) new JsonSelector();
+                    return (ISelector<T>)new JsonSelector();
 
                 if (typeof(T) != _documentType)
                     return null;
@@ -120,7 +118,6 @@ namespace Marten.Linq.Model
 
             var fields = selector.SelectFields().ToArray();
 
-
             if (HasSelectTransform())
             {
                 sql.Append("select ");
@@ -149,14 +146,12 @@ namespace Marten.Linq.Model
                 sql.Append(_tableAlias);
             }
 
-
             if (joins.Any())
                 foreach (var join in joins)
                 {
                     sql.Append(" ");
                     join.AppendJoin(sql, _tableAlias, _document);
                 }
-
 
             var where = buildWhereFragment(_document);
             if (where != null)
@@ -177,7 +172,8 @@ namespace Marten.Linq.Model
         private string determineOrderClause(ChildDocument document)
         {
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
-            if (!orders.Any()) return string.Empty;
+            if (!orders.Any())
+                return string.Empty;
 
             return " order by " + orders.Select(x => toOrderClause(document, x)).Join(", ");
         }

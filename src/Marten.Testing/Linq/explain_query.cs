@@ -1,13 +1,12 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Services;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class explain_query : DocumentSessionFixture<NulloIdentityMap>
+    public class explain_query: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void retrieves_query_plan()

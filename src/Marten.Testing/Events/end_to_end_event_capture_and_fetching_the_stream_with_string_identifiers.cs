@@ -3,18 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using Marten;
 using Marten.Events;
 using Marten.Testing;
-using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-
-
-
     public class end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers
     {
         [Fact]
@@ -22,14 +17,13 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
-
             using (var session = store.OpenSession())
             {
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = "First";
-                    
+
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
 
@@ -49,7 +43,6 @@ namespace Marten.Testing.Events
         public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_async()
         {
             var store = InitStore();
-
 
             using (var session = store.OpenSession())
             {
@@ -79,7 +72,6 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
-
             using (var session = store.OpenSession())
             {
                 // SAMPLE: start-stream-with-aggregate-type
@@ -93,7 +85,6 @@ namespace Marten.Testing.Events
 
                 var streamEvents = await session.Events.QueryAllRawEvents()
                                                 .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToListAsync();
-
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -110,7 +101,6 @@ namespace Marten.Testing.Events
         {
             var store = InitStore();
 
-
             using (var session = store.OpenSession())
             {
                 // SAMPLE: start-stream-with-aggregate-type
@@ -125,7 +115,6 @@ namespace Marten.Testing.Events
                 var streamEvents = session.Events.QueryAllRawEvents()
                                           .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToList();
 
-
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
@@ -135,7 +124,6 @@ namespace Marten.Testing.Events
                 streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
             }
         }
-
 
         [Fact]
         public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts()
@@ -450,7 +438,6 @@ namespace Marten.Testing.Events
             }
         }
 
-
         [Fact]
         public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema()
         {
@@ -510,7 +497,6 @@ namespace Marten.Testing.Events
             }
         }
 
-
         private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)
         {
             var store = DocumentStore.For(_ =>
@@ -530,7 +516,6 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
                 _.Events.AddEventType(typeof(QuestStarted));
-
             });
 
             if (cleanShema)
@@ -563,7 +548,8 @@ namespace Marten.Testing.Events
 
         public void Apply(MembersJoined joined)
         {
-            if (joined.Members != null) _members.Fill(joined.Members);
+            if (joined.Members != null)
+                _members.Fill(joined.Members);
         }
 
         public void Apply(MembersDeparted departed)

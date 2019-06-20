@@ -13,7 +13,7 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    public class DefaultTenancy : Tenancy, ITenancy
+    public class DefaultTenancy: Tenancy, ITenancy
     {
         public DefaultTenancy(IConnectionFactory factory, StoreOptions options) : base(options)
         {
@@ -36,7 +36,7 @@ namespace Marten.Storage
         public TenancyStyle Style { get; } = TenancyStyle.Conjoined;
     }
 
-    public class LightweightTenant : ITenant
+    public class LightweightTenant: ITenant
     {
         private readonly ITenant _inner;
         private readonly IRetryPolicy _retryPolicy;
@@ -68,6 +68,7 @@ namespace Marten.Storage
         }
 
         public ISequences Sequences => _inner.Sequences;
+
         public IDocumentStorage<T> StorageFor<T>()
         {
             return _inner.StorageFor<T>();
@@ -106,7 +107,8 @@ namespace Marten.Storage
 
         public DocumentMetadata MetadataFor<T>(T entity)
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
 
             var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
                 MappingFor(typeof(T)).As<DocumentMapping>());
@@ -119,7 +121,8 @@ namespace Marten.Storage
 
         public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = new CancellationToken())
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
 
             var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
                 MappingFor(typeof(T)).As<DocumentMapping>());

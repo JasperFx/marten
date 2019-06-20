@@ -10,7 +10,7 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    public class BulkInsertion : IDisposable
+    public class BulkInsertion: IDisposable
     {
         private readonly ITenant _tenant;
         private readonly MemoryPool<char> _writerPool;
@@ -22,7 +22,7 @@ namespace Marten.Storage
             Serializer = options.Serializer();
         }
 
-        public ISerializer Serializer { get;}
+        public ISerializer Serializer { get; }
 
         public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
@@ -82,13 +82,12 @@ namespace Marten.Storage
             }
         }
 
-
         internal interface IBulkInserter
         {
             void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent, BulkInsertMode mode);
         }
 
-        internal class BulkInserter<T> : IBulkInserter
+        internal class BulkInserter<T>: IBulkInserter
         {
             private readonly T[] _documents;
 

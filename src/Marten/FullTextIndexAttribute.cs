@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reflection;
 
 namespace Marten.Schema
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
-    public class FullTextIndexAttribute : MartenAttribute
+    public class FullTextIndexAttribute: MartenAttribute
     {
         public override void Modify(DocumentMapping mapping)
         {

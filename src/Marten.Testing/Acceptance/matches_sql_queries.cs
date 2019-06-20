@@ -4,11 +4,10 @@ using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
-    public class matches_sql_queries : IntegratedFixture
+    public class matches_sql_queries: IntegratedFixture
     {
         [Fact]
         public void query_using_matches_sql()

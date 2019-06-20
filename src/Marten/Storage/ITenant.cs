@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,12 +45,14 @@ namespace Marten.Storage
         void EnsureStorageExists(Type documentType);
 
         /// <summary>
-        /// Used to create new Hilo sequences 
+        /// Used to create new Hilo sequences
         /// </summary>
         ISequences Sequences { get; }
 
         IDocumentStorage<T> StorageFor<T>();
+
         IdAssignment<T> IdAssignmentFor<T>();
+
         TransformFunction TransformFor(string name);
 
         /// <summary>
@@ -65,7 +67,6 @@ namespace Marten.Storage
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         IBulkLoader<T> BulkLoaderFor<T>();
-
 
         /// <summary>
         ///     Directly open a managed connection to the underlying Postgresql database
@@ -105,6 +106,5 @@ namespace Marten.Storage
         /// </summary>
         /// <returns></returns>
         NpgsqlConnection CreateConnection();
-
     }
 }

@@ -8,7 +8,7 @@ using NpgsqlTypes;
 
 namespace Marten.Linq.Parsing
 {
-    public class IsSupersetOf : IMethodCallParser
+    public class IsSupersetOf: IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {

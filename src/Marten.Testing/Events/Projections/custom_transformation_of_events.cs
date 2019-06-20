@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class project_events_from_multiple_streams_into_view : DocumentSessionFixture<IdentityMap>
+    public class project_events_from_multiple_streams_into_view: DocumentSessionFixture<IdentityMap>
     {
         private static readonly Guid streamId = Guid.NewGuid();
         private static readonly Guid streamId2 = Guid.NewGuid();
@@ -34,7 +34,7 @@ namespace Marten.Testing.Events.Projections
                 _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
                 _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
-                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.Events.Add(@event.Data);  view.StreamIdsForEvents.Add(@event.StreamId); })
+                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
                     .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => view.Events.Add(@event))
                     .ProjectEvent<ProjectionEvent<MonsterSlayed>>(e => e.Data.QuestId, (view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
                     .DeleteEvent<QuestEnded>()
@@ -416,7 +416,7 @@ namespace Marten.Testing.Events.Projections
     }
 
     // SAMPLE: viewprojection-from-class
-    public class PersistViewProjection : ViewProjection<PersistedView, Guid>
+    public class PersistViewProjection: ViewProjection<PersistedView, Guid>
     {
         public PersistViewProjection()
         {

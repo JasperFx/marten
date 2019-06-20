@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class ScenarioAggregateAndRepository : DocumentSessionFixture<NulloIdentityMap>
+    public class ScenarioAggregateAndRepository: DocumentSessionFixture<NulloIdentityMap>
     {
         public ScenarioAggregateAndRepository()
         {
@@ -26,12 +26,12 @@ namespace Marten.Testing.Events
 
             // SAMPLE: scenario-aggregate-storeandreadinvoice
             var repository = new AggregateRepository(theStore);
-            
+
             repository.Store(invoice);
 
             var invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
-            
-            Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());           
+
+            Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());
             Assert.Equal(invoice.Total, invoiceFromRepository.Total);
             // ENDSAMPLE
         }
@@ -84,7 +84,7 @@ namespace Marten.Testing.Events
     }
 
     // SAMPLE: scenario-aggregate-invoice
-    public sealed class Invoice : AggregateBase
+    public sealed class Invoice: AggregateBase
     {
         public Invoice(int invoiceNumber) : this()
         {
@@ -121,7 +121,7 @@ namespace Marten.Testing.Events
         {
             // Register the event types that make up our aggregate , together with their respective handlers
             Register<InvoiceCreated>(Apply);
-            Register<LineItemAdded>(Apply);            
+            Register<LineItemAdded>(Apply);
         }
 
         // Apply the deltas to mutate our state
@@ -138,6 +138,7 @@ namespace Marten.Testing.Events
             lines.Add(Tuple.Create(@event.Description, price, @event.Vat));
         }
     }
+
     // ENDSAMPLE
 
     // SAMPLE: scenario-aggregate-events
@@ -150,7 +151,7 @@ namespace Marten.Testing.Events
             InvoiceNumber = invoiceNumber;
         }
     }
-    
+
     public sealed class LineItemAdded
     {
         public readonly decimal Price;
@@ -164,6 +165,7 @@ namespace Marten.Testing.Events
             Description = description;
         }
     }
+
     // ENDSAMPLE
 
     // SAMPLE: scenario-aggregate-base
@@ -172,12 +174,13 @@ namespace Marten.Testing.Events
     {
         // For indexing our event streams
         public string Id { get; protected set; }
+
         // For protecting the state, i.e. conflict prevention
         public int Version { get; protected set; }
 
         private readonly List<object> uncommittedEvents = new List<object>();
         private readonly Dictionary<Type, Action<object>> handlers = new Dictionary<Type, Action<object>>();
-        
+
         // Get the deltas, i.e. events that make up the state, not yet persisted
         public IEnumerable<object> GetUncommittedEvents()
         {
@@ -187,7 +190,7 @@ namespace Marten.Testing.Events
         // Mark the deltas as persisted.
         public void ClearUncommittedEvents()
         {
-            uncommittedEvents.Clear();            
+            uncommittedEvents.Clear();
         }
 
         // Infrastructure for raising events & registering handlers
@@ -195,7 +198,7 @@ namespace Marten.Testing.Events
         protected void Register<T>(Action<T> handle)
         {
             handlers[typeof(T)] = e => handle((T)e);
-        } 
+        }
 
         protected void RaiseEvent(object @event)
         {
@@ -210,6 +213,7 @@ namespace Marten.Testing.Events
             Version++;
         }
     }
+
     // ENDSAMPLE
 
     // SAMPLE: scenario-aggregate-repository
@@ -232,8 +236,8 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
             }
             // Once succesfully persisted, clear events from list of uncommitted events
-            aggregate.ClearUncommittedEvents();            
-        }        
+            aggregate.ClearUncommittedEvents();
+        }
 
         private static readonly MethodInfo ApplyEvent = typeof(AggregateBase).GetMethod("ApplyEvent", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -242,19 +246,20 @@ namespace Marten.Testing.Events
             IReadOnlyList<IEvent> events;
             using (var session = store.LightweightSession())
             {
-                events = session.Events.FetchStream(id, version ?? 0);                
+                events = session.Events.FetchStream(id, version ?? 0);
             }
 
             if (events != null && events.Any())
-            {                                
-                var instance = Activator.CreateInstance(typeof(T), true);                
+            {
+                var instance = Activator.CreateInstance(typeof(T), true);
                 // Replay our aggregate state from the event stream
-                events.Aggregate(instance, (o, @event) => ApplyEvent.Invoke(instance, new [] { @event.Data }));
+                events.Aggregate(instance, (o, @event) => ApplyEvent.Invoke(instance, new[] { @event.Data }));
                 return (T)instance;
             }
 
             throw new InvalidOperationException($"No aggregate by id {id}.");
         }
     }
+
     // ENDSAMPLE
 }

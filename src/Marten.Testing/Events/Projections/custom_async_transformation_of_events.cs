@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class project_events_async_from_multiple_streams_into_view : DocumentSessionFixture<IdentityMap>
+    public class project_events_async_from_multiple_streams_into_view: DocumentSessionFixture<IdentityMap>
     {
         private static readonly Guid streamId = Guid.NewGuid();
         private static readonly Guid streamId2 = Guid.NewGuid();
@@ -320,7 +320,7 @@ namespace Marten.Testing.Events.Projections
     }
 
     // SAMPLE: viewprojection-from-class
-    public class PersistAsyncViewProjection : ViewProjection<PersistedView, Guid>
+    public class PersistAsyncViewProjection: ViewProjection<PersistedView, Guid>
     {
         public PersistAsyncViewProjection()
         {

@@ -10,10 +10,9 @@ namespace Marten.Linq.Parsing
 {
     public interface ITenantWhereFragment
     {
-        
     }
 
-    public class AnyTenant : WhereFragment, IMethodCallParser, ITenantWhereFragment
+    public class AnyTenant: WhereFragment, IMethodCallParser, ITenantWhereFragment
     {
         public AnyTenant() : base("1=1")
         {
@@ -31,7 +30,7 @@ namespace Marten.Linq.Parsing
         }
     }
 
-    public class TenantIsOneOf : IMethodCallParser
+    public class TenantIsOneOf: IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {
@@ -46,7 +45,7 @@ namespace Marten.Linq.Parsing
         }
     }
 
-    public class TenantIsOneOfWhereFragment : IWhereFragment, ITenantWhereFragment
+    public class TenantIsOneOfWhereFragment: IWhereFragment, ITenantWhereFragment
     {
         private static readonly string _filter = $"{TenantIdColumn.Name} = ANY(?)";
 

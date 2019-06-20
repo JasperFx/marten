@@ -1,6 +1,5 @@
-﻿using Marten.Schema;
 using System;
-using System.Linq;
+using Marten.Schema;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -12,7 +11,7 @@ namespace Marten.Testing.Bugs
         public string Field2 { get; set; }
     }
 
-    public class Bug_1018_multi_key_unique_index_schema_update_assert_failure : IntegratedFixture
+    public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: IntegratedFixture
     {
         [Fact]
         public void check_database_matches_configuration_with_multi_key_unique_index()

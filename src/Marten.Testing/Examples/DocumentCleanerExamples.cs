@@ -1,4 +1,4 @@
-﻿using Marten.Testing.Documents;
+using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
 {
@@ -25,7 +25,8 @@ namespace Marten.Testing.Examples
             // automated testing scenarios where you have some static data that can
             // be safely reused across tests
             store.Advanced.Clean.DeleteDocumentsExcept(typeof(Company), typeof(User));
-        } 
+        }
+
         // ENDSAMPLE
     }
 }

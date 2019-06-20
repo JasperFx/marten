@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
-    public class GuidIdGenerator : IIdGenerator<Guid>
+    public class GuidIdGenerator: IIdGenerator<Guid>
     {
         private readonly Func<Guid> _guidmaker;
 

@@ -89,7 +89,6 @@ namespace Marten.Storage
                 }
             });
 
-
             return list;
         }
 

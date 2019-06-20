@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Baseline;
 using Marten.Events.Projections;
 
@@ -42,9 +42,10 @@ namespace Marten.Events
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new();
     }
+
     // ENDSAMPLE
 
-    public class Event<T> : IEvent
+    public class Event<T>: IEvent
     {
         public Event(T data)
         {
@@ -93,10 +94,7 @@ namespace Marten.Events
         public string TenantId { get; set; }
         // ENDSAMPLE
 
-
         object IEvent.Data => Data;
-
-
 
         public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
             where TAggregate : class, new()
@@ -111,8 +109,6 @@ namespace Marten.Events
             {
                 step?.Apply(state, Data);
             }
-
-            
         }
 
         protected bool Equals(Event<T> other)
@@ -122,10 +118,13 @@ namespace Marten.Events
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((Event<T>) obj);
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj.GetType() != this.GetType())
+                return false;
+            return Equals((Event<T>)obj);
         }
 
         public override int GetHashCode()
@@ -133,5 +132,6 @@ namespace Marten.Events
             return Id.GetHashCode();
         }
     }
+
     // ENDSAMPLE
 }

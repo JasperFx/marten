@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Baseline;
 using Marten.Schema;
@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_145_table_getting_erroneously_regenerated_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_145_table_getting_erroneously_regenerated_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         public Bug_145_table_getting_erroneously_regenerated_Tests()
         {
@@ -19,7 +19,6 @@ namespace Marten.Testing.Bugs
                 .Duplicate(x => x.Email)
                 .Duplicate(x => x.Identifier);
             });
-
 
             theStore.Tenancy.Default.StorageFor(typeof(Login)).ShouldNotBeNull();
         }
@@ -34,7 +33,6 @@ namespace Marten.Testing.Bugs
 
             if (!existing.Equals(configured))
             {
-
                 var writer = new StringWriter();
                 writer.WriteLine("Expected:");
                 configured.Write(theStore.Schema.DdlRules, writer);

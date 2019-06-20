@@ -6,14 +6,14 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq
 {
-    public class ToJsonArrayExpressionNode : ResultOperatorExpressionNodeBase
+    public class ToJsonArrayExpressionNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
-            typeof (CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.ToJsonArray)).ToArray();
+            typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.ToJsonArray)).ToArray();
 
         public ToJsonArrayExpressionNode(
             MethodCallExpressionParseInfo parseInfo, LambdaExpression parameter)
-            : base(parseInfo, null, null){}
+            : base(parseInfo, null, null) { }
 
         protected override ResultOperatorBase CreateResultOperator(
             ClauseGenerationContext clauseGenerationContext)

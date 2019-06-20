@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 
 namespace Marten.Testing.Examples
 {
@@ -21,7 +21,7 @@ namespace Marten.Testing.Examples
                 .Where(x => x.Internal)
                 .ToList();
 
-            session.Store(new User {UserName = "lebron"});
+            session.Store(new User { UserName = "lebron" });
 
             // This starts a transaction against the open
             // connection before doing any writes

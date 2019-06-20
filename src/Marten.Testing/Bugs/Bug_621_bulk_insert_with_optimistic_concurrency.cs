@@ -1,10 +1,10 @@
-﻿using System.Linq;
+using System.Linq;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_621_bulk_insert_with_optimistic_concurrency : IntegratedFixture
+    public class Bug_621_bulk_insert_with_optimistic_concurrency: IntegratedFixture
     {
         [Fact]
         public void can_do_a_bulk_insert()

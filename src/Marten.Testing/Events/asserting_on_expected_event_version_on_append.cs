@@ -1,22 +1,18 @@
 using Marten.Events;
-using Shouldly;
 using Marten.Services;
-using Npgsql;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class asserting_on_expected_event_version_on_append : DocumentSessionFixture<NulloIdentityMap>
-    {    
-
-
+    public class asserting_on_expected_event_version_on_append: DocumentSessionFixture<NulloIdentityMap>
+    {
         [Fact]
         public void should_check_max_event_id_on_append()
         {
-
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
-            
+
             var stream = theSession.Events.StartStream<Quest>(joined).Id;
             theSession.Events.Append(stream, 2, departed);
 
@@ -31,7 +27,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void should_not_append_events_when_unexpected_max_version()
         {
-            var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };            
+            var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var stream = theSession.Events.StartStream<Quest>(joined).Id;
@@ -40,9 +36,9 @@ namespace Marten.Testing.Events
             theSession.Events.Append(stream, 2, departed);
 
             using (var session = theStore.OpenSession())
-            {                
-                var joined3 = new MembersJoined {Members = new[] {"Egwene"}};
-                var departed3 = new MembersDeparted {Members = new[] {"Perrin"}};
+            {
+                var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
+                var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
 
                 session.Events.Append(stream, joined3, departed3);
                 session.SaveChanges();

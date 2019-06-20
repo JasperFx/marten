@@ -7,10 +7,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-
-
-
-    public abstract class StringComparisonParser : IMethodCallParser
+    public abstract class StringComparisonParser: IMethodCallParser
     {
         private readonly MethodInfo[] _supportedMethods;
 
@@ -29,7 +26,8 @@ namespace Marten.Linq.Parsing
             var locator = GetLocator(mapping, expression);
 
             var value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
-            if (value == null) throw new BadLinqExpressionException("Could not extract string value from {0}.".ToFormat(expression), null);
+            if (value == null)
+                throw new BadLinqExpressionException("Could not extract string value from {0}.".ToFormat(expression), null);
 
             var stringOperator = GetOperator(expression);
             return new WhereFragment("{0} {1} ?".ToFormat(locator, stringOperator), FormatValue(expression.Method, value.Value as string));
@@ -58,7 +56,8 @@ namespace Marten.Linq.Parsing
                 StringComparison.InvariantCultureIgnoreCase,
 #endif
                 StringComparison.OrdinalIgnoreCase };
-            if (ignoreCaseComparisons.Contains(comparison)) return true;
+            if (ignoreCaseComparisons.Contains(comparison))
+                return true;
 
             return false;
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Baseline;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_571_defensive_check_for_IEnumerable_of_T_in_Store : IntegratedFixture
+    public class Bug_571_defensive_check_for_IEnumerable_of_T_in_Store: IntegratedFixture
     {
         [Fact]
         public void does_not_allow_IEnumerable_of_T()
@@ -32,7 +32,7 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public class DocHolder : IEnumerable<User>
+        public class DocHolder: IEnumerable<User>
         {
             public Guid Id;
 

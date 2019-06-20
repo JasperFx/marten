@@ -9,13 +9,14 @@ using NpgsqlTypes;
 
 namespace Marten.Linq.Compiled
 {
-    public interface IContainmentParameterSetter : IDbParameterSetter
+    public interface IContainmentParameterSetter: IDbParameterSetter
     {
         void AddElement(string[] keys, MemberInfo member);
+
         void Constant(string[] keys, object value);
     }
 
-    public class ContainmentParameterSetter<TQuery> : IContainmentParameterSetter
+    public class ContainmentParameterSetter<TQuery>: IContainmentParameterSetter
     {
         private readonly ISerializer _serializer;
         private readonly MemberInfo[] _pathToCollection;
@@ -32,7 +33,7 @@ namespace Marten.Linq.Compiled
             var setterType = typeof(DictionaryElement<,>).MakeGenericType(typeof(TQuery), memberType);
 
             var setter = Activator.CreateInstance(setterType, _serializer.EnumStorage, keys, member);
-            Elements.Add((IDictionaryElement<TQuery>) setter);
+            Elements.Add((IDictionaryElement<TQuery>)setter);
         }
 
         public void Constant(string[] keys, object value)
@@ -60,16 +61,15 @@ namespace Marten.Linq.Compiled
 
         public NpgsqlParameter AddParameter(object query, CommandBuilder command)
         {
-            var dict = BuildDictionary((TQuery) query);
+            var dict = BuildDictionary((TQuery)query);
 
-            var array = new IDictionary<string, object>[] {dict};
-            dict = new Dictionary<string, object> { {_pathToCollection.Last().Name, array} };
+            var array = new IDictionary<string, object>[] { dict };
+            dict = new Dictionary<string, object> { { _pathToCollection.Last().Name, array } };
 
             _pathToCollection.Reverse().Skip(1).Each(member =>
             {
-                dict = new Dictionary<string, object> {{member.Name, dict}};
+                dict = new Dictionary<string, object> { { member.Name, dict } };
             });
-
 
             var json = _serializer.ToCleanJson(dict);
 
@@ -81,7 +81,6 @@ namespace Marten.Linq.Compiled
 
         public void ReplaceValue(NpgsqlParameter cmdParameter)
         {
-            
         }
     }
 }

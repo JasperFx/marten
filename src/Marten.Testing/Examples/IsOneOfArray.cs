@@ -1,8 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
-using Marten.Schema;
-using Marten.Storage;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
@@ -14,7 +11,7 @@ namespace Marten.Testing.Examples
             // SAMPLE: is_one_of_array
             // Finds all UserWithNicknames's whose nicknames matches either "Melinder" or "Norrland"
 
-            var nickNames = new[] {"Melinder", "Norrland"};
+            var nickNames = new[] { "Melinder", "Norrland" };
 
             var users = session.Query<UserWithNicknames>()
                 .Where(x => x.Nicknames.Any(n => nickNames.Contains(n)));

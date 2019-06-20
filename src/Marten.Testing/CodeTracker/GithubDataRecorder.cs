@@ -31,7 +31,6 @@ namespace Marten.Testing.CodeTracker
 
             Debug.WriteLine($"Done with issues for {organization}/{projectName}");
 
-
             var commits = await _client.Repository.Commit.GetAll(organization, projectName, new ApiOptions {PageSize = 100, PageCount = 10}).ConfigureAwait(false);
 
             foreach (var commit in commits)
@@ -46,8 +45,6 @@ namespace Marten.Testing.CodeTracker
 
             Debug.WriteLine($"Persisted {organization}/{projectName}");
         }
-
-
     }
     */
 }

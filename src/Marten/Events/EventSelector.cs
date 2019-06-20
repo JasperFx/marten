@@ -12,7 +12,7 @@ using Npgsql;
 
 namespace Marten.Events
 {
-    internal class EventSelector : IEventSelector
+    internal class EventSelector: IEventSelector
     {
         public EventGraph Events { get; }
         private readonly ISerializer _serializer;

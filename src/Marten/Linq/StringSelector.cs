@@ -1,4 +1,3 @@
-﻿using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,7 +5,7 @@ using Marten.Services;
 
 namespace Marten.Linq
 {
-    public class StringSelector : BasicSelector, ISelector<string>
+    public class StringSelector: BasicSelector, ISelector<string>
     {
         public StringSelector() : base("data")
         {

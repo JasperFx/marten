@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Npgsql;
 
 namespace Marten
 {
-    public class MartenCommandException : Exception
+    public class MartenCommandException: Exception
     {
         public NpgsqlCommand Command { get; }
 

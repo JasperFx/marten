@@ -15,7 +15,8 @@ namespace Marten.Storage
 
         protected void seedSchemas(ITenant tenant)
         {
-            if (Options.AutoCreateSchemaObjects == AutoCreate.None) return;
+            if (Options.AutoCreateSchemaObjects == AutoCreate.None)
+                return;
 
             var allSchemaNames = Options.Storage.AllSchemaNames();
             var generator = new DatabaseSchemaGenerator(tenant);

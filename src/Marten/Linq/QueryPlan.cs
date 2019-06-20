@@ -1,4 +1,3 @@
-﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using Npgsql;
 
@@ -15,7 +14,7 @@ namespace Marten.Linq
         /// </summary>
         [JsonProperty(PropertyName = "Node Type")]
         public string NodeType { get; set; }
-        
+
         /// <summary>
         /// The table name from which the 'select' was queried.
         /// </summary>
@@ -26,7 +25,7 @@ namespace Marten.Linq
         /// The table alias that was used (if none was used, <see cref="RelationName"/> is returned).
         /// </summary>
         public string Alias { get; set; }
-        
+
         /// <summary>
         /// The cost of initialising the query.
         /// (note that "cost" does not have a unit - it's an arbitrary value)
@@ -87,16 +86,17 @@ namespace Marten.Linq
         public QueryPlan[] Plans { get; set; }
 
         // Lifted these from QueryPlanContainer so as not to change the returned type alltogether :|
-        public decimal PlanningTime { get; set; }        
+        public decimal PlanningTime { get; set; }
+
         public decimal ExecutionTime { get; set; }
-        
+
         /// <summary>
         /// The command executed by Marten
         /// </summary>
         public NpgsqlCommand Command { get; set; }
     }
 
-    class QueryPlanContainer
+    internal class QueryPlanContainer
     {
         public QueryPlan Plan { get; set; }
 

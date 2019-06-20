@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-using System.Linq;
-using System.Text;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -12,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Linq
 {
-    public class IncludeSelector<T> : ISelector<T>
+    public class IncludeSelector<T>: ISelector<T>
     {
         private readonly IIncludeJoin[] _joins;
         private readonly ISelector<T> _inner;

@@ -1,21 +1,20 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Marten.Storage;
 
 namespace Marten.Schema.Identity
 {
     /// <summary>
     ///     Comb Guid Id Generation. More info http://www.informit.com/articles/article.aspx?p=25862
     /// </summary>
-    public class CombGuidIdGeneration : IIdGeneration
+    public class CombGuidIdGeneration: IIdGeneration
     {
         private const int NumDateBytes = 6;
 
-        public IEnumerable<Type> KeyTypes { get; } = new[] {typeof(Guid)};
+        public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(Guid) };
 
         public IIdGenerator<T> Build<T>()
         {
-            return (IIdGenerator<T>) new GuidIdGenerator(() => Create(Guid.NewGuid(), DateTime.UtcNow));
+            return (IIdGenerator<T>)new GuidIdGenerator(() => Create(Guid.NewGuid(), DateTime.UtcNow));
         }
 
         public bool RequiresSequences { get; } = false;

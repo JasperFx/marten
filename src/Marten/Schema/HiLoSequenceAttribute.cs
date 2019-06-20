@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Schema.Identity.Sequences;
 
 namespace Marten.Schema
@@ -7,10 +7,9 @@ namespace Marten.Schema
     /// Use to customize the Hilo sequence generation for a single document type
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class HiloSequenceAttribute : MartenAttribute
+    public class HiloSequenceAttribute: MartenAttribute
     {
         private readonly HiloSettings _settings = new HiloSettings();
-
 
         public int MaxLo
         {

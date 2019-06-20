@@ -1,7 +1,7 @@
-﻿using Marten.Linq;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 
 namespace Marten.Pagination
 {
@@ -19,8 +19,8 @@ namespace Marten.Pagination
         /// <param name="pageSize">Page size</param>
         /// <returns>return paged result</returns>
         public static IPagedList<T> ToPagedList<T>(
-            this IQueryable<T> queryable, 
-            int pageNumber, 
+            this IQueryable<T> queryable,
+            int pageNumber,
             int pageSize)
         {
             // return paged list

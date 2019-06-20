@@ -1,4 +1,4 @@
-﻿using System.Data.Common;
+using System.Data.Common;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,7 +7,7 @@ using Marten.Services;
 
 namespace Marten.Linq
 {
-    public class SingleFieldSelector<T> : BasicSelector, ISelector<T>
+    public class SingleFieldSelector<T>: BasicSelector, ISelector<T>
     {
         public SingleFieldSelector(IQueryableDocument mapping, MemberInfo[] members)
             : base(mapping.FieldFor(members).SqlLocator)

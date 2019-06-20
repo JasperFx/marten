@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Events.Projections.Async
 {
-    public class ProjectionTrack : IProjectionTrack
+    public class ProjectionTrack: IProjectionTrack
     {
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private readonly EventGraph _events;
@@ -74,7 +74,8 @@ namespace Marten.Events.Projections.Async
 
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
 
             _cancellation.Cancel();
 
@@ -144,8 +145,6 @@ namespace Marten.Events.Projections.Async
             IsRunning = false;
 
             _rebuildCompletion.TrySetResult(LastEncountered);
-
-
         }
 
         public Task Start()
@@ -156,7 +155,8 @@ namespace Marten.Events.Projections.Async
 
         public Task<long> WaitUntilEventIsProcessed(long sequence)
         {
-            if (LastEncountered >= sequence) return Task.FromResult(sequence);
+            if (LastEncountered >= sequence)
+                return Task.FromResult(sequence);
 
             var waiter = new EventWaiter(sequence);
             _waiters.Add(waiter);
@@ -167,7 +167,7 @@ namespace Marten.Events.Projections.Async
         public Task<long> RunUntilEndOfEvents(CancellationToken token = default(CancellationToken))
         {
             ensureStorageExists();
-            
+
             Start(DaemonLifecycle.StopAtEndOfEventData);
 
             return _rebuildCompletion.Task;
@@ -175,7 +175,7 @@ namespace Marten.Events.Projections.Async
 
         private void ensureStorageExists()
         {
-            _projection.EnsureStorageExists(_tenant);            
+            _projection.EnsureStorageExists(_tenant);
         }
 
         public async Task Rebuild(CancellationToken token = new CancellationToken())
@@ -192,21 +192,19 @@ namespace Marten.Events.Projections.Async
                 _fetcher.Reset();
             }, this).ConfigureAwait(false);
 
-            
             await RunUntilEndOfEvents(token).ConfigureAwait(false);
         }
 
         public async Task ExecutePage(EventPage page, CancellationToken cancellation)
         {
             // Duplicated, ignore. Shouldn't happen, but Fetcher is screwed up, so...
-            if (page.To <= LastEncountered) return;
+            if (page.To <= LastEncountered)
+                return;
 
             await _errorHandler.TryAction(async () =>
             {
                 await executePage(page, cancellation).ConfigureAwait(false);
             }, this).ConfigureAwait(false);
-
-
         }
 
         private async Task executePage(EventPage page, CancellationToken cancellation)
@@ -222,7 +220,7 @@ namespace Marten.Events.Projections.Async
 
                 // Just making sure nothing bad is happening to GC
                 page.Next = null;
-                
+
                 _logger.PageExecuted(page, this);
 
                 // This is a change to accomodate the big gap problem
@@ -242,28 +240,28 @@ namespace Marten.Events.Projections.Async
                 waiter.Completion.SetResult(LastEncountered);
                 _waiters.Remove(waiter);
             }
-        }  
+        }
 
         public async Task CachePage(EventPage page)
         {
             Accumulator.Store(page);
 
-            
             if (Accumulator.CachedEventCount > _projection.AsyncOptions.MaximumStagedEventCount)
             {
                 _logger.ProjectionBackedUp(this, Accumulator.CachedEventCount, page);
                 await _fetcher.Pause().ConfigureAwait(false);
             }
 
-
             _executionTrack?.Post(page);
         }
 
         private bool shouldRestartFetcher()
         {
-            if (_fetcher.State == FetcherState.Active) return false;
+            if (_fetcher.State == FetcherState.Active)
+                return false;
 
-            if (Lifecycle == DaemonLifecycle.StopAtEndOfEventData && _atEndOfEventLog) return false;
+            if (Lifecycle == DaemonLifecycle.StopAtEndOfEventData && _atEndOfEventLog)
+                return false;
 
             if (Accumulator.CachedEventCount <= _projection.AsyncOptions.CooldownStagedEventCount &&
                 _fetcher.State == FetcherState.Paused)
@@ -272,7 +270,6 @@ namespace Marten.Events.Projections.Async
             }
 
             return false;
-
         }
 
         public Task StoreProgress(Type viewType, EventPage page)
@@ -291,7 +288,7 @@ namespace Marten.Events.Projections.Async
         {
             _logger.ClearingExistingState(this);
             var types = _projection.ProjectedTypes();
-            
+
             using (var conn = _tenant.OpenConnection())
             {
                 foreach (var type in types)
@@ -307,10 +304,9 @@ namespace Marten.Events.Projections.Async
                             .ExecuteNonQueryAsync(tkn)
                             .ConfigureAwait(false);
                     }, token);
-                }                
+                }
             }
             LastEncountered = 0;
         }
     }
-
 }

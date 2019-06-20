@@ -11,7 +11,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class DuplicatedField : Field, IField
+    public class DuplicatedField: Field, IField
     {
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
         private readonly bool useTimestampWithoutTimeZoneForDateTime;

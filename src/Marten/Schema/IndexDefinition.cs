@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Baseline;
@@ -7,7 +7,7 @@ using Marten.Storage;
 
 namespace Marten.Schema
 {
-    public class IndexDefinition : IIndexDefinition
+    public class IndexDefinition: IIndexDefinition
     {
         private readonly DocumentMapping _parent;
         private readonly string[] _columns;
@@ -97,7 +97,8 @@ namespace Marten.Schema
 
         public bool Matches(ActualIndex index)
         {
-            if (!index.Name.EqualsIgnoreCase(IndexName)) return false;
+            if (!index.Name.EqualsIgnoreCase(IndexName))
+                return false;
 
             var actual = index.DDL;
             if (Method == IndexMethod.btree)

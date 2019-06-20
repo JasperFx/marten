@@ -11,7 +11,4 @@ namespace Marten.Schema.Identity
 
         bool RequiresSequences { get; }
     }
-
-
-
 }

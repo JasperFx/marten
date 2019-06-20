@@ -68,9 +68,6 @@ function Transform(def){
 
 				result.push(usage);
 			}
-
-
-			
 		}
 
 		return result;
@@ -120,9 +117,4 @@ module.exports = {
 
 		throw new Error('Unknown Projection: ' + projection);
 	}
-
-
-
-
-
 }

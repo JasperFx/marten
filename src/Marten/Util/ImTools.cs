@@ -33,7 +33,6 @@ using System.Threading;
 
 namespace Marten.Util
 { // For [MethodImpl(AggressiveInlining)]
-
     /// <summary>Helpers for functional composition</summary>
     public static class Fun
     {
@@ -59,7 +58,7 @@ namespace Marten.Util
             public static readonly T[] Value = new T[0];
         }
 
-        /// <summary>Returns singleton empty array of provided type.</summary> 
+        /// <summary>Returns singleton empty array of provided type.</summary>
         /// <typeparam name="T">Array item type.</typeparam> <returns>Empty array.</returns>
         public static T[] Empty<T>() => EmptyArray<T>.Value;
 
@@ -75,7 +74,7 @@ namespace Marten.Util
 
         /// <summary>Returns source enumerable if it is array, otherwise converts source to array.</summary>
         public static T[] ToArrayOrSelf<T>(this IEnumerable<T> source) =>
-            source == null ? Empty<T>() : 
+            source == null ? Empty<T>() :
                 (source as T[] ?? (((source as ICollection<T>)?.Count ?? 0) == 0 ? Empty<T>() : source.ToArray()));
 
         /// <summary>Returns new array consisting from all items from source array then all items from added array.
@@ -110,7 +109,7 @@ namespace Marten.Util
         public static T[] Append<T>(this IEnumerable<T> source, IEnumerable<T> other) =>
             source.ToArrayOrSelf().Append(other.ToArrayOrSelf());
 
-        /// <summary>Returns new array with <paramref name="value"/> appended, 
+        /// <summary>Returns new array with <paramref name="value"/> appended,
         /// or <paramref name="value"/> at <paramref name="index"/>, if specified.
         /// If source array could be null or empty, then single value item array will be created despite any index.</summary>
         /// <typeparam name="T">Array item type.</typeparam>
@@ -162,7 +161,7 @@ namespace Marten.Util
             return -1;
         }
 
-        /// <summary>Produces new array without item at specified <paramref name="index"/>. 
+        /// <summary>Produces new array without item at specified <paramref name="index"/>.
         /// Will return <paramref name="source"/> array if index is out of bounds, or source is null/empty.</summary>
         /// <typeparam name="T">Type of array item.</typeparam>
         /// <param name="source">Input array.</param> <param name="index">Index if item to remove.</param>
@@ -421,7 +420,7 @@ namespace Marten.Util
             return results;
         }
 
-        /// <summary>Maps all items from source to result collection. 
+        /// <summary>Maps all items from source to result collection.
         /// If possible uses fast array Map otherwise Enumerable.Select.</summary>
         /// <typeparam name="T">Source item type</typeparam> <typeparam name="R">Result item type</typeparam>
         /// <param name="source">Source items</param> <param name="map">Function to convert item from source to result.</param>
@@ -521,8 +520,8 @@ namespace Marten.Util
         /// <param name="original">Original ref.</param> <returns>New ref to original value.</returns>
         public static Ref<T> NewRef<T>(this Ref<T> original) where T : class => Of(original.Value);
 
-        /// <summary>First, it evaluates new value using <paramref name="getNewValue"/> function. 
-        /// Second, it checks that original value is not changed. 
+        /// <summary>First, it evaluates new value using <paramref name="getNewValue"/> function.
+        /// Second, it checks that original value is not changed.
         /// If it is changed it will retry first step, otherwise it assigns new value and returns original (the one used for <paramref name="getNewValue"/>).</summary>
         /// <typeparam name="T">Type of value to swap.</typeparam>
         /// <param name="value">Reference to change to new value</param>
@@ -544,11 +543,12 @@ namespace Marten.Util
         }
 
         private const int RETRY_COUNT_UNTIL_THROW = 50;
+
         private static readonly string _errorRetryCountExceeded =
             "Ref retried to Update for " + RETRY_COUNT_UNTIL_THROW + " times But there is always someone else intervened.";
     }
 
-    /// <summary>Immutable Key-Value pair. It is reference type (could be check for null), 
+    /// <summary>Immutable Key-Value pair. It is reference type (could be check for null),
     /// which is different from System value type <see cref="KeyValuePair{TKey,TValue}"/>.
     /// In addition provides <see cref="Equals"/> and <see cref="GetHashCode"/> implementations.</summary>
     /// <typeparam name="K">Type of Key.</typeparam><typeparam name="V">Type of Value.</typeparam>
@@ -686,7 +686,9 @@ namespace Marten.Util
 
         #region Implementation
 
-        private ImList() { }
+        private ImList()
+        {
+        }
 
         private ImList(T head, ImList<T> tail)
         {
@@ -694,7 +696,7 @@ namespace Marten.Util
             Tail = tail;
         }
 
-        #endregion
+        #endregion Implementation
     }
 
     /// <summary>Extension methods providing basic operations on a list.</summary>
@@ -745,7 +747,7 @@ namespace Marten.Util
         }
 
         /// <summary>Maps the items from the first list to the result list.</summary>
-        /// <typeparam name="T">source item type.</typeparam> 
+        /// <typeparam name="T">source item type.</typeparam>
         /// <typeparam name="R">result item type.</typeparam>
         /// <param name="source">input list.</param> <param name="map">converter func.</param>
         /// <returns>result list.</returns>
@@ -755,7 +757,7 @@ namespace Marten.Util
         }
 
         /// <summary>Maps the items from the first list to the result list with item index.</summary>
-        /// <typeparam name="T">source item type.</typeparam> 
+        /// <typeparam name="T">source item type.</typeparam>
         /// <typeparam name="R">result item type.</typeparam>
         /// <param name="source">input list.</param> <param name="map">converter func.</param>
         /// <returns>result list.</returns>
@@ -764,8 +766,8 @@ namespace Marten.Util
             return source.To(ImList<R>.Empty, (it, i, _) => _.Prep(map(it, i))).Reverse();
         }
 
-        /// <summary>Copies list to array.</summary> 
-        /// <param name="source">list to convert.</param> 
+        /// <summary>Copies list to array.</summary>
+        /// <param name="source">list to convert.</param>
         /// <returns>Array with list items.</returns>
         public static T[] ToArray<T>(this ImList<T> source)
         {
@@ -855,7 +857,7 @@ namespace Marten.Util
             return false;
         }
 
-        /// <summary>Returns all sub-trees enumerated from left to right.</summary> 
+        /// <summary>Returns all sub-trees enumerated from left to right.</summary>
         /// <returns>Enumerated sub-trees or empty if tree is empty.</returns>
         public IEnumerable<ImMap<V>> Enumerate()
         {
@@ -884,7 +886,7 @@ namespace Marten.Util
 
         /// <summary>Removes or updates value for specified key, or does nothing if key is not found.
         /// Based on Eric Lippert http://blogs.msdn.com/b/ericlippert/archive/2008/01/21/immutability-in-c-part-nine-academic-plus-my-avl-tree-implementation.aspx </summary>
-        /// <param name="key">Key to look for.</param> 
+        /// <param name="key">Key to look for.</param>
         /// <returns>New tree with removed or updated value.</returns>
         public ImMap<V> Remove(int key) =>
             RemoveImpl(key);
@@ -894,7 +896,9 @@ namespace Marten.Util
 
         #region Implementation
 
-        private ImMap() { }
+        private ImMap()
+        {
+        }
 
         private ImMap(int key, V value)
         {
@@ -1021,7 +1025,8 @@ namespace Marten.Util
                 {
                     // we have two children, so remove the next highest node and replace this node with it.
                     var successor = Right;
-                    while (!successor.Left.IsEmpty) successor = successor.Left;
+                    while (!successor.Left.IsEmpty)
+                        successor = successor.Left;
                     result = new ImMap<V>(successor.Key, successor.Value,
                         Left, Right.RemoveImpl(successor.Key, ignoreKey: true));
                 }
@@ -1034,10 +1039,10 @@ namespace Marten.Util
             return result.KeepBalance();
         }
 
-        #endregion
+        #endregion Implementation
     }
 
-    /// <summary>Immutable http://en.wikipedia.org/wiki/AVL_tree 
+    /// <summary>Immutable http://en.wikipedia.org/wiki/AVL_tree
     /// where node key is the hash code of <typeparamref name="K"/>.</summary>
     public sealed class ImHashMap<K, V>
     {
@@ -1068,7 +1073,7 @@ namespace Marten.Util
         /// <summary>Returns true if tree is empty.</summary>
         public bool IsEmpty => Height == 0;
 
-        /// <summary>Returns new tree with added key-value. 
+        /// <summary>Returns new tree with added key-value.
         /// If value with the same key is exist then the value is replaced.</summary>
         /// <param name="key">Key to add.</param><param name="value">Value to add.</param>
         /// <returns>New tree with added or updated key-value.</returns>
@@ -1084,7 +1089,7 @@ namespace Marten.Util
         public ImHashMap<K, V> AddOrUpdate(K key, V value, Update<V> update) =>
             AddOrUpdate(key.GetHashCode(), key, value, update);
 
-        /// <summary>Looks for <paramref name="key"/> and replaces its value with new <paramref name="value"/>, or 
+        /// <summary>Looks for <paramref name="key"/> and replaces its value with new <paramref name="value"/>, or
         /// runs custom update handler (<paramref name="update"/>) with old and new value to get the updated result.</summary>
         /// <param name="key">Key to look for.</param>
         /// <param name="value">New value to replace key value with.</param>
@@ -1164,7 +1169,7 @@ namespace Marten.Util
 
         /// <summary>Removes or updates value for specified key, or does nothing if key is not found.
         /// Based on Eric Lippert http://blogs.msdn.com/b/ericlippert/archive/2008/01/21/immutability-in-c-part-nine-academic-plus-my-avl-tree-implementation.aspx </summary>
-        /// <param name="key">Key to look for.</param> 
+        /// <param name="key">Key to look for.</param>
         /// <returns>New tree with removed or updated value.</returns>
         public ImHashMap<K, V> Remove(K key) =>
             Remove(key.GetHashCode(), key);
@@ -1182,7 +1187,9 @@ namespace Marten.Util
 
             public readonly KV<K, V>[] Conflicts;
 
-            public Data() { }
+            public Data()
+            {
+            }
 
             public Data(int hash, K key, V value, KV<K, V>[] conflicts = null)
             {
@@ -1195,7 +1202,10 @@ namespace Marten.Util
 
         private readonly Data _data;
 
-        private ImHashMap() { _data = new Data(); }
+        private ImHashMap()
+        {
+            _data = new Data();
+        }
 
         private ImHashMap(Data data)
         {
@@ -1280,10 +1290,12 @@ namespace Marten.Util
                     : new ImHashMap<K, V>(new Data(Hash, Key, Value, new[] { new KV<K, V>(key, value) }), Left, Right);
 
             var found = Conflicts.Length - 1;
-            while (found >= 0 && !Equals(Conflicts[found].Key, Key)) --found;
+            while (found >= 0 && !Equals(Conflicts[found].Key, Key))
+                --found;
             if (found == -1)
             {
-                if (updateOnly) return this;
+                if (updateOnly)
+                    return this;
                 var newConflicts = new KV<K, V>[Conflicts.Length + 1];
                 Array.Copy(Conflicts, 0, newConflicts, 0, Conflicts.Length);
                 newConflicts[Conflicts.Length] = new KV<K, V>(key, value);
@@ -1404,7 +1416,8 @@ namespace Marten.Util
                     {
                         // we have two children, so remove the next highest node and replace this node with it.
                         var successor = Right;
-                        while (!successor.Left.IsEmpty) successor = successor.Left;
+                        while (!successor.Left.IsEmpty)
+                            successor = successor.Left;
                         result = new ImHashMap<K, V>(successor._data,
                             Left, Right.Remove(successor.Hash, default(K), ignoreKey: true));
                     }
@@ -1428,7 +1441,8 @@ namespace Marten.Util
         private ImHashMap<K, V> TryRemoveConflicted(K key)
         {
             var index = Conflicts.Length - 1;
-            while (index >= 0 && !Equals(Conflicts[index].Key, key)) --index;
+            while (index >= 0 && !Equals(Conflicts[index].Key, key))
+                --index;
             if (index == -1) // key is not found in conflicts - just return
                 return this;
 
@@ -1437,7 +1451,8 @@ namespace Marten.Util
             var shrinkedConflicts = new KV<K, V>[Conflicts.Length - 1];
             var newIndex = 0;
             for (var i = 0; i < Conflicts.Length; ++i)
-                if (i != index) shrinkedConflicts[newIndex++] = Conflicts[i];
+                if (i != index)
+                    shrinkedConflicts[newIndex++] = Conflicts[i];
             return new ImHashMap<K, V>(new Data(Hash, Key, Value, shrinkedConflicts), Left, Right);
         }
 
@@ -1450,6 +1465,6 @@ namespace Marten.Util
             return new ImHashMap<K, V>(new Data(Hash, Conflicts[0].Key, Conflicts[0].Value, shrinkedConflicts), Left, Right);
         }
 
-        #endregion
+        #endregion Implementation
     }
 }

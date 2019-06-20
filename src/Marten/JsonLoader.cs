@@ -7,7 +7,7 @@ using Marten.Util;
 
 namespace Marten
 {
-    public class JsonLoader : IJsonLoader
+    public class JsonLoader: IJsonLoader
     {
         private readonly IManagedConnection _connection;
         private readonly ITenant _tenant;
@@ -22,7 +22,6 @@ namespace Marten
         {
             return findJsonById<T>(id);
         }
-
 
         public Task<string> FindByIdAsync<T>(string id, CancellationToken token) where T : class
         {

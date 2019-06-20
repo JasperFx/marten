@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Services;
 using Shouldly;
@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_964_optimistic_concurrency_with_subclass : IntegratedFixture
+    public class Bug_964_optimistic_concurrency_with_subclass: IntegratedFixture
     {
         public Bug_964_optimistic_concurrency_with_subclass(ITestOutputHelper output = null) : base(output)
         {
@@ -21,14 +21,9 @@ namespace Marten.Testing.Bugs
             });
         }
 
-
-
-
-
         [Fact]
         public void should_not_throw_a_ConcurrencyException()
         {
-
             CloudStorageMinio minio1 = new CloudStorageMinio()
             {
                 Description = "Test 1",
@@ -53,11 +48,9 @@ namespace Marten.Testing.Bugs
             }
         }
 
-
         [Fact]
         public void should_Throw_ConcurrencyException()
         {
-
             CloudStorageMinio minio1 = new CloudStorageMinio()
             {
                 Description = "Test 1",
@@ -98,14 +91,8 @@ namespace Marten.Testing.Bugs
                 {
                     session.SaveChanges();
                 }).InnerExceptions.Single().ShouldBeOfType<ConcurrencyException>();
-
             }
         }
-
-
-
-
-
     }
 
     public abstract class CloudStorage
@@ -121,7 +108,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class CloudStorageMinio : CloudStorage
+    public class CloudStorageMinio: CloudStorage
     {
         public string Endpoint { get; set; }
         public string AccessKey { get; set; }

@@ -10,7 +10,7 @@ namespace Marten.Services.Json
     /// Note that without using custom `JsonConverter`, `Newtonsoft.Json` stores it as $type and $value.
     /// Or you may need to resort to `Newtonsoft.Json.TypeNameHandling.None` which has its own side-effects
     /// </summary>
-    public class JsonNetCollectionToArrayJsonConverter : JsonConverter
+    public class JsonNetCollectionToArrayJsonConverter: JsonConverter
     {
         public static JsonNetCollectionToArrayJsonConverter Instance = new JsonNetCollectionToArrayJsonConverter();
 
