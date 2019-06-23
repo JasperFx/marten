@@ -32,8 +32,8 @@
         <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-        <NoWarn>1591;1701;1702</NoWarn>
+    <PropertyGroup>
+        <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
