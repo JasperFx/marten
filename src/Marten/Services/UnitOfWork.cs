@@ -51,7 +51,7 @@ namespace Marten.Services
 
         public IEnumerable<object> Updates()
         {
-            return _operations.Value.Enumerate().SelectMany(x => x.Value.OfType<UpsertDocument>().Select(u => u.Document))
+            return _operations.Value.Enumerate().SelectMany(x => x.Value.Where(t => t is UpsertDocument || t is UpdateDocument).OfType<DocumentStorageOperation>().Select(u => u.Document))
                 .Union(detectTrackerChanges().Select(x => x.Document));
         }
 
