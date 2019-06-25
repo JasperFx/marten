@@ -123,7 +123,7 @@ namespace Marten.Testing.Events
 
             var @event = new InvoiceCreated(invoiceNumber);
             // Instantiation creates our initial event, capturing the invoice number
-            RaiseEvent(@event);
+            Enqueue(@event);
             Apply(@event);
         }
 
@@ -141,7 +141,7 @@ namespace Marten.Testing.Events
             }
 
             var @event = new LineItemAdded(price, vat, description);
-            RaiseEvent(@event);
+            Enqueue(@event);
             Apply(@event);
         }
 
@@ -231,7 +231,7 @@ namespace Marten.Testing.Events
             uncommittedEvents.Clear();
         }
 
-        protected void RaiseEvent(object @event)
+        protected void Enqueue(object @event)
         {
             Version++;
             if (@event is IVersionedEvent versionedEvent)
