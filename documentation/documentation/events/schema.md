@@ -7,6 +7,10 @@ you can segregate the event store objects into a separate schema with this synta
 
 <[sample:setting_event_schema]>
 
+## Configuration
+
+If Marten is being used in a distributed scenario, where multiple process can be appending events to the same stream at the same time, you should set `UseAppendEventForUpdateLock` to `true` on the `StoreOptions` `Events` (EventGraph) configuration. This will add a `FOR UPDATE` lock to the `mt_append_event` function that will ensure that the same stream cannot have its `version` updated by multiple processes at the same time, which could lead to a `pk_mt_events_stream_and_version` constraint violation from the `mt_events` and `mt_streams` versions getting out of sync.
+
 ## Database Tables
 
 The events are stored in the `mt_events` table, with these columns:
