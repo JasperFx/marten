@@ -435,4 +435,46 @@ namespace Marten.Testing.Events.Projections
     }
 
     // ENDSAMPLE
+
+    // SAMPLE: viewprojection-from-class-with-eventdata
+
+    public class Lap
+    {
+        public Guid Id { get; set; }
+
+        public DateTimeOffset? Start { get; set; }
+
+        public DateTimeOffset? End { get; set; }
+    }
+
+    public class LapStarted
+    {
+        public Guid LapId { get; set; }
+    }
+
+    public class LapFinished
+    {
+        public Guid LapId { get; set; }
+    }
+
+    public class LapViewProjection: ViewProjection<Lap, Guid>
+    {
+        public LapViewProjection()
+        {
+            ProjectEvent<ProjectionEvent<LapStarted>>(e => e.Data.LapId, Persist);
+            ProjectEvent<ProjectionEvent<LapFinished>>(e => e.Data.LapId, Persist);
+        }
+
+        private void Persist(Lap view, ProjectionEvent<LapStarted> eventData)
+        {
+            view.Start = eventData.Timestamp;
+        }
+
+        private void Persist(Lap view, ProjectionEvent<LapFinished> eventData)
+        {
+            view.End = eventData.Timestamp;
+        }
+    }
+
+    // ENDSAMPLE
 }
