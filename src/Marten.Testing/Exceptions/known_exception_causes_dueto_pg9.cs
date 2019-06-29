@@ -2,6 +2,7 @@ using System.Linq;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Exceptions
@@ -19,19 +20,21 @@ namespace Marten.Testing.Exceptions
                 }
             });
 
-            Assert.Contains(KnownExceptionCause.ToTsvectorOnJsonb.Description, e.Message);
+            e.Reason.ShouldBe(NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10);
+            e.Message.ShouldContain(KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
         }
 
         [PgVersionTargetedFact(MaximumVersion = "10.0")]
         public void can_totsvector_other_than_jsonb_without_FTS_exception()
         {
-            Assert.Throws<MartenCommandException>(() =>
+            var e = Assert.Throws<MartenCommandException>(() =>
             {
                 using (var session = theStore.OpenSession())
                 {
                     session.Query<User>("to_tsvector(?)", 0).ToList();
                 }
             });
+            e.ShouldNotBeOfType<MartenCommandNotSupportedException>();
         }
     }
 }
