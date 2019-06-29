@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Marten.Services;
 using Npgsql;
 
 namespace Marten.Exceptions
@@ -31,7 +30,7 @@ namespace Marten.Exceptions
             out MartenCommandNotSupportedException notSupportedException
         )
         {
-            var knownCause = KnownExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(innerException));
+            var knownCause = KnownNotSupportedExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(innerException));
 
             if (knownCause != null)
             {
@@ -44,6 +43,4 @@ namespace Marten.Exceptions
             return false;
         }
     }
-
-
 }
