@@ -5,9 +5,7 @@ using Npgsql;
 namespace Marten.Exceptions
 {
     /// <summary>
-    /// Class responsible for MartenCommandException creation.
-    /// Based on the exact command code and exception creates
-    /// generi MartenCommandException or specific Exception derived from it.
+    /// Class responsible for creating MartenCommandException exception or exceptions derived from it based on exact command code.
     /// </summary>
     internal static class MartenCommandExceptionFactory
     {
