@@ -27,7 +27,7 @@ namespace Marten.Testing.Exceptions
         [PgVersionTargetedFact(MaximumVersion = "10.0")]
         public void can_totsvector_other_than_jsonb_without_FTS_exception()
         {
-            var e = Assert.Throws<MartenCommandException>(() =>
+            var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
             {
                 using (var session = theStore.OpenSession())
                 {

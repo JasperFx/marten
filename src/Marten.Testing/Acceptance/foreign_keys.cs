@@ -41,7 +41,7 @@ namespace Marten.Testing.Acceptance
 
             var issue = new Issue { AssigneeId = Guid.NewGuid() };
 
-            Should.Throw<MartenCommandException>(() =>
+            Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
             {
                 using (var session = theStore.OpenSession())
                 {
@@ -111,7 +111,7 @@ namespace Marten.Testing.Acceptance
 
             issue.AssigneeId = Guid.NewGuid();
 
-            Should.Throw<MartenCommandException>(() =>
+            Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
             {
                 using (var session = theStore.OpenSession())
                 {
@@ -192,7 +192,7 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            Should.Throw<MartenCommandException>(() =>
+            Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
             {
                 using (var session = theStore.OpenSession())
                 {
