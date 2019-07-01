@@ -83,7 +83,7 @@ namespace Marten.Testing.Schema
                     {
                         session.SaveChanges();
                     }
-                    catch (MartenCommandException exception)
+                    catch (Marten.Exceptions.MartenCommandException exception)
                     {
                         ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                     }
@@ -112,7 +112,7 @@ namespace Marten.Testing.Schema
                     {
                         session.SaveChanges();
                     }
-                    catch (MartenCommandException exception)
+                    catch (Marten.Exceptions.MartenCommandException exception)
                     {
                         ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                     }
@@ -140,7 +140,7 @@ namespace Marten.Testing.Schema
                     {
                         session.SaveChanges();
                     }
-                    catch (MartenCommandException exception)
+                    catch (Marten.Exceptions.MartenCommandException exception)
                     {
                         ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                     }
@@ -169,7 +169,7 @@ namespace Marten.Testing.Schema
                     {
                         session.SaveChanges();
                     }
-                    catch (MartenCommandException exception)
+                    catch (Marten.Exceptions.MartenCommandException exception)
                     {
                         ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                     }

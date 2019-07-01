@@ -117,7 +117,7 @@ namespace Marten.Testing.Examples
 
             using (var s = theStore.QuerySession())
             {
-                Assert.Throws<MartenCommandException>(() =>
+                Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
                 {
                     var _ = s.Query<object>("select null from mt_nonexistenttable").FirstOrDefault();
                 });

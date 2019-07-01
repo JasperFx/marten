@@ -1,12 +1,11 @@
 using System;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing
 {
-    public class foreign_key_persisting_Tests : DocumentSessionFixture<IdentityMap>
+    public class foreign_key_persisting_Tests: DocumentSessionFixture<IdentityMap>
     {
         [Fact]
         public void persist_and_overwrite_foreign_key()
@@ -64,7 +63,7 @@ namespace Marten.Testing
                 session.SaveChanges();
             }
 
-            Exception<MartenCommandException>.ShouldBeThrownBy(() =>
+            Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession())
                 {
@@ -123,7 +122,7 @@ namespace Marten.Testing
                 _.Schema.For<Node3>().ForeignKey<Node2>(x => x.Link);
             });
 
-            Exception<MartenCommandException>.ShouldBeThrownBy(() =>
+            Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession())
                 {
@@ -139,7 +138,7 @@ namespace Marten.Testing
         public class Node1
         {
             public Guid Id { get; set; }
-            public Guid Link { get; set; } 
+            public Guid Link { get; set; }
         }
 
         public class Node2

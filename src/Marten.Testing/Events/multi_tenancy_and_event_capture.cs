@@ -148,7 +148,7 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
             }
 
-            Exception<MartenCommandException>.ShouldBeThrownBy(() =>
+            Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession("Red"))
                 {

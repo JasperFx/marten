@@ -37,7 +37,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 
             using (var session = theStore.OpenSession(options))
             {
-                var e = Assert.Throws<MartenCommandException>(() =>
+                var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
                 {
                     session.Query<FryGuy>("select pg_sleep(2)");
                 });
