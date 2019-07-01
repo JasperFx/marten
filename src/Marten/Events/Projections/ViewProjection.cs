@@ -683,19 +683,14 @@ namespace Marten.Events.Projections
             if (handler == null && type == ProjectionEventType.CreateAndUpdate)
                 throw new ArgumentNullException(nameof(handler));
 
-            EventHandler eventHandler;
-            if (type == ProjectionEventType.CreateAndUpdate || type == ProjectionEventType.UpdateOnly)
-            {
-                eventHandler = new EventHandler(
+            var eventHandler = type == ProjectionEventType.CreateAndUpdate || type == ProjectionEventType.UpdateOnly
+                ? new EventHandler(
                     viewIdSelector,
                     viewIdsSelector,
                     (session, view, @event) => handler(session, view, @event as TEvent),
                     null,
-                    type);
-            }
-            else
-            {
-                eventHandler = new EventHandler(
+                    type)
+                : new EventHandler(
                     viewIdSelector,
                     viewIdsSelector,
                     null,
@@ -703,7 +698,6 @@ namespace Marten.Events.Projections
                         ? (Func<IDocumentSession, TView, object, Task<bool>>)null
                         : (session, view, @event) => shouldDelete(session, view, @event as TEvent),
                     type);
-            }
 
             _handlers.Add(typeof(TEvent), eventHandler);
 
@@ -756,12 +750,12 @@ namespace Marten.Events.Projections
 
             foreach (var eventProjection in projections)
             {
-                var hasView = viewMap.TryGetValue(eventProjection.ViewId, out TView view);
+                var hasView = viewMap.TryGetValue(eventProjection.ViewId, out var view);
 
                 if (!hasView)
                     continue;
 
-                using (Util.NoSynchronizationContextScope.Enter())
+                using (NoSynchronizationContextScope.Enter())
                 {
                     if (eventProjection.Type == ProjectionEventType.Delete)
                     {
@@ -847,9 +841,8 @@ namespace Marten.Events.Projections
             var projections = new List<EventProjection>();
             foreach (var streamEvent in page.Events)
             {
-                EventHandler handler;
                 var eventType = streamEvent.Data.GetType();
-                if (_handlers.TryGetValue(eventType, out handler))
+                if (_handlers.TryGetValue(eventType, out var handler))
                 {
                     appendProjections(projections, handler, session, streamEvent, eventType, false);
                 }

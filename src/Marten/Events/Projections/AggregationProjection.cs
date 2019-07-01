@@ -25,13 +25,13 @@ namespace Marten.Events.Projections
             {
                 var state = _finder.Find(stream, session);
 
-                update(state, stream);
+                update(session, state, stream);
 
                 session.Store(state);
             });
         }
 
-        private void update(T state, EventStream stream)
+        private void update(IDocumentSession session, T state, EventStream stream)
         {
             stream.Events.Each(x => x.Apply(state, _aggregator));
         }
@@ -45,7 +45,7 @@ namespace Marten.Events.Projections
             foreach (var stream in matchingStreams)
             {
                 var state = await _finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
-                update(state, stream);
+                update(session, state, stream);
 
                 session.Store(state);
             }
@@ -59,5 +59,10 @@ namespace Marten.Events.Projections
         }
 
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+
+        public AggregationProjection<T> DeleteEvent<TEvent>(Func<TEvent, Guid> streamIdSelector)
+        {
+            return this;
+        }
     }
 }

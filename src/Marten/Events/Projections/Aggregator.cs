@@ -24,7 +24,7 @@ namespace Marten.Events.Projections
                 .Each(method =>
                 {
                     object step = null;
-                    var eventType = method.GetParameters().Single<ParameterInfo>().ParameterType;
+                    var eventType = method.GetParameters().Single().ParameterType;
                     if (eventType.Closes(typeof(Event<>)))
                     {
                         eventType = eventType.GetGenericArguments().Single();
