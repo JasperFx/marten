@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -207,14 +207,15 @@ namespace Marten.Testing
 
         public static void ShouldBeEqualWithDbPrecision(this DateTimeOffset actual, DateTimeOffset expected)
         {
-            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 100 * 100, date.Offset);
+            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 100 * 100, new TimeSpan(date.Offset.Ticks / 100 * 100));
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
 
         public static void ShouldContain(this DbObjectName[] names, string qualifiedName)
         {
-            if (names == null) throw new ArgumentNullException(nameof(names));
+            if (names == null)
+                throw new ArgumentNullException(nameof(names));
 
             var function = DbObjectName.Parse(qualifiedName);
             names.ShouldContain(function);

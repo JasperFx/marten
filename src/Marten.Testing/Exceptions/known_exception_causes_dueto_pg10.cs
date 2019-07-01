@@ -9,7 +9,7 @@ namespace Marten.Testing.Exceptions
 {
     public class known_exception_causes_dueto_pg10: IntegratedFixture
     {
-        [PgVersionTargetedFact(MaximumVersion = "11.0")]
+        [PgVersionTargetedFact(MinimumVersion = "10.0", MaximumVersion = "11.0")]
         public void can_map_web_style_search_not_supported()
         {
             var e = Assert.Throws<MartenCommandNotSupportedException>(() =>
