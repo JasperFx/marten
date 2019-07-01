@@ -1,7 +1,7 @@
 using System;
 using Npgsql;
 
-namespace Marten
+namespace Marten.Exceptions
 {
     /// <summary>
     /// Wraps the Postgres command exceptions. Unifies exception handling and brings additonal information.
