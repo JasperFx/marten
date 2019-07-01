@@ -200,14 +200,14 @@ namespace Marten.Testing
 
         public static void ShouldBeEqualWithDbPrecision(this DateTime actual, DateTime expected)
         {
-            DateTime toDbPrecision(DateTime date) => new DateTime(date.Ticks / 100 * 100);
+            DateTime toDbPrecision(DateTime date) => new DateTime(date.Ticks / 1000 * 1000);
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
 
         public static void ShouldBeEqualWithDbPrecision(this DateTimeOffset actual, DateTimeOffset expected)
         {
-            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 100 * 100, new TimeSpan(date.Offset.Ticks / 100 * 100));
+            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 1000 * 1000, new TimeSpan(date.Offset.Ticks / 1000 * 1000));
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
