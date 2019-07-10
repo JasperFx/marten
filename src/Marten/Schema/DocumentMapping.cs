@@ -669,6 +669,10 @@ namespace Marten.Schema
 
             foreach (var foreignKey in ForeignKeys)
             {
+                // ExternalForeignKeyDefinition's will have a null ReferenceDocumentType, so we can skip it
+                if (foreignKey.ReferenceDocumentType == null)
+                    continue;
+
                 yield return foreignKey.ReferenceDocumentType;
             }
         }
