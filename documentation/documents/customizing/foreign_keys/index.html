@@ -1,105 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <meta name="generator" content="Bootply" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Foreign Keys</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-        
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Foreign Keys</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
-        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
 
-        <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
-    </head>
-    
-    <!-- HTML code from Bootply.com editor -->
-    
-    <body  >
+<!-- HTML code from Bootply.com editor -->
 
-<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
-        
-        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
-		  <div class="container">
-		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.6.0</a>
-		    </div>
-		    <nav class="collapse navbar-collapse" role="navigation">
-		      <ul class="nav navbar-nav pull-right">
-            <li>
-              <a href="/marten/getting_started">Getting Started</a>
-            </li>
-		        <li>
-		          <a href="/marten/documentation">Documentation</a>
-		        </li>
-		        <li>
-		          <a href="/marten/migration_guide">Migration Guide</a>
-		        </li>
-		        <li>
-<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
-		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing/duplicated_fields" title="Duplicated Fields for Faster Querying">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/full_text" title="Full Text Indexes">Next</a></li>
-		      </ul>
-      <div class="navbar-form navbar-left" role="search">
-        <div class="form-group">
-          <input id="search" type="search" class="form-control" placeholder="Search">
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.6.1</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/documents/customizing/duplicated_fields" title="Duplicated Fields for Faster Querying">Previous</a></li>
+                <li><a href="/marten/documentation/documents/customizing/full_text" title="Full Text Indexes">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
         </div>
-      </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Foreign Keys</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
 
-		    </nav>
+            <div class="col-md-3" id="leftCol">
 
-		  </div>
-		</nav>
+                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/full_text">Full Text Indexes</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Foreign Keys <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/foreign_keys.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
-		  <div class="container">
-		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Foreign Keys</li></ol>
-		  	</nav>
-		  </div>
-
-		<!--main-->
-		<div class="container">
-			<div class="row">
-		      <!--left-->
-		      
-		      <div class="col-md-3" id="leftCol">
-			  
-				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
-		      	<br />
-
-				<ul class="nav nav-stacked affix" id="sidebar">
-
-		        </ul>
-
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/full_text">Full Text Indexes</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a></p>
-
-		        </ul>
-		      </div><!--/left-->
-		      
-		      <!--right-->
-		      <div class="col-md-9">
-			      	<h1>Foreign Keys <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/foreign_keys.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
-			      
-			      	<hr />
-
-			      	<div id="main-pane">
-			      		<!--title: Foreign Keys-->
+                <hr />
+                <div id="main-pane">
+                    <!--title: Foreign Keys-->
 <p>Marten <strong>is</strong> built on top of a relational database, so why not take advantage of those abilities
 where they still add value? In this case, Marten allows for a special kind of &quot;Searchable&quot; column
 that also adds a foreign key constraint to enforce referential integrity between document types.</p>
 <p>One of our sample document types in Marten is the <code>Issue</code> class that has
 a couple properties that link to the id's of related <code>User</code> documents:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string[] Tags { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Number { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? AssigneeId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? ReporterId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? BugId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string[] Tags { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;&#xD;&#xA;    public int Number { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? AssigneeId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? ReporterId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? BugId { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>If I want to enforce referential integrity between the <code>Issue</code> document and the <code>User</code> documents,
 I can use this syntax shown below to configure Marten:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(_ =&gt;&#xD;&#xA;         {&#xD;&#xA;             _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;             // In the following line of code, I&#x27;m setting&#xD;&#xA;             // up a foreign key relationship to the User document&#xD;&#xA;             _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId);&#xD;&#xA;         });&#xD;&#xA;</code></pre>
@@ -137,60 +127,46 @@ to enable this is to use a configuration function like:</p>
 <p>You can optionally configure properties or fields as foreign key relationships with the <code>[ForeignKey]</code> attribute:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [ForeignKey(typeof(User))]&#xD;&#xA;    public Guid UserId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? OtherUserId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
-			      	</div>
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/documents/customizing/full_text">Full Text Indexes</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+</body>
 
-			      	<hr />
+<foot>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
 
-			      	<nav class="related-links">
-				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a>
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
 
-				        </span>
-				        <span class="pull-right">
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/full_text">Full Text Indexes</a>
+                //alert(url);
 
-				        </span>
-			      	</nav>
+                window.location.href = url;
 
-		      </div><!--/right-->
-		  	</div><!--/row-->
-		</div><!--/container-->
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
 
-
-    </body>
-
-
-    <foot>
-        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
-
-<script>
-$('#search').keyup(function(e){
-  if(e.keyCode == 13) {
-    var search = $('#search').val();
-
-    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
-    url = encodeURI(url);
-
-    //alert(url);
-
-    window.location.href = url;
-
-    e.stopPropagation();
-    if (e.cancelBubble!=null) e.cancelBubble = true;
-    return false;
-  }
-
-
-
-}); 
-
-</script>
-    </foot>
+        });
+    </script>
+</foot>
 </html>
-

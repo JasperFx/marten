@@ -1,166 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <meta name="generator" content="Bootply" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Immutable projections as read model</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-        
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Immutable projections as read model</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
-        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
 
-        <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
-    </head>
-    
-    <!-- HTML code from Bootply.com editor -->
-    
-    <body  >
+<!-- HTML code from Bootply.com editor -->
 
-<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
-        
-        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
-		  <div class="container">
-		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.6.0</a>
-		    </div>
-		    <nav class="collapse navbar-collapse" role="navigation">
-		      <ul class="nav navbar-nav pull-right">
-            <li>
-              <a href="/marten/getting_started">Getting Started</a>
-            </li>
-		        <li>
-		          <a href="/marten/documentation">Documentation</a>
-		        </li>
-		        <li>
-		          <a href="/marten/migration_guide">Migration Guide</a>
-		        </li>
-		        <li>
-<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
-		        </li>
-		      	<li><a href="/marten/documentation/scenarios/copyandtransformstream" title="Copy and transform stream">Previous</a></li>
-		      	<li><a href="/marten/documentation/scenarios/usingsequenceforuniqueid" title="Using sequences for unique and human-readable identifiers">Next</a></li>
-		      </ul>
-      <div class="navbar-form navbar-left" role="search">
-        <div class="form-group">
-          <input id="search" type="search" class="form-control" placeholder="Search">
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.6.1</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/scenarios/copyandtransformstream" title="Copy and transform stream">Previous</a></li>
+                <li><a href="/marten/documentation/scenarios/usingsequenceforuniqueid" title="Using sequences for unique and human-readable identifiers">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
         </div>
-      </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/scenarios">Scenarios</a></li><li class="active">Immutable projections as read model</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
 
-		    </nav>
+            <div class="col-md-3" id="leftCol">
 
-		  </div>
-		</nav>
+                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/scenarios/usingsequenceforuniqueid">Using sequences for unique and human-readable identifiers</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios/copyandtransformstream">Copy and transform stream</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Immutable projections as read model <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/scenarios/immutable_projections_readmodel.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
-		  <div class="container">
-		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/scenarios">Scenarios</a></li><li class="active">Immutable projections as read model</li></ol>
-		  	</nav>
-		  </div>
-
-		<!--main-->
-		<div class="container">
-			<div class="row">
-		      <!--left-->
-		      
-		      <div class="col-md-3" id="leftCol">
-			  
-				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
-		      	<br />
-
-				<ul class="nav nav-stacked affix" id="sidebar">
-
-		        </ul>
-
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/scenarios/usingsequenceforuniqueid">Using sequences for unique and human-readable identifiers</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios/copyandtransformstream">Copy and transform stream</a></p>
-
-		        </ul>
-		      </div><!--/left-->
-		      
-		      <!--right-->
-		      <div class="col-md-9">
-			      	<h1>Immutable projections as read model <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/scenarios/immutable_projections_readmodel.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
-			      
-			      	<hr />
-
-			      	<div id="main-pane">
-			      		<!--Title: Immutable projections as read model-->
+                <hr />
+                <div id="main-pane">
+                    <!--Title: Immutable projections as read model-->
 <p>This use case demonstrates how to create immutable projections from event streams.</p>
 <h2 id="scenario">Scenario</h2>
 <p>To make projections immutable, the event application methods invoked by aggregators need to be made private, as well as any property setters.</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;    &#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestEnded ended)&#xD;&#xA;    {&#xD;&#xA;        Name = ended.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class AggregateWithPrivateEventApply&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; private set; }&#xD;&#xA;&#xD;&#xA;    private void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestEnded ended)&#xD;&#xA;    {&#xD;&#xA;        Name = ended.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; private set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>To run aggregators against such projections, aggregator lookup strategy is configured to use aggregators that look for private <code>Apply([Event Type])</code> methods. Furthermore, document deserialization is configured to look for private property setters, allowing hydration of the projected objects from the database.</p>
 <p>This can be done in the store configuration as follows:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var serializer = new JsonNetSerializer();&#xD;&#xA;serializer.Customize(c =&gt; c.ContractResolver = new ResolvePrivateSetters());&#xD;&#xA;options.Serializer(serializer);&#xD;&#xA;options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xD;&#xA;options.Events.InlineProjections.AggregateStreamsWith&lt;AggregateWithPrivateEventApply&gt;();&#xD;&#xA;</code></pre>
 <p>The serializer contract applied customises the default behaviour of the Json.NET serializer:</p>
-<pre><code class="language-csharp">&#xD;&#xA;internal class ResolvePrivateSetters : DefaultContractResolver&#xD;&#xA;{&#xD;&#xA;    protected override JsonProperty CreateProperty(&#xD;&#xA;        MemberInfo member,&#xD;&#xA;        MemberSerialization memberSerialization)&#xD;&#xA;    {            &#xD;&#xA;        var prop = base.CreateProperty(member, memberSerialization);&#xD;&#xA;&#xD;&#xA;        if (!prop.Writable)&#xD;&#xA;        {&#xD;&#xA;            var property = member as PropertyInfo;&#xD;&#xA;            if (property != null)&#xD;&#xA;            {&#xD;&#xA;                var hasPrivateSetter = property.GetSetMethod(true) != null;&#xD;&#xA;                prop.Writable = hasPrivateSetter;&#xD;&#xA;            }&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        return prop;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;internal class ResolvePrivateSetters: DefaultContractResolver&#xD;&#xA;{&#xD;&#xA;    protected override JsonProperty CreateProperty(&#xD;&#xA;        MemberInfo member,&#xD;&#xA;        MemberSerialization memberSerialization)&#xD;&#xA;    {&#xD;&#xA;        var prop = base.CreateProperty(member, memberSerialization);&#xD;&#xA;&#xD;&#xA;        if (!prop.Writable)&#xD;&#xA;        {&#xD;&#xA;            var property = member as PropertyInfo;&#xD;&#xA;            if (property != null)&#xD;&#xA;            {&#xD;&#xA;                var hasPrivateSetter = property.GetSetMethod(true) != null;&#xD;&#xA;                prop.Writable = hasPrivateSetter;&#xD;&#xA;            }&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        return prop;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
  
 Given the setup, a stream can now be projected using `AggregateWithPrivateEventApply` shown above. Furthermore, the created projection can be hydrated from the document store:
-<pre><code class="language-csharp">&#xD;&#xA;var quest = new QuestStarted {Name = &quot;Destroy the Ring&quot;};&#xD;&#xA;var questId = Guid.NewGuid();&#xD;&#xA;theSession.Events.StartStream&lt;QuestParty&gt;(questId, quest);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;var projection = theSession.Load&lt;AggregateWithPrivateEventApply&gt;(questId);&#xD;&#xA;projection.Name.ShouldBe(&quot;Destroy the Ring&quot;);&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var quest = new QuestStarted { Name = &quot;Destroy the Ring&quot; };&#xD;&#xA;var questId = Guid.NewGuid();&#xD;&#xA;theSession.Events.StartStream&lt;QuestParty&gt;(questId, quest);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;var projection = theSession.Load&lt;AggregateWithPrivateEventApply&gt;(questId);&#xD;&#xA;projection.Name.ShouldBe(&quot;Destroy the Ring&quot;);&#xD;&#xA;</code></pre>
 
-			      	</div>
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/scenarios/copyandtransformstream">Copy and transform stream</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/scenarios/usingsequenceforuniqueid">Using sequences for unique and human-readable identifiers</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+</body>
 
-			      	<hr />
+<foot>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
 
-			      	<nav class="related-links">
-				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/scenarios/copyandtransformstream">Copy and transform stream</a>
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
 
-				        </span>
-				        <span class="pull-right">
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
 
-				        	<strong>Next: </strong><a href="/marten/documentation/scenarios/usingsequenceforuniqueid">Using sequences for unique and human-readable identifiers</a>
+                //alert(url);
 
-				        </span>
-			      	</nav>
+                window.location.href = url;
 
-		      </div><!--/right-->
-		  	</div><!--/row-->
-		</div><!--/container-->
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
 
-
-    </body>
-
-
-    <foot>
-        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
-
-<script>
-$('#search').keyup(function(e){
-  if(e.keyCode == 13) {
-    var search = $('#search').val();
-
-    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
-    url = encodeURI(url);
-
-    //alert(url);
-
-    window.location.href = url;
-
-    e.stopPropagation();
-    if (e.cancelBubble!=null) e.cancelBubble = true;
-    return false;
-  }
-
-
-
-}); 
-
-</script>
-    </foot>
+        });
+    </script>
+</foot>
 </html>
-

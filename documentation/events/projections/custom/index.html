@@ -1,99 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <meta name="generator" content="Bootply" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Custom Projections</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-        
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Custom Projections</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
-        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
 
-        <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
-    </head>
-    
-    <!-- HTML code from Bootply.com editor -->
-    
-    <body  >
+<!-- HTML code from Bootply.com editor -->
 
-<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
-        
-        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
-		  <div class="container">
-		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.6.0</a>
-		    </div>
-		    <nav class="collapse navbar-collapse" role="navigation">
-		      <ul class="nav navbar-nav pull-right">
-            <li>
-              <a href="/marten/getting_started">Getting Started</a>
-            </li>
-		        <li>
-		          <a href="/marten/documentation">Documentation</a>
-		        </li>
-		        <li>
-		          <a href="/marten/migration_guide">Migration Guide</a>
-		        </li>
-		        <li>
-<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
-		        </li>
-		      	<li><a href="/marten/documentation/events/projections/async_daemon" title="Async Projections Daemon">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/projections/projectionbyeventtype" title="Projecting by Event Type">Next</a></li>
-		      </ul>
-      <div class="navbar-form navbar-left" role="search">
-        <div class="form-group">
-          <input id="search" type="search" class="form-control" placeholder="Search">
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.6.1</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/events/projections/async_daemon" title="Async Projections Daemon">Previous</a></li>
+                <li><a href="/marten/documentation/events/projections/projectionbyeventtype" title="Projecting by Event Type">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
         </div>
-      </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li><a href="/marten/documentation/events/projections">Projections</a></li><li class="active">Custom Projections</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
 
-		    </nav>
+            <div class="col-md-3" id="leftCol">
 
-		  </div>
-		</nav>
+                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/projections/projectionbyeventtype">Projecting by Event Type</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Custom Projections <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/projections/custom.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
-		  <div class="container">
-		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li><a href="/marten/documentation/events/projections">Projections</a></li><li class="active">Custom Projections</li></ol>
-		  	</nav>
-		  </div>
-
-		<!--main-->
-		<div class="container">
-			<div class="row">
-		      <!--left-->
-		      
-		      <div class="col-md-3" id="leftCol">
-			  
-				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
-		      	<br />
-
-				<ul class="nav nav-stacked affix" id="sidebar">
-
-		        </ul>
-
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/projections/projectionbyeventtype">Projecting by Event Type</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></p>
-
-		        </ul>
-		      </div><!--/left-->
-		      
-		      <!--right-->
-		      <div class="col-md-9">
-			      	<h1>Custom Projections <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/projections/custom.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
-			      
-			      	<hr />
-
-			      	<div id="main-pane">
-			      		<!--Title: Custom Projections-->
+                <hr />
+                <div id="main-pane">
+                    <!--Title: Custom Projections-->
 <h2 id="multistream-projections-using-viewprojection">Multistream Projections using ViewProjection</h2>
 <p>The <code>ViewProjection</code> class is an implementation of the <code>IProjection</code> that can handle building a projection from multiple streams.</p>
 <p>This can be setup from configuration like:</p>
@@ -101,70 +91,90 @@
  
 or through a class like: 
  
-<pre><code class="language-csharp">&#xD;&#xA;public class PersistViewProjection : ViewProjection&lt;PersistedView, Guid&gt;&#xD;&#xA;{&#xD;&#xA;    public PersistViewProjection()&#xD;&#xA;    {&#xD;&#xA;        ProjectEvent&lt;QuestStarted&gt;(Persist);&#xD;&#xA;        ProjectEvent&lt;MembersJoined&gt;(e =&gt; e.QuestId, Persist);&#xD;&#xA;        ProjectEvent&lt;MonsterSlayed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id, Persist);&#xD;&#xA;        DeleteEvent&lt;QuestEnded&gt;();&#xD;&#xA;        DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId);&#xD;&#xA;        DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void Persist&lt;T&gt;(PersistedView view, T @event)&#xD;&#xA;    {&#xD;&#xA;        view.Events.Add(@event);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xD;&#xA;public class PersistViewProjection: ViewProjection&lt;PersistedView, Guid&gt;&#xD;&#xA;{&#xD;&#xA;    public PersistViewProjection()&#xD;&#xA;    {&#xD;&#xA;        ProjectEvent&lt;QuestStarted&gt;(Persist);&#xD;&#xA;        ProjectEvent&lt;MembersJoined&gt;(e =&gt; e.QuestId, Persist);&#xD;&#xA;        ProjectEvent&lt;MonsterSlayed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id, Persist);&#xD;&#xA;        DeleteEvent&lt;QuestEnded&gt;();&#xD;&#xA;        DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId);&#xD;&#xA;        DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void Persist&lt;T&gt;(PersistedView view, T @event)&#xD;&#xA;    {&#xD;&#xA;        view.Events.Add(@event);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre> 
  
-`ProjectEvent` and `DeleteEvent` can operate on events that need a single or multiple Ids operated on. With `ProjectEvent` if a `List<TId>` is passed, the handler method will be called for each Id in the collection. With `DeleteEvent` if a `List<TId>` is passed, then each document tied to the Id in the collection will be removed. Each of these methods take various overloads that allow selecting the Id field implicitly, through a property or through two different Funcs `Func<IDocumentSession, TEvent, TId>` and `Func<TEvent, TId>`. 
- 
-If additional Marten event details are needed, then events can use the `ProjectionEvent<>` generic when setting them up with `ProjectEvent`. `ProjectionEvent` exposes the Marten Id, Version, Timestamp and Data.
-<p>Projections are created during the DocumentStore creation by default. Marten gives also possible to register them with factory method. With such registration projections are created on runtime during the events application. Thanks to that it's possible to setup custom creation logic or event connect dependency injection mechanism.</p>
+<p><code>ProjectEvent</code> by default takes two parameters:</p>
+<ul>
+<li>property from event that will be used as projection document selector,</li>
+<li>apply method that describes the projection by itself.</li>
+</ul>
+<p><code>DeleteEvent</code> takes the first parameter - as by the nature of this method it's only needed to select which document should be deleted.</p>
+<p>Both methods may also select multiple Ids:</p>
+<ul>
+<li><code>ProjectEvent</code> if a <code>List&lt;TId&gt;</code> is passed, the handler method will be called for each Id in the collection.</li>
+<li><code>DeleteEvent</code> if a <code>List&lt;TId&gt;</code> is passed, then each document tied to the Id in the collection will be removed.</li>
+</ul>
+<p>Each of these methods take various overloads that allow selecting the Id field implicitly, through a property or through two different Funcs <code>Func&lt;IDocumentSession, TEvent, TId&gt;</code> and <code>Func&lt;TEvent, TId&gt;</code>.</p>
+<div class="alert alert-warning">
+<b><u>Warning:</u></b>
+<br />
+Projection class needs to have:
+<ul>
+<li>public default constructor,</li>
+<li><b>Id</b> property with public getter or setter.</li>
+</ul>
+It comes of the way how Marten handles projection mechanism:
+<br />
+<ol>
+<li>Try to find document that has the same <b>Id</b> as the value of the property selected from event (so eg. for <b>UserCreated</b> event it will be <b>UserId</b>).</li>
+<li>If such document exists, then new record needs to be created. It's done using <b>default constructor</b>.</li>
+<li>If document with such <b>Id</b> was found then it's being loaded from database.</li>
+<li>Document is updated with the defined in <b>ViewProjection</b> logic (using expression from second <b>ProjectEvent</b> parameter).</li>
+<li>Created or updated document is upserted to database.</li>
+</div>
+<h3 id="using-event-meta-data">Using event meta data</h3>
+<p>If additional Marten event details are needed, then events can use the <code>ProjectionEvent&lt;&gt;</code> generic when setting them up with <code>ProjectEvent</code>. <code>ProjectionEvent</code> exposes the Marten Id, Version, Timestamp and Data.</p>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;public class Lap&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public DateTimeOffset? Start { get; set; }&#xD;&#xA;&#xD;&#xA;    public DateTimeOffset? End { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class LapStarted&#xD;&#xA;{&#xD;&#xA;    public Guid LapId { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class LapFinished&#xD;&#xA;{&#xD;&#xA;    public Guid LapId { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class LapViewProjection: ViewProjection&lt;Lap, Guid&gt;&#xD;&#xA;{&#xD;&#xA;    public LapViewProjection()&#xD;&#xA;    {&#xD;&#xA;        ProjectEvent&lt;ProjectionEvent&lt;LapStarted&gt;&gt;(e =&gt; e.Data.LapId, Persist);&#xD;&#xA;        ProjectEvent&lt;ProjectionEvent&lt;LapFinished&gt;&gt;(e =&gt; e.Data.LapId, Persist);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void Persist(Lap view, ProjectionEvent&lt;LapStarted&gt; eventData)&#xD;&#xA;    {&#xD;&#xA;        view.Start = eventData.Timestamp;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void Persist(Lap view, ProjectionEvent&lt;LapFinished&gt; eventData)&#xD;&#xA;    {&#xD;&#xA;        view.End = eventData.Timestamp;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<h3 id="injecting-helpers-classes">Injecting helpers classes</h3>
+<p>ViewProjections instances are created (by default) during the <code>DocumentStore</code> initialization. Marten gives also possible to register them with factory method. With such registration projections are created on runtime during the events application. Thanks to that it's possible to setup custom creation logic or event connect dependency injection mechanism.</p>
 <pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;    _.Events.InlineProjections.Add(() =&gt; new PersistViewProjectionWithInjection(logger));&#xD;&#xA;});&#xD;&#xA;</code></pre> 
 <p>By convention it's needed to provide the default constructor with projections definition and other with code injection (that calls the default constructor).</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class PersistViewProjectionWithInjection : PersistViewProjection&#xD;&#xA;{&#xD;&#xA;    private readonly Logger logger;&#xD;&#xA;&#xD;&#xA;    public PersistViewProjectionWithInjection() : base()&#xD;&#xA;    {&#xD;&#xA;        ProjectEvent&lt;QuestPaused&gt;(@event =&gt; @event.QuestId, LogAndPersist);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public PersistViewProjectionWithInjection(Logger logger) : this()&#xD;&#xA;    {&#xD;&#xA;        this.logger = logger;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void LogAndPersist&lt;T&gt;(PersistedView view, T @event)&#xD;&#xA;    {&#xD;&#xA;        logger.Log($&quot;Handled {typeof(T).Name} event: {@event.ToString()}&quot;);&#xD;&#xA;        view.Events.Add(@event);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xD;&#xA;public class PersistViewProjectionWithInjection: PersistViewProjection&#xD;&#xA;{&#xD;&#xA;    private readonly Logger logger;&#xD;&#xA;&#xD;&#xA;    public PersistViewProjectionWithInjection() : base()&#xD;&#xA;    {&#xD;&#xA;        ProjectEvent&lt;QuestPaused&gt;(@event =&gt; @event.QuestId, LogAndPersist);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public PersistViewProjectionWithInjection(Logger logger) : this()&#xD;&#xA;    {&#xD;&#xA;        this.logger = logger;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void LogAndPersist&lt;T&gt;(PersistedView view, T @event)&#xD;&#xA;    {&#xD;&#xA;        logger.Log($&quot;Handled {typeof(T).Name} event: {@event.ToString()}&quot;);&#xD;&#xA;        view.Events.Add(@event);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre> 
+<h3 id="using-async-projections">Using async projections</h3>
+<p>It's also possible to use async version of <code>ProjectEvent</code>. Using <code>ProjectEventAsync</code> gives possibility to call the async apis (from Marten or other frameworks) to get better resources utilization.</p>
+<p>Sample usage could be loading other document/projection to create denormalized view.</p>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;// Customer main aggregate&#xD;&#xA;public class Customer&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public string FullName { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Event informing that customer full name was updated&#xD;&#xA;public class CustomerFullNameUpdated&#xD;&#xA;{&#xD;&#xA;    public Guid CustomerId { get; set; }&#xD;&#xA;&#xD;&#xA;    public string FullName { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Bank Account main aggregate&#xD;&#xA;public class BankAccount&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    // normalized reference with id to related aggregate&#xD;&#xA;    public Guid CustomerId { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;//Bank Account created event with normalized data&#xD;&#xA;public class BankAccountCreated&#xD;&#xA;{&#xD;&#xA;    public Guid BankAccountId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid CustomerId { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Denormalized read model with full data of related document&#xD;&#xA;public class BankAccountView&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    // Full info about customer instead of just CustomerId&#xD;&#xA;    public Customer Customer { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Number { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class BankAccountViewProjection: ViewProjection&lt;BankAccountView, Guid&gt;&#xD;&#xA;{&#xD;&#xA;    public BankAccountViewProjection()&#xD;&#xA;    {&#xD;&#xA;        ProjectEventAsync&lt;BankAccountCreated&gt;(e =&gt; e.BankAccountId, PersistAsync);&#xD;&#xA;&#xD;&#xA;        // one customer might have more than one account&#xD;&#xA;        Func&lt;IDocumentSession, CustomerFullNameUpdated, List&lt;Guid&gt;&gt; selectCustomerBankAccountIds =&#xD;&#xA;            (ds, @event) =&gt; ds.Query&lt;BankAccountView&gt;()&#xD;&#xA;                              .Where(a =&gt; a.Customer.Id == @event.CustomerId)&#xD;&#xA;                              .Select(a =&gt; a.Id).ToList();&#xD;&#xA;&#xD;&#xA;        ProjectEvent&lt;CustomerFullNameUpdated&gt;(selectCustomerBankAccountIds, Persist);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private async Task PersistAsync&#xD;&#xA;    (&#xD;&#xA;        IDocumentSession documentSession,&#xD;&#xA;        BankAccountView view,&#xD;&#xA;        BankAccountCreated @event&#xD;&#xA;    )&#xD;&#xA;    {&#xD;&#xA;        // load asynchronously document to use it in denormalized view&#xD;&#xA;        var customer = await documentSession.LoadAsync&lt;Customer&gt;(@event.CustomerId);&#xD;&#xA;&#xD;&#xA;        view.Customer = customer;&#xD;&#xA;        view.Number = @event.Number;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private void Persist(BankAccountView view, CustomerFullNameUpdated @event)&#xD;&#xA;    {&#xD;&#xA;        view.Customer.FullName = @event.FullName;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre> 
 
-			      	</div>
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/events/projections/projectionbyeventtype">Projecting by Event Type</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+</body>
 
-			      	<hr />
+<foot>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
 
-			      	<nav class="related-links">
-				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a>
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
 
-				        </span>
-				        <span class="pull-right">
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/projections/projectionbyeventtype">Projecting by Event Type</a>
+                //alert(url);
 
-				        </span>
-			      	</nav>
+                window.location.href = url;
 
-		      </div><!--/right-->
-		  	</div><!--/row-->
-		</div><!--/container-->
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
 
-
-    </body>
-
-
-    <foot>
-        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
-
-<script>
-$('#search').keyup(function(e){
-  if(e.keyCode == 13) {
-    var search = $('#search').val();
-
-    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
-    url = encodeURI(url);
-
-    //alert(url);
-
-    window.location.href = url;
-
-    e.stopPropagation();
-    if (e.cancelBubble!=null) e.cancelBubble = true;
-    return false;
-  }
-
-
-
-}); 
-
-</script>
-    </foot>
+        });
+    </script>
+</foot>
 </html>
-

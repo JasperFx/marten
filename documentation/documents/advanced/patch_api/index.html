@@ -1,99 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <meta name="generator" content="Bootply" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - The Patching API</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-        
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - The Patching API</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
-        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
 
-        <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
-    </head>
-    
-    <!-- HTML code from Bootply.com editor -->
-    
-    <body  >
+<!-- HTML code from Bootply.com editor -->
 
-<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
-        
-        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
-		  <div class="container">
-		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.6.0</a>
-		    </div>
-		    <nav class="collapse navbar-collapse" role="navigation">
-		      <ul class="nav navbar-nav pull-right">
-            <li>
-              <a href="/marten/getting_started">Getting Started</a>
-            </li>
-		        <li>
-		          <a href="/marten/documentation">Documentation</a>
-		        </li>
-		        <li>
-		          <a href="/marten/migration_guide">Migration Guide</a>
-		        </li>
-		        <li>
-<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
-		        </li>
-		      	<li><a href="/marten/documentation/documents/advanced/cleaning" title="Tearing Down Document Storage">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/diagnostics" title="Diagnostics and Instrumentation">Next</a></li>
-		      </ul>
-      <div class="navbar-form navbar-left" role="search">
-        <div class="form-group">
-          <input id="search" type="search" class="form-control" placeholder="Search">
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.6.1</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/documents/advanced/cleaning" title="Tearing Down Document Storage">Previous</a></li>
+                <li><a href="/marten/documentation/documents/diagnostics" title="Diagnostics and Instrumentation">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
         </div>
-      </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">The Patching API</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
 
-		    </nav>
+            <div class="col-md-3" id="leftCol">
 
-		  </div>
-		</nav>
+                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>The Patching API <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/patch_api.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
-		  <div class="container">
-		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/advanced">Advanced Topics</a></li><li class="active">The Patching API</li></ol>
-		  	</nav>
-		  </div>
-
-		<!--main-->
-		<div class="container">
-			<div class="row">
-		      <!--left-->
-		      
-		      <div class="col-md-3" id="leftCol">
-			  
-				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
-		      	<br />
-
-				<ul class="nav nav-stacked affix" id="sidebar">
-
-		        </ul>
-
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a></p>
-
-		        </ul>
-		      </div><!--/left-->
-		      
-		      <!--right-->
-		      <div class="col-md-9">
-			      	<h1>The Patching API <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/patch_api.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
-			      
-			      	<hr />
-
-			      	<div id="main-pane">
-			      		<!--Title:The Patching API-->
+                <hr />
+                <div id="main-pane">
+                    <!--Title:The Patching API-->
 <div class="alert alert-info">
 Using the Patching API in Marten requires the usage of Postgresql's <a href="https://github.com/plv8/plv8">PLV8 extension</a>.
 </div>
@@ -120,7 +110,7 @@ In all cases, the property or field being updated can be a deep accessor like <c
 <h2 id="setting-a-single-propertyfield">Setting a single Property/Field</h2>
 <p>The usage of <code>IDocumentSession.Patch().Set()</code> to change the value of a single persisted field is
 shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void set_an_immediate_property_by_id()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Number = 5;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Set(x =&gt; x.Number, 10);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(10);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;[Fact]&#xD;&#xA;public void set_an_immediate_property_by_id()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Number = 5;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Set(x =&gt; x.Number, 10);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(10);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="initialize-a-new-propertyfield">Initialize a new Property/Field</h2>
 <p>To initialize a new property on existing documents:</p>
 <pre><code class="language-csharp">&#xD;&#xA;const string where = &quot;where (data -&gt;&gt; &#x27;UpdatedAt&#x27;) is null&quot;;&#xD;&#xA;theSession.Query&lt;Target&gt;(where).Count.ShouldBe(3);&#xD;&#xA;theSession.Patch&lt;Target&gt;(new WhereFragment(where)).Set(&quot;UpdatedAt&quot;, DateTime.UtcNow);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;using (var query = theStore.QuerySession())&#xD;&#xA;{&#xD;&#xA;    query.Query&lt;Target&gt;(where).Count.ShouldBe(0);&#xD;&#xA;}&#xD;&#xA;</code></pre>
@@ -132,32 +122,32 @@ shown below:</p>
 <p>The new locations need not exist in the persisted document, null or absent parents will be initialized</p>
 <h2 id="incrementing-an-existing-value">Incrementing an Existing Value</h2>
 <p>To increment a persisted value in the persisted document, use this operation:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void increment_for_int()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    target.Number = 6;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(7);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void increment_for_int()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    target.Number = 6;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(7);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>By default, the <code>Patch.Increment()</code> operation will add 1 to the existing value. You can optionally override the increment:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void increment_for_int_with_explicit_increment()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    target.Number = 6;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number, 3);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(9);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void increment_for_int_with_explicit_increment()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    target.Number = 6;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Increment(x =&gt; x.Number, 3);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        query.Load&lt;Target&gt;(target.Id).Number.ShouldBe(9);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="append-an-element-to-a-child-collection">Append an Element to a Child Collection</h2>
 <p>The <code>Patch.Append()</code> operation adds a new item to the end of a child collection:</p>
-<pre><code class="language-csharp">&#xD;&#xA;    [Fact]&#xD;&#xA;public void append_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var child = Target.Random();&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Append(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount &#x2B; 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.Last().Id.ShouldBe(child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void append_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var child = Target.Random();&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Append(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount &#x2B; 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.Last().Id.ShouldBe(child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>The <code>Patch.AppendIfNotExists()</code> operation will treat the child collection as a set rather than a list and only append the element if it does not already exist within the collection</p>
 <p>Marten can append either complex, value object values or primitives like numbers or strings.</p>
 <h2 id="insert-an-element-into-a-child-collection">Insert an Element into a Child Collection</h2>
 <p>Instead of appending an item to the end of a child collection, the <code>Patch.Insert()</code> operation allows you
 to insert a new item into a persisted collection with a given index -- with the default index
 being 0 so that a new item would be inserted at the beginning of the child collection.</p>
-<pre><code class="language-csharp">&#xD;&#xA;    [Fact]&#xD;&#xA;public void insert_first_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var child = Target.Random();&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Insert(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount &#x2B; 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.First().Id.ShouldBe(child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void insert_first_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var child = Target.Random();&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Insert(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount &#x2B; 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.First().Id.ShouldBe(child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>The <code>Patch.InsertIfNotExists()</code> operation will only insert the element if the element at the designated index does not already exist.</p>
 <h2 id="remove-an-element-from-a-child-collection">Remove an Element from a Child Collection</h2>
 <p>The <code>Patch.Remove()</code> operation removes the given item from a child collection:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_primitive_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    var initialCount = target.NumberArray.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.NumberArray[random.Next(0, initialCount)];&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.NumberArray.Length.ShouldBe(initialCount - 1);&#xD;&#xA;&#xD;&#xA;        target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.ExceptFirst(child));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Removing complex items can also be accomplished, matching is performed on all fields:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.Children[random.Next(0, initialCount)];&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount - 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.ShouldNotContain(t =&gt; t.Id == child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_complex_element()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    var initialCount = target.Children.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.Children[random.Next(0, initialCount)];&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.Children, child);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Children.Length.ShouldBe(initialCount - 1);&#xD;&#xA;&#xD;&#xA;        target2.Children.ShouldNotContain(t =&gt; t.Id == child.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>To remove reoccurring values from a collection specify <code>RemoveAction.RemoveAll</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_repeated_primitive_elements()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    var initialCount = target.NumberArray.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.NumberArray[random.Next(0, initialCount)];&#xD;&#xA;    var occurances = target.NumberArray.Count(e =&gt; e == child);&#xD;&#xA;    if (occurances &lt; 2)&#xD;&#xA;    {&#xD;&#xA;        target.NumberArray = target.NumberArray.Concat(new[] {child}).ToArray();&#xD;&#xA;        &#x2B;&#x2B;occurances;&#xD;&#xA;        &#x2B;&#x2B;initialCount;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child, RemoveAction.RemoveAll);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.NumberArray.Length.ShouldBe(initialCount - occurances);&#xD;&#xA;&#xD;&#xA;        target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] {child}));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void remove_repeated_primitive_elements()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random();&#xD;&#xA;    var initialCount = target.NumberArray.Length;&#xD;&#xA;&#xD;&#xA;    var random = new Random();&#xD;&#xA;    var child = target.NumberArray[random.Next(0, initialCount)];&#xD;&#xA;    var occurances = target.NumberArray.Count(e =&gt; e == child);&#xD;&#xA;    if (occurances &lt; 2)&#xD;&#xA;    {&#xD;&#xA;        target.NumberArray = target.NumberArray.Concat(new[] { child }).ToArray();&#xD;&#xA;        &#x2B;&#x2B;occurances;&#xD;&#xA;        &#x2B;&#x2B;initialCount;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Remove(x =&gt; x.NumberArray, child, RemoveAction.RemoveAll);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.NumberArray.Length.ShouldBe(initialCount - occurances);&#xD;&#xA;&#xD;&#xA;        target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] { child }));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="rename-a-propertyfield">Rename a Property/Field</h2>
 <p>In the case of changing the name of a property or field in your document type that's already persisted
 in your Marten database, you have the option to apply a patch that will move the value from the
 old name to the new name.</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void rename_deep_prop()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Inner.String = &quot;Foo&quot;;&#xD;&#xA;    target.Inner.AnotherString = &quot;Bar&quot;;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Rename(&quot;String&quot;, x =&gt; x.Inner.AnotherString);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Inner.AnotherString.ShouldBe(&quot;Foo&quot;);&#xD;&#xA;        target2.Inner.String.ShouldBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void rename_deep_prop()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Inner.String = &quot;Foo&quot;;&#xD;&#xA;    target.Inner.AnotherString = &quot;Bar&quot;;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Rename(&quot;String&quot;, x =&gt; x.Inner.AnotherString);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Inner.AnotherString.ShouldBe(&quot;Foo&quot;);&#xD;&#xA;        target2.Inner.String.ShouldBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Renaming can be used on nested values.</p>
 <h2 id="delete-a-propertyfield">Delete a Property/Field</h2>
 <p>The <code>Patch.Delete()</code> operation can be used to remove a persisted property or field without the need
@@ -171,60 +161,46 @@ to load, deserialize, edit and save all affected documents</p>
 <p>Many documents may be patched using a where expressions:</p>
 <pre><code class="language-csharp">&#xD;&#xA;const string where = &quot;(data -&gt;&gt; &#x27;String&#x27;) is not null&quot;;&#xD;&#xA;theSession.Query&lt;Target&gt;(where).Count.ShouldBe(15);&#xD;&#xA;theSession.Patch&lt;Target&gt;(new WhereFragment(where)).Delete(&quot;String&quot;);&#xD;&#xA;theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;using (var query = theStore.QuerySession())&#xD;&#xA;{&#xD;&#xA;    query.Query&lt;Target&gt;(where).Count(t =&gt; t.String != null).ShouldBe(0);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
-			      	</div>
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+</body>
 
-			      	<hr />
+<foot>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
 
-			      	<nav class="related-links">
-				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/advanced/cleaning">Tearing Down Document Storage</a>
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
 
-				        </span>
-				        <span class="pull-right">
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a>
+                //alert(url);
 
-				        </span>
-			      	</nav>
+                window.location.href = url;
 
-		      </div><!--/right-->
-		  	</div><!--/row-->
-		</div><!--/container-->
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
 
-
-    </body>
-
-
-    <foot>
-        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
-
-<script>
-$('#search').keyup(function(e){
-  if(e.keyCode == 13) {
-    var search = $('#search').val();
-
-    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
-    url = encodeURI(url);
-
-    //alert(url);
-
-    window.location.href = url;
-
-    e.stopPropagation();
-    if (e.cancelBubble!=null) e.cancelBubble = true;
-    return false;
-  }
-
-
-
-}); 
-
-</script>
-    </foot>
+        });
+    </script>
+</foot>
 </html>
-

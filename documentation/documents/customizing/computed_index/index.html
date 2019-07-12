@@ -1,99 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <meta name="generator" content="Bootply" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Calculated Index</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-        
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Calculated Index</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
-        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
 
-        <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
-    </head>
-    
-    <!-- HTML code from Bootply.com editor -->
-    
-    <body  >
+<!-- HTML code from Bootply.com editor -->
 
-<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
-        
-        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
-		  <div class="container">
-		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.6.0</a>
-		    </div>
-		    <nav class="collapse navbar-collapse" role="navigation">
-		      <ul class="nav navbar-nav pull-right">
-            <li>
-              <a href="/marten/getting_started">Getting Started</a>
-            </li>
-		        <li>
-		          <a href="/marten/documentation">Documentation</a>
-		        </li>
-		        <li>
-		          <a href="/marten/migration_guide">Migration Guide</a>
-		        </li>
-		        <li>
-<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
-		        </li>
-		      	<li><a href="/marten/documentation/documents/customizing" title="Customizing Document Storage">Previous</a></li>
-		      	<li><a href="/marten/documentation/documents/customizing/document_policies" title="Document Policies">Next</a></li>
-		      </ul>
-      <div class="navbar-form navbar-left" role="search">
-        <div class="form-group">
-          <input id="search" type="search" class="form-control" placeholder="Search">
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.6.1</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/documents/customizing" title="Customizing Document Storage">Previous</a></li>
+                <li><a href="/marten/documentation/documents/customizing/document_policies" title="Document Policies">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
         </div>
-      </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Calculated Index</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
 
-		    </nav>
+            <div class="col-md-3" id="leftCol">
 
-		  </div>
-		</nav>
+                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Calculated Index <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/computed_index.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
-		  <div class="container">
-		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Calculated Index</li></ol>
-		  	</nav>
-		  </div>
-
-		<!--main-->
-		<div class="container">
-			<div class="row">
-		      <!--left-->
-		      
-		      <div class="col-md-3" id="leftCol">
-			  
-				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
-		      	<br />
-
-				<ul class="nav nav-stacked affix" id="sidebar">
-
-		        </ul>
-
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></p>
-
-		        </ul>
-		      </div><!--/left-->
-		      
-		      <!--right-->
-		      <div class="col-md-9">
-			      	<h1>Calculated Index <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/configuration/computed_index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
-			      
-			      	<hr />
-
-			      	<div id="main-pane">
-			      		<!--Title: Calculated Index-->
+                <hr />
+                <div id="main-pane">
+                    <!--Title: Calculated Index-->
 <div class="alert alert-info">
 Calculated indexes are a great way to optimize the querying of a document type without incurring
 potentially expensive schema changes and extra runtime insert costs.
@@ -105,7 +95,7 @@ to resort to a duplicated field for these types.
 <p>If you want to optimize a document type for searches on a certain field within the JSON body without
 incurring the potential cost of the duplicated field, you can take advantage of Postgresql's
 <a href="https://www.postgresql.org/docs/9.5/static/indexes-expressional.html">computed index feature</a> within Marten with this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates &#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;        &#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // Postgresql will be able to use the computed&#xD;&#xA;    // index generated from above&#xD;&#xA;    var somebody = session.Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.UserName == &quot;somebody&quot;)&#xD;&#xA;        .FirstOrDefault();&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // Postgresql will be able to use the computed&#xD;&#xA;    // index generated from above&#xD;&#xA;    var somebody = session.Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.UserName == &quot;somebody&quot;)&#xD;&#xA;        .FirstOrDefault();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>In the configuration shown above, Marten generates a database index in Postgresql:</p>
 <pre>
 CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserName'));
@@ -125,62 +115,48 @@ CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btr
 <h2 id="customizing-a-calculated-index">Customizing a Calculated Index</h2>
 <p>You have some ability to customize the calculated index by passing a second Lambda <code>Action</code> into
 the <code>Index()</code> method as shown below:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // The second, optional argument to Index()&#xD;&#xA;    // allows you to customize the calculated index&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.Method = IndexMethod.brin;&#xD;&#xA;&#xD;&#xA;        // Force the index to be generated with casing rules&#xD;&#xA;        x.Casing = ComputedIndex.Casings.Lower;&#xD;&#xA;&#xD;&#xA;        // Override the index name if you want&#xD;&#xA;        x.IndexName = &quot;mt_my_name&quot;;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is concurrent&#xD;&#xA;        // Default is false&#xD;&#xA;        x.IsConcurrent = true;&#xD;&#xA;&#xD;&#xA;        // Toggle whether or not the index is a UNIQUE&#xD;&#xA;        // index&#xD;&#xA;        x.IsUnique = true;&#xD;&#xA;        &#xD;&#xA;        // Partial index by supplying a condition&#xD;&#xA;        x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xD;&#xA;    });&#xD;&#xA;    &#xD;&#xA;    // For B-tree indexes, it&#x27;s also possible to change&#xD;&#xA;    // the sort order from the default of &quot;ascending&quot;&#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.LastName, x =&gt;&#xD;&#xA;    {&#xD;&#xA;        // Change the index method to &quot;brin&quot;&#xD;&#xA;        x.SortOrder = SortOrder.Desc;&#xD;&#xA;    });&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // The second, optional argument to Index()&#xD;&#xA;    // allows you to customize the calculated index&#xD;&#xA;    _.Schema.For&lt;Target&gt;().Index(x =&gt; x.Number, x =&gt;&#xD;&#xA;            {&#xD;&#xA;                // Change the index method to &quot;brin&quot;&#xD;&#xA;                x.Method = IndexMethod.brin;&#xD;&#xA;&#xD;&#xA;                // Force the index to be generated with casing rules&#xD;&#xA;                x.Casing = ComputedIndex.Casings.Lower;&#xD;&#xA;&#xD;&#xA;                // Override the index name if you want&#xD;&#xA;                x.IndexName = &quot;mt_my_name&quot;;&#xD;&#xA;&#xD;&#xA;                // Toggle whether or not the index is concurrent&#xD;&#xA;                // Default is false&#xD;&#xA;                x.IsConcurrent = true;&#xD;&#xA;&#xD;&#xA;                // Toggle whether or not the index is a UNIQUE&#xD;&#xA;                // index&#xD;&#xA;                x.IsUnique = true;&#xD;&#xA;&#xD;&#xA;                // Partial index by supplying a condition&#xD;&#xA;                x.Where = &quot;(data -&gt;&gt; &#x27;Number&#x27;)::int &gt; 10&quot;;&#xD;&#xA;            });&#xD;&#xA;&#xD;&#xA;    // For B-tree indexes, it&#x27;s also possible to change&#xD;&#xA;    // the sort order from the default of &quot;ascending&quot;&#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.LastName, x =&gt;&#xD;&#xA;            {&#xD;&#xA;                // Change the index method to &quot;brin&quot;&#xD;&#xA;                x.SortOrder = SortOrder.Desc;&#xD;&#xA;            });&#xD;&#xA;});&#xD;&#xA;</code></pre>
 
-			      	</div>
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+</body>
 
-			      	<hr />
+<foot>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
 
-			      	<nav class="related-links">
-				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a>
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
 
-				        </span>
-				        <span class="pull-right">
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
 
-				        	<strong>Next: </strong><a href="/marten/documentation/documents/customizing/document_policies">Document Policies</a>
+                //alert(url);
 
-				        </span>
-			      	</nav>
+                window.location.href = url;
 
-		      </div><!--/right-->
-		  	</div><!--/row-->
-		</div><!--/container-->
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
 
-
-    </body>
-
-
-    <foot>
-        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
-
-<script>
-$('#search').keyup(function(e){
-  if(e.keyCode == 13) {
-    var search = $('#search').val();
-
-    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
-    url = encodeURI(url);
-
-    //alert(url);
-
-    window.location.href = url;
-
-    e.stopPropagation();
-    if (e.cancelBubble!=null) e.cancelBubble = true;
-    return false;
-  }
-
-
-
-}); 
-
-</script>
-    </foot>
+        });
+    </script>
+</foot>
 </html>
-

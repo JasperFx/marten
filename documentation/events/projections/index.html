@@ -1,99 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8"> 
-        <meta charset="utf-8">
-        <meta name="generator" content="Bootply" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>Marten - Projections</title>
-		<link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-		<link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
-        
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Projections</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
-        <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
 
-        <!-- CSS code from Bootply.com editor -->
-        <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
-    </head>
-    
-    <!-- HTML code from Bootply.com editor -->
-    
-    <body  >
+<!-- HTML code from Bootply.com editor -->
 
-<a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
-        
-        <nav class="navbar navbar-default navbar-fixed-top" role="banner">
-		  <div class="container">
-		    <div class="navbar-header">
-		      <a href="/marten" class="navbar-brand">Marten 3.6.0</a>
-		    </div>
-		    <nav class="collapse navbar-collapse" role="navigation">
-		      <ul class="nav navbar-nav pull-right">
-            <li>
-              <a href="/marten/getting_started">Getting Started</a>
-            </li>
-		        <li>
-		          <a href="/marten/documentation">Documentation</a>
-		        </li>
-		        <li>
-		          <a href="/marten/migration_guide">Migration Guide</a>
-		        </li>
-		        <li>
-<a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
-		        </li>
-		      	<li><a href="/marten/documentation/events/streams" title="Querying Event and Stream Data">Previous</a></li>
-		      	<li><a href="/marten/documentation/events/projections/async_daemon" title="Async Projections Daemon">Next</a></li>
-		      </ul>
-      <div class="navbar-form navbar-left" role="search">
-        <div class="form-group">
-          <input id="search" type="search" class="form-control" placeholder="Search">
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.6.1</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/events/streams" title="Querying Event and Stream Data">Previous</a></li>
+                <li><a href="/marten/documentation/events/projections/async_daemon" title="Async Projections Daemon">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
         </div>
-      </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li class="active">Projections</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
 
-		    </nav>
+            <div class="col-md-3" id="leftCol">
 
-		  </div>
-		</nav>
+                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Projections <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/projections/index.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
-		  <div class="container">
-		  	<nav class="navbar-inverse">
-		  		<ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li class="active">Projections</li></ol>
-		  	</nav>
-		  </div>
-
-		<!--main-->
-		<div class="container">
-			<div class="row">
-		      <!--left-->
-		      
-		      <div class="col-md-3" id="leftCol">
-			  
-				<img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle"/>
-		      	<br />
-
-				<ul class="nav nav-stacked affix" id="sidebar">
-
-		        </ul>
-
-		        	<h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a></p>
-		        	<h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></p>
-
-		        </ul>
-		      </div><!--/left-->
-		      
-		      <!--right-->
-		      <div class="col-md-9">
-			      	<h1>Projections <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/projections/index.md"  class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
-			      
-			      	<hr />
-
-			      	<div id="main-pane">
-			      		<!--Title:Projections-->
+                <hr />
+                <div id="main-pane">
+                    <!--Title:Projections-->
 <!--Url:projections-->
 <div class="alert alert-info">
 The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime, don't forget to just look through the code and our unit tests.
@@ -109,22 +99,22 @@ The Marten community is working to create more samples of event store projection
 </ul>
 <h2 id="transformations">Transformations</h2>
 <p>Transformations project from one event type to one document. If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net <code>ITransform</code> interface:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public interface ITransform&lt;TEvent, TView&gt;&#xD;&#xA;{&#xD;&#xA;    TView Transform(EventStream stream, Event&lt;TEvent&gt; input);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public interface ITransform&lt;TEvent, TView&gt;&#xD;&#xA;{&#xD;&#xA;    TView Transform(EventStream stream, Event&lt;TEvent&gt; input);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>As a sample problem, let's say that we're constantly capturing <code>MonsterSlayed</code> events and our system needs to query just this data. You could query directly against the large <code>mt_events</code> table with
 <code>IEventStore.Query&lt;MonsterSlayed&gt;()</code>, but it would be more efficient to keep a separate &quot;read side&quot; copy of this data in a new data collection. We could build a new transform class and readside document like this:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class MonsterDefeatedTransform : ITransform&lt;MonsterSlayed, MonsterDefeated&gt;&#xD;&#xA;{&#xD;&#xA;    public MonsterDefeated Transform(EventStream stream, Event&lt;MonsterSlayed&gt; input)&#xD;&#xA;    {&#xD;&#xA;        return new MonsterDefeated&#xD;&#xA;        {&#xD;&#xA;            Id = input.Id,&#xD;&#xA;            Monster = input.Data.Name&#xD;&#xA;        };&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class MonsterDefeated&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string Monster { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class MonsterDefeatedTransform: ITransform&lt;MonsterSlayed, MonsterDefeated&gt;&#xD;&#xA;{&#xD;&#xA;    public MonsterDefeated Transform(EventStream stream, Event&lt;MonsterSlayed&gt; input)&#xD;&#xA;    {&#xD;&#xA;        return new MonsterDefeated&#xD;&#xA;        {&#xD;&#xA;            Id = input.Id,&#xD;&#xA;            Monster = input.Data.Name&#xD;&#xA;        };&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class MonsterDefeated&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string Monster { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Now, we can plug our new transform type above as a projection when we configure our document store like this:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());&#xD;&#xA;});&#xD;&#xA;</code></pre>
-<pre><code class="language-csharp">&#xD;&#xA;public void using_live_transformed_events(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var started = new QuestStarted { Name = &quot;Find the Orb&quot; };&#xD;&#xA;    var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#x27;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };&#xD;&#xA;    var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };&#xD;&#xA;    var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };&#xD;&#xA;&#xD;&#xA;    MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // Our MonsterDefeated documents are created inline&#xD;&#xA;    // with the SaveChanges() call above and are available&#xD;&#xA;    // for querying&#xD;&#xA;    session.Query&lt;MonsterDefeated&gt;().Count()&#xD;&#xA;        .ShouldBe(2);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public void using_live_transformed_events(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var started = new QuestStarted { Name = &quot;Find the Orb&quot; };&#xD;&#xA;    var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#x27;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };&#xD;&#xA;    var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };&#xD;&#xA;    var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };&#xD;&#xA;&#xD;&#xA;    MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };&#xD;&#xA;&#xD;&#xA;    session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // Our MonsterDefeated documents are created inline&#xD;&#xA;    // with the SaveChanges() call above and are available&#xD;&#xA;    // for querying&#xD;&#xA;    session.Query&lt;MonsterDefeated&gt;().Count()&#xD;&#xA;        .ShouldBe(2);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="aggregates">Aggregates</h2>
 <p>Aggregates condense data described by a single stream. As of v1.0, Marten only supports aggregation via .Net classes. Aggregates are calculated upon every request by running the event stream through them, as compared to inline projections, which are computed at event commit time and stored as documents.</p>
 <p>The out-of-the box convention is to expose <code>public Apply([Event Type])</code> methods on your aggregate class to do all incremental updates to an aggregate object. This can be customised using <a href="#aggregator-lookup">AggregatorLookup</a>.</p>
 <p>Sticking with the fantasy theme, the <code>QuestParty</code> class shown below could be used to aggregate streams of quest data:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class QuestParty&#xD;&#xA;{&#xD;&#xA;    protected readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public string[] Members&#xD;&#xA;    {&#xD;&#xA;        get&#xD;&#xA;        {&#xD;&#xA;            return _members.ToArray();&#xD;&#xA;        }&#xD;&#xA;        set&#xD;&#xA;        {&#xD;&#xA;            _members.Clear();&#xD;&#xA;            _members.AddRange(value);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersJoined joined)&#xD;&#xA;    {&#xD;&#xA;        _members.Fill(joined.Members);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersDeparted departed)&#xD;&#xA;    {&#xD;&#xA;        _members.RemoveAll(x =&gt; departed.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    public string Key { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class QuestFinishingParty : QuestParty&#xD;&#xA;{&#xD;&#xA;    private readonly string _exMachina;&#xD;&#xA;&#xD;&#xA;    public QuestFinishingParty() { }&#xD;&#xA;&#xD;&#xA;    public QuestFinishingParty(string exMachina)&#xD;&#xA;    {&#xD;&#xA;        _exMachina = exMachina;&#xD;&#xA;    }&#xD;&#xA;    &#xD;&#xA;    public void Apply(MembersEscaped escaped)&#xD;&#xA;    {&#xD;&#xA;        if (_exMachina == null)&#xD;&#xA;        {&#xD;&#xA;            throw new NullReferenceException(&quot;Can&#x27;t escape w/o an Ex Machina&quot;);&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        _members.RemoveAll(x =&gt; escaped.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class QuestParty&#xD;&#xA;{&#xD;&#xA;    protected readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public string[] Members&#xD;&#xA;    {&#xD;&#xA;        get&#xD;&#xA;        {&#xD;&#xA;            return _members.ToArray();&#xD;&#xA;        }&#xD;&#xA;        set&#xD;&#xA;        {&#xD;&#xA;            _members.Clear();&#xD;&#xA;            _members.AddRange(value);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersJoined joined)&#xD;&#xA;    {&#xD;&#xA;        _members.Fill(joined.Members);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersDeparted departed)&#xD;&#xA;    {&#xD;&#xA;        _members.RemoveAll(x =&gt; departed.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(QuestStarted started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Key { get; set; }&#xD;&#xA;&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class QuestFinishingParty: QuestParty&#xD;&#xA;{&#xD;&#xA;    private readonly string _exMachina;&#xD;&#xA;&#xD;&#xA;    public QuestFinishingParty()&#xD;&#xA;    {&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public QuestFinishingParty(string exMachina)&#xD;&#xA;    {&#xD;&#xA;        _exMachina = exMachina;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(MembersEscaped escaped)&#xD;&#xA;    {&#xD;&#xA;        if (_exMachina == null)&#xD;&#xA;        {&#xD;&#xA;            throw new NullReferenceException(&quot;Can&#x27;t escape w/o an Ex Machina&quot;);&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        _members.RemoveAll(x =&gt; escaped.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>New in Marten 1.2 is the ability to use <code>Event&lt;T&gt;</code> metadata within your projections, assuming that you're not trying to run the aggregations inline.</p>
 <p>The syntax using the built in aggregation technique is to take in <code>Event&lt;T&gt;</code> as the argument to your <code>Apply(event)</code> methods,
 where <code>T</code> is the event type you're interested in:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class QuestPartyWithEvents&#xD;&#xA;{&#xD;&#xA;    private readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public string[] Members&#xD;&#xA;    {&#xD;&#xA;        get&#xD;&#xA;        {&#xD;&#xA;            return _members.ToArray();&#xD;&#xA;        }&#xD;&#xA;        set&#xD;&#xA;        {&#xD;&#xA;            _members.Clear();&#xD;&#xA;            _members.AddRange(value);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public void Apply(Event&lt;MembersJoined&gt; joined)&#xD;&#xA;    {&#xD;&#xA;        _members.Fill(joined.Data.Members);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(Event&lt;MembersDeparted&gt; departed)&#xD;&#xA;    {&#xD;&#xA;        _members.RemoveAll(x =&gt; departed.Data.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(Event&lt;QuestStarted&gt; started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Data.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class QuestPartyWithEvents&#xD;&#xA;{&#xD;&#xA;    private readonly IList&lt;string&gt; _members = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public string[] Members&#xD;&#xA;    {&#xD;&#xA;        get&#xD;&#xA;        {&#xD;&#xA;            return _members.ToArray();&#xD;&#xA;        }&#xD;&#xA;        set&#xD;&#xA;        {&#xD;&#xA;            _members.Clear();&#xD;&#xA;            _members.AddRange(value);&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IList&lt;string&gt; Slayed { get; } = new List&lt;string&gt;();&#xD;&#xA;&#xD;&#xA;    public void Apply(Event&lt;MembersJoined&gt; joined)&#xD;&#xA;    {&#xD;&#xA;        _members.Fill(joined.Data.Members);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(Event&lt;MembersDeparted&gt; departed)&#xD;&#xA;    {&#xD;&#xA;        _members.RemoveAll(x =&gt; departed.Data.Members.Contains(x));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void Apply(Event&lt;QuestStarted&gt; started)&#xD;&#xA;    {&#xD;&#xA;        Name = started.Data.Name;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string Name { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    public override string ToString()&#xD;&#xA;    {&#xD;&#xA;        return $&quot;Quest party &#x27;{Name}&#x27; is {Members.Join(&quot;, &quot;)}&quot;;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h3 id="aggregates-across-multiple-streams">Aggregates Across Multiple Streams</h3>
 <p>Example coming soon, and check <a href="http://jeremydmiller.com">Jeremy's blog</a> for a sample soon.</p>
 <p>It's possible currently by using either a custom <code>IProjection</code> or using the existing aggregation capabilities with a
@@ -141,7 +131,7 @@ custom <code>IAggregateFinder&lt;T&gt;</code>, where <code>T</code> is the proje
 <pre><code class="language-csharp">&#xD;&#xA;// Registering an aggregator lookup that provides aggregator supporting private Apply([Event Type]) methods&#xD;&#xA;theGraph.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);&#xD;&#xA;</code></pre>
 <h3 id="live-aggregation-via.net">Live Aggregation via .Net</h3>
 <p>You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    // questId is the id of the stream&#xD;&#xA;    var party = session.Events.AggregateStream&lt;QuestParty&gt;(questId);&#xD;&#xA;    Console.WriteLine(party);&#xD;&#xA;&#xD;&#xA;    var party_at_version_3 = session.Events&#xD;&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, 3);&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    var party_yesterday = session.Events&#xD;&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, timestamp: DateTime.UtcNow.AddDays(-1));&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    // questId is the id of the stream&#xD;&#xA;    var party = session.Events.AggregateStream&lt;QuestParty&gt;(questId);&#xD;&#xA;    Console.WriteLine(party);&#xD;&#xA;&#xD;&#xA;    var party_at_version_3 = session.Events&#xD;&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, 3);&#xD;&#xA;&#xD;&#xA;    var party_yesterday = session.Events&#xD;&#xA;        .AggregateStream&lt;QuestParty&gt;(questId, timestamp: DateTime.UtcNow.AddDays(-1));&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>There is also a matching asynchronous <code>AggregateStreamAsync()</code> mechanism as well. Additionally, you can do stream aggregations in batch queries with
 <code>IBatchQuery.Events.AggregateStream&lt;T&gt;(streamId)</code>.</p>
 <h2 id="inline-projections">Inline Projections</h2>
@@ -153,60 +143,46 @@ custom <code>IAggregateFinder&lt;T&gt;</code>, where <code>T</code> is the proje
 <p>Projections need to be rebuilt when the code that defines them changes in a way that requires events to be reapplied in order to maintain correct state. Using an <code>IDaemon</code> this is easy to execute on-demand:</p>
 <pre><code class="language-csharp">&#xD;&#xA;using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings&#xD;&#xA;{&#xD;&#xA;    LeadingEdgeBuffer = 0.Seconds()&#xD;&#xA;}))&#xD;&#xA;{&#xD;&#xA;    await daemon.Rebuild&lt;ActiveProject&gt;().ConfigureAwait(false);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
-			      	</div>
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+</body>
 
-			      	<hr />
+<foot>
+    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
 
-			      	<nav class="related-links">
-				        <span>
-				        	<strong>Previous: </strong><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a>
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
 
-				        </span>
-				        <span class="pull-right">
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
 
-				        	<strong>Next: </strong><a href="/marten/documentation/events/projections/async_daemon">Async Projections Daemon</a>
+                //alert(url);
 
-				        </span>
-			      	</nav>
+                window.location.href = url;
 
-		      </div><!--/right-->
-		  	</div><!--/row-->
-		</div><!--/container-->
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
 
-
-    </body>
-
-
-    <foot>
-        <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-        <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-
-        <script type="text/javascript" src="/marten/content/prism.js"></script>
-        <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-        <script type="text/javascript" src="/marten/content/affix.js"></script>
-
-<script>
-$('#search').keyup(function(e){
-  if(e.keyCode == 13) {
-    var search = $('#search').val();
-
-    var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
-    url = encodeURI(url);
-
-    //alert(url);
-
-    window.location.href = url;
-
-    e.stopPropagation();
-    if (e.cancelBubble!=null) e.cancelBubble = true;
-    return false;
-  }
-
-
-
-}); 
-
-</script>
-    </foot>
+        });
+    </script>
+</foot>
 </html>
-
