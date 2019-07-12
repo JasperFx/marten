@@ -8,10 +8,6 @@
 
 ![marten logo](http://jasperfx.github.io/marten/content/images/banner.png)
 
-<a class="twitter-follow-button"
-  href="https://twitter.com/marten_lib">
-Follow @TwitterDev</a>
-
 The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
