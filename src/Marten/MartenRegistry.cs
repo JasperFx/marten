@@ -296,7 +296,7 @@ namespace Marten
             public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName,
                                                            Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
             {
-                alter = m => m.ForeignKey(expression, schemaName, tableName, columnName, foreignKeyConfiguration);
+                alter = m => m.ForeignKey(expression, tableName, columnName, schemaName, foreignKeyConfiguration);
 
                 return this;
             }
