@@ -34,12 +34,13 @@ namespace Marten.Events.Projections
 
         private void update(IDocumentSession session, T state, EventStream stream)
         {
-            stream.Events.Each(@event => HandlerFor(@event.Data.GetType()).Handle(session, state, @event));
+            stream.Events.SelectMany(@event => HandlersFor(@event.Data.GetType()).Select(handler => (Event: @event, Handler: handler)))
+                .Each(x => x.Handler.Handle(session, state, x.Event));
         }
 
-        private IProjectionEventHandler<T> HandlerFor(Type eventType)
+        private IEnumerable<IProjectionEventHandler<T>> HandlersFor(Type eventType)
         {
-            return eventHandlers.Single(handler => handler.CanHandle(eventType));
+            return eventHandlers.Where(handler => handler.CanHandle(eventType));
         }
 
         public async Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)

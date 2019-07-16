@@ -16,6 +16,7 @@ namespace Marten.Events.Projections
         where TView : class, new()
     {
         private readonly Func<IQuerySession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
+        private readonly IList<IProjectionEventHandler<TView>> eventHandlers = new List<IProjectionEventHandler<TView>>();
 
         public ViewProjection()
         {
