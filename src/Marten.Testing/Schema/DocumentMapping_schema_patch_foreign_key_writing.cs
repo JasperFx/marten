@@ -86,7 +86,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = true);
             }))
             {
                 var patch = store.Schema.ToPatch();
@@ -107,7 +107,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = true);
             }))
             {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -116,7 +116,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = false);
             }))
             {
                 var patch = store.Schema.ToPatch();
@@ -143,7 +143,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = false);
             }))
             {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -153,7 +153,7 @@ namespace Marten.Testing.Schema
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = true);
             }))
             {
                 var patch = store.Schema.ToPatch();
@@ -191,7 +191,7 @@ namespace Marten.Testing.Schema
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = true);
             }))
             {
                 var patch = store.Schema.ToPatch();
@@ -221,7 +221,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = false);
             }))
             {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -270,7 +270,7 @@ namespace Marten.Testing.Schema
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = false);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = true);
             }))
             {
                 var patch = store.Schema.ToPatch();
@@ -300,7 +300,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = false);
             }))
             {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -310,7 +310,7 @@ namespace Marten.Testing.Schema
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = false);
                 _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
             }))
             {
@@ -349,7 +349,7 @@ namespace Marten.Testing.Schema
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.AssigneeId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = true);
+                _.Schema.For<Issue>().ForeignKey(i => i.AssigneeId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = true);
             }))
             {
                 var patch = store.Schema.ToPatch();
@@ -379,7 +379,7 @@ namespace Marten.Testing.Schema
             using (var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.For<Issue>().ForeignKey(i => i.AssigneeId, "bugs", "bugid", "bugtracker", fkd => fkd.CascadeDeletes = false);
+                _.Schema.For<Issue>().ForeignKey(i => i.AssigneeId, "bugtracker", "bugs", "bugid", fkd => fkd.CascadeDeletes = false);
             }))
             {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
