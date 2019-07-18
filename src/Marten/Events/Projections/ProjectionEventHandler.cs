@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {
@@ -8,6 +10,8 @@ namespace Marten.Events.Projections
         Type[] Handles { get; }
 
         void Handle(IDocumentSession session, TAggregate state, IEvent @event);
+
+        Task HandleAsync(IDocumentSession session, TAggregate state, IEvent @event);
 
         bool CanHandle(Type eventType);
 
@@ -28,6 +32,8 @@ namespace Marten.Events.Projections
             return stream.Events.Any(x => Handles.Contains(x.Data.GetType()));
         }
 
+        public abstract Task HandleAsync(IDocumentSession session, TAggregate state, IEvent @event);
+
         public abstract void Handle(IDocumentSession session, TAggregate state, IEvent @event);
     }
 
@@ -46,6 +52,13 @@ namespace Marten.Events.Projections
         {
             session.Delete(state);
         }
+
+        public override Task HandleAsync(IDocumentSession session, TAggregate state, IEvent @event)
+        {
+            session.Delete(state);
+
+            return Task.CompletedTask;
+        }
     }
 
     internal class ProjectionAggregateEventHandler<TAggregate>: ProjectionEventHandler<TAggregate> where TAggregate : class, new()
@@ -62,6 +75,43 @@ namespace Marten.Events.Projections
         public override void Handle(IDocumentSession session, TAggregate state, IEvent @event)
         {
             @event.Apply(state, aggregator);
+            session.Store(state);
+        }
+
+        public override Task HandleAsync(IDocumentSession session, TAggregate state, IEvent @event)
+        {
+            Handle(session, state, @event);
+
+            return Task.CompletedTask;
+        }
+    }
+
+    internal class ProjectionCreateOrUpdateEventHandler<TAggregate>: ProjectionEventHandler<TAggregate> where TAggregate : class, new()
+    {
+        public override Type[] Handles => handles;
+
+        private readonly Type[] handles;
+
+        private readonly Func<IDocumentSession, TAggregate, object, Task> Apply;
+
+        public ProjectionCreateOrUpdateEventHandler(Type eventType, Func<IDocumentSession, TAggregate, object, Task> apply)
+        {
+            handles = new[] { eventType };
+            Apply = apply;
+        }
+
+        public override void Handle(IDocumentSession session, TAggregate state, IEvent @event)
+        {
+            using (NoSynchronizationContextScope.Enter())
+            {
+                Apply(session, state, @event).Wait();
+            }
+            session.Store(state);
+        }
+
+        public override async Task HandleAsync(IDocumentSession session, TAggregate state, IEvent @event)
+        {
+            await Apply(session, state, @event);
             session.Store(state);
         }
     }

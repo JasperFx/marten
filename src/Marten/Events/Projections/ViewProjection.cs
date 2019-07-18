@@ -289,7 +289,7 @@ namespace Marten.Events.Projections
 
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
-            => projectEvent<TEvent>(
+            => projectEvent(
                 (session, @event, streamId) => convertToTId(streamId),
                 null,
                 null,
@@ -316,7 +316,7 @@ namespace Marten.Events.Projections
         {
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
-            return projectEvent<TEvent>(
+            return projectEvent(
                 (session, @event, streamId) => viewIdSelector(@event as TEvent),
                 null,
                 null,
@@ -400,7 +400,7 @@ namespace Marten.Events.Projections
         {
             if (viewIdsSelector == null)
                 throw new ArgumentNullException(nameof(viewIdsSelector));
-            return projectEvent<TEvent>(
+            return projectEvent(
                 null,
                 (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
                 null,
@@ -810,7 +810,7 @@ namespace Marten.Events.Projections
             foreach (var projection in projections)
             {
                 var viewId = projection.ViewId;
-                var hasExistingView = viewMap.TryGetValue(viewId, out TView view);
+                var hasExistingView = viewMap.TryGetValue(viewId, out var view);
                 if (!hasExistingView)
                 {
                     if (projection.Type == ProjectionEventType.CreateAndUpdate)

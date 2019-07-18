@@ -38,8 +38,16 @@ namespace Marten.Events.Projections
                 .Each(x => x.Handler.Handle(session, state, x.Event));
         }
 
+        private Task updateAsync(IDocumentSession session, T state, EventStream stream)
+        {
+            //TODO: Make it more readable
+            return Task.WhenAll(stream.Events.SelectMany(@event => HandlersFor(@event.Data.GetType()).Select(handler => (Event: @event, Handler: handler)))
+                .Select(x => x.Handler.HandleAsync(session, state, x.Event)).ToArray());
+        }
+
         private IEnumerable<IProjectionEventHandler<T>> HandlersFor(Type eventType)
         {
+            //TODO: Add memoization
             return eventHandlers.Where(handler => handler.CanHandle(eventType));
         }
 
@@ -52,7 +60,7 @@ namespace Marten.Events.Projections
             foreach (var stream in matchingStreams)
             {
                 var state = await finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
-                update(session, state, stream);
+                await updateAsync(session, state, stream);
             }
         }
 
