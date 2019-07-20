@@ -41,7 +41,10 @@ namespace Marten.Storage
         /// <param name="feature"></param>
         public void Add(IFeatureSchema feature)
         {
-            _features.Add(feature.StorageType, feature);
+            if (!_features.ContainsKey(feature.StorageType))
+            {
+                _features[feature.StorageType] = feature;
+            }
         }
 
         /// <summary>
