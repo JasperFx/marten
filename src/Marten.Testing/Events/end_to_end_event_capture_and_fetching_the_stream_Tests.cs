@@ -35,7 +35,7 @@ namespace Marten.Testing.Events
         };
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -66,7 +66,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -97,7 +97,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -129,7 +129,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -161,7 +161,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -192,7 +192,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void open_persisted_stream_in_new_store_with_same_settings(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -273,7 +273,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void query_before_saving(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -305,7 +305,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public Task aggregate_stream_async_has_the_id(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -337,7 +337,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(
             DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
@@ -368,7 +368,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -398,7 +398,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_an_existing_stream_and_fetch_the_events_back(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -441,7 +441,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(
             DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
@@ -469,7 +469,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void
             capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(
             DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
@@ -501,7 +501,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(
             DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
@@ -532,7 +532,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
             DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
@@ -577,7 +577,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void assert_on_max_event_id_on_event_stream_append(
             DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
@@ -611,7 +611,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_immutable_events(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle);
@@ -644,7 +644,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("SessionParams")]
+        [MemberData(nameof(SessionParams))]
         public void capture_immutable_events_with_for_update_lock(DocumentTracking sessionType, TenancyStyle tenancyStyle, string[] tenants)
         {
             var store = InitStore(tenancyStyle, useAppendEventForUpdateLock: true);

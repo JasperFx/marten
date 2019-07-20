@@ -33,7 +33,7 @@ namespace Marten.Testing.Bugs
             {
                 var items = s.Query<TestClass>().Where(x => !x.Flag == false).ToList();
 
-                Assert.Equal(1, items.Count);
+                Assert.Single(items);
                 Assert.Equal(flagTrue.Id, items[0].Id);
             }
         }

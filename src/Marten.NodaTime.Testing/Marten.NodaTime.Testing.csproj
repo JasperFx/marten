@@ -20,4 +20,7 @@
     <PackageReference Include="NSubstitute" Version="4.2.0" />
     <PackageReference Include="Shouldly" Version="3.0.2" />
   </ItemGroup>
+  <PropertyGroup>
+    <NoWarn>xUnit1013;CS0618</NoWarn>
+  </PropertyGroup>
 </Project>

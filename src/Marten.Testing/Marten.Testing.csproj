@@ -38,7 +38,7 @@
     <PackageReference Include="Shouldly" Version="3.0.2" />
     <PackageReference Include="structuremap" Version="4.7.1" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netcoreapp2.1'">
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
   </ItemGroup>
@@ -46,7 +46,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netcoreapp2.1'">
     <Compile Remove="**\Fixtures\**\*.cs;**\Github\**\*.cs;StorytellerHarness.cs" />
   </ItemGroup>
-  
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <PackageReference Include="HtmlTags" Version="3.0.0.186" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.1.0" />
@@ -60,4 +60,7 @@
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
+  <PropertyGroup>
+    <NoWarn>xUnit1013;CS0618</NoWarn>
+  </PropertyGroup>
 </Project>
