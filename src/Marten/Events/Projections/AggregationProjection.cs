@@ -12,12 +12,12 @@ namespace Marten.Events.Projections
     public class AggregationProjection<T>: DocumentProjection<T>, IDocumentProjection where T : class, new()
     {
         private readonly IAggregationFinder<T> finder;
-        private readonly IList<IProjectionEventHandler<T>> eventHandlers = new List<IProjectionEventHandler<T>>();
+        private readonly IList<IProjectionEventHandler<T, Guid>> eventHandlers = new List<IProjectionEventHandler<T, Guid>>();
 
         public AggregationProjection(IAggregationFinder<T> finder, IAggregator<T> aggregator)
         {
             this.finder = finder;
-            eventHandlers.Add(new ProjectionAggregateEventHandler<T>(aggregator));
+            eventHandlers.Add(new ProjectionAggregateEventHandler<T, Guid>(aggregator));
         }
 
         public void Apply(IDocumentSession session, EventPage page)
@@ -26,26 +26,26 @@ namespace Marten.Events.Projections
             {
                 var state = finder.Find(stream, session);
 
-                update(session, state, stream);
+                update(session, stream.Id, state, stream);
 
                 session.Store(state);
             });
         }
 
-        private void update(IDocumentSession session, T state, EventStream stream)
+        private void update(IDocumentSession session, Guid streamId, T state, EventStream stream)
         {
             stream.Events.SelectMany(@event => HandlersFor(@event.Data.GetType()).Select(handler => (Event: @event, Handler: handler)))
-                .Each(x => x.Handler.Handle(session, state, x.Event));
+                .Each(x => x.Handler.Handle(session, streamId, state, x.Event));
         }
 
-        private Task updateAsync(IDocumentSession session, T state, EventStream stream)
+        private Task updateAsync(IDocumentSession session, Guid streamId, T state, EventStream stream)
         {
             //TODO: Make it more readable
             return Task.WhenAll(stream.Events.SelectMany(@event => HandlersFor(@event.Data.GetType()).Select(handler => (Event: @event, Handler: handler)))
-                .Select(x => x.Handler.HandleAsync(session, state, x.Event)).ToArray());
+                .Select(x => x.Handler.HandleAsync(session, streamId, state, x.Event)).ToArray());
         }
 
-        private IEnumerable<IProjectionEventHandler<T>> HandlersFor(Type eventType)
+        private IEnumerable<IProjectionEventHandler<T, Guid>> HandlersFor(Type eventType)
         {
             //TODO: Add memoization
             return eventHandlers.Where(handler => handler.CanHandle(eventType));
@@ -60,7 +60,7 @@ namespace Marten.Events.Projections
             foreach (var stream in matchingStreams)
             {
                 var state = await finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
-                await updateAsync(session, state, stream);
+                await updateAsync(session, stream.Id, state, stream);
             }
         }
 

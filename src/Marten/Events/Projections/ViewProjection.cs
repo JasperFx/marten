@@ -6,8 +6,6 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
-using Marten.Schema.Identity;
-using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Events.Projections
@@ -16,7 +14,7 @@ namespace Marten.Events.Projections
         where TView : class, new()
     {
         private readonly Func<IQuerySession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
-        private readonly IList<IProjectionEventHandler<TView>> eventHandlers = new List<IProjectionEventHandler<TView>>();
+        private readonly IList<IProjectionEventHandler<TView, TId>> eventHandlers = new List<IProjectionEventHandler<TView, TId>>();
 
         public ViewProjection()
         {
@@ -38,11 +36,11 @@ namespace Marten.Events.Projections
         private class ProjectionHandler
         {
             public IEventIdsSelector<TId> IdsSelector { get; }
-            public IProjectionEventHandler<TView> Handler { get; }
+            public IProjectionEventHandler<TView, TId> Handler { get; }
 
             public ProjectionHandler(
                 IEventIdsSelector<TId> idsSelector,
-                IProjectionEventHandler<TView> handler)
+                IProjectionEventHandler<TView, TId> handler)
             {
                 IdsSelector = idsSelector;
                 Handler = handler;
@@ -55,14 +53,14 @@ namespace Marten.Events.Projections
             public Action<IDocumentSession, TView> Handle { get; }
             public Func<IDocumentSession, TView, Task> HandleAsync { get; }
 
-            private IProjectionEventHandler<TView> handler { get; }
+            private IProjectionEventHandler<TView, TId> handler { get; }
 
             public EventProjection(ProjectionHandler eventHandler, TId viewId, IEvent @event, object projectionEvent)
             {
                 ViewId = viewId;
 
-                HandleAsync = (session, view) => eventHandler.Handler.HandleAsync(session, view, projectionEvent ?? @event.Data);
-                Handle = (session, view) => eventHandler.Handler.Handle(session, view, projectionEvent ?? @event.Data);
+                HandleAsync = (session, view) => eventHandler.Handler.HandleAsync(session, viewId, view, projectionEvent ?? @event.Data);
+                Handle = (session, view) => eventHandler.Handler.Handle(session, viewId, view, projectionEvent ?? @event.Data);
             }
         }
 
@@ -74,26 +72,26 @@ namespace Marten.Events.Projections
         public ViewProjection<TView, TId> DeleteEvent<TEvent>() where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create()
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create()
             );
 
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<TView, TEvent, bool> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
 
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<IDocumentSession, TView, TEvent, bool> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
 
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<TEvent, TId> viewIdSelector) where TEvent : class
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create()
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create()
             );
         }
 
@@ -103,7 +101,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -113,7 +111,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -121,7 +119,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create()
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create()
             );
         }
 
@@ -131,7 +129,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -141,7 +139,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -149,7 +147,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create()
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create()
             );
         }
 
@@ -159,7 +157,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -169,7 +167,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -177,7 +175,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create()
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create()
             );
         }
 
@@ -187,7 +185,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -197,21 +195,21 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
 
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
 
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
@@ -220,7 +218,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -230,7 +228,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -240,7 +238,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -250,7 +248,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -260,7 +258,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -270,7 +268,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -280,7 +278,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
@@ -290,14 +288,14 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionDeleteEventHandler<TView, TEvent>.Create(shouldDelete)
+                ProjectionDeleteEventHandler<TView, TId, TEvent>.Create(shouldDelete)
             );
         }
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<TView, TEvent> handler, bool onlyUpdate = false) where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
                     return Task.CompletedTask;
@@ -308,7 +306,7 @@ namespace Marten.Events.Projections
             where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
                     return Task.CompletedTask;
@@ -320,7 +318,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
                     return Task.CompletedTask;
@@ -333,7 +331,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
                     return Task.CompletedTask;
@@ -346,7 +344,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
                     return Task.CompletedTask;
@@ -359,7 +357,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
                     return Task.CompletedTask;
@@ -372,7 +370,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
                     return Task.CompletedTask;
@@ -385,7 +383,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
                     return Task.CompletedTask;
@@ -398,7 +396,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
                     return Task.CompletedTask;
@@ -411,7 +409,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
                     return Task.CompletedTask;
@@ -423,14 +421,14 @@ namespace Marten.Events.Projections
             where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
             );
 
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
             => projectEvent<TEvent>(
                 IdsSelector.Create((session, @event, streamId) => convertToTId(streamId)),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, handler)
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, handler)
             );
 
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
@@ -438,7 +436,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
             );
         }
 
@@ -447,7 +445,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, handler)
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, handler)
             );
         }
 
@@ -456,7 +454,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
             );
         }
 
@@ -465,7 +463,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, handler)
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, handler)
             );
         }
 
@@ -474,7 +472,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
             );
         }
 
@@ -483,7 +481,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, handler)
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, handler)
             );
         }
 
@@ -492,7 +490,7 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, (IDocumentSession _, TView view, TEvent @event) => handler(view, @event))
             );
         }
 
@@ -501,13 +499,13 @@ namespace Marten.Events.Projections
         {
             return projectEvent<TEvent>(
                 IdsSelector.Create(viewIdsSelector),
-                ProjectionCreateOrUpdateEventHandler<TView, TEvent>.Create(onlyUpdate, handler)
+                ProjectionCreateOrUpdateEventHandler<TView, TId, TEvent>.Create(onlyUpdate, handler)
             );
         }
 
         private ViewProjection<TView, TId> projectEvent<TEvent>(
             IEventIdsSelector<TId> idsSelector,
-            IProjectionEventHandler<TView> handler) where TEvent : class
+            IProjectionEventHandler<TView, TId> handler) where TEvent : class
         {
             if (idsSelector == null)
                 throw new ArgumentException($"{nameof(idsSelector)} or {nameof(idsSelector)} must be provided.");
@@ -589,9 +587,6 @@ namespace Marten.Events.Projections
             {
                 var hasView = viewMap.TryGetValue(eventProjection.ViewId, out var view);
 
-                if (!hasView)
-                    continue;
-
                 await eventProjection.HandleAsync(session, view);
             }
         }
@@ -601,36 +596,7 @@ namespace Marten.Events.Projections
             var idAssigner = session.Tenant.IdAssignmentFor<TView>();
             var resolver = session.Tenant.StorageFor<TView>();
 
-            var viewMap = views.ToDictionary(view => (TId)resolver.Identity(view), view => view);
-
-            foreach (var projection in projections)
-            {
-                var viewId = projection.ViewId;
-                var hasExistingView = viewMap.TryGetValue(viewId, out var view);
-                if (!hasExistingView)
-                {
-                    if (projection.Type == ProjectionEventType.CreateAndUpdate)
-                    {
-                        view = newView(session.Tenant, idAssigner, viewId);
-                        viewMap.Add(viewId, view);
-                    }
-                }
-
-                if (projection.Type == ProjectionEventType.CreateAndUpdate
-                    || (projection.Type == ProjectionEventType.UpdateOnly && hasExistingView))
-                {
-                    session.Store(view);
-                }
-            }
-
-            return viewMap;
-        }
-
-        private static TView newView(ITenant tenant, IdAssignment<TView> idAssigner, TId id)
-        {
-            var view = new TView();
-            idAssigner.Assign(tenant, view, id);
-            return view;
+            return views.ToDictionary(view => (TId)resolver.Identity(view), view => view);
         }
 
         private IList<EventProjection> getEventProjections(IDocumentSession session, EventPage page)
