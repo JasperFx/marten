@@ -111,7 +111,10 @@ namespace Marten.Testing
             var store1 = new DocumentStore(options);
             // pass with the same options and check it does not throw ArgumentException
             // "An item with the same key has already been added. Key: <transform function name/feature schema name>"
-            var store2 = new DocumentStore(options);
+            Should.NotThrow(() =>
+            {
+                var store2 = new DocumentStore(options);
+            });
         }
 
         public class FakeUserStorage : IDocumentStorage, IdAssignment<User>
