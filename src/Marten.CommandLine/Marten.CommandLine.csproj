@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Command line tooling for managing Marten development</Description>
-        <VersionPrefix>3.6.1</VersionPrefix>
+        <VersionPrefix>3.6.2</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten.CommandLine</AssemblyName>

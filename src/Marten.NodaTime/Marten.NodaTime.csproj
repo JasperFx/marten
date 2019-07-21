@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-        <VersionPrefix>1.1.1</VersionPrefix>
+        <VersionPrefix>1.1.2</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Marten.NodaTime</AssemblyName>
