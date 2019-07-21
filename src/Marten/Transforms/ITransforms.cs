@@ -42,6 +42,14 @@ namespace Marten.Transforms
             }
         }
 
+        private void AddFunction(TransformFunction function)
+        {
+            if (!_functions.ContainsKey(function.Name))
+            {
+                _functions.Add(function.Name, function);
+            }
+        }
+
         public void LoadFile(string file, string name = null)
         {
             assertAvailable();
@@ -52,7 +60,7 @@ namespace Marten.Transforms
             }
 
             var function = TransformFunction.ForFile(_options, file, name);
-            _functions.Add(function.Name, function);
+            AddFunction(function);
         }
 
         public void LoadDirectory(string directory)
@@ -75,14 +83,13 @@ namespace Marten.Transforms
             assertAvailable();
 
             var func = new TransformFunction(_options, name, script);
-            _functions.Add(func.Name, func);
+            AddFunction(func);
         }
 
         public void Load(TransformFunction function)
         {
             assertAvailable();
-
-            _functions.Add(function.Name, function);
+            AddFunction(function);
         }
 
         public TransformFunction For(string name)

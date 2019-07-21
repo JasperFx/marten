@@ -20,7 +20,11 @@ namespace Marten.Storage
         public void AddSystemFunction(StoreOptions options, string name, string args)
         {
             var function = new SystemFunction(options, name, args);
-            _systemFunctions.Add(name, function);
+
+            if (!_systemFunctions.ContainsKey(name))
+            {
+                _systemFunctions[name] = function;
+            }
         }
 
         public IEnumerable<Type> DependentTypes()
