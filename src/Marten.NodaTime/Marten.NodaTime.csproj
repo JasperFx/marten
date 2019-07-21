@@ -8,7 +8,7 @@
         <PackageId>Marten.NodaTime</PackageId>
         <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
         <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
-        <PackageLicenseUrl>https://github.com/JasperFX/marten/blob/master/LICENSE.txt</PackageLicenseUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>

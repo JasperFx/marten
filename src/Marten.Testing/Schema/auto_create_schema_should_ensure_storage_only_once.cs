@@ -48,7 +48,7 @@ namespace Marten.Testing.Schema
 
                     Assert.Contains("relation \"public.mt_streams\" does not exist", e.Message);
                     // We should have enabled the feature, i.e. also generated & executed DDL
-                    Assert.True(dllLog.Sql.Any(x => x.IndexOf("mt_append_event") > -1));
+                    Assert.Contains(dllLog.Sql, x => x.IndexOf("mt_append_event") > -1);
                 }
             }
         }
