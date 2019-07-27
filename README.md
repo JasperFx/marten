@@ -16,11 +16,15 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 2.1**
+**1. .NET Core SDK 2.1 (or higher)**
 
 Available [here](https://www.microsoft.com/net/download/core)
 
-**2. PostgreSQL **9.5+** database with PLV8**
+**2. .NET Framework 4.6 Developer Pack
+
+Available [here](https://dotnet.microsoft.com/download/thank-you/net46-developer-pack)
+
+**3. PostgreSQL **9.5+** database with PLV8**
 
 You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
