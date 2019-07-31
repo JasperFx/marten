@@ -456,19 +456,29 @@ namespace Marten
 
         private void applyProjections()
         {
-            var eventPage = new EventPage(PendingChanges.Streams().ToArray());
-            foreach (var projection in _store.Events.InlineProjections)
+            var streams = PendingChanges.Streams().ToArray();
+
+            if (streams.Length > 0)
             {
-                projection.Apply(this, eventPage);
+                var eventPage = new EventPage(streams);
+                foreach (var projection in _store.Events.InlineProjections)
+                {
+                    projection.Apply(this, eventPage);
+                }
             }
         }
 
         private async Task applyProjectionsAsync(CancellationToken token)
         {
-            var eventPage = new EventPage(PendingChanges.Streams().ToArray());
-            foreach (var projection in _store.Events.InlineProjections)
+            var streams = PendingChanges.Streams().ToArray();
+
+            if (streams.Length > 0)
             {
-                await projection.ApplyAsync(this, eventPage, token).ConfigureAwait(false);
+                var eventPage = new EventPage(streams);
+                foreach (var projection in _store.Events.InlineProjections)
+                {
+                    await projection.ApplyAsync(this, eventPage, token).ConfigureAwait(false);
+                }
             }
         }
 

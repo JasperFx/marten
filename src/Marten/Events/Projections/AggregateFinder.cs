@@ -50,7 +50,10 @@ namespace Marten.Events.Projections
 
         public async Task FetchAllAggregates(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            await session.LoadManyAsync<T>(token, streams.Select(x => x.Id).ToArray()).ConfigureAwait(false);
+            if (streams.Length > 0)
+            {
+                await session.LoadManyAsync<T>(token, streams.Select(x => x.Id).ToArray()).ConfigureAwait(false);
+            }
         }
     }
 }
