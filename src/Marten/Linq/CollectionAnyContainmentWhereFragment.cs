@@ -196,7 +196,7 @@ namespace Marten.Linq
             var members = visitor.Members;
             if (!members.Any())
                 throwNotSupportedContains();
-            var path = members.Select(m => m.Name).Join("'->'");
+            var path = members.Select(m => m.Name.FormatCase(_serializer.Casing)).Join("'->'");
             return $"d.data->'{path}' ?| :{fromParam.ParameterName}";
         }
 
