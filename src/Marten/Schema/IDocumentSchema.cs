@@ -54,7 +54,7 @@ namespace Marten.Schema
         ///     Executes all detected DDL patches to the schema based on current configuration
         ///     upfront at one time
         /// </summary>
-        void ApplyAllConfiguredChangesToDatabase();
+        void ApplyAllConfiguredChangesToDatabase(AutoCreate? withAutoCreate = null);
 
         /// <summary>
         ///     Generate a DDL patch for one specific document type
