@@ -1,6 +1,7 @@
 using System;
 using Baseline;
 using Marten.Schema;
+using Marten.Testing.Schema.Identity.Sequences;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -40,6 +41,27 @@ namespace Marten.Testing.Schema
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnName == "manager_id");
+        }
+
+        [Fact]
+        public void should_allow_foreign_key_on_id_field()
+        {
+            var storeOptions = new StoreOptions();
+
+
+            var store = TestingDocumentStore.For(_ =>
+            {
+                _.Schema.For<Foo>()
+                    .Identity(x => x.FooId);
+                _.Schema.For<FooExtra>()
+                    .Identity(x => x.FooId)
+                    .ForeignKey<Foo>(x => x.FooId);
+            });
+
+            store.Storage.MappingFor(typeof(FooExtra))
+                .As<DocumentMapping>()
+                .ForeignKeys
+                .ShouldContain(x => x.ColumnName == "foo_id");
         }
 
         // SAMPLE: issue-with-fk-attribute
@@ -83,6 +105,15 @@ namespace Marten.Testing.Schema
 
             [ForeignKey(typeof(Employee))]
             public Guid? ManagerId { get; set; }
+        }
+
+        public class Foo
+        {
+            public Guid FooId { get; set; }
+        }
+        public class FooExtra
+        {
+            public Guid FooId { get; set; }
         }
     }
 }
