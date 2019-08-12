@@ -96,11 +96,16 @@ namespace Marten.Schema
         // TODO -- have this take in CommandBuilder
         public string UpdateSqlFragment()
         {
-            var jsonField = new JsonLocatorField("d.data", _enumStorage, Casing.Default, Members);
-            // HOKEY, but I'm letting it pass for now.
-            var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
-
-            return $"{ColumnName} = {sqlLocator}";
+            if ((DbType & NpgsqlDbType.Array) == NpgsqlDbType.Array && PgType != "jsonb")
+            {
+                var jsonField = new JsonLocatorField("data", null, _enumStorage, Casing.Default, Members, "jsonb");
+                return $"{ColumnName} = CAST(ARRAY(SELECT jsonb_array_elements_text({jsonField.SqlLocator})) as {PgType})";
+            }
+            else
+            {
+                var jsonField = new JsonLocatorField("data", null, _enumStorage, Casing.Default, Members, PgType);
+                return $"{ColumnName} = {jsonField.SqlLocator}";
+            }
         }
 
         public object GetValue(Expression valueExpression)
@@ -120,7 +125,7 @@ namespace Marten.Schema
 
         public string SqlLocator { get; set; }
 
-        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true)
+        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true, string pgType = null)
         {
             var accessor = ReflectionHelper.GetAccessor(expression);
 
@@ -130,7 +135,12 @@ namespace Marten.Schema
                 throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
             }
 
-            return new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
+            var duplicate = new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
+            if (pgType.IsNotEmpty())
+            {
+                duplicate.PgType = pgType;
+            }
+            return duplicate;
         }
 
         // I say you don't need a ForeignKey

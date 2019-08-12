@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Util;
@@ -14,38 +15,55 @@ namespace Marten.Schema
         {
             var property = ReflectionHelper.GetProperty(expression);
 
-            return new JsonLocatorField("d.data", new StoreOptions(), enumStyle, casing, property);
+            return new JsonLocatorField("d.data", null, enumStyle, casing, property);
         }
 
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
 
-        public JsonLocatorField(string dataLocator, StoreOptions options, EnumStorage enumStyle, Casing casing, MemberInfo member) : base(enumStyle, member)
+        public JsonLocatorField(string dataLocator, string databaseSchemaName, EnumStorage enumStyle, Casing casing, MemberInfo member, string pgType = null) :
+            this(dataLocator, databaseSchemaName, enumStyle, casing, new[] { member }, pgType)
         {
-            var memberType = member.GetMemberType();
-            var memberName = member.Name.FormatCase(casing);
+        }
 
-            var isStringEnum = memberType.IsEnum && enumStyle == EnumStorage.AsString;
-            if (memberType == typeof(string) || isStringEnum)
+        public JsonLocatorField(string dataLocator, string databaseSchemaName, EnumStorage enumStyle, Casing casing, MemberInfo[] members, string pgType = null) : base(enumStyle, members)
+        {
+            var locator = new StringBuilder(dataLocator);
+            var depth = 1;
+            foreach (var memberInfo in members)
             {
-                SqlLocator = $"{dataLocator} ->> '{memberName}'";
+                locator.Append(depth == members.Length ? " ->> " : " -> ");
+                locator.Append($"'{memberInfo.Name.FormatCase(casing)}'");
+                depth++;
             }
-            else if (TypeMappings.TimespanTypes.Contains(memberType))
+
+            var isStringEnum = MemberType.IsEnum && enumStyle == EnumStorage.AsString;
+
+            if (!string.IsNullOrWhiteSpace(pgType))
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamp({dataLocator} ->> '{memberName}')";
-                SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
+                PgType = pgType;
             }
-            else if (TypeMappings.TimespanZTypes.Contains(memberType))
+
+            if (MemberType == typeof(string) || isStringEnum)
             {
-                SqlLocator = $"{options.DatabaseSchemaName}.mt_immutable_timestamptz({dataLocator} ->> '{memberName}')";
-                SelectionLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
+                SqlLocator = $"{locator}";
             }
-            else if (memberType.IsArray)
+            else if (TypeMappings.TimespanTypes.Contains(MemberType))
             {
-                SqlLocator = $"CAST({dataLocator} ->> '{memberName}' as jsonb)";
+                SqlLocator = $"{databaseSchemaName ?? StoreOptions.DefaultDatabaseSchemaName}.mt_immutable_timestamp({locator})";
+                SelectionLocator = $"CAST({locator} as {PgType})";
+            }
+            else if (TypeMappings.TimespanZTypes.Contains(MemberType))
+            {
+                SqlLocator = $"{databaseSchemaName ?? StoreOptions.DefaultDatabaseSchemaName}.mt_immutable_timestamptz({locator})";
+                SelectionLocator = $"CAST({locator} as {PgType})";
+            }
+            else if (MemberType.IsArray)
+            {
+                SqlLocator = $"CAST({locator} as jsonb)";
             }
             else
             {
-                SqlLocator = $"CAST({dataLocator} ->> '{memberName}' as {PgType})";
+                SqlLocator = $"CAST({locator} as {PgType})";
             }
 
             if (isStringEnum)
@@ -60,30 +78,6 @@ namespace Marten.Schema
             if (SelectionLocator.IsEmpty())
             {
                 SelectionLocator = SqlLocator;
-            }
-        }
-
-        public JsonLocatorField(string dataLocator, EnumStorage enumStyle, Casing casing, MemberInfo[] members) : base(enumStyle, members)
-        {
-            var locator = dataLocator;
-
-            for (int i = 0; i < members.Length - 1; i++)
-            {
-                locator += $" -> '{members[i].Name.FormatCase(casing)}'";
-            }
-
-            locator += $" ->> '{members.Last().Name.FormatCase(casing)}'";
-
-            SqlLocator = MemberType == typeof(string) ? locator : locator.ApplyCastToLocator(enumStyle, MemberType);
-
-            var isStringEnum = MemberType.IsEnum && enumStyle == EnumStorage.AsString;
-            if (isStringEnum)
-            {
-                _parseObject = expression =>
-                {
-                    var raw = expression.Value();
-                    return Enum.GetName(MemberType, raw);
-                };
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
 using Marten.Schema;
@@ -62,12 +63,74 @@ namespace Marten.Testing.Schema
         }
 
         [Theory]
-        [InlineData(EnumStorage.AsInteger, "color = (data ->> 'Color')::int")]
+        [InlineData(EnumStorage.AsInteger, "color = CAST(data ->> 'Color' as integer)")]
         [InlineData(EnumStorage.AsString, "color = data ->> 'Color'")]
         public void storage_is_set_when_passed_in(EnumStorage storageMode, string expectedUpdateFragment)
         {
             var field = DuplicatedField.For<Target>(storageMode, x => x.Color);
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
         }
+
+        [Theory]
+        [InlineData(null, "string = data ->> 'String'")]
+        [InlineData("varchar", "string = data ->> 'String'")]
+        [InlineData("text", "string = data ->> 'String'")]
+        public void pg_type_is_used_for_string(string pgType, string expectedUpdateFragment)
+        {
+            var field = DuplicatedField.For<Target>(EnumStorage.AsInteger, x => x.String);
+            field.PgType = pgType ?? field.PgType;
+
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+            field.PgType.ShouldBe(pgType ?? "varchar");
+            field.DbType.ShouldBe(NpgsqlDbType.Text);
+        }
+
+        [Theory]
+        [InlineData(null, "user_id = CAST(data ->> 'UserId' as uuid)")]
+        [InlineData("uuid", "user_id = CAST(data ->> 'UserId' as uuid)")]
+        [InlineData("text", "user_id = CAST(data ->> 'UserId' as text)")]
+        public void pg_type_is_used_for_guid(string pgType, string expectedUpdateFragment)
+        {
+            var field = DuplicatedField.For<Target>(EnumStorage.AsInteger, x => x.UserId);
+            field.PgType = pgType ?? field.PgType;
+
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+            field.PgType.ShouldBe(pgType ?? "uuid");
+            field.DbType.ShouldBe(NpgsqlDbType.Uuid);
+        }
+
+        [Theory]
+        [InlineData(null, "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as varchar[])")]
+        [InlineData("varchar[]", "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as varchar[])")]
+        [InlineData("text[]", "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as text[])")]
+        public void pg_type_is_used_for_string_array(string pgType, string expectedUpdateFragment)
+        {
+            var field = DuplicatedField.For<Target>(EnumStorage.AsInteger, x => x.TagsArray);
+            field.PgType = pgType ?? field.PgType;
+
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+            field.PgType.ShouldBe(pgType ?? "varchar[]");
+            field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
+        }
+
+        [Theory]
+        [InlineData(null, "tags_list = CAST(data ->> 'TagsList' as jsonb)")]
+        [InlineData("varchar[]", "tags_list = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as varchar[])")]
+        [InlineData("text[]", "tags_list = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as text[])")]
+        public void pg_type_is_used_for_string_list(string pgType, string expectedUpdateFragment)
+        {
+            var field = DuplicatedField.For<ListTarget>(EnumStorage.AsInteger, x => x.TagsList);
+            field.PgType = pgType ?? field.PgType;
+
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+            field.PgType.ShouldBe(pgType ?? "jsonb");
+            field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
+        }
+
+        private class ListTarget
+        {
+            public List<string> TagsList { get; set; }
+        }
+
     }
 }

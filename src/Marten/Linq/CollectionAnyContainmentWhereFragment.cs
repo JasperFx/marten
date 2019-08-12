@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 using NpgsqlTypes;
 using Remotion.Linq.Clauses;
@@ -19,12 +20,14 @@ namespace Marten.Linq
         private readonly MemberInfo[] _members;
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
+        private readonly IQueryableDocument _mapping;
 
-        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression)
+        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression, IQueryableDocument mapping)
         {
             _members = members;
             _serializer = serializer;
             _expression = expression;
+            _mapping = mapping;
         }
 
         public void Apply(CommandBuilder builder)
@@ -196,8 +199,7 @@ namespace Marten.Linq
             var members = visitor.Members;
             if (!members.Any())
                 throwNotSupportedContains();
-            var path = members.Select(m => m.Name.FormatCase(_serializer.Casing)).Join("'->'");
-            return $"d.data->'{path}' ?| :{fromParam.ParameterName}";
+            return $"{_mapping.FieldFor(members).SqlLocator} ?| :{fromParam.ParameterName}";
         }
 
         private void throwNotSupportedContains()

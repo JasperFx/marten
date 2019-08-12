@@ -114,7 +114,7 @@ namespace Marten.Linq
             {
                 Action<IWhereFragment> register = w => _register.Peek()(w);
 
-                var visitor = new ChildCollectionWhereVisitor(_parent._serializer, expression, register);
+                var visitor = new ChildCollectionWhereVisitor(_parent._serializer, expression, register, _mapping);
                 visitor.Parse();
 
                 return null;

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.Expressions;
@@ -18,13 +19,15 @@ namespace Marten.Linq
         private readonly SubQueryExpression _expression;
         private readonly Action<IWhereFragment> _registerFilter;
         private readonly QueryModel _query;
+        private readonly IQueryableDocument _mapping;
 
-        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter)
+        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter, IQueryableDocument mapping)
         {
             _serializer = serializer;
             _expression = expression;
             _query = expression.QueryModel;
             _registerFilter = registerFilter;
+            _mapping = mapping;
         }
 
         public void Parse()
@@ -70,7 +73,7 @@ namespace Marten.Linq
                     return;
                 }
 
-                var @where = new CollectionAnyContainmentWhereFragment(members, _serializer, _expression);
+                var @where = new CollectionAnyContainmentWhereFragment(members, _serializer, _expression, _mapping);
                 _registerFilter(@where);
             }
         }
