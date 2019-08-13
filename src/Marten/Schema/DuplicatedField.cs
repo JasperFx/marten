@@ -98,12 +98,12 @@ namespace Marten.Schema
         {
             if ((DbType & NpgsqlDbType.Array) == NpgsqlDbType.Array && PgType != "jsonb")
             {
-                var jsonField = new JsonLocatorField("data", null, _enumStorage, Casing.Default, Members, "jsonb");
+                var jsonField = new JsonLocatorField("data", new StoreOptions(), _enumStorage, Casing.Default, Members, "jsonb");
                 return $"{ColumnName} = CAST(ARRAY(SELECT jsonb_array_elements_text({jsonField.SqlLocator})) as {PgType})";
             }
             else
             {
-                var jsonField = new JsonLocatorField("data", null, _enumStorage, Casing.Default, Members, PgType);
+                var jsonField = new JsonLocatorField("data", new StoreOptions(), _enumStorage, Casing.Default, Members, PgType);
                 return $"{ColumnName} = {jsonField.SqlLocator}";
             }
         }

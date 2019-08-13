@@ -21,6 +21,10 @@ namespace Marten.Linq
         private readonly QueryModel _query;
         private readonly IQueryableDocument _mapping;
 
+        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter) : this(serializer, expression, registerFilter, null)
+        {
+        }
+
         public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter, IQueryableDocument mapping)
         {
             _serializer = serializer;

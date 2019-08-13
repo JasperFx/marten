@@ -81,7 +81,9 @@ namespace Marten.Testing.Schema
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
-            field.PgType.ShouldBe(pgType ?? "varchar");
+            var expectedPgType = pgType ?? "varchar";
+            field.PgType.ShouldBe(expectedPgType);
+            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);           
             field.DbType.ShouldBe(NpgsqlDbType.Text);
         }
 
@@ -95,7 +97,9 @@ namespace Marten.Testing.Schema
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
-            field.PgType.ShouldBe(pgType ?? "uuid");
+            var expectedPgType = pgType ?? "uuid";
+            field.PgType.ShouldBe(expectedPgType);
+            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Uuid);
         }
 
@@ -109,7 +113,9 @@ namespace Marten.Testing.Schema
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
-            field.PgType.ShouldBe(pgType ?? "varchar[]");
+            var expectedPgType = pgType ?? "varchar[]";
+            field.PgType.ShouldBe(expectedPgType);
+            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
         }
 
@@ -123,7 +129,9 @@ namespace Marten.Testing.Schema
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
-            field.PgType.ShouldBe(pgType ?? "jsonb");
+            var expectedPgType = pgType ?? "jsonb";
+            field.PgType.ShouldBe(expectedPgType);
+            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
         }
 

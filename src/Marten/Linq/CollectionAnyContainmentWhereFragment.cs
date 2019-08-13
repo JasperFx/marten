@@ -22,6 +22,10 @@ namespace Marten.Linq
         private readonly SubQueryExpression _expression;
         private readonly IQueryableDocument _mapping;
 
+        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression) : this(members, serializer, expression, null)
+        {
+        }
+
         public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression, IQueryableDocument mapping)
         {
             _members = members;
@@ -199,7 +203,8 @@ namespace Marten.Linq
             var members = visitor.Members;
             if (!members.Any())
                 throwNotSupportedContains();
-            return $"{_mapping.FieldFor(members).SqlLocator} ?| :{fromParam.ParameterName}";
+            var path = _mapping?.FieldFor(members).SqlLocator ?? CommandBuilder.BuildJsonStringLocator("d.data", members.ToArray(), _serializer.Casing);
+            return $"{path} ?| :{fromParam.ParameterName}";
         }
 
         private void throwNotSupportedContains()
