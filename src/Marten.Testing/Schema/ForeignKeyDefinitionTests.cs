@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -71,8 +72,22 @@ namespace Marten.Testing.Schema
                 "REFERENCES schema2.mt_doc_user (id)",
                 "ON DELETE CASCADE;");
 
-            new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema)
-                { CascadeDeletes = true }
+            new ForeignKeyDefinition("user_id", issueMappingOtherSchema, userMappingOtherSchema) {CascadeDeletes = true}
+                .ToDDL()
+                .ShouldBe(expected);;
+        }
+
+        [Fact]
+        public void generate_ddl_with_tenancy_conjoined()
+        {
+            _userMapping.TenancyStyle = TenancyStyle.Conjoined;
+            _issueMapping.TenancyStyle = TenancyStyle.Conjoined;
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE public.mt_doc_issue",
+                "ADD CONSTRAINT mt_doc_issue_user_id_tenant_id_fkey FOREIGN KEY (user_id, tenant_id)",
+                "REFERENCES public.mt_doc_user (id, tenant_id);");
+
+            new ForeignKeyDefinition("user_id", _issueMapping, _userMapping)
                 .ToDDL()
                 .ShouldBe(expected);
         }
@@ -106,8 +121,22 @@ namespace Marten.Testing.Schema
                 "ON DELETE CASCADE;");
 
             new ExternalForeignKeyDefinition("user_id", _userMapping,
+                "external_schema", "external_table", "external_id") {CascadeDeletes = true}
+                .ToDDL()
+                .ShouldBe(expected);
+        }
+
+        [Fact]
+        public void generate_ddl_with_tenancy_conjoined()
+        {
+            _userMapping.TenancyStyle = TenancyStyle.Conjoined;
+            var expected = string.Join(Environment.NewLine,
+                "ALTER TABLE public.mt_doc_user",
+                "ADD CONSTRAINT mt_doc_user_user_id_fkey FOREIGN KEY (user_id)",
+                "REFERENCES external_schema.external_table (external_id);");
+
+            new ExternalForeignKeyDefinition("user_id", _userMapping,
                     "external_schema", "external_table", "external_id")
-                { CascadeDeletes = true }
                 .ToDDL()
                 .ShouldBe(expected);
         }
