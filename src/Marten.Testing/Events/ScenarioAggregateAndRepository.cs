@@ -121,7 +121,7 @@ namespace Marten.Testing.Events
                 throw new ArgumentException("Invoice number needs to be positive", nameof(invoiceNumber));
             }
 
-            var @event = new InvoiceCreated(invoiceNumber);
+            var @event = new InvoiceCreated(invoiceNumber, ++Version);
             // Instantiation creates our initial event, capturing the invoice number
             Enqueue(@event);
             Apply(@event);
@@ -140,7 +140,7 @@ namespace Marten.Testing.Events
                 throw new ArgumentException("Description cannot be empty", nameof(description));
             }
 
-            var @event = new LineItemAdded(price, vat, description);
+            var @event = new LineItemAdded(price, vat, description, ++Version);
             Enqueue(@event);
             Apply(@event);
         }
@@ -171,35 +171,33 @@ namespace Marten.Testing.Events
     // ENDSAMPLE
 
     // SAMPLE: scenario-aggregate-events
-    public interface IVersionedEvent
-    {
-        int Version { get; set; }
-    }
 
-    public sealed class InvoiceCreated: IVersionedEvent
+    public sealed class InvoiceCreated
     {
         public int InvoiceNumber { get; }
 
-        public int Version { get; set; }
+        public int Version { get; }
 
-        public InvoiceCreated(int invoiceNumber)
+        public InvoiceCreated(int invoiceNumber, int version)
         {
             InvoiceNumber = invoiceNumber;
+            Version = version;
         }
     }
 
-    public sealed class LineItemAdded: IVersionedEvent
+    public sealed class LineItemAdded
     {
         public decimal Price { get; }
         public decimal Vat { get; }
         public string Description { get; }
-        public int Version { get; set; }
+        public int Version { get; }
 
-        public LineItemAdded(decimal price, decimal vat, string description)
+        public LineItemAdded(decimal price, decimal vat, string description, int version)
         {
             Price = price;
             Vat = vat;
             Description = description;
+            Version = version;
         }
     }
 
@@ -233,11 +231,6 @@ namespace Marten.Testing.Events
 
         protected void Enqueue(object @event)
         {
-            Version++;
-            if (@event is IVersionedEvent versionedEvent)
-            {
-                versionedEvent.Version = Version;
-            }
             uncommittedEvents.Add(@event);
         }
     }
