@@ -74,8 +74,9 @@ namespace Marten.Schema
             }
         }
 
+        [Obsolete("Use a constructor that takes StoreOptions instead. This might be removed in v4.0.")]
         public JsonLocatorField(string dataLocator, EnumStorage enumStyle, Casing casing, MemberInfo[] members) :
-            this(dataLocator, new StoreOptions(), enumStyle, casing, members, null)
+            this(dataLocator, null, enumStyle, casing, members, null)
         {
         }
 

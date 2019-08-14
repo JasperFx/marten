@@ -21,6 +21,7 @@ namespace Marten.Linq
         private readonly QueryModel _query;
         private readonly IQueryableDocument _mapping;
 
+        [Obsolete("Use the constructor that takes IQueryableDocument instead. This might be removed in v4.0.")]
         public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter) : this(serializer, expression, registerFilter, null)
         {
         }

@@ -22,6 +22,7 @@ namespace Marten.Linq
         private readonly SubQueryExpression _expression;
         private readonly IQueryableDocument _mapping;
 
+        [Obsolete("Use the constructor that takes IQueryableDocument instead. This might be removed in v4.0.")]
         public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression) : this(members, serializer, expression, null)
         {
         }
@@ -203,7 +204,7 @@ namespace Marten.Linq
             var members = visitor.Members;
             if (!members.Any())
                 throwNotSupportedContains();
-            var path = _mapping?.FieldFor(members).SqlLocator ?? CommandBuilder.BuildJsonStringLocator("d.data", members.ToArray(), _serializer.Casing);
+            var path = _mapping?.FieldFor(members).SqlLocator ?? $"CAST ({CommandBuilder.BuildJsonStringLocator("d.data", members.ToArray(), _serializer.Casing)} as jsonb)";
             return $"{path} ?| :{fromParam.ParameterName}";
         }
 
