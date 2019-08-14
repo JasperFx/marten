@@ -38,7 +38,6 @@ namespace Marten.Testing.MultiTenancy
             theStore.BulkInsert(new User[]{user1, user2});
 
             // Add documents to default tenant
-            // Note that schema for Issue is multi-tenanted
             // Note that schema for Issue is multi-tenanted hence documents will get added
             // to default tenant if tenant is not passed in the bulk insert operation
             var issue1 = new Issue { Title = "Test issue1" };
