@@ -310,6 +310,18 @@ namespace Marten.Util
             return ResolvePgType(memberType) != null || memberType.IsEnum;
         }
 
+        [Obsolete("Use JsonLocatorField to build locators with appropriate casting.  This might be removed in v4.0.")]
+        public static string ApplyCastToLocator(this string locator, EnumStorage enumStyle, Type memberType)
+        {
+            if (memberType.IsEnum)
+            {
+                return enumStyle == EnumStorage.AsInteger ? "({0})::int".ToFormat(locator) : locator;
+            }
+
+            // Treat "unknown" PgTypes as jsonb (this way null checks of arbitary depth won't fail on cast).
+            return "CAST({0} as {1})".ToFormat(locator, GetPgType(memberType, enumStyle));
+        }
+
         private static Type GetNullableType(Type type)
         {
             type = Nullable.GetUnderlyingType(type) ?? type;
