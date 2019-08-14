@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using Baseline;
+using Marten.Storage;
 
 namespace Marten.Schema
 {
@@ -21,7 +22,7 @@ namespace Marten.Schema
             columnName,
             parent,
             fkd => reference.Table.QualifiedName,
-            fkd => "(id)",
+            fkd => $"(id{(parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined ? ", tenant_id" : "")})",
             GenerateOnDeleteClause
         )
         {
@@ -45,7 +46,7 @@ namespace Marten.Schema
 
         public string KeyName
         {
-            get => _keyName ?? $"{_parent.Table.Name}_{ColumnName}_fkey";
+            get => _keyName ?? $"{_parent.Table.Name}_{ColumnName}{(_parent.TenancyStyle == TenancyStyle.Conjoined && _reference?.TenancyStyle == TenancyStyle.Conjoined ? "_tenant_id" : "")}_fkey";
             set => _keyName = value;
         }
 
@@ -60,7 +61,7 @@ namespace Marten.Schema
             var sb = new StringBuilder();
 
             sb.AppendLine($"ALTER TABLE {_parent.Table.QualifiedName}");
-            sb.AppendLine($"ADD CONSTRAINT {KeyName} FOREIGN KEY ({ColumnName})");
+            sb.AppendLine($"ADD CONSTRAINT {KeyName} FOREIGN KEY ({ColumnName}{(_parent.TenancyStyle == TenancyStyle.Conjoined && _reference?.TenancyStyle == TenancyStyle.Conjoined ? ", tenant_id" : "")})");
             sb.Append($"REFERENCES {_fkeyTableRefFunc.Invoke(this)} {_fkeyColumnRefFunc.Invoke(this)}");
 
             var extra = _fkeyExtraFunc?.Invoke(this);
