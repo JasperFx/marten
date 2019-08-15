@@ -8,7 +8,7 @@ namespace martenbuild
 {
     class MartenBuild
     {
-        private const string BUILD_VERSION = "3.6.1";
+        private const string BUILD_VERSION = "3.6.2";
 
         static void Main(string[] args)
         {
@@ -42,7 +42,7 @@ namespace martenbuild
 
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
-            
+
             Target("test", DependsOn("test-marten", "test-noda-time"));
 
             Target("storyteller", DependsOn("compile"), () =>
