@@ -125,7 +125,7 @@ to enable this is to use a configuration function like:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(_ =&gt;&#xD;&#xA;         {&#xD;&#xA;             _.Connection(&quot;some database connection&quot;);&#xD;&#xA;&#xD;&#xA;             _.Schema.For&lt;Issue&gt;().ForeignKey&lt;User&gt;(x =&gt; x.AssigneeId, fkd =&gt; fkd.CascadeDeletes = true);&#xD;&#xA;         });&#xD;&#xA;</code></pre>
 <h2 id="configuring-with-attributes">Configuring with Attributes</h2>
 <p>You can optionally configure properties or fields as foreign key relationships with the <code>[ForeignKey]</code> attribute:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [ForeignKey(typeof(User))]&#xD;&#xA;    public Guid UserId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? OtherUserId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class Issue&#xD;&#xA;{&#xD;&#xA;    public Issue()&#xD;&#xA;    {&#xD;&#xA;        Id = Guid.NewGuid();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;&#xD;&#xA;    [ForeignKey(typeof(User))]&#xD;&#xA;    public Guid UserId { get; set; }&#xD;&#xA;&#xD;&#xA;    public Guid? OtherUserId { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />
