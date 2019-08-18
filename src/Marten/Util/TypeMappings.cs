@@ -310,6 +310,7 @@ namespace Marten.Util
             return ResolvePgType(memberType) != null || memberType.IsEnum;
         }
 
+        [Obsolete("Use JsonLocatorField to build locators with appropriate casting.  This might be removed in v4.0.")]
         public static string ApplyCastToLocator(this string locator, EnumStorage enumStyle, Type memberType)
         {
             if (memberType.IsEnum)

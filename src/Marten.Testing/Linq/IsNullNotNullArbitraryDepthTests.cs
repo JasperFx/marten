@@ -1,4 +1,5 @@
-﻿using System.Linq;
+using System.Linq;
+using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Util;
@@ -44,12 +45,11 @@ namespace Marten.Testing.Linq
 			}
 		}
 
-		[Fact]
-		public void UnknownPGTypesMapToJsonb()
-		{
-			var cast = TypeMappings.ApplyCastToLocator("item", EnumStorage.AsInteger, typeof(UserNested));
-
-			Assert.Contains("as jsonb", cast);
-		}
+        [Fact]
+        public void UnknownPGTypesMapToJsonb()
+        {
+            var locator = JsonLocatorField.For<UserNested>(EnumStorage.AsInteger, Casing.Default, x => x.Nested);
+            Assert.Equal("CAST(d.data ->> 'Nested' as jsonb)", locator.SqlLocator);
+        }
 	}
 }

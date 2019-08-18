@@ -52,7 +52,7 @@ namespace Marten.Schema
             var serializer = _options.Serializer();
 
             return _fields.GetOrAdd(key,
-                _ => new JsonLocatorField(_dataLocator, serializer.EnumStorage, serializer.Casing, members.ToArray()));
+                _ => new JsonLocatorField(_dataLocator, _options, serializer.EnumStorage, serializer.Casing, members.ToArray()));
         }
 
         public IField FieldFor(MemberInfo member)
