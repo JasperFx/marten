@@ -18,7 +18,7 @@ namespace Marten.Testing.Bugs
 
             StoreOptions(_ =>
                          {
-                             _.Schema.For<ClassWithExternalForeignKey>().ForeignKey(x => x.ForiegnId, _.DatabaseSchemaName, "external_table", "id");
+                             _.Schema.For<ClassWithExternalForeignKey>().ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
                          });
 
             theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default).All(x => x != null).ShouldBeTrue();
@@ -31,7 +31,7 @@ namespace Marten.Testing.Bugs
 
             StoreOptions(_ =>
                          {
-                             _.Schema.For<ClassWithExternalForeignKey>().ForeignKey(x => x.ForiegnId, _.DatabaseSchemaName, "external_table", "id");
+                             _.Schema.For<ClassWithExternalForeignKey>().ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
                          });
 
             // Inserting a new document will force a call to:
@@ -43,7 +43,7 @@ namespace Marten.Testing.Bugs
             //  UnitOfWork.GetTypeDependencies(ClassWithExternalForeignKey) 
             using (var session = theStore.LightweightSession())
             {
-                session.Insert(new ClassWithExternalForeignKey{Id  = 1, ForiegnId = 1});
+                session.Insert(new ClassWithExternalForeignKey{Id  = 1, ForeignId = 1});
                 session.SaveChanges();
             }
         }
@@ -100,6 +100,6 @@ namespace Marten.Testing.Bugs
     public class ClassWithExternalForeignKey
     {
         public int Id { get; set; }
-        public int ForiegnId { get; set; }
+        public int ForeignId { get; set; }
     }
 }
