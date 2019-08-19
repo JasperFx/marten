@@ -194,6 +194,7 @@ namespace MartenBenchmarks.BenchAgainst
                     return m.ForeignKeys
                         .Where(x => x.ReferenceDocumentType != m.DocumentType)
                         .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
+                        .Where(referenceDocumentType => referenceDocumentType != null)
                         .Select(MappingFor);
                 });
 

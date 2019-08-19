@@ -204,9 +204,8 @@ namespace Marten.Storage
                 .TopologicalSort(m =>
                 {
                     return m.ForeignKeys
-                        .Where(x => x.ReferenceDocumentType != m.DocumentType)
+                        .Where(x => x.ReferenceDocumentType != m.DocumentType && x.ReferenceDocumentType != null)
                         .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
-                        .Where(keyDefinition => keyDefinition != null)
                         .Select(MappingFor);
                 });
 
