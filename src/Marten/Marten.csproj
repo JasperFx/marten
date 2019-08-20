@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-        <VersionPrefix>3.6.2</VersionPrefix>
+        <VersionPrefix>3.7.0</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten</AssemblyName>
@@ -37,8 +37,8 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-        <PackageReference Include="Npgsql" Version="4.0.7" />
-        <PackageReference Include="Npgsql.Json.NET" Version="4.0.7" />
+        <PackageReference Include="Npgsql" Version="4.0.9" />
+        <PackageReference Include="Npgsql.Json.NET" Version="4.0.9" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="Baseline" Version="1.5.0" />
         <PackageReference Include="System.Memory" Version="4.5.3" />
