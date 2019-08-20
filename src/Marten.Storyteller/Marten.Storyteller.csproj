@@ -19,6 +19,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <DotNetCliToolReference Include="dotnet-storyteller" Version="5.2.0" />
+        <DotNetCliToolReference Include="dotnet-storyteller" Version="5.4.0" />
     </ItemGroup>
 </Project>
