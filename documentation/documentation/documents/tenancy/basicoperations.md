@@ -18,6 +18,6 @@ Lastly, unlike reading operations, `IDocumentSession.Store` offers an overload t
 
 With multi-tenancy enabled, Marten associates each record with a tenancy. If no explicit tenancy is specified, either via policies, mappings, scoped sessions or overloads, Marten will default to `Tenancy.DefaultTenantId` with a constant value of *\*DEFAULT\**.
 
-The following sample demonstrates peristing documents as non-tenanted, under default tenant and other named tenants then querying them back in a session scoped to a specific named tenant and default tenant.
+The following sample demonstrates persisting documents as non-tenanted, under default tenant and other named tenants then querying them back in a session scoped to a specific named tenant and default tenant.
 
 <[sample:tenancy-mixed-tenancy-non-tenancy-sample]> 
