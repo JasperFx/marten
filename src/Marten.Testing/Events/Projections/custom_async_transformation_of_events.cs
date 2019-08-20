@@ -392,6 +392,35 @@ namespace Marten.Testing.Events.Projections
             firstBankAccountView.Customer.FullName.ShouldBe(customer.FullName);
             secondBankAccountView.Customer.FullName.ShouldBe(customer.FullName);
         }
+
+        [Fact]
+        public void verify_delete_and_store_events_on_same_stream_are_processed_in_order()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
+                    .DeleteEvent<QuestEnded>();
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+
+            theSession.Events.Append(streamId, ended);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldBeNull();
+
+            theSession.Events.Append(streamId, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+
+            theSession.Events.Append(streamId, ended, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+        }
     }
 
     // SAMPLE: viewprojection-from-class-async
