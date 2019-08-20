@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -6,11 +6,11 @@ using static Westwind.Utilities.FileUtils;
 
 namespace martenbuild
 {
-    class MartenBuild
+    internal class MartenBuild
     {
-        private const string BUILD_VERSION = "3.6.2";
+        private const string BUILD_VERSION = "3.7.0";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var configuration = Environment.GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
