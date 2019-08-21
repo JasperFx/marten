@@ -752,18 +752,33 @@ namespace Marten.Events.Projections
 
         private void applyProjections(IDocumentSession session, ICollection<EventProjection> projections, IEnumerable<TView> views)
         {
-            var viewMap = createViewMap(session, projections, views);
+            var idAssigner = session.Tenant.IdAssignmentFor<TView>();
+            var resolver = session.Tenant.StorageFor<TView>();
+            var viewMap = views.ToDictionary(view => (TId)resolver.Identity(view), view => view);
 
             foreach (var eventProjection in projections)
             {
-                var hasView = viewMap.TryGetValue(eventProjection.ViewId, out TView view);
-
-                if (!hasView)
-                    continue;
-
-                using (Util.NoSynchronizationContextScope.Enter())
+                var viewId = eventProjection.ViewId;
+                var hasExistingView = viewMap.TryGetValue(viewId, out var view);
+                if (!hasExistingView)
                 {
-                    if (eventProjection.Type == ProjectionEventType.Delete)
+                    if (eventProjection.Type == ProjectionEventType.CreateAndUpdate)
+                    {
+                        view = newView(session.Tenant, idAssigner, viewId);
+                        viewMap.Add(viewId, view);
+                        hasExistingView = true;
+                    }
+                }
+
+                using (NoSynchronizationContextScope.Enter())
+                {
+                    if (eventProjection.Type == ProjectionEventType.CreateAndUpdate
+                        || (eventProjection.Type == ProjectionEventType.UpdateOnly && hasExistingView))
+                    {
+                        session.Store(view);
+                        eventProjection.ProjectTo(session, view).Wait();
+                    }
+                    else if (eventProjection.Type == ProjectionEventType.Delete)
                     {
                         var shouldDeleteTask = eventProjection.ShouldDelete(session, view);
                         shouldDeleteTask.Wait();
@@ -772,67 +787,41 @@ namespace Marten.Events.Projections
                             session.Delete(view);
                         }
                     }
-                    else
-                    {
-                        eventProjection.ProjectTo(session, view).Wait();
-                    }
                 }
             }
         }
 
         private async Task applyProjectionsAsync(IDocumentSession session, ICollection<EventProjection> projections, IEnumerable<TView> views)
         {
-            var viewMap = createViewMap(session, projections, views);
+            var idAssigner = session.Tenant.IdAssignmentFor<TView>();
+            var resolver = session.Tenant.StorageFor<TView>();
+            var viewMap = views.ToDictionary(view => (TId)resolver.Identity(view), view => view);
 
             foreach (var eventProjection in projections)
             {
-                var hasView = viewMap.TryGetValue(eventProjection.ViewId, out TView view);
-
-                if (!hasView)
-                    continue;
-
-                if (eventProjection.Type == ProjectionEventType.Delete)
-                {
-                    if (await eventProjection.ShouldDelete(session, view))
-                    {
-                        session.Delete(view);
-                    }
-                }
-                else
-                {
-                    await eventProjection.ProjectTo(session, view);
-                }
-            }
-        }
-
-        private IDictionary<TId, TView> createViewMap(IDocumentSession session, IEnumerable<EventProjection> projections, IEnumerable<TView> views)
-        {
-            var idAssigner = session.Tenant.IdAssignmentFor<TView>();
-            var resolver = session.Tenant.StorageFor<TView>();
-
-            var viewMap = views.ToDictionary(view => (TId)resolver.Identity(view), view => view);
-
-            foreach (var projection in projections)
-            {
-                var viewId = projection.ViewId;
-                var hasExistingView = viewMap.TryGetValue(viewId, out TView view);
+                var viewId = eventProjection.ViewId;
+                var hasExistingView = viewMap.TryGetValue(viewId, out var view);
                 if (!hasExistingView)
                 {
-                    if (projection.Type == ProjectionEventType.CreateAndUpdate)
+                    if (eventProjection.Type == ProjectionEventType.CreateAndUpdate)
                     {
                         view = newView(session.Tenant, idAssigner, viewId);
                         viewMap.Add(viewId, view);
+                        hasExistingView = true;
                     }
                 }
 
-                if (projection.Type == ProjectionEventType.CreateAndUpdate
-                    || (projection.Type == ProjectionEventType.UpdateOnly && hasExistingView))
+                if (eventProjection.Type == ProjectionEventType.CreateAndUpdate
+                    || (eventProjection.Type == ProjectionEventType.UpdateOnly && hasExistingView))
                 {
                     session.Store(view);
+                    eventProjection.ProjectTo(session, view).Wait();
+                }
+                else if (eventProjection.Type == ProjectionEventType.Delete && await eventProjection.ShouldDelete(session, view))
+                {
+                    session.Delete(view);
                 }
             }
-
-            return viewMap;
         }
 
         private static TView newView(ITenant tenant, IdAssignment<TView> idAssigner, TId id)
