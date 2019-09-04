@@ -1,5 +1,7 @@
+using System;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
@@ -161,6 +163,26 @@ namespace Marten.Testing.Schema
                     ON DELETE CASCADE;", StringComparisonOption.NormalizeWhitespaces);
 
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
+            }
+        }
+
+        [Fact]
+        public void for_document_with_int_id_when_schema_patch_applied_then_does_not_show_more_changes()
+        {
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(IntDoc));
+
+            using (var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Schema.For<IntDoc>();
+            }))
+            {
+                Should.NotThrow(() =>
+                {
+                    store.Schema.ApplyAllConfiguredChangesToDatabase();
+
+                    store.Schema.AssertDatabaseMatchesConfiguration();
+                });
             }
         }
     }
