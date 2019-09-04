@@ -1,4 +1,4 @@
-﻿CREATE OR REPLACE FUNCTION {databaseSchema}.mt_get_next_hi(entity varchar) RETURNS int AS $$
+﻿CREATE OR REPLACE FUNCTION {databaseSchema}.mt_get_next_hi(entity varchar) RETURNS integer AS $$
 DECLARE
 	current_value bigint;
 	next_value bigint;
