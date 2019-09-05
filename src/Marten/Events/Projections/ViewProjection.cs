@@ -778,7 +778,7 @@ namespace Marten.Events.Projections
                         session.Store(view);
                         eventProjection.ProjectTo(session, view).Wait();
                     }
-                    else if (eventProjection.Type == ProjectionEventType.Delete)
+                    else if (eventProjection.Type == ProjectionEventType.Delete && hasExistingView)
                     {
                         var shouldDeleteTask = eventProjection.ShouldDelete(session, view);
                         shouldDeleteTask.Wait();
@@ -817,7 +817,9 @@ namespace Marten.Events.Projections
                     session.Store(view);
                     eventProjection.ProjectTo(session, view).Wait();
                 }
-                else if (eventProjection.Type == ProjectionEventType.Delete && await eventProjection.ShouldDelete(session, view))
+                else if (eventProjection.Type == ProjectionEventType.Delete
+                    && hasExistingView
+                    && await eventProjection.ShouldDelete(session, view))
                 {
                     session.Delete(view);
                 }
