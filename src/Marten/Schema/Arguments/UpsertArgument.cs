@@ -12,7 +12,7 @@ namespace Marten.Schema.Arguments
     public class UpsertArgument
     {
         protected static readonly MethodInfo writeMethod =
-            typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.GetParameters().Length == 2);
+            typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.Name == "Write" && x.GetParameters().Length == 2 && x.GetParameters()[0].ParameterType.IsGenericParameter && x.GetParameters()[1].ParameterType == typeof(NpgsqlTypes.NpgsqlDbType));
 
         protected static readonly MethodInfo _paramMethod = typeof(SprocCall)
             .GetMethod("Param", new[] { typeof(string), typeof(object), typeof(NpgsqlDbType) });
