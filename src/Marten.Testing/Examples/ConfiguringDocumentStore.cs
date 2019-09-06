@@ -13,6 +13,7 @@ namespace Marten.Testing.Examples
         public string LastName { get; set; }
         public bool Internal { get; set; }
         public string UserName { get; set; }
+        public string Department { get; set; }
     }
 
     // ENDSAMPLE

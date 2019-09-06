@@ -178,7 +178,7 @@ namespace Marten.Storage
     {
         private readonly DuplicatedField _field;
 
-        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType)
+        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType, field.NotNull ? "NOT NULL": "NULL")
         {
             CanAdd = true;
             _field = field;

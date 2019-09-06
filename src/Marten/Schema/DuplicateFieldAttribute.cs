@@ -14,7 +14,7 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            var field = mapping.DuplicateField(member.Name, PgType);
+            var field = mapping.DuplicateField(member.Name, PgType, notNull: NotNull);
 
             if (DbType != default(NpgsqlDbType))
             {
@@ -54,5 +54,7 @@ namespace Marten.Schema
         /// Specifies the sort order of the index (only applicable to B-tree indexes)
         /// </summary>
         public SortOrder IndexSortOrder { get; set; } = SortOrder.Asc;
+
+        public bool NotNull { get; set; } = false;
     }
 }

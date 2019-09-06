@@ -138,11 +138,11 @@ namespace Marten
             /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
             /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null)
+            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null, bool notNull = false)
             {
                 alter = mapping =>
                 {
-                    mapping.Duplicate(expression, pgType, dbType, configure);
+                    mapping.Duplicate(expression, pgType, dbType, configure, notNull);
                 };
                 return this;
             }
