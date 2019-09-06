@@ -421,6 +421,27 @@ namespace Marten.Testing.Events.Projections
             theSession.SaveChanges();
             theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
         }
+
+        [Fact]
+        public void verify_delete_and_with_nonexistent_streamId_does_not_throw()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
+                    .DeleteEvent<QuestEnded>();
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+
+            theSession.Events.Append(Guid.NewGuid(), ended);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+        }
     }
 
     // SAMPLE: viewprojection-from-class-async
