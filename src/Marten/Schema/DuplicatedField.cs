@@ -17,7 +17,8 @@ namespace Marten.Schema
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
-        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true) : base(enumStorage, memberPath)
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
+            : base(enumStorage, memberPath, notNull)
         {
             ColumnName = MemberName.ToTableAlias();
             this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;

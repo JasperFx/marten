@@ -608,10 +608,10 @@ namespace Marten.Schema
             return string.Join("_", parts);
         }
 
-        public DuplicatedField DuplicateField(string memberName, string pgType = null)
+        public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
         {
             var field = FieldFor(memberName);
-            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime);
+            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -622,11 +622,11 @@ namespace Marten.Schema
             return duplicate;
         }
 
-        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null)
+        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null, bool notNull = false)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime);
+            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;
@@ -725,12 +725,12 @@ namespace Marten.Schema
         /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
         /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
         /// <returns></returns>
-        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null)
+        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null, bool notNull = false)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType);
+            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType, notNull:notNull);
 
             if (dbType.HasValue)
                 duplicateField.DbType = dbType.Value;

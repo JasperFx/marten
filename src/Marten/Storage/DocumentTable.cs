@@ -177,8 +177,11 @@ namespace Marten.Storage
     public class DuplicatedFieldColumn: TableColumn
     {
         private readonly DuplicatedField _field;
+        private const string NullConstraint = "NULL";
+        private const string NotNullConstraint = "NOT NULL";
 
-        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType)
+
+        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType, field.NotNull ? NotNullConstraint : NullConstraint)
         {
             CanAdd = true;
             _field = field;

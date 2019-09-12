@@ -14,11 +14,14 @@ Or by using the fluent interface off of `StoreOptions`:
 
 <[sample:IndexExamples]>
 
+In the case above, Marten would add an extra columns to the generated `mt_doc_user` table with `first_name` and `department`. Some users find duplicated fields to be useful for user supplied SQL queries.
+
+## Defining Not Null constraint
+By default, the duplicate column is created with NULL constraint. If you want to define the duplicate column with a NOT NULL constraint, use `NotNull` property via `DuplicateFieldAttribute` or pass `notNull: true` for the `Duplicate` fluent interface. See the examples above.
+
+## Indexing
 By default, Marten adds a [btree index](http://www.postgresql.org/docs/9.4/static/indexes-types.html) (the Postgresql default) to a searchable index, but you can also 
 customize the generated index with the syntax shown above: The second [nested closure](http://martinfowler.com/dslCatalog/nestedClosure.html) argument is an optional
 mechanism to customize the database index generated for the duplicated field.
-
-In the case above, Marten would add an extra column to the generated `mt_doc_user` table called
-`first_name`. Some users find duplicated fields to be useful for user supplied SQL queries.
 
 
