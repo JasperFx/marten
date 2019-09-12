@@ -308,8 +308,8 @@ namespace Marten.Schema
             // 4) Id field
             return GetProperties(documentType).FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
                    ?? documentType.GetFields().FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
-                   ?? (MemberInfo)GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
-                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+                   ?? (MemberInfo)GetProperties(documentType).FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
+                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
         }
 
         private static PropertyInfo[] GetProperties(Type type)
