@@ -6,7 +6,6 @@ using Marten.Events;
 using Marten.Services;
 using Marten.Services.Events;
 using Newtonsoft.Json;
-using NSubstitute;
 using ReflectionMagic;
 using Shouldly;
 using Xunit;
