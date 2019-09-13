@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using Marten.Events;
 using Marten.Services;
+using Marten.Services.Events;
+using Newtonsoft.Json;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
@@ -16,6 +18,7 @@ namespace Marten.Testing.Events
             StoreOptions(options =>
             {
                 options.Events.StreamIdentity = StreamIdentity.AsString;
+                options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePublicAndPrivateApply);
             });
         }
 
@@ -70,6 +73,28 @@ namespace Marten.Testing.Events
             // ENDSAMPLE
         }
 
+        [Fact]
+        public void CanRetrieveVersion()
+        {
+            var repository = new AggregateRepository(theStore);
+
+            var invoice = CreateInvoice();
+            invoice.Version.ShouldBe(3);
+            repository.Store(invoice);
+
+            // Assert version was incremented properly
+            var invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+            invoiceFromRepository.Version.ShouldBe(3);
+
+            // Update aggregate
+            invoiceFromRepository.AddLine(100, 23, "Some nice product with 23% VAT");
+            repository.Store(invoiceFromRepository);
+
+            // Assert version was incremented properly
+            invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+            invoiceFromRepository.Version.ShouldBe(4);
+        }
+
         private static Invoice CreateInvoice()
         {
             // SAMPLE: scenario-aggregate-createinvoice
@@ -86,7 +111,11 @@ namespace Marten.Testing.Events
     // SAMPLE: scenario-aggregate-invoice
     public sealed class Invoice: AggregateBase
     {
-        public Invoice(int invoiceNumber) : this()
+        public Invoice()
+        {
+        }
+
+        public Invoice(int invoiceNumber)
         {
             if (invoiceNumber <= 0)
             {
@@ -94,10 +123,16 @@ namespace Marten.Testing.Events
             }
 
             // Instantiation creates our initial event, capturing the invoice number
-            RaiseEvent(new InvoiceCreated(invoiceNumber));
+            var @event = new InvoiceCreated(invoiceNumber);
+
+            // Call Apply to mutate state of aggregate based on event
+            Apply(@event);
+
+            // Add the event to uncommitted events to use it while persisting the events to Marten events store
+            AddUncommittedEvent(@event);
         }
 
-        // Enforce any contracts on input, then raise event caputring the data
+        // Enforce any contracts on input, then raise event capturing the data
         public void AddLine(decimal price, decimal vat, string description)
         {
             if (string.IsNullOrEmpty(description))
@@ -105,7 +140,13 @@ namespace Marten.Testing.Events
                 throw new ArgumentException("Description cannot be empty", nameof(description));
             }
 
-            RaiseEvent(new LineItemAdded(price, vat, description));
+            var @event = new LineItemAdded(price, vat, description);
+
+            // Call Apply to mutate state of aggregate based on event
+            Apply(@event);
+
+            // Add the event to uncommitted events to use it while persisting the events to Marten events store
+            AddUncommittedEvent(@event);
         }
 
         public override string ToString()
@@ -117,17 +158,13 @@ namespace Marten.Testing.Events
         public decimal Total { get; private set; }
         private readonly List<Tuple<string, decimal, decimal>> lines = new List<Tuple<string, decimal, decimal>>();
 
-        private Invoice()
-        {
-            // Register the event types that make up our aggregate , together with their respective handlers
-            Register<InvoiceCreated>(Apply);
-            Register<LineItemAdded>(Apply);
-        }
-
         // Apply the deltas to mutate our state
         private void Apply(InvoiceCreated @event)
         {
             Id = @event.InvoiceNumber.ToString(CultureInfo.InvariantCulture);
+
+            // Ensure to update version on every Apply method.
+            Version++;
         }
 
         // Apply the deltas to mutate our state
@@ -136,6 +173,9 @@ namespace Marten.Testing.Events
             var price = @event.Price * (1 + @event.Vat / 100);
             Total += price;
             lines.Add(Tuple.Create(@event.Description, price, @event.Vat));
+
+            // Ensure to update version on every Apply method.
+            Version++;
         }
     }
 
@@ -178,39 +218,26 @@ namespace Marten.Testing.Events
         // For protecting the state, i.e. conflict prevention
         public int Version { get; protected set; }
 
-        private readonly List<object> uncommittedEvents = new List<object>();
-        private readonly Dictionary<Type, Action<object>> handlers = new Dictionary<Type, Action<object>>();
+        // JsonIgnore - for making sure that it won't be stored in inline projection
+        [JsonIgnore]
+        private readonly List<object> _uncommittedEvents = new List<object>();
 
         // Get the deltas, i.e. events that make up the state, not yet persisted
         public IEnumerable<object> GetUncommittedEvents()
         {
-            return uncommittedEvents;
+            return _uncommittedEvents;
         }
 
         // Mark the deltas as persisted.
         public void ClearUncommittedEvents()
         {
-            uncommittedEvents.Clear();
+            _uncommittedEvents.Clear();
         }
 
-        // Infrastructure for raising events & registering handlers
-
-        protected void Register<T>(Action<T> handle)
+        protected void AddUncommittedEvent(object @event)
         {
-            handlers[typeof(T)] = e => handle((T)e);
-        }
-
-        protected void RaiseEvent(object @event)
-        {
-            ApplyEvent(@event);
-            uncommittedEvents.Add(@event);
-        }
-
-        private void ApplyEvent(object @event)
-        {
-            handlers[@event.GetType()](@event);
-            // Each event bumps our version
-            Version++;
+            // add the event to the uncommitted list
+            _uncommittedEvents.Add(@event);
         }
     }
 
@@ -235,29 +262,17 @@ namespace Marten.Testing.Events
                 session.Events.Append(aggregate.Id, aggregate.Version, events);
                 session.SaveChanges();
             }
-            // Once succesfully persisted, clear events from list of uncommitted events
+            // Once successfully persisted, clear events from list of uncommitted events
             aggregate.ClearUncommittedEvents();
         }
 
-        private static readonly MethodInfo ApplyEvent = typeof(AggregateBase).GetMethod("ApplyEvent", BindingFlags.Instance | BindingFlags.NonPublic);
-
-        public T Load<T>(string id, int? version = null) where T : AggregateBase
+        public T Load<T>(string id, int? version = null) where T : AggregateBase, new()
         {
-            IReadOnlyList<IEvent> events;
             using (var session = store.LightweightSession())
             {
-                events = session.Events.FetchStream(id, version ?? 0);
+                var aggregate = session.Events.AggregateStream<T>(id, version ?? 0);
+                return aggregate ?? throw new InvalidOperationException($"No aggregate by id {id}.");
             }
-
-            if (events != null && events.Any())
-            {
-                var instance = Activator.CreateInstance(typeof(T), true);
-                // Replay our aggregate state from the event stream
-                events.Aggregate(instance, (o, @event) => ApplyEvent.Invoke(instance, new[] { @event.Data }));
-                return (T)instance;
-            }
-
-            throw new InvalidOperationException($"No aggregate by id {id}.");
         }
     }
 
