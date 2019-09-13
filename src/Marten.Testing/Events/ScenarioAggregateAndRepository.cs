@@ -82,12 +82,17 @@ namespace Marten.Testing.Events
             invoice.Version.ShouldBe(3);
             repository.Store(invoice);
 
-            // assert version was incremented properly
+            // Assert version was incremented properly
             var invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
             invoiceFromRepository.Version.ShouldBe(3);
 
-            // update aggregate
+            // Update aggregate
             invoiceFromRepository.AddLine(100, 23, "Some nice product with 23% VAT");
+            repository.Store(invoiceFromRepository);
+
+            // Assert version was incremented properly
+            invoiceFromRepository = repository.Load<Invoice>(invoice.Id);
+            invoiceFromRepository.Version.ShouldBe(4);
         }
 
         private static Invoice CreateInvoice()
