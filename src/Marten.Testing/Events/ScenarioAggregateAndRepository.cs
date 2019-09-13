@@ -124,7 +124,7 @@ namespace Marten.Testing.Events
             Apply(@event);
 
             // Add the event to uncommitted events to use it while persisting the events to Marten events store
-            AddUncommittedEvents(@event);
+            AddUncommittedEvent(@event);
         }
 
         // Enforce any contracts on input, then raise event capturing the data
@@ -141,7 +141,7 @@ namespace Marten.Testing.Events
             Apply(@event);
 
             // Add the event to uncommitted events to use it while persisting the events to Marten events store
-            AddUncommittedEvents(@event);
+            AddUncommittedEvent(@event);
         }
 
         public override string ToString()
@@ -158,7 +158,7 @@ namespace Marten.Testing.Events
         {
             Id = @event.InvoiceNumber.ToString(CultureInfo.InvariantCulture);
 
-            // ensure to update version on every Apply method
+            // Ensure to update version on every Apply method.
             Version++;
         }
 
@@ -169,7 +169,7 @@ namespace Marten.Testing.Events
             Total += price;
             lines.Add(Tuple.Create(@event.Description, price, @event.Vat));
 
-            // ensure to update version on every Apply method
+            // Ensure to update version on every Apply method.
             Version++;
         }
     }
@@ -229,7 +229,7 @@ namespace Marten.Testing.Events
             _uncommittedEvents.Clear();
         }
 
-        protected void AddUncommittedEvents(object @event)
+        protected void AddUncommittedEvent(object @event)
         {
             // add the event to the uncommitted list
             _uncommittedEvents.Add(@event);
