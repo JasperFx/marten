@@ -6,7 +6,6 @@ using Marten.Events;
 using Marten.Services;
 using Marten.Services.Events;
 using Newtonsoft.Json;
-using ReflectionMagic;
 using Shouldly;
 using Xunit;
 
@@ -119,7 +118,13 @@ namespace Marten.Testing.Events
             }
 
             // Instantiation creates our initial event, capturing the invoice number
-            RaiseEvent(new InvoiceCreated(invoiceNumber));
+            var @event = new InvoiceCreated(invoiceNumber);
+
+            // Call Apply to mutate state of aggregate based on event
+            Apply(@event);
+
+            // Add the event to uncommitted events to use it while persisting the events to Marten events store
+            AddUncommittedEvents(@event);
         }
 
         // Enforce any contracts on input, then raise event capturing the data
@@ -130,7 +135,13 @@ namespace Marten.Testing.Events
                 throw new ArgumentException("Description cannot be empty", nameof(description));
             }
 
-            RaiseEvent(new LineItemAdded(price, vat, description));
+            var @event = new LineItemAdded(price, vat, description);
+
+            // Call Apply to mutate state of aggregate based on event
+            Apply(@event);
+
+            // Add the event to uncommitted events to use it while persisting the events to Marten events store
+            AddUncommittedEvents(@event);
         }
 
         public override string ToString()
@@ -218,11 +229,8 @@ namespace Marten.Testing.Events
             _uncommittedEvents.Clear();
         }
 
-        protected void RaiseEvent(object @event)
+        protected void AddUncommittedEvents(object @event)
         {
-            // using ReflectionMagic library to invoke the Apply method
-            this.AsDynamic().Apply(@event);
-
             // add the event to the uncommitted list
             _uncommittedEvents.Add(@event);
         }
