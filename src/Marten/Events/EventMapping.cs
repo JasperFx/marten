@@ -135,6 +135,11 @@ namespace Marten.Events
             // Do nothing
         }
 
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, Type entityType)
+        {
+            // Do nothing
+        }
+
         public void Remove(IIdentityMap map, object entity)
         {
             throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");

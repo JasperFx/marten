@@ -256,7 +256,7 @@ namespace Marten.Services
             {
                 var upsert = _tenant.StorageFor(group.Key);
 
-                group.Each(c => { upsert.RegisterUpdate(null, UpdateStyle.Upsert, batch, c.Document, c.Json); });
+                group.Each(c => { upsert.RegisterUpdate(null, UpdateStyle.Upsert, batch, c.Document, c.DocumentType); });
             });
 
             return changes;

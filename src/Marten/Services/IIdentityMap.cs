@@ -1,3 +1,4 @@
+using Marten.Storage;
 using System;
 using System.IO;
 
@@ -9,9 +10,13 @@ namespace Marten.Services
 
         VersionTracker Versions { get; }
 
+        MetadataCache MetadataCache { get; }
+
         T Get<T>(object id, TextReader json, Guid? version);
 
         T Get<T>(object id, Type concreteType, TextReader json, Guid? version);
+
+        T Get<T>(object id, Type concreteType, TextReader json, Guid? version, Func<T, DocumentMetadata> applyMetadata);
 
         void Remove<T>(object id);
 

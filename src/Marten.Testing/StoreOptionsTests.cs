@@ -149,6 +149,11 @@ namespace Marten.Testing
                 throw new NotImplementedException();
             }
 
+            public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, Type entityType)
+            {
+                throw new NotImplementedException();
+            }
+
             public void Remove(IIdentityMap map, object entity)
             {
                 throw new NotImplementedException();
@@ -218,6 +223,11 @@ namespace Marten.Testing
             }
 
             public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, Type entityType)
             {
                 throw new NotImplementedException();
             }

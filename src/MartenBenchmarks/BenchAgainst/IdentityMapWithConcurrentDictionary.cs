@@ -6,6 +6,7 @@ using System.Linq;
 using Baseline;
 using Marten;
 using Marten.Services;
+using Marten.Storage;
 
 namespace MartenBenchmarks.BenchAgainst
 {
@@ -32,12 +33,20 @@ namespace MartenBenchmarks.BenchAgainst
 
         public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
         {
+            return Get<T>(id, concreteType, json, version, null);
+        }
+
+        public T Get<T>(object id, Type concreteType, TextReader json, Guid? version, Func<T, DocumentMetadata> applyMetadata)
+        {
             var cacheValue = Cache[typeof(T)].GetOrAdd(id, _ =>
             {
                 if (version.HasValue)
                     Versions.Store<T>(id, version.Value);
 
                 var document = Serializer.FromJson(concreteType, json);
+
+                var metadata = applyMetadata?.Invoke(document.As<T>());
+                MetadataCache.Store<T>(id, metadata);
 
                 _listeners.Each(listener => listener.DocumentLoaded(id, document));
 
@@ -50,12 +59,14 @@ namespace MartenBenchmarks.BenchAgainst
         {
             TCacheValue value;
             Cache[typeof(T)].TryRemove(id, out value);
+            MetadataCache.Remove(typeof(T), id);
         }
 
         public void RemoveAllOfType(Type type)
         {
             if (Cache.Has(type))
                 Cache[type].Clear();
+            MetadataCache.RemoveAllOfType(type);
         }
 
         public void Store<T>(object id, T entity, Guid? version = null)
@@ -98,6 +109,8 @@ namespace MartenBenchmarks.BenchAgainst
         }
 
         public VersionTracker Versions { get; set; } = new VersionTracker();
+
+        public MetadataCache MetadataCache { get; set; } = new MetadataCache();
 
         public virtual void ClearChanges()
         {

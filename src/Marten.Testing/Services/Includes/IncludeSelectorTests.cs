@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data.Common;
 using Marten.Linq;
 using Marten.Schema;
@@ -38,7 +38,7 @@ namespace Marten.Testing.Services.Includes
         [Fact]
         public void select_fields_has_both_the_inner_and_outer_fields()
         {
-            theSelector.SelectFields().ShouldHaveTheSameElementsAs("a", "b", "c", "foo.data", "foo.id", "foo.mt_version");
+            theSelector.SelectFields().ShouldHaveTheSameElementsAs("a", "b", "c", "foo.data", "foo.id", "foo.mt_version", "foo.mt_last_modified", "foo.mt_dotnet_type");
         }
 
         [Fact]

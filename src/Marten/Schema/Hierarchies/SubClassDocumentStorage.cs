@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -18,11 +19,13 @@ namespace Marten.Schema.Hierarchies
     {
         private readonly IDocumentStorage<TBase> _parent;
         private readonly SubClassMapping _mapping;
+        private readonly MetadataProjector<T> _metadataProjector;
 
         public SubClassDocumentStorage(IDocumentStorage<TBase> parent, SubClassMapping mapping)
         {
             _parent = parent;
             _mapping = mapping;
+            _metadataProjector = new MetadataProjector<T>(mapping.Parent);
         }
 
         public TenancyStyle TenancyStyle => _parent.TenancyStyle;
@@ -47,12 +50,17 @@ namespace Marten.Schema.Hierarchies
 
         public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
-            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity);
+            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, typeof(T));
         }
 
         public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
-            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, json);
+            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, typeof(T));
+        }
+
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, Type entityType)
+        {
+            _parent.RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, entityType);
         }
 
         public void Remove(IIdentityMap map, object entity)
@@ -87,29 +95,79 @@ namespace Marten.Schema.Hierarchies
 
         public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
         {
-            var id = reader[startingIndex + 1];
+            var offset = 0;
+            var id = reader[startingIndex + ++offset];
+            var typeAlias = reader.GetFieldValue<string>(startingIndex + ++offset);
 
-            var version = reader.GetFieldValue<Guid>(startingIndex + 3);
-            var typeAlias = reader.GetString(startingIndex + 2);
+            var version = reader.GetFieldValue<Guid>(startingIndex + ++offset);
+            var lastMod = reader.GetValue(startingIndex + ++offset).MapToDateTime();
+            var dotNetType = reader.GetFieldValue<string>(startingIndex + ++offset);
+
+            var deleted = false;
+            DateTime? deletedAt = null;
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                deleted = reader.GetFieldValue<bool>(startingIndex + ++offset);
+                if (!reader.IsDBNull(startingIndex + ++offset))
+                {
+                    deletedAt = reader.GetValue(startingIndex + offset).MapToDateTime();
+                }
+            }
+
+            string tenantId = null;
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                tenantId = reader.GetFieldValue<string>(startingIndex + ++offset);
+            }
+
+            var metadata = new DocumentMetadata(lastMod, version, dotNetType, typeAlias, deleted, deletedAt)
+            {
+                TenantId = tenantId
+            };
 
             var actualType = _mapping.TypeFor(typeAlias);
-
             var json = reader.GetTextReader(startingIndex);
+            return map.Get<TBase>(id, actualType, json, version, t => _metadataProjector.ProjectTo(t as T, metadata)) as T;
 
-            return map.Get<TBase>(id, actualType, json, version) as T;
         }
 
         public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map,
             CancellationToken token)
         {
-            var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
+            var offset = 0;
+            var id = await reader.GetFieldValueAsync<object>(startingIndex + ++offset, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(3, token).ConfigureAwait(false);
-            var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + 2, token).ConfigureAwait(false);
+            var typeAlias = await reader.GetFieldValueAsync<string>(startingIndex + ++offset, token).ConfigureAwait(false);
+
+            var version = await reader.GetFieldValueAsync<Guid>(startingIndex + ++offset, token).ConfigureAwait(false);
+            var lastMod = (await reader.GetFieldValueAsync<object>(startingIndex + ++offset, token).ConfigureAwait(false)).MapToDateTime();
+            var dotNetType = await reader.GetFieldValueAsync<string>(startingIndex + ++offset, token).ConfigureAwait(false);
+
+            var deleted = false;
+            DateTime? deletedAt = null;
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                deleted = await reader.GetFieldValueAsync<bool>(startingIndex + ++offset, token).ConfigureAwait(false);
+                if (!await reader.IsDBNullAsync(startingIndex + ++offset, token).ConfigureAwait(false))
+                {
+                    deletedAt = (await reader.GetFieldValueAsync<object>(startingIndex + offset, token).ConfigureAwait(false)).MapToDateTime();
+                }
+            }
+
+            string tenantId = null;
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                tenantId = await reader.GetFieldValueAsync<string>(startingIndex + ++offset, token).ConfigureAwait(false);
+            }
+
+            var metadata = new DocumentMetadata(lastMod, version, dotNetType, typeAlias, deleted, deletedAt)
+            {
+                TenantId = tenantId
+            };
 
             var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false);
 
-            return map.Get<TBase>(id, _mapping.TypeFor(typeAlias), json, version) as T;
+            return map.Get<TBase>(id, _mapping.TypeFor(typeAlias), json, version, t => _metadataProjector.ProjectTo(t as T, metadata)) as T;
         }
 
         public T Resolve(IIdentityMap map, IQuerySession session, object id)

@@ -47,6 +47,12 @@ namespace Marten
             return _identityMap.Versions.Version<TDoc>(id);
         }
 
+        public DocumentMetadata MetadataFor<TDoc>(TDoc entity)
+        {
+            var id = _store.Storage.StorageFor(typeof(TDoc)).Identity(entity);
+            return _identityMap.MetadataCache?.MetadataFor(typeof(TDoc), id) ?? Tenant.MetadataFor(entity);
+        }
+
         public IDocumentStore DocumentStore => _store;
 
         public IJsonLoader Json => new JsonLoader(_connection, Tenant);

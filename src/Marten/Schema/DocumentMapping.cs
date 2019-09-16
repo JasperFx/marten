@@ -43,6 +43,13 @@ namespace Marten.Schema
         private string _alias;
         private string _databaseSchemaName;
         private MemberInfo _idMember;
+        private MemberInfo _versionMember;
+        private MemberInfo _lastModifiedMember;
+        private MemberInfo _tenantIdMember;
+        private MemberInfo _softDeletedMember;
+        private MemberInfo _softDeletedAtMember;
+        private MemberInfo _documentTypeMember;
+        private MemberInfo _dotNetTypeMember;
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions) : base("d.data", documentType, storeOptions)
         {
@@ -76,6 +83,72 @@ namespace Marten.Schema
                     UseOptimisticConcurrency = true;
                     _versionMember = value;
                 }
+            }
+        }
+
+        public MemberInfo LastModifiedMember
+        {
+            get => _lastModifiedMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(DateTime))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(LastModifiedMember)} has to be of type DateTime");
+                _lastModifiedMember = value;
+            }
+        }
+
+        public MemberInfo TenantIdMember
+        {
+            get => _tenantIdMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(string))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(TenantIdMember)} has to be of type string");
+                _tenantIdMember = value;
+            }
+        }
+
+        public MemberInfo IsSoftDeletedMember
+        {
+            get => _softDeletedMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(bool))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(IsSoftDeletedMember)} has to be of type boolean");
+                _softDeletedMember = value;
+            }
+        }
+
+        public MemberInfo SoftDeletedAtMember
+        {
+            get => _softDeletedAtMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(DateTime))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(SoftDeletedAtMember)} has to be of type DateTime");
+                _softDeletedAtMember = value;
+            }
+        }
+
+        public MemberInfo DocumentTypeMember
+        {
+            get => _documentTypeMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(string))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(DocumentTypeMember)} has to be of type string");
+                _documentTypeMember = value;
+            }
+        }
+
+        public MemberInfo DotNetTypeMember
+        {
+            get => _dotNetTypeMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(string))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(DotNetTypeMember)} has to be of type string");
+                _dotNetTypeMember = value;
             }
         }
 
@@ -123,6 +196,11 @@ namespace Marten.Schema
         public EnumStorage EnumStorage
         {
             get { return _storeOptions.EnumStorage; }
+        }
+
+        public Casing Casing
+        {
+            get { return _storeOptions.Serializer().Casing; }
         }
 
         public EnumStorage DuplicatedFieldEnumStorage
@@ -276,9 +354,26 @@ namespace Marten.Schema
 
         public virtual string[] SelectFields()
         {
-            return IsHierarchy()
-                ? new[] { "data", "id", DocumentTypeColumn, VersionColumn }
-                : new[] { "data", "id", VersionColumn };
+            var fields = new List<string> { "data", "id" };
+
+            if (IsHierarchy())
+            {
+                fields.Add(DocumentTypeColumn);
+            }
+
+            fields.AddRange(new[] { VersionColumn, LastModifiedColumn, DotNetTypeColumn });
+
+            if (DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                fields.AddRange(new[] { DeletedColumn, DeletedAtColumn });
+            }
+
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                fields.Add(TenantIdColumn.Name);
+            }
+
+            return fields.ToArray();
         }
 
         public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
@@ -567,7 +662,6 @@ namespace Marten.Schema
         }
 
         private HiloSettings _hiloSettings;
-        private MemberInfo _versionMember;
 
         public HiloSettings HiloSettings
         {
@@ -653,6 +747,21 @@ namespace Marten.Schema
             {
                 throw new InvalidDocumentException(
                     $"Could not determine an 'id/Id' field or property for requested document type {DocumentType.FullName}");
+            }
+
+            if (TenantIdMember != null && TenancyStyle != TenancyStyle.Conjoined)
+            {
+                throw new InvalidDocumentException($"Tenancy style must be set to {nameof(TenancyStyle.Conjoined)} to map tenant id metadata for {DocumentType.FullName}.");
+            }
+
+            if (DocumentTypeMember != null && !IsHierarchy())
+            {
+                throw new InvalidDocumentException($"{DocumentType.FullName} must be part of a document hierarchy to map document type metadata.");
+            }
+
+            if ((IsSoftDeletedMember != null || SoftDeletedAtMember != null) && DeleteStyle != DeleteStyle.SoftDelete)
+            {
+                throw new InvalidDocumentException($"{DocumentType.FullName} must be configured for soft deletion to map soft deleted metadata.");
             }
 
             var idField = new IdField(IdMember);

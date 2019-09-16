@@ -511,7 +511,7 @@ namespace Marten.Testing.Schema
         public void select_fields_for_non_hierarchy_mapping()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn);
+            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn);
         }
 
         [Fact]
@@ -522,14 +522,14 @@ namespace Marten.Testing.Schema
 
             mapping.SelectFields()
                 .ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.DocumentTypeColumn,
-                    DocumentMapping.VersionColumn);
+                    DocumentMapping.VersionColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn);
         }
 
         [Fact]
         public void select_fields_without_subclasses()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn);
+            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn);
         }
 
         [Fact]

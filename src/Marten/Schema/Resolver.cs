@@ -2,7 +2,6 @@ using System;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -25,7 +24,8 @@ namespace Marten.Schema
         private readonly DocumentMapping _mapping;
         private readonly DbObjectName _upsertName;
         private readonly Action<SprocCall, T, UpdateBatch, DocumentMapping, Guid?, Guid, string> _sprocWriter;
-        private readonly Action<T, Guid> _setVersion = (x, v) => { };
+
+        protected readonly MetadataProjector<T> MetadataProjector;
 
         public DocumentStorage(DocumentMapping mapping)
         {
@@ -57,19 +57,22 @@ namespace Marten.Schema
             }
             else
             {
-                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where id = ?";
-                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ?";
+                string softDeleteJsonb = null;
+                if (mapping.IsSoftDeletedMember != null)
+                {
+                    softDeleteJsonb = $"jsonb_set(data,'{{{mapping.IsSoftDeletedMember.Name.FormatCase(mapping.Casing)}}}','\"true\"'::jsonb)::jsonb";
+                }
+                if (mapping.SoftDeletedAtMember != null)
+                {
+                    softDeleteJsonb = $"jsonb_set({(softDeleteJsonb ?? "data")},'{{{mapping.SoftDeletedAtMember.Name.FormatCase(mapping.Casing)}}}', to_jsonb(now()))::jsonb";
+                }
+                var setJsonb = softDeleteJsonb == null ? "" : $", data = {softDeleteJsonb}";
+
+                DeleteByIdSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = true, {DocumentMapping.DeletedAtColumn} = now(){setJsonb} where id = ?";
+                DeleteByWhereSql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = true, {DocumentMapping.DeletedAtColumn} = now(){setJsonb} where ?";
             }
 
-            if (mapping.VersionMember is FieldInfo)
-            {
-                _setVersion = LambdaBuilder.SetField<T, Guid>(mapping.VersionMember.As<FieldInfo>());
-            }
-
-            if (mapping.VersionMember is PropertyInfo)
-            {
-                _setVersion = LambdaBuilder.SetProperty<T, Guid>(mapping.VersionMember.As<PropertyInfo>());
-            }
+            MetadataProjector = new MetadataProjector<T>(mapping);
         }
 
         public Type TopLevelBaseType => DocumentType;
@@ -115,13 +118,38 @@ namespace Marten.Schema
             if (reader.IsDBNull(startingIndex))
                 return null;
 
-            var id = reader[startingIndex + 1];
+            var offset = 0;
+            var id = reader[startingIndex + ++offset];
 
-            var version = reader.GetFieldValue<Guid>(startingIndex + 2);
+            var version = reader.GetFieldValue<Guid>(startingIndex + ++offset);
+            var lastMod = reader.GetValue(startingIndex + ++offset).MapToDateTime();
+            var dotNetType = reader.GetFieldValue<string>(startingIndex + ++offset);
+
+            var deleted = false;
+            DateTime? deletedAt = null;
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                deleted = reader.GetFieldValue<bool>(startingIndex + ++offset);
+                if (!reader.IsDBNull(startingIndex + ++offset))
+                {
+                    deletedAt = reader.GetValue(startingIndex + offset).MapToDateTime();
+                }
+            }
+
+            string tenantId = null;
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                tenantId = reader.GetFieldValue<string>(startingIndex + ++offset);
+            }
+
+            var metadata = new DocumentMetadata(lastMod, version, dotNetType, null, deleted, deletedAt)
+            {
+                TenantId = tenantId
+            };
 
             using (var json = reader.GetTextReader(startingIndex))
             {
-                return map.Get<T>(id, json, version);
+                return map.Get<T>(id, typeof(T), json, version, t => MetadataProjector.ProjectTo(t, metadata));
             }
         }
 
@@ -131,13 +159,38 @@ namespace Marten.Schema
             if (await reader.IsDBNullAsync(startingIndex, token).ConfigureAwait(false))
                 return null;
 
-            var id = await reader.GetFieldValueAsync<object>(startingIndex + 1, token).ConfigureAwait(false);
+            var offset = 0;
+            var id = await reader.GetFieldValueAsync<object>(startingIndex + ++offset, token).ConfigureAwait(false);
 
-            var version = await reader.GetFieldValueAsync<Guid>(startingIndex + 2, token).ConfigureAwait(false);
+            var version = await reader.GetFieldValueAsync<Guid>(startingIndex + ++offset, token).ConfigureAwait(false);
+            var lastMod = (await reader.GetFieldValueAsync<object>(startingIndex + ++offset, token).ConfigureAwait(false)).MapToDateTime();
+            var dotNetType = await reader.GetFieldValueAsync<string>(startingIndex + ++offset, token).ConfigureAwait(false);
+
+            var deleted = false;
+            DateTime? deletedAt = null;
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                deleted = await reader.GetFieldValueAsync<bool>(startingIndex + ++offset, token).ConfigureAwait(false);
+                if (!await reader.IsDBNullAsync(startingIndex + ++offset, token).ConfigureAwait(false))
+                {
+                    deletedAt = (await reader.GetFieldValueAsync<object>(startingIndex + offset, token).ConfigureAwait(false)).MapToDateTime();
+                }
+            }
+
+            string tenantId = null;
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                tenantId = await reader.GetFieldValueAsync<string>(startingIndex + ++offset, token).ConfigureAwait(false);
+            }
+
+            var metadata = new DocumentMetadata(lastMod, version, dotNetType, null, deleted, deletedAt)
+            {
+                TenantId = tenantId
+            };
 
             using (var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex).ConfigureAwait(false))
             {
-                return map.Get<T>(id, json, version);
+                return map.Get<T>(id, typeof(T), json, version, t => MetadataProjector.ProjectTo(t, metadata));
             }
         }
 
@@ -176,11 +229,7 @@ namespace Marten.Schema
             if (!found)
                 return null;
 
-            var version = reader.GetFieldValue<Guid>(2);
-
-            var json = reader.GetTextReader(0);
-
-            return map.Get<T>(id, json, version);
+            return Resolve(0, reader, map);
         }
 
         public virtual async Task<T> FetchAsync(object id, DbDataReader reader, IIdentityMap map, CancellationToken token)
@@ -189,11 +238,7 @@ namespace Marten.Schema
             if (!found)
                 return null;
 
-            var version = await reader.GetFieldValueAsync<Guid>(2, token).ConfigureAwait(false);
-
-            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
-
-            return map.Get<T>(id, json, version);
+            return await ResolveAsync(0, reader, map, token).ConfigureAwait(false);
         }
 
         public NpgsqlCommand LoaderCommand(object id)
@@ -215,8 +260,7 @@ namespace Marten.Schema
 
         public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
         {
-            var json = batch.Serializer.ToJson(entity);
-            RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, json);
+            RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, typeof(T));
         }
 
         private DbObjectName determineDbObjectName(UpdateStyle updateStyle, UpdateBatch batch)
@@ -244,21 +288,41 @@ namespace Marten.Schema
 
         public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
         {
+            RegisterUpdate(tenantIdOverride, updateStyle, batch, entity, typeof(T));
+        }
+
+        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, Type entityType)
+        {
             var newVersion = CombGuidIdGeneration.NewGuid();
             var currentVersion = batch.Versions.Version<T>(Identity(entity));
+            var tenantId = tenantIdOverride ?? batch.TenantId;
 
-            // Set the current version
-            _setVersion(entity.As<T>(), newVersion);
+            var cachedMetadata = batch.MetadataCache?.MetadataFor(typeof(T), Identity(entity));
+            if (cachedMetadata != null)
+            {
+                MetadataProjector.Update(entity.As<T>(),
+                    new DocumentMetadata(DateTime.UtcNow, newVersion, cachedMetadata.DotNetType, cachedMetadata.DocumentType, cachedMetadata.Deleted, cachedMetadata.DeletedAt)
+                    {
+                        TenantId = cachedMetadata.TenantId
+                    });
+            }
+            else
+            {
+                MetadataProjector.ProjectTo(entity.As<T>(),
+                    new DocumentMetadata(DateTime.UtcNow, newVersion, entityType.FullName, _mapping.AliasFor(entityType), false, null)
+                    {
+                        TenantId = tenantId
+                    });
+            }
 
             ICallback callback = null;
             IExceptionTransform exceptionTransform = null;
             var sprocName = determineDbObjectName(updateStyle, batch);
 
-            var tenantId = tenantIdOverride ?? batch.TenantId;
 
             if (_mapping.UseOptimisticConcurrency)
             {
-                Action<Guid> setVersion = version => _setVersion(entity.As<T>(), version);
+                void setVersion(Guid version) => MetadataProjector.UpdateVersion(entity.As<T>(), version);
 
                 callback = new OptimisticConcurrencyCallback<T>(batch.Concurrency, Identity(entity), batch.Versions, newVersion,
                     currentVersion, setVersion);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data.Common;
 using System.Diagnostics;
 using Marten.Linq;
@@ -26,7 +26,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public void the_selected_fields()
         {
-            theSelector.SelectFields().ShouldHaveTheSameElementsAs("d.data", "d.id", "d.mt_version");
+            theSelector.SelectFields().ShouldHaveTheSameElementsAs("d.data", "d.id", "d.mt_version", "d.mt_last_modified", "d.mt_dotnet_type");
         }
 
         [Fact]

@@ -47,7 +47,10 @@ namespace Marten.Schema
 
         void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity);
 
+        [Obsolete]
         void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json);
+
+        void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, Type entityType);
     }
 
     public interface IDocumentStorage<T>: IDocumentStorage

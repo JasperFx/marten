@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Storage;
 using Marten.Util;
 
 namespace Marten.Services
@@ -35,6 +36,11 @@ namespace Marten.Services
 
         public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
         {
+            return Get<T>(id, concreteType, json, version, null);
+        }
+
+        public T Get<T>(object id, Type concreteType, TextReader json, Guid? version, Func<T, DocumentMetadata> applyMetadata)
+        {
             if (Cache.Value.TryFind(typeof(T), out var t) && t.TryFind(id, out var value))
             {
                 return FromCache<T>(value);
@@ -44,6 +50,9 @@ namespace Marten.Services
                 Versions.Store<T>(id, version.Value);
 
             var document = Serializer.FromJson(concreteType, json);
+
+            var metadata = applyMetadata?.Invoke(document.As<T>());
+            MetadataCache.Store<T>(id, metadata);
 
             _listeners.Each(listener => listener.DocumentLoaded(id, document));
 
@@ -59,11 +68,14 @@ namespace Marten.Services
         {
             Cache.Swap(c => c.AddOrUpdate(typeof(T),
                 (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).Remove(id)));
+
+            MetadataCache.Remove(typeof(T), id);
         }
 
         public void RemoveAllOfType(Type type)
         {
             Cache.Swap(c => c.AddOrUpdate(type, ImHashMap<object, TCacheValue>.Empty));
+            MetadataCache.RemoveAllOfType(type);
         }
 
         public void Store<T>(object id, T entity, Guid? version = null)
@@ -107,6 +119,8 @@ namespace Marten.Services
         }
 
         public VersionTracker Versions { get; set; } = new VersionTracker();
+
+        public MetadataCache MetadataCache { get; set; } = new MetadataCache();
 
         public virtual void ClearChanges()
         {

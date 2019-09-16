@@ -16,7 +16,7 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ =>
             {
                 _.Schema.For<User>().SoftDeletedWithIndex();
-                _.Schema.For<File>().SoftDeleted();
+                _.Schema.For<File>().SoftDeleted().MapIsSoftDeletedTo(x => x.Deleted).MapSoftDeletedAtTo(x => x.DeletedAt);
             });
         }
 
@@ -425,6 +425,8 @@ namespace Marten.Testing.Acceptance
             public Guid Id { get; set; } = Guid.NewGuid();
             public Guid UserId { get; set; }
             public string Path { get; set; }
+            public bool Deleted { get; set; }
+            public DateTime? DeletedAt { get; set; }
         }
     }
 }

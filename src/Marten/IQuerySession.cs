@@ -258,6 +258,16 @@ namespace Marten
         /// <returns></returns>
         Guid? VersionFor<TDoc>(TDoc entity);
 
+
+        /// <summary>
+        /// Retrieve the current metadata for the given document using
+        /// the cached value in the IIdentityMap if available.
+        /// </summary>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        DocumentMetadata MetadataFor<TDoc>(TDoc entity);
+
         /// <summary>
         /// Performs a full text search against <typeparamref name="TDoc"/>
         /// </summary>

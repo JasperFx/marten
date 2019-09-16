@@ -21,6 +21,11 @@ namespace Marten.Services
         private BatchCommand _current;
 
         public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, MemoryPool<char> writerPool, ITenant tenant, ConcurrencyChecks concurrency)
+            : this(store, connection, versions, writerPool, tenant, concurrency, new MetadataCache())
+        {
+        }
+
+        public UpdateBatch(DocumentStore store, IManagedConnection connection, VersionTracker versions, MemoryPool<char> writerPool, ITenant tenant, ConcurrencyChecks concurrency, MetadataCache metadataCache)
         {
             _store = store;
             _writerPool = writerPool;
@@ -35,11 +40,14 @@ namespace Marten.Services
             Concurrency = concurrency;
             TenantId = tenant.TenantId;
             _tenant = tenant;
+            MetadataCache = metadataCache;
         }
 
         public ISerializer Serializer => _store.Serializer;
 
         public VersionTracker Versions { get; }
+
+        public MetadataCache MetadataCache { get; }
 
         public IManagedConnection Connection { get; }
         public ConcurrencyChecks Concurrency { get; }

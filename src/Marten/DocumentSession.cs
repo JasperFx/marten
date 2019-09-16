@@ -308,7 +308,7 @@ namespace Marten
                 listener.BeforeSaveChanges(this);
             }
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency, IdentityMap.MetadataCache);
             var changes = _unitOfWork.ApplyChanges(batch);
             EjectPatchedTypes(changes);
 
@@ -350,7 +350,7 @@ namespace Marten
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
             }
 
-            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency);
+            var batch = new UpdateBatch(_store, _connection, IdentityMap.Versions, WriterPool, Tenant, Concurrency, IdentityMap.MetadataCache);
             var changes = await _unitOfWork.ApplyChangesAsync(batch, token).ConfigureAwait(false);
             EjectPatchedTypes(changes);
 
