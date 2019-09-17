@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.7.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.8.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -105,7 +105,7 @@ make sure that your user account has rights to execute <code>CREATE TABLE/FUNCTI
 all the default behavior and a connection string:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);&#xD;&#xA;</code></pre>
 <p>Now, for your first document type, let's represent the users in our system:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public class User&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;    public string LastName { get; set; }&#xD;&#xA;    public bool Internal { get; set; }&#xD;&#xA;    public string UserName { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public class User&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;    public string LastName { get; set; }&#xD;&#xA;    public bool Internal { get; set; }&#xD;&#xA;    public string UserName { get; set; }&#xD;&#xA;    public string Department { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p><em>For more information on document id's, see <a href="/marten/documentation/documents/identity">Document Identity</a>.</em></p>
 <p>And now that we've got a PostgreSQL schema and an <code>IDocumentStore</code>, let's start persisting and loading user documents:</p>
 <pre><code class="language-csharp">&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents&#xD;&#xA;using (var session = store.LightweightSession())&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Han&quot;, LastName = &quot;Solo&quot; };&#xD;&#xA;    session.Store(user);&#xD;&#xA;&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents with a backing &quot;Identity Map&quot;&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var existing = session&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Han&quot; &amp;&amp; x.LastName == &quot;Solo&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents that performas automated&#xD;&#xA;// &quot;dirty&quot; checking of previously loaded documents&#xD;&#xA;using (var session = store.DirtyTrackedSession())&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
