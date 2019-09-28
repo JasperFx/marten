@@ -1,3 +1,9 @@
+using System;
+using System.IO;
+using static Bullseye.Targets;
+using static SimpleExec.Command;
+using static Westwind.Utilities.FileUtils;
+
 namespace martenbuild
 {
     internal class MartenBuild
