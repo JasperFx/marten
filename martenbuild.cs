@@ -1,14 +1,8 @@
-using System;
-using System.IO;
-using static Bullseye.Targets;
-using static SimpleExec.Command;
-using static Westwind.Utilities.FileUtils;
-
 namespace martenbuild
 {
     internal class MartenBuild
     {
-        private const string BUILD_VERSION = "3.8.0";
+        private const string BUILD_VERSION = "3.8.1";
 
         private static void Main(string[] args)
         {
