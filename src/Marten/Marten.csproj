@@ -37,8 +37,8 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-        <PackageReference Include="Npgsql" Version="[4.0.4,4.1)" />
-        <PackageReference Include="Npgsql.Json.NET" Version="[4.0.4,4.1)" />
+        <PackageReference Include="Npgsql" Version="[4.0.9,4.1)" />
+        <PackageReference Include="Npgsql.Json.NET" Version="[4.0.9,4.1)" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="Baseline" Version="1.5.0" />
         <PackageReference Include="System.Memory" Version="4.5.3" />
