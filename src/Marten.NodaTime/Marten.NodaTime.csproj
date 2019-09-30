@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
-        <VersionPrefix>1.3.1</VersionPrefix>
+        <VersionPrefix>1.3.2</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Marten.NodaTime</AssemblyName>
@@ -37,7 +37,11 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
+<<<<<<< .mine
+        <PackageReference Include="Npgsql.NodaTime" Version="[4.0.9,4.1)" />
+=======
         <PackageReference Include="Npgsql.NodaTime" Version="[4.0.4,4.1)" />
+>>>>>>> .theirs
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
