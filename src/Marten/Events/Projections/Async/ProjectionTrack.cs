@@ -46,7 +46,7 @@ namespace Marten.Events.Projections.Async
                 new ExecutionDataflowBlockOptions
                 {
                     MaxDegreeOfParallelism = 1,
-#if !NET46
+#if !NET461
                     EnsureOrdered = true
 #endif
                 });
@@ -54,7 +54,7 @@ namespace Marten.Events.Projections.Async
             UpdateBlock = new ActionBlock<IDaemonUpdate>(msg => msg.Invoke(this), new ExecutionDataflowBlockOptions
             {
                 MaxDegreeOfParallelism = 1,
-#if !NET46
+#if !NET461
                 EnsureOrdered = true
 #endif
             });

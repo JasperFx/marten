@@ -1,10 +1,10 @@
-#if NET46
+#if NET461
 using System.Transactions;
 #endif
 
 namespace Marten.Testing.Bugs
 {
-#if NET46
+#if NET461
     public class Bug_949_connection_closing_issue_with_transaction_scope : IntegratedFixture
     {
         [Fact]

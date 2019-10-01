@@ -6,12 +6,12 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-    <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6/1.0.1/lib/net46/</FrameworkPathOverride>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+    <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.1/1.0.1/lib/net461/</FrameworkPathOverride>
     <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
   </PropertyGroup>
-  <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-    <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+  <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+    <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup>
     <None Update="**/*.js;connection.txt">
@@ -28,7 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Jil" Version="2.17.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -47,7 +47,7 @@
     <Compile Remove="**\Fixtures\**\*.cs;**\Github\**\*.cs;StorytellerHarness.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <PackageReference Include="HtmlTags" Version="3.0.0.186" />
     <PackageReference Include="Microsoft.NETCore.Platforms" Version="1.1.0" />
     <Reference Include="System.Web" />

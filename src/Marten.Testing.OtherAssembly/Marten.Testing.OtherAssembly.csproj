@@ -3,7 +3,7 @@
     <PropertyGroup>
         <Description>Dummy project for test scenario</Description>
         <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle</Authors>
-        <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten.Testing.OtherAssembly</AssemblyName>
         <PackageId>Marten.Testing.OtherAssembly</PackageId>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -16,16 +16,16 @@
         <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6/1.0.1/lib/net46/</FrameworkPathOverride>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.1/1.0.1/lib/net461/</FrameworkPathOverride>
         <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <Reference Include="System" />
         <Reference Include="System.Runtime" />
         <Reference Include="Microsoft.CSharp" />

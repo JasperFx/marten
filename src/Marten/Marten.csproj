@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
         <VersionPrefix>3.8.1</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
-        <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten</AssemblyName>
         <PackageId>Marten</PackageId>
         <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
@@ -18,8 +18,8 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <LangVersion>7.2</LangVersion>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6/1.0.1/lib/net46/</FrameworkPathOverride>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.1/1.0.1/lib/net461/</FrameworkPathOverride>
         <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
     </PropertyGroup>
     <ItemGroup>
@@ -37,15 +37,15 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-        <PackageReference Include="Npgsql" Version="[4.0.9,4.1)" />
-        <PackageReference Include="Npgsql.Json.NET" Version="[4.0.9,4.1)" />
+        <PackageReference Include="Npgsql" Version="4.1.1-ci.2395" />
+        <PackageReference Include="Npgsql.Json.NET" Version="4.1.1-ci.2395" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="Baseline" Version="1.5.0" />
         <PackageReference Include="System.Memory" Version="4.5.3" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.9.0" />
-        <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.10.0" />
+        <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.6.0" />
     </ItemGroup>
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <Reference Include="System.Data" />
         <Reference Include="System.Threading.Tasks" />
         <Reference Include="System" />
@@ -55,8 +55,8 @@
     <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
         <Reference Include="System.Transactions" />
     </ItemGroup>
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
     </ItemGroup>
     <PropertyGroup>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

@@ -12,7 +12,7 @@ namespace Marten.Testing
     {
         protected ITestOutputHelper _output;
         private Lazy<IDocumentStore> _store;
-#if NET46
+#if NET461
         private CultureInfo _originalCulture;
 #endif
 
@@ -26,7 +26,7 @@ namespace Marten.Testing
                 UseDefaultSchema();
             }
 
-#if NET46
+#if NET461
             _originalCulture = Thread.CurrentThread.CurrentCulture;
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
@@ -63,7 +63,7 @@ namespace Marten.Testing
             {
                 _store.Value.Dispose();
             }
-#if NET46
+#if NET461
             Thread.CurrentThread.CurrentCulture = _originalCulture;
             Thread.CurrentThread.CurrentUICulture = _originalCulture;
 #endif
