@@ -20,9 +20,9 @@ Before getting started you will need the following in your environment:
 
 Available [here](https://www.microsoft.com/net/download/core)
 
-**2. .NET Framework 4.6 Developer Pack**
+**2. .NET Framework 4.6.1 Developer Pack**
 
-Available [here](https://dotnet.microsoft.com/download/thank-you/net46-developer-pack)
+Available [here](https://dotnet.microsoft.com/download/thank-you/net461-developer-pack)
 
 **3. PostgreSQL **9.5+** database with PLV8**
 

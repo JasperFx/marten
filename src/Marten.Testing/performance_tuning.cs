@@ -7,14 +7,14 @@ using Baseline;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
-#if NET46
+#if NET461
 using HtmlTags;
 using Jil;
 #endif
 
 namespace Marten.Testing
 {
-#if NET46
+#if NET461
     // SAMPLE: JilSerializer
     public class JilSerializer : ISerializer
     {
@@ -200,7 +200,7 @@ var store = DocumentStore.For(_ =>
 
 
 
-#if NET46
+#if NET461
 
         private void measure_and_report()
         {

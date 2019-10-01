@@ -4,7 +4,7 @@
         <Description>Command line tooling for managing Marten development</Description>
         <VersionPrefix>3.8.2</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
-        <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten.CommandLine</AssemblyName>
         <PackageId>Marten.CommandLine</PackageId>
         <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
@@ -20,13 +20,13 @@
         <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6/1.0.1/lib/net46/</FrameworkPathOverride>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.1/1.0.1/lib/net461/</FrameworkPathOverride>
         <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net46'">
-        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
@@ -41,7 +41,7 @@
         <PackageReference Include="Oakton" Version="1.5.0" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
         <Reference Include="System" />
         <Reference Include="System.Runtime" />
         <Reference Include="Microsoft.CSharp" />

@@ -11,7 +11,7 @@ namespace Marten.Linq.Parsing
         public StringEndsWith() : base(
             ReflectionHelper.GetMethod<string>(s => s.EndsWith(null)),
             ReflectionHelper.GetMethod<string>(s => s.EndsWith(null, StringComparison.CurrentCulture))
-#if NET46
+#if NET461
             , ReflectionHelper.GetMethod<string>(s => s.EndsWith(null, true, null))
 #endif
             )
@@ -23,7 +23,7 @@ namespace Marten.Linq.Parsing
             return "%" + value;
         }
 
-#if NET46
+#if NET461
 
         protected override bool IsCaseInsensitiveComparison(MethodCallExpression expression)
         {
