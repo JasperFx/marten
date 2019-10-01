@@ -8,7 +8,7 @@ namespace martenbuild
 {
     internal class MartenBuild
     {
-        private const string BUILD_VERSION = "3.8.2";
+        private const string BUILD_VERSION = "3.9.0";
 
         private static void Main(string[] args)
         {
