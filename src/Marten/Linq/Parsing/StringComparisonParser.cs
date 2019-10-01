@@ -52,7 +52,7 @@ namespace Marten.Linq.Parsing
             var comparison = expression.Arguments.OfType<ConstantExpression>().Where(a => a.Type == typeof(StringComparison)).Select(c => (StringComparison)c.Value).FirstOrDefault();
 
             var ignoreCaseComparisons = new[] { StringComparison.CurrentCultureIgnoreCase,
-#if NET46
+#if (NET46 || NETCOREAPP)
                 StringComparison.InvariantCultureIgnoreCase,
 #endif
                 StringComparison.OrdinalIgnoreCase };
