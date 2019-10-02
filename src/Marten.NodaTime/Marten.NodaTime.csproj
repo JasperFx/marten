@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
         <VersionPrefix>1.4.0</VersionPrefix>
@@ -37,7 +37,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
-        <PackageReference Include="Npgsql.NodaTime" Version="4.1.1-ci.2395" />
+        <PackageReference Include="Npgsql.NodaTime" Version="[4.1.1,4.2.0)" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
