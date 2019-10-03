@@ -1,7 +1,6 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using Baseline;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -9,10 +8,6 @@ namespace Marten.Schema.Arguments
     public class VersionArgument: UpsertArgument
     {
         public const string ArgName = "docVersion";
-
-        private readonly static MethodInfo _newGuid =
-            typeof(Guid).GetMethod(nameof(Guid.NewGuid),
-                BindingFlags.Static | BindingFlags.Public);
 
         public VersionArgument()
         {
@@ -22,34 +17,13 @@ namespace Marten.Schema.Arguments
             PostgresType = "uuid";
         }
 
-        public override Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
+        public override Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression version, ParameterExpression tenantId)
         {
-            Expression value = Expression.Call(_newGuid);
 
             var dbType = Expression.Constant(DbType);
-
             var method = writeMethod.MakeGenericMethod(typeof(Guid));
 
-            var writeExpression = Expression.Call(writer, method, value, dbType);
-            if (mapping.VersionMember == null)
-            {
-                return writeExpression;
-            }
-            else if (mapping.VersionMember is FieldInfo)
-            {
-                var fieldAccess = Expression.Field(document, (FieldInfo)mapping.VersionMember);
-                var fieldSetter = Expression.Assign(fieldAccess, value);
-
-                return Expression.Block(fieldSetter, writeExpression);
-            }
-            else
-            {
-                var property = mapping.VersionMember.As<PropertyInfo>();
-                var setMethod = property.SetMethod;
-                var callSetMethod = Expression.Call(document, setMethod, value);
-
-                return Expression.Block(callSetMethod, writeExpression);
-            }
+            return Expression.Call(writer, method, version, dbType);
         }
 
         public override Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, ParameterExpression tenantId, bool useCharBufferPooling)

@@ -18,8 +18,9 @@ namespace Marten.Schema.BulkLoading
         private readonly string _baseSql;
         private readonly DocumentMapping _mapping;
         private readonly string _sql;
+        private readonly MetadataProjector<T> _metadataProjector;
 
-        private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string> _transferData;
+        private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, Guid, string> _transferData;
         private readonly string _tempTableName;
 
         public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment)
@@ -27,6 +28,7 @@ namespace Marten.Schema.BulkLoading
             _mapping = mapping;
             _assignment = assignment;
             var upsertFunction = new UpsertFunction(mapping);
+            _metadataProjector = new MetadataProjector<T>(mapping);
 
             _tempTableName = mapping.Table.Name + "_temp";
 
@@ -35,12 +37,13 @@ namespace Marten.Schema.BulkLoading
             var alias = Expression.Parameter(typeof(string), "alias");
             var serializerParam = Expression.Parameter(typeof(ISerializer), "serializer");
             var textWriter = Expression.Parameter(typeof(CharArrayTextWriter), "writer");
+            var version = Expression.Parameter(typeof(Guid), "version");
             var tenantId = Expression.Parameter(typeof(string), "tenantId");
 
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
             var expressions =
                 arguments.Select(
-                    x => x.CompileBulkImporter(mapping, serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, tenantId));
+                    x => x.CompileBulkImporter(mapping, serializer.EnumStorage, writer, document, alias, serializerParam, textWriter, version, tenantId));
 
             var columns = arguments.Select(x => $"\"{x.Column}\"").Join(", ");
             _baseSql = $"COPY %TABLE%({columns}) FROM STDIN BINARY";
@@ -48,10 +51,10 @@ namespace Marten.Schema.BulkLoading
 
             var block = Expression.Block(expressions);
 
-            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string>>(block, document, alias,
-                serializerParam, writer, textWriter, tenantId);
+            var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, Guid, string>>(block, document, alias,
+                serializerParam, writer, textWriter, version, tenantId);
 
-            _transferData = ExpressionCompiler.Compile<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string>>(lambda);
+            _transferData = ExpressionCompiler.Compile<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, Guid, string>>(lambda);
         }
 
         public void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter textWriter)
@@ -109,12 +112,19 @@ namespace Marten.Schema.BulkLoading
             {
                 foreach (var document in documents)
                 {
-                    var assigned = false;
-                    _assignment.Assign(tenant, document, out assigned);
+                    var version = CombGuidIdGeneration.NewGuid();
+                    var alias = _mapping.AliasFor(document.GetType());
+
+                    _assignment.Assign(tenant, document, out var assigned);
+
+                    _metadataProjector.ProjectTo(document, new DocumentMetadata(DateTime.UtcNow, version, document.GetType().FullName, alias, false, null)
+                    {
+                        TenantId = tenant.TenantId
+                    });
 
                     writer.StartRow();
 
-                    _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer, textWriter, tenant.TenantId);
+                    _transferData(document, alias, serializer, writer, textWriter, version, tenant.TenantId);
                     textWriter.Clear();
                 }
 

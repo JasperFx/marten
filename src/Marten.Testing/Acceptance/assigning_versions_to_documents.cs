@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
@@ -261,6 +262,11 @@ namespace Marten.Testing.Acceptance
             {
                 doc.Version.ShouldNotBe(Guid.Empty);
             }
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Query<AttVersionedDoc>().Where(d => d.Version != Guid.Empty).Count().ShouldBe(100);
+            }
         }
 
         [Fact]
@@ -277,6 +283,11 @@ namespace Marten.Testing.Acceptance
             foreach (var doc in docs)
             {
                 doc.Version.ShouldNotBe(Guid.Empty);
+            }
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Query<PropVersionedDoc>().Where(d => d.Version != Guid.Empty).Count().ShouldBe(100);
             }
         }
     }

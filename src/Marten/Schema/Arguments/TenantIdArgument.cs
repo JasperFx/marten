@@ -16,7 +16,7 @@ namespace Marten.Schema.Arguments
             Column = TenantIdColumn.Name;
         }
 
-        public override Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
+        public override Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression version, ParameterExpression tenantId)
         {
             var method = writeMethod.MakeGenericMethod(typeof(string));
             var dbType = Expression.Constant(DbType);
