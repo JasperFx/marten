@@ -124,8 +124,8 @@ namespace Marten.Services
             {
                 try
                 {
-                    Transaction?.Rollback();
-                    Transaction?.Dispose();
+                    Transaction.Rollback();
+                    Transaction.Dispose();
                     Transaction = null;
                 }
                 catch (Exception e)
