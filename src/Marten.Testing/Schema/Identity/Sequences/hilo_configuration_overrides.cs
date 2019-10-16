@@ -163,12 +163,13 @@ namespace Marten.Testing.Schema.Identity.Sequences
         [Fact]
         public void create_docs_with_global_id()
         {
+            // SAMPLE: configuring-global-hilo-defaults-sequencename
             var store = DocumentStore.For(_ =>
             {
                 _.HiloSequenceDefaults.SequenceName = "Entity";
                 _.Connection(ConnectionSource.ConnectionString);
             });
-
+            // ENDSAMPLE
             using (var session = store.OpenSession())
             {
                 var doc1 = new IntDoc();

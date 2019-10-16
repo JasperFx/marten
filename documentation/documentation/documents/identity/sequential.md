@@ -6,6 +6,10 @@ To set different global defaults, use the `StoreOptions.HiloSequenceDefaults` pr
 
 <[sample:configuring-global-hilo-defaults]>
 
+It's also possible to use one sequence with multiple document types by specifying the same "sequence name".
+
+<[sample:configuring-global-hilo-defaults-sequencename]>
+
 To override the Hilo configuration for a specific document type, you can decorate the document type with the `[HiloSequence]` attribute
 as in this example:
 
