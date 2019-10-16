@@ -160,9 +160,43 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).As<HiloSequence>().EntityName.ShouldBe("Entity");
         }
 
+        [Fact]
+        public void create_docs_with_global_id()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.HiloSequenceDefaults.SequenceName = "Entity";
+                _.Connection(ConnectionSource.ConnectionString);
+            });
+
+            using (var session = store.OpenSession())
+            {
+                var doc1 = new IntDoc();
+                var doc2 = new Int2Doc();
+                var doc3 = new IntDoc();
+                var doc4 = new Int2Doc();
+
+                session.Store(doc1);
+                session.Store(doc2);
+                session.Store(doc3);
+                session.Store(doc4);
+
+                doc1.Id.ShouldBeGreaterThanOrEqualTo(1001);
+                doc2.Id.ShouldBe(doc1.Id + 1);
+                doc3.Id.ShouldBe(doc2.Id + 1);
+                doc4.Id.ShouldBe(doc3.Id + 1);
+            }
+        }
+
 
 
     }
+
+    public class Int2Doc
+    {
+        public int Id { get; set; }
+    }
+
 
     // SAMPLE: overriding-hilo-with-attribute
     [HiloSequence(MaxLo = 66, SequenceName = "Entity")]
