@@ -17,6 +17,13 @@ namespace Marten.Schema
             get { return _settings.MaxLo; }
         }
 
+        public string SequenceName
+        {
+            set { _settings.SequenceName = value; }
+            get { return _settings.SequenceName; }
+
+        }
+
         public override void Modify(DocumentMapping mapping)
         {
             mapping.HiloSettings = _settings;

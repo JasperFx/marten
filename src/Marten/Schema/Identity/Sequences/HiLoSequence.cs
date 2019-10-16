@@ -21,7 +21,10 @@ namespace Marten.Schema.Identity.Sequences
             _tenant = tenant;
             _options = options;
             _entityName = entityName;
-
+            if (!string.IsNullOrWhiteSpace(settings.SequenceName))
+            {
+                _entityName = settings.SequenceName;
+            }
             CurrentHi = -1;
             CurrentLo = 1;
             MaxLo = settings.MaxLo;

@@ -1,4 +1,4 @@
-﻿using Baseline;
+using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -94,6 +94,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(66);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("IntDoc");
         }
 
         [Fact]
@@ -105,20 +107,65 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 _.Connection(ConnectionSource.ConnectionString);
             });
 
-            var mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
+            var mapping = store.Storage.MappingFor(typeof(IntDoc));
 
+            mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
+                .As<IdAssigner<IntDoc, int>>().Generator
+                .ShouldBeOfType<IntHiloGenerator>();
+
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(33);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("IntDoc");
+
+
+            mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
 
             mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
                 .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
                 .ShouldBeOfType<IntHiloGenerator>();
 
             store.Tenancy.Default.Sequences
-                .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(33);
+                .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(66);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(OverriddenHiloDoc)).As<HiloSequence>().EntityName.ShouldBe("Entity");
         }
+
+        [Fact]
+        public void set_default_sequencename()
+        {
+            var store = DocumentStore.For(_ =>
+            {
+                _.HiloSequenceDefaults.MaxLo = 33;
+                _.HiloSequenceDefaults.SequenceName = "ID";
+                _.Connection(ConnectionSource.ConnectionString);
+            });
+
+            var mapping = store.Storage.MappingFor(typeof(IntDoc));
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(33);
+
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("ID");
+
+            mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
+
+            mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
+                .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
+                .ShouldBeOfType<IntHiloGenerator>();
+
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(66);
+            store.Tenancy.Default.Sequences
+                .SequenceFor(typeof(OverriddenHiloDoc)).As<HiloSequence>().EntityName.ShouldBe("Entity");
+        }
+
+
+
     }
 
     // SAMPLE: overriding-hilo-with-attribute
-    [HiloSequence(MaxLo = 33)]
+    [HiloSequence(MaxLo = 66, SequenceName = "Entity")]
     public class OverriddenHiloDoc
     {
         public int Id { get; set; }
