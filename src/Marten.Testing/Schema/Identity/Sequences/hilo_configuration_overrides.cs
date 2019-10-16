@@ -181,7 +181,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 session.Store(doc3);
                 session.Store(doc4);
 
-                doc1.Id.ShouldBeGreaterThanOrEqualTo(1001);
+                doc1.Id.ShouldBeGreaterThanOrEqualTo(1);
                 doc2.Id.ShouldBe(doc1.Id + 1);
                 doc3.Id.ShouldBe(doc2.Id + 1);
                 doc4.Id.ShouldBe(doc3.Id + 1);
