@@ -318,7 +318,7 @@ namespace Marten.Schema
                 ? new[] { type }
                     .Concat(type.GetInterfaces())
                     .SelectMany(i => i.GetProperties()).ToArray()
-                : type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic).OrderByDescending(x => x.DeclaringType == type).ToArray();
+                : type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).OrderByDescending(x => x.DeclaringType == type).ToArray();
         }
 
         public void AddSubClass(Type subclassType, IEnumerable<MappedType> otherSubclassTypes, string alias)
