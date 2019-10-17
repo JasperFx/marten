@@ -210,9 +210,7 @@ namespace Marten.Storage
             {
                 var assignment = IdAssignmentFor<T>();
 
-                var mapping = MappingFor(typeof(T)).Root as DocumentMapping;
-
-                if (mapping == null)
+                if (!(MappingFor(typeof(T)).Root is DocumentMapping mapping))
                     throw new ArgumentOutOfRangeException("Marten cannot do bulk inserts on documents of type " + typeof(T).FullName);
 
                 return new BulkLoader<T>(_options.Serializer(), mapping, assignment);

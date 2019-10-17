@@ -7,24 +7,23 @@ namespace Marten.Schema.Identity
 {
     public class IdAssigner<TDoc, TId>: IdAssignment<TDoc>
     {
-        private readonly IIdGenerator<TId> _generator;
+        public IIdGenerator<TId> Generator { get; }
+
         private readonly Func<TDoc, TId> _getter;
         private readonly Action<TDoc, TId> _setter;
 
         public IdAssigner(MemberInfo member, IIdGeneration generation)
         {
-            _generator = generation.Build<TId>();
+            Generator = generation.Build<TId>();
             _getter = LambdaBuilder.Getter<TDoc, TId>(member);
             _setter = LambdaBuilder.Setter<TDoc, TId>(member);
         }
 
-        public IIdGenerator<TId> Generator => _generator;
-
         public object Assign(ITenant tenant, TDoc document, out bool assigned)
         {
-            var original = _getter != null ? _getter(document) : default(TId);
+            var original = _getter != null ? _getter(document) : default;
 
-            var id = _generator.Assign(tenant, original, out assigned);
+            var id = Generator.Assign(tenant, original, out assigned);
 
             if (assigned)
             {
