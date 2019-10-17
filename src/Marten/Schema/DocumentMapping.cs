@@ -318,7 +318,7 @@ namespace Marten.Schema
                 ? new[] { type }
                     .Concat(type.GetInterfaces())
                     .SelectMany(i => i.GetProperties()).ToArray()
-                : type.GetProperties();
+                : type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic).OrderByDescending(x => x.DeclaringType == type).ToArray();
         }
 
         public void AddSubClass(Type subclassType, IEnumerable<MappedType> otherSubclassTypes, string alias)
@@ -730,7 +730,7 @@ namespace Marten.Schema
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType, notNull:notNull);
+            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType, notNull: notNull);
 
             if (dbType.HasValue)
                 duplicateField.DbType = dbType.Value;
