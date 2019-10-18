@@ -31,16 +31,16 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void run_inline_aggregation_with_private_id_setter()
         {
-            VerifyInlineProjection<QuestMonstersWithPrivateIdSetter>();
+            VerifyProjection<QuestMonstersWithPrivateIdSetter>();
         }
 
         [Fact]
         public void run_inline_aggregation_with_protected_id_setter()
         {
-            VerifyInlineProjection<QuestMonstersWithProtectedIdSetter>();
+            VerifyProjection<QuestMonstersWithProtectedIdSetter>();
         }
 
-        private void VerifyInlineProjection<T>() where T : IMonstersView
+        private void VerifyProjection<T>() where T : IMonstersView
         {
             var loadedView = theSession.Load<T>(streamId);
 
