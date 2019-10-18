@@ -86,8 +86,6 @@ namespace Marten.Storage
             // TODO -- ensure the system type here too?
             var feature = _features.FindFeature(featureType);
 
-            feature.AssertValidNames(_options);
-
             if (feature == null)
                 throw new ArgumentOutOfRangeException(nameof(featureType),
                     $"Unknown feature type {featureType.FullName}");
@@ -109,7 +107,6 @@ namespace Marten.Storage
                 ensureStorageExists(types, dependentType);
             }
 
-            // TODO -- might need to do a lock here.
             generateOrUpdateFeature(featureType, feature);
         }
 
@@ -119,12 +116,18 @@ namespace Marten.Storage
         {
             lock (_updateLock)
             {
+                if (_checks.ContainsKey(featureType))
+                    return;
+
+                var schemaObjects = feature.Objects;
+                schemaObjects.AssertValidNames(_options);
+
                 using (var conn = _factory.Create())
                 {
                     conn.Open();
 
                     var patch = new SchemaPatch(_options.DdlRules);
-                    patch.Apply(conn, _options.AutoCreateSchemaObjects, feature.Objects);
+                    patch.Apply(conn, _options.AutoCreateSchemaObjects, schemaObjects);
                     patch.AssertPatchingIsValid(_options.AutoCreateSchemaObjects);
 
                     var ddl = patch.UpdateDDL;
