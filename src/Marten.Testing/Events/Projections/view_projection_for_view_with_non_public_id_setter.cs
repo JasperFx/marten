@@ -18,6 +18,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
                 _.Events.InlineProjections.Add<ViewProjectionForViewWithPrivateIdSetter>();
                 _.Events.InlineProjections.Add<ViewProjectionForViewWithProtectedIdSetter>();
             });
