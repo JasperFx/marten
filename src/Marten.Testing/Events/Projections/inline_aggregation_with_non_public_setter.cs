@@ -6,20 +6,20 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_aggregation_with_base_view_class: DocumentSessionFixture<NulloIdentityMap>
+    public class inline_aggregation_with_non_public_setter: DocumentSessionFixture<NulloIdentityMap>
     {
         private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
         private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
         private readonly Guid streamId;
 
-        public inline_aggregation_with_base_view_class()
+        public inline_aggregation_with_non_public_setter()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestMonstersWithBaseClass>();
-                _.Events.InlineProjections.AggregateStreamsWith<QuestMonstersWithBaseClassAndIdOverloaded>();
-                _.Events.InlineProjections.AggregateStreamsWith<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+                _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+                _.Events.InlineProjections.AggregateStreamsWith<QuestMonstersWithPrivateIdSetter>();
+                _.Events.InlineProjections.AggregateStreamsWith<QuestMonstersWithProtectedIdSetter>();
             });
 
             streamId = theSession.Events
@@ -29,21 +29,15 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
-        public void run_inline_aggregation_with_base_view_class()
+        public void run_inline_aggregation_with_private_id_setter()
         {
-            VerifyInlineProjection<QuestMonstersWithBaseClass>();
+            VerifyInlineProjection<QuestMonstersWithPrivateIdSetter>();
         }
 
         [Fact]
-        public void run_inline_aggregation_with_base_class_and_id_overloaded()
+        public void run_inline_aggregation_with_protected_id_setter()
         {
-            VerifyInlineProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
-        }
-
-        [Fact]
-        public void run_inline_aggregation_with_base_class_and_id_overloaded_with_new()
-        {
-            VerifyInlineProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+            VerifyInlineProjection<QuestMonstersWithProtectedIdSetter>();
         }
 
         private void VerifyInlineProjection<T>() where T : IMonstersView

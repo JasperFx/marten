@@ -223,6 +223,8 @@ namespace Marten.NodaTime.Testing.Acceptance
 
             public CollectionStorage CollectionStorage => throw new NotImplementedException();
 
+            public NonPublicMembersStorage NonPublicMembersStorage => throw new NotImplementedException();
+
             public T FromJson<T>(TextReader reader)
             {
                 throw new NotImplementedException();

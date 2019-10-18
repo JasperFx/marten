@@ -131,11 +131,10 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    if (_unitOfWork.Contains<T>(entity))
+                    if (_unitOfWork.Contains(entity))
                         continue;
 
-                    var assigned = false;
-                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+                    var id = idAssignment.Assign(Tenant, entity, out var assigned);
 
                     storage.Store(IdentityMap, id, entity);
                     if (assigned)
@@ -173,11 +172,10 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    if (_unitOfWork.Contains<T>(entity))
+                    if (_unitOfWork.Contains(entity))
                         continue;
 
-                    var assigned = false;
-                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+                    var id = idAssignment.Assign(Tenant, entity, out var assigned);
 
                     storage.Store(IdentityMap, id, entity);
                     _unitOfWork.Add(new UpsertDocument(entity, tenantId));
@@ -208,11 +206,10 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    if (_unitOfWork.Contains<T>(entity))
+                    if (_unitOfWork.Contains(entity))
                         continue;
 
-                    var assigned = false;
-                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+                    var id = idAssignment.Assign(Tenant, entity, out var assigned);
 
                     storage.Store(IdentityMap, id, entity);
                     _unitOfWork.StoreInserts(entity);
@@ -243,11 +240,10 @@ namespace Marten
 
                 foreach (var entity in entities)
                 {
-                    if (_unitOfWork.Contains<T>(entity))
+                    if (_unitOfWork.Contains(entity))
                         continue;
 
-                    var assigned = false;
-                    var id = idAssignment.Assign(Tenant, entity, out assigned);
+                    var id = idAssignment.Assign(Tenant, entity, out var assigned);
 
                     storage.Store(IdentityMap, id, entity);
                     _unitOfWork.StoreUpdates(entity);

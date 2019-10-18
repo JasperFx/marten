@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace Marten
@@ -50,9 +50,20 @@ namespace Marten
         /// </summary>
         EnumStorage EnumStorage { get; }
 
+        /// <summary>
+        /// Specify whether properties in the JSON document should use Camel or Pascal casing.
+        /// </summary>
         Casing Casing { get; }
 
+        /// <summary>
+        /// Specify whether collections should be stored as json arrays (without type names)
+        /// </summary>
         CollectionStorage CollectionStorage { get; }
+
+        /// <summary>
+        /// Specify whether non public members should be used during deserialization
+        /// </summary>
+        NonPublicMembersStorage NonPublicMembersStorage { get; }
     }
 
     // ENDSAMPLE
@@ -74,5 +85,13 @@ namespace Marten
     {
         Default,
         AsArray
+    }
+
+    [Flags]
+    public enum NonPublicMembersStorage
+    {
+        Default = 0,
+        NonPublicSetters = 1,
+        NonPublicDefaultConstructor = 2
     }
 }

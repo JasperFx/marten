@@ -10,14 +10,17 @@ namespace Marten.Services.Json
 
         public CollectionStorage CollectionStorage { get; }
 
+        public NonPublicMembersStorage NonPublicMembersStorage { get; }
+
         public JsonNetContractResolver()
         {
         }
 
-        public JsonNetContractResolver(Casing casing, CollectionStorage collectionStorage)
+        public JsonNetContractResolver(Casing casing, CollectionStorage collectionStorage, NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default)
         {
             Casing = casing;
             CollectionStorage = collectionStorage;
+            NonPublicMembersStorage = nonPublicMembersStorage;
 
             SetNamingStrategy(casing);
         }
@@ -29,6 +32,12 @@ namespace Marten.Services.Json
             if (CollectionStorage == CollectionStorage.AsArray && JsonNetCollectionToArrayJsonConverter.Instance.CanConvert(property.PropertyType))
             {
                 property.Converter = JsonNetCollectionToArrayJsonConverter.Instance;
+            }
+
+            if (NonPublicMembersStorage.HasFlag(NonPublicMembersStorage.NonPublicSetters) && member is PropertyInfo pi)
+            {
+                property.Readable = pi.GetMethod != null;
+                property.Writable = pi.SetMethod != null;
             }
             return property;
         }
