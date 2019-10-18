@@ -32,22 +32,22 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void run_view_projection_with_base_class()
         {
-            VerifyInlineProjection<QuestMonstersWithBaseClass>();
+            VerifyProjection<QuestMonstersWithBaseClass>();
         }
 
         [Fact]
         public void run_view_projection_with_base_class_and_id_overloaded()
         {
-            VerifyInlineProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
+            VerifyProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
         }
 
         [Fact]
         public void run_view_projection_with_base_class_and_id_overloaded_with_new()
         {
-            VerifyInlineProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+            VerifyProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
         }
 
-        private void VerifyInlineProjection<T>() where T : IMonstersView
+        private void VerifyProjection<T>() where T : IMonstersView
         {
             var loadedView = theSession.Load<T>(streamId);
 

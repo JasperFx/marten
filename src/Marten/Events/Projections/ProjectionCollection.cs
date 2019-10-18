@@ -31,7 +31,7 @@ namespace Marten.Events.Projections
         {
             var aggregator = _options.Events.AggregateFor<T>();
 
-            IAggregationFinder<T> finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
+            var finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
                 ? (IAggregationFinder<T>)new AggregateFinder<T>()
                 : new StringIdentifiedAggregateFinder<T>();
 
