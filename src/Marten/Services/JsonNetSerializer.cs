@@ -81,6 +81,7 @@ namespace Marten.Services
         private EnumStorage _enumStorage = EnumStorage.AsInteger;
         private Casing _casing = Casing.Default;
         private CollectionStorage _collectionStorage = CollectionStorage.Default;
+        private NonPublicMembersStorage _nonPublicMembersStorage;
 
         /// <summary>
         /// Specify whether .Net Enum values should be stored as integers or strings
@@ -123,8 +124,8 @@ namespace Marten.Services
             {
                 _casing = value;
 
-                _serializer.ContractResolver = new JsonNetContractResolver(_casing, CollectionStorage);
-                _clean.ContractResolver = new JsonNetContractResolver(_casing, CollectionStorage);
+                _serializer.ContractResolver = new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
+                _clean.ContractResolver = new JsonNetContractResolver(_casing, CollectionStorage, NonPublicMembersStorage);
             }
         }
 
@@ -141,8 +142,30 @@ namespace Marten.Services
             {
                 _collectionStorage = value;
 
-                _serializer.ContractResolver = new JsonNetContractResolver(Casing, _collectionStorage);
-                _clean.ContractResolver = new JsonNetContractResolver(Casing, _collectionStorage);
+                _serializer.ContractResolver = new JsonNetContractResolver(Casing, _collectionStorage, NonPublicMembersStorage);
+                _clean.ContractResolver = new JsonNetContractResolver(Casing, _collectionStorage, NonPublicMembersStorage);
+            }
+        }
+
+        /// <summary>
+        /// Specify whether non public members should be used during deserialization
+        /// </summary>
+        public NonPublicMembersStorage NonPublicMembersStorage
+        {
+            get
+            {
+                return _nonPublicMembersStorage;
+            }
+            set
+            {
+                _nonPublicMembersStorage = value;
+
+                if (_nonPublicMembersStorage.HasFlag(NonPublicMembersStorage.NonPublicDefaultConstructor))
+                {
+                    _serializer.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+                }
+                _serializer.ContractResolver = new JsonNetContractResolver(Casing, CollectionStorage, _nonPublicMembersStorage);
+                _clean.ContractResolver = new JsonNetContractResolver(Casing, CollectionStorage, _nonPublicMembersStorage);
             }
         }
     }
