@@ -97,7 +97,12 @@ namespace Marten.Storage
     {
         public static void AssertValidNames(this IFeatureSchema schema, StoreOptions options)
         {
-            foreach (var objectName in schema.Objects.SelectMany(x => x.AllNames()))
+            AssertValidNames(schema.Objects, options);
+        }
+
+        public static void AssertValidNames(this ISchemaObject[] schemaObjects, StoreOptions options)
+        {
+            foreach (var objectName in schemaObjects.SelectMany(x => x.AllNames()))
             {
                 options.AssertValidIdentifier(objectName.Name);
             }
