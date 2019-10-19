@@ -21,7 +21,6 @@ namespace Marten.Schema.Identity.Sequences
             _tenant = tenant;
             _options = options;
             _entityName = entityName;
-
             CurrentHi = -1;
             CurrentLo = 1;
             MaxLo = settings.MaxLo;
