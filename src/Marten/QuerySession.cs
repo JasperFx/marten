@@ -370,6 +370,7 @@ namespace Marten
             _disposed = true;
             _connection?.Dispose();
             WriterPool?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public T Load<T>(int id)
