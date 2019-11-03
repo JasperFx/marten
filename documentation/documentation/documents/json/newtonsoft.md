@@ -47,12 +47,11 @@ by changing the serialization settings in the `DocumentStore` options.
 
 Marten by default stores the collections as strongly typed (so with $type and $value). Because of that and current `MartenQueryable` limitations, it might result in not properly resolved nested collections queries.
 
-You can change collection storage to `AsArray` then custom `JsonConverter` that will store:
+Changing the collection storage to `AsArray` using a custom `JsonConverter` will store it as regular JSON array for the following:
 - `ICollection<>`,
 - `IList<>`,
 - `IReadOnlyCollection<>`,
-- `IEnumerable<>`
-as regular JSON array. 
+- `IEnumerable<>`.
 
 That improves the nested collections queries handling.
 
