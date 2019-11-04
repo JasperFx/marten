@@ -611,7 +611,7 @@ namespace Marten.Schema
         public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
         {
             var field = FieldFor(memberName);
-            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicate = new DuplicatedField(_storeOptions, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -626,7 +626,7 @@ namespace Marten.Schema
         {
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicatedField = new DuplicatedField(_storeOptions, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;

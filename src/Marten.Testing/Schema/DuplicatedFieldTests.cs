@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Documents;
 using NpgsqlTypes;
 using Shouldly;
@@ -12,7 +13,7 @@ namespace Marten.Testing.Schema
 {
     public class DuplicatedFieldTests
     {
-        private DuplicatedField theField = new DuplicatedField(EnumStorage.AsInteger, new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName) });
+        private DuplicatedField theField = new DuplicatedField(new StoreOptions(), new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName) });
 
         [Fact]
         public void default_role_is_search()
@@ -53,7 +54,10 @@ namespace Marten.Testing.Schema
         [Fact]
         public void enum_field()
         {
-            var field = DuplicatedField.For<Target>(EnumStorage.AsString, x => x.Color);
+            var storeOptions = new StoreOptions();
+            storeOptions.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString });
+
+            var field = DuplicatedField.For<Target>(storeOptions, x => x.Color);
             field.UpsertArgument.DbType.ShouldBe(NpgsqlDbType.Varchar);
             field.UpsertArgument.PostgresType.ShouldBe("varchar");
 
@@ -67,7 +71,10 @@ namespace Marten.Testing.Schema
         [InlineData(EnumStorage.AsString, "color = data ->> 'Color'")]
         public void storage_is_set_when_passed_in(EnumStorage storageMode, string expectedUpdateFragment)
         {
-            var field = DuplicatedField.For<Target>(storageMode, x => x.Color);
+            var storeOptions = new StoreOptions();
+            storeOptions.Serializer(new JsonNetSerializer { EnumStorage = storageMode });
+
+            var field = DuplicatedField.For<Target>(storeOptions, x => x.Color);
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
         }
 
@@ -77,13 +84,13 @@ namespace Marten.Testing.Schema
         [InlineData("text", "string = data ->> 'String'")]
         public void pg_type_is_used_for_string(string pgType, string expectedUpdateFragment)
         {
-            var field = DuplicatedField.For<Target>(EnumStorage.AsInteger, x => x.String);
+            var field = DuplicatedField.For<Target>(new StoreOptions(), x => x.String);
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
             var expectedPgType = pgType ?? "varchar";
             field.PgType.ShouldBe(expectedPgType);
-            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);           
+            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Text);
         }
 
@@ -93,7 +100,7 @@ namespace Marten.Testing.Schema
         [InlineData("text", "user_id = CAST(data ->> 'UserId' as text)")]
         public void pg_type_is_used_for_guid(string pgType, string expectedUpdateFragment)
         {
-            var field = DuplicatedField.For<Target>(EnumStorage.AsInteger, x => x.UserId);
+            var field = DuplicatedField.For<Target>(new StoreOptions(), x => x.UserId);
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
@@ -109,7 +116,7 @@ namespace Marten.Testing.Schema
         [InlineData("text[]", "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as text[])")]
         public void pg_type_is_used_for_string_array(string pgType, string expectedUpdateFragment)
         {
-            var field = DuplicatedField.For<Target>(EnumStorage.AsInteger, x => x.TagsArray);
+            var field = DuplicatedField.For<Target>(new StoreOptions(), x => x.TagsArray);
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
@@ -125,7 +132,7 @@ namespace Marten.Testing.Schema
         [InlineData("text[]", "tags_list = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as text[])")]
         public void pg_type_is_used_for_string_list(string pgType, string expectedUpdateFragment)
         {
-            var field = DuplicatedField.For<ListTarget>(EnumStorage.AsInteger, x => x.TagsList);
+            var field = DuplicatedField.For<ListTarget>(new StoreOptions(), x => x.TagsList);
             field.PgType = pgType ?? field.PgType;
 
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
