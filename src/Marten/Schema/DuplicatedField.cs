@@ -18,46 +18,10 @@ namespace Marten.Schema
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
+        [Obsolete("Please use constructor with StoreOptions parameter. This one will be removed in v4.0")]
         public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
-            : base(enumStorage, memberPath, notNull)
+            : this(GetStoreOptions(enumStorage), memberPath, useTimestampWithoutTimeZoneForDateTime, notNull)
         {
-            ColumnName = MemberName.ToTableAlias();
-            _storeOptions = new StoreOptions();
-            this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
-
-            if (MemberType.IsEnum)
-            {
-                if (_storeOptions.DuplicatedFieldEnumStorage == EnumStorage.AsString)
-                {
-                    DbType = NpgsqlDbType.Varchar;
-                    PgType = "varchar";
-
-                    _parseObject = expression =>
-                    {
-                        var raw = expression.Value();
-                        return Enum.GetName(MemberType, raw);
-                    };
-                }
-                else
-                {
-                    DbType = NpgsqlDbType.Integer;
-                    PgType = "integer";
-                }
-            }
-            else if (MemberType.IsDateTime())
-            {
-                PgType = this.useTimestampWithoutTimeZoneForDateTime ? "timestamp without time zone" : "timestamp with time zone";
-                DbType = this.useTimestampWithoutTimeZoneForDateTime ? NpgsqlDbType.Timestamp : NpgsqlDbType.TimestampTz;
-            }
-            else if (MemberType == typeof(DateTimeOffset) || MemberType == typeof(DateTimeOffset?))
-            {
-                PgType = "timestamp with time zone";
-                DbType = NpgsqlDbType.TimestampTz;
-            }
-            else
-            {
-                DbType = TypeMappings.ToDbType(MemberType);
-            }
         }
 
         public DuplicatedField(StoreOptions storeOptions, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
@@ -192,6 +156,14 @@ namespace Marten.Schema
         public virtual TableColumn ToColumn()
         {
             return new TableColumn(ColumnName, PgType);
+        }
+
+        [Obsolete("This method will be removed in v4.0 - it's only being kept for backward compatibility.")]
+        private static StoreOptions GetStoreOptions(EnumStorage enumStorage)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(enumStorage);
+            return storeOptions;
         }
     }
 }
