@@ -142,6 +142,32 @@ namespace Marten.Testing.Schema
             field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
         }
 
+        [Theory]
+        [InlineData(null, "date = public.mt_immutable_timestamp(data ->> 'Date')")]
+        [InlineData("myergen", "date = myergen.mt_immutable_timestamp(data ->> 'Date')")]
+        public void store_options_schema_name_is_used_for_timestamp(string schemaName, string expectedUpdateFragment)
+        {
+            var storeOptions = schemaName != null
+                ? new StoreOptions {DatabaseSchemaName = schemaName}
+                : new StoreOptions();
+
+            var field = DuplicatedField.For<Target>(storeOptions, x => x.Date);
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+        }
+
+        [Theory]
+        [InlineData(null, "date_offset = public.mt_immutable_timestamptz(data ->> 'DateOffset')")]
+        [InlineData("myergen", "date_offset = myergen.mt_immutable_timestamptz(data ->> 'DateOffset')")]
+        public void store_options_schema_name_is_used_for_timestamptz(string schemaName, string expectedUpdateFragment)
+        {
+            var storeOptions = schemaName != null
+                ? new StoreOptions {DatabaseSchemaName = schemaName}
+                : new StoreOptions();
+
+            var field = DuplicatedField.For<Target>(storeOptions, x => x.DateOffset);
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+        }
+
         private class ListTarget
         {
             public List<string> TagsList { get; set; }
