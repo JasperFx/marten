@@ -18,6 +18,48 @@ namespace Marten.Schema
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
+            : base(enumStorage, memberPath, notNull)
+        {
+            ColumnName = MemberName.ToTableAlias();
+            _storeOptions = new StoreOptions();
+            this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+
+            if (MemberType.IsEnum)
+            {
+                if (_storeOptions.DuplicatedFieldEnumStorage == EnumStorage.AsString)
+                {
+                    DbType = NpgsqlDbType.Varchar;
+                    PgType = "varchar";
+
+                    _parseObject = expression =>
+                    {
+                        var raw = expression.Value();
+                        return Enum.GetName(MemberType, raw);
+                    };
+                }
+                else
+                {
+                    DbType = NpgsqlDbType.Integer;
+                    PgType = "integer";
+                }
+            }
+            else if (MemberType.IsDateTime())
+            {
+                PgType = this.useTimestampWithoutTimeZoneForDateTime ? "timestamp without time zone" : "timestamp with time zone";
+                DbType = this.useTimestampWithoutTimeZoneForDateTime ? NpgsqlDbType.Timestamp : NpgsqlDbType.TimestampTz;
+            }
+            else if (MemberType == typeof(DateTimeOffset) || MemberType == typeof(DateTimeOffset?))
+            {
+                PgType = "timestamp with time zone";
+                DbType = NpgsqlDbType.TimestampTz;
+            }
+            else
+            {
+                DbType = TypeMappings.ToDbType(MemberType);
+            }
+        }
+
         public DuplicatedField(StoreOptions storeOptions, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
             : base(storeOptions.DuplicatedFieldEnumStorage, memberPath, notNull)
         {
