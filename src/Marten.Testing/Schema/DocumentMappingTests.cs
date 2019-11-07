@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentMappingTests : IntegratedFixture
+    public class DocumentMappingTests: IntegratedFixture
     {
         public class FieldId
         {
@@ -92,7 +92,7 @@ namespace Marten.Testing.Schema
             public string OtherField { get; set; }
         }
 
-        public class CustomIdGeneration : IIdGeneration
+        public class CustomIdGeneration: IIdGeneration
         {
             public IEnumerable<Type> KeyTypes { get; }
 

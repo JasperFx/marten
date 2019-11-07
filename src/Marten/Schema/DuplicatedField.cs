@@ -14,18 +14,26 @@ namespace Marten.Schema
     public class DuplicatedField: Field, IField
     {
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
+        private readonly StoreOptions _storeOptions;
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
+        [Obsolete("Please use constructor with StoreOptions parameter. This one will be removed in v4.0")]
         public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
-            : base(enumStorage, memberPath, notNull)
+            : this(GetStoreOptions(enumStorage), memberPath, useTimestampWithoutTimeZoneForDateTime, notNull)
+        {
+        }
+
+        public DuplicatedField(StoreOptions storeOptions, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
+            : base(storeOptions.DuplicatedFieldEnumStorage, memberPath, notNull)
         {
             ColumnName = MemberName.ToTableAlias();
+            _storeOptions = storeOptions;
             this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
 
             if (MemberType.IsEnum)
             {
-                if (enumStorage == EnumStorage.AsString)
+                if (storeOptions.DuplicatedFieldEnumStorage == EnumStorage.AsString)
                 {
                     DbType = NpgsqlDbType.Varchar;
                     PgType = "varchar";
@@ -99,12 +107,12 @@ namespace Marten.Schema
         {
             if ((DbType & NpgsqlDbType.Array) == NpgsqlDbType.Array && PgType != "jsonb")
             {
-                var jsonField = new JsonLocatorField("data", new StoreOptions(), _enumStorage, Casing.Default, Members, "jsonb");
+                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, "jsonb");
                 return $"{ColumnName} = CAST(ARRAY(SELECT jsonb_array_elements_text({jsonField.SqlLocator})) as {PgType})";
             }
             else
             {
-                var jsonField = new JsonLocatorField("data", new StoreOptions(), _enumStorage, Casing.Default, Members, PgType);
+                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, PgType);
                 return $"{ColumnName} = {jsonField.SqlLocator}";
             }
         }
@@ -126,7 +134,7 @@ namespace Marten.Schema
 
         public string SqlLocator { get; set; }
 
-        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true, string pgType = null)
+        public static DuplicatedField For<T>(StoreOptions storeOptions, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true, string pgType = null)
         {
             var accessor = ReflectionHelper.GetAccessor(expression);
 
@@ -136,7 +144,7 @@ namespace Marten.Schema
                 throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
             }
 
-            var duplicate = new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
+            var duplicate = new DuplicatedField(storeOptions, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -148,6 +156,14 @@ namespace Marten.Schema
         public virtual TableColumn ToColumn()
         {
             return new TableColumn(ColumnName, PgType);
+        }
+
+        [Obsolete("This method will be removed in v4.0 - it's only being kept for backward compatibility.")]
+        private static StoreOptions GetStoreOptions(EnumStorage enumStorage)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(enumStorage);
+            return storeOptions;
         }
     }
 }
