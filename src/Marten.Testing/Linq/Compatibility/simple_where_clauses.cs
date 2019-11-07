@@ -31,6 +31,7 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.String.Equals("a", StringComparison.OrdinalIgnoreCase));
             @where(x => string.Equals(x.String, "a", StringComparison.OrdinalIgnoreCase));
             @where(x => string.Equals("a", x.String, StringComparison.OrdinalIgnoreCase));
+            @where(x => string.Equals(x.String, null, StringComparison.OrdinalIgnoreCase));
             @where(x => x.String.Equals("A", StringComparison.Ordinal));
             @where(x => x.String != "A");
 

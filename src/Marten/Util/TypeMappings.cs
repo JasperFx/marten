@@ -204,10 +204,10 @@ namespace Marten.Util
 
         public static NpgsqlDbType? TryGetDbType(Type type)
         {
-            if (determineNpgsqlDbType(type, out var dbType))
-                return dbType;
+            if (type == null || !determineNpgsqlDbType(type, out var dbType))
+                return null;
 
-            return null;
+            return dbType;
         }
 
         private static bool determineNpgsqlDbType(Type type, out NpgsqlDbType dbType)
