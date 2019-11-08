@@ -1,25 +1,26 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Services;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_for_sum_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_for_sum_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: using_sum
         [Fact]
         public void get_sum_of_integers()
         {
-            theSession.Store(new Target{Color = Colors.Blue, Number = 1});
-            theSession.Store(new Target{Color = Colors.Red, Number = 2});
-            theSession.Store(new Target{Color = Colors.Green, Number = 3});
-            theSession.Store(new Target{Color = Colors.Blue, Number = 4});
+            theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+            theSession.Store(new Target { Color = Colors.Red, Number = 2 });
+            theSession.Store(new Target { Color = Colors.Green, Number = 3 });
+            theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
 
             theSession.SaveChanges();
             theSession.Query<Target>().Sum(x => x.Number)
                 .ShouldBe(10);
         }
+
         // ENDSAMPLE
 
         [Fact]
@@ -51,6 +52,25 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
             theSession.Query<Target>().Where(x => x.Number < 4).Sum(x => x.Number)
+                .ShouldBe(6);
+        }
+
+        [Theory]
+        [InlineData(EnumStorage.AsString)]
+        [InlineData(EnumStorage.AsInteger)]
+        public void get_sum_of_integers_with_where_with_nullable_enum(EnumStorage enumStorage)
+        {
+            StoreOptions(o => o.UseDefaultSerialization(enumStorage));
+
+            theSession.Store(new Target { NullableColor = Colors.Blue, Number = 1 });
+            theSession.Store(new Target { NullableColor = Colors.Red, Number = 2 });
+            theSession.Store(new Target { NullableColor = Colors.Green, Number = 3 });
+            theSession.Store(new Target { NullableColor = null, Number = 4 });
+
+            theSession.SaveChanges();
+            theSession.Query<Target>()
+                .Where(x => x.NullableColor != null)
+                .Sum(x => x.Number)
                 .ShouldBe(6);
         }
     }
