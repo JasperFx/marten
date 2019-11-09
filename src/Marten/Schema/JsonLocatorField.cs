@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Util;
@@ -64,7 +62,7 @@ namespace Marten.Schema
                 _parseObject = expression =>
                 {
                     var raw = expression.Value();
-                    return Enum.GetName(MemberType, raw);
+                    return raw != null ? Enum.GetName(MemberType, raw) : null;
                 };
             }
 

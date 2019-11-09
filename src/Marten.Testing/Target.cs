@@ -115,6 +115,8 @@ namespace Marten.Testing
 
         public Colors Color { get; set; }
 
+        public Colors? NullableEnum { get; set; }
+
         public bool Flag { get; set; }
 
         public string StringField;
