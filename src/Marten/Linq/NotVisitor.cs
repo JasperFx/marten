@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
@@ -58,7 +59,12 @@ namespace Marten.Linq
             if (expression.Type == typeof(bool))
             {
                 var locator = _mapping.JsonLocator(expression);
-                var @where = new WhereFragment($"{locator} != ?", true);
+                var whereFragments = new List<IWhereFragment>
+                {
+                    new WhereFragment($"{locator} IS NULL"),
+                    new WhereFragment($"{locator} != ?", true)
+                };
+                var @where = new CompoundWhereFragment("or", whereFragments.ToArray());
                 _callback(@where);
             }
 

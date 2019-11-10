@@ -21,7 +21,7 @@ namespace Marten.Testing.Bugs
                 var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
 
                 cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where d.flag = :arg0");
-                cmd2.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where d.flag != :arg0");
+                cmd2.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (d.flag IS NULL or d.flag != :arg0)");
             }
         }
 
