@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.8.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -99,6 +99,36 @@ This can be overriden to serialize the names to camelCase and Marten will store 
 Marten actually has to keep two Newtonsoft.Json serializers, with one being a "clean" Json serializer that omits all Type metadata. The need for two serializers is why
 the customization is done with a nested closure so that the same configuration is always applied to both internal <code>JsonSerializer's</code>.
 </div>
+<h2 id="enum-storage">Enum Storage</h2>
+<p>Marten allows how enum values are being stored. By default, they are stored as integers but it is possible to change that to storing them as strings.</p>
+<p>To do that you need to change the serialization settings in the <code>DocumentStore</code> options.</p>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Replace the default JsonNetSerializer default enum storage&#xD;&#xA;    // with storing them as string&#xD;&#xA;    _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<h2 id="fields-names-casing">Fields Names Casing</h2>
+<p>Marten by default stores field names &quot;as they are&quot; (C# naming convention is PascalCase for public properties).</p>
+<p>You can have them also automatically formatted to:</p>
+<ul>
+<li><code>CamelCase</code>,</li>
+<li><code>snake_case</code>
+by changing the serialization settings in the <code>DocumentStore</code> options.</li>
+</ul>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Replace the default (as is) JsonNetSerializer field names casing&#xD;&#xA;    // with camelCase formatting&#xD;&#xA;    _.UseDefaultSerialization(casing: Casing.CamelCase);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Replace the default (as is) JsonNetSerializer field names casing&#xD;&#xA;    // with snake_case formatting&#xD;&#xA;    _.UseDefaultSerialization(casing: Casing.SnakeCase);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<h2 id="collection-storage">Collection Storage</h2>
+<p>Marten by default stores the collections as strongly typed (so with $type and $value). Because of that and current <code>MartenQueryable</code> limitations, it might result in not properly resolved nested collections queries.</p>
+<p>Changing the collection storage to <code>AsArray</code> using a custom <code>JsonConverter</code> will store it as regular JSON array for the following:</p>
+<ul>
+<li><code>ICollection&lt;&gt;</code>,</li>
+<li><code>IList&lt;&gt;</code>,</li>
+<li><code>IReadOnlyCollection&lt;&gt;</code>,</li>
+<li><code>IEnumerable&lt;&gt;</code>.</li>
+</ul>
+<p>That improves the nested collections queries handling.</p>
+<p>To do that you need to change the serialization settings in the <code>DocumentStore</code> options.</p>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Replace the default (strongly typed) JsonNetSerializer collection storage&#xD;&#xA;    // with JSON array formatting&#xD;&#xA;    _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<h2 id="non-public-members-storage">Non Public Members Storage</h2>
+<p>By default <code>Newtonsoft.Json</code> only deserializes properties with public setters.</p>
+<p>You can allow deserialisation of properties with non-public setters by changing the serialization settings in the <code>DocumentStore</code> options.</p>
+<pre><code class="language-csharp">&#xD;&#xA;&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;some connection string&quot;);&#xD;&#xA;&#xD;&#xA;    // Replace the default (only public setters) JsonNetSerializer deserialization settings&#xD;&#xA;    // with allowing to also deserialize using non-public setters&#xD;&#xA;    _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />

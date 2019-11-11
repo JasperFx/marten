@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.8.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -89,7 +89,7 @@
 JSON serialization extensible and configurable through the native mechanisms in each JSON serialization library. For the purposes of having
 a smooth &quot;getting started&quot; story, Marten comes out of the box with support for a very basic usage of Newtonsoft.Json as the main JSON serializer.</p>
 <p>Internally, Marten uses an adapter interface for JSON serialization:</p>
-<pre><code class="language-csharp">&#xD;&#xA;public interface ISerializer&#xD;&#xA;{&#xD;&#xA;    void ToJson(object document, TextWriter writer);&#xD;&#xA;&#xD;&#xA;    string ToJson(object document);&#xD;&#xA;&#xD;&#xA;    T FromJson&lt;T&gt;(TextReader reader);&#xD;&#xA;&#xD;&#xA;    object FromJson(Type type, TextReader reader);&#xD;&#xA;&#xD;&#xA;    string ToCleanJson(object document);&#xD;&#xA;&#xD;&#xA;    EnumStorage EnumStorage { get; }&#xD;&#xA;&#xD;&#xA;    Casing Casing { get; }&#xD;&#xA;&#xD;&#xA;    CollectionStorage CollectionStorage { get; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;public interface ISerializer&#xD;&#xA;{&#xD;&#xA;    void ToJson(object document, TextWriter writer);&#xD;&#xA;&#xD;&#xA;    string ToJson(object document);&#xD;&#xA;&#xD;&#xA;    T FromJson&lt;T&gt;(TextReader reader);&#xD;&#xA;&#xD;&#xA;    object FromJson(Type type, TextReader reader);&#xD;&#xA;&#xD;&#xA;    string ToCleanJson(object document);&#xD;&#xA;&#xD;&#xA;    EnumStorage EnumStorage { get; }&#xD;&#xA;&#xD;&#xA;    Casing Casing { get; }&#xD;&#xA;&#xD;&#xA;    CollectionStorage CollectionStorage { get; }&#xD;&#xA;&#xD;&#xA;    NonPublicMembersStorage NonPublicMembersStorage { get; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>To support a new serialization library or customize the JSON serialization options, you can write a new version of <code>ISerializer</code> and plug it
 into the <code>DocumentStore</code> (there's an example of doing that in the section on using Jil).</p>
 

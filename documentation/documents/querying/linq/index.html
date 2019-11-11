@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.8.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -135,7 +135,7 @@ using the <code>&amp;&amp;</code> operator:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_average()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Red, Number = 2 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Green, Number = -5 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 42 });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    var average = theSession.Query&lt;Target&gt;().Average(t =&gt; t.Number);&#xD;&#xA;    average.ShouldBe(10);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="sum">Sum()</h2>
 <p>Marten supports the <code>IQueryable.Sum()</code> method:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_sum_of_integers()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Red, Number = 2});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 3});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    theSession.Query&lt;Target&gt;().Sum(x =&gt; x.Number)&#xD;&#xA;        .ShouldBe(10);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void get_sum_of_integers()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 1 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Red, Number = 2 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Green, Number = 3 });&#xD;&#xA;    theSession.Store(new Target { Color = Colors.Blue, Number = 4 });&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;    theSession.Query&lt;Target&gt;().Sum(x =&gt; x.Number)&#xD;&#xA;        .ShouldBe(10);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="ordering-results">Ordering Results</h2>
 <p>Marten contains support for expressing ordering in both ascending and descending order in Linq queries:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public void order_by(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    // Sort in ascending order&#xD;&#xA;    session.Query&lt;Target&gt;().OrderBy(x =&gt; x.Date);&#xD;&#xA;&#xD;&#xA;    // Sort in descending order&#xD;&#xA;    session.Query&lt;Target&gt;().OrderByDescending(x =&gt; x.Date);&#xD;&#xA;&#xD;&#xA;    // You can use multiple order by&#x27;s&#xD;&#xA;    session.Query&lt;Target&gt;().OrderBy(x =&gt; x.Date).ThenBy(x =&gt; x.Number);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>

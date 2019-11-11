@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.8.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -87,9 +87,11 @@
 <p>The <em>Hilo</em> sequence generation can be customized with either global defaults or document type specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a &quot;maximum lo&quot; number of 1000.</p>
 <p>To set different global defaults, use the <code>StoreOptions.HiloSequenceDefaults</code> property like this sample:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.HiloSequenceDefaults.MaxLo = 55;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<p>It's also possible to use one sequence with multiple document types by specifying the same &quot;sequence name&quot;.</p>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.HiloSequenceDefaults.SequenceName = &quot;Entity&quot;;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>To override the Hilo configuration for a specific document type, you can decorate the document type with the <code>[HiloSequence]</code> attribute
 as in this example:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[HiloSequence(MaxLo = 33)]&#xD;&#xA;public class OverriddenHiloDoc&#xD;&#xA;{&#xD;&#xA;    public int Id { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[HiloSequence(MaxLo = 66, SequenceName = &quot;Entity&quot;)]&#xD;&#xA;public class OverriddenHiloDoc&#xD;&#xA;{&#xD;&#xA;    public int Id { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>You can also use the <code>MartenRegistry</code> fluent interface to override the Hilo configuration for a document type as in this example:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Overriding the Hilo settings for the document type &quot;IntDoc&quot;&#xD;&#xA;    _.Schema.For&lt;IntDoc&gt;()&#xD;&#xA;        .HiloSettings(new HiloSettings {MaxLo = 66});&#xD;&#xA;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <h2 id="set-the-identifier-floor">Set the Identifier Floor</h2>
