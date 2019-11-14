@@ -107,14 +107,13 @@ namespace Marten.Services
             if (Transaction != null && _mode != CommandRunnerMode.External)
             {
                 await Transaction.CommitAsync(token).ConfigureAwait(false);
-
-                Transaction.Dispose();
+                await Transaction.DisposeAsync().ConfigureAwait(false);
                 Transaction = null;
             }
 
             if (_ownsConnection)
             {
-                Connection.Close();
+                await Connection.CloseAsync().ConfigureAwait(false);
             }
         }
 
@@ -146,7 +145,7 @@ namespace Marten.Services
                 try
                 {
                     await Transaction.RollbackAsync(token).ConfigureAwait(false);
-                    Transaction.Dispose();
+                    await Transaction.DisposeAsync().ConfigureAwait(false);
                     Transaction = null;
                 }
                 catch (Exception e)
@@ -155,7 +154,7 @@ namespace Marten.Services
                 }
                 finally
                 {
-                    Connection.Close();
+                    await Connection.CloseAsync().ConfigureAwait(false);
                 }
             }
         }
