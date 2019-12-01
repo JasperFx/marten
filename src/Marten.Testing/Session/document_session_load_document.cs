@@ -34,7 +34,7 @@ namespace Marten.Testing.Session
         }
 
         [Fact]
-        public void when_collection_with_no_setter()
+        public void when_collectionstorage_asarray_and_with_readonlycollection_with_integers_and_private_setter()
         {
             StoreOptions(_ =>
             {
