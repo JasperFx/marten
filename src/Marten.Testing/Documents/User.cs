@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Baseline;
 
 namespace Marten.Testing.Documents
@@ -75,6 +77,20 @@ namespace Marten.Testing.Documents
     public class UserWithNicknames
     {
         public string[] Nicknames { get; set; }
+    }
+
+    public class UserWithReadonlyCollectionWithPrivateSetter
+    {
+        public Guid Id { get; private set; }
+        public string Name { get; private set; }
+        public IReadOnlyCollection<int> Collection { get; private set; }
+
+        public UserWithReadonlyCollectionWithPrivateSetter(Guid id, string name, IEnumerable<int> collection)
+        {
+            Id = id;
+            Name = name;
+            Collection = collection.ToList();
+        }
     }
 
     public class Post

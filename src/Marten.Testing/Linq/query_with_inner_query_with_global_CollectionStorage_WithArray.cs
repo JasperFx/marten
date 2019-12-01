@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,37 +25,67 @@ namespace Marten.Testing.Linq
         public ICollection<string> ICollection { get; set; }
 
         public IReadOnlyCollection<string> IReadonlyCollection { get; set; }
+        public int[] ArrayWithInt { get; set; }
+        public List<int> ListWithInt { get; set; }
+        public IList<int> IListWithInt { get; set; }
+
+        public IEnumerable<int> EnumerableWithInt { get; set; }
+
+        public IEnumerable<int> IEnumerableWithIntFromArray { get; set; }
+
+        public IEnumerable<int> IEnumerbaleWithIntFromList { get; set; }
+
+        public ICollection<int> ICollectionWithInt { get; set; }
+
+        public IReadOnlyCollection<int> IReadonlyCollectionWithInt { get; set; }
 
         public IReadOnlyCollection<TypeWithInnerCollections> IReadonlyCollectionOfInnerClasses { get; set; }
 
-        public static TypeWithInnerCollections Create(params string[] array)
+        public static TypeWithInnerCollections Create(params int[] array)
         {
+            var stringArray = array.Select(x => x.ToString()).ToArray();
             return new TypeWithInnerCollections()
             {
                 Id = Guid.NewGuid(),
-                Flatten = array.Aggregate((i, j) => i + j),
-                Array = array,
-                List = array.ToList(),
-                IList = array.ToList(),
-                Enumerable = array.AsEnumerable(),
-                IEnumerableFromArray = array,
-                IEnumerbaleFromList = array.ToList(),
-                ICollection = array.ToList(),
-                IReadonlyCollection = array.ToList(),
+                Flatten = stringArray.Aggregate((i, j) => i + j),
+                Array = stringArray,
+                List = stringArray.ToList(),
+                IList = stringArray.ToList(),
+                Enumerable = stringArray.AsEnumerable(),
+                IEnumerableFromArray = stringArray,
+                IEnumerbaleFromList = stringArray.ToList(),
+                ICollection = stringArray.ToList(),
+                IReadonlyCollection = stringArray.ToList(),
+                ArrayWithInt = array,
+                ListWithInt = array.ToList(),
+                IListWithInt = array.ToList(),
+                EnumerableWithInt = array.AsEnumerable(),
+                IEnumerableWithIntFromArray = array,
+                IEnumerbaleWithIntFromList = array.ToList(),
+                ICollectionWithInt = array.ToList(),
+                IReadonlyCollectionWithInt = array.ToList(),
                 IReadonlyCollectionOfInnerClasses = new List<TypeWithInnerCollections>
                     {
                         new TypeWithInnerCollections()
                         {
                             Id = Guid.NewGuid(),
-                            Flatten = array.Aggregate((i, j) => i + j),
-                            Array = array,
-                            List = array.ToList(),
-                            IList = array.ToList(),
-                            Enumerable = array.AsEnumerable(),
-                            IEnumerableFromArray = array,
-                            ICollection = array.ToList(),
-                            IEnumerbaleFromList = array.ToList(),
-                            IReadonlyCollection = array.ToList(),
+                            Flatten = stringArray.Aggregate((i, j) => i + j),
+                            Array = stringArray,
+                            List = stringArray.ToList(),
+                            IList = stringArray.ToList(),
+                            Enumerable = stringArray.AsEnumerable(),
+                            IEnumerableFromArray = stringArray,
+                            IEnumerbaleFromList = stringArray.ToList(),
+                            ICollection = stringArray.ToList(),
+                            IReadonlyCollection = stringArray.ToList(),
+                            ArrayWithInt = array,
+                            ListWithInt = array.ToList(),
+                            IListWithInt = array.ToList(),
+                            EnumerableWithInt = array.AsEnumerable(),
+                            IEnumerableWithIntFromArray = array,
+                            IEnumerbaleWithIntFromList = array.ToList(),
+                            ICollectionWithInt = array.ToList(),
+                            IReadonlyCollectionWithInt = array.ToList(),
                         }
                     }
             };
@@ -63,16 +93,17 @@ namespace Marten.Testing.Linq
     }
 
     [ControlledQueryStoryteller]
-    public class query_with_inner_query_with_global_CollectionStorage_WithArray : IntegratedFixture
+    public class query_with_inner_query_with_global_CollectionStorage_WithArray: IntegratedFixture
     {
         private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]
         {
-            TypeWithInnerCollections.Create("one", "two"),
-            TypeWithInnerCollections.Create("two", "three"),
-            TypeWithInnerCollections.Create("four", "five"),
+            TypeWithInnerCollections.Create(1, 2),
+            TypeWithInnerCollections.Create(2, 3),
+            TypeWithInnerCollections.Create(4, 5),
         };
 
-        private const string SearchPhrase = "two";
+        private const string SearchPhrase = "2";
+        private const int IntSearchPhrase = 2;
 
         public static readonly TheoryData<Expression<Func<TypeWithInnerCollections, bool>>> Predicates = new TheoryData<Expression<Func<TypeWithInnerCollections, bool>>>
         {
@@ -85,7 +116,16 @@ namespace Marten.Testing.Linq
             x => x.ICollection.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Where(e => e == SearchPhrase).Any(),
-            x => x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "onetwo").Any() || x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "twothree").Any()
+            x => x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "12").Any() || x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "23").Any(),
+            x => x.ArrayWithInt.Contains(IntSearchPhrase),
+            x => x.EnumerableWithInt.Contains(IntSearchPhrase),
+            x => x.IEnumerableWithIntFromArray.Contains(IntSearchPhrase),
+            x => x.IEnumerbaleWithIntFromList.Contains(IntSearchPhrase),
+            x => x.ListWithInt.Contains(IntSearchPhrase),
+            x => x.IListWithInt.Contains(IntSearchPhrase),
+            x => x.ICollectionWithInt.Contains(IntSearchPhrase),
+            x => x.IReadonlyCollectionWithInt.Contains(IntSearchPhrase),
+            x => x.IReadonlyCollectionWithInt.Where(e => e == IntSearchPhrase).Any(),
         };
 
         [Theory]
