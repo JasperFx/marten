@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
@@ -24,8 +25,8 @@ namespace Marten.Services.Json
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            var o = value as IEnumerable<object>;
-            serializer.Serialize(writer, o?.ToArray());
+            var o = value as IEnumerable;
+            serializer.Serialize(writer, o?.Cast<object>().ToArray());
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
