@@ -54,21 +54,12 @@ namespace martenbuild
             Target("docs", () =>
                 Run("dotnet", $"stdocs run -d documentation -c src -v {BUILD_VERSION}"));
 
-            // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
             Target("publish-docs", () =>
             {
-                const string docTargetDir = "doc-target";
-
-                Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
-                // if you are not using git --global config, un-comment the block below, update and use it
-                // Run("git", "config user.email user_email", docTargetDir);
-                // Run("git", "config user.name user_name", docTargetDir);
-
-                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
-
-                Run("git", "add --all", docTargetDir);
-                Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
-                Run("git", "push origin gh-pages", docTargetDir);
+                // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
+                PublishDocs(branchName: "gh-pages", exportWithGithubPagePrefix: true);
+                // Exports the documentation to Netlify - martendb.io - requires Git access to that repo though!
+                PublishDocs(branchName: "gh-pages-netlify", exportWithGithubPagePrefix: false);
             });
 
             Target("benchmarks", () =>
@@ -88,6 +79,23 @@ namespace martenbuild
                 Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
 
             RunTargetsAndExit(args);
+        }
+
+        private static void PublishDocs(string branchName, bool exportWithGithubPagePrefix, string docTargetDir = "doc-target")
+        {
+            Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
+            // if you are not using git --global config, un-comment the block below, update and use it
+            // Run("git", "config user.email user_email", docTargetDir);
+            // Run("git", "config user.name user_name", docTargetDir);
+
+            if (exportWithGithubPagePrefix)
+                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
+            else
+                Run("dotnet", $"stdocs export {docTargetDir} Website -d documentation -c src -v {BUILD_VERSION}");
+
+            Run("git", "add --all", docTargetDir);
+            Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
+            Run("git", $"push origin {branchName}", docTargetDir);
         }
 
         private static string InitializeDirectory(string path)
