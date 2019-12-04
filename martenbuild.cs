@@ -57,9 +57,9 @@ namespace martenbuild
             Target("publish-docs", () =>
             {
                 // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
-                PublishDocs(branchName: "gh-pages", exportWithGithubPagePrefix: true);
+                PublishDocs(branchName: "gh-pages", exportWithGithubProjectPrefix: true);
                 // Exports the documentation to Netlify - martendb.io - requires Git access to that repo though!
-                PublishDocs(branchName: "gh-pages-netlify", exportWithGithubPagePrefix: false);
+                PublishDocs(branchName: "gh-pages-netlify", exportWithGithubProjectPrefix: false);
             });
 
             Target("benchmarks", () =>
@@ -81,14 +81,14 @@ namespace martenbuild
             RunTargetsAndExit(args);
         }
 
-        private static void PublishDocs(string branchName, bool exportWithGithubPagePrefix, string docTargetDir = "doc-target")
+        private static void PublishDocs(string branchName, bool exportWithGithubProjectPrefix, string docTargetDir = "doc-target")
         {
             Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
             // if you are not using git --global config, un-comment the block below, update and use it
             // Run("git", "config user.email user_email", docTargetDir);
             // Run("git", "config user.name user_name", docTargetDir);
 
-            if (exportWithGithubPagePrefix)
+            if (exportWithGithubProjectPrefix)
                 Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
             else
                 Run("dotnet", $"stdocs export {docTargetDir} Website -d documentation -c src -v {BUILD_VERSION}");
