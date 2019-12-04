@@ -6,9 +6,9 @@
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Marten - Document Identity</title>
-    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/content/theme.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
     <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
     <!-- CSS code from Bootply.com editor -->
-    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    <link href="/content/affix.css" rel="stylesheet" type="text/css" />
 </head>
 
 <!-- HTML code from Bootply.com editor -->
@@ -27,18 +27,18 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten </a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
                     <li>
-                        <a href="/marten/getting_started">Getting Started</a>
+                        <a href="/getting_started">Getting Started</a>
                     </li>
                     <li>
-                        <a href="/marten/documentation">Documentation</a>
+                        <a href="/documentation">Documentation</a>
                     </li>
                     <li>
-                        <a href="/marten/migration_guide">Migration Guide</a>
+                        <a href="/migration_guide">Migration Guide</a>
                     </li>
                     <li>
                         <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation/documents" title="Marten as Document Db">Previous</a></li>
-                <li><a href="/marten/documentation/documents/identity/custom" title="Custom Identity Strategies">Next</a></li>
+                    <li><a href="/documentation/documents" title="Marten as Document Db">Previous</a></li>
+                <li><a href="/documentation/documents/identity/custom" title="Custom Identity Strategies">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li class="active">Document Identity</li></ol>
+            <ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li class="active">Document Identity</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -73,8 +73,8 @@
                 <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents">Marten as Document Db</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/documentation/documents/identity/custom">Custom Identity Strategies</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/documentation/documents">Marten as Document Db</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
@@ -87,7 +87,7 @@
 <p>Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. The <code>Id</code> can be either a public field or property, and the name must be either <code>id</code> or <code>Id</code> or <code>ID</code>. As of this time, Marten supports these <code>Id</code> types:</p>
 <ol>
 <li><code>String</code>. It might be valuable to use a <a href="https://en.wikipedia.org/wiki/Natural_key">natural key</a> as the identifier, especially if it is valuable within the
-<a href="/marten/documentation/documents/advanced/identitymap">Identity Map</a> feature of Marten Db. In this case, the user will
+<a href="/documentation/documents/advanced/identitymap">Identity Map</a> feature of Marten Db. In this case, the user will
 be responsible for supplying the identifier.</li>
 <li><code>Guid</code>. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
 <em>And for the record, it's pronounced &quot;gwid&quot;</em>.</li>
@@ -100,7 +100,7 @@ Marten may support Postgresql sequences or star-based algorithms as later altern
 <p>Marten by default uses the identity value set on documents and only assigns one in case it has no value (<code>Guid.Empty</code>, <code>0</code>, <code>string.Empty</code> etc).</p>
 <div class="alert alert-info">When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.</div>
 <p>See these topics for more information about specific Id types:</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a></li><li><a href="/marten/documentation/documents/identity/guid">Guid Identifiers</a></li><li><a href="/marten/documentation/documents/identity/sequential">Sequential Identifiers with Hilo</a></li></ul>
+<ul class="table-of-contents"><li><a href="/documentation/documents/identity/custom">Custom Identity Strategies</a></li><li><a href="/documentation/documents/identity/guid">Guid Identifiers</a></li><li><a href="/documentation/documents/identity/sequential">Sequential Identifiers with Hilo</a></li></ul>
 <p>You can see some example id usages below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class Division&#xD;&#xA;{&#xD;&#xA;    // String property as Id&#xD;&#xA;    public string Id { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class Category&#xD;&#xA;{&#xD;&#xA;    // Guid&#x27;s work, fields too&#xD;&#xA;    public Guid Id;&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class Invoide&#xD;&#xA;{&#xD;&#xA;    // int&#x27;s and long&#x27;s can be the Id&#xD;&#xA;    // &quot;id&quot; is accepted&#xD;&#xA;    public int id { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="overriding-the-choice-of-id-propertyfield">Overriding the Choice of Id Property/Field</h2>
@@ -115,10 +115,10 @@ the &quot;id&quot; or &quot;Id&quot; or &quot;ID&quot; convention:</p>
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation/documents">Marten as Document Db</a>
+                        <strong>Previous: </strong><a href="/documentation/documents">Marten as Document Db</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/documents/identity/custom">Custom Identity Strategies</a>
+                        <strong>Next: </strong><a href="/documentation/documents/identity/custom">Custom Identity Strategies</a>
                     </span>
                 </nav>
             </div><!--/right-->
@@ -129,9 +129,9 @@ the &quot;id&quot; or &quot;Id&quot; or &quot;ID&quot; convention:</p>
 <foot>
     <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/marten/content/prism.js"></script>
-    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-    <script type="text/javascript" src="/marten/content/affix.js"></script>
+    <script type="text/javascript" src="/content/prism.js"></script>
+    <script type="text/javascript" src="/content/sidebar.js"></script>
+    <script type="text/javascript" src="/content/affix.js"></script>
 
     <script>
         $('#search').keyup(function (e) {

@@ -6,9 +6,9 @@
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Marten - Appending Events</title>
-    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/content/theme.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
     <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
     <!-- CSS code from Bootply.com editor -->
-    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    <link href="/content/affix.css" rel="stylesheet" type="text/css" />
 </head>
 
 <!-- HTML code from Bootply.com editor -->
@@ -27,18 +27,18 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten </a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
                     <li>
-                        <a href="/marten/getting_started">Getting Started</a>
+                        <a href="/getting_started">Getting Started</a>
                     </li>
                     <li>
-                        <a href="/marten/documentation">Documentation</a>
+                        <a href="/documentation">Documentation</a>
                     </li>
                     <li>
-                        <a href="/marten/migration_guide">Migration Guide</a>
+                        <a href="/migration_guide">Migration Guide</a>
                     </li>
                     <li>
                         <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation/events/identity" title="Stream Identity">Previous</a></li>
-                <li><a href="/marten/documentation/events/streams" title="Querying Event and Stream Data">Next</a></li>
+                    <li><a href="/documentation/events/identity" title="Stream Identity">Previous</a></li>
+                <li><a href="/documentation/events/streams" title="Querying Event and Stream Data">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li class="active">Appending Events</li></ol>
+            <ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/events">Marten as Event Store</a></li><li class="active">Appending Events</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -73,8 +73,8 @@
                 <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/identity">Stream Identity</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/documentation/events/streams">Querying Event and Stream Data</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/documentation/events/identity">Stream Identity</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
@@ -87,7 +87,7 @@
 <!--Url:appending-->
 <p>Marten's event sourcing support &quot;appends&quot; event data documents to a single table <code>mt_events.</code> Events must be captured against a stream id, with a second table called <code>mt_streams</code> that Marten uses to
 keep metadata describing the state of an individual stream. Appending events to either a new or existing stream is done within the same Marten transaction as any other document updates or deletions. See
-<a href="/marten/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a> for more information on Marten transactions.</p>
+<a href="/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a> for more information on Marten transactions.</p>
 <h2 id="event-types">Event Types</h2>
 <p>The only requirement that Marten makes on types used as events is that they are:</p>
 <ol>
@@ -102,17 +102,17 @@ but for production usage when you may be querying event data before you append a
 <h2 id="starting-a-new-stream">Starting a new Stream</h2>
 <p>As of Marten v0.9, you can <strong>optionally</strong> start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing. Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that you could just supply either a string to mark the &quot;stream type&quot; or work without a stream type.</p>
 <p>As usual, our sample problem domain is the Lord of the Rings style &quot;Quest.&quot; For now, you can either start a new stream and let Marten assign the Guid id for the stream:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = session.Events.StartStream(joined, departed).Id;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = &quot;Fourth&quot;;&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <p>Or have Marten use a Guid value that you provide yourself:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
-<p>For stream identity (strings vs. Guids), see <a href="/marten/documentation/events/identity">Stream Identity</a>.</p>
+<p>For stream identity (strings vs. Guids), see <a href="/documentation/events/identity">Stream Identity</a>.</p>
 <p>Note that <code>StartStream</code> checks for an existing stream and throws <code>ExistingStreamIdCollisionException</code> if a matching stream already exists.</p>
 <h2 id="appending-events">Appending Events</h2>
 <p>If you have an existing stream, you can later append additional events with <code>IEventStore.Append()</code> as shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;session.Events.Append(id, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <h3 id="appending-assertions">Appending &amp; Assertions</h3>
 <p><code>IEventStore.Append()</code> supports an overload taking in a parameter <code>int expectedVersion</code> that can be used to assert that events are inserted into the event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted and an <code>EventStreamUnexpectedMaxEventIdException</code> exception is thrown.</p>
-<pre><code class="language-csharp">&#xD;&#xA;session.Events.StartStream(id, started);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xD;&#xA;// would be 3 after the append operation.&#xD;&#xA;session.Events.Append(id, 3, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, started);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;// Events are appended into the stream only if the maximum event id for the stream&#xD;&#xA;// would be 3 after the append operation.&#xD;&#xA;session.Events.Append(id, 3, joined, departed);&#xD;&#xA;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre> 
 <h3 id="startstream-vs.append">StartStream vs. Append</h3>
 <p>Both <code>StartStream</code> and <code>Append</code> can be used to start a new event stream. The difference with the methods is that <code>StartStream</code> always checks for existing stream and throws <code>ExistingStreamIdCollisionException</code> in case the stream already exists.</p>
 
@@ -120,10 +120,10 @@ but for production usage when you may be querying event data before you append a
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation/events/identity">Stream Identity</a>
+                        <strong>Previous: </strong><a href="/documentation/events/identity">Stream Identity</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/events/streams">Querying Event and Stream Data</a>
+                        <strong>Next: </strong><a href="/documentation/events/streams">Querying Event and Stream Data</a>
                     </span>
                 </nav>
             </div><!--/right-->
@@ -134,9 +134,9 @@ but for production usage when you may be querying event data before you append a
 <foot>
     <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/marten/content/prism.js"></script>
-    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-    <script type="text/javascript" src="/marten/content/affix.js"></script>
+    <script type="text/javascript" src="/content/prism.js"></script>
+    <script type="text/javascript" src="/content/sidebar.js"></script>
+    <script type="text/javascript" src="/content/affix.js"></script>
 
     <script>
         $('#search').keyup(function (e) {

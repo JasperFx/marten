@@ -6,9 +6,9 @@
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Marten - Compiled Queries</title>
-    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/content/theme.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
     <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
     <!-- CSS code from Bootply.com editor -->
-    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    <link href="/content/affix.css" rel="stylesheet" type="text/css" />
 </head>
 
 <!-- HTML code from Bootply.com editor -->
@@ -27,18 +27,18 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten </a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
                     <li>
-                        <a href="/marten/getting_started">Getting Started</a>
+                        <a href="/getting_started">Getting Started</a>
                     </li>
                     <li>
-                        <a href="/marten/documentation">Documentation</a>
+                        <a href="/documentation">Documentation</a>
                     </li>
                     <li>
-                        <a href="/marten/migration_guide">Migration Guide</a>
+                        <a href="/migration_guide">Migration Guide</a>
                     </li>
                     <li>
                         <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation/documents/querying/include" title="Including Related Documents">Previous</a></li>
-                <li><a href="/marten/documentation/documents/querying/batched_queries" title="Batched Queries">Next</a></li>
+                    <li><a href="/documentation/documents/querying/include" title="Including Related Documents">Previous</a></li>
+                <li><a href="/documentation/documents/querying/batched_queries" title="Batched Queries">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/querying">Querying Documents</a></li><li class="active">Compiled Queries</li></ol>
+            <ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li><a href="/documentation/documents">Marten as Document Db</a></li><li><a href="/documentation/documents/querying">Querying Documents</a></li><li class="active">Compiled Queries</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -73,8 +73,8 @@
                 <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/querying/batched_queries">Batched Queries</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/querying/include">Including Related Documents</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/documentation/documents/querying/batched_queries">Batched Queries</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/documentation/documents/querying/include">Including Related Documents</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
@@ -109,7 +109,7 @@ to express document queries in compiler-safe manner, but there is a non-trivial 
 </ol>
 <p>On subsequent usages, Marten will just reuse the existing SQL command and remembered handlers to execute the query.</p>
 <h2 id="what-is-supported">What is supported?</h2>
-<p>To the best of our knowledge and testing, you may use any <a href="/marten/documentation/documents/querying/linq">Linq feature that Marten supports</a> within a compiled query. So any combination of:</p>
+<p>To the best of our knowledge and testing, you may use any <a href="/documentation/documents/querying/linq">Linq feature that Marten supports</a> within a compiled query. So any combination of:</p>
 <ul>
 <li><code>Select()</code> transforms</li>
 <li><code>First/FirstOrDefault()</code></li>
@@ -136,7 +136,7 @@ to express document queries in compiler-safe manner, but there is a non-trivial 
 <p>A sample usage of this type of query is shown below:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class UserNamesForFirstName: ICompiledListQuery&lt;User, string&gt;&#xD;&#xA;{&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;User&gt;, IEnumerable&lt;string&gt;&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return q =&gt; q&#xD;&#xA;            .Where(x =&gt; x.FirstName == FirstName)&#xD;&#xA;            .Select(x =&gt; x.UserName);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="querying-for-included-documents">Querying for included documents</h2>
-<p>If you wish to use a compiled query for a document, using a <code>JOIN</code> so that the query will include another document, just as the <a href="/marten/documentation/documents/querying/include">Include()</a> method does on a simple query, the compiled query would be constructed just like any other, using the <code>Include()</code> method
+<p>If you wish to use a compiled query for a document, using a <code>JOIN</code> so that the query will include another document, just as the <a href="/documentation/documents/querying/include">Include()</a> method does on a simple query, the compiled query would be constructed just like any other, using the <code>Include()</code> method
 on the query:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void simple_compiled_include_for_a_single_document()&#xD;&#xA;{&#xD;&#xA;    var user = new User();&#xD;&#xA;    var issue = new Issue { AssigneeId = user.Id, Title = &quot;Garage Door is busted&quot; };&#xD;&#xA;&#xD;&#xA;    theSession.Store&lt;object&gt;(user, issue);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};&#xD;&#xA;        var issue2 = query.Query(issueQuery);&#xD;&#xA;&#xD;&#xA;        issueQuery.Included.ShouldNotBeNull();&#xD;&#xA;        issueQuery.Included.Id.ShouldBe(user.Id);&#xD;&#xA;&#xD;&#xA;        issue2.ShouldNotBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class IssueByTitleWithAssignee : ICompiledQuery&lt;Issue&gt;&#xD;&#xA;{&#xD;&#xA;    public string Title { get; set; }&#xD;&#xA;    public User Included { get; private set; } = new User();&#xD;&#xA;    public JoinType JoinType { get; set; } = JoinType.Inner;&#xD;&#xA;&#xD;&#xA;    public Expression&lt;Func&lt;IQueryable&lt;Issue&gt;, Issue&gt;&gt; QueryIs()&#xD;&#xA;    {&#xD;&#xA;        return query =&gt; query&#xD;&#xA;            .Include&lt;Issue, IssueByTitleWithAssignee&gt;(x =&gt; x.AssigneeId, x =&gt; x.Included, JoinType)&#xD;&#xA;            .Single(x =&gt; x.Title == Title);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>In this example, the query has an <code>Included</code> property which will receive the included Assignee / <code>User</code>. The 'resulting' included property can only be
@@ -181,10 +181,10 @@ we handle Include queries.</p>
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation/documents/querying/include">Including Related Documents</a>
+                        <strong>Previous: </strong><a href="/documentation/documents/querying/include">Including Related Documents</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/documents/querying/batched_queries">Batched Queries</a>
+                        <strong>Next: </strong><a href="/documentation/documents/querying/batched_queries">Batched Queries</a>
                     </span>
                 </nav>
             </div><!--/right-->
@@ -195,9 +195,9 @@ we handle Include queries.</p>
 <foot>
     <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/marten/content/prism.js"></script>
-    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-    <script type="text/javascript" src="/marten/content/affix.js"></script>
+    <script type="text/javascript" src="/content/prism.js"></script>
+    <script type="text/javascript" src="/content/sidebar.js"></script>
+    <script type="text/javascript" src="/content/affix.js"></script>
 
     <script>
         $('#search').keyup(function (e) {
