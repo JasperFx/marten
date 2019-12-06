@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten </a>
+                <a href="/" class="navbar-brand">Marten 3.10.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -70,7 +70,7 @@
 
             <div class="col-md-3" id="leftCol">
 
-                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <img src="/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
                 <h3 class="no-margin">Next</h3><p><a href="/documentation/events/streams">Querying Event and Stream Data</a></p>
@@ -104,7 +104,7 @@ but for production usage when you may be querying event data before you append a
 <p>As usual, our sample problem domain is the Lord of the Rings style &quot;Quest.&quot; For now, you can either start a new stream and let Marten assign the Guid id for the stream:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = &quot;Fourth&quot;;&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <p>Or have Marten use a Guid value that you provide yourself:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <p>For stream identity (strings vs. Guids), see <a href="/documentation/events/identity">Stream Identity</a>.</p>
 <p>Note that <code>StartStream</code> checks for an existing stream and throws <code>ExistingStreamIdCollisionException</code> if a matching stream already exists.</p>
 <h2 id="appending-events">Appending Events</h2>
@@ -132,8 +132,8 @@ but for production usage when you may be querying event data before you append a
 </body>
 
 <foot>
-    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/content/prism.js"></script>
     <script type="text/javascript" src="/content/sidebar.js"></script>
     <script type="text/javascript" src="/content/affix.js"></script>

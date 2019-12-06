@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten </a>
+                <a href="/" class="navbar-brand">Marten 3.10.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -70,7 +70,7 @@
 
             <div class="col-md-3" id="leftCol">
 
-                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <img src="/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
                 <h3 class="no-margin">Next</h3><p><a href="/documentation/documents">Marten as Document Db</a></p>
@@ -132,7 +132,7 @@ and the database</p>
 </code></pre>
 <p>In all cases, the commands expose usage help through &quot;marten help [command].&quot; Each of the commands also exposes a &quot;--conn&quot; (or &quot;-c&quot; if you prefer) flag to override the database connection string and a &quot;--log&quot; flag to record all the command output to a file.</p>
 <h3 id="current-thinking-about-marten-sqitch">Current Thinking about Marten + Sqitch</h3>
-<p>Our team doing the RavenDB-to-Marten transition work has turned us on to using <a href="http://sqitch.org/">Sqitch</a> for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our <a href="http://jasperfx.github.io/marten/documentation/schema/migrations/">existing <code>WritePatch()</code> schema management</a> to tie into Sqitch's migration scheme.</p>
+<p>Our team doing the RavenDB-to-Marten transition work has turned us on to using <a href="http://sqitch.org/">Sqitch</a> for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our existing <code>WritePatch()</code> <a href="/documentation/schema/migrations">schema management</a> to tie into Sqitch's migration scheme.</p>
 <p>The way that I think this could work for us is first to have a Sqitch project established in our codebase with its folders for updates, rollbacks, and verify's. In our build script that runs in our master continuous integration (CI) build, we would:</p>
 <ol>
 <li>Call sqitch to update the CI database (or whatever database we declare to be the source of truth) with the latest known migrations</li>
@@ -161,8 +161,8 @@ and the database</p>
 </body>
 
 <foot>
-    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/content/prism.js"></script>
     <script type="text/javascript" src="/content/sidebar.js"></script>
     <script type="text/javascript" src="/content/affix.js"></script>
