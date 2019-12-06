@@ -410,13 +410,13 @@ namespace Marten.Testing.Patching
                 _.UseDefaultSerialization(casing: Casing.CamelCase);
             });
 
-            var expr1 = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
-            expr1.Set(x => x.Color, Colors.Blue);
-            expr1.Patch["path"].ShouldBe("color");
+            var expressionWithSimpleProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
+            expressionWithSimpleProperty.Set(x => x.Color, Colors.Blue);
+            expressionWithSimpleProperty.Patch["path"].ShouldBe("color");
 
-            var expr2 = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
-            expr2.Delete(x => x.Inner.AnotherString);
-            expr2.Patch["path"].ShouldBe("inner.anotherString");
+            var expressionWithNestedProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
+            expressionWithNestedProperty.Delete(x => x.Inner.AnotherString);
+            expressionWithNestedProperty.Patch["path"].ShouldBe("inner.anotherString");
         }
     }
 }
