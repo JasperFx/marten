@@ -70,7 +70,7 @@
 
             <div class="col-md-3" id="leftCol">
 
-                <img src="http://jasperfx.github.io/marten/content/images/emblem.png" width="80%" align="middle" />
+                <img src="/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
                 <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/json">Json Serialization</a></p>
@@ -150,7 +150,7 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 <p>Same can be configured for Duplicated Field:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class IndexExamples: MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public IndexExamples()&#xD;&#xA;    {&#xD;&#xA;        // Add a gin index to the User document type&#xD;&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xD;&#xA;&#xD;&#xA;        // Adds a basic btree index to the duplicated&#xD;&#xA;        // field for this property that also overrides&#xD;&#xA;        // the Postgresql database type for the column&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xD;&#xA;&#xD;&#xA;        // Defining a duplicate column with not null constraint&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.Department, pgType: &quot;varchar(50)&quot;, notNull: true);&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for FirstName&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xD;&#xA;            idx.Method = IndexMethod.hash;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for UserName to be unique&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IsUnique = true;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for LastName to be in descending order&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.LastName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.SortOrder = SortOrder.Desc;&#xD;&#xA;        });&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="unique-index-per-tenant">Unique Index per Tenant</h2>
-<p>For tables which have been configured for <p class="bg-warning" style="padding:5px"><b>Unknown topic key '/documentation/documents/tenancy/'</b><small> -- CTRL+SHIFT+R to force refresh the topic tree</small></p>, index definitions may also be scoped per tenant.</p>
+<p>For tables which have been configured for <a href="/marten/documentation/documents/tenancy">Tenancy</a>, index definitions may also be scoped per tenant.</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates a duplicated field unique index on firstname, lastname and tenant_id&#xD;&#xA;    _.Schema.For&lt;User&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.FirstName, x =&gt; x.LastName);&#xD;&#xA;&#xD;&#xA;    // This creates a computed unique index on client name and tenant_id&#xD;&#xA;    _.Schema.For&lt;Client&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.Name);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 
                 </div>
@@ -169,8 +169,8 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 </body>
 
 <foot>
-    <script type='text/javascript' src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script type='text/javascript' src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/marten/content/prism.js"></script>
     <script type="text/javascript" src="/marten/content/sidebar.js"></script>
     <script type="text/javascript" src="/marten/content/affix.js"></script>
