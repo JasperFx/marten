@@ -77,6 +77,6 @@ Same can be configured for Duplicated Field:
 
 ## Unique Index per Tenant
 
-For tables which have been configured for <[linkto:/documentation/documents/tenancy/]>, index definitions may also be scoped per tenant.
+For tables which have been configured for <[linkto:documentation/documents/tenancy]>, index definitions may also be scoped per tenant.
 
 <[sample:per-tenant-unique-index]>
