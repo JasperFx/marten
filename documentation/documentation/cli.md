@@ -64,7 +64,7 @@ and the database
 In all cases, the commands expose usage help through "marten help [command]." Each of the commands also exposes a "--conn" (or "-c" if you prefer) flag to override the database connection string and a "--log" flag to record all the command output to a file.
 
 ### Current Thinking about Marten + Sqitch
-Our team doing the RavenDB-to-Marten transition work has turned us on to using [Sqitch](http://sqitch.org/) for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our [existing `WritePatch()` schema management](http://jasperfx.github.io/marten/documentation/schema/migrations/) to tie into Sqitch's migration scheme.
+Our team doing the RavenDB-to-Marten transition work has turned us on to using [Sqitch](http://sqitch.org/) for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our existing `WritePatch()` <[linkto:documentation/schema/migrations;title=schema management]> to tie into Sqitch's migration scheme.
 
 The way that I think this could work for us is first to have a Sqitch project established in our codebase with its folders for updates, rollbacks, and verify's. In our build script that runs in our master continuous integration (CI) build, we would:
 
