@@ -3,6 +3,7 @@ using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Documents;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -13,7 +14,7 @@ namespace Marten.Testing.Patching
     {
         private readonly PatchExpression<Target> _expression;
         private readonly ITenant _schema = Substitute.For<ITenant>();
-        
+
 
         public PatchExpressionTests()
         {
@@ -399,6 +400,23 @@ namespace Marten.Testing.Patching
         {
             Assert.Throws<ArgumentException>(() => _expression.Duplicate(x => x.String))
                 .Message.ShouldContain("At least one destination must be given");
+        }
+
+        [Fact]
+        public void check_camel_case_serialized_property()
+        {
+            var store = TestingDocumentStore.For(_ =>
+            {
+                _.UseDefaultSerialization(casing: Casing.CamelCase);
+            });
+
+            var expressionWithSimpleProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
+            expressionWithSimpleProperty.Set(x => x.Color, Colors.Blue);
+            expressionWithSimpleProperty.Patch["path"].ShouldBe("color");
+
+            var expressionWithNestedProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
+            expressionWithNestedProperty.Delete(x => x.Inner.AnotherString);
+            expressionWithNestedProperty.Patch["path"].ShouldBe("inner.anotherString");
         }
     }
 }

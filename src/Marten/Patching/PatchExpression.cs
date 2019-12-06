@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Patching
 {
@@ -194,7 +195,7 @@ namespace Marten.Patching
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            return visitor.Members.Select(x => x.Name).Join(".");
+            return visitor.Members.Select(x => x.Name.FormatCase(_serializer.Casing)).Join(".");
         }
 
         private void apply()
