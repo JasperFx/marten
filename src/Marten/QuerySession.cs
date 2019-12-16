@@ -76,10 +76,12 @@ namespace Marten
         }
 
         public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters)
+            => QueryAsync(new UserSuppliedQueryHandler<T>(_store, sql, parameters));
+
+        public Task<T> QueryAsync<T>(IQueryHandler<T> handler, CancellationToken token = default(CancellationToken))
         {
             assertNotDisposed();
 
-            var handler = new UserSuppliedQueryHandler<T>(_store, sql, parameters);
             return _connection.FetchAsync(handler, _identityMap.ForQuery(), null, Tenant, token);
         }
 
