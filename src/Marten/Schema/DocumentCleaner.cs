@@ -110,8 +110,8 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
         {
             using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
-                connection.Execute($"truncate table {_options.Events.DatabaseSchemaName}.mt_events cascade;" +
-                                   $"truncate table {_options.Events.DatabaseSchemaName}.mt_streams cascade");
+                connection.Execute($"drop table if exists {_options.Events.DatabaseSchemaName}.mt_events cascade;" +
+                                   $"drop table if exists {_options.Events.DatabaseSchemaName}.mt_streams cascade");
                 connection.Commit();
             }
         }
