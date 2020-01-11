@@ -14,7 +14,7 @@ environment:
   PG_PLV8_EXTENSION_ZIP_FILENAME: pg10plv8jsbin_w64
   PG_DB: marten_test
   NUGET_DEPLOY_KEY:
-    secure: gcZQodwplC8EyShor3GPKubzIDADyqyM2hfSx2Zb6eHCaCQiNq5A1M/MTPBYgwd2
+    secure: jFY4hMpr2i4B+cD795OfusCB3hdwzuxOi5D9cjVXow69yMR7mcfgUhCm8s9rC1Zp
 
 services: 
   - postgresql101
