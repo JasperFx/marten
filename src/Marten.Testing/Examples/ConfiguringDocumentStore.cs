@@ -56,7 +56,7 @@ namespace Marten.Testing.Examples
             }
 
             // Open a session for querying, loading, and
-            // updating documents that performas automated
+            // updating documents that performs automated
             // "dirty" checking of previously loaded documents
             using (var session = store.DirtyTrackedSession())
             {
