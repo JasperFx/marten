@@ -8,7 +8,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.LastModified
 {
-    public class ModifiedBeforeParser : IMethodCallParser
+    public class ModifiedBeforeParser: IMethodCallParser
     {
         private static readonly MethodInfo _method =
             typeof(LastModifiedExtensions).GetMethod(nameof(LastModifiedExtensions.ModifiedBefore));

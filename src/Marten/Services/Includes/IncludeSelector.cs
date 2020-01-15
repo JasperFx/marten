@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
@@ -8,7 +8,7 @@ using Marten.Schema;
 
 namespace Marten.Services.Includes
 {
-    public class IncludeSelector<TSearched, TIncluded> : BasicSelector, ISelector<TSearched>
+    public class IncludeSelector<TSearched, TIncluded>: BasicSelector, ISelector<TSearched>
     {
         private readonly Action<TIncluded> _callback;
         private readonly ISelector<TSearched> _inner;
@@ -41,7 +41,6 @@ namespace Marten.Services.Includes
 
             return _inner.Resolve(reader, map, stats);
         }
-
 
         public async Task<TSearched> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {

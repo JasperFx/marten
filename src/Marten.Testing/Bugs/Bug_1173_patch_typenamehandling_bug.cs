@@ -1,21 +1,20 @@
-﻿using System;
 using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-
     public class PatchTypeA
     {
         public string Id { get; set; }
         public PatchTypeB TypeB { get; set; }
     }
+
     public class PatchTypeB
     {
         public string Name { get; set; }
     }
 
-    public class Bug_1173_patch_typenamehandling_bug : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_1173_patch_typenamehandling_bug: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void can_support_typenamehandling()

@@ -1,7 +1,5 @@
-﻿using Marten.Schema;
 using Marten.Testing.Documents;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
@@ -33,7 +31,6 @@ namespace Marten.Testing.Bugs
 
                 patch.UpdateDDL.ShouldContain("alter table public.mt_doc_user add column mt_doc_type varchar DEFAULT \'BASE\'");
             }
-
         }
     }
 }

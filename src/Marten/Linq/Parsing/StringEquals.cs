@@ -4,7 +4,7 @@ using Baseline.Reflection;
 
 namespace Marten.Linq.Parsing
 {
-    public class StringEquals : StringComparisonParser
+    public class StringEquals: StringComparisonParser
     {
         public StringEquals() : base(
             ReflectionHelper.GetMethod<string>(s => s.Equals(string.Empty)),

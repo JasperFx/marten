@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -138,11 +138,11 @@ namespace Marten
             /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
             /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null)
+            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null, bool notNull = false)
             {
                 alter = mapping =>
                 {
-                    mapping.Duplicate(expression, pgType, dbType, configure);
+                    mapping.Duplicate(expression, pgType, dbType, configure, notNull);
                 };
                 return this;
             }
@@ -289,6 +289,14 @@ namespace Marten
                 Action<IndexDefinition> indexConfiguration = null)
             {
                 alter = m => m.ForeignKey<TReference>(expression, foreignKeyConfiguration, indexConfiguration);
+
+                return this;
+            }
+
+            public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName,
+                                                           Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
+            {
+                alter = m => m.ForeignKey(expression, tableName, columnName, schemaName, foreignKeyConfiguration);
 
                 return this;
             }

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Baseline;
 using Marten.Linq;
 using Marten.Linq.SoftDeletes;
@@ -12,7 +12,7 @@ using StoryTeller.Grammars.Tables;
 
 namespace Marten.Storyteller.Fixtures
 {
-    public class DocumentFilteringFixture : Fixture
+    public class DocumentFilteringFixture: Fixture
     {
         public DocumentFilteringFixture()
         {
@@ -22,18 +22,16 @@ namespace Marten.Storyteller.Fixtures
         [ExposeAsTable("Default Filter Determination for User and AdminUser subclass")]
         public void FiltersAre(
             [Header("Soft Deleted")] bool softDeleted,
-            [Header("Tenancy")] TenancyStyle tenancy, 
+            [Header("Tenancy")] TenancyStyle tenancy,
             [Header("User")]out string user, [Header("AdminUser")]out string subclass)
         {
             var store = buildStore(softDeleted, tenancy);
-
 
             user = store.Storage.MappingFor(typeof(User)).DefaultWhereFragment().ToSql();
 
             subclass = store
                 .Tenancy.Default.MappingFor(typeof(AdminUser)).As<IQueryableDocument>()
                 .DefaultWhereFragment().ToSql();
-
         }
 
         private static DocumentStore buildStore(bool softDeleted, TenancyStyle tenancy)
@@ -51,7 +49,6 @@ namespace Marten.Storyteller.Fixtures
                 {
                     _.Connection(ConnectionSource.ConnectionString);
                     _.Policies.AllDocumentsAreMultiTenanted();
-                    
                 }
                 else
                 {
@@ -77,8 +74,6 @@ namespace Marten.Storyteller.Fixtures
                 IQueryable<User> userQuery = null;
                 IQueryable<AdminUser> adminQuery = null;
 
-
-
                 if (baseWhere == "x => x.UserName == \"Aubrey\"")
                 {
                     userQuery = session.Query<User>().Where(x => x.UserName == "Aubrey");
@@ -88,7 +83,6 @@ namespace Marten.Storyteller.Fixtures
                 {
                     userQuery = session.Query<User>().Where(x => x.MaybeDeleted());
                     adminQuery = session.Query<AdminUser>().Where(x => x.MaybeDeleted());
-
                 }
 
                 var userCommand = userQuery.ToCommand();
@@ -97,8 +91,6 @@ namespace Marten.Storyteller.Fixtures
                 user = extractWhereClause(userCommand);
                 subclass = extractWhereClause(adminCommand);
             }
-
-
         }
 
         private string extractWhereClause(NpgsqlCommand cmd)
@@ -107,6 +99,4 @@ namespace Marten.Storyteller.Fixtures
             return cmd.CommandText.Substring(index + 5).Trim();
         }
     }
-
-
 }

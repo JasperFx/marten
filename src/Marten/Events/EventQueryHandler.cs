@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -11,11 +11,11 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    internal interface IEventQueryHandler : IQueryHandler<IReadOnlyList<IEvent>>
+    internal interface IEventQueryHandler: IQueryHandler<IReadOnlyList<IEvent>>
     {
     }
 
-    internal class EventQueryHandler<TIdentity> : IEventQueryHandler
+    internal class EventQueryHandler<TIdentity>: IEventQueryHandler
     {
         private readonly ISelector<IEvent> _selector;
         private readonly TIdentity _streamId;

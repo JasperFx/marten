@@ -1,7 +1,8 @@
-﻿namespace Marten.Schema.Identity.Sequences
+namespace Marten.Schema.Identity.Sequences
 {
     public class HiloSettings
     {
         public int MaxLo = 1000;
+        public string SequenceName = null;
     }
 }

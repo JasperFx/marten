@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using Baseline;
 using Oakton;
@@ -15,13 +15,12 @@ namespace Marten.CommandLine
                 configure(factory);
                 factory.ConfigureRun = run =>
                 {
-                    if (!(run.Input is MartenInput)) return;
+                    if (!(run.Input is MartenInput))
+                        return;
 
                     run.Input.As<MartenInput>().Options = options;
                 };
-
             });
-
 
             return executor;
         }

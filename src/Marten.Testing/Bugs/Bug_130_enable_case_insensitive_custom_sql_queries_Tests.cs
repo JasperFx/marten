@@ -1,12 +1,12 @@
-﻿using System.Linq;
+using System.Linq;
+using Marten.Services;
 using Shouldly;
 using Xunit;
-using Marten.Services;
 
 namespace Marten.Testing.Bugs
 {
     [Collection("DefaultSchema")]
-    public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void query()

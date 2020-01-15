@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_transforms : IntegratedFixture
+    public class document_transforms: IntegratedFixture
     {
         public document_transforms()
         {
@@ -15,24 +15,22 @@ namespace Marten.Testing.Acceptance
             });
         }
 
-
         public void example()
         {
             // SAMPLE: loading_js_transform_files
-    var store = DocumentStore.For(_ =>
-    {
-        _.Connection(ConnectionSource.ConnectionString);
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
 
-        // Let Marten derive the transform name from the filename
-        _.Transforms.LoadFile("get_fullname.js");
+                // Let Marten derive the transform name from the filename
+                _.Transforms.LoadFile("get_fullname.js");
 
-        // Explicitly define the transform name yourself
-        _.Transforms.LoadFile("default_username.js", "set_default_username");
-    });
+                // Explicitly define the transform name yourself
+                _.Transforms.LoadFile("default_username.js", "set_default_username");
+            });
             // ENDSAMPLE
 
-    
-    transform_example(store);
+            transform_example(store);
 
             store.Dispose();
         }
@@ -55,9 +53,8 @@ namespace Marten.Testing.Acceptance
             // Only transform documents from the named tenants
             store.Transform.Tenants<User>("default_username", "tenant1", "tenant2");
         }
+
         // ENDSAMPLE
-
-
 
         [Fact] //-- Unreliable on CI
         public void use_transform_in_production_mode()
@@ -79,14 +76,13 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void transform_all_documents()
         {
-            var user1 = new User {FirstName = "Jeremy", LastName = "Miller"};
-            var user2 = new User {FirstName = "Corey", LastName = "Kaylor"};
-            var user3 = new User {FirstName = "Tim", LastName = "Cools"};
+            var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
+            var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
+            var user3 = new User { FirstName = "Tim", LastName = "Cools" };
 
-            theStore.BulkInsert(new User[] {user1, user2, user3});
+            theStore.BulkInsert(new User[] { user1, user2, user3 });
 
             theStore.Transform.All<User>("default_username");
-
 
             using (var session = theStore.QuerySession())
             {
@@ -107,10 +103,10 @@ namespace Marten.Testing.Acceptance
 
             var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
             var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
-            var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed"};
+            var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed" };
 
-            theStore.BulkInsert("Purple",new User[]{user1, user2});
-            theStore.BulkInsert("Orange",new User[]{user3});
+            theStore.BulkInsert("Purple", new User[] { user1, user2 });
+            theStore.BulkInsert("Orange", new User[] { user3 });
 
             theStore.Transform.Tenant<User>("default_username", "Purple");
 
@@ -125,17 +121,14 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        
-
         [Fact]
         public void transform_a_single_document()
         {
             var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
-            var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2"};
-            var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3"};
+            var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
+            var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
             theStore.BulkInsert(new User[] { user1, user2, user3 });
-
 
             theStore.Transform.Document<User>("default_username", user1.Id);
 
@@ -157,7 +150,6 @@ namespace Marten.Testing.Acceptance
             var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
             theStore.BulkInsert(new User[] { user1, user2, user3 });
-
 
             theStore.Transform.Where<User>("default_username", x => x.FirstName == user1.FirstName);
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -14,7 +14,7 @@ namespace Marten.Storage
     /// <summary>
     /// Model a database table in Postgresql
     /// </summary>
-    public class Table : ISchemaObject, IEnumerable<TableColumn>
+    public class Table: ISchemaObject, IEnumerable<TableColumn>
     {
         public readonly List<TableColumn> _columns = new List<TableColumn>();
 
@@ -159,7 +159,6 @@ namespace Marten.Storage
 
         public List<TableColumn> PrimaryKeys { get; } = new List<TableColumn>();
 
-
         public void WriteDropStatement(DdlRules rules, StringWriter writer)
         {
             writer.WriteLine($"DROP TABLE IF EXISTS {Identifier} CASCADE;");
@@ -178,12 +177,11 @@ order by ordinal_position;
 select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
 from pg_index i
 join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
-where attrelid = (select pg_class.oid 
-                  from pg_class 
+where attrelid = (select pg_class.oid
+                  from pg_class
                   join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
                   where n.nspname = :{schemaParam} and relname = :{nameParam})
-and i.indisprimary; 
-
+and i.indisprimary;
 
 SELECT
   U.usename                AS user_name,
@@ -212,16 +210,26 @@ FROM pg_index AS idx
   JOIN pg_user AS U ON i.relowner = U.usesysid
 WHERE
   nspname = :{schemaParam} AND
-  NOT nspname LIKE 'pg%' AND 
+  NOT nspname LIKE 'pg%' AND
   i.relname like 'mt_%';
 
-select constraint_name 
-from information_schema.table_constraints as c
-where 
-  c.constraint_name LIKE 'mt_%' and 
-  c.constraint_type = 'FOREIGN KEY' and 
-  c.table_schema = :{schemaParam} and
-  c.table_name = :{nameParam};
+SELECT c.conname                                     AS constraint_name,
+       c.contype                                     AS constraint_type,
+       sch.nspname                                   AS schema_name,
+       tbl.relname                                   AS table_name,
+       ARRAY_AGG(col.attname ORDER BY u.attposition) AS columns,
+       pg_get_constraintdef(c.oid)                   AS definition
+FROM pg_constraint c
+       JOIN LATERAL UNNEST(c.conkey) WITH ORDINALITY AS u(attnum, attposition) ON TRUE
+       JOIN pg_class tbl ON tbl.oid = c.conrelid
+       JOIN pg_namespace sch ON sch.oid = tbl.relnamespace
+       JOIN pg_attribute col ON (col.attrelid = tbl.oid AND col.attnum = u.attnum)
+WHERE
+	c.conname like 'mt_%' and
+	c.contype = 'f' and
+	sch.nspname = :{schemaParam} and
+	tbl.relname = :{nameParam}
+GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
 
 ");
         }
@@ -244,7 +252,8 @@ where
         public TableDelta FetchDelta(NpgsqlConnection conn)
         {
             var actual = FetchExisting(conn);
-            if (actual == null) return null;
+            if (actual == null)
+                return null;
 
             return new TableDelta(this, actual);
         }
@@ -270,6 +279,10 @@ where
             {
                 if (autoCreate == AutoCreate.All)
                 {
+                    delta.ForeignKeyMissing.Each(x => patch.Updates.Apply(this, x));
+                    delta.ForeignKeyRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+                    delta.ForeignKeyMissingRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+
                     Write(patch.Rules, patch.UpWriter);
 
                     return SchemaPatchDifference.Create;
@@ -292,7 +305,9 @@ where
             delta.IndexChanges.Each(x => patch.Updates.Apply(this, x));
             delta.IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
 
-            delta.MissingForeignKeys.Each(x => patch.Updates.Apply(this, x.ToDDL()));
+            delta.ForeignKeyChanges.Each(x => patch.Updates.Apply(this, x));
+            delta.ForeignKeyRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
+            delta.ForeignKeyMissingRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
 
             return SchemaPatchDifference.Update;
         }
@@ -304,8 +319,8 @@ where
             var indexes = readIndexes(reader);
             var constraints = readConstraints(reader);
 
-
-            if (!columns.Any()) return null;
+            if (!columns.Any())
+                return null;
 
             var existing = new Table(Identifier);
             foreach (var column in columns)
@@ -321,22 +336,20 @@ where
             existing.ActualIndices = indexes;
             existing.ActualForeignKeys = constraints;
 
-
             return existing;
         }
 
-        public List<string> ActualForeignKeys { get; set; } = new List<string>();
+        public List<ActualForeignKey> ActualForeignKeys { get; set; } = new List<ActualForeignKey>();
 
         public Dictionary<string, ActualIndex> ActualIndices { get; set; } = new Dictionary<string, ActualIndex>();
 
-
-        private static List<string> readConstraints(DbDataReader reader)
+        private List<ActualForeignKey> readConstraints(DbDataReader reader)
         {
             reader.NextResult();
-            var constraints = new List<string>();
+            var constraints = new List<ActualForeignKey>();
             while (reader.Read())
             {
-                constraints.Add(reader.GetString(0));
+                constraints.Add(new ActualForeignKey(Identifier, reader.GetString(0), reader.GetString(5)));
             }
 
             return constraints;
@@ -349,7 +362,8 @@ where
             reader.NextResult();
             while (reader.Read())
             {
-                if (reader.IsDBNull(2)) continue;
+                if (reader.IsDBNull(2))
+                    continue;
 
                 var schemaName = reader.GetString(1);
                 var tableName = reader.GetString(2);
@@ -361,8 +375,6 @@ where
 
                     dict.Add(index.Name, index);
                 }
-
-
             }
 
             return dict;
@@ -430,10 +442,13 @@ where
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (!obj.GetType().CanBeCastTo<Table>()) return false;
-            return Equals((Table) obj);
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (!obj.GetType().CanBeCastTo<Table>())
+                return false;
+            return Equals((Table)obj);
         }
 
         public override int GetHashCode()

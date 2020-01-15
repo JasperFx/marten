@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -27,7 +27,6 @@ namespace Marten.Storage
 
             var nameStart = functionIndex + "function".Length;
             var funcName = Body.Substring(nameStart, openParen - nameStart).Trim();
-
 
             return $"{funcName}({args})";
         }

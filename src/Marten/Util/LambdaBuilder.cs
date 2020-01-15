@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -30,7 +30,8 @@ namespace Marten.Util
 
             var method = property.SetMethod;
 
-            if (method == null) return null;
+            if (method == null)
+                return null;
 
             var callSetMethod = Expression.Call(target, method, value);
 

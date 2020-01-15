@@ -1,12 +1,11 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Marten.Services;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_count_async_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_count_async_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public async Task count_without_any_where()

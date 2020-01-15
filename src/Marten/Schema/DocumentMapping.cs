@@ -19,7 +19,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping : FieldCollection, IDocumentMapping, IQueryableDocument, IFeatureSchema
+    public class DocumentMapping: FieldCollection, IDocumentMapping, IQueryableDocument, IFeatureSchema
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -71,7 +71,8 @@ namespace Marten.Schema
                 }
                 else
                 {
-                    if (value.GetMemberType() != typeof(Guid)) throw new ArgumentOutOfRangeException(nameof(value), "The Version member has to be of type Guid");
+                    if (value.GetMemberType() != typeof(Guid))
+                        throw new ArgumentOutOfRangeException(nameof(value), "The Version member has to be of type Guid");
                     UseOptimisticConcurrency = true;
                     _versionMember = value;
                 }
@@ -136,7 +137,8 @@ namespace Marten.Schema
             get { return _alias; }
             set
             {
-                if (value.IsEmpty()) throw new ArgumentNullException(nameof(value));
+                if (value.IsEmpty())
+                    throw new ArgumentNullException(nameof(value));
 
                 _alias = value.ToLower();
             }
@@ -306,8 +308,8 @@ namespace Marten.Schema
             // 4) Id field
             return GetProperties(documentType).FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
                    ?? documentType.GetFields().FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
-                   ?? (MemberInfo)GetProperties(documentType).FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"))
-                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.EqualsIgnoreCase("id"));
+                   ?? (MemberInfo)GetProperties(documentType).FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
+                   ?? documentType.GetFields().FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
         }
 
         private static PropertyInfo[] GetProperties(Type type)
@@ -316,7 +318,7 @@ namespace Marten.Schema
                 ? new[] { type }
                     .Concat(type.GetInterfaces())
                     .SelectMany(i => i.GetProperties()).ToArray()
-                : type.GetProperties();
+                : type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).OrderByDescending(x => x.DeclaringType == type).ToArray();
         }
 
         public void AddSubClass(Type subclassType, IEnumerable<MappedType> otherSubclassTypes, string alias)
@@ -346,7 +348,8 @@ namespace Marten.Schema
 
         public string AliasFor(Type subclassType)
         {
-            if (subclassType == DocumentType) return BaseAlias;
+            if (subclassType == DocumentType)
+                return BaseAlias;
 
             var type = _subClasses.FirstOrDefault(x => x.DocumentType == subclassType);
             if (type == null)
@@ -360,7 +363,8 @@ namespace Marten.Schema
 
         public Type TypeFor(string alias)
         {
-            if (alias == BaseAlias) return DocumentType;
+            if (alias == BaseAlias)
+                return DocumentType;
 
             var subClassMapping = _subClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
             if (subClassMapping == null)
@@ -509,7 +513,8 @@ namespace Marten.Schema
 
         public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType)
         {
-            var referenceMapping = _storeOptions.Storage.MappingFor(referenceType);
+            var referenceMapping = referenceType != DocumentType ?
+                _storeOptions.Storage.MappingFor(referenceType) : this;
 
             var duplicateField = DuplicateField(members);
 
@@ -553,9 +558,11 @@ namespace Marten.Schema
         private bool idMemberIsSettable()
         {
             var field = IdMember as FieldInfo;
-            if (field != null) return field.IsPublic;
+            if (field != null)
+                return field.IsPublic;
             var property = IdMember as PropertyInfo;
-            if (property != null) return property.CanWrite && property.SetMethod != null;
+            if (property != null)
+                return property.CanWrite && property.SetMethod != null;
             return false;
         }
 
@@ -601,10 +608,10 @@ namespace Marten.Schema
             return string.Join("_", parts);
         }
 
-        public DuplicatedField DuplicateField(string memberName, string pgType = null)
+        public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
         {
             var field = FieldFor(memberName);
-            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime);
+            var duplicate = new DuplicatedField(_storeOptions, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -615,11 +622,11 @@ namespace Marten.Schema
             return duplicate;
         }
 
-        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null)
+        public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null, bool notNull = false)
         {
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime);
+            var duplicatedField = new DuplicatedField(_storeOptions, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;
@@ -663,6 +670,10 @@ namespace Marten.Schema
 
             foreach (var foreignKey in ForeignKeys)
             {
+                // ExternalForeignKeyDefinition's will have a null ReferenceDocumentType, so we can skip it
+                if (foreignKey.ReferenceDocumentType == null)
+                    continue;
+
                 yield return foreignKey.ReferenceDocumentType;
             }
         }
@@ -698,7 +709,7 @@ namespace Marten.Schema
         }
     }
 
-    public class DocumentMapping<T> : DocumentMapping
+    public class DocumentMapping<T>: DocumentMapping
     {
         public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
         {
@@ -714,14 +725,15 @@ namespace Marten.Schema
         /// <param name="pgType">Optional, overrides the Postgresql column type for the duplicated field</param>
         /// <param name="configure">Optional, allows you to customize the Postgresql database index configured for the duplicated field</param>
         /// <returns></returns>
-        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null)
+        public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null, bool notNull = false)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType);
+            var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType, notNull: notNull);
 
-            if (dbType.HasValue) duplicateField.DbType = dbType.Value;
+            if (dbType.HasValue)
+                duplicateField.DbType = dbType.Value;
 
             var indexDefinition = AddIndex(duplicateField.ColumnName);
             configure?.Invoke(indexDefinition);
@@ -879,6 +891,13 @@ namespace Marten.Schema
                 regConfig);
         }
 
+        /// <summary>
+        /// Adds foreign key index to other marten document
+        /// </summary>
+        /// <typeparam name="TReference">Document type</typeparam>
+        /// <param name="expression">Field selector</param>
+        /// <param name="foreignKeyConfiguration">customize foreign key configuration</param>
+        /// <param name="indexConfiguration">customize index configuration</param>
         public void ForeignKey<TReference>(
             Expression<Func<T, object>> expression,
             Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
@@ -893,15 +912,31 @@ namespace Marten.Schema
             var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
             indexConfiguration?.Invoke(indexDefinition);
         }
-        
-        public void ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName)
+
+        /// <summary>
+        /// Adds foreign key index to non-marten table
+        /// </summary>
+        /// <param name="expression">Field selector</param>
+        /// <param name="tableName">external table name</param>
+        /// <param name="columnName">referenced column to external table</param>
+        /// <param name="schemaName">external table schema name, if not provided then DatabaseSchemaName from store options will be used</param>
+        /// <param name="foreignKeyConfiguration">customize foreign key configuration</param>
+        public void ForeignKey(
+            Expression<Func<T, object>> expression,
+            string tableName,
+            string columnName,
+            string schemaName = null,
+            Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
         {
+            schemaName = schemaName ?? DatabaseSchemaName;
+
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
             var duplicateField = DuplicateField(visitor.Members.ToArray());
 
             var foreignKey = new ExternalForeignKeyDefinition(duplicateField.ColumnName, this, schemaName, tableName, columnName);
+            foreignKeyConfiguration?.Invoke(foreignKey);
             ForeignKeys.Add(foreignKey);
         }
     }

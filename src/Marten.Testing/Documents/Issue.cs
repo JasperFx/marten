@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Testing.Documents
 {
@@ -21,6 +21,28 @@ namespace Marten.Testing.Documents
         public Guid? AssigneeId { get; set; }
 
         public Guid? ReporterId { get; set; }
+
+        public Guid? BugId { get; set; }
     }
+
+    // ENDSAMPLE
+
+    // SAMPLE: Bug
+    public class Bug
+    {
+        public Bug()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public Guid Id { get; set; }
+
+        public string Type { get; set; }
+
+        public string Title { get; set; }
+
+        public int IssueTrackerId { get; set; }
+    }
+
     // ENDSAMPLE
 }

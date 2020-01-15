@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async.ErrorHandling
 {
-    public class Retry : IExceptionAction
+    public class Retry: IExceptionAction
     {
         public int Attempts { get; }
         public TimeSpan Cooldown { get; }

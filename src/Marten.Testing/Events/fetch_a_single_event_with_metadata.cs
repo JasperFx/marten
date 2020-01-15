@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Services;
@@ -8,21 +8,18 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-
-    public class fetch_a_single_event_with_metadata : DocumentSessionFixture<NulloIdentityMap>
+    public class fetch_a_single_event_with_metadata: DocumentSessionFixture<NulloIdentityMap>
     {
-        QuestStarted started = new QuestStarted { Name = "Find the Orb" };
-        MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
-        MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
-        MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+        private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
+        private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
+        private MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
+        private MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-        MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
-
+        private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
         [Fact]
         public void fetch_synchronously()
         {
-
             var streamId = theSession.Events
                 .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             theSession.SaveChanges();
@@ -45,7 +42,6 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task fetch_asynchronously()
         {
-
             var streamId = theSession.Events
                 .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             await theSession.SaveChangesAsync().ConfigureAwait(false);

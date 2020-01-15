@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Data.Common;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
@@ -10,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    internal class SingleEventQueryHandler : IQueryHandler<IEvent>
+    internal class SingleEventQueryHandler: IQueryHandler<IEvent>
     {
         private readonly Guid _id;
         private readonly EventSelector _selector;
@@ -24,7 +23,7 @@ namespace Marten.Events
         public void ConfigureCommand(CommandBuilder sql)
         {
             _selector.WriteSelectClause(sql, null);
-            
+
             var param = sql.AddParameter(_id);
             sql.Append(" where id = :");
             sql.Append(param.ParameterName);

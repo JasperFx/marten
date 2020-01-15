@@ -1,19 +1,20 @@
-﻿using System;
+using System;
 
 namespace Marten.Events.Projections
 {
     /// <summary>
     /// Used by <see cref="EventGraph"/> to resolve IAggregator when no explicit IAggregator registration exists
-    /// </summary>    
+    /// </summary>
     public interface IAggregatorLookup
     {
         /// <summary>
         /// Resolve aggregator for T
-        /// </summary>        
+        /// </summary>
         IAggregator<T> Lookup<T>() where T : class, new();
+
         /// <summary>
         /// Resolve aggregator for aggregateType
-        /// </summary>        
+        /// </summary>
         IAggregator Lookup(Type aggregateType);
     }
 }

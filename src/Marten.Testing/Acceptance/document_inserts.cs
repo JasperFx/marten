@@ -1,13 +1,12 @@
-﻿using System.Linq;
-using Marten.Testing.Documents;
-using Marten.Testing.TrackingSession;
+using System.Linq;
 using Marten.Schema;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_inserts : IntegratedFixture
+    public class document_inserts: IntegratedFixture
     {
         [Fact]
         public void can_insert_all_new_documents()

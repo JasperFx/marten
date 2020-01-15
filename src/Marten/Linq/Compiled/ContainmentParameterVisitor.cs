@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -10,7 +9,7 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq.Compiled
 {
-    public class ContainmentParameterVisitor : RelinqExpressionVisitor
+    public class ContainmentParameterVisitor: RelinqExpressionVisitor
     {
         private readonly ISerializer _serializer;
         private readonly Type _queryType;
@@ -76,15 +75,12 @@ namespace Marten.Linq.Compiled
                 }
             }
 
-
             return base.VisitBinary(node);
         }
-
 
         protected override Expression VisitUnary(UnaryExpression node)
         {
             return base.VisitUnary(node);
         }
     }
-
 }

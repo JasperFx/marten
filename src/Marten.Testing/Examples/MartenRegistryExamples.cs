@@ -1,4 +1,4 @@
-﻿using Marten.Schema;
+using Marten.Schema;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
@@ -25,7 +25,7 @@ namespace Marten.Testing.Examples
     }
 
     // SAMPLE: MyMartenRegistry
-    public class MyMartenRegistry : MartenRegistry
+    public class MyMartenRegistry: MartenRegistry
     {
         public MyMartenRegistry()
         {
@@ -52,12 +52,16 @@ namespace Marten.Testing.Examples
         // storage table
         [DuplicateField(PgType = "text")]
         public string Category;
+
+        // Defining a duplicate column with not null constraint
+        [DuplicateField(PgType = "text", NotNull = true)]
+        public string Department;
     }
 
     // ENDSAMPLE
 
     // SAMPLE: IndexExamples
-    public class IndexExamples : MartenRegistry
+    public class IndexExamples: MartenRegistry
     {
         public IndexExamples()
         {
@@ -68,6 +72,9 @@ namespace Marten.Testing.Examples
             // field for this property that also overrides
             // the Postgresql database type for the column
             For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50)");
+
+            // Defining a duplicate column with not null constraint
+            For<User>().Duplicate(x => x.Department, pgType: "varchar(50)", notNull: true);
 
             // Customize the index on the duplicated field
             // for FirstName

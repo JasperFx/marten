@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BenchmarkDotNet.Attributes;
 using Marten;
 using Marten.Storage;
@@ -17,7 +17,7 @@ namespace MartenBenchmarks.Benchmarks
         [GlobalSetup]
         public void GlobalSetup()
         {
-            values = new[] {typeof(BenchModel), typeof(BenchModel2), typeof(BenchModel3), typeof(BenchModel4) };
+            values = new[] { typeof(BenchModel), typeof(BenchModel2), typeof(BenchModel3), typeof(BenchModel4) };
         }
 
         [Benchmark(Baseline = true)]

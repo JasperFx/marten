@@ -1,9 +1,8 @@
-﻿using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class SubClassForeignKeyBugs : IntegratedFixture
+    public class SubClassForeignKeyBugs: IntegratedFixture
     {
         public class Person
         {
@@ -11,7 +10,7 @@ namespace Marten.Testing.Bugs
             public int DepartmentId { get; set; }
         }
 
-        public class Employee : Person
+        public class Employee: Person
         {
         }
 
@@ -20,12 +19,12 @@ namespace Marten.Testing.Bugs
             public int Id { get; set; }
             public int ParentId { get; set; }
         }
-     
+
         public class Department
         {
             public int Id { get; set; }
         }
-        
+
         public SubClassForeignKeyBugs()
         {
             StoreOptions(_ =>
@@ -44,7 +43,7 @@ namespace Marten.Testing.Bugs
         {
             using (var session = theStore.OpenSession())
             {
-                var department = new Department {Id = 37};
+                var department = new Department { Id = 37 };
                 session.Store(department);
                 session.SaveChanges();
             }
@@ -52,9 +51,9 @@ namespace Marten.Testing.Bugs
             {
                 // Creating an employee with an address - the employee object should be
                 // inserted *before* the address object.
-                var employee = new Employee {Id = 222, DepartmentId = 37};
+                var employee = new Employee { Id = 222, DepartmentId = 37 };
                 session.Store(employee);
-                var address = new Address {ParentId = 222, Id = 42};
+                var address = new Address { ParentId = 222, Id = 42 };
                 session.Store(address);
 
                 session.SaveChanges();
@@ -66,12 +65,12 @@ namespace Marten.Testing.Bugs
         {
             using (var session = theStore.OpenSession())
             {
-                var department = new Department {Id = 1};
+                var department = new Department { Id = 1 };
                 session.Store(department);
 
-                var employee = new Employee {Id = 2, DepartmentId = 1};
+                var employee = new Employee { Id = 2, DepartmentId = 1 };
                 session.Store(employee);
-                
+
                 session.SaveChanges();
             }
         }

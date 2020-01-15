@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
@@ -7,16 +7,16 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class deep_searches_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class deep_searches_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void query_two_deep()
         {
-            theSession.Store(new Target{Inner = new Target{Number = 1, String = "Jeremy"}});
-            theSession.Store(new Target{Inner = new Target{Number = 2, String = "Max"}});
-            theSession.Store(new Target{Inner = new Target{Number = 1, String = "Declan"}});
-            theSession.Store(new Target{Inner = new Target{Number = 2, String = "Lindsey"}});
-            theSession.Store(new Target{String = "Russell"});
+            theSession.Store(new Target { Inner = new Target { Number = 1, String = "Jeremy" } });
+            theSession.Store(new Target { Inner = new Target { Number = 2, String = "Max" } });
+            theSession.Store(new Target { Inner = new Target { Number = 1, String = "Declan" } });
+            theSession.Store(new Target { Inner = new Target { Number = 2, String = "Lindsey" } });
+            theSession.Store(new Target { String = "Russell" });
 
             theSession.SaveChanges();
 
@@ -28,7 +28,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_three_deep()
         {
-            theSession.Store(new Target{Number = 1, Inner = new Target{Inner = new Target{Long = 1}}});
+            theSession.Store(new Target { Number = 1, Inner = new Target { Inner = new Target { Long = 1 } } });
             theSession.Store(new Target { Number = 2, Inner = new Target { Inner = new Target { Long = 2 } } });
             theSession.Store(new Target { Number = 3, Inner = new Target { Inner = new Target { Long = 1 } } });
             theSession.Store(new Target { Number = 4, Inner = new Target { Inner = new Target { Long = 2 } } });

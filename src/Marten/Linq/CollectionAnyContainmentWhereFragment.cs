@@ -1,11 +1,10 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 using NpgsqlTypes;
 using Remotion.Linq.Clauses;
@@ -15,18 +14,25 @@ using Remotion.Linq.Clauses.ResultOperators;
 namespace Marten.Linq
 {
     // TODO -- this is going to have to get redone
-    public class CollectionAnyContainmentWhereFragment : IWhereFragment
+    public class CollectionAnyContainmentWhereFragment: IWhereFragment
     {
         private static readonly Type[] supportedTypes = new Type[] { typeof(string), typeof(Guid) };
         private readonly MemberInfo[] _members;
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
+        private readonly IQueryableDocument _mapping;
 
-        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression)
+        [Obsolete("Use the constructor that takes IQueryableDocument instead. This might be removed in v4.0.")]
+        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression) : this(members, serializer, expression, null)
+        {
+        }
+
+        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression, IQueryableDocument mapping)
         {
             _members = members;
             _serializer = serializer;
             _expression = expression;
+            _mapping = mapping;
         }
 
         public void Apply(CommandBuilder builder)
@@ -129,8 +135,10 @@ namespace Marten.Linq
         {
             if (x.NodeType == ExpressionType.AndAlso)
             {
-                if (x.Left is BinaryExpression) gatherSearch(x.Left.As<BinaryExpression>(), search, serializer);
-                if (x.Right is BinaryExpression) gatherSearch(x.Right.As<BinaryExpression>(), search, serializer);
+                if (x.Left is BinaryExpression)
+                    gatherSearch(x.Left.As<BinaryExpression>(), search, serializer);
+                if (x.Right is BinaryExpression)
+                    gatherSearch(x.Right.As<BinaryExpression>(), search, serializer);
             }
             else if (x.NodeType == ExpressionType.Equal)
             {
@@ -160,7 +168,7 @@ namespace Marten.Linq
             //TODO: this won't work for enumeration types. Only works with strings, so we have
             // to exactly map the ToString() like the underlying serializer would. Blech.
             var values = new List<string>();
-            
+
             var enumerable = ((System.Collections.IEnumerable)from.Value);
 
             foreach (var obj in enumerable)
@@ -196,8 +204,8 @@ namespace Marten.Linq
             var members = visitor.Members;
             if (!members.Any())
                 throwNotSupportedContains();
-            var path = members.Select(m => m.Name).Join("'->'");
-            return $"d.data->'{path}' ?| :{fromParam.ParameterName}";
+            var path = _mapping?.FieldFor(members).SqlLocator ?? $"CAST ({CommandBuilder.BuildJsonStringLocator("d.data", members.ToArray(), _serializer.Casing)} as jsonb)";
+            return $"{path} ?| :{fromParam.ParameterName}";
         }
 
         private void throwNotSupportedContains()

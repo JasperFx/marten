@@ -1,12 +1,12 @@
 using System;
-using System.Runtime.Serialization;
 
 namespace Marten.Linq
 {
 #if SERIALIZE
     [Serializable]
 #endif
-    public class BadLinqExpressionException : Exception
+
+    public class BadLinqExpressionException: Exception
     {
         public BadLinqExpressionException(string message, Exception innerException) : base(message, innerException)
         {

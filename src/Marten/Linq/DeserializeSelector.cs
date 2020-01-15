@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace Marten.Linq
 {
-    public class DeserializeSelector<T> : BasicSelector, ISelector<T>
+    public class DeserializeSelector<T>: BasicSelector, ISelector<T>
     {
         private readonly ISerializer _serializer;
 
@@ -39,7 +39,6 @@ namespace Marten.Linq
                 var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0).ConfigureAwait(false);
                 return _serializer.FromJson<T>(json);
             }
-
 
             return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
         }

@@ -1,11 +1,11 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
 
 namespace Marten.Linq.WhereFragments
 {
-    internal class FullTextWhereFragment : IWhereFragment
+    internal class FullTextWhereFragment: IWhereFragment
     {
         private readonly string _regConfig;
         private readonly string _dataConfig;
@@ -17,8 +17,8 @@ namespace Marten.Linq.WhereFragments
         public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig)
         {
             _regConfig = regConfig;
-            
-            // TODO -- try to delete the damn d. prefix. 
+
+            // TODO -- try to delete the damn d. prefix.
             _dataConfig = GetDataConfig(mapping, regConfig).Replace("data", "d.data");
             _searchFunction = searchFunction;
             _searchTerm = searchTerm;

@@ -12,6 +12,5 @@ namespace Marten.Events.Projections.Async.ErrorHandling
 
         public Func<Exception, bool> Match { get; }
         public IExceptionAction Action { get; }
-
     }
 }

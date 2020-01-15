@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -12,72 +12,68 @@ namespace Marten.Testing.Examples
     {
         public void capture_events()
         {
-// SAMPLE: event-store-quickstart            
-var store = DocumentStore.For(_ =>
-{
-    _.Connection(ConnectionSource.ConnectionString);
-    _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
-});
+            // SAMPLE: event-store-quickstart
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+            });
 
-var questId = Guid.NewGuid();
+            var questId = Guid.NewGuid();
 
-using (var session = store.OpenSession())
-{
-    var started = new QuestStarted {Name = "Destroy the One Ring"};
-    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
+            using (var session = store.OpenSession())
+            {
+                var started = new QuestStarted { Name = "Destroy the One Ring" };
+                var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
 
-    // Start a brand new stream and commit the new events as 
-    // part of a transaction
-    session.Events.StartStream<Quest>(questId, started, joined1);
-    session.SaveChanges();
+                // Start a brand new stream and commit the new events as
+                // part of a transaction
+                session.Events.StartStream<Quest>(questId, started, joined1);
+                session.SaveChanges();
 
-    // Append more events to the same stream
-    var joined2 = new MembersJoined(3, "Buckland", "Merry", "Pippen");
-    var joined3 = new MembersJoined(10, "Bree", "Aragorn");
-    var arrived = new ArrivedAtLocation { Day = 15, Location = "Rivendell" };
-    session.Events.Append(questId, joined2, joined3, arrived);
-    session.SaveChanges();
-}
-// ENDSAMPLE
+                // Append more events to the same stream
+                var joined2 = new MembersJoined(3, "Buckland", "Merry", "Pippen");
+                var joined3 = new MembersJoined(10, "Bree", "Aragorn");
+                var arrived = new ArrivedAtLocation { Day = 15, Location = "Rivendell" };
+                session.Events.Append(questId, joined2, joined3, arrived);
+                session.SaveChanges();
+            }
+            // ENDSAMPLE
 
-// SAMPLE: events-fetching-stream
-using (var session = store.OpenSession())
-{
-    var events = session.Events.FetchStream(questId);
-    events.Each(evt =>
-    {
-        Console.WriteLine($"{evt.Version}.) {evt.Data}");
-    });
-}
-// ENDSAMPLE
+            // SAMPLE: events-fetching-stream
+            using (var session = store.OpenSession())
+            {
+                var events = session.Events.FetchStream(questId);
+                events.Each(evt =>
+                {
+                    Console.WriteLine($"{evt.Version}.) {evt.Data}");
+                });
+            }
+            // ENDSAMPLE
 
-// SAMPLE: events-aggregate-on-the-fly
-using (var session = store.OpenSession())
-{
-    // questId is the id of the stream
-    var party = session.Events.AggregateStream<QuestParty>(questId);
-    Console.WriteLine(party);
+            // SAMPLE: events-aggregate-on-the-fly
+            using (var session = store.OpenSession())
+            {
+                // questId is the id of the stream
+                var party = session.Events.AggregateStream<QuestParty>(questId);
+                Console.WriteLine(party);
 
-    var party_at_version_3 = session.Events
-        .AggregateStream<QuestParty>(questId, 3);
+                var party_at_version_3 = session.Events
+                    .AggregateStream<QuestParty>(questId, 3);
 
+                var party_yesterday = session.Events
+                    .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+            }
+            // ENDSAMPLE
 
-    var party_yesterday = session.Events
-        .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-}
-// ENDSAMPLE
-
-
-using (var session = store.OpenSession())
-{
-    var party = session.Load<QuestParty>(questId);
-    Console.WriteLine(party);
-}
-
-
+            using (var session = store.OpenSession())
+            {
+                var party = session.Load<QuestParty>(questId);
+                Console.WriteLine(party);
+            }
         }
 
-// SAMPLE: using-fetch-stream
+        // SAMPLE: using-fetch-stream
         public void load_event_stream(IDocumentSession session, Guid streamId)
         {
             // Fetch *all* of the events for this stream
@@ -103,28 +99,29 @@ using (var session = store.OpenSession())
             var events3 = await session.Events
                         .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
         }
-// ENDSAMPLE
 
-            // SAMPLE: load-a-single-event
-public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
-{
-    // If you know what the event type is already
-    var event1 = session.Events.Load<MembersJoined>(eventId);
+        // ENDSAMPLE
 
-    // If you do not know what the event type is
-    var event2 = session.Events.Load(eventId);
-}
+        // SAMPLE: load-a-single-event
+        public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
+        {
+            // If you know what the event type is already
+            var event1 = session.Events.Load<MembersJoined>(eventId);
 
-public async Task load_a_single_event_asynchronously(IDocumentSession session, Guid eventId)
-{
-    // If you know what the event type is already
-    var event1 = await session.Events.LoadAsync<MembersJoined>(eventId)
-        .ConfigureAwait(false);
+            // If you do not know what the event type is
+            var event2 = session.Events.Load(eventId);
+        }
 
-    // If you do not know what the event type is
-    var event2 = await session.Events.LoadAsync(eventId)
-        .ConfigureAwait(false);
-}
+        public async Task load_a_single_event_asynchronously(IDocumentSession session, Guid eventId)
+        {
+            // If you know what the event type is already
+            var event1 = await session.Events.LoadAsync<MembersJoined>(eventId)
+                .ConfigureAwait(false);
+
+            // If you do not know what the event type is
+            var event2 = await session.Events.LoadAsync(eventId)
+                .ConfigureAwait(false);
+        }
 
         // ENDSAMPLE
 
@@ -138,7 +135,6 @@ public async Task load_a_single_event_asynchronously(IDocumentSession session, G
 
             MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
-
             session.Events.StartStream<Quest>(started, joined, slayed1, slayed2);
             session.SaveChanges();
 
@@ -148,6 +144,7 @@ public async Task load_a_single_event_asynchronously(IDocumentSession session, G
             session.Query<MonsterDefeated>().Count()
                 .ShouldBe(2);
         }
+
         // ENDSAMPLE
     }
 }

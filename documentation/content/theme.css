@@ -1,9 +1,9 @@
-h2{
-	margin-top: 50px;
+h2 {
+    margin-top: 50px;
 }
 
-div.alert{
-	font-size: 14px !important;
+div.alert {
+    font-size: 14px !important;
 }
 
 div.single-command-usage {
@@ -23,7 +23,6 @@ div.single-command-usage {
 
 section h4 span.section-header {
     margin-right: 10px;
-
 }
 
 section h4 {
@@ -45,9 +44,13 @@ i.command-description {
 }
 
 .navbar-inverse {
-     background-color: transparent;
+    background-color: transparent;
 }
 
 nav.related-links {
     margin-bottom: 21px;
+}
+
+.twitter-follow-button {
+    margin-top: 14px;
 }

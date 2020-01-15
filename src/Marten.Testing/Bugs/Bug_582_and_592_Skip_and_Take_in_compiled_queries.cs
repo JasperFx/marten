@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_582_and_592_Skip_and_Take_in_compiled_queries : IntegratedFixture
+    public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: IntegratedFixture
     {
         [Fact]
         public void can_get_separate_pages()
@@ -39,7 +39,7 @@ namespace Marten.Testing.Bugs
             {
                 _.UseDefaultSerialization(EnumStorage.AsString);
             });
-            
+
             var targets = Target.GenerateRandomData(1000).ToArray();
 
             theStore.BulkInsert(targets);
@@ -58,7 +58,7 @@ namespace Marten.Testing.Bugs
                 }
             }
         }
-        
+
         [Fact]
         public void warn_if_skip_and_take_are_ordered_wrong()
         {
@@ -72,7 +72,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class PageOfTargets : ICompiledListQuery<Target>
+    public class PageOfTargets: ICompiledListQuery<Target>
     {
         public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
         {
@@ -84,7 +84,7 @@ namespace Marten.Testing.Bugs
         public int Take { get; set; } = 10;
     }
 
-    public class WrongOrderedPageOfTargets : ICompiledListQuery<Target>
+    public class WrongOrderedPageOfTargets: ICompiledListQuery<Target>
     {
         public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
         {

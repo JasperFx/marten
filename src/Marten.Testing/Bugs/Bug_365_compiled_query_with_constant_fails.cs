@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_365_compiled_query_with_constant_fails : DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_365_compiled_query_with_constant_fails: DocumentSessionFixture<NulloIdentityMap>
     {
         public class Route
         {
@@ -47,8 +47,7 @@ namespace Marten.Testing.Bugs
             theStore.Tenancy.Default.StorageFor(typeof(Route)).ShouldNotBeNull();
         }
 
-
-        public class RoutesPlannedAfter : ICompiledQuery<Route, IEnumerable<Route>>
+        public class RoutesPlannedAfter: ICompiledQuery<Route, IEnumerable<Route>>
         {
             public DateTime DateTime { get; }
 
@@ -86,7 +85,7 @@ namespace Marten.Testing.Bugs
                 for (var index = 0; index < number; index++)
                 {
                     var route = new Route();
-                    if (index%2 == 0)
+                    if (index % 2 == 0)
                     {
                         route.Plan(DateTime.Today.AddDays(index + 1));
                     }

@@ -3,7 +3,7 @@ using Marten.Storage;
 
 namespace Marten.Linq
 {
-    public class TenantWhereFragment : WhereFragment
+    public class TenantWhereFragment: WhereFragment
     {
         public static readonly string Filter = $"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
 

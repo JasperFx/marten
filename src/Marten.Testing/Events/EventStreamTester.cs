@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Events;
 using Shouldly;
@@ -16,7 +16,6 @@ namespace Marten.Testing.Events
             stream.Add(new MembersJoined());
             stream.Add(new MembersJoined());
             stream.Add(new MembersDeparted());
-
 
             stream.ApplyLatestVersion(8);
 

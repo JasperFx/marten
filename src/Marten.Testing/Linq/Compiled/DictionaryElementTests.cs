@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Marten.Linq;
 using Marten.Linq.Compiled;
 using Shouldly;
@@ -13,7 +13,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var field = FindMembers.Member<DictTarget>(x => x.Field);
 
-            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new []{ "foo" }, field);
+            var element = new DictionaryElement<DictTarget, string>(EnumStorage.AsString, new[] { "foo" }, field);
 
             var target = new DictTarget
             {
@@ -46,7 +46,6 @@ namespace Marten.Testing.Linq.Compiled
             dict["foo"].ShouldBe("baz");
         }
 
-
         [Fact]
         public void can_set_property_two_deep()
         {
@@ -65,7 +64,6 @@ namespace Marten.Testing.Linq.Compiled
 
             dict["one"].ShouldBeOfType<Dictionary<string, object>>()["two"]
                 .ShouldBe("baz");
-
         }
 
         [Fact]
@@ -87,7 +85,6 @@ namespace Marten.Testing.Linq.Compiled
             dict["one"].ShouldBeOfType<Dictionary<string, object>>()
                 ["two"].ShouldBeOfType<Dictionary<string, object>>()
                 ["three"].ShouldBe("baz");
-
         }
 
         [Fact]
@@ -110,9 +107,7 @@ namespace Marten.Testing.Linq.Compiled
             dict["one"].ShouldBeOfType<Dictionary<string, object>>()
                 ["two"].ShouldBeOfType<Dictionary<string, object>>()
                 ["three"].ShouldBe("baz");
-
         }
-
 
         public class DictTarget
         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Linq;
 using Npgsql;
 
@@ -6,8 +6,6 @@ namespace Marten
 {
     public interface IDiagnostics
     {
-
-
         /// <summary>
         /// Preview the database command that will be executed for this compiled query
         /// object

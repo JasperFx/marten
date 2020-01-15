@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 
@@ -23,7 +23,6 @@ namespace Marten
         /// <returns></returns>
         Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);
 
-
         /// <summary>
         /// After an IDocumentSession is committed
         /// </summary>
@@ -40,7 +39,6 @@ namespace Marten
         /// <returns></returns>
         Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
 
-
         /// <summary>
         /// Called after a document is loaded
         /// </summary>
@@ -52,9 +50,10 @@ namespace Marten
         /// </summary>
         void DocumentAddedForStorage(object id, object document);
     }
+
     // ENDSAMPLE
 
-    public abstract class DocumentSessionListenerBase : IDocumentSessionListener
+    public abstract class DocumentSessionListenerBase: IDocumentSessionListener
     {
         public virtual void BeforeSaveChanges(IDocumentSession session)
         {

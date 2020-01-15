@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 
 namespace Marten.Util
@@ -12,7 +12,7 @@ namespace Marten.Util
             return new Disposable(context);
         }
 
-        public struct Disposable : IDisposable
+        public struct Disposable: IDisposable
         {
             private readonly SynchronizationContext _synchronizationContext;
 

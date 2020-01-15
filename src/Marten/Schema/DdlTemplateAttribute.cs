@@ -6,7 +6,7 @@ namespace Marten.Schema
     /// Override the DDL template for a single document type
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class DdlTemplateAttribute : MartenAttribute
+    public class DdlTemplateAttribute: MartenAttribute
     {
         private readonly string _templateName;
 

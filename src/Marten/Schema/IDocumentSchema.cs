@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Schema
 {
@@ -13,7 +13,6 @@ namespace Marten.Schema
         /// <param name="filename"></param>
         void WriteDDL(string filename, bool transactionalScript = true);
 
-
         /// <summary>
         ///     Write all the SQL scripts to build the database schema, but
         ///     split by document type
@@ -27,7 +26,6 @@ namespace Marten.Schema
         /// </summary>
         /// <returns></returns>
         string ToDDL(bool transactionalScript = true);
-
 
         /// <summary>
         ///     Tries to write a "patch" SQL file to upgrade the database
@@ -56,8 +54,7 @@ namespace Marten.Schema
         ///     Executes all detected DDL patches to the schema based on current configuration
         ///     upfront at one time
         /// </summary>
-        void ApplyAllConfiguredChangesToDatabase();
-
+        void ApplyAllConfiguredChangesToDatabase(AutoCreate? withAutoCreate = null);
 
         /// <summary>
         ///     Generate a DDL patch for one specific document type

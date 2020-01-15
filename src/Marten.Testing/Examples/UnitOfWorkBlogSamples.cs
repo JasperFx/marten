@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Examples
 {
-    public class UnitOfWorkBlogSamples : IntegratedFixture
+    public class UnitOfWorkBlogSamples: IntegratedFixture
     {
         [Fact]
         public void show_unit_of_work()
@@ -22,10 +22,9 @@ namespace Marten.Testing.Examples
                 session.Logger = logger;
 
                 // Insert some new documents
-                session.Store(new User {UserName = "luke", FirstName = "Luke", LastName = "Skywalker"});
-                session.Store(new User {UserName = "leia", FirstName = "Leia", LastName = "Organa"});
-                session.Store(new User {UserName = "wedge", FirstName = "Wedge", LastName = "Antilles"});
-
+                session.Store(new User { UserName = "luke", FirstName = "Luke", LastName = "Skywalker" });
+                session.Store(new User { UserName = "leia", FirstName = "Leia", LastName = "Organa" });
+                session.Store(new User { UserName = "wedge", FirstName = "Wedge", LastName = "Antilles" });
 
                 // Delete all users matching a certain criteria
                 session.DeleteWhere<User>(x => x.UserName == "hansolo");

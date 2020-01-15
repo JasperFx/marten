@@ -1,22 +1,22 @@
-﻿using System;
-using System.Linq.Expressions;
-using Marten.Schema;
-using System.Reflection;
+using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Reflection;
+using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public class DictionaryExpressions : IMethodCallParser
+    public class DictionaryExpressions: IMethodCallParser
     {
-        static bool IsCollectionContainsWithStringKey(MethodInfo m) => 
-                m.Name == "Contains" 
-            && m.DeclaringType.IsConstructedGenericType 
+        private static bool IsCollectionContainsWithStringKey(MethodInfo m) =>
+                m.Name == "Contains"
+            && m.DeclaringType.IsConstructedGenericType
             && m.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
             && m.DeclaringType.GenericTypeArguments[0].IsConstructedGenericType
             && m.DeclaringType.GenericTypeArguments[0].GetGenericTypeDefinition() == typeof(KeyValuePair<,>)
             && m.DeclaringType.GenericTypeArguments[0].GenericTypeArguments[0] == typeof(string);
 
-        static bool IsDictionaryContainsKey(MethodInfo m) =>
+        private static bool IsDictionaryContainsKey(MethodInfo m) =>
                m.Name == "ContainsKey"
             && m.DeclaringType.IsConstructedGenericType
             && m.DeclaringType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
@@ -43,17 +43,18 @@ namespace Marten.Linq.Parsing
             {
                 return QueryFromDictionaryContainsKey(expression, fieldlocator);
             }
-            else throw new NotImplementedException("Could not understand the format of the dictionary access");
+            else
+                throw new NotImplementedException("Could not understand the format of the dictionary access");
         }
 
-        static IWhereFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)
+        private static IWhereFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)
         {
             var key = (string)expression.Arguments[0].Value();
             // have to use different token here because we actually want the `?` character as the operator!
-            return new CustomizableWhereFragment($"{fieldLocator} ? @1", "@1", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(key, NpgsqlTypes.NpgsqlDbType.Text)); 
+            return new CustomizableWhereFragment($"{fieldLocator} ? @1", "@1", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(key, NpgsqlTypes.NpgsqlDbType.Text));
         }
 
-        static IWhereFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
+        private static IWhereFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
         {
             var constant = expression.Arguments[0] as ConstantExpression;
             var kvp = constant.Value; // is kvp<string, unknown>

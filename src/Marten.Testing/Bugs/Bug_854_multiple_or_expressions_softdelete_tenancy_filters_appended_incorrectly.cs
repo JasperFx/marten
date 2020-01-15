@@ -1,6 +1,6 @@
-﻿using System.Linq;
-using Xunit;
+using System.Linq;
 using Marten.Testing.Linq;
+using Xunit;
 
 namespace Marten.Testing.Bugs
 {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -6,11 +6,11 @@ using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
 {
-    public class SequenceFactory : ISequences
+    public class SequenceFactory: ISequences
     {
         private readonly StoreOptions _options;
         private readonly ITenant _tenant;
-        private readonly ConcurrentDictionary<Type, ISequence> _sequences = new ConcurrentDictionary<Type, ISequence>();
+        private readonly ConcurrentDictionary<string, ISequence> _sequences = new ConcurrentDictionary<string, ISequence>();
 
         public SequenceFactory(StoreOptions options, ITenant tenant)
         {
@@ -47,6 +47,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public Type StorageType { get; } = typeof(SequenceFactory);
         public string Identifier { get; } = "hilo";
+
         public void WritePermissions(DdlRules rules, StringWriter writer)
         {
             // Nothing
@@ -54,19 +55,21 @@ namespace Marten.Schema.Identity.Sequences
 
         public ISequence SequenceFor(Type documentType)
         {
-            return _sequences.GetOrAdd(documentType, type =>
-            {
-                var settings = _options.Storage.MappingFor(type).HiloSettings ?? _options.HiloSequenceDefaults;
-                return new HiloSequence(_tenant, _options, documentType.Name, settings);
-            });
+            return Hilo(documentType, _options.Storage.MappingFor(documentType).HiloSettings ?? _options.HiloSequenceDefaults);
         }
 
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
-            return _sequences.GetOrAdd(documentType,
-                type => new HiloSequence(_tenant, _options, documentType.Name, settings));
+            return _sequences.GetOrAdd(GetSequenceName(documentType, settings),
+                sequence => new HiloSequence(_tenant, _options, sequence, settings));
         }
 
+        private string GetSequenceName(Type documentType, HiloSettings settings)
+        {
+            if (!string.IsNullOrEmpty(settings.SequenceName))
+                return settings.SequenceName;
+            return documentType.Name;
+        }
 
         public override string ToString()
         {

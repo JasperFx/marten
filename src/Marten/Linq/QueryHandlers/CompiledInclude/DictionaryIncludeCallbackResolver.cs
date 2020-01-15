@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Baseline;
-using Marten.Schema;
 using Marten.Storage;
 
 namespace Marten.Linq.QueryHandlers.CompiledInclude
 {
-    public class DictionaryIncludeCallbackResolver<TKey, TInclude, TDoc, TOut> : IncludeCallbackResolver, IIncludeCallbackResolver<TInclude>
+    public class DictionaryIncludeCallbackResolver<TKey, TInclude, TDoc, TOut>: IncludeCallbackResolver, IIncludeCallbackResolver<TInclude>
     {
         private readonly ICompiledQuery<TDoc, TOut> _query;
         private readonly IncludeResultOperator _includeOperator;
@@ -39,7 +38,8 @@ namespace Marten.Linq.QueryHandlers.CompiledInclude
                 dictionary = (IDictionary<TKey, TInclude>)queryProperty.GetValue(query);
             }
 
-            return x => {
+            return x =>
+            {
                 var id = storage.Identity(x).As<TKey>();
                 if (!dictionary.ContainsKey(id))
                 {

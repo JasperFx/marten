@@ -240,7 +240,7 @@ namespace MartenBenchmarks.BenchAgainst
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
-            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type)
+            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type && x.ReferenceDocumentType != null)
                 .SelectMany(keyDefinition =>
                 {
                     var results = new List<Type>();

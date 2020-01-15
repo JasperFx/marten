@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Services.Events;
+using Marten.Exceptions;
 using Npgsql;
 
 namespace Marten.Services
 {
-    public class ManagedConnection : IManagedConnection
+    public class ManagedConnection: IManagedConnection
     {
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
@@ -38,7 +38,7 @@ namespace Marten.Services
         {
             _ownsConnection = options.OwnsConnection;
             _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
-            _isolationLevel = options.IsolationLevel;            
+            _isolationLevel = options.IsolationLevel;
 
             var conn = options.Connection ?? options.Transaction?.Connection;
 
@@ -56,7 +56,6 @@ namespace Marten.Services
         {
         }
 
-
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
         public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode, IRetryPolicy retryPolicy,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int? commandTimeout = null)
@@ -67,7 +66,6 @@ namespace Marten.Services
             _commandTimeout = commandTimeout;
             _ownsConnection = true;
             _retryPolicy = retryPolicy;
-
         }
 
         private void buildConnection()
@@ -96,7 +94,8 @@ namespace Marten.Services
 
         public void Commit()
         {
-            if (_mode == CommandRunnerMode.External) return;
+            if (_mode == CommandRunnerMode.External)
+                return;
 
             buildConnection();
 
@@ -108,10 +107,11 @@ namespace Marten.Services
 
         public async Task CommitAsync(CancellationToken token)
         {
-            if (_mode == CommandRunnerMode.External) return;
+            if (_mode == CommandRunnerMode.External)
+                return;
 
-            await buildConnectionAsync(token).ConfigureAwait(false);   
-            await _retryPolicy.ExecuteAsync( async () => await _connection.CommitAsync(token).ConfigureAwait(false), token);
+            await buildConnectionAsync(token).ConfigureAwait(false);
+            await _retryPolicy.ExecuteAsync(async () => await _connection.CommitAsync(token).ConfigureAwait(false), token);
 
             await _connection.CommitAsync(token).ConfigureAwait(false);
 
@@ -121,8 +121,10 @@ namespace Marten.Services
 
         public void Rollback()
         {
-            if (_connection == null) return;
-            if (_mode == CommandRunnerMode.External) return;
+            if (_connection == null)
+                return;
+            if (_mode == CommandRunnerMode.External)
+                return;
 
             try
             {
@@ -130,7 +132,8 @@ namespace Marten.Services
             }
             catch (RollbackException e)
             {
-                if (e.InnerException != null) Logger.LogFailure(new NpgsqlCommand(), e.InnerException);
+                if (e.InnerException != null)
+                    Logger.LogFailure(new NpgsqlCommand(), e.InnerException);
             }
             catch (Exception e)
             {
@@ -145,8 +148,10 @@ namespace Marten.Services
 
         public async Task RollbackAsync(CancellationToken token)
         {
-            if (_connection == null) return;
-            if (_mode == CommandRunnerMode.External) return;
+            if (_connection == null)
+                return;
+            if (_mode == CommandRunnerMode.External)
+                return;
 
             try
             {
@@ -154,7 +159,8 @@ namespace Marten.Services
             }
             catch (RollbackException e)
             {
-                if (e.InnerException != null) Logger.LogFailure(new NpgsqlCommand(), e.InnerException);
+                if (e.InnerException != null)
+                    Logger.LogFailure(new NpgsqlCommand(), e.InnerException);
             }
             catch (Exception e)
             {
@@ -216,7 +222,7 @@ namespace Marten.Services
 
             if (e is NpgsqlException)
             {
-                throw new MartenCommandException(cmd, e);
+                throw MartenCommandExceptionFactory.Create(cmd, e);
             }
         }
 
@@ -390,10 +396,5 @@ namespace Marten.Services
         {
             _connection?.Dispose();
         }
-    }
-
-    public static class PostgresErrorCodes
-    {
-        public const string SerializationFailure = "40001";
     }
 }

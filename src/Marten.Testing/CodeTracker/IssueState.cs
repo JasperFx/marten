@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Testing.CodeTracker
 {
@@ -23,6 +23,4 @@ namespace Marten.Testing.CodeTracker
             Number = number;
         }
     }
-
-
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Shouldly;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class no_prior_registration_of_the_event_types : IntegratedFixture
+    public class no_prior_registration_of_the_event_types: IntegratedFixture
     {
         [Fact]
         public void can_fetch_sync_with_guids()

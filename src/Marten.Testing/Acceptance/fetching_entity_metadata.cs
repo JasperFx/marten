@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class fetching_entity_metadata : IntegratedFixture
+    public class fetching_entity_metadata: IntegratedFixture
     {
         [Fact]
         public void total_miss_returns_null()
@@ -38,6 +38,7 @@ namespace Marten.Testing.Acceptance
             metadata.Deleted.ShouldBeFalse();
             metadata.DeletedAt.ShouldBeNull();
         }
+
         // ENDSAMPLE
 
         [Fact]

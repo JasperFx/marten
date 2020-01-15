@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -34,7 +34,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().AnyAsync(token);
         }
@@ -44,8 +45,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).AnyAsync(token);
         }
@@ -58,7 +61,8 @@ namespace Marten
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.Select(expression).As<IMartenQueryable>().SumAsync<TResult>(token);
         }
@@ -67,7 +71,8 @@ namespace Marten
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.Select(expression).As<IMartenQueryable>().MaxAsync<TResult>(token);
         }
@@ -76,7 +81,8 @@ namespace Marten
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.Select(expression).As<IMartenQueryable>().MinAsync<TResult>(token);
         }
@@ -85,7 +91,8 @@ namespace Marten
             this IQueryable<TSource> source, Expression<Func<TSource, TMember>> expression,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.Select(expression).As<IMartenQueryable>().AverageAsync(token);
         }
@@ -98,7 +105,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().CountAsync(token);
         }
@@ -108,8 +116,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).CountAsync(token);
         }
@@ -118,7 +128,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().CountLongAsync(token);
         }
@@ -128,8 +139,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).LongCountAsync(token);
         }
@@ -142,7 +155,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().FirstAsync<TSource>(token);
         }
@@ -152,8 +166,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).FirstAsync(token);
         }
@@ -162,7 +178,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().FirstOrDefaultAsync<TSource>(token);
         }
@@ -172,8 +189,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).FirstOrDefaultAsync(token);
         }
@@ -186,7 +205,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().SingleAsync<TSource>(token);
         }
@@ -196,8 +216,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).SingleAsync(token);
         }
@@ -206,7 +228,8 @@ namespace Marten
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
 
             return source.As<IMartenQueryable>().SingleOrDefaultAsync<TSource>(token);
         }
@@ -216,8 +239,10 @@ namespace Marten
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            if (predicate == null)
+                throw new ArgumentNullException(nameof(predicate));
 
             return source.Where(predicate).SingleOrDefaultAsync(token);
         }

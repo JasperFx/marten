@@ -9,9 +9,11 @@ namespace Marten.Storage
     public interface ISchemaObject
     {
         void Write(DdlRules rules, StringWriter writer);
+
         void WriteDropStatement(DdlRules rules, StringWriter writer);
 
         DbObjectName Identifier { get; }
+
         void ConfigureQueryCommand(CommandBuilder builder);
 
         SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch, AutoCreate autoCreate);

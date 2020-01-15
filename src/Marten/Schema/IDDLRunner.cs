@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 
 namespace Marten.Schema
 {
@@ -7,7 +7,7 @@ namespace Marten.Schema
         void Apply(object subject, string ddl);
     }
 
-    public class DDLRecorder : IDDLRunner
+    public class DDLRecorder: IDDLRunner
     {
         private readonly StringWriter _writer;
 

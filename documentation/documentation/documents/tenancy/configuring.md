@@ -6,7 +6,7 @@ The three levels of tenancy that Marten supports are expressed in the enum `Tena
 * `Conjoined`, multi-tenancy through tenant id
 * `Separate`, multi-tenancy through separate databases or schemas
 
-Tenancy can be configured at the store level, applying to all documents or, at most fine-graned level, on individual documents.
+Tenancy can be configured at the store level, applying to all documents or, at the most fine-grained level, on individual documents.
 
 ## Tenancy Through Policies
  

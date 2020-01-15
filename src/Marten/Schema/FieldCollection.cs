@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +52,7 @@ namespace Marten.Schema
             var serializer = _options.Serializer();
 
             return _fields.GetOrAdd(key,
-                _ => new JsonLocatorField(_dataLocator, serializer.EnumStorage, serializer.Casing, members.ToArray()));
+                _ => new JsonLocatorField(_dataLocator, _options, serializer.EnumStorage, serializer.Casing, members.ToArray()));
         }
 
         public IField FieldFor(MemberInfo member)
@@ -70,7 +70,8 @@ namespace Marten.Schema
                 var member = _documentType.GetProperties().FirstOrDefault(x => x.Name == name).As<MemberInfo>() ??
                              _documentType.GetFields().FirstOrDefault(x => x.Name == name);
 
-                if (member == null) return null;
+                if (member == null)
+                    return null;
 
                 var serializer = _options.Serializer();
 

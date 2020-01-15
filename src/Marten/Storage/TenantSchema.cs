@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -6,7 +6,7 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    public class TenantSchema : IDocumentSchema
+    public class TenantSchema: IDocumentSchema
     {
         private readonly StorageFeatures _features;
         private readonly Tenant _tenant;
@@ -29,7 +29,7 @@ namespace Marten.Storage
             new FileSystem().WriteStringToFile(filename, sql);
         }
 
-        public void WriteDDLByType(string directory, bool transactionalScript=true)
+        public void WriteDDLByType(string directory, bool transactionalScript = true)
         {
             var system = new FileSystem();
 
@@ -38,7 +38,6 @@ namespace Marten.Storage
 
             var features = _features.AllActiveFeatures(_tenant).ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, features);
-
 
             foreach (var feature in features)
             {
@@ -74,6 +73,28 @@ namespace Marten.Storage
             system.WriteStringToFile(filename, writer.ToString());
         }
 
+        private SchemaPatch ToPatch(bool withSchemas, AutoCreate withAutoCreate)
+        {
+            var patch = new SchemaPatch(StoreOptions.DdlRules);
+
+            if (withSchemas)
+            {
+                var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
+                DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
+            }
+
+            var @objects = _features.AllActiveFeatures(_tenant).SelectMany(x => x.Objects).ToArray();
+
+            using (var conn = _tenant.CreateConnection())
+            {
+                conn.Open();
+
+                patch.Apply(conn, withAutoCreate, @objects);
+            }
+
+            return patch;
+        }
+
         public string ToDDL(bool transactionalScript = true)
         {
             var writer = new StringWriter();
@@ -92,7 +113,6 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-
         public void WritePatch(string filename, bool withSchemas = true, bool transactionalScript = true)
         {
             if (!Path.IsPathRooted(filename))
@@ -110,29 +130,12 @@ namespace Marten.Storage
 
         public SchemaPatch ToPatch(bool withSchemas = true, bool withAutoCreateAll = false)
         {
-            var patch = new SchemaPatch(StoreOptions.DdlRules);
-
-            if (withSchemas)
-            {
-                var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
-                DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
-            }
-
-            var @objects = _features.AllActiveFeatures(_tenant).SelectMany(x => x.Objects).ToArray();
-
-            using (var conn = _tenant.CreateConnection())
-            {
-                conn.Open();
-
-                patch.Apply(conn, withAutoCreateAll ? AutoCreate.All : StoreOptions.AutoCreateSchemaObjects, @objects);
-            }
-
-            return patch;
+            return ToPatch(withSchemas, withAutoCreateAll ? AutoCreate.All : StoreOptions.AutoCreateSchemaObjects);
         }
 
         public void AssertDatabaseMatchesConfiguration()
         {
-            var patch = ToPatch(false, withAutoCreateAll:true);
+            var patch = ToPatch(false, withAutoCreateAll: true);
 
             if (patch.UpdateDDL.Trim().IsNotEmpty())
             {
@@ -140,23 +143,27 @@ namespace Marten.Storage
             }
         }
 
-        public void ApplyAllConfiguredChangesToDatabase()
+        public void ApplyAllConfiguredChangesToDatabase(AutoCreate? withCreateSchemaObjects = null)
         {
-            var patch = ToPatch(true);
-            var ddl = patch.UpdateDDL.Trim();
-            if (ddl.IsNotEmpty())
-            {
-                try
-                {
-                    _tenant.RunSql(ddl);
-                    StoreOptions.Logger().SchemaChange(ddl);
+            var defaultAutoCreate = StoreOptions.AutoCreateSchemaObjects != AutoCreate.None
+                ? StoreOptions.AutoCreateSchemaObjects
+                : AutoCreate.CreateOrUpdate;
 
-                    _tenant.MarkAllFeaturesAsChecked();
-                }
-                catch (Exception e)
-                {
-                    throw new MartenSchemaException("All Configured Changes", ddl, e);
-                }
+            var patch = ToPatch(true, withCreateSchemaObjects ?? defaultAutoCreate);
+            var ddl = patch.UpdateDDL.Trim();
+
+            if (ddl.IsEmpty()) return;
+
+            try
+            {
+                _tenant.RunSql(ddl);
+                StoreOptions.Logger().SchemaChange(ddl);
+
+                _tenant.MarkAllFeaturesAsChecked();
+            }
+            catch (Exception e)
+            {
+                throw new MartenSchemaException("All Configured Changes", ddl, e);
             }
         }
 
@@ -201,11 +208,7 @@ namespace Marten.Storage
                         patch.WriteUpdateFile(file, transactionalScript);
                     }
                 }
-
             }
-
-
-
         }
     }
 }

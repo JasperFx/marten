@@ -8,7 +8,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class AnyQueryHandler : IQueryHandler<bool>
+    public class AnyQueryHandler: IQueryHandler<bool>
     {
         private readonly ILinqQuery _query;
 
@@ -35,7 +35,6 @@ namespace Marten.Linq.QueryHandlers
         public async Task<bool> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
         {
             var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
-
 
             return hasRow && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false) &&
                    await reader.GetFieldValueAsync<bool>(0, token).ConfigureAwait(false);

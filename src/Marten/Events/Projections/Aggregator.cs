@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,14 +7,15 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
-    public class Aggregator<T> : IAggregator<T> where T : class, new()
+    public class Aggregator<T>: IAggregator<T> where T : class, new()
     {
         public static readonly string ApplyMethod = "Apply";
 
         private readonly IDictionary<Type, object> _aggregations = new Dictionary<Type, object>();
 
-
-        public Aggregator() : this(typeof(T).GetMethods().Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1)) { }
+        public Aggregator() : this(typeof(T).GetMethods().Where(x => x.Name == ApplyMethod && x.GetParameters().Length == 1))
+        {
+        }
 
         protected Aggregator(IEnumerable<MethodInfo> overrideMethodLookup)
         {
@@ -83,7 +84,6 @@ namespace Marten.Events.Projections
                 ? _aggregations[typeof(TEvent)].As<IAggregation<T, TEvent>>()
                 : null;
         }
-
 
         public bool AppliesTo(EventStream stream)
         {

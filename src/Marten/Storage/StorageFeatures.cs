@@ -41,7 +41,10 @@ namespace Marten.Storage
         /// <param name="feature"></param>
         public void Add(IFeatureSchema feature)
         {
-            _features.Add(feature.StorageType, feature);
+            if (!_features.ContainsKey(feature.StorageType))
+            {
+                _features[feature.StorageType] = feature;
+            }
         }
 
         /// <summary>
@@ -74,7 +77,7 @@ namespace Marten.Storage
         public IEnumerable<IDocumentMapping> AllMappings => _documentMappings.Value.Enumerate().Select(x => x.Value).Union(_mappings.Value.Enumerate().Select(x => x.Value));
 
         public DocumentMapping MappingFor(Type documentType)
-        {            
+        {
             if (!_documentMappings.Value.TryFind(documentType, out var value))
             {
                 value = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
@@ -99,7 +102,7 @@ namespace Marten.Storage
         }
 
         internal void AddMapping(IDocumentMapping mapping)
-        {                        
+        {
             _mappings.Swap(d => d.AddOrUpdate(mapping.DocumentType, mapping));
         }
 
@@ -165,13 +168,13 @@ namespace Marten.Storage
             _features[typeof(StreamState)] = _options.Events;
             _features[typeof(EventStream)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
-                        
+
             _mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
 
             foreach (var mapping in _documentMappings.Value.Enumerate().Select(x => x.Value))
             {
                 foreach (var subClass in mapping.SubClasses)
-                {                                        
+                {
                     _mappings.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass));
                     _features[subClass.DocumentType] = subClass.Parent;
                 }
@@ -201,7 +204,7 @@ namespace Marten.Storage
                 .TopologicalSort(m =>
                 {
                     return m.ForeignKeys
-                        .Where(x => x.ReferenceDocumentType != m.DocumentType)
+                        .Where(x => x.ReferenceDocumentType != m.DocumentType && x.ReferenceDocumentType != null)
                         .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
                         .Select(MappingFor);
                 });

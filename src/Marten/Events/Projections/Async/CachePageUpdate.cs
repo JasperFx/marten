@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async
 {
-    public class CachePageUpdate : IDaemonUpdate
+    public class CachePageUpdate: IDaemonUpdate
     {
         private readonly EventPage _page;
 

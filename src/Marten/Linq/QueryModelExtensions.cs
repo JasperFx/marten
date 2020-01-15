@@ -1,12 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Baseline;
-using Marten.Schema;
 using Marten.Storage;
 using Marten.Util;
-using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
@@ -58,7 +55,8 @@ namespace Marten.Linq
         {
             var mapping = tenant.MappingFor(query.SourceType()).ToQueryableDocument();
             var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
-            if (wheres.Length == 0) return mapping.DefaultWhereFragment();
+            if (wheres.Length == 0)
+                return mapping.DefaultWhereFragment();
 
             var @where = wheres.Length == 1
                 ? store.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
@@ -84,7 +82,6 @@ namespace Marten.Linq
                     sql.Append(param.ParameterName);
                 }
             }
-
         }
 
         public static void ApplySkip(this QueryModel model, CommandBuilder sql)
@@ -95,7 +92,7 @@ namespace Marten.Linq
                 return;
             }
 
-            int offset = (int) skip.Count.Value();
+            int offset = (int)skip.Count.Value();
             if (offset == 0)
             {
                 return;

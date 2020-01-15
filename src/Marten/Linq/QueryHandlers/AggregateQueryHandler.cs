@@ -8,11 +8,10 @@ using Baseline;
 using Marten.Linq.Model;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class AggregateQueryHandler<T> : IQueryHandler<T>
+    public class AggregateQueryHandler<T>: IQueryHandler<T>
     {
         private readonly string _operator;
         private readonly ILinqQuery _query;
@@ -22,7 +21,6 @@ namespace Marten.Linq.QueryHandlers
         {
             _operator = @operator;
             _query = query;
-
 
             if (typeof(T).Closes(typeof(Nullable<>)))
             {
@@ -45,7 +43,6 @@ namespace Marten.Linq.QueryHandlers
         {
             _query.ConfigureAggregate(builder, _operator);
         }
-
 
         public T Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
         {

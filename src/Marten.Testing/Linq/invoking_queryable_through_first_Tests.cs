@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Services;
 using Shouldly;
@@ -7,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [SingleStoryteller]
-    public class invoking_queryable_through_first_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_through_first_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         [Fact]
         public void first_hit_with_only_one_document()

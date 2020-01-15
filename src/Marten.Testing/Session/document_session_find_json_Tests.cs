@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Session
 {
-    public class document_session_find_json_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class document_session_find_json_Tests: DocumentSessionFixture<NulloIdentityMap>
     {
         // SAMPLE: find-json-by-id
         [Fact]
@@ -18,8 +18,9 @@ namespace Marten.Testing.Session
             theSession.SaveChanges();
 
             var json = theSession.Json.FindById<Issue>(issue.Id);
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
+
         // ENDSAMPLE
 
         [Fact]

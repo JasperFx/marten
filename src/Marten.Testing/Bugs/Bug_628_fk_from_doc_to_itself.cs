@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_628_fk_from_doc_to_itself : IntegratedFixture
+    public class Bug_628_fk_from_doc_to_itself: IntegratedFixture
     {
         public class Category
         {

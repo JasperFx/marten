@@ -4,7 +4,7 @@ using Marten.Storage;
 namespace Marten.Events
 {
     // SAMPLE: EventsTable
-    public class EventsTable : Table
+    public class EventsTable: Table
     {
         public EventsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_events"))
         {

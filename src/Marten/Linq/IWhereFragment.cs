@@ -33,9 +33,11 @@ namespace Marten.Linq
 
         public static IWhereFragment Append(this IWhereFragment fragment, IWhereFragment[] others)
         {
-            if (others?.Any() == false) return fragment;
+            if (others?.Any() == false)
+                return fragment;
 
-            if (fragment == null) return Append(others.First(), others.Skip(1).ToArray());
+            if (fragment == null)
+                return Append(others.First(), others.Skip(1).ToArray());
 
             foreach (var other in others)
             {
@@ -47,7 +49,8 @@ namespace Marten.Linq
 
         public static IWhereFragment[] Flatten(this IWhereFragment fragment)
         {
-            if (fragment == null) return new IWhereFragment[0];
+            if (fragment == null)
+                return new IWhereFragment[0];
 
             if (fragment is CompoundWhereFragment)
             {
@@ -59,7 +62,8 @@ namespace Marten.Linq
 
         public static string ToSql(this IWhereFragment fragment)
         {
-            if (fragment == null) return null;
+            if (fragment == null)
+                return null;
 
             var cmd = new NpgsqlCommand();
             var builder = new CommandBuilder(cmd);

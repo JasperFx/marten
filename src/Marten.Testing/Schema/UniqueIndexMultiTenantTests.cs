@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
 using Npgsql;
@@ -62,7 +62,7 @@ namespace Marten.Testing.Schema
                 {
                     session.SaveChanges();
                 }
-                catch (MartenCommandException exception)
+                catch (Marten.Exceptions.MartenCommandException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
@@ -91,7 +91,7 @@ namespace Marten.Testing.Schema
                 {
                     session.SaveChanges();
                 }
-                catch (MartenCommandException exception)
+                catch (Marten.Exceptions.MartenCommandException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
@@ -115,7 +115,7 @@ namespace Marten.Testing.Schema
                 {
                     session.SaveChanges();
                 }
-                catch (MartenCommandException exception)
+                catch (Marten.Exceptions.MartenCommandException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
@@ -146,7 +146,7 @@ namespace Marten.Testing.Schema
                 {
                     session.SaveChanges();
                 }
-                catch (MartenCommandException exception)
+                catch (Marten.Exceptions.MartenCommandException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
@@ -170,7 +170,7 @@ namespace Marten.Testing.Schema
                 {
                     session.SaveChanges();
                 }
-                catch (MartenCommandException exception)
+                catch (Marten.Exceptions.MartenCommandException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }

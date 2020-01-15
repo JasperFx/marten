@@ -19,10 +19,9 @@ namespace Marten.Testing.CodeTracker
         public int Deletions { get; set; }
 
         public DateTimeOffset Timestamp { get; set; }
-
     }
 
-    public class CommitViewTransform : ITransform<Commit, CommitView>
+    public class CommitViewTransform: ITransform<Commit, CommitView>
     {
         public CommitView Transform(EventStream stream, Event<Commit> input)
         {

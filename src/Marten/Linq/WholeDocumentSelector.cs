@@ -7,7 +7,7 @@ using Marten.Services;
 
 namespace Marten.Linq
 {
-    public class WholeDocumentSelector<T> : BasicSelector, ISelector<T>
+    public class WholeDocumentSelector<T>: BasicSelector, ISelector<T>
     {
         private readonly IDocumentStorage<T> storage;
 

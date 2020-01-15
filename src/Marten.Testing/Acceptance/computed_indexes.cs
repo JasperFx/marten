@@ -1,39 +1,35 @@
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Schema;
 using Marten.Testing.Documents;
-using Npgsql;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class computed_indexes : IntegratedFixture
+    public class computed_indexes: IntegratedFixture
     {
         [Fact]
         public void example()
         {
             // SAMPLE: using-a-simple-calculated-index
-    var store = DocumentStore.For(_ =>
-    {
-        _.Connection(ConnectionSource.ConnectionString);
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
 
-        // This creates 
-        _.Schema.For<User>().Index(x => x.UserName);
-    });
+                // This creates
+                _.Schema.For<User>().Index(x => x.UserName);
+            });
 
-            
-
-    using (var session = store.QuerySession())
-    {
-        // Postgresql will be able to use the computed
-        // index generated from above
-        var somebody = session.Query<User>()
-            .Where(x => x.UserName == "somebody")
-            .FirstOrDefault();
-    }
+            using (var session = store.QuerySession())
+            {
+                // Postgresql will be able to use the computed
+                // index generated from above
+                var somebody = session.Query<User>()
+                    .Where(x => x.UserName == "somebody")
+                    .FirstOrDefault();
+            }
             // ENDSAMPLE
 
             store.Dispose();
@@ -44,7 +40,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Number));
 
-                        var data = Target.GenerateRandomData(100).ToArray();
+            var data = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(data.ToArray());
 
             theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
@@ -64,60 +60,59 @@ namespace Marten.Testing.Acceptance
         public void specify_a_deep_index()
         {
             // SAMPLE: deep-calculated-index
-    var store = DocumentStore.For(_ =>
-    {
-        _.Connection(ConnectionSource.ConnectionString);
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
 
-        _.Schema.For<Target>().Index(x => x.Inner.Color);
-    });
+                _.Schema.For<Target>().Index(x => x.Inner.Color);
+            });
             // ENDSAMPLE
-
         }
 
         [Fact]
         public void specify_a_different_mechanism_to_customize_the_index()
         {
             // SAMPLE: customizing-calculated-index
-    var store = DocumentStore.For(_ =>
-    {
-        _.Connection(ConnectionSource.ConnectionString);
+            var store = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
 
-        // The second, optional argument to Index()
-        // allows you to customize the calculated index
-        _.Schema.For<Target>().Index(x => x.Number, x =>
-        {
-            // Change the index method to "brin"
-            x.Method = IndexMethod.brin;
+                // The second, optional argument to Index()
+                // allows you to customize the calculated index
+                _.Schema.For<Target>().Index(x => x.Number, x =>
+                        {
+                            // Change the index method to "brin"
+                            x.Method = IndexMethod.brin;
 
-            // Force the index to be generated with casing rules
-            x.Casing = ComputedIndex.Casings.Lower;
+                            // Force the index to be generated with casing rules
+                            x.Casing = ComputedIndex.Casings.Lower;
 
-            // Override the index name if you want
-            x.IndexName = "mt_my_name";
+                            // Override the index name if you want
+                            x.IndexName = "mt_my_name";
 
-            // Toggle whether or not the index is concurrent
-            // Default is false
-            x.IsConcurrent = true;
+                            // Toggle whether or not the index is concurrent
+                            // Default is false
+                            x.IsConcurrent = true;
 
-            // Toggle whether or not the index is a UNIQUE
-            // index
-            x.IsUnique = true;
-            
-            // Partial index by supplying a condition
-            x.Where = "(data ->> 'Number')::int > 10";
-        });
-        
-        // For B-tree indexes, it's also possible to change
-        // the sort order from the default of "ascending"
-        _.Schema.For<User>().Index(x => x.LastName, x =>
-        {
-            // Change the index method to "brin"
-            x.SortOrder = SortOrder.Desc;
-        });
-    });
+                            // Toggle whether or not the index is a UNIQUE
+                            // index
+                            x.IsUnique = true;
+
+                            // Partial index by supplying a condition
+                            x.Where = "(data ->> 'Number')::int > 10";
+                        });
+
+                // For B-tree indexes, it's also possible to change
+                // the sort order from the default of "ascending"
+                _.Schema.For<User>().Index(x => x.LastName, x =>
+                        {
+                            // Change the index method to "brin"
+                            x.SortOrder = SortOrder.Desc;
+                        });
+            });
             // ENDSAMPLE
         }
-        
+
         [Fact]
         public void specifying_an_index_type_should_create_the_index_with_that_type()
         {
@@ -133,7 +128,7 @@ namespace Marten.Testing.Acceptance
                 .Where(x => x.Name == "mt_doc_target_idx_number")
                 .Select(x => x.DDL.ToLower())
                 .First();
-            
+
             ddl.ShouldContain("mt_doc_target_idx_number on");
             ddl.ShouldContain("mt_doc_target using brin");
         }
@@ -153,12 +148,12 @@ namespace Marten.Testing.Acceptance
                 .Where(x => x.Name == "mt_doc_target_idx_number")
                 .Select(x => x.DDL.ToLower())
                 .First();
-            
+
             ddl.ShouldContain("mt_doc_target_idx_number on");
             ddl.ShouldContain("mt_doc_target");
             ddl.ShouldEndWith(" DESC)", Case.Insensitive);
         }
-        
+
         [Fact]
         public void create_multi_property_index()
         {
@@ -179,7 +174,6 @@ namespace Marten.Testing.Acceptance
                 .Single(x => x.Name == "mt_doc_target_idx_user_idflag")
                 .DDL
                 .ToLower();
-
 
             ddl.ShouldContain("index mt_doc_target_idx_user_idflag");
 
@@ -202,8 +196,8 @@ namespace Marten.Testing.Acceptance
                 .Select(x => x.DDL.ToLower())
                 .First();
 
-                ddl.ShouldContain("mt_doc_target_idx_date on");
-                ddl.ShouldContain("mt_doc_target_idx_date");
+            ddl.ShouldContain("mt_doc_target_idx_date on");
+            ddl.ShouldContain("mt_doc_target_idx_date");
         }
 
         [Fact]
@@ -226,7 +220,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
                     .ShouldContain("mt_doc_target_uidx_string");
-            
+
             using (var session = theStore.LightweightSession())
             {
                 var item = Target.GenerateRandomData(1).First();
@@ -243,7 +237,7 @@ namespace Marten.Testing.Acceptance
 
                 // Inserting the same original string should throw
                 session.Store(item2);
-                Assert.Throws<MartenCommandException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+                Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
             }
         }
 
@@ -264,7 +258,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(item);
                 session.SaveChanges();
             }
-            
+
             theStore.Tenancy.Default.DbObjects.AllIndexes().Select(x => x.Name)
                     .ShouldContain("mt_banana_index_created_by_nigel");
         }
@@ -286,7 +280,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(item);
                 session.SaveChanges();
             }
-            
+
             theStore.Tenancy.Default.DbObjects.AllIndexes()
                     .Where(x => x.Name == "mt_doc_target_idx_string")
                     .Select(x => x.DDL)
@@ -324,7 +318,7 @@ namespace Marten.Testing.Acceptance
                 // Inserting the same string but all uppercase should throw because
                 // the index is stored with lowcased value
                 session.Store(item);
-                Assert.Throws<MartenCommandException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+                Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
             }
         }
 

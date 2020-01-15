@@ -1,16 +1,14 @@
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Linq
 {
-    public class NotWhereFragment : IWhereFragment
+    public class NotWhereFragment: IWhereFragment
     {
         private readonly IWhereFragment _inner;
 
         public NotWhereFragment(IWhereFragment inner)
         {
             _inner = inner;
-            
         }
 
         public void Apply(CommandBuilder builder)

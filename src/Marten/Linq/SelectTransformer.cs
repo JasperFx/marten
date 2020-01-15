@@ -8,15 +8,16 @@ using Npgsql;
 
 namespace Marten.Linq
 {
-    public class SelectTransformer<T> : BasicSelector, ISelector<T>
+    public class SelectTransformer<T>: BasicSelector, ISelector<T>
     {
-        public SelectTransformer(IQueryableDocument mapping, TargetObject target) 
+        public SelectTransformer(IQueryableDocument mapping, TargetObject target)
             : base(target.ToSelectField(mapping))
         {
         }
 
         public SelectTransformer(IQueryableDocument mapping, TargetObject target, bool distinct)
-            : base(distinct, target.ToSelectField(mapping)) {
+            : base(distinct, target.ToSelectField(mapping))
+        {
         }
 
         public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)

@@ -12,7 +12,7 @@ using Npgsql;
 
 namespace Marten.Schema.BulkLoading
 {
-    public class BulkLoader<T> : IBulkLoader<T>
+    public class BulkLoader<T>: IBulkLoader<T>
     {
         private readonly IdAssignment<T> _assignment;
         private readonly string _baseSql;
@@ -22,7 +22,6 @@ namespace Marten.Schema.BulkLoading
         private readonly Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string> _transferData;
         private readonly string _tempTableName;
 
-
         public BulkLoader(ISerializer serializer, DocumentMapping mapping, IdAssignment<T> assignment)
         {
             _mapping = mapping;
@@ -30,7 +29,6 @@ namespace Marten.Schema.BulkLoading
             var upsertFunction = new UpsertFunction(mapping);
 
             _tempTableName = mapping.Table.Name + "_temp";
-
 
             var writer = Expression.Parameter(typeof(NpgsqlBinaryImporter), "writer");
             var document = Expression.Parameter(typeof(T), "document");
@@ -49,8 +47,6 @@ namespace Marten.Schema.BulkLoading
             _sql = _baseSql.Replace("%TABLE%", mapping.Table.QualifiedName);
 
             var block = Expression.Block(expressions);
-
-            
 
             var lambda = Expression.Lambda<Action<T, string, ISerializer, NpgsqlBinaryImporter, CharArrayTextWriter, string>>(block, document, alias,
                 serializerParam, writer, textWriter, tenantId);
@@ -83,7 +79,7 @@ namespace Marten.Schema.BulkLoading
             var columns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\"{x.Name}\"").Join(", ");
             var selectColumns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTableName}.\"{x.Name}\"").Join(", ");
 
-            return $@"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTableName} 
+            return $@"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTableName}
                          left join {storageTable} on {_tempTableName}.id = {storageTable}.id where {storageTable}.id is null)";
         }
 
@@ -121,7 +117,7 @@ namespace Marten.Schema.BulkLoading
                     _transferData(document, _mapping.AliasFor(document.GetType()), serializer, writer, textWriter, tenant.TenantId);
                     textWriter.Clear();
                 }
-                
+
                 writer.Complete();
             }
         }

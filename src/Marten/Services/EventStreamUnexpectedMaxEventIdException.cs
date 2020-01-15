@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Services
 {
-    public class EventStreamUnexpectedMaxEventIdException : Exception
+    public class EventStreamUnexpectedMaxEventIdException: Exception
     {
         public object Id { get; }
 

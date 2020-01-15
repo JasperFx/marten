@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,7 +6,7 @@ using Marten.Events.Projections.Async;
 
 namespace Marten.Events.Projections
 {
-    public class OneForOneProjection<TEvent, TView> : DocumentProjection<TView>, IDocumentProjection
+    public class OneForOneProjection<TEvent, TView>: DocumentProjection<TView>, IDocumentProjection
     {
         private readonly ITransform<TEvent, TView> _transform;
 
@@ -14,7 +14,7 @@ namespace Marten.Events.Projections
         {
             _transform = transform;
 
-            Consumes = new[] {typeof(TEvent)};
+            Consumes = new[] { typeof(TEvent) };
         }
 
         public void Apply(IDocumentSession session, EventPage page)

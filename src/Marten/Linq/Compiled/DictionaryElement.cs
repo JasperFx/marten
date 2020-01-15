@@ -7,7 +7,7 @@ using Marten.Util;
 
 namespace Marten.Linq.Compiled
 {
-    public class DictionaryElement<TQuery, TElement> : IDictionaryElement<TQuery>
+    public class DictionaryElement<TQuery, TElement>: IDictionaryElement<TQuery>
     {
         public string[] Keys { get; }
         private readonly Func<TQuery, TElement> _getter;
@@ -15,7 +15,7 @@ namespace Marten.Linq.Compiled
         public DictionaryElement(EnumStorage storage, string[] keys, MemberInfo member)
         {
             Keys = keys;
-            _getter = LambdaBuilder.Getter<TQuery, TElement>(storage, new []{member});
+            _getter = LambdaBuilder.Getter<TQuery, TElement>(storage, new[] { member });
 
             Member = member;
         }

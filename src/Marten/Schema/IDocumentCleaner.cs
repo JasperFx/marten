@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Schema
 {
@@ -16,7 +16,7 @@ namespace Marten.Schema
         void DeleteDocumentsFor(Type documentType);
 
         /// <summary>
-        /// Delete all document data *except* for the specified document types. 
+        /// Delete all document data *except* for the specified document types.
         /// </summary>
         /// <param name="documentTypes"></param>
         void DeleteDocumentsExcept(params Type[] documentTypes);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Marten.Schema
 {
@@ -6,7 +6,7 @@ namespace Marten.Schema
     /// Directs Marten to use optimistic versioning checks when updating this document type
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class UseOptimisticConcurrencyAttribute : MartenAttribute
+    public class UseOptimisticConcurrencyAttribute: MartenAttribute
     {
         public override void Modify(DocumentMapping mapping)
         {

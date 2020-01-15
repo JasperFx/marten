@@ -2,12 +2,11 @@
 ## Polyglot Persistence Powered by .NET and PostgreSQL
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/jasperfx/marten?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten)
-[![Linux Build status](https://api.travis-ci.org/JasperFx/marten.svg)](https://travis-ci.org/JasperFx/marten)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/va5br63j7sbx74cm/branch/master?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten/branch/master)
+[![Linux Build status](https://dev.azure.com/jasperfx-marten/marten/_apis/build/status/marten?branchName=master)](https://dev.azure.com/jasperfx-marten/marten/_build/latest?definitionId=1&branchName=master)
 [![Nuget Package](https://badgen.net/nuget/v/marten)](https://www.nuget.org/packages/Marten/)
 
 ![marten logo](http://jasperfx.github.io/marten/content/images/banner.png)
-
 
 The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://www.compose.io/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
 
@@ -17,11 +16,15 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 2.1**
+**1. .NET Core SDK 2.1 (or higher)**
 
 Available [here](https://www.microsoft.com/net/download/core)
 
-**2. PostgreSQL **9.5+** database with PLV8**
+**2. .NET Framework 4.6.1 Developer Pack**
+
+Available [here](https://dotnet.microsoft.com/download/thank-you/net461-developer-pack)
+
+**3. PostgreSQL **9.5+** database with PLV8**
 
 You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 

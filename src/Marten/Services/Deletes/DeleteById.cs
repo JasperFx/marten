@@ -1,16 +1,12 @@
-﻿using System;
-using System.Text;
+using System;
 using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Services.Deletes
 {
-
-    public class DeleteById : IDeletion
+    public class DeleteById: IDeletion
     {
         private readonly TenancyStyle _tenancyStyle;
         private readonly IDocumentStorage _storage;
@@ -25,7 +21,6 @@ namespace Marten.Services.Deletes
 
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Document = document;
-
         }
 
         public string Sql { get; }
@@ -44,7 +39,6 @@ namespace Marten.Services.Deletes
 
         public override string ToString()
         {
-
             return $"Delete {DocumentType} with Id {Id}: {Sql}";
         }
     }

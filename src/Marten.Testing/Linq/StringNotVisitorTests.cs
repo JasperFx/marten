@@ -26,7 +26,6 @@ namespace Marten.Testing.Linq
 
 		[Theory]
 		[InlineData("zap", StringComparison.OrdinalIgnoreCase, 3)]
-		[InlineData("zap", StringComparison.OrdinalIgnoreCase, 3)]
 		[InlineData("Zap", StringComparison.CurrentCulture, 3)]
 		[InlineData("zap", StringComparison.CurrentCulture, 4)]
 		public void CanQueryByNotEquals(string search, StringComparison comparison, int expectedCount)

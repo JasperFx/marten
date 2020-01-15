@@ -17,7 +17,7 @@ namespace Marten.Events
         AsString
     }
 
-    public class EventGraph : IFeatureSchema
+    public class EventGraph: IFeatureSchema
     {
         private readonly Ref<ImHashMap<string, IAggregator>> _aggregateByName =
             Ref.Of(ImHashMap<string, IAggregator>.Empty);
@@ -111,7 +111,7 @@ namespace Marten.Events
 
         public void AddAggregator<T>(IAggregator<T> aggregator) where T : class, new()
         {
-            Options.Storage.MappingFor(typeof(T));            
+            Options.Storage.MappingFor(typeof(T));
             _aggregates.Swap(a => a.AddOrUpdate(typeof(T), aggregator));
         }
 
@@ -138,7 +138,7 @@ namespace Marten.Events
             {
                 return null;
             }
-            
+
             _aggregateByName.Swap(a => a.AddOrUpdate(aggregateTypeName, aggregate));
 
             return aggregate.AggregateType;
@@ -251,7 +251,7 @@ namespace Marten.Events
             if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
             {
                 value = Type.GetType(assemblyQualifiedName);
-                if(value == null)
+                if (value == null)
                 {
                     throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
                 }

@@ -4,13 +4,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Patching
 {
-    public class PatchExpression<T> : IPatchExpression<T>
+    public class PatchExpression<T>: IPatchExpression<T>
     {
         private readonly IWhereFragment _fragment;
         private readonly ITenant _tenant;
@@ -138,13 +138,13 @@ namespace Marten.Patching
             apply();
         }
 
-        public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, 
+        public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
             RemoveAction action = RemoveAction.RemoveFirst)
         {
             Patch.Add("type", "remove");
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
-            Patch.Add("action", (int) action);
+            Patch.Add("action", (int)action);
 
             apply();
         }
@@ -195,7 +195,7 @@ namespace Marten.Patching
             var visitor = new FindMembers();
             visitor.Visit(expression);
 
-            return visitor.Members.Select(x => x.Name).Join(".");
+            return visitor.Members.Select(x => x.Name.FormatCase(_serializer.Casing)).Join(".");
         }
 
         private void apply()

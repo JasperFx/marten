@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Marten.Storage;
 
@@ -55,6 +55,7 @@ namespace Marten.Schema
         FunctionBody DefinitionForFunction(DbObjectName function);
 
         ForeignKeyConstraint[] AllForeignKeys();
+
         Table ExistingTableFor(Type type);
     }
 }

@@ -8,7 +8,7 @@ using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon
 {
-    public class AsyncDaemonTestHelper : IDisposable
+    public class AsyncDaemonTestHelper: IDisposable
     {
         private readonly IDocumentStore _store;
 
@@ -129,7 +129,6 @@ namespace Marten.Testing.AsyncDaemon
                 }
             });
 
-
             if (list.Any())
             {
                 throw new Exception($"Differences in ActiveProjects:\n{list.Join("\n")}");
@@ -142,7 +141,6 @@ namespace Marten.Testing.AsyncDaemon
                 Console.WriteLine("All ActiveProject views match!");
                 Console.WriteLine("==============================");
             }
-
         }
 
         public void Dispose()

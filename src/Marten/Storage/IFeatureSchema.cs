@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Marten.Exceptions;
 using Marten.Util;
 using Npgsql;
 
@@ -21,19 +22,19 @@ namespace Marten.Storage
         /// </summary>
         /// <returns></returns>
         IEnumerable<Type> DependentTypes();
-        
+
         /// <summary>
-        /// Should this feature be active based on the current options? 
+        /// Should this feature be active based on the current options?
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
         bool IsActive(StoreOptions options);
-        
+
         /// <summary>
         /// All the schema objects in this feature
         /// </summary>
         ISchemaObject[] Objects { get; }
-        
+
         /// <summary>
         /// Identifier by type for this feature. Used along with the DependentTypes()
         /// collection to control the proper ordering of object creation or scripting
@@ -47,20 +48,19 @@ namespace Marten.Storage
 
         /// <summary>
         /// Write any permission SQL when this feature is exported to a SQL
-        /// file 
+        /// file
         /// </summary>
         /// <param name="rules"></param>
         /// <param name="writer"></param>
         void WritePermissions(DdlRules rules, StringWriter writer);
     }
+
     // ENDSAMPLE
 
-
-    
     /// <summary>
     /// Base class for easier creation of custom IFeatureSchema objects
     /// </summary>
-    public abstract class FeatureSchemaBase : IFeatureSchema
+    public abstract class FeatureSchemaBase: IFeatureSchema
     {
         public string Identifier { get; }
         public StoreOptions Options { get; }
@@ -97,7 +97,12 @@ namespace Marten.Storage
     {
         public static void AssertValidNames(this IFeatureSchema schema, StoreOptions options)
         {
-            foreach (var objectName in schema.Objects.SelectMany(x => x.AllNames()))
+            AssertValidNames(schema.Objects, options);
+        }
+
+        public static void AssertValidNames(this ISchemaObject[] schemaObjects, StoreOptions options)
+        {
+            foreach (var objectName in schemaObjects.SelectMany(x => x.AllNames()))
             {
                 options.AssertValidIdentifier(objectName.Name);
             }
@@ -143,7 +148,7 @@ namespace Marten.Storage
             }
             catch (Exception e)
             {
-                throw new MartenCommandException(cmd, e);
+                throw MartenCommandExceptionFactory.Create(cmd, e);
             }
         }
     }

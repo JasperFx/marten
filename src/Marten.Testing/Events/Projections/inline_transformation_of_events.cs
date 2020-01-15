@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_transformation_of_events : DocumentSessionFixture<NulloIdentityMap>
+    public class inline_transformation_of_events: DocumentSessionFixture<NulloIdentityMap>
     {
         private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
@@ -111,7 +111,7 @@ namespace Marten.Testing.Events.Projections
     }
 
     // SAMPLE: MonsterDefeatedTransform
-    public class MonsterDefeatedTransform : ITransform<MonsterSlayed, MonsterDefeated>
+    public class MonsterDefeatedTransform: ITransform<MonsterSlayed, MonsterDefeated>
     {
         public MonsterDefeated Transform(EventStream stream, Event<MonsterSlayed> input)
         {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -54,7 +54,7 @@ namespace Marten.Linq
         IQueryable<TDoc> TransformTo<TDoc>(string transformName);
     }
 
-    public interface IMartenQueryable<T> : IQueryable<T>, IMartenQueryable
+    public interface IMartenQueryable<T>: IQueryable<T>, IMartenQueryable
     {
         IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback,
             JoinType joinType = JoinType.Inner);

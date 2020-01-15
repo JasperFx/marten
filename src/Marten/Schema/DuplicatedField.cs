@@ -11,20 +11,29 @@ using NpgsqlTypes;
 
 namespace Marten.Schema
 {
-    public class DuplicatedField : Field, IField
+    public class DuplicatedField: Field, IField
     {
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
+        private readonly StoreOptions _storeOptions;
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
-        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true) : base(enumStorage, memberPath)
+        [Obsolete("Please use constructor with StoreOptions parameter. This one will be removed in v4.0")]
+        public DuplicatedField(EnumStorage enumStorage, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
+            : this(GetStoreOptions(enumStorage), memberPath, useTimestampWithoutTimeZoneForDateTime, notNull)
+        {
+        }
+
+        public DuplicatedField(StoreOptions storeOptions, MemberInfo[] memberPath, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
+            : base(storeOptions.DuplicatedFieldEnumStorage, memberPath, notNull)
         {
             ColumnName = MemberName.ToTableAlias();
+            _storeOptions = storeOptions;
             this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
 
             if (MemberType.IsEnum)
             {
-                if (enumStorage == EnumStorage.AsString)
+                if (storeOptions.DuplicatedFieldEnumStorage == EnumStorage.AsString)
                 {
                     DbType = NpgsqlDbType.Varchar;
                     PgType = "varchar";
@@ -96,11 +105,16 @@ namespace Marten.Schema
         // TODO -- have this take in CommandBuilder
         public string UpdateSqlFragment()
         {
-            var jsonField = new JsonLocatorField("d.data", _enumStorage, Casing.Default, Members);
-            // HOKEY, but I'm letting it pass for now.
-            var sqlLocator = jsonField.SqlLocator.Replace("d.", "");
-
-            return $"{ColumnName} = {sqlLocator}";
+            if ((DbType & NpgsqlDbType.Array) == NpgsqlDbType.Array && PgType != "jsonb")
+            {
+                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, "jsonb");
+                return $"{ColumnName} = CAST(ARRAY(SELECT jsonb_array_elements_text({jsonField.SqlLocator})) as {PgType})";
+            }
+            else
+            {
+                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, PgType);
+                return $"{ColumnName} = {jsonField.SqlLocator}";
+            }
         }
 
         public object GetValue(Expression valueExpression)
@@ -120,7 +134,7 @@ namespace Marten.Schema
 
         public string SqlLocator { get; set; }
 
-        public static DuplicatedField For<T>(EnumStorage enumStorage, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true)
+        public static DuplicatedField For<T>(StoreOptions storeOptions, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true, string pgType = null)
         {
             var accessor = ReflectionHelper.GetAccessor(expression);
 
@@ -130,13 +144,26 @@ namespace Marten.Schema
                 throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
             }
 
-            return new DuplicatedField(enumStorage, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
+            var duplicate = new DuplicatedField(storeOptions, new MemberInfo[] { accessor.InnerProperty }, useTimestampWithoutTimeZoneForDateTime);
+            if (pgType.IsNotEmpty())
+            {
+                duplicate.PgType = pgType;
+            }
+            return duplicate;
         }
 
         // I say you don't need a ForeignKey
         public virtual TableColumn ToColumn()
         {
             return new TableColumn(ColumnName, PgType);
+        }
+
+        [Obsolete("This method will be removed in v4.0 - it's only being kept for backward compatibility.")]
+        private static StoreOptions GetStoreOptions(EnumStorage enumStorage)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(enumStorage);
+            return storeOptions;
         }
     }
 }

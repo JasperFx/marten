@@ -9,7 +9,7 @@ using Remotion.Linq.Clauses.StreamedData;
 
 namespace Marten.Transforms
 {
-    public class TransformToOtherTypeOperator : SequenceTypePreservingResultOperatorBase, ISelectableOperator
+    public class TransformToOtherTypeOperator: SequenceTypePreservingResultOperatorBase, ISelectableOperator
     {
         private readonly string _transformName;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
 {
-    public class assert_if_daemon_is_running_on_wait_methods : IntegratedFixture
+    public class assert_if_daemon_is_running_on_wait_methods: IntegratedFixture
     {
         private IDaemon theDaemon;
 

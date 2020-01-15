@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using Marten.Schema.Identity;
 using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_393_issue_with_identity_map : DocumentSessionFixture<IdentityMap>
+    public class Bug_393_issue_with_identity_map: DocumentSessionFixture<IdentityMap>
     {
         [Fact]
         public void load_non_existing_with_a_store_shoudl_return_new_added_document()
@@ -27,7 +27,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class Bug_393_issue_with_dirty_tracking_identity_map : DocumentSessionFixture<DirtyTrackingIdentityMap>
+    public class Bug_393_issue_with_dirty_tracking_identity_map: DocumentSessionFixture<DirtyTrackingIdentityMap>
     {
         [Fact]
         public void load_non_existing_with_a_store_shoudl_return_new_added_document()

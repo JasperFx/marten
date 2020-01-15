@@ -11,7 +11,7 @@ namespace Marten.Linq
     public class TargetObject
     {
         public Type Type { get; }
-        private readonly IList<SetterBinding> _setters = new List<SetterBinding>(); 
+        private readonly IList<SetterBinding> _setters = new List<SetterBinding>();
 
         public TargetObject(Type type)
         {
@@ -34,7 +34,7 @@ namespace Marten.Linq
         public string ToSelectField(IQueryableDocument mapping)
         {
             var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
-            return  $"jsonb_build_object({jsonBuildObjectArgs}) as json";
+            return $"jsonb_build_object({jsonBuildObjectArgs}) as json";
         }
 
         public ISelector<T> ToJsonSelector<T>(IQueryableDocument mapping)
@@ -63,7 +63,7 @@ namespace Marten.Linq
         }
     }
 
-    public class SelectedField : IEnumerable<MemberInfo>
+    public class SelectedField: IEnumerable<MemberInfo>
     {
         private readonly Stack<MemberInfo> _members = new Stack<MemberInfo>();
 

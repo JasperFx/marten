@@ -2,23 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
     public class Bug_1245_include_plus_full_text_search: IntegratedFixture
     {
-        private readonly bool _hasRequiredMinimumPgVersion;
-        private readonly string _skipReason;
-
-        public Bug_1245_include_plus_full_text_search()
-        {
-            var requiredMinimumPgVersion = Version.Parse("10.0");
-            _hasRequiredMinimumPgVersion =
-                theStore.Diagnostics.GetPostgresVersion().CompareTo(requiredMinimumPgVersion) >= 0;
-            _skipReason = $"Test skipped, minimum Postgres version required is {requiredMinimumPgVersion}";
-        }
-
         public sealed class Email
         {
             public Guid Id { get; set; }
@@ -45,16 +35,14 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void can_do_include_with_full_text_search()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             var term = "content";
             var userDictionary = new Dictionary<Guid, User>();
             using (var session = theStore.OpenSession())
             {
-                for( var i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     var newUser = new User(Guid.NewGuid(), $"Test user {i}");
                     var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
@@ -73,19 +61,16 @@ namespace Marten.Testing.Bugs
 
                 query.ShouldNotBeNull();
             }
-
         }
 
-        [SkippableFact]
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public async Task can_do_include_with_full_text_search_async()
         {
-            Skip.IfNot(_hasRequiredMinimumPgVersion, _skipReason);
-
             var term = "content";
             var userDictionary = new Dictionary<Guid, User>();
             using (var session = theStore.OpenSession())
             {
-                for( var i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     var newUser = new User(Guid.NewGuid(), $"Test user {i}");
                     var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
@@ -104,9 +89,6 @@ namespace Marten.Testing.Bugs
 
                 query.ShouldNotBeNull();
             }
-
         }
-
     }
-
 }

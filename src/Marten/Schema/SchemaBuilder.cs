@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using Baseline;
@@ -9,16 +9,17 @@ namespace Marten.Schema
     {
         public static string GetSqlScript(string databaseSchemaName, string script)
         {
-            var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{script}.sql";
+            var name = $"{typeof(SchemaBuilder).Namespace}.SQL.{script}.sql";
 
             return ReadFromStream(name, databaseSchemaName);
         }
 
         public static string GetJavascript(StoreOptions options, string jsfile)
         {
-            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
 
-            var name = $"{typeof (SchemaBuilder).Namespace}.SQL.{jsfile}.js";
+            var name = $"{typeof(SchemaBuilder).Namespace}.SQL.{jsfile}.js";
 
             return ReadFromStream(name, options.DatabaseSchemaName);
         }

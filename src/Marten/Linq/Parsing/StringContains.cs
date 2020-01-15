@@ -6,7 +6,7 @@ using Marten.Util;
 
 namespace Marten.Linq.Parsing
 {
-    public class StringContains : StringComparisonParser
+    public class StringContains: StringComparisonParser
     {
         public StringContains() : base(GetContainsMethods())
         {
@@ -19,7 +19,7 @@ namespace Marten.Linq.Parsing
 
         private static MethodInfo[] GetContainsMethods()
         {
-            return new []
+            return new[]
             {
                 typeof(string).GetMethod("Contains", new Type[] { typeof(string), typeof(StringComparison)}),
                 ReflectionHelper.GetMethod<string>(s => s.Contains(null)),

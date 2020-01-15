@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
-using System.Reflection;
 using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Services;

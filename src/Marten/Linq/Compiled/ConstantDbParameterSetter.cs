@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace Marten.Linq.Compiled
 {
-    internal class ConstantDbParameterSetter : IDbParameterSetter
+    internal class ConstantDbParameterSetter: IDbParameterSetter
     {
         private object _value;
 

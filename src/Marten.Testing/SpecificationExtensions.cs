@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
@@ -152,13 +153,23 @@ namespace Marten.Testing
             return aString;
         }
 
-        public static void ShouldContain(this string actual, string expected)
+        public static void ShouldContain(this string actual, string expected, StringComparisonOption options = StringComparisonOption.Default)
         {
+            if (options == StringComparisonOption.NormalizeWhitespaces)
+            {
+                actual = Regex.Replace(actual, @"\s+", " ");
+                expected = Regex.Replace(expected, @"\s+", " ");
+            }
             actual.Contains(expected).ShouldBeTrue($"Actual: {actual}{Environment.NewLine}Expected: {expected}");
         }
 
-        public static string ShouldNotContain(this string actual, string expected)
+        public static string ShouldNotContain(this string actual, string expected, StringComparisonOption options = StringComparisonOption.NormalizeWhitespaces)
         {
+            if (options == StringComparisonOption.NormalizeWhitespaces)
+            {
+                actual = Regex.Replace(actual, @"\s+", " ");
+                expected = Regex.Replace(expected, @"\s+", " ");
+            }
             actual.Contains(expected).ShouldBeFalse($"Actual: {actual}{Environment.NewLine}Expected: {expected}");
             return actual;
         }
@@ -189,24 +200,31 @@ namespace Marten.Testing
 
         public static void ShouldBeEqualWithDbPrecision(this DateTime actual, DateTime expected)
         {
-            DateTime toDbPrecision(DateTime date) => new DateTime(date.Ticks / 100 * 100);
+            DateTime toDbPrecision(DateTime date) => new DateTime(date.Ticks / 1000 * 1000);
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
 
         public static void ShouldBeEqualWithDbPrecision(this DateTimeOffset actual, DateTimeOffset expected)
         {
-            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 100 * 100, date.Offset);
+            DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 1000 * 1000, new TimeSpan(date.Offset.Ticks / 1000 * 1000));
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
 
         public static void ShouldContain(this DbObjectName[] names, string qualifiedName)
         {
-            if (names == null) throw new ArgumentNullException(nameof(names));
+            if (names == null)
+                throw new ArgumentNullException(nameof(names));
 
             var function = DbObjectName.Parse(qualifiedName);
             names.ShouldContain(function);
         }
+    }
+
+    public enum StringComparisonOption
+    {
+        Default,
+        NormalizeWhitespaces
     }
 }

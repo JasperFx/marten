@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -30,7 +30,7 @@ namespace Marten.Linq.QueryHandlers
         IQueryHandler<TOut> HandlerFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, out QueryStatistics stats);
     }
 
-    public class QueryHandlerFactory : IQueryHandlerFactory
+    public class QueryHandlerFactory: IQueryHandlerFactory
     {
         private readonly DocumentStore _store;
         private readonly ConcurrentCache<Type, CachedQuery> _cache = new ConcurrentCache<Type, CachedQuery>();
@@ -138,7 +138,8 @@ namespace Marten.Linq.QueryHandlers
         {
             var choice = model.FindOperators<ChoiceResultOperatorBase>().FirstOrDefault();
 
-            if (choice == null) return null;
+            if (choice == null)
+                return null;
 
             var query = new LinqQuery<T>(_store, model, joins, stats);
 

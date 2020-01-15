@@ -1,6 +1,4 @@
-﻿using Marten.Schema;
 using Xunit;
-using Shouldly;
 
 namespace Marten.Testing.Bugs
 {
@@ -11,7 +9,8 @@ namespace Marten.Testing.Bugs
         {
             EnableCommandLogging = true;
 
-            StoreOptions(_ => {
+            StoreOptions(_ =>
+            {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
                 _.Schema.For<Bug_1002>();

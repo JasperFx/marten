@@ -1,17 +1,16 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Npgsql;
 
 namespace Marten.Services
 {
-    public class UpdateBatch : IDisposable
+    public class UpdateBatch: IDisposable
     {
         private readonly MemoryPool<char> _writerPool;
         private readonly List<BatchCommand> _commands = new List<BatchCommand>();
@@ -31,7 +30,7 @@ namespace Marten.Services
             _commands.Add(current);
 
             _current = current;
-            
+
             Connection = connection;
             Concurrency = concurrency;
             TenantId = tenant.TenantId;
@@ -62,7 +61,6 @@ namespace Marten.Services
             return _current.Count >= _store.Options.UpdateBatchSize;
         }
 
-
         public BatchCommand Current()
         {
             try
@@ -80,9 +78,8 @@ namespace Marten.Services
                     {
                         _lock.ExitWriteLock();
                     }
-                    
                 }
-                    
+
                 return _current;
             }
             finally
@@ -90,7 +87,6 @@ namespace Marten.Services
                 _lock.ExitUpgradeableReadLock();
             }
         }
-
 
         public void Add(IStorageOperation operation)
         {
@@ -101,7 +97,8 @@ namespace Marten.Services
 
         public SprocCall Sproc(DbObjectName function, ICallback callback = null, IExceptionTransform exceptionTransform = null)
         {
-            if (function == null) throw new ArgumentNullException(nameof(function));
+            if (function == null)
+                throw new ArgumentNullException(nameof(function));
 
             return Current().Sproc(function, callback, exceptionTransform);
         }

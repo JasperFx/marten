@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +14,7 @@ using Marten.Util;
 
 namespace Marten.Services
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork: IUnitOfWork
     {
         private readonly ConcurrentDictionary<Guid, EventStream> _events = new ConcurrentDictionary<Guid, EventStream>();
 
@@ -51,7 +51,7 @@ namespace Marten.Services
 
         public IEnumerable<object> Updates()
         {
-            return _operations.Value.Enumerate().SelectMany(x => x.Value.OfType<UpsertDocument>().Select(u => u.Document))
+            return _operations.Value.Enumerate().SelectMany(x => x.Value.Where(t => t is UpsertDocument || t is UpdateDocument).OfType<DocumentStorageOperation>().Select(u => u.Document))
                 .Union(detectTrackerChanges().Select(x => x.Document));
         }
 
@@ -110,7 +110,6 @@ namespace Marten.Services
             _trackers.Remove(tracker);
         }
 
-
         public void StoreStream(EventStream stream)
         {
             _events[stream.Id] = stream;
@@ -149,7 +148,6 @@ namespace Marten.Services
             var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new UpsertDocument(x)));
-
         }
 
         public void StoreUpdates<T>(params T[] documents)
@@ -157,7 +155,6 @@ namespace Marten.Services
             var list = operationsFor(typeof(T));
 
             list.AddRange(documents.Select(x => new UpdateDocument(x)));
-
         }
 
         public void StoreInserts<T>(params T[] documents)
@@ -166,7 +163,6 @@ namespace Marten.Services
 
             list.AddRange(documents.Select(x => new InsertDocument(x)));
         }
-
 
         public ChangeSet ApplyChanges(UpdateBatch batch)
         {
@@ -209,10 +205,12 @@ namespace Marten.Services
         private bool shouldSort(List<IStorageOperation> operations, out IComparer<IStorageOperation> comparer)
         {
             comparer = null;
-            if (operations.Count <= 1) return false;
+            if (operations.Count <= 1)
+                return false;
 
-            if (operations.Select(x => x.DocumentType).Distinct().Count() == 1) return false;
-            
+            if (operations.Select(x => x.DocumentType).Distinct().Count() == 1)
+                return false;
+
             var types = _operations.Value.Enumerate().Select(x => x.Key).TopologicalSort(GetTypeDependencies).ToArray();
 
             if (operations.OfType<IDeletion>().Any())
@@ -280,7 +278,7 @@ namespace Marten.Services
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
-            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type)
+            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type && x.ReferenceDocumentType != null)
                 .SelectMany(keyDefinition =>
                 {
                     var results = new List<Type>();
@@ -331,13 +329,10 @@ namespace Marten.Services
             return _operations.Value.Enumerate().SelectMany(x => x.Value.OfType<DocumentStorageOperation>()).Any(x => object.ReferenceEquals(entity, x.Document));
         }
 
-
-
         public IEnumerable<T> NonDocumentOperationsOf<T>() where T : IStorageOperation
         {
             return _ancillaryOperations.OfType<T>();
         }
-
 
         public bool HasStream(string stream)
         {
@@ -360,7 +355,7 @@ namespace Marten.Services
             }
         }
 
-        private class StorageOperationWithDeletionsComparer : IComparer<IStorageOperation>
+        private class StorageOperationWithDeletionsComparer: IComparer<IStorageOperation>
         {
             private readonly Type[] _topologicallyOrderedTypes;
 
@@ -426,8 +421,8 @@ namespace Marten.Services
                 return index;
             }
         }
-        
-        private class StorageOperationByTypeComparer : IComparer<IStorageOperation>
+
+        private class StorageOperationByTypeComparer: IComparer<IStorageOperation>
         {
             private readonly Type[] _topologicallyOrderedTypes;
 
@@ -477,7 +472,7 @@ namespace Marten.Services
         }
     }
 
-    public abstract class DocumentStorageOperation : IStorageOperation
+    public abstract class DocumentStorageOperation: IStorageOperation
     {
         public UpdateStyle UpdateStyle { get; }
 
@@ -501,7 +496,6 @@ namespace Marten.Services
 
         public string TenantOverride { get; set; }
 
-
         public bool Persist(UpdateBatch batch, ITenant tenant)
         {
             var upsert = tenant.StorageFor(Document.GetType());
@@ -511,7 +505,7 @@ namespace Marten.Services
         }
     }
 
-    public class UpsertDocument : DocumentStorageOperation
+    public class UpsertDocument: DocumentStorageOperation
     {
         public UpsertDocument(object document) : base(UpdateStyle.Upsert, document)
         {
@@ -528,24 +522,24 @@ namespace Marten.Services
         }
     }
 
-    public class UpdateDocument : DocumentStorageOperation
+    public class UpdateDocument: DocumentStorageOperation
     {
         public UpdateDocument(object document) : base(UpdateStyle.Update, document)
         {
         }
-        
+
         public override string ToString()
         {
             return $"{GetType().Name}: {DocumentType.Name}";
         }
     }
 
-    public class InsertDocument : DocumentStorageOperation
+    public class InsertDocument: DocumentStorageOperation
     {
         public InsertDocument(object document) : base(UpdateStyle.Insert, document)
         {
         }
-        
+
         public override string ToString()
         {
             return $"{GetType().Name}: {DocumentType.Name}";

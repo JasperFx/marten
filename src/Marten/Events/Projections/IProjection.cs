@@ -9,10 +9,13 @@ namespace Marten.Events.Projections
     public interface IProjection
     {
         Type[] Consumes { get; }
-        
+
         AsyncOptions AsyncOptions { get; }
+
         void Apply(IDocumentSession session, EventPage page);
+
         Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token);
+
         void EnsureStorageExists(ITenant tenant);
     }
 
@@ -37,8 +40,11 @@ namespace Marten.Events.Projections
         {
             switch (projection)
             {
-                case IDocumentsProjection documentsProjection: return documentsProjection.Produces;
-                default: return new[] {projection.ProjectedType()};
+                case IDocumentsProjection documentsProjection:
+                    return documentsProjection.Produces;
+
+                default:
+                    return new[] { projection.ProjectedType() };
             }
         }
     }

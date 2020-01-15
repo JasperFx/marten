@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
@@ -7,7 +6,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Projections.Async
 {
-    public class EventProgressWrite : IStorageOperation
+    public class EventProgressWrite: IStorageOperation
     {
         private readonly string _key;
         private readonly long _number;
@@ -26,7 +25,6 @@ namespace Marten.Events.Projections.Async
             var numberArg = builder.AddParameter(_number, NpgsqlDbType.Bigint);
             builder.Append($"select {_sproc}(:{nameArg.ParameterName}, :{numberArg.ParameterName})");
         }
-
 
         public Type DocumentType => null;
     }

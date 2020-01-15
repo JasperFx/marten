@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using NodaTime;
 
 namespace Marten.NodaTime.Testing.TestData
 {
-    public class TargetWithDates : IEquatable<TargetWithDates>
+    public class TargetWithDates: IEquatable<TargetWithDates>
     {
         public Guid Id { get; set; }
         public DateTime DateTime { get; set; }

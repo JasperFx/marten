@@ -72,10 +72,13 @@ namespace Marten.Testing.CodeTracker
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
-            return Equals((ActiveProject) obj);
+            if (ReferenceEquals(null, obj))
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj.GetType() != this.GetType())
+                return false;
+            return Equals((ActiveProject)obj);
         }
 
         public override int GetHashCode()
@@ -83,9 +86,9 @@ namespace Marten.Testing.CodeTracker
             unchecked
             {
                 var hashCode = (ProjectName != null ? ProjectName.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ (OrganizationName != null ? OrganizationName.GetHashCode() : 0);
-                hashCode = (hashCode*397) ^ LinesOfCode;
-                hashCode = (hashCode*397) ^ OpenIssueCount;
+                hashCode = (hashCode * 397) ^ (OrganizationName != null ? OrganizationName.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ LinesOfCode;
+                hashCode = (hashCode * 397) ^ OpenIssueCount;
                 return hashCode;
             }
         }
@@ -95,6 +98,4 @@ namespace Marten.Testing.CodeTracker
             return $"ProjectName: {ProjectName}, OrganizationName: {OrganizationName}, LinesOfCode: {LinesOfCode}, OpenIssueCount: {OpenIssueCount}, Contributors: {Contributors}";
         }
     }
-
-    
 }

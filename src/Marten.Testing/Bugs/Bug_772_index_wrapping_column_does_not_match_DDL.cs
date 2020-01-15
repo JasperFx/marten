@@ -1,10 +1,10 @@
-﻿using Marten.Schema;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_772_index_wrapping_column_does_not_match_DDL : IntegratedFixture
+    public class Bug_772_index_wrapping_column_does_not_match_DDL: IntegratedFixture
     {
         [Fact] // Control
         public void index_with_no_expression_should_match_DDL()
@@ -25,11 +25,11 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.Schema.For<Company>()
-                    .Duplicate(c => c.Name, pgType:"jsonb", configure:id =>
-                    {
-                        id.Method = IndexMethod.gin;
-                        id.Expression = "? jsonb_path_ops";
-                    });
+                    .Duplicate(c => c.Name, pgType: "jsonb", configure: id =>
+                      {
+                          id.Method = IndexMethod.gin;
+                          id.Expression = "? jsonb_path_ops";
+                      });
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();

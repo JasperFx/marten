@@ -1,8 +1,8 @@
-﻿namespace Marten.Events.Projections.Async
+namespace Marten.Events.Projections.Async
 {
     public enum FetcherState
     {
-        Active, 
+        Active,
         Waiting,
         Paused
     }

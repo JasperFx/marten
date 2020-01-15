@@ -96,6 +96,5 @@ namespace Marten.Services
         /// <param name="documentType"></param>
         /// <returns></returns>
         IEnumerable<IStorageOperation> OperationsFor(Type documentType);
-    
     }
 }

@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Services;
@@ -9,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class project_events_async_from_multiple_streams_into_view : DocumentSessionFixture<IdentityMap>
+    public class project_events_async_from_multiple_streams_into_view: DocumentSessionFixture<IdentityMap>
     {
         private static readonly Guid streamId = Guid.NewGuid();
         private static readonly Guid streamId2 = Guid.NewGuid();
@@ -317,10 +318,134 @@ namespace Marten.Testing.Events.Projections
             var nullDocument2 = theSession.Load<QuestView>(streamId2);
             nullDocument2.ShouldBeNull();
         }
+
+        [Fact]
+        public async Task verify_viewprojection_from_class_async_with_load()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<BankAccount>();
+                _.Events.InlineProjections.Add<BankAccountViewProjection>();
+            });
+
+            var customer = new Customer { Id = Guid.NewGuid(), FullName = "Ron Artest" };
+
+            var firstBankAccountId = Guid.NewGuid();
+            var firstBankAccountNumber = "PL61109010140000071219812874";
+
+            var secondBankAccountId = Guid.NewGuid();
+            var secondBankAccountNumber = "PL61109010140000071219812874";
+
+            theSession.Insert(customer);
+
+            theSession.Events.Append(firstBankAccountId,
+                new BankAccountCreated
+                {
+                    BankAccountId = firstBankAccountId,
+                    CustomerId = customer.Id,
+                    Number = firstBankAccountNumber
+                });
+
+            theSession.Events.Append(secondBankAccountId,
+                new BankAccountCreated
+                {
+                    BankAccountId = secondBankAccountId,
+                    CustomerId = customer.Id,
+                    Number = secondBankAccountNumber
+                });
+
+            await theSession.SaveChangesAsync();
+
+            var firstBankAccountView = await theSession.LoadAsync<BankAccountView>(firstBankAccountId);
+            var secondBankAccountView = await theSession.LoadAsync<BankAccountView>(secondBankAccountId);
+
+            firstBankAccountView.ShouldNotBeNull();
+            firstBankAccountView.Id.ShouldBe(firstBankAccountId);
+            firstBankAccountView.Number.ShouldBe(firstBankAccountNumber);
+
+            firstBankAccountView.Customer.ShouldNotBeNull();
+            firstBankAccountView.Customer.Id.ShouldBe(customer.Id);
+            firstBankAccountView.Customer.FullName.ShouldBe(customer.FullName);
+
+            secondBankAccountView.ShouldNotBeNull();
+            secondBankAccountView.Id.ShouldBe(secondBankAccountId);
+            secondBankAccountView.Number.ShouldBe(secondBankAccountNumber);
+
+            secondBankAccountView.Customer.ShouldNotBeNull();
+            secondBankAccountView.Customer.Id.ShouldBe(customer.Id);
+            secondBankAccountView.Customer.FullName.ShouldBe(customer.FullName);
+
+            var updatedCustomerFullName = "Metta World Peace";
+            theSession.Events.Append(customer.Id,
+                new CustomerFullNameUpdated
+                {
+                    CustomerId = customer.Id,
+                    FullName = updatedCustomerFullName
+                });
+
+            await theSession.SaveChangesAsync();
+
+            firstBankAccountView = await theSession.LoadAsync<BankAccountView>(firstBankAccountId);
+            secondBankAccountView = await theSession.LoadAsync<BankAccountView>(firstBankAccountId);
+
+            firstBankAccountView.Customer.FullName.ShouldBe(customer.FullName);
+            secondBankAccountView.Customer.FullName.ShouldBe(customer.FullName);
+        }
+
+        [Fact]
+        public void verify_delete_and_store_events_on_same_stream_are_processed_in_order()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
+                    .DeleteEvent<QuestEnded>();
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+
+            theSession.Events.Append(streamId, ended);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldBeNull();
+
+            theSession.Events.Append(streamId, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+
+            theSession.Events.Append(streamId, ended, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+        }
+
+        [Fact]
+        public void verify_delete_and_with_nonexistent_streamId_does_not_throw()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
+                    .DeleteEvent<QuestEnded>();
+            });
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+
+            theSession.Events.Append(Guid.NewGuid(), ended);
+            theSession.SaveChanges();
+            theSession.Load<PersistedView>(streamId).ShouldNotBeNull();
+        }
     }
 
-    // SAMPLE: viewprojection-from-class
-    public class PersistAsyncViewProjection : ViewProjection<PersistedView, Guid>
+    // SAMPLE: viewprojection-from-class-async
+    public class PersistAsyncViewProjection: ViewProjection<PersistedView, Guid>
     {
         public PersistAsyncViewProjection()
         {
@@ -336,6 +461,93 @@ namespace Marten.Testing.Events.Projections
         {
             view.Events.Add(@event);
             return Task.CompletedTask;
+        }
+    }
+
+    // ENDSAMPLE
+
+    // SAMPLE: viewprojection-from-class-async-with-load
+
+    // Customer main aggregate
+    public class Customer
+    {
+        public Guid Id { get; set; }
+
+        public string FullName { get; set; }
+    }
+
+    // Event informing that customer full name was updated
+    public class CustomerFullNameUpdated
+    {
+        public Guid CustomerId { get; set; }
+
+        public string FullName { get; set; }
+    }
+
+    // Bank Account main aggregate
+    public class BankAccount
+    {
+        public Guid Id { get; set; }
+
+        // normalized reference with id to related aggregate
+        public Guid CustomerId { get; set; }
+
+        public string Number { get; set; }
+    }
+
+    //Bank Account created event with normalized data
+    public class BankAccountCreated
+    {
+        public Guid BankAccountId { get; set; }
+
+        public Guid CustomerId { get; set; }
+
+        public string Number { get; set; }
+    }
+
+    // Denormalized read model with full data of related document
+    public class BankAccountView
+    {
+        public Guid Id { get; set; }
+
+        // Full info about customer instead of just CustomerId
+        public Customer Customer { get; set; }
+
+        public string Number { get; set; }
+    }
+
+    public class BankAccountViewProjection: ViewProjection<BankAccountView, Guid>
+    {
+        public BankAccountViewProjection()
+        {
+            ProjectEventAsync<BankAccountCreated>(e => e.BankAccountId, PersistAsync);
+
+            // one customer might have more than one account
+            Func<IDocumentSession, CustomerFullNameUpdated, List<Guid>> selectCustomerBankAccountIds =
+                (ds, @event) => ds.Query<BankAccountView>()
+                                  .Where(a => a.Customer.Id == @event.CustomerId)
+                                  .Select(a => a.Id).ToList();
+
+            ProjectEvent<CustomerFullNameUpdated>(selectCustomerBankAccountIds, Persist);
+        }
+
+        private async Task PersistAsync
+        (
+            IDocumentSession documentSession,
+            BankAccountView view,
+            BankAccountCreated @event
+        )
+        {
+            // load asynchronously document to use it in denormalized view
+            var customer = await documentSession.LoadAsync<Customer>(@event.CustomerId);
+
+            view.Customer = customer;
+            view.Number = @event.Number;
+        }
+
+        private void Persist(BankAccountView view, CustomerFullNameUpdated @event)
+        {
+            view.Customer.FullName = @event.FullName;
         }
     }
 

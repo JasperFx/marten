@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
@@ -12,7 +12,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public void perfectly_sequential()
         {
-            var list = new List<long>() {3, 4, 5, 6, 7};
+            var list = new List<long>() { 3, 4, 5, 6, 7 };
 
             EventPage.IsCompletelySequential(list)
                 .ShouldBeTrue();
@@ -54,7 +54,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public void last_encountered_with_non_zero_page()
         {
-            var page = new EventPage(0, 100, new List<IEvent> {new Event<ProjectStarted>(new ProjectStarted())})
+            var page = new EventPage(0, 100, new List<IEvent> { new Event<ProjectStarted>(new ProjectStarted()) })
             {
                 NextKnownSequence = 0,
                 LastKnownSequence = 1000
@@ -77,7 +77,6 @@ namespace Marten.Testing.Events.Projections.Async
             };
 
             page.ShouldPause().ShouldBeTrue();
-
         }
 
         [Fact]
@@ -106,7 +105,6 @@ namespace Marten.Testing.Events.Projections.Async
             page.Sequences.Add(99);
 
             page.ShouldPause().ShouldBeTrue();
-
         }
     }
 }

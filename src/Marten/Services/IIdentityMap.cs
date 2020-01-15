@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace Marten.Services
@@ -10,9 +10,11 @@ namespace Marten.Services
         VersionTracker Versions { get; }
 
         T Get<T>(object id, TextReader json, Guid? version);
+
         T Get<T>(object id, Type concreteType, TextReader json, Guid? version);
 
         void Remove<T>(object id);
+
         void RemoveAllOfType(Type type);
 
         void Store<T>(object id, T entity, Guid? version = null);
@@ -22,6 +24,7 @@ namespace Marten.Services
         T Retrieve<T>(object id);
 
         IIdentityMap ForQuery();
+
         void ClearChanges();
     }
 }

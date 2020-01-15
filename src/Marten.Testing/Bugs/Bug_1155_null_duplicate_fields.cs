@@ -1,17 +1,17 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1155_null_duplicate_fields : IntegratedFixture
+    public class Bug_1155_null_duplicate_fields: IntegratedFixture
     {
         [Fact]
         public void when_enum_is_null_due_to_nullable_type()
         {
             StoreOptions(_ =>
             {
-                _.Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsInteger});
+                _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsInteger });
                 _.Schema.For<Target>().Duplicate(t => t.NullableColor);
             });
 
@@ -40,7 +40,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
-                _.Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsInteger});
+                _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsInteger });
                 _.Schema.For<Target>().Duplicate(t => t.Inner.Color);
             });
 
@@ -69,7 +69,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
-                _.Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});
+                _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString });
                 _.Schema.For<Target>().Duplicate(t => t.NullableColor);
             });
 
@@ -98,7 +98,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ =>
             {
-                _.Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString});
+                _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString });
                 _.Schema.For<Target>().Duplicate(t => t.Inner.Color);
             });
 
@@ -132,7 +132,7 @@ namespace Marten.Testing.Bugs
                 session.Store(new Target
                 {
                     Number = 1,
-                    Inner = new Target {Number = 2}
+                    Inner = new Target { Number = 2 }
                 });
 
                 session.SaveChanges();

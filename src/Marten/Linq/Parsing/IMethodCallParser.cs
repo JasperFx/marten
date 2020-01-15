@@ -31,5 +31,6 @@ namespace Marten.Linq.Parsing
         /// <returns></returns>
         IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);
     }
+
     // ENDSAMPLE
 }

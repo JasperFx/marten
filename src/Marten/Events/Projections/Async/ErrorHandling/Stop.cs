@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Projections.Async.ErrorHandling
 {
-    public class Stop : IExceptionAction
+    public class Stop: IExceptionAction
     {
         private readonly Action<Exception> _logger;
 

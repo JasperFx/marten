@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class CurrentVersionArgument : UpsertArgument
+    public class CurrentVersionArgument: UpsertArgument
     {
         public CurrentVersionArgument()
         {

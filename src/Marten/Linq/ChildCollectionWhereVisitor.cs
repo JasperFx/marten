@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.Expressions;
@@ -10,23 +11,28 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq
 {
-    public class ChildCollectionWhereVisitor : RelinqExpressionVisitor
+    public class ChildCollectionWhereVisitor: RelinqExpressionVisitor
     {
-        public static readonly Type[] ValidOperators = new[] {typeof(AnyResultOperator), typeof(ContainsResultOperator)};
+        public static readonly Type[] ValidOperators = new[] { typeof(AnyResultOperator), typeof(ContainsResultOperator) };
 
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
         private readonly Action<IWhereFragment> _registerFilter;
         private readonly QueryModel _query;
+        private readonly IQueryableDocument _mapping;
 
-        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter)
+        [Obsolete("Use the constructor that takes IQueryableDocument instead. This might be removed in v4.0.")]
+        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter) : this(serializer, expression, registerFilter, null)
+        {
+        }
+
+        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter, IQueryableDocument mapping)
         {
             _serializer = serializer;
             _expression = expression;
             _query = expression.QueryModel;
             _registerFilter = registerFilter;
-
-            
+            _mapping = mapping;
         }
 
         public void Parse()
@@ -44,12 +50,10 @@ namespace Marten.Linq
             var queryType = _query.SourceType();
             var isPrimitive = TypeMappings.HasTypeMapping(queryType);
 
-
-
             Visit(_expression);
 
             // Simple types
-            
+
             if (isPrimitive)
             {
                 var contains = _query.ResultOperators.OfType<ContainsResultOperator>().FirstOrDefault();
@@ -74,9 +78,8 @@ namespace Marten.Linq
                     return;
                 }
 
-                var @where = new CollectionAnyContainmentWhereFragment(members, _serializer, _expression);
+                var @where = new CollectionAnyContainmentWhereFragment(members, _serializer, _expression, _mapping);
                 _registerFilter(@where);
-
             }
         }
 

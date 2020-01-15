@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Storage;
@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class multi_tenancy_and_event_capture : IntegratedFixture
+    public class multi_tenancy_and_event_capture: IntegratedFixture
     {
         public static TheoryData<TenancyStyle> TenancyStyles = new TheoryData<TenancyStyle>
         {
@@ -16,7 +16,7 @@ namespace Marten.Testing.Events
         };
 
         [Theory]
-        [MemberData("TenancyStyles")]
+        [MemberData(nameof(TenancyStyles))]
         public void capture_events_for_a_tenant(TenancyStyle tenancyStyle)
         {
             InitStore(tenancyStyle);
@@ -39,7 +39,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("TenancyStyles")]
+        [MemberData(nameof(TenancyStyles))]
         public async Task capture_events_for_a_tenant_async(TenancyStyle tenancyStyle)
         {
             InitStore(tenancyStyle);
@@ -62,7 +62,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("TenancyStyles")]
+        [MemberData(nameof(TenancyStyles))]
         public void capture_events_for_a_tenant_with_string_identifier(TenancyStyle tenancyStyle)
         {
             InitStore(tenancyStyle, StreamIdentity.AsString);
@@ -85,7 +85,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("TenancyStyles")]
+        [MemberData(nameof(TenancyStyles))]
         public async Task capture_events_for_a_tenant_async_as_string_identifier(TenancyStyle tenancyStyle)
         {
             InitStore(tenancyStyle, StreamIdentity.AsString);
@@ -108,7 +108,7 @@ namespace Marten.Testing.Events
         }
 
         [Theory]
-        [MemberData("TenancyStyles")]
+        [MemberData(nameof(TenancyStyles))]
         public void append_to_events_a_second_time_with_same_tenant_id(TenancyStyle tenancyStyle)
         {
             InitStore(tenancyStyle);
@@ -148,7 +148,7 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
             }
 
-            Exception<MartenCommandException>.ShouldBeThrownBy(() =>
+            Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession("Red"))
                 {

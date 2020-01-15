@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Events.Projections.Async;
 using Oakton;
 

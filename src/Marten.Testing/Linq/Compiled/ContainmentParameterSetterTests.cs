@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Compiled;
@@ -13,7 +13,6 @@ namespace Marten.Testing.Linq.Compiled
 {
     public class ContainmentParameterSetterTests
     {
-
         [Fact]
         public void add_element_for_field()
         {
@@ -21,7 +20,7 @@ namespace Marten.Testing.Linq.Compiled
 
             var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer(), new MemberInfo[0]);
 
-            setter.AddElement(new [] {"position"}, field);
+            setter.AddElement(new[] { "position" }, field);
 
             setter.Elements[0].Member.Name.ShouldBe(nameof(Target.StringField));
         }
@@ -42,7 +41,7 @@ namespace Marten.Testing.Linq.Compiled
         public void can_build_out_dictionary_with_a_constant()
         {
             var setter = new ContainmentParameterSetter<Target>(new JsonNetSerializer(), new MemberInfo[0]);
-            setter.Constant(new string[] {"foo", "bar"}, "baz");
+            setter.Constant(new string[] { "foo", "bar" }, "baz");
 
             var target = new Target
             {
@@ -55,19 +54,18 @@ namespace Marten.Testing.Linq.Compiled
 
             dict["foo"].ShouldBeOfType<Dictionary<string, object>>()
                 ["bar"].ShouldBe("baz");
-           
         }
 
         [Fact]
         public void can_build_out_the_dictionary()
         {
-            var serializer = new JsonNetSerializer {EnumStorage = EnumStorage.AsString};
+            var serializer = new JsonNetSerializer { EnumStorage = EnumStorage.AsString };
 
             var setter = new ContainmentParameterSetter<Target>(serializer, new MemberInfo[0]);
 
-            setter.AddElement(new [] {"color"}, FindMembers.Member<Target>(x => x.Color));
-            setter.AddElement(new [] {"name"}, FindMembers.Member<Target>(x => x.String));
-            setter.AddElement(new [] {"rank"}, FindMembers.Member<Target>(x => x.Number));
+            setter.AddElement(new[] { "color" }, FindMembers.Member<Target>(x => x.Color));
+            setter.AddElement(new[] { "name" }, FindMembers.Member<Target>(x => x.String));
+            setter.AddElement(new[] { "rank" }, FindMembers.Member<Target>(x => x.Number));
 
             var target = new Target
             {
@@ -81,7 +79,6 @@ namespace Marten.Testing.Linq.Compiled
             dict["color"].ShouldBe(Colors.Blue);
             dict["name"].ShouldBe(target.String);
             dict["rank"].ShouldBe(5);
-
         }
 
         [Fact]
@@ -89,7 +86,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var serializer = new JsonNetSerializer { EnumStorage = EnumStorage.AsString };
 
-            var setter = new ContainmentParameterSetter<Target>(serializer, new MemberInfo[] {FindMembers.Member<Target>(x => x.Children)});
+            var setter = new ContainmentParameterSetter<Target>(serializer, new MemberInfo[] { FindMembers.Member<Target>(x => x.Children) });
 
             setter.AddElement(new[] { "color" }, FindMembers.Member<Target>(x => x.Color));
             setter.AddElement(new[] { "name" }, FindMembers.Member<Target>(x => x.String));
@@ -110,8 +107,5 @@ namespace Marten.Testing.Linq.Compiled
             parameter.NpgsqlDbType.ShouldBe(NpgsqlDbType.Jsonb);
             parameter.Value.ShouldBe("{\"Children\":[{\"color\":\"Blue\",\"name\":\"Ronald McDonald\",\"rank\":5}]}");
         }
-
-
-
     }
 }

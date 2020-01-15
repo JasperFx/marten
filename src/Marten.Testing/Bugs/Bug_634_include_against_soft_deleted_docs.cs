@@ -1,11 +1,11 @@
-﻿using System.Linq;
+using System.Linq;
 using Marten.Services.Includes;
 using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_634_include_against_soft_deleted_docs : IntegratedFixture
+    public class Bug_634_include_against_soft_deleted_docs: IntegratedFixture
     {
         public Bug_634_include_against_soft_deleted_docs()
         {
@@ -79,6 +79,4 @@ namespace Marten.Testing.Bugs
             }
         }
     }
-
-    
 }

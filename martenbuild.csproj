@@ -11,9 +11,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Bullseye" Version="2.3.0-rc.1" />
-    <PackageReference Include="SimpleExec" Version="4.2.0" />
-    <PackageReference Include="Westwind.Utilities" Version="3.0.20.4" />
+    <PackageReference Include="Bullseye" Version="3.0.0" />
+    <PackageReference Include="SimpleExec" Version="6.1.0" />
+    <PackageReference Include="Westwind.Utilities" Version="3.0.29" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <DotNetCliToolReference Include="dotnet-stdocs" Version="1.1.1" />
   </ItemGroup>
 
 </Project>

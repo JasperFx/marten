@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -27,8 +26,9 @@ namespace Marten.Events.Projections.Async
 
         public void Store(EventPage page)
         {
-            if (page.Count == 0) return;
-            
+            if (page.Count == 0)
+                return;
+
             if (First == null)
             {
                 First = page;
@@ -48,6 +48,5 @@ namespace Marten.Events.Projections.Async
                 First = First.Next;
             }
         }
-
     }
 }

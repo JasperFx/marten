@@ -1,8 +1,8 @@
-﻿using Oakton;
+using Oakton;
 
 namespace Marten.CommandLine
 {
-    public abstract class MartenCommand<T> : OaktonCommand<T> where T : MartenInput
+    public abstract class MartenCommand<T>: OaktonCommand<T> where T : MartenInput
     {
         public override bool Execute(T input)
         {

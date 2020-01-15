@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Marten.Schema;
 using Oakton;
 
@@ -7,7 +7,7 @@ namespace Marten.CommandLine.Commands.Patch
     [Description(
          "Evaluates the current configuration against the database and writes a patch and drop file if there are any differences"
      )]
-    public class PatchCommand : MartenCommand<PatchInput>
+    public class PatchCommand: MartenCommand<PatchInput>
     {
         public PatchCommand()
         {
@@ -20,7 +20,6 @@ namespace Marten.CommandLine.Commands.Patch
             {
                 store.Schema.AssertDatabaseMatchesConfiguration();
 
-
                 input.WriteLine(ConsoleColor.Green, "No differences were detected between the Marten configuration and the database");
 
                 return true;
@@ -32,7 +31,6 @@ namespace Marten.CommandLine.Commands.Patch
                 input.WriteLine(ConsoleColor.Green, "Wrote a patch file to " + input.FileName);
                 patch.WriteUpdateFile(input.FileName, input.TransactionalScriptFlag);
 
-
                 var dropFile = input.DropFlag ?? SchemaPatch.ToDropFileName(input.FileName);
 
                 input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + dropFile);
@@ -40,9 +38,6 @@ namespace Marten.CommandLine.Commands.Patch
 
                 return true;
             }
-
-
-
         }
     }
 }

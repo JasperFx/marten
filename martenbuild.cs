@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -6,11 +6,11 @@ using static Westwind.Utilities.FileUtils;
 
 namespace martenbuild
 {
-    class MartenBuild
+    internal class MartenBuild
     {
-        private const string BUILD_VERSION = "3.5.0";
+        private const string BUILD_VERSION = "3.10.0";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var configuration = Environment.GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
@@ -42,7 +42,7 @@ namespace martenbuild
 
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
-            
+
             Target("test", DependsOn("test-marten", "test-noda-time"));
 
             Target("storyteller", DependsOn("compile"), () =>
@@ -51,28 +51,15 @@ namespace martenbuild
             Target("open_st", DependsOn("compile"), () =>
                 Run("dotnet", $"storyteller open --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller"));
 
-            Target("docs-restore", () =>
-                Run("dotnet", "restore", "tools/stdocs"));
+            Target("docs", () =>
+                Run("dotnet", $"stdocs run -d documentation -c src -v {BUILD_VERSION}"));
 
-            Target("docs", DependsOn("docs-restore"), () =>
-                RunStoryTellerDocs($"run -d ../../documentation -c ../../src -v {BUILD_VERSION}"));
-
-            // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
             Target("publish-docs", () =>
             {
-                const string docTargetDir = "doc-target";
-
-                Run("git", $"clone -b gh-pages https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
-                // if you are not using git --global config, un-comment the block below, update and use it
-                // Run("git", "config user.email user_email", docTargetDir);
-                // Run("git", "config user.name user_name", docTargetDir);
-
-                RunStoryTellerDocs(
-                    $"export ../../{docTargetDir} ProjectWebsite -d ../../documentation -c ../../src -v {BUILD_VERSION} --project marten");
-
-                Run("git", "add --all", docTargetDir);
-                Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
-                Run("git", "push origin gh-pages", docTargetDir);
+                // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
+                PublishDocs(branchName: "gh-pages", exportWithGithubProjectPrefix: true);
+                // Exports the documentation to Netlify - martendb.io - requires Git access to that repo though!
+                PublishDocs(branchName: "gh-pages-netlify", exportWithGithubProjectPrefix: false);
             });
 
             Target("benchmarks", () =>
@@ -92,6 +79,23 @@ namespace martenbuild
                 Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
 
             RunTargetsAndExit(args);
+        }
+
+        private static void PublishDocs(string branchName, bool exportWithGithubProjectPrefix, string docTargetDir = "doc-target")
+        {
+            Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
+            // if you are not using git --global config, un-comment the block below, update and use it
+            // Run("git", "config user.email user_email", docTargetDir);
+            // Run("git", "config user.name user_name", docTargetDir);
+
+            if (exportWithGithubProjectPrefix)
+                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
+            else
+                Run("dotnet", $"stdocs export {docTargetDir} Website -d documentation -c src -v {BUILD_VERSION}");
+
+            Run("git", "add --all", docTargetDir);
+            Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
+            Run("git", $"push origin {branchName}", docTargetDir);
         }
 
         private static string InitializeDirectory(string path)
@@ -125,22 +129,7 @@ namespace martenbuild
             baseDir.Delete(true);
         }
 
-        private static void RunNpm(string args)
-        {
-            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
-            {
-                Run("cmd.exe", $"/c npm {args}");
-            }
-            else
-            {
-                Run("npm", args);
-            }
-        }
-
-        private static void RunStoryTellerDocs(string args)
-        {
-            Run("dotnet", "restore", "tools/stdocs");
-            Run("dotnet", $"stdocs {args}", "tools/stdocs");
-        }
+        private static void RunNpm(string args) =>
+            Run("npm", args, windowsName: "cmd.exe", windowsArgs: $"/c npm {args}");
     }
 }

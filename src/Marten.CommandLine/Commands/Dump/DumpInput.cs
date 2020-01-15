@@ -1,8 +1,8 @@
-﻿using Oakton;
+using Oakton;
 
 namespace Marten.CommandLine.Commands.Dump
 {
-    public class DumpInput : MartenInput
+    public class DumpInput: MartenInput
     {
         [Description("File (or folder) location to write the DDL file")]
         public string FileName { get; set; }

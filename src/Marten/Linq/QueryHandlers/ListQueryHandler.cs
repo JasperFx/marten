@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class ListQueryHandler<T> : IQueryHandler<IReadOnlyList<T>>
+    public class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     {
         private readonly LinqQuery<T> _query;
 
@@ -27,7 +27,6 @@ namespace Marten.Linq.QueryHandlers
         {
             return _query.Selector.ReadAsync(reader, map, stats, token);
         }
-
 
         public void ConfigureCommand(CommandBuilder builder)
         {

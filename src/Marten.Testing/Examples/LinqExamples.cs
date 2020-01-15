@@ -1,7 +1,5 @@
-﻿using System;
-using System.Globalization;
+using System;
 using System.Linq;
-using Shouldly;
 using Marten.Util;
 
 namespace Marten.Testing.Examples
@@ -14,8 +12,8 @@ namespace Marten.Testing.Examples
             // Calling ToArray() just forces the query to be executed
             var targets = session.Query<Target>().ToArray();
         }
-        // ENDSAMPLE
 
+        // ENDSAMPLE
 
         // SAMPLE: query_by_basic_operators
         public void basic_operators(IDocumentSession session)
@@ -32,6 +30,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Number < 5);
             session.Query<Target>().Where(x => x.Number <= 5);
         }
+
         // ENDSAMPLE
 
         // SAMPLE: querying_with_and_or_or
@@ -43,6 +42,7 @@ namespace Marten.Testing.Examples
             // OR queries
             session.Query<Target>().Where(x => x.Number == 5 || x.Date == DateTime.Today);
         }
+
         // ENDSAMPLE
 
         // SAMPLE: deep_nested_properties
@@ -50,6 +50,7 @@ namespace Marten.Testing.Examples
         {
             session.Query<Target>().Where(x => x.Inner.Number == 3);
         }
+
         // ENDSAMPLE
 
         // SAMPLE: searching_within_string_fields
@@ -61,6 +62,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.Contains("something"));
             session.Query<Target>().Where(x => x.String.Equals("The same thing"));
         }
+
         // ENDSAMPLE
 
         // SAMPLE: searching_within_case_insensitive_string_fields
@@ -74,6 +76,7 @@ namespace Marten.Testing.Examples
 
             session.Query<Target>().Where(x => x.String.Equals("ThE SaMe ThInG", StringComparison.OrdinalIgnoreCase));
         }
+
         // ENDSAMPLE
 
         // SAMPLE: ordering-in-linq
@@ -88,6 +91,7 @@ namespace Marten.Testing.Examples
             // You can use multiple order by's
             session.Query<Target>().OrderBy(x => x.Date).ThenBy(x => x.Number);
         }
+
         // ENDSAMPLE
 
         // SAMPLE: using_take_and_skip
@@ -96,12 +100,13 @@ namespace Marten.Testing.Examples
             // gets records 11-20 from the database
             session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToArray();
         }
+
         // ENDSAMPLE
 
         // SAMPLE: select_a_single_value
         public void select_a_single_value(IDocumentSession session)
         {
-            // Single()/SingleOrDefault() will throw exceptions if more than 
+            // Single()/SingleOrDefault() will throw exceptions if more than
             // one result is returned from the database
             session.Query<Target>().Where(x => x.Number == 5).Single();
             session.Query<Target>().Where(x => x.Number == 5).SingleOrDefault();
@@ -115,6 +120,7 @@ namespace Marten.Testing.Examples
             // Using the query inside of Single/Last/First is supported as well
             session.Query<Target>().Single(x => x.Number == 5);
         }
+
         // ENDSAMPLE
 
         // SAMPLE: boolean_queries
@@ -132,6 +138,7 @@ namespace Marten.Testing.Examples
             // or
             session.Query<Target>().Where(x => x.Flag == false).ToArray();
         }
+
         // ENDSAMPLE
 
         // SAMPLE: query_by_nullable_types
@@ -144,9 +151,7 @@ namespace Marten.Testing.Examples
             // You can always search by field is NULL
             session.Query<Target>().Where(x => x.Inner == null);
         }
+
         // ENDSAMPLE
-
-
-
     }
 }

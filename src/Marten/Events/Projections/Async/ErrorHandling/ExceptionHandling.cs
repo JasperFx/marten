@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Baseline;
 using Baseline.Dates;
 
 namespace Marten.Events.Projections.Async.ErrorHandling
@@ -16,7 +15,6 @@ namespace Marten.Events.Projections.Async.ErrorHandling
         }
 
         public IExceptionAction DefaultAction { get; set; } = new Pause();
-
 
         public ExceptionExpression OnException<T>(Func<T, bool> filter = null) where T : Exception
         {

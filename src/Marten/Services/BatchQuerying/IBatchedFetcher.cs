@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -34,7 +34,9 @@ namespace Marten.Services.BatchQuerying
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<bool> Any(Expression<Func<T, bool>> filter);
+
         Task<IReadOnlyList<T>> ToList();
+
         Task<T> First();
 
         /// <summary>
@@ -50,10 +52,11 @@ namespace Marten.Services.BatchQuerying
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<T> FirstOrDefault();
+
         Task<T> FirstOrDefault(Expression<Func<T, bool>> filter);
 
         /// <summary>
-        /// Returns the single document of type "T" matching this query. Will 
+        /// Returns the single document of type "T" matching this query. Will
         /// throw an exception if the results are null or contain more than one
         /// document
         /// </summary>
@@ -62,7 +65,7 @@ namespace Marten.Services.BatchQuerying
         Task<T> Single();
 
         /// <summary>
-        /// Returns the single document of type "T" matching this query. Will 
+        /// Returns the single document of type "T" matching this query. Will
         /// throw an exception if the results are null or contain more than one
         /// document
         /// </summary>
@@ -71,7 +74,7 @@ namespace Marten.Services.BatchQuerying
         Task<T> Single(Expression<Func<T, bool>> filter);
 
         /// <summary>
-        /// Returns the single document of type "T" matching this query or null. Will 
+        /// Returns the single document of type "T" matching this query or null. Will
         /// throw an exception if the results contain more than one
         /// document
         /// </summary>
@@ -80,7 +83,7 @@ namespace Marten.Services.BatchQuerying
         Task<T> SingleOrDefault();
 
         /// <summary>
-        /// Returns the single document of type "T" matching this query or null. Will 
+        /// Returns the single document of type "T" matching this query or null. Will
         /// throw an exception if the results contain more than one
         /// document
         /// </summary>

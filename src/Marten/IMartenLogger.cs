@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
@@ -43,9 +43,10 @@ namespace Marten
         /// <param name="commit"></param>
         void RecordSavedChanges(IDocumentSession session, IChangeSet commit);
     }
+
     // ENDSAMPLE
 
-    public class NulloMartenLogger : IMartenLogger, IMartenSessionLogger
+    public class NulloMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         public IMartenSessionLogger StartSession(IQuerySession session)
         {
@@ -75,7 +76,7 @@ namespace Marten
     }
 
     // SAMPLE: ConsoleMartenLogger
-    public class ConsoleMartenLogger : IMartenLogger, IMartenSessionLogger
+    public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         public IMartenSessionLogger StartSession(IQuerySession session)
         {
@@ -92,7 +93,8 @@ namespace Marten
         public void LogSuccess(NpgsqlCommand command)
         {
             Console.WriteLine(command.CommandText);
-            foreach (var p in command.Parameters.OfType<NpgsqlParameter>()) {
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+            {
                 Console.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
         }
@@ -101,7 +103,8 @@ namespace Marten
         {
             Console.WriteLine("Postgresql command failed!");
             Console.WriteLine(command.CommandText);
-            foreach (var p in command.Parameters.OfType<NpgsqlParameter>()) {
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+            {
                 Console.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
             Console.WriteLine(ex);
@@ -114,6 +117,6 @@ namespace Marten
                 $"Persisted {lastCommit.Updated.Count()} updates, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
         }
     }
-    // ENDSAMPLE
 
+    // ENDSAMPLE
 }

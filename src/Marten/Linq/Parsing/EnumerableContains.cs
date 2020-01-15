@@ -7,7 +7,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.Parsing
 {
-    public class EnumerableContains : IMethodCallParser
+    public class EnumerableContains: IMethodCallParser
     {
         public bool Matches(MethodCallExpression expression)
         {
@@ -18,7 +18,8 @@ namespace Marten.Linq.Parsing
 
         private static bool typeMatches(Type type)
         {
-            if (type.IsGenericEnumerable()) return true;
+            if (type.IsGenericEnumerable())
+                return true;
 
             return type.Closes(typeof(IReadOnlyList<>));
         }
@@ -26,7 +27,7 @@ namespace Marten.Linq.Parsing
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var value = expression.Arguments.Single().Value();
-            return ContainmentWhereFragment.SimpleArrayContains(FindMembers.Determine(expression.Object) ,serializer, expression.Object, value);
+            return ContainmentWhereFragment.SimpleArrayContains(FindMembers.Determine(expression.Object), serializer, expression.Object, value);
         }
     }
 }

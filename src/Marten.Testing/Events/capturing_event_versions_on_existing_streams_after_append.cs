@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -9,13 +9,12 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class capturing_event_versions_on_existing_streams_after_append : IntegratedFixture
+    public class capturing_event_versions_on_existing_streams_after_append: IntegratedFixture
     {
-        public class RecordingSessionLogger : IMartenSessionLogger
+        public class RecordingSessionLogger: IMartenSessionLogger
         {
             public void LogSuccess(NpgsqlCommand command)
             {
-                
             }
 
             public void LogFailure(NpgsqlCommand command, Exception ex)

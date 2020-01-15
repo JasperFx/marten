@@ -53,6 +53,26 @@ namespace Marten.Testing.Linq
 
             cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT 1");
         }
+
+        [Fact]
+        public void preview_collection_any_containment_command()
+        {
+            var tags = new[] { "ONE", "TWO" };
+            var cmd = theSession.Query<Target>().Where(x => x.TagsArray.Any(t => tags.Contains(t))).ToCommand(FetchType.FetchMany);
+
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data ->> 'TagsArray' as jsonb) ?| :arg0");
+            cmd.Parameters["arg0"].Value.ShouldBe(tags);
+        }
+
+        [Fact]
+        public void preview_deep_collection_any_containment_command()
+        {
+            var tags = new[] { "ONE", "TWO" };
+            var cmd = theSession.Query<Target>().Where(x => x.Inner.TagsArray.Any(t => tags.Contains(t))).ToCommand(FetchType.FetchMany);
+
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data -> 'Inner' ->> 'TagsArray' as jsonb) ?| :arg0");
+            cmd.Parameters["arg0"].Value.ShouldBe(tags);
+        }
     }
 
     public class previewing_the_command_from_a_queryable_inb_different_schema_Tests : DocumentSessionFixture<NulloIdentityMap>

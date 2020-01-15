@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Marten.Events.Projections
 {
-    public class ProjectionCollection : IEnumerable<IProjection>
+    public class ProjectionCollection: IEnumerable<IProjection>
     {
         private readonly StoreOptions _options;
         private readonly IList<IProjection> _projections = new List<IProjection>();
@@ -31,7 +31,7 @@ namespace Marten.Events.Projections
         {
             var aggregator = _options.Events.AggregateFor<T>();
 
-            IAggregationFinder<T> finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
+            var finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
                 ? (IAggregationFinder<T>)new AggregateFinder<T>()
                 : new StringIdentifiedAggregateFinder<T>();
 
@@ -52,7 +52,8 @@ namespace Marten.Events.Projections
 
         public void Add(IProjection projection)
         {
-            if (projection == null) throw new ArgumentNullException(nameof(projection));
+            if (projection == null)
+                throw new ArgumentNullException(nameof(projection));
 
             if (projection is IDocumentProjection)
             {
@@ -71,7 +72,8 @@ namespace Marten.Events.Projections
         {
             var lazyLoadedProjection = new LazyLoadedProjection<T>(projectionFactory);
 
-            if (lazyLoadedProjection == null) throw new ArgumentNullException(nameof(lazyLoadedProjection));
+            if (lazyLoadedProjection == null)
+                throw new ArgumentNullException(nameof(lazyLoadedProjection));
 
             if (typeof(T).GetTypeInfo().IsAssignableFrom(typeof(IDocumentProjection).GetTypeInfo()))
             {

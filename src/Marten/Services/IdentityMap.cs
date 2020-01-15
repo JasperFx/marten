@@ -13,7 +13,7 @@ namespace Marten.Services
         Loaded
     }
 
-    public abstract class IdentityMap<TCacheValue> : IIdentityMap
+    public abstract class IdentityMap<TCacheValue>: IIdentityMap
     {
         private readonly IEnumerable<IDocumentSessionListener> _listeners;
 
@@ -35,7 +35,6 @@ namespace Marten.Services
 
         public T Get<T>(object id, Type concreteType, TextReader json, Guid? version)
         {
-
             if (Cache.Value.TryFind(typeof(T), out var t) && t.TryFind(id, out var value))
             {
                 return FromCache<T>(value);
@@ -57,7 +56,7 @@ namespace Marten.Services
         }
 
         public void Remove<T>(object id)
-        {	        
+        {
             Cache.Swap(c => c.AddOrUpdate(typeof(T),
                 (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).Remove(id)));
         }
@@ -71,7 +70,7 @@ namespace Marten.Services
         {
             if (version.HasValue)
                 Versions.Store<T>(id, version.Value);
-            
+
             if (Cache.Value.TryFind(typeof(T), out var dictionary) && dictionary.TryFind(id, out var value))
             {
                 var existing = FromCache<T>(value);
@@ -83,7 +82,7 @@ namespace Marten.Services
             _listeners.Each(listener => listener.DocumentAddedForStorage(id, entity));
 
             var cacheValue = ToCache(id, typeof(T), entity, null, UnitOfWorkOrigin.Stored);
-            
+
             Cache.Swap(c => c.AddOrUpdate(typeof(T),
                 (c.GetValueOrDefault(typeof(T)) ?? ImHashMap<object, TCacheValue>.Empty).AddOrUpdate(id, cacheValue)));
         }
@@ -94,7 +93,7 @@ namespace Marten.Services
         }
 
         public T Retrieve<T>(object id)
-        {            
+        {
             if (Cache.Value.TryFind(typeof(T), out var dict) && dict.TryFind(id, out var value))
             {
                 return FromCache<T>(value);
@@ -124,7 +123,7 @@ namespace Marten.Services
         protected abstract T FromCache<T>(TCacheValue cacheValue);
     }
 
-    public class IdentityMap : IdentityMap<object>
+    public class IdentityMap: IdentityMap<object>
     {
         public IdentityMap(ISerializer serializer, IEnumerable<IDocumentSessionListener> listeners)
             : base(serializer, listeners)

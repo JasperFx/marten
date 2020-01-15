@@ -6,7 +6,7 @@ namespace Marten.Schema
     /// Customize the PropertySearching mode of a single document type
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class PropertySearchingAttribute : MartenAttribute
+    public class PropertySearchingAttribute: MartenAttribute
     {
         private readonly PropertySearching _searching;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace Marten.Services
 {
-    public sealed class CharArrayTextWriter : TextWriter
+    public sealed class CharArrayTextWriter: TextWriter
     {
-        readonly MemoryPool<char> _pool;
-        IDisposable _owned;
-        Memory<char> _memory;
+        private readonly MemoryPool<char> _pool;
+        private IDisposable _owned;
+        private Memory<char> _memory;
 
-        int _next;
+        private int _next;
 
         public override Encoding Encoding => EncodingValue;
-        static readonly Encoding EncodingValue = new UnicodeEncoding(false, false);
+        private static readonly Encoding EncodingValue = new UnicodeEncoding(false, false);
 
         public CharArrayTextWriter() : this(new AllocatingMemoryPool<char>())
         {
@@ -34,7 +34,7 @@ namespace Marten.Services
             _next += 1;
         }
 
-        void Ensure(int i)
+        private void Ensure(int i)
         {
             var length = _memory.Length;
             if (length == 0)
@@ -47,7 +47,7 @@ namespace Marten.Services
             }
 
             var required = _next + i;
-            
+
             if (required < length)
             {
                 return;
@@ -78,7 +78,7 @@ namespace Marten.Services
             Write(span);
         }
 
-        void Write(ReadOnlySpan<char> span)
+        private void Write(ReadOnlySpan<char> span)
         {
             var length = span.Length;
 

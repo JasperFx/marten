@@ -1,13 +1,11 @@
-﻿using System;
+using System;
 using Marten.Services;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_276_Query_by_abstract_type_in_hierarchy : DocumentSessionFixture<IdentityMap>
+    public class Bug_276_Query_by_abstract_type_in_hierarchy: DocumentSessionFixture<IdentityMap>
     {
-
         public Bug_276_Query_by_abstract_type_in_hierarchy()
         {
             StoreOptions(_ =>
@@ -29,12 +27,13 @@ namespace Marten.Testing.Bugs
             public abstract string Type { get; }
         }
 
-        public class StatusActivity : Activity
+        public class StatusActivity: Activity
         {
             public override string Type
             {
                 get { return "StatusUpdate"; }
             }
+
             public string StatusText { get; set; }
         }
 

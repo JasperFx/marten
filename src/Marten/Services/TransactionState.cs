@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace Marten.Services
 {
-    public class TransactionState : IDisposable
+    public class TransactionState: IDisposable
     {
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
@@ -16,7 +16,7 @@ namespace Marten.Services
         public TransactionState(CommandRunnerMode mode, IsolationLevel isolationLevel, int? commandTimeout, NpgsqlConnection connection, bool ownsConnection, NpgsqlTransaction transaction = null)
         {
             _mode = mode;
-            _isolationLevel = isolationLevel;            
+            _isolationLevel = isolationLevel;
             _ownsConnection = ownsConnection;
             Transaction = transaction;
             Connection = connection;
@@ -26,7 +26,7 @@ namespace Marten.Services
         public TransactionState(IConnectionFactory factory, CommandRunnerMode mode, IsolationLevel isolationLevel, int? commandTimeout, bool ownsConnection)
         {
             _mode = mode;
-            _isolationLevel = isolationLevel;            
+            _isolationLevel = isolationLevel;
             _ownsConnection = ownsConnection;
             Connection = factory.Create();
             _commandTimeout = commandTimeout ?? Connection.CommandTimeout;
@@ -57,7 +57,8 @@ namespace Marten.Services
 
         public void BeginTransaction()
         {
-            if (Transaction != null || _mode == CommandRunnerMode.External) return;
+            if (Transaction != null || _mode == CommandRunnerMode.External)
+                return;
 
             if (_mode == CommandRunnerMode.Transactional || _mode == CommandRunnerMode.ReadOnly)
             {
@@ -77,7 +78,8 @@ namespace Marten.Services
         public void Apply(NpgsqlCommand cmd)
         {
             cmd.Connection = Connection;
-            if (Transaction != null) cmd.Transaction = Transaction;
+            if (Transaction != null)
+                cmd.Transaction = Transaction;
             cmd.CommandTimeout = _commandTimeout;
         }
 
@@ -105,14 +107,13 @@ namespace Marten.Services
             if (Transaction != null && _mode != CommandRunnerMode.External)
             {
                 await Transaction.CommitAsync(token).ConfigureAwait(false);
-
-                Transaction.Dispose();
+                await Transaction.DisposeAsync().ConfigureAwait(false);
                 Transaction = null;
             }
 
             if (_ownsConnection)
             {
-                Connection.Close();
+                await Connection.CloseAsync().ConfigureAwait(false);
             }
         }
 
@@ -122,8 +123,8 @@ namespace Marten.Services
             {
                 try
                 {
-                    Transaction?.Rollback();
-                    Transaction?.Dispose();
+                    Transaction.Rollback();
+                    Transaction.Dispose();
                     Transaction = null;
                 }
                 catch (Exception e)
@@ -144,7 +145,7 @@ namespace Marten.Services
                 try
                 {
                     await Transaction.RollbackAsync(token).ConfigureAwait(false);
-                    Transaction.Dispose();
+                    await Transaction.DisposeAsync().ConfigureAwait(false);
                     Transaction = null;
                 }
                 catch (Exception e)
@@ -153,7 +154,7 @@ namespace Marten.Services
                 }
                 finally
                 {
-                    Connection.Close();
+                    await Connection.CloseAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -176,13 +177,14 @@ namespace Marten.Services
         public NpgsqlCommand CreateCommand()
         {
             var cmd = Connection.CreateCommand();
-            if (Transaction != null) cmd.Transaction = Transaction;
+            if (Transaction != null)
+                cmd.Transaction = Transaction;
 
             return cmd;
         }
     }
 
-    public class RollbackException : Exception
+    public class RollbackException: Exception
     {
         public RollbackException(Exception innerException) : base("Failed while trying to rollback an exception", innerException)
         {

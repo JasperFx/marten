@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Testing.Schema.Identity.Sequences;
 using Xunit;
@@ -28,7 +28,6 @@ namespace Marten.Testing.Schema
                     _.Connection(ConnectionSource.ConnectionString);
                 }))
                 {
-
                     // Store issues a command to verify & create event store schemas
                     using (var s = store.OpenSession())
                     {
@@ -39,7 +38,7 @@ namespace Marten.Testing.Schema
                     store2.Advanced.Clean.CompletelyRemoveAll();
 
                     // Path to check schemas should not be executed -> exception
-                    var e = Assert.Throws<MartenCommandException>(() =>
+                    var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
                     {
                         using (var s = store.OpenSession())
                         {
@@ -49,7 +48,7 @@ namespace Marten.Testing.Schema
 
                     Assert.Contains("relation \"public.mt_streams\" does not exist", e.Message);
                     // We should have enabled the feature, i.e. also generated & executed DDL
-                    Assert.True(dllLog.Sql.Any(x => x.IndexOf("mt_append_event") > -1));
+                    Assert.Contains(dllLog.Sql, x => x.IndexOf("mt_append_event") > -1);
                 }
             }
         }
@@ -77,7 +76,6 @@ namespace Marten.Testing.Schema
                     _.Connection(ConnectionSource.ConnectionString);
                 }))
                 {
-
                     store2.Advanced.Clean.CompletelyRemoveAll();
                 }
 

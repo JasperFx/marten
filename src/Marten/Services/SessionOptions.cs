@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Data;
+using System.Collections.Generic;
 using Marten.Storage;
 using Npgsql;
 
@@ -7,7 +6,6 @@ namespace Marten.Services
 {
     public sealed class SessionOptions
     {
-
         /// <summary>
         /// Default to DocumentTracking.IdentityOnly
         /// </summary>
@@ -27,8 +25,6 @@ namespace Marten.Services
         ///     Add, remove, or reorder local session listeners
         /// </summary>
         public readonly IList<IDocumentSessionListener> Listeners = new List<IDocumentSessionListener>();
-
-        
 
         /// <summary>
         /// Override the tenant id for the requested session
@@ -52,7 +48,7 @@ namespace Marten.Services
 
         /// <summary>
         /// Default is true. If false, Marten will issue commands on IDocumentSession.SaveChanges/SaveChangesAsync,
-        /// but will **not** commit the transaction 
+        /// but will **not** commit the transaction
         /// </summary>
         public bool OwnsTransactionLifecycle { get; set; } = true;
 
@@ -95,9 +91,6 @@ namespace Marten.Services
         /// Enlist the session in this transaction
         /// </summary>
         public System.Transactions.Transaction DotNetTransaction { get; set; }
-
-        
-
 
         /// <summary>
         /// Open a session that enlists in the current, ambient TransactionScope

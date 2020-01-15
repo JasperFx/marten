@@ -1,12 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
-using Marten.Schema;
-using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_837_missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema : IntegratedFixture
+    public class Bug_837_missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema: IntegratedFixture
     {
         [Fact]
         public void missing_func_mt_immutable_timestamp_when_initializing_with_new_Schema()

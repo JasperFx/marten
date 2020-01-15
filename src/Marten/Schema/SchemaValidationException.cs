@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Schema
 {
-    public class SchemaValidationException : Exception
+    public class SchemaValidationException: Exception
     {
         public SchemaValidationException(string ddl)
             : base("Configuration to Schema Validation Failed! These changes detected:\n\n" + ddl)

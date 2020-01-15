@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq.Compatibility
 {
-    public class select_transforms : LinqTestContext<DefaultQueryFixture, select_transforms>
+    public class select_transforms: LinqTestContext<DefaultQueryFixture, select_transforms>
     {
         public select_transforms(DefaultQueryFixture fixture) : base(fixture)
         {
@@ -13,9 +13,9 @@ namespace Marten.Testing.Linq.Compatibility
 
         static select_transforms()
         {
-            selectInOrder(docs => docs.OrderBy(x => x.Id).Take(10).Select(x => new Person{Name = x.String, Number = x.Number}));
+            selectInOrder(docs => docs.OrderBy(x => x.Id).Take(10).Select(x => new Person { Name = x.String, Number = x.Number }));
         }
-        
+
         [Theory]
         [MemberData(nameof(GetDescriptions))]
         public Task run_query(string description)
