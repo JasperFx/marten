@@ -14,7 +14,6 @@ namespace Marten.Storage
                 throw new ArgumentOutOfRangeException(nameof(type));
             Name = name.ToLower().Trim();
             Type = type.ToLower().Trim();
-
         }
 
         public TableColumn(string name, string type, string directive) : this(name, type)
