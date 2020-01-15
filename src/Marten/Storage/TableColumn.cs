@@ -10,8 +10,8 @@ namespace Marten.Storage
         {
             if (string.IsNullOrEmpty(name)) throw new ArgumentOutOfRangeException(nameof(name));
             if (string.IsNullOrEmpty(type)) throw new ArgumentOutOfRangeException(nameof(type));
-            Name = name.ToLower();
-            Type = type.ToLower();
+            Name = name.ToLower().Trim();
+            Type = type.ToLower().Trim();
         }
 
         public TableColumn(string name, string type, string directive) : this(name, type)
