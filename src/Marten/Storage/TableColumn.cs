@@ -8,9 +8,9 @@ namespace Marten.Storage
     {
         public TableColumn(string name, string type)
         {
-            if (string.IsNullOrEmpty(name)) 
+            if (string.IsNullOrEmpty(name))
                 throw new ArgumentOutOfRangeException(nameof(name));
-            if (string.IsNullOrEmpty(type)) 
+            if (string.IsNullOrEmpty(type))
                 throw new ArgumentOutOfRangeException(nameof(type));
             Name = name.ToLower().Trim();
             Type = type.ToLower().Trim();
