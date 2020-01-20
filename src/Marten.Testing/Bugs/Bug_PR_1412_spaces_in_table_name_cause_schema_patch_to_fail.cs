@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -56,24 +57,19 @@ namespace Marten.Testing.Bugs
             }
         }
         [Fact]
-        public void space_after_table_name_does_not_cause_exception()
+        public void space_after_table_name_does_not_cause_exception_on_update()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Storage.Add(new spaceAfterTableNameSchema());
             });
-            try
+            Should.NotThrow(() =>
             {
+                // Calling twice because create can succeed, but update fails
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Exception during space_after_table_name_does_not_cause_exception");
-                Debug.WriteLine(e.ToString());
-                Assert.False(true, e.ToString());
-            }
+            });
         }
         internal class spaceBeforeTableNameSchema: testSchema
         {
@@ -88,24 +84,19 @@ namespace Marten.Testing.Bugs
             }
         }
         [Fact]
-        public void space_before_table_name_does_not_cause_exception()
+        public void space_before_table_name_does_not_cause_exception_on_update()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Storage.Add(new spaceBeforeTableNameSchema());
             });
-            try
+            Should.NotThrow(() =>
             {
+                // Calling twice because create can succeed, but update fails
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Exception during space_before_table_name_does_not_cause_exception");
-                Debug.WriteLine(e.ToString());
-                Assert.False(true, e.ToString());
-            }
+            });
         }
         internal class spaceInNameSchema: testSchema
         {
@@ -120,24 +111,19 @@ namespace Marten.Testing.Bugs
             }
         }
         [Fact]
-        public void space_in_table_name_does_not_cause_exception()
+        public void space_in_table_name_does_not_cause_exception_on_update()
         {
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Storage.Add(new spaceInNameSchema());
             });
-            try
+            Should.NotThrow(() =>
             {
+                // Calling twice because create can succeed, but update fails
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Exception during space_in_table_name_does_not_cause_exception");
-                Debug.WriteLine(e.ToString());
-                Assert.False(true, e.ToString());
-            }
+            });
         }
     }
 }
