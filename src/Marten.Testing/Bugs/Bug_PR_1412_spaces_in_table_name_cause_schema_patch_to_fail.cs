@@ -66,9 +66,8 @@ namespace Marten.Testing.Bugs
             });
             Should.NotThrow(() =>
             {
-                // Calling twice because create can succeed, but update fails
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+                theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
         }
         internal class spaceBeforeTableNameSchema: testSchema
@@ -93,9 +92,8 @@ namespace Marten.Testing.Bugs
             });
             Should.NotThrow(() =>
             {
-                // Calling twice because create can succeed, but update fails
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+                theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
         }
         internal class spaceInNameSchema: testSchema
@@ -120,9 +118,8 @@ namespace Marten.Testing.Bugs
             });
             Should.NotThrow(() =>
             {
-                // Calling twice because create can succeed, but update fails
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+                theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
         }
     }
