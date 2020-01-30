@@ -65,17 +65,21 @@ namespace Marten.Schema.Identity.Sequences
         {
             lock (_lock)
             {
-                if (ShouldAdvanceHi())
+                var retryCount = 0;
+                while(ShouldAdvanceHi())
                 {
                     try
                     {
                         AdvanceToNextHi();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // Retry once.
                         Thread.Sleep(50);
-                        AdvanceToNextHi();
+                        retryCount++;
+                        if(retryCount> 3)
+                        {
+                            throw ex;
+                        }
                     }
                 }
 
@@ -91,7 +95,7 @@ namespace Marten.Schema.Identity.Sequences
 
                 try
                 {
-                    var tx = conn.BeginTransaction(IsolationLevel.Serializable);
+                    var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
                     var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
                         .With("entity", _entityName)
                         .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
