@@ -13,9 +13,9 @@ namespace Marten.Testing.Schema.Identity.Sequences
     public class Bug_1404_Hilo_concurrent_update_failure
     {
         [Fact]
-        public async void only_generated_once_default_connection_string_schema()
+        public void only_generated_once_default_connection_string_schema()
         {
-            await Task.WhenAll(new Task[]
+            Task.WaitAll(new Task[]
             {
                 Task.Run(()=> Hammertime()),
                 Task.Run(()=> Hammertime()),

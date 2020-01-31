@@ -65,24 +65,10 @@ namespace Marten.Schema.Identity.Sequences
         {
             lock (_lock)
             {
-                var retryCount = 0;
-                while(ShouldAdvanceHi())
+                if(ShouldAdvanceHi())
                 {
-                    try
-                    {
-                        AdvanceToNextHi();
-                    }
-                    catch (Exception ex)
-                    {
-                        Thread.Sleep(50);
-                        retryCount++;
-                        if(retryCount> 3)
-                        {
-                            throw ex;
-                        }
-                    }
+                    AdvanceToNextHi();
                 }
-
                 return AdvanceValue();
             }
         }
@@ -95,14 +81,26 @@ namespace Marten.Schema.Identity.Sequences
 
                 try
                 {
-                    var tx = conn.BeginTransaction(IsolationLevel.ReadCommitted);
-                    var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
-                        .With("entity", _entityName)
-                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
+                    var attempts = 0;
+                    do
+                    {
+                        attempts++;
 
-                    tx.Commit();
+                        // GetNextFunction is expected to return -1 if it's unable to
+                        // atomically secure the next hi
+                        var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
+                            .With("entity", _entityName)
+                            .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 
-                    CurrentHi = Convert.ToInt64(raw);
+                        CurrentHi = Convert.ToInt64(raw);
+
+                    } while (CurrentHi < 0 && attempts < 20);
+
+                    // if CurrentHi is still less than 1 at this point, then throw exception
+                    if (CurrentHi < 0)
+                    {
+                        throw new Exception("Unable to advance hi sequence");
+                    }
                 }
                 finally
                 {
