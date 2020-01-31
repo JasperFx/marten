@@ -181,6 +181,32 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void create_multi_property_string_index_with_casing()
+        {
+            StoreOptions(_ =>
+            {
+                var columns = new Expression<Func<Target, object>>[]
+                {
+                    x => x.String,
+                    x => x.StringField
+                };
+                _.Schema.For<Target>().Index(columns, c => c.Casing = ComputedIndex.Casings.Upper);
+            });
+
+            var data = Target.GenerateRandomData(100).ToArray();
+            theStore.BulkInsert(data.ToArray());
+
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
+                .Single(x => x.Name == "mt_doc_target_idx_stringstring_field")
+                .DDL
+                .ToLower();
+
+            ddl.ShouldContain("index mt_doc_target_idx_stringstring_field");
+
+            ddl.ShouldContain("(upper((data ->> 'string'::text)), upper((data ->> 'stringfield'::text)))");
+        }
+
+        [Fact]
         public void creating_index_using_date_should_work()
         {
             StoreOptions(_ =>

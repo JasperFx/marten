@@ -10,8 +10,7 @@ namespace Marten.Schema
     public class ComputedIndex: IIndexDefinition
     {
         private readonly MemberInfo[][] _members;
-        private string _locator;
-        private readonly DbObjectName _table;
+        private readonly DocumentMapping _mapping;
         private string _indexName;
 
         public ComputedIndex(DocumentMapping mapping, MemberInfo[] memberPath)
@@ -22,28 +21,7 @@ namespace Marten.Schema
         public ComputedIndex(DocumentMapping mapping, MemberInfo[][] members)
         {
             _members = members;
-
-            var mebersLocator = members
-                    .Select(m =>
-                    {
-                        var sql = mapping.FieldFor(m).SqlLocator.Replace("d.", "");
-                        switch (Casing)
-                        {
-                            case Casings.Upper:
-                                return $" upper({sql})";
-
-                            case Casings.Lower:
-                                return $" lower({sql})";
-
-                            default:
-                                return $" ({sql})";
-                        }
-                    })
-                    .Join(",");
-
-            _locator = $" {mebersLocator}";
-
-            _table = mapping.Table;
+            _mapping = mapping;
         }
 
         /// <summary>
@@ -107,32 +85,39 @@ namespace Marten.Schema
                 index += " CONCURRENTLY";
             }
 
-            index += $" {IndexName} ON {_table.QualifiedName}";
+            index += $" {IndexName} ON {_mapping.Table.QualifiedName}";
 
             if (Method != IndexMethod.btree)
             {
                 index += $" USING {Method}";
             }
 
+            var membersLocator = _members
+                .Select(m =>
+                {
+                    var sql = _mapping.FieldFor(m).SqlLocator.Replace("d.", "");
+                    switch (Casing)
+                    {
+                        case Casings.Upper:
+                            return $" upper({sql})";
+
+                        case Casings.Lower:
+                            return $" lower({sql})";
+
+                        default:
+                            return $" ({sql})";
+                    }
+                })
+                .Join(",");
+
+            var locator = $"{membersLocator}";
+
             if (TenancyScope == TenancyScope.PerTenant)
             {
-                _locator = $"{_locator}, tenant_id";
+                locator = $"{locator}, tenant_id";
             }
 
-            switch (Casing)
-            {
-                case Casings.Upper:
-                    index += $" (upper({_locator}))";
-                    break;
-
-                case Casings.Lower:
-                    index += $" (lower({_locator}))";
-                    break;
-
-                default:
-                    index += $" ({_locator})";
-                    break;
-            }
+            index += " (" + locator + ")";
 
             // Only the B-tree index type supports modifying the sort order, and ascending is the default
             if (Method == IndexMethod.btree && SortOrder == SortOrder.Desc)
@@ -151,7 +136,7 @@ namespace Marten.Schema
 
         private string GenerateIndexName()
         {
-            var name = _table.Name;
+            var name = _mapping.Table.Name;
 
             name += IsUnique ? "_uidx_" : "_idx_";
 
