@@ -94,7 +94,7 @@ namespace Marten.Schema.Identity.Sequences
 
                         CurrentHi = Convert.ToInt64(raw);
 
-                    } while (CurrentHi < 0 && attempts < 20);
+                    } while (CurrentHi < 0 && attempts < 30);
 
                     // if CurrentHi is still less than 1 at this point, then throw exception
                     if (CurrentHi < 0)

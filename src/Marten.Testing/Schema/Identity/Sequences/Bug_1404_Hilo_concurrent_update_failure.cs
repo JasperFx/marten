@@ -15,6 +15,15 @@ namespace Marten.Testing.Schema.Identity.Sequences
         [Fact]
         public void generate_hilo_in_highly_concurrent_scenarios()
         {
+            // ensure we create required DB objects since the concurrent
+            // test could potentially create the same DB objects at the same time
+            var store = CreateDocumentStore();
+            using(var session = store.OpenSession())
+            {
+                session.InsertObjects(TargetIntId.GenerateRandomData(1));
+                session.SaveChanges();
+            }
+
             Task.WaitAll(new Task[]
             {
                 Task.Run(()=> Hammertime()),
@@ -26,12 +35,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
         private void Hammertime()
         {
-            using (var store = DocumentStore.For(_ =>
-            {
-                 _.HiloSequenceDefaults.MaxLo = 1;
-                 _.Connection(ConnectionSource.ConnectionString);
-                 _.AutoCreateSchemaObjects = AutoCreate.All;
-             }))
+            using (var store = CreateDocumentStore())
             {
                 using (var session = store.OpenSession())
                 {
@@ -41,6 +45,16 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 }
                 
             }
+        }
+
+        private DocumentStore CreateDocumentStore()
+        {
+            return DocumentStore.For(_ =>
+            {
+                _.HiloSequenceDefaults.MaxLo = 1;
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+            });
         }
     }
 }
