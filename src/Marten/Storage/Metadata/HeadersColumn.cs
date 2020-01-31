@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
@@ -9,8 +8,6 @@ using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
-using Marten.Linq.Fields;
-using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using NpgsqlTypes;
@@ -35,7 +32,7 @@ namespace Marten.Storage.Metadata
                 return;
             }
 
-            var json = reader.GetTextReader(index);
+            var json = reader.GetStream(index);
             metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(json);
         }
 
@@ -47,7 +44,7 @@ namespace Marten.Storage.Metadata
                 return;
             }
 
-            var json = reader.GetTextReader(index);
+            var json = reader.GetStream(index);
             metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(json);
         }
 

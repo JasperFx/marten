@@ -212,7 +212,7 @@ namespace Marten.Events
                 mapping = Events.EventMappingFor(type);
             }
 
-            var dataJson = reader.GetTextReader(0);
+            var dataJson = reader.GetStream(0);
             var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
 
             var @event = mapping.Wrap(data);
@@ -247,7 +247,7 @@ namespace Marten.Events
                 mapping = Events.EventMappingFor(type);
             }
 
-            var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0, token);
+            var dataJson = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
             var data = _serializer.FromJson(mapping.DocumentType, dataJson);
 
             var @event = mapping.Wrap(data);

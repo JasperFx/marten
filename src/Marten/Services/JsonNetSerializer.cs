@@ -13,8 +13,6 @@ namespace Marten.Services
         private readonly ArrayPool<char> _charPool = ArrayPool<char>.Create();
         private readonly JsonArrayPool<char> _jsonArrayPool;
 
-
-
         private readonly JsonSerializer _clean = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.None,
@@ -61,9 +59,9 @@ namespace Marten.Services
             _withTypes.TypeNameHandling = TypeNameHandling.Objects;
         }
 
-        public void ToJson(object document, TextWriter writer)
+        public void ToJson(object document, Stream stream)
         {
-            using var jsonWriter = new JsonTextWriter(writer)
+            using var jsonWriter = new JsonTextWriter(new StreamWriter(stream))
             {
                 ArrayPool = _jsonArrayPool,
                 CloseOutput = false,
@@ -73,15 +71,18 @@ namespace Marten.Services
 
             _serializer.Serialize(jsonWriter, document);
 
-            writer.Flush();
+            jsonWriter.Flush();
         }
 
         public string ToJson(object document)
         {
-            var writer = new StringWriter();
-            ToJson(document, writer);
+            using var stream = new MemoryStream();
+            ToJson(document, stream);
 
-            return writer.ToString();
+            stream.Seek(0, SeekOrigin.Begin);
+            stream.Position = 0;
+            var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
         }
 
         public T FromJson<T>(Stream stream)
@@ -106,9 +107,9 @@ namespace Marten.Services
             return _serializer.Deserialize<T>(jsonReader);
         }
 
-        public object FromJson(Type type, TextReader reader)
+        public object FromJson(Type type, Stream stream)
         {
-            using var jsonReader = new JsonTextReader(reader)
+            using var jsonReader = new JsonTextReader(new StreamReader(stream))
             {
                 ArrayPool = _jsonArrayPool,
                 CloseInput = false

@@ -15,7 +15,7 @@ namespace Marten.Linq.Selectors
 
         public T Resolve(DbDataReader reader)
         {
-            using var json = reader.GetTextReader(0);
+            using var json = reader.GetStream(0);
             return _serializer.FromJson<T>(json);
         }
 

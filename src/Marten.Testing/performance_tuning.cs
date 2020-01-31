@@ -1,14 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using Baseline;
 using Jil;
-using Marten.Linq;
-using Marten.Schema;
 using Marten.Services;
-using Marten.Testing.Documents;
 
 namespace Marten.Testing
 {
@@ -18,9 +11,11 @@ namespace Marten.Testing
         private readonly Options _options
             = new Options(dateFormat: DateTimeFormat.ISO8601, includeInherited:true);
 
-        public void ToJson(object document, TextWriter writer)
+        public void ToJson(object document, Stream stream)
         {
+            using var writer = new StreamWriter(stream);
             JSON.Serialize(document, writer, _options);
+            writer.Flush();
         }
 
         public string ToJson(object document)
@@ -28,14 +23,14 @@ namespace Marten.Testing
             return JSON.Serialize(document, _options);
         }
 
-        public T FromJson<T>(TextReader reader)
+        public T FromJson<T>(Stream stream)
         {
-            return JSON.Deserialize<T>(reader, _options);
+            return JSON.Deserialize<T>(new StreamReader(stream), _options);
         }
 
-        public object FromJson(Type type, TextReader reader)
+        public object FromJson(Type type, Stream stream)
         {
-            return JSON.Deserialize(reader, type, _options);
+            return JSON.Deserialize(new StreamReader(stream), type, _options);
         }
 
         public string ToCleanJson(object document)

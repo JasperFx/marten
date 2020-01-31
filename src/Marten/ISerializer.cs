@@ -7,11 +7,9 @@ namespace Marten
     public interface ISerializer
     {
         /// <summary>
-        /// Serialize the document object into <paramref name="writer"/>.
+        /// Serialize the document object into <paramref name="stream"/>.
         /// </summary>
-        /// <param name="document"></param>
-        /// <param name="writer"></param>
-        void ToJson(object document, TextWriter writer);
+        void ToJson(object document, Stream stream);
 
         /// <summary>
         /// Serialize the document object into a JSON string
@@ -23,18 +21,12 @@ namespace Marten
         /// <summary>
         /// Deserialize a JSON string into an object of type T
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="reader"></param>
-        /// <returns></returns>
-        T FromJson<T>(TextReader reader);
+        T FromJson<T>(Stream stream);
 
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="reader"></param>
-        /// <returns></returns>
-        object FromJson(Type type, TextReader reader);
+        object FromJson(Type type, Stream stream);
 
         /// <summary>
         /// Serialize a document without any extra
@@ -54,16 +46,6 @@ namespace Marten
         /// Specify whether properties in the JSON document should use Camel or Pascal casing.
         /// </summary>
         Casing Casing { get; }
-
-        /// <summary>
-        /// Specify whether collections should be stored as json arrays (without type names)
-        /// </summary>
-        CollectionStorage CollectionStorage { get; }
-
-        /// <summary>
-        /// Specify whether non public members should be used during deserialization
-        /// </summary>
-        NonPublicMembersStorage NonPublicMembersStorage { get; }
 
         /// <summary>
         /// Write the JSON for a document with embedded

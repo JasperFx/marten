@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using System.Text;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
@@ -51,10 +52,10 @@ namespace Marten.Testing.Scenarios
             // ENDSAMPLE
 
             // SAMPLE: sample-scenarios-dynamic-insertandquery
-            using (var reader = new StringReader(jsonRecords))
+            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonRecords)))
             {
                 // Deserialize our document
-                var records = theStore.Serializer.FromJson<dynamic[]>(reader);
+                var records = theStore.Serializer.FromJson<dynamic[]>(stream);
                 var docs = records.Select(x => new TemperatureData { Values = x }).ToArray();
 
                 // Persist our records
