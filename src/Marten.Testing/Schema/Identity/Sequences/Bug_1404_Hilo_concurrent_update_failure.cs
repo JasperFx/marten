@@ -51,7 +51,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             return DocumentStore.For(_ =>
             {
-                _.HiloSequenceDefaults.MaxLo = 3;
+                _.HiloSequenceDefaults.MaxLo = 5;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
             });
