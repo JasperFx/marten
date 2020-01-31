@@ -86,7 +86,7 @@ namespace Marten.Schema.Identity.Sequences
                     {
                         attempts++;
 
-                        // GetNextFunction is expected to return -1 if it's unable to
+                        // Sproc is expected to return -1 if it's unable to
                         // atomically secure the next hi
                         var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
                             .With("entity", _entityName)
@@ -96,7 +96,7 @@ namespace Marten.Schema.Identity.Sequences
 
                     } while (CurrentHi < 0 && attempts < 30);
 
-                    // if CurrentHi is still less than 1 at this point, then throw exception
+                    // if CurrentHi is still less than 0 at this point, then throw exception
                     if (CurrentHi < 0)
                     {
                         throw new Exception("Unable to advance hi sequence");
