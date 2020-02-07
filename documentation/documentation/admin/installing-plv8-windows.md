@@ -26,9 +26,13 @@ You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from
 
 [PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit](http://www.postgresonline.com/journal/archives/379-PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit.htmll)
 
+[xTuple-PLV8-binaries-for-PostgreSQL-9.4-to-12-windows-64-bit](http://updates.xtuple.com/updates/plv8/win/xtuple_plv8.zip)
+
 Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)
 
 ## Install
+
+### Distributions from Postgres Online
 
 The zip should contain 3 folders:
 
@@ -52,6 +56,12 @@ The `Program Files` and `9.5` folders should correspond to the bit and version o
 
 > C:\Program Files (x86)\PostgreSQL\9.6\
 
+### Distributions from xTuple
+
+The zip contains the folders for all the supported versions and the install_plv8.bat file.
+
+Run the batch file from a command window running in administrative mode and provide the path for your Postgres installation.
+
 ## Create Extension
 
 Once you have moved all the files to the correct folder, you can now call the create extension again:
@@ -64,6 +74,13 @@ This time you should get the message like:
 
     sql> create extension plv8
     [2016-12-06 23:12:10] completed in 2s 271ms
+
+If you get the below error while using the xTuple distribution
+
+> ERROR:  syntax error in file "path_to_/plv8.control" line 1, near token ""
+> SQL state: 42601
+
+You need to ensure that the plv8.control is encoded with UTF-8. This is easiest to do with Notepad++.
 
 ## Testing out the extension
 
