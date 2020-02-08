@@ -21,6 +21,7 @@ namespace Marten.Linq
             new StringNotContains(),
             new StringNotStartsWith(),
             new StringNotEndsWith(),
+            new NotIn(),
             new IsNotOneOf()
         };
 
