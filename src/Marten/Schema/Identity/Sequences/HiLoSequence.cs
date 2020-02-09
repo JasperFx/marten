@@ -94,12 +94,12 @@ namespace Marten.Schema.Identity.Sequences
 
                         CurrentHi = Convert.ToInt64(raw);
 
-                    } while (CurrentHi < 0 && attempts < 30);
+                    } while (CurrentHi < 0 && attempts < _options.HiloSequenceDefaults.MaxAdvanceToNextHiAttempts);
 
                     // if CurrentHi is still less than 0 at this point, then throw exception
                     if (CurrentHi < 0)
                     {
-                        throw new Exception("Unable to advance hi sequence");
+                        throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
                     }
                 }
                 finally
