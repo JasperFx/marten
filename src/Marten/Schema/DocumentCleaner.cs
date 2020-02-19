@@ -110,8 +110,14 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
         {
             using (var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional))
             {
-                connection.Execute($"drop table if exists {_options.Events.DatabaseSchemaName}.mt_events cascade;" +
-                                   $"drop table if exists {_options.Events.DatabaseSchemaName}.mt_streams cascade");
+                connection.Execute("DO $$ BEGIN " +
+                                        "IF EXISTS(SELECT * FROM information_schema.tables " +
+                                        $"WHERE table_name = 'mt_events' AND table_schema = '{_options.Events.DatabaseSchemaName}') " +
+                                        $"THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_events CASCADE; END IF;" +
+                                        "IF EXISTS(SELECT * FROM information_schema.tables " +
+                                        $"WHERE table_name = 'mt_streams' AND table_schema = '{_options.Events.DatabaseSchemaName}') " +
+                                        $"THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF; " +
+                                        "END; $$;");
                 connection.Commit();
             }
         }
