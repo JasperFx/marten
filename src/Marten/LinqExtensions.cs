@@ -251,5 +251,17 @@ namespace Marten
         {
             return true;
         }
+
+        /// <summary>
+        /// Performs a full text search against <typeparamref name="T"/> using the 'mt_ngram_tsvector' search function
+        /// </summary>
+        /// <param name="searchTerm">The text to search for.</param>
+        /// <remarks>
+        /// Uses the custom function mt_ngram_tsvector which is included in the commit.
+        /// </remarks>
+        public static bool NgramSearch<T>(this T variable, string searchTerm)
+        {
+            return true;
+        }
     }
 }

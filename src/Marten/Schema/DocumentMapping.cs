@@ -505,6 +505,52 @@ namespace Marten.Schema
             return index;
         }
 
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <param name="configure">Optional action to further configure the full text index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public NgramIndex AddNgramIndex(Action<NgramIndex> configure = null)
+        {
+            var index = new NgramIndex(this);
+            configure?.Invoke(index);
+
+            return AddNgramIndexIfDoesNotExist(index);
+        }
+
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="members">Document fields that should be use by full text index</param>
+        /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public NgramIndex AddNgramIndex(MemberInfo members, string indexName = null)
+        {
+            var index = new NgramIndex(this, members)
+            {
+                IndexName = indexName
+            };
+
+            return AddNgramIndexIfDoesNotExist(index);
+        }
+
+        private NgramIndex AddNgramIndexIfDoesNotExist(NgramIndex index)
+        {
+            var existing = Indexes.OfType<NgramIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
+            if (existing != null)
+            {
+                return existing;
+            }
+            Indexes.Add(index);
+
+            return index;
+        }
+
         public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
         {
             var field = FieldFor(memberName);
@@ -841,6 +887,36 @@ namespace Marten.Schema
                 indexName,
                 IndexMethod.btree,
                 tenancyScope);
+        }
+
+        /// <summary>
+        /// Adds an ngram index.
+        /// </summary>
+        /// <param name="expressions">Document fields that should be use by ngram index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public NgramIndex NgramIndex(Expression<Func<T, object>> expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+            var member = visitor.Members.First();
+
+            return AddNgramIndex(member);
+        }
+
+        /// <summary>
+        /// Adds a full text index with default region config set to 'english'
+        /// </summary>
+        /// <param name="expressions">Document fields that should be use by full text index</param>
+        /// <remarks>
+        /// See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
+        /// </remarks>
+        public NgramIndex NgramIndex(Action<NgramIndex> configure, Expression<Func<T, object>> expression)
+        {
+            var index = NgramIndex(expression);
+            configure(index);
+            return index;
         }
 
         /// <summary>

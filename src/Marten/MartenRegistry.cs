@@ -283,6 +283,25 @@ namespace Marten
                 return this;
             }
 
+
+            public DocumentMappingExpression<T> NgramIndex(Action<NgramIndex> configure)
+            {
+                alter = m => m.AddNgramIndex(configure);
+                return this;
+            }
+
+            public DocumentMappingExpression<T> NgramIndex(Expression<Func<T, object>> expression)
+            {
+                alter = m => m.NgramIndex(expression);
+                return this;
+            }
+
+            public DocumentMappingExpression<T> NgramIndex(Action<NgramIndex> configure, Expression<Func<T, object>> expression)
+            {
+                alter = m => m.NgramIndex(configure, expression);
+                return this;
+            }
+
             public DocumentMappingExpression<T> ForeignKey<TReference>(
                 Expression<Func<T, object>> expression,
                 Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
