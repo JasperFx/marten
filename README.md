@@ -2,6 +2,7 @@
 ## Polyglot Persistence Powered by .NET and PostgreSQL
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+![Twitter Follow](https://img.shields.io/twitter/follow/marten_lib?style=social)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/va5br63j7sbx74cm/branch/master?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten/branch/master)
 [![Linux Build status](https://dev.azure.com/jasperfx-marten/marten/_apis/build/status/marten?branchName=master)](https://dev.azure.com/jasperfx-marten/marten/_build/latest?definitionId=1&branchName=master)
 [![Nuget Package](https://badgen.net/nuget/v/marten)](https://www.nuget.org/packages/Marten/)
@@ -84,3 +85,18 @@ If you wish to insert code samples to a documentation page from the tests, wrap 
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
 > Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
+
+## License
+
+Copyright © .NET Foundation, Jeremy D. Miller, Babu Annamalai, Oskar Dudycz, Joona-Pekka Kokko and contributors.
+
+Marten is provided as-is under the MIT license. For more information see [LICENSE](LICENSE).
+
+## Code of Conduct
+
+This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community.
+For more information see the [.NET Foundation Code of Conduct](http://www.dotnetfoundation.org/code-of-conduct).
+
+## .NET Foundation
+
+This project is supported by the [.NET Foundation](http://www.dotnetfoundation.org).ct).
