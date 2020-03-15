@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="documentation\CONTRIBUTING.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="martenbuild.cs" />
   </ItemGroup>
 
