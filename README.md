@@ -39,7 +39,7 @@ _Help with PSQL/PLV8_
 - On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
 - On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
 
-Once you have the codebase and the connection string file, run the rake script or use the dotnet CLI to restore and build the solution.
+Once you have the codebase and the connection string file, run the rake build or use the dotnet CLI to restore and build the solution.
 
 You are now ready to contribute to Marten.
 
