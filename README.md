@@ -43,6 +43,8 @@ Once you have the codebase and the connection string file, run the rake build or
 
 You are now ready to contribute to Marten.
 
+See more in [Contribution Guidelines](CONTRIBUTING.md).
+
 ### Tooling
 
 * Unit Tests rely on [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly)
@@ -52,16 +54,16 @@ You are now ready to contribute to Marten.
 
 ### Build Commands
 
-Description | Windows Commandline | PowerShell | Linux Shell | DotNet CLI
----|---|---|---|---
-Run restore, build and test | `build.cmd` | `build.ps1`  | `build.sh` | `dotnet build src\Marten.sln`
-Run all tests including mocha tests | `build.cmd test` | `build.ps1 test` | `build.sh test` | `dotnet run -p martenbuild.csproj -- test`
-Run just mocha tests | `build.cmd mocha` | `build.ps1 mocha` | `build.sh mocha` | `dotnet run -p martenbuild.csproj -- mocha`
-Run StoryTeller tests | `build.cmd storyteller` | `build.ps1 storyteller` | `build.sh storyteller` | `dotnet run -p martenbuild.csproj -- storyteller`
-Open StoryTeller editor | `build.cmd open_st` | `build.ps1 open_st` | `build.sh open_st` | `dotnet run -p martenbuild.csproj -- open_st`
-Run documentation website locally | `build.cmd docs` | `build.ps1 docs` | `build.sh docs` | `dotnet run -p martenbuild.csproj -- docs`
-Publish docs | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run -p martenbuild.csproj -- publish-docs`
-Run benchmarks | `build.cmd benchmarks` | `build.ps1 benchmarks` | `build.sh benchmarks` | `dotnet run -p martenbuild.csproj -- benchmarks`
+| Description                         | Windows Commandline      | PowerShell               | Linux Shell             | DotNet CLI                                         |
+| ----------------------------------- | ------------------------ | ------------------------ | ----------------------- | -------------------------------------------------- |
+| Run restore, build and test         | `build.cmd`              | `build.ps1`              | `build.sh`              | `dotnet build src\Marten.sln`                      |
+| Run all tests including mocha tests | `build.cmd test`         | `build.ps1 test`         | `build.sh test`         | `dotnet run -p martenbuild.csproj -- test`         |
+| Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run -p martenbuild.csproj -- mocha`        |
+| Run StoryTeller tests               | `build.cmd storyteller`  | `build.ps1 storyteller`  | `build.sh storyteller`  | `dotnet run -p martenbuild.csproj -- storyteller`  |
+| Open StoryTeller editor             | `build.cmd open_st`      | `build.ps1 open_st`      | `build.sh open_st`      | `dotnet run -p martenbuild.csproj -- open_st`      |
+| Run documentation website locally   | `build.cmd docs`         | `build.ps1 docs`         | `build.sh docs`         | `dotnet run -p martenbuild.csproj -- docs`         |
+| Publish docs                        | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run -p martenbuild.csproj -- publish-docs` |
+| Run benchmarks                      | `build.cmd benchmarks`   | `build.ps1 benchmarks`   | `build.sh benchmarks`   | `dotnet run -p martenbuild.csproj -- benchmarks`   |
 
 > Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
 
