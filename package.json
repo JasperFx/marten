@@ -7,7 +7,7 @@
     "test": "mocha"
   },
   "devDependencies": {
-    "chai": "^3.4.1",
+    "chai": "^4.2.0",
     "lodash": "^4.17.13",
     "mocha": "^5.2.0"
   }
