@@ -54,3 +54,17 @@ nav.related-links {
 .twitter-follow-button {
     margin-top: 14px;
 }
+
+footer {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+    footer ul {
+        list-style: none;
+    }
+
+.dot-net-foundation-logo {
+    max-height: 75px;
+    padding: 10px;
+}
