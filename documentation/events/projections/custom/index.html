@@ -87,7 +87,7 @@
 <h2 id="multistream-projections-using-viewprojection">Multistream Projections using ViewProjection</h2>
 <p>The <code>ViewProjection</code> class is an implementation of the <code>IProjection</code> that can handle building a projection from multiple streams.</p>
 <p>This can be setup from configuration like:</p>
-<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;    _.Events.ProjectView&lt;PersistedView, Guid&gt;()&#xD;&#xA;        .ProjectEvent&lt;ProjectionEvent&lt;QuestStarted&gt;&gt;((view, @event) =&gt; { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })&#xD;&#xA;        .ProjectEvent&lt;MembersJoined&gt;(e =&gt; e.QuestId, (view, @event) =&gt; { view.Events.Add(@event); })&#xD;&#xA;        .ProjectEvent&lt;ProjectionEvent&lt;MonsterSlayed&gt;&gt;(e =&gt; e.Data.QuestId, (view, @event) =&gt; { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })&#xD;&#xA;        .DeleteEvent&lt;QuestEnded&gt;()&#xD;&#xA;        .DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId)&#xD;&#xA;        .DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;});&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;    _.Events.ProjectView&lt;PersistedView, Guid&gt;()&#xD;&#xA;        .ProjectEventAsync&lt;QuestStarted&gt;((view, @event) =&gt; { view.Events.Add(@event); return Task.CompletedTask; })&#xD;&#xA;        .ProjectEventAsync&lt;MembersJoined&gt;(e =&gt; e.QuestId, (view, @event) =&gt; { view.Events.Add(@event); return Task.CompletedTask; })&#xD;&#xA;        .ProjectEventAsync&lt;ProjectionEvent&lt;MonsterSlayed&gt;&gt;(e =&gt; e.Data.QuestId, (view, @event) =&gt; { view.Events.Add(@event.Data); return Task.CompletedTask; })&#xD;&#xA;        .DeleteEvent&lt;QuestEnded&gt;()&#xD;&#xA;        .DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId)&#xD;&#xA;        .DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;});&#xD;&#xA;</code></pre> 
  
 or through a class like: 
  
@@ -148,6 +148,16 @@ It comes of the way how Marten handles projection mechanism:
             </div><!--/right-->
         </div><!--/row-->
     </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
 </body>
 
 <foot>

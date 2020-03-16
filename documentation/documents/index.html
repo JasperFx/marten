@@ -114,7 +114,7 @@ Marten will build new database tables and functions for each new document type a
 <h2 id="persisting-documents">Persisting Documents</h2>
 <p>The main service for updating and persisting documents is the <code>IDocumentSession</code>. An <code>IDocumentSession</code> is created by your <code>IDocumentStore</code> from above
 in one of three ways:</p>
-<pre><code class="language-csharp">&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents&#xD;&#xA;using (var session = store.LightweightSession())&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Han&quot;, LastName = &quot;Solo&quot; };&#xD;&#xA;    session.Store(user);&#xD;&#xA;&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents with a backing &quot;Identity Map&quot;&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var existing = session&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Han&quot; &amp;&amp; x.LastName == &quot;Solo&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents that performas automated&#xD;&#xA;// &quot;dirty&quot; checking of previously loaded documents&#xD;&#xA;using (var session = store.DirtyTrackedSession())&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents&#xD;&#xA;using (var session = store.LightweightSession())&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Han&quot;, LastName = &quot;Solo&quot; };&#xD;&#xA;    session.Store(user);&#xD;&#xA;&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents with a backing &quot;Identity Map&quot;&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var existing = session&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Han&quot; &amp;&amp; x.LastName == &quot;Solo&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents that performs automated&#xD;&#xA;// &quot;dirty&quot; checking of previously loaded documents&#xD;&#xA;using (var session = store.DirtyTrackedSession())&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>In all cases, <code>IDocumentSession</code> has the same query and loading functions as the read only <code>IQuerySession</code>.</p>
 <p>For more information on persisting documents and the different underlying behavior of the three flavors of <code>IDocumentSession</code> above, see:</p>
 <ul>
@@ -136,6 +136,16 @@ in one of three ways:</p>
             </div><!--/right-->
         </div><!--/row-->
     </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
 </body>
 
 <foot>

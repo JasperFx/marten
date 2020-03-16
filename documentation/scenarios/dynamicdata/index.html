@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>Marten - Managing PostgreSQL Instance</title>
+    <title>Marten - Storing & reading back non-uniform JSON documents via dynamic</title>
     <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
     <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation/scenarios" title="Scenarios">Previous</a></li>
-                <li><a href="/marten/documentation/admin/installing-plv8-windows" title="Installing plv8 on Windows">Next</a></li>
+                    <li><a href="/marten/documentation/scenarios/immutable_projections_readmodel" title="Immutable projections as read model">Previous</a></li>
+                <li><a href="/marten/documentation/scenarios/usingsequenceforuniqueid" title="Using sequences for unique and human-readable identifiers">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Managing PostgreSQL Instance</li></ol>
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/scenarios">Scenarios</a></li><li class="active">Storing &amp; reading back non-uniform JSON documents via dynamic</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -73,29 +73,34 @@
                 <img src="/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/admin/installing-plv8-windows">Installing plv8 on Windows</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios">Scenarios</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/scenarios/usingsequenceforuniqueid">Using sequences for unique and human-readable identifiers</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/scenarios/immutable_projections_readmodel">Immutable projections as read model</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
             <div class="col-md-9">
-                <h1>Managing PostgreSQL Instance <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/admin/index.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+                <h1>Storing & reading back non-uniform JSON documents via dynamic <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/scenarios/dynamicdata.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
                 <hr />
                 <div id="main-pane">
-                    <!--Title:Managing PostgreSQL Instance-->
-<!--Url:admin-->
-<p>A list of helpful information to manage your PostgreSQL instance.</p>
-<ul class="table-of-contents"><li><a href="/marten/documentation/admin/installing-plv8-windows">Installing plv8 on Windows</a></li></ul>
+                    <!--Title: Storing & reading back non-uniform JSON documents via dynamic -->
+<p>This scenario demonstrates how to store and query non-uniform JSON documents via the help of <a href="https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/types/using-type-dynamic"><code>dynamic</code></a>.</p>
+<h2 id="scenario">Scenario</h2>
+<p>Let us assume we have a document with non-uniform JSON records, presenting temperature sensor data whereby individual records are identified either via the field <em>detector</em> or <em>sensor</em>.</p>
+<pre><code class="language-csharp">&#xD;&#xA;            // Our documents with non-uniform structure&#xD;&#xA;            var jsonRecords = @&quot;&#xD;&#xA;[{&#xD;&#xA;        &#x27;sensor&#x27;: &#x27;aisle-1&#x27;,&#xD;&#xA;        &#x27;timestamp&#x27;: &#x27;2020-01-21 11:19:19.283&#x27;,&#xD;&#xA;        &#x27;temperature&#x27;: 21.2&#xD;&#xA;    }, {&#xD;&#xA;        &#x27;sensor&#x27;: &#x27;aisle-2&#x27;,&#xD;&#xA;        &#x27;timestamp&#x27;: &#x27;2020-01-21 11:18:19.220&#x27;,&#xD;&#xA;        &#x27;temperature&#x27;: 21.6&#xD;&#xA;    }, {&#xD;&#xA;        &#x27;sensor&#x27;: &#x27;aisle-1&#x27;,&#xD;&#xA;        &#x27;timestamp&#x27;: &#x27;2020-01-21 11:17:19.190&#x27;,&#xD;&#xA;        &#x27;temperature&#x27;: 21.6&#xD;&#xA;    }, {&#xD;&#xA;        &#x27;detector&#x27;: &#x27;aisle-1&#x27;,&#xD;&#xA;        &#x27;timestamp&#x27;: &#x27;2020-01-21 11:16:19.100&#x27;,&#xD;&#xA;        &#x27;temperature&#x27;: 20.9&#xD;&#xA;    }, {&#xD;&#xA;        &#x27;sensor&#x27;: &#x27;aisle-3&#x27;,&#xD;&#xA;        &#x27;timestamp&#x27;: &#x27;2020-01-21 11:15:19.037&#x27;,&#xD;&#xA;        &#x27;temperature&#x27;: 21.7,&#xD;&#xA;    }, {&#xD;&#xA;        &#x27;detector&#x27;: &#x27;aisle-1&#x27;,&#xD;&#xA;        &#x27;timestamp&#x27;: &#x27;2020-01-21 11:14:19.100&#x27;,&#xD;&#xA;        &#x27;temperature&#x27;: -1.0&#xD;&#xA;    }&#xD;&#xA;]&quot;;&#xD;&#xA;</code></pre>
+<p>To store and later read back these records, we create a wrapper type with a <code>dynamic</code> property to present our record.</p>
+<pre><code class="language-csharp">&#xD;&#xA;class TemperatureData&#xD;&#xA;{&#xD;&#xA;    public int Id { get; set; }&#xD;&#xA;    public dynamic Values { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>We then read and serialize our records into our newly introduced intermediate type and persist an array of its instances via <code>BulkInsert</code>. Lastly, we read back the records, via the non-generic <code>Query</code> extension method, passing in predicates that take into account the non-uniform fields of the source documents. After reading back the data for <em>sensor-1</em>, we calculate the average of its recorded temperatures:</p>
+<pre><code class="language-csharp">&#xD;&#xA;using (var reader = new StringReader(jsonRecords))&#xD;&#xA;{&#xD;&#xA;    // Deserialize our document&#xD;&#xA;    var records = theStore.Serializer.FromJson&lt;dynamic[]&gt;(reader);&#xD;&#xA;    var docs = records.Select(x =&gt; new TemperatureData { Values = x }).ToArray();&#xD;&#xA;&#xD;&#xA;    // Persist our records&#xD;&#xA;    theStore.BulkInsertDocuments(docs);&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        // Read back the data for &quot;aisle-1&quot;&#xD;&#xA;        dynamic[] tempsFromDb = session.Query(typeof(TemperatureData),&#xD;&#xA;            &quot;where data-&gt;&#x27;Values&#x27;-&gt;&gt;&#x27;detector&#x27; = :sensor OR data-&gt;&#x27;Values&#x27;-&gt;&gt;&#x27;sensor&#x27; = :sensor&quot;, new { sensor = &quot;aisle-1&quot; }).ToArray();&#xD;&#xA;&#xD;&#xA;        var temperatures = tempsFromDb.Select(x =&gt; (decimal)x.Values.temperature);&#xD;&#xA;&#xD;&#xA;        Assert.Equal(15.675m, temperatures.Average());&#xD;&#xA;        Assert.Equal(4, tempsFromDb.Length);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation/scenarios">Scenarios</a>
+                        <strong>Previous: </strong><a href="/marten/documentation/scenarios/immutable_projections_readmodel">Immutable projections as read model</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/admin/installing-plv8-windows">Installing plv8 on Windows</a>
+                        <strong>Next: </strong><a href="/marten/documentation/scenarios/usingsequenceforuniqueid">Using sequences for unique and human-readable identifiers</a>
                     </span>
                 </nav>
             </div><!--/right-->

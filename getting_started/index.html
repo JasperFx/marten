@@ -108,7 +108,7 @@ all the default behavior and a connection string:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class User&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;    public string LastName { get; set; }&#xD;&#xA;    public bool Internal { get; set; }&#xD;&#xA;    public string UserName { get; set; }&#xD;&#xA;    public string Department { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p><em>For more information on document id's, see <a href="/marten/documentation/documents/identity">Document Identity</a>.</em></p>
 <p>And now that we've got a PostgreSQL schema and an <code>IDocumentStore</code>, let's start persisting and loading user documents:</p>
-<pre><code class="language-csharp">&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents&#xD;&#xA;using (var session = store.LightweightSession())&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Han&quot;, LastName = &quot;Solo&quot; };&#xD;&#xA;    session.Store(user);&#xD;&#xA;&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents with a backing &quot;Identity Map&quot;&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var existing = session&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Han&quot; &amp;&amp; x.LastName == &quot;Solo&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents that performas automated&#xD;&#xA;// &quot;dirty&quot; checking of previously loaded documents&#xD;&#xA;using (var session = store.DirtyTrackedSession())&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents&#xD;&#xA;using (var session = store.LightweightSession())&#xD;&#xA;{&#xD;&#xA;    var user = new User { FirstName = &quot;Han&quot;, LastName = &quot;Solo&quot; };&#xD;&#xA;    session.Store(user);&#xD;&#xA;&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents with a backing &quot;Identity Map&quot;&#xD;&#xA;using (var session = store.OpenSession())&#xD;&#xA;{&#xD;&#xA;    var existing = session&#xD;&#xA;        .Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.FirstName == &quot;Han&quot; &amp;&amp; x.LastName == &quot;Solo&quot;)&#xD;&#xA;        .Single();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;// Open a session for querying, loading, and&#xD;&#xA;// updating documents that performs automated&#xD;&#xA;// &quot;dirty&quot; checking of previously loaded documents&#xD;&#xA;using (var session = store.DirtyTrackedSession())&#xD;&#xA;{&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="integrating-marten-with-ioc-containers">Integrating Marten with IoC Containers</h2>
 <p>The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to
 use an IoC container specifically to manage dependencies and the life cycle of Marten objects.</p>
@@ -141,6 +141,16 @@ bus applications.</li>
             </div><!--/right-->
         </div><!--/row-->
     </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
 </body>
 
 <foot>

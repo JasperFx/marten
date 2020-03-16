@@ -99,8 +99,10 @@
 <p><a href="http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html">PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit</a></p>
 <p><a href="http://www.postgresonline.com/journal/archives/367-PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit.html">PLV8-binaries-for-PostgreSQL-9.6beta1-windows-both-32-bit-and-64-bit</a></p>
 <p><a href="http://www.postgresonline.com/journal/archives/379-PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit.htmll">PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit</a></p>
+<p><a href="http://updates.xtuple.com/updates/plv8/win/xtuple_plv8.zip">xTuple-PLV8-binaries-for-PostgreSQL-9.4-to-12-windows-64-bit</a></p>
 <p>Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)</p>
 <h2 id="install">Install</h2>
+<h3 id="distributions-from-postgres-online">Distributions from Postgres Online</h3>
 <p>The zip should contain 3 folders:</p>
 <ul>
 <li>bin</li>
@@ -123,6 +125,9 @@
 <blockquote>
 <p>C:\Program Files (x86)\PostgreSQL\9.6\</p>
 </blockquote>
+<h3 id="distributions-from-xtuple">Distributions from xTuple</h3>
+<p>The zip contains the folders for all the supported versions and the install_plv8.bat file.</p>
+<p>Run the batch file from a command window running in administrative mode and provide the path for your Postgres installation.</p>
 <h2 id="create-extension">Create Extension</h2>
 <p>Once you have moved all the files to the correct folder, you can now call the create extension again:</p>
 <pre><code class="language-sql">CREATE EXTENSION plv8;
@@ -131,6 +136,12 @@
 <pre><code>sql&gt; create extension plv8
 [2016-12-06 23:12:10] completed in 2s 271ms
 </code></pre>
+<p>If you get the below error while using the xTuple distribution</p>
+<blockquote>
+<p>ERROR:  syntax error in file &quot;path_to_/plv8.control&quot; line 1, near token &quot;&quot;
+SQL state: 42601</p>
+</blockquote>
+<p>You need to ensure that the plv8.control is encoded with UTF-8. This is easiest to do with Notepad++.</p>
 <h2 id="testing-out-the-extension">Testing out the extension</h2>
 <p>To test out the extension you can create a super basic function which manipulates a string input and returns the value.</p>
 <pre><code class="language-sql">create or replace function test_js_func(value text) returns text as $$
@@ -164,6 +175,16 @@ $$ language plv8;
             </div><!--/right-->
         </div><!--/row-->
     </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
 </body>
 
 <foot>
