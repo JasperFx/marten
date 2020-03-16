@@ -235,12 +235,22 @@ hr.small {
     }
 }
 
+.twitter-follow-button {
+    vertical-align: middle;
+}
+
 /* Footer */
 
 footer {
-    padding: 100px 0;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-.twitter-follow-button {
-    vertical-align: middle;
+    footer ul {
+        list-style: none;
+    }
+
+.dot-net-foundation-logo {
+    max-height: 100px;
+    padding: 10px;
 }

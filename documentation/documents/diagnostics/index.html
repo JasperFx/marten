@@ -92,7 +92,7 @@
 <p>Marten has a facility for listening and even intercepting document persistence events with the <code>IDocumentSessionListener</code> interface:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public interface IDocumentSessionListener&#xD;&#xA;{&#xD;&#xA;    void BeforeSaveChanges(IDocumentSession session);&#xD;&#xA;&#xD;&#xA;    Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);&#xD;&#xA;&#xD;&#xA;    void AfterCommit(IDocumentSession session, IChangeSet commit);&#xD;&#xA;&#xD;&#xA;    Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);&#xD;&#xA;&#xD;&#xA;    void DocumentLoaded(object id, object document);&#xD;&#xA;&#xD;&#xA;    void DocumentAddedForStorage(object id, object document);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>You can build and inject your own listeners by adding them to the <code>StoreOptions</code> object you use to configure a <code>DocumentStore</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var stub1 = new StubDocumentSessionListener();&#xD;&#xA;var stub2 = new StubDocumentSessionListener();&#xD;&#xA;&#xD;&#xA;using (var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;    _.Listeners.Add(stub1);&#xD;&#xA;    _.Listeners.Add(stub2);&#xD;&#xA;}))&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var stub1 = new StubDocumentSessionListener();&#xD;&#xA;var stub2 = new StubDocumentSessionListener();&#xD;&#xA;&#xD;&#xA;using (var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;}))&#xD;&#xA;</code></pre>
 <p>The listeners can be used to modify an <code>IDocumentSession</code> and its related unit of work just before persisting. Marten itself will be using this mechanism
 internally to perform projections in the future.</p>
 <p>The following fake, sample listener demonstrates how you can query into the pending changes before making a transactional commit, and also how to
@@ -155,6 +155,16 @@ just understand what kinds of operations are being chatty in the first place. To
             </div><!--/right-->
         </div><!--/row-->
     </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
 </body>
 
 <foot>
