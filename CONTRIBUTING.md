@@ -7,15 +7,15 @@ We take Pull Requests!
 
 1. Contact the contributors via the [Gitter channel](https://gitter.im/JasperFx/marten) or the [Github Issue](https://github.com/JasperFx/marten/issues/new) to make sure that this is issue or bug should be handled with proposed way. Send details of your case and explain the details of the proposed solution.
 2. Once you get approval from one of the maintainers, you can start to work on your code change.
-3. After your change is ready to make sure that you covered your case with automated tests and verify that you limited the number of breaking changes to a bare minimum.
-4. We also highly appreciate updates for the documentation.
+3. After your changes are ready, make sure that you covered your case with automated tests and verify that you have limited the number of breaking changes to a bare minimum.
+4. We also highly appreciate any relevant updates to the documentation.
 5. Make sure that your code is compiling and all automated tests are passing.
  
-## After you've sent Pull Request
+## After you have sent Pull Request
 
 1. Make sure that you applied or answered all the feedback from the maintainers.
 2. We're trying to be as much responsive as we can, but if we didn't respond to you, feel free to ping us on the [Gitter channel](https://gitter.im/JasperFx/marten).
-3. Pull request will be merged when you get approvals from at least 2 of the maintainers (and no rejection from others). Pull request will be tagged with the desired Marten Nuget version in which it will be released. We also label the Pull Requests with information about the type of change. 
+3. Pull request will be merged when you get approvals from at least 2 of the maintainers (and no rejection from others). Pull request will be tagged with the target Marten version in which it will be released. We also label the Pull Requests with information about the type of change.
 
 ## Setup your work environment
 
@@ -29,7 +29,7 @@ Available [here](https://www.microsoft.com/net/download/core)
  
 Available [here](https://dotnet.microsoft.com/download/thank-you/net461-developer-pack)
  
-**3. Use PostgreSQL **9.5+** database with PLV8**
+**3. Use PostgreSQL 9.5 or above database with PLV8**
  
 You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
  
