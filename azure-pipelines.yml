@@ -7,8 +7,14 @@ trigger:
 
 resources:
   containers:
+    - container: pg12
+      image: oskardudycz/postgres-plv8:12-2
+      ports:
+        - 5432:5432
+      env:
+        POSTGRES_HOST_AUTH_METHOD: trust
     - container: pg11
-      image: ionx/postgres-plv8:11.1
+      image: ionx/postgres-plv8:11.5
       ports:
         - 5432:5432
     - container: pg10
@@ -42,6 +48,8 @@ jobs:
           postgresService: pg10
         pg11:
           postgresService: pg11
+        pg12:
+          postgresService: pg12
     services:
       postgres: $[ variables['postgresService'] ]
     steps:
