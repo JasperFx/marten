@@ -25,7 +25,7 @@ Available [here](https://www.microsoft.com/net/download/core)
 
 Available [here](https://dotnet.microsoft.com/download/thank-you/net461-developer-pack)
 
-**3. PostgreSQL **9.5+** database with PLV8**
+**3. PostgreSQL 9.5 or above database with PLV8**
 
 You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
