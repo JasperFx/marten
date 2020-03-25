@@ -65,20 +65,10 @@ namespace Marten.Schema.Identity.Sequences
         {
             lock (_lock)
             {
-                if (ShouldAdvanceHi())
+                if(ShouldAdvanceHi())
                 {
-                    try
-                    {
-                        AdvanceToNextHi();
-                    }
-                    catch (Exception)
-                    {
-                        // Retry once.
-                        Thread.Sleep(50);
-                        AdvanceToNextHi();
-                    }
+                    AdvanceToNextHi();
                 }
-
                 return AdvanceValue();
             }
         }
@@ -91,14 +81,26 @@ namespace Marten.Schema.Identity.Sequences
 
                 try
                 {
-                    var tx = conn.BeginTransaction(IsolationLevel.Serializable);
-                    var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
-                        .With("entity", _entityName)
-                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
+                    var attempts = 0;
+                    do
+                    {
+                        attempts++;
 
-                    tx.Commit();
+                        // Sproc is expected to return -1 if it's unable to
+                        // atomically secure the next hi
+                        var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
+                            .With("entity", _entityName)
+                            .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
 
-                    CurrentHi = Convert.ToInt64(raw);
+                        CurrentHi = Convert.ToInt64(raw);
+
+                    } while (CurrentHi < 0 && attempts < _options.HiloSequenceDefaults.MaxAdvanceToNextHiAttempts);
+
+                    // if CurrentHi is still less than 0 at this point, then throw exception
+                    if (CurrentHi < 0)
+                    {
+                        throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
+                    }
                 }
                 finally
                 {
