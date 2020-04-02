@@ -40,7 +40,7 @@ namespace Marten.Events
         string TenantId { get; set; }
 
         void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
-            where TAggregate : class, new();
+            where TAggregate : class;
     }
 
     // ENDSAMPLE
@@ -97,7 +97,7 @@ namespace Marten.Events
         object IEvent.Data => Data;
 
         public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
-            where TAggregate : class, new()
+            where TAggregate : class
         {
             var step = aggregator.AggregatorFor<T>();
             if (step is IAggregationWithMetadata<TAggregate, T>)

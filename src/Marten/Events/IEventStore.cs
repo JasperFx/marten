@@ -47,7 +47,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class, new();
+        EventStream StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -57,7 +57,7 @@ namespace Marten.Events
         /// <param name="streamKey">String identifier of this stream</param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class, new();
+        EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
@@ -83,7 +83,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class, new();
+        EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -141,7 +141,7 @@ namespace Marten.Events
         /// <param name="timestamp"></param>
         /// <param name="state">Instance of T to apply events to</param>
         /// <returns></returns>
-        T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null) where T : class, new();
+        T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -153,7 +153,7 @@ namespace Marten.Events
         /// <param name="state">Instance of T to apply events to</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null, CancellationToken token = default(CancellationToken)) where T : class, new();
+        Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null, CancellationToken token = default(CancellationToken)) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -164,7 +164,7 @@ namespace Marten.Events
         /// <param name="timestamp"></param>
         /// <param name="state">Instance of T to apply events to</param>
         /// <returns></returns>
-        T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null) where T : class, new();
+        T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -176,7 +176,7 @@ namespace Marten.Events
         /// <param name="state">Instance of T to apply events to</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> AggregateStreamAsync<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null, CancellationToken token = default(CancellationToken)) where T : class, new();
+        Task<T> AggregateStreamAsync<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null, CancellationToken token = default(CancellationToken)) where T : class;
 
         /// <summary>
         /// Query directly against ONLY the raw event data. Use IQuerySession.Query() for aggregated documents!

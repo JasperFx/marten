@@ -10,7 +10,7 @@ namespace Marten.Events.Projections
         /// <summary>
         /// Resolve aggregator for T
         /// </summary>
-        IAggregator<T> Lookup<T>() where T : class, new();
+        IAggregator<T> Lookup<T>() where T : class;
 
         /// <summary>
         /// Resolve aggregator for aggregateType

@@ -266,7 +266,7 @@ namespace Marten.Testing.Events
             aggregate.ClearUncommittedEvents();
         }
 
-        public T Load<T>(string id, int? version = null) where T : AggregateBase, new()
+        public T Load<T>(string id, int? version = null) where T : AggregateBase
         {
             using (var session = store.LightweightSession())
             {

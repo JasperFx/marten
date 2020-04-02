@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using System.Reflection;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {
@@ -27,7 +28,7 @@ namespace Marten.Events.Projections
             return GetEnumerator();
         }
 
-        public AggregationProjection<T> AggregateStreamsWith<T>() where T : class, new()
+        public AggregationProjection<T> AggregateStreamsWith<T>() where T : class
         {
             var aggregator = _options.Events.AggregateFor<T>();
 
@@ -63,12 +64,12 @@ namespace Marten.Events.Projections
             _projections.Add(projection);
         }
 
-        public void Add<T>() where T : IProjection, new()
+        public void Add<T>() where T : IProjection
         {
-            Add(new T());
+            Add(New<T>.Instance());
         }
 
-        public void Add<T>(Func<T> projectionFactory) where T : IProjection, new()
+        public void Add<T>(Func<T> projectionFactory) where T : IProjection
         {
             var lazyLoadedProjection = new LazyLoadedProjection<T>(projectionFactory);
 
