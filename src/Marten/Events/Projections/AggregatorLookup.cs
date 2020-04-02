@@ -16,7 +16,7 @@ namespace Marten.Events.Projections
             this.factory = factory;
         }
 
-        public IAggregator<T> Lookup<T>() where T : class, new()
+        public IAggregator<T> Lookup<T>() where T : class
         {
             // trade null check for the cost of using default factory with Activator.CreateInstance
             return (IAggregator<T>)factory?.Invoke(typeof(T)) ?? new Aggregator<T>();

@@ -4,11 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Projections.Async;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {
     // This is mostly tested through integration tests and in the Storyteller suite
-    public class AggregationProjection<T>: DocumentProjection<T>, IDocumentProjection where T : class, new()
+    public class AggregationProjection<T>: DocumentProjection<T>, IDocumentProjection where T : class
     {
         private readonly IAggregationFinder<T> _finder;
         private readonly IAggregator<T> _aggregator;
@@ -44,7 +45,7 @@ namespace Marten.Events.Projections
 
             foreach (var stream in matchingStreams)
             {
-                var state = await _finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? new T();
+                var state = await _finder.FindAsync(stream, session, token).ConfigureAwait(false) ?? New<T>.Instance();
                 update(state, stream);
 
                 session.Store(state);

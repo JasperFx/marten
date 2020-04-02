@@ -13,7 +13,7 @@ using Marten.Util;
 namespace Marten.Events.Projections
 {
     public class ViewProjection<TView, TId>: DocumentProjection<TView>, IDocumentProjection
-        where TView : class, new()
+        where TView : class
     {
         private readonly Func<IQuerySession, TId[], IReadOnlyList<TView>> _sessionLoadMany;
 
@@ -828,7 +828,7 @@ namespace Marten.Events.Projections
 
         private static TView newView(ITenant tenant, IdAssignment<TView> idAssigner, TId id)
         {
-            var view = new TView();
+            var view = New<TView>.Instance();
             idAssigner.Assign(tenant, view, id);
             return view;
         }

@@ -10,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    internal class AggregationQueryHandler<T>: IQueryHandler<T> where T : class, new()
+    internal class AggregationQueryHandler<T>: IQueryHandler<T> where T : class
     {
         private readonly IAggregator<T> _aggregator;
         private readonly IEventQueryHandler _inner;

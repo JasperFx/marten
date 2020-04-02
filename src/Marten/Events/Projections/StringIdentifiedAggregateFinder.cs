@@ -12,7 +12,7 @@ namespace Marten.Events.Projections
     /// Simple aggregation finder that looks for an aggregate document based on the stream key
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class StringIdentifiedAggregateFinder<T>: IAggregationFinder<T> where T : class, new()
+    public class StringIdentifiedAggregateFinder<T>: IAggregationFinder<T> where T : class
     {
         private readonly Action<T, string> _setId;
 
@@ -33,7 +33,7 @@ namespace Marten.Events.Projections
 
         public T Find(EventStream stream, IDocumentSession session)
         {
-            var returnValue = stream.IsNew ? new T() : session.Load<T>(stream.Key) ?? new T();
+            var returnValue = stream.IsNew ? New<T>.Instance() : session.Load<T>(stream.Key) ?? New<T>.Instance();
             _setId(returnValue, stream.Key);
 
             return returnValue;
@@ -41,7 +41,7 @@ namespace Marten.Events.Projections
 
         public async Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token)
         {
-            var returnValue = stream.IsNew ? new T() : await session.LoadAsync<T>(stream.Key, token).ConfigureAwait(false) ?? new T();
+            var returnValue = stream.IsNew ? New<T>.Instance() : await session.LoadAsync<T>(stream.Key, token).ConfigureAwait(false) ?? New<T>.Instance();
 
             _setId(returnValue, stream.Key);
 

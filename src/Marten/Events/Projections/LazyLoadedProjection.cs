@@ -4,18 +4,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
 using Marten.Storage;
+using Marten.Util;
 
 namespace Marten.Events.Projections
 {
     public class LazyLoadedProjection<T>: IProjection, IDocumentsProjection
-        where T : IProjection, new()
+        where T : IProjection
     {
         private readonly Func<T> factory;
 
         public LazyLoadedProjection(Func<T> factory)
         {
             this.factory = factory;
-            var definition = new T();
+            var definition = New<T>.Instance();
 
             Consumes = definition.Consumes;
             AsyncOptions = definition.AsyncOptions;

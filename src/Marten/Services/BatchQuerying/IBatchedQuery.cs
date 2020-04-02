@@ -17,7 +17,7 @@ namespace Marten.Services.BatchQuerying
         /// <param name="version"></param>
         /// <param name="timestamp"></param>
         /// <returns></returns>
-        Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class, new();
+        Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class;
 
         /// <summary>
         /// Load a single event with all of its metadata

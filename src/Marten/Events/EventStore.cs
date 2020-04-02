@@ -112,7 +112,7 @@ namespace Marten.Events
             return eventStream;
         }
 
-        public EventStream StartStream<T>(Guid id, params object[] events) where T : class, new()
+        public EventStream StartStream<T>(Guid id, params object[] events) where T : class
         {
             ensureAsGuidStorage();
 
@@ -126,7 +126,7 @@ namespace Marten.Events
             return stream;
         }
 
-        public EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class, new()
+        public EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
         {
             ensureAsStringStorage();
 
@@ -162,7 +162,7 @@ namespace Marten.Events
             return stream;
         }
 
-        public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class, new()
+        public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class
         {
             return StartStream<TAggregate>(Guid.NewGuid(), events);
         }
@@ -204,7 +204,7 @@ namespace Marten.Events
             return _connection.FetchAsync(handler, null, null, _tenant, token);
         }
 
-        public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null) where T : class, new()
+        public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null) where T : class
         {
             ensureAsGuidStorage();
 
@@ -221,7 +221,7 @@ namespace Marten.Events
         }
 
         public async Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null,
-            T state = null, CancellationToken token = new CancellationToken()) where T : class, new()
+            T state = null, CancellationToken token = new CancellationToken()) where T : class
         {
             ensureAsGuidStorage();
 
@@ -237,7 +237,7 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null) where T : class, new()
+        public T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null) where T : class
         {
             ensureAsStringStorage();
 
@@ -254,7 +254,7 @@ namespace Marten.Events
         }
 
         public async Task<T> AggregateStreamAsync<T>(string streamKey, int version = 0, DateTime? timestamp = null,
-            T state = null, CancellationToken token = new CancellationToken()) where T : class, new()
+            T state = null, CancellationToken token = new CancellationToken()) where T : class
         {
             ensureAsStringStorage();
 

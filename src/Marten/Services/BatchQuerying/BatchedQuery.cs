@@ -128,7 +128,7 @@ namespace Marten.Services.BatchQuerying
         }
 
         public Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null)
-            where T : class, new()
+            where T : class
         {
             var inner = new EventQueryHandler<Guid>(new EventSelector(_store.Events, _store.Serializer), streamId, version,
                 timestamp, _store.Events.TenancyStyle, _parent.Tenant.TenantId);

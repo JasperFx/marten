@@ -71,7 +71,7 @@ namespace Marten.Events
             return _events[eventType];
         }
 
-        public EventMapping EventMappingFor<T>() where T : class, new()
+        public EventMapping EventMappingFor<T>() where T : class
         {
             return EventMappingFor(typeof(T));
         }
@@ -109,13 +109,13 @@ namespace Marten.Events
             set { _databaseSchemaName = value; }
         }
 
-        public void AddAggregator<T>(IAggregator<T> aggregator) where T : class, new()
+        public void AddAggregator<T>(IAggregator<T> aggregator) where T : class
         {
             Options.Storage.MappingFor(typeof(T));
             _aggregates.Swap(a => a.AddOrUpdate(typeof(T), aggregator));
         }
 
-        public IAggregator<T> AggregateFor<T>() where T : class, new()
+        public IAggregator<T> AggregateFor<T>() where T : class
         {
             if (!_aggregates.Value.TryFind(typeof(T), out var aggregator))
             {
@@ -164,7 +164,7 @@ namespace Marten.Events
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
-        public ViewProjection<TView, TId> ProjectView<TView, TId>() where TView : class, new()
+        public ViewProjection<TView, TId> ProjectView<TView, TId>() where TView : class
         {
             var projection = new ViewProjection<TView, TId>();
             InlineProjections.Add(projection);
