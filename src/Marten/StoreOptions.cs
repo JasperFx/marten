@@ -350,6 +350,11 @@ namespace Marten
 
         public bool PLV8Enabled { get; set; } = true;
 
+        /// <summary>
+        /// Option to enable or disable usage of default tenant when using multi-tenanted documents
+        /// </summary>
+        public bool DefaultTenantUsageEnabled { get; set; } = true;
+
         public class PoliciesExpression
         {
             private readonly StoreOptions _parent;
