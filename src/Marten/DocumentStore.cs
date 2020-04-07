@@ -185,10 +185,15 @@ namespace Marten
 
         private IDocumentSession openSession(SessionOptions options)
         {
+            var tenant = Tenancy[options.TenantId];
+
+            if (!Options.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
+                throw new DefaultTenantUsageDisabledException();
+            }
+
             var sessionPool = CreateWriterPool();
             var map = createMap(options.Tracking, sessionPool, options.Listeners);
-
-            var tenant = Tenancy[options.TenantId];
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);
 
@@ -293,9 +298,14 @@ namespace Marten
 
         public IQuerySession QuerySession(SessionOptions options)
         {
-            var parser = new MartenQueryParser();
-
             var tenant = Tenancy[options.TenantId];
+
+            if (!Options.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
+                throw new DefaultTenantUsageDisabledException();
+            }
+
+            var parser = new MartenQueryParser();
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly, _retryPolicy);
 
@@ -317,9 +327,15 @@ namespace Marten
 
         public IQuerySession QuerySession(string tenantId)
         {
+            var tenant = Tenancy[tenantId];
+
+            if (!Options.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
+                throw new DefaultTenantUsageDisabledException();
+            }
+
             var parser = new MartenQueryParser();
 
-            var tenant = Tenancy[tenantId];
             var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
 
             var session = new QuerySession(this,

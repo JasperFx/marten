@@ -1,0 +1,96 @@
+using System;
+using Marten.Services;
+using Marten.Storage;
+using Xunit;
+
+namespace Marten.Testing.Acceptance
+{
+    public class disabling_default_tenant_usage : IntegratedFixture
+    {
+        [Fact]
+        public void get_exception_when_creating_session_with_default_tenant_usage_disabled()
+        {
+            StoreOptions(_ =>
+            {
+                _.DefaultTenantUsageEnabled = false;
+            });
+
+            Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+            {
+                using (var session = theStore.OpenSession()) { }
+            });
+        }
+
+        [Fact]
+        public void get_exception_when_creating_query_session_with_default_tenant_usage_disabled()
+        {
+            StoreOptions(_ =>
+            {
+                _.DefaultTenantUsageEnabled = false;
+            });
+
+            Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+            {
+                using (var session = theStore.QuerySession()) { }
+            });
+        }
+
+        [Fact]
+        public void get_exception_when_creating_session_with_default_tenant_and_default_tenant_usage_disabled()
+        {
+            StoreOptions(_ =>
+            {
+                _.DefaultTenantUsageEnabled = false;
+            });
+
+            Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+            {
+                using (var session = theStore.OpenSession(Tenancy.DefaultTenantId)) { }
+            });
+        }
+
+        [Fact]
+        public void get_exception_when_creating_query_session_with_default_tenant_and_default_tenant_usage_disabled()
+        {
+            StoreOptions(_ =>
+            {
+                _.DefaultTenantUsageEnabled = false;
+            });
+
+            Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+            {
+                using (var session = theStore.QuerySession(Tenancy.DefaultTenantId)) { }
+            });
+        }
+
+        [Fact]
+        public void get_exception_when_creating_session_with_default_tenant_session_options_and_default_tenant_usage_disabled()
+        {
+            StoreOptions(_ =>
+            {
+                _.DefaultTenantUsageEnabled = false;
+            });
+
+            Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+            {
+                var sessionOptions = new SessionOptions {TenantId = Tenancy.DefaultTenantId};
+                using (var session = theStore.OpenSession(sessionOptions)) { }
+            });
+        }
+
+        [Fact]
+        public void get_exception_when_creating_query_session_with_default_tenant_session_options_and_default_tenant_usage_disabled()
+        {
+            StoreOptions(_ =>
+            {
+                _.DefaultTenantUsageEnabled = false;
+            });
+
+            Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+            {
+                var sessionOptions = new SessionOptions {TenantId = Tenancy.DefaultTenantId};
+                using (var session = theStore.QuerySession(sessionOptions)) { }
+            });
+        }
+    }
+}

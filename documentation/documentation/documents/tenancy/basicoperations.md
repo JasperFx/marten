@@ -21,3 +21,5 @@ With multi-tenancy enabled, Marten associates each record with a tenancy. If no 
 The following sample demonstrates persisting documents as non-tenanted, under default tenant and other named tenants then querying them back in a session scoped to a specific named tenant and default tenant.
 
 <[sample:tenancy-mixed-tenancy-non-tenancy-sample]> 
+
+In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
