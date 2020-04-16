@@ -111,10 +111,6 @@ namespace Marten.Testing.Events
     // SAMPLE: scenario-aggregate-invoice
     public sealed class Invoice: AggregateBase
     {
-        public Invoice()
-        {
-        }
-
         public Invoice(int invoiceNumber)
         {
             if (invoiceNumber <= 0)
@@ -130,6 +126,10 @@ namespace Marten.Testing.Events
 
             // Add the event to uncommitted events to use it while persisting the events to Marten events store
             AddUncommittedEvent(@event);
+        }
+
+        private Invoice()
+        {
         }
 
         // Enforce any contracts on input, then raise event capturing the data
@@ -156,6 +156,7 @@ namespace Marten.Testing.Events
         }
 
         public decimal Total { get; private set; }
+
         private readonly List<Tuple<string, decimal, decimal>> lines = new List<Tuple<string, decimal, decimal>>();
 
         // Apply the deltas to mutate our state
@@ -184,7 +185,7 @@ namespace Marten.Testing.Events
     // SAMPLE: scenario-aggregate-events
     public sealed class InvoiceCreated
     {
-        public readonly int InvoiceNumber;
+        public int InvoiceNumber { get; }
 
         public InvoiceCreated(int invoiceNumber)
         {
@@ -194,9 +195,9 @@ namespace Marten.Testing.Events
 
     public sealed class LineItemAdded
     {
-        public readonly decimal Price;
-        public readonly decimal Vat;
-        public readonly string Description;
+        public decimal Price { get; }
+        public decimal Vat { get; }
+        public string Description { get; }
 
         public LineItemAdded(decimal price, decimal vat, string description)
         {

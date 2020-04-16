@@ -1,5 +1,6 @@
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace Marten.Util
@@ -25,7 +26,17 @@ namespace Marten.Util
     {
         public static bool HasDefaultConstructor(this Type t)
         {
-            return t.IsValueType || t.GetConstructor(Type.EmptyTypes) != null;
+            return t.IsValueType || t.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null) != null;
         }
+    }
+
+    public enum ConstructorHandling
+    {
+        DefaultPublic = 1,
+        DefaultProtected = 2,
+        DefaultPrivate = 4,
+        NotInitialized = 8,
+        AnyDefault = DefaultPublic | DefaultProtected | DefaultPrivate,
+        All = AnyDefault | NotInitialized
     }
 }
