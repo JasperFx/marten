@@ -57,6 +57,16 @@ namespace Marten.Testing.Util
         }
 
         [Fact]
+        public void can_create_not_intialized_instance_of_class_with_no_default_constructor()
+        {
+            var instance = New<ClassWithNoDefaultConstructor>.Instance();
+
+            instance.ShouldNotBeNull();
+            instance.ShouldBeOfType<ClassWithNoDefaultConstructor>();
+            instance.IsInitialized.ShouldBeFalse();
+        }
+
+        [Fact]
         public void can_create_intialized_instance_of_class_with_private_default_constructor_and_public_non_default_constructor()
         {
             var instance = New<ClassWithPrivateDefaultConstructorAndPublicNonDefaultConstructor>.Instance();
@@ -150,6 +160,16 @@ namespace Marten.Testing.Util
 
         private ClassWithProtectedDefaultConstructor()
         {
+        }
+    }
+
+    internal class ClassWithNoDefaultConstructor
+    {
+        public bool IsInitialized = false;
+
+        public ClassWithNoDefaultConstructor(string stringParam)
+        {
+            IsInitialized = true;
         }
     }
 

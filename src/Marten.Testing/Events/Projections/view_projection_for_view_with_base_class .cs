@@ -21,6 +21,8 @@ namespace Marten.Testing.Events.Projections
                 _.Events.InlineProjections.Add<ViewProjectionForViewWithBaseClass>();
                 _.Events.InlineProjections.Add<ViewProjectionForViewWithBaseClassAndIdOverloaded>();
                 _.Events.InlineProjections.Add<ViewProjectionForViewWithBaseClassAndIdOverloadedWithNew>();
+                _.Events.InlineProjections.Add<ViewProjectionForViewWithNonDefaultPublicConstructor>();
+                _.Events.InlineProjections.Add<ViewProjectionForViewWithDefaultPrivateConstructorAndNonDefaultPublicConstructor>();
             });
 
             streamId = theSession.Events
@@ -45,6 +47,18 @@ namespace Marten.Testing.Events.Projections
         public void run_view_projection_with_base_class_and_id_overloaded_with_new()
         {
             VerifyProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+        }
+
+        [Fact]
+        public void run_view_projection_with_non_default_public_constructor()
+        {
+            VerifyProjection<QuestMonstersWithNonDefaultPublicConstructor>();
+        }
+
+        [Fact]
+        public void run_view_projection_with_default_private_constructor_and_non_default_public_constructor()
+        {
+            VerifyProjection<QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor>();
         }
 
         private void VerifyProjection<T>() where T : IMonstersView
@@ -95,6 +109,33 @@ namespace Marten.Testing.Events.Projections
             }
 
             private void Project(QuestMonstersWithBaseClassAndIdOverloadedWithNew view, MonsterSlayed @event)
+            {
+                view.Apply(@event);
+            }
+        }
+
+        public class ViewProjectionForViewWithNonDefaultPublicConstructor: ViewProjection<QuestMonstersWithNonDefaultPublicConstructor, Guid>
+        {
+            public ViewProjectionForViewWithNonDefaultPublicConstructor()
+            {
+                ProjectEvent<MonsterSlayed>(Project);
+            }
+
+            private void Project(QuestMonstersWithNonDefaultPublicConstructor view, MonsterSlayed @event)
+            {
+                view.Apply(@event);
+            }
+        }
+
+        public class ViewProjectionForViewWithDefaultPrivateConstructorAndNonDefaultPublicConstructor
+            : ViewProjection<QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor, Guid>
+        {
+            public ViewProjectionForViewWithDefaultPrivateConstructorAndNonDefaultPublicConstructor()
+            {
+                ProjectEvent<MonsterSlayed>(Project);
+            }
+
+            private void Project(QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor view, MonsterSlayed @event)
             {
                 view.Apply(@event);
             }
