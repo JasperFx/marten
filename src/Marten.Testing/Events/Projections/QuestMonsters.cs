@@ -145,4 +145,57 @@ namespace Marten.Testing.Events.Projections
             }
         }
     }
+
+    public class QuestMonstersWithNonDefaultPublicConstructor: IMonstersView
+    {
+        public Guid Id { get; private set; }
+
+        public IList<string> Monsters { get; private set; }
+
+        string[] IMonstersView.Monsters => Monsters.ToArray();
+
+        public QuestMonstersWithNonDefaultPublicConstructor(
+            Guid id,
+            string[] monsters
+        )
+        {
+            Id = id;
+            Monsters = monsters;
+        }
+
+        public void Apply(MonsterSlayed slayed)
+        {
+            if (Monsters == null)
+                Monsters = new List<string>();
+
+            Monsters.Fill(slayed.Name);
+        }
+    }
+
+    public class QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor: IMonstersView
+    {
+        public Guid Id { get; private set; }
+
+        public IList<string> Monsters { get; private set; } = new List<string>();
+
+        string[] IMonstersView.Monsters => Monsters.ToArray();
+
+        public QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor(
+            Guid id,
+            string[] monsters
+        )
+        {
+            Id = id;
+            Monsters = monsters;
+        }
+
+        private QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor()
+        {
+        }
+
+        public void Apply(MonsterSlayed slayed)
+        {
+            Monsters.Fill(slayed.Name);
+        }
+    }
 }
