@@ -28,16 +28,18 @@ Each of these methods take various overloads that allow selecting the Id field i
 <div class="alert alert-warning">
 <b><u>Warning:</u></b>
 <br />
-Projection class needs to have:
-<ul>
-<li>public default constructor,</li>
-<li><b>Id</b> property with public getter or setter.</li>
-</ul>
+Projection class needs to have <b>Id</b> property with public getter or property marked with <b>Identity</b> attribute.
+<br /><br />
 It comes of the way how Marten handles projection mechanism:
 <br />
 <ol>
 <li>Try to find document that has the same <b>Id</b> as the value of the property selected from event (so eg. for <b>UserCreated</b> event it will be <b>UserId</b>).</li>
-<li>If such document exists, then new record needs to be created. It's done using <b>default constructor</b>.</li>
+<li>
+    If such document exists, then new record needs to be created. Marten by default tries to use <b>default constructor</b>. <br />
+    Default constructor doesn't have to be public, might be also private or protected. <br />
+    If class does not have the default constructor then it creates unitialized object (see <a href="https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8" target="_parent">more</a>).<br />
+    Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
+</li>
 <li>If document with such <b>Id</b> was found then it's being loaded from database.</li>
 <li>Document is updated with the defined in <b>ViewProjection</b> logic (using expression from second <b>ProjectEvent</b> parameter).</li>
 <li>Created or updated document is upserted to database.</li>
