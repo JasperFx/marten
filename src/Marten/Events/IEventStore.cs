@@ -51,6 +51,15 @@ namespace Marten.Events
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        /// </summary>
+        /// <param name="aggregateType"></param>
+        /// <param name="id"></param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        EventStream StartStream(Type aggregateType, Guid id, params object[] events);
+
+        /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
         ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
         /// </summary>
         /// <typeparam name="TAggregate"></typeparam>
@@ -58,6 +67,16 @@ namespace Marten.Events
         /// <param name="events"></param>
         /// <returns></returns>
         EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class;
+
+        /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        ///  - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
+        /// </summary>
+        /// <param name="aggregateType"></param>
+        /// <param name="streamKey">String identifier of this stream</param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        EventStream StartStream(Type aggregateType, string streamKey, params object[] events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
