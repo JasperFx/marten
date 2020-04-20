@@ -3,7 +3,7 @@
     <PropertyGroup>
         <Description>Dummy project for test scenario</Description>
         <Authors>Jeremy D. Miller;Tim Cools;Jeff Doolittle</Authors>
-        <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net462;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten.Testing.OtherAssembly</AssemblyName>
         <PackageId>Marten.Testing.OtherAssembly</PackageId>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
