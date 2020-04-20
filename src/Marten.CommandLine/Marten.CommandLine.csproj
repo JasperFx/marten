@@ -4,7 +4,7 @@
         <Description>Command line tooling for Marten</Description>
         <VersionPrefix>3.12.1</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
-        <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+        <TargetFrameworks>net462;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten.CommandLine</AssemblyName>
         <PackageId>Marten.CommandLine</PackageId>
         <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
