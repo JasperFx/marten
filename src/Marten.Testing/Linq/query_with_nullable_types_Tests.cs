@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Marten.Services;
 using Shouldly;
@@ -80,6 +80,18 @@ namespace Marten.Testing.Linq
 
             theSession.Query<Target>().Where(x => !x.NullableDateTime.HasValue || x.NullableDateTime > new DateTime(2525,1,1)).Count()
                 .ShouldBe(4);
+        }
+
+        [Fact]
+        public void query_against_null_6()
+        {
+            theSession.Store(new Target { NullableBoolean = null });
+            theSession.Store(new Target { NullableBoolean = true });
+
+            theSession.SaveChanges();
+
+            theSession.Query<Target>().Where(x => x.NullableBoolean.HasValue == false).Count()
+                .ShouldBe(1);
         }
 
         [Fact]
