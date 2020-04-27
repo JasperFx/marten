@@ -155,6 +155,14 @@ Use native postgresql partial JSON updates wherever possible. Let's do a perf te
 
 There's an existing conversation on GitHub about the [event sourcing improvements for v4](https://github.com/JasperFx/marten/issues/1307).
 
+### Tombstoning Events
+
+See [this issue](https://github.com/JasperFx/marten/issues/996)
+
+**Maybe**, the way we do this is in any unit of work involving event capture, we first fetch the event sequence numbers, then try to execute the unit of work. If that fails, then you insert tombstone rows.
+
+The value here is making the async daemon go faster by being more sure where the leading edge is.
+
 ### Event Store Metadata
 
 See the earlier conversation about document metadata up above, and also the next section on schema generation for the event store.
@@ -384,22 +392,63 @@ The difference here is that this will take multiple batched commands to the data
 
 
 
-
 ### Snapshots & "Live" Projections
 
+TODO
 
 ## Async Daemon
 
 For v4, the Async Daemon needs to come in a couple different possible deployment configurations:
 
-1. "Classic" database polling mode -- no queueing, just something that polls for new events and runs the projections. I think this will be a near rewrite in v4, but there's some 
+1. "Classic" Polling-Based Mode -- no queueing, just something like the existing Async Daemon that polls for new events and runs the projections. I think this will be a near rewrite in v4, but there's some 
    existing art in [Jasper's DurabilityAgent](http://jasperfx.github.io/documentation/durability/) that might help this along
-1. Messaging-based Mode -- use Rabbit MQ, Azure Service Bus, Kafka, etc. to gather up events and connect with the running projections
+1. Messaging-Based Mode -- use Rabbit MQ, Azure Service Bus, Kafka, etc. to gather up events and connect with the running projections
+
+For both modes, we've got these issues to solve:
+
+1. Assigning projection ownership between active nodes, including the distribution and segmentation of projection builders
+1. Triggering a projection rebuild? Or at least a switchover?
+1. Enforcing event ordering
+
+Some general thoughts:
+
+* Try to decouple the projections away from `IDocumentSession` as a way to make the projection code more efficient
+* By skipping the document session, we could go directly at individual `IStorageOperation` for updates maybe. Allowing us to more effectively parallelize the generation of 
+  document updates
+* Generate a new Postgresql function for projected documents that combines the progress tracking by projection, adds optimistic concurrency checks,
+  and upserts an array of documents. Postgresql support for arrays makes this feasible
+* We need to support zero downtime projection rebuilds
+* For aggregations, introduce some caching on the aggregated documents as an optimization. Depending on the aggregation, this might not be super effective,
+  but would be huge for rebuilding projections
 
 
+### Polling-Based Mode
+
+Just some thoughts:
+
+* Use [advisory locks](https://hashrocket.com/blog/posts/advisory-locks-in-postgres) for [leader election](https://en.wikipedia.org/wiki/Leader_election) of the async daemon. The question becomes though, do you try to do a coarse grained "active / ready standby" split where the entire async deamon runs on one node at a time, or do you try to get more fine-grained and try to spread
+different projections or segments of projections around to different nodes?
+
+* Inactive nodes will poll to try to take over the ownership of the active daemon
+
+
+### Messaging-Based Projections
+
+* Use some sort of messaging infrastructure to publish events to the running projection builders
+* Use some kind of centralized *Distributor* process to assign individual projections and projection segments
+  to different running nodes. We'll need leader election *somehow* to handle that
+* We should have some out of the box solutions for this. I'm obviously interested initially in a [Jasper-based solution](https://jasperfx.github.io)
+  that would add Rabbit MQ and Azure Service Bus support, with Kafka coming soon. It'd take some additional work in Jasper to add the 
+  idea of "sticky" processes, but Jasper already has Marten integration w/ outbox support that would come in handy here.
 
 
 ### Rebuilding Projections
 
+TODO -- Be nice to do this with zero downtime. Will need a solution even for inline projections. 
 
+There's some room for optimizations:
+
+* If it's aggregating, rebuild one aggregate at a time so you have perfect cache hits on the aggregated document
+* If you can detect when an aggregate would be deleted anyway because it's "finished", don't rebuild anything
+* Much more parallelization
 
