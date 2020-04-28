@@ -27,6 +27,11 @@ Available [here](https://dotnet.microsoft.com/download/thank-you/net461-develope
 
 **3. PostgreSQL 9.5 or above database with PLV8**
 
+The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have
+Docker running on your local box, type `dotnet run -- init-db` at the command line to spin up a Postgresql database with
+PLv8 enabled and configured in the database. The default Marten test configuration tries to find this database if no
+PostgreSQL database connection string is explicitly configured following the steps below:
+
 You need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
 Ensure the following:
