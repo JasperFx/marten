@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Threading;
+using Npgsql;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 using static Westwind.Utilities.FileUtils;
@@ -9,6 +11,9 @@ namespace martenbuild
     internal class MartenBuild
     {
         private const string BUILD_VERSION = "3.11.0";
+
+        private const string DockerConnectionString =
+            "Host=localhost;Port=5432;Database=postgres;Username=postgres;password=postgres";
 
         private static void Main(string[] args)
         {
@@ -78,7 +83,40 @@ namespace martenbuild
             Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime"), project =>
                 Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
 
+            Target("init-db", () =>
+            {
+                Run("docker-compose", "up -d");
+
+                WaitForDatabaseToBeReady();
+
+            });
+
             RunTargetsAndExit(args);
+        }
+
+        private static void WaitForDatabaseToBeReady()
+        {
+            var attempt = 0;
+            while (attempt < 10)
+                try
+                {
+                    using (var conn = new NpgsqlConnection(DockerConnectionString))
+                    {
+                        conn.Open();
+
+                        var cmd = conn.CreateCommand();
+                        cmd.CommandText = "create extension if not exists plv8";
+                        cmd.ExecuteNonQuery();
+
+                        Console.WriteLine("Postgresql is up and ready!");
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(250);
+                    attempt++;
+                }
         }
 
         private static void PublishDocs(string branchName, bool exportWithGithubProjectPrefix, string docTargetDir = "doc-target")
