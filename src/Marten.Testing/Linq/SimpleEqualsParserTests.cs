@@ -7,11 +7,12 @@ using System.Linq.Expressions;
 using Marten.Services;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Testing.Harness;
 
 namespace Marten.Testing.Linq
 {
-	public class SimpleEqualsParserTests : DocumentSessionFixture<NulloIdentityMap>
-	{		
+	public class SimpleEqualsParserTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+	{
 		class QueryTarget
 		{
 			public int IntProp { get; set; }
@@ -21,7 +22,7 @@ namespace Marten.Testing.Linq
 			public Guid Id { get; set; }
 			public DateTime DateTimeProp { get; set; }
 			public DateTimeOffset DateTimeOffsetProp { get; set; }
-		}		
+		}
 
 		[Fact]
 		public void CanTranslateEqualsToQueries()
@@ -147,7 +148,7 @@ namespace Marten.Testing.Linq
 		[Theory]
 		[ClassData(typeof(TestData))]
 		public void EqualsGeneratesSameSqlAsEqualityOperator(object value)
-		{			
+		{
 			string queryEquals = null, queryEqualOperator = null;
 			switch (value)
 			{
@@ -232,5 +233,9 @@ namespace Marten.Testing.Linq
 				return q => q.FirstOrDefault(x => x.IntProp.Equals(IntProp) && x.Id.Equals(IdProp));
 			}
 		}
-	}
+
+        public SimpleEqualsParserTests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
 }

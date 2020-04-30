@@ -1,11 +1,12 @@
 using System.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_980_bulk_insert_with_subclass: IntegratedFixture
+    public class Bug_980_bulk_insert_with_subclass: IntegrationContext
     {
         [Fact]
         public void can_do_a_bulk_insert_against_the_parent()
@@ -57,6 +58,10 @@ namespace Marten.Testing.Bugs
             {
                 query.Query<SuperUser>().Count().ShouldBe(4);
             }
+        }
+
+        public Bug_980_bulk_insert_with_subclass(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

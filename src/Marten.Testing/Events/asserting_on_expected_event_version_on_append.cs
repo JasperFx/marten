@@ -1,11 +1,12 @@
 using Marten.Events;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class asserting_on_expected_event_version_on_append: DocumentSessionFixture<NulloIdentityMap>
+    public class asserting_on_expected_event_version_on_append: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void should_check_max_event_id_on_append()
@@ -108,6 +109,10 @@ namespace Marten.Testing.Events
                 state.Key.ShouldBe(stream);
                 state.Version.ShouldBe(3);
             }
+        }
+
+        public asserting_on_expected_event_version_on_append(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -5,12 +5,13 @@ using System.IO;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail : IntegratedFixture
+    public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail : IntegrationContext
     {
 
         internal class testSchema : IFeatureSchema
@@ -121,6 +122,10 @@ namespace Marten.Testing.Bugs
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase();
                 theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
+        }
+
+        public Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

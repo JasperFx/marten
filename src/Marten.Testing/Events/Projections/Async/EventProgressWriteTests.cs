@@ -1,15 +1,16 @@
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections.Async;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
 {
-    public class EventProgressWriteTests: IntegratedFixture
+    public class EventProgressWriteTests: IntegrationContext
     {
-        public EventProgressWriteTests()
+        public EventProgressWriteTests(DefaultStoreFixture fixture) : base(fixture)
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
         }

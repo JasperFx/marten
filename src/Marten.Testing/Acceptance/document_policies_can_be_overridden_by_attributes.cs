@@ -1,12 +1,14 @@
 using System;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_policies_can_be_overridden_by_attributes: IntegratedFixture
+    public class document_policies_can_be_overridden_by_attributes: IntegrationContext
     {
         [Fact]
         public void attribute_can_override_a_policy()
@@ -39,6 +41,10 @@ namespace Marten.Testing.Acceptance
         public class TenantedDoc
         {
             public Guid Id;
+        }
+
+        public document_policies_can_be_overridden_by_attributes(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

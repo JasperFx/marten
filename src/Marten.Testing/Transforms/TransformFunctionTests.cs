@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Transforms;
 using Marten.Util;
 using NSubstitute;
@@ -60,7 +61,7 @@ namespace Marten.Testing.Transforms
 
             func.Name.ShouldBe("get_fullname");
 
-            func.Body.ShouldContain("module.exports");
+            SpecificationExtensions.ShouldContain(func.Body, "module.exports");
 
             func.Identifier.Name.ShouldBe("mt_transform_get_fullname");
         }
@@ -88,7 +89,7 @@ namespace Marten.Testing.Transforms
                     actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
                 }
 
-                
+
             }
         }
 

@@ -1,11 +1,12 @@
 using System;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_654_document_session_delete_Tests: DocumentSessionFixture<IdentityMap>
+    public class Bug_654_document_session_delete_Tests: IntegrationContextWithIdentityMap<IdentityMap>
     {
         [Fact]
         public void upsert_then_delete_should_delete()
@@ -18,6 +19,10 @@ namespace Marten.Testing.Bugs
 
             var loadedIssue = theSession.Load<Issue>(issue.Id);
             loadedIssue.ShouldBeNull();
+        }
+
+        public Bug_654_document_session_delete_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,6 +1,8 @@
+using Marten.Testing.Harness;
+
 namespace Marten.Testing.Examples
 {
-    public class IdentityMapTests: IntegratedFixture
+    public class IdentityMapTests: IntegrationContext
     {
         // SAMPLE: using-identity-map
         public void using_identity_map()
@@ -17,5 +19,8 @@ namespace Marten.Testing.Examples
         }
 
         // ENDSAMPLE
+        public IdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 }

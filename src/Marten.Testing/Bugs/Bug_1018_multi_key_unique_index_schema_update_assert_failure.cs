@@ -1,5 +1,6 @@
 using System;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -11,7 +12,7 @@ namespace Marten.Testing.Bugs
         public string Field2 { get; set; }
     }
 
-    public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: IntegratedFixture
+    public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: IntegrationContext
     {
         [Fact]
         public void check_database_matches_configuration_with_multi_key_unique_index()
@@ -28,6 +29,10 @@ namespace Marten.Testing.Bugs
 
             store.Schema.ApplyAllConfiguredChangesToDatabase();
             store.Schema.AssertDatabaseMatchesConfiguration();
+        }
+
+        public Bug_1018_multi_key_unique_index_schema_update_assert_failure(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

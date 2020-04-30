@@ -1,13 +1,14 @@
 using System.Linq;
 using Marten.Services.Includes;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_634_include_against_soft_deleted_docs: IntegratedFixture
+    public class Bug_634_include_against_soft_deleted_docs: IntegrationContext
     {
-        public Bug_634_include_against_soft_deleted_docs()
+        public Bug_634_include_against_soft_deleted_docs(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

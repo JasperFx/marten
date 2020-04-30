@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_IsSupersetOf_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_IsSupersetOf_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         public void is_superset_of_example()
         {
@@ -23,7 +24,7 @@ namespace Marten.Testing.Linq
 
         private readonly Target[] _allTargets;
 
-        public query_with_IsSupersetOf_Tests()
+        public query_with_IsSupersetOf_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             _allTargets = new[]
             {

@@ -1,15 +1,17 @@
 ﻿using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class searching_across_tenants : IntegratedFixture
+    public class searching_across_tenants : IntegrationContext
     {
         private readonly Target[] reds = Target.GenerateRandomData(50).ToArray();
         private readonly Target[] greens = Target.GenerateRandomData(75).ToArray();
         private readonly Target[] blues = Target.GenerateRandomData(25).ToArray();
 
-        public searching_across_tenants()
+        public searching_across_tenants(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

@@ -2,12 +2,13 @@ using System;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Examples
 {
-    public class UnitOfWorkBlogSamples: IntegratedFixture
+    public class UnitOfWorkBlogSamples: IntegrationContext
     {
         [Fact]
         public void show_unit_of_work()
@@ -46,6 +47,10 @@ namespace Marten.Testing.Examples
                 new FileSystem()
                     .WriteStringToFile(directory, sql);
             }
+        }
+
+        public UnitOfWorkBlogSamples(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

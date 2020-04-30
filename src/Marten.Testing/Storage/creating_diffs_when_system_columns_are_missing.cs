@@ -3,13 +3,14 @@ using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    public class creating_diffs_when_system_columns_are_missing : IntegratedFixture
+    public class creating_diffs_when_system_columns_are_missing : IntegrationContext
     {
         [Fact]
         public void can_fill_in_the_version_column()
@@ -87,6 +88,10 @@ namespace Marten.Testing.Storage
             var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
             actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
+        }
+
+        public creating_diffs_when_system_columns_are_missing(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

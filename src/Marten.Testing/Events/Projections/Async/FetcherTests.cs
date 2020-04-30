@@ -5,17 +5,19 @@ using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Projections.Async;
+using Marten.Testing.CoreFunctionality;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
 {
-    public class FetcherTests: IntegratedFixture
+    public class FetcherTests: DestructiveIntegrationContext
     {
-        public FetcherTests()
+        public FetcherTests(DefaultStoreFixture fixture) : base(fixture)
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
+
         }
 
         [Fact]

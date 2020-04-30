@@ -4,12 +4,14 @@ using System.Diagnostics;
 using System.Linq;
 using Baseline;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_against_dateoffset_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_against_dateoffset_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void query()
@@ -48,7 +50,11 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1, 3, 2);
         }
+
+        public query_against_dateoffset_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
-    
+
 }

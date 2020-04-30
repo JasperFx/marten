@@ -1,10 +1,11 @@
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_772_index_wrapping_column_does_not_match_DDL: IntegratedFixture
+    public class Bug_772_index_wrapping_column_does_not_match_DDL: IntegrationContext
     {
         [Fact] // Control
         public void index_with_no_expression_should_match_DDL()
@@ -73,6 +74,10 @@ namespace Marten.Testing.Bugs
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
             theStore.Schema.AssertDatabaseMatchesConfiguration();
+        }
+
+        public Bug_772_index_wrapping_column_does_not_match_DDL(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

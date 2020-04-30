@@ -3,20 +3,21 @@ using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    
-    public class when_deriving_the_table_definition_from_the_database_schema_Tests : IntegratedFixture
+
+    public class when_deriving_the_table_definition_from_the_database_schema_Tests : IntegrationContext
     {
         private readonly IDocumentSchema _schema;
         private DocumentMapping theMapping;
         private IDocumentStorage _storage;
         private DocumentTable theDerivedTable;
 
-        public when_deriving_the_table_definition_from_the_database_schema_Tests()
+        public when_deriving_the_table_definition_from_the_database_schema_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             _schema = theStore.Schema;
 
@@ -38,7 +39,7 @@ namespace Marten.Testing.Storage
         [Fact]
         public void it_finds_the_primary_key()
         {
-            theDerivedTable.PrimaryKey.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theDerivedTable.PrimaryKey);
             theDerivedTable.PrimaryKey.Name.ShouldBe("id");
         }
 

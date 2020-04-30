@@ -1,5 +1,7 @@
 ﻿using System;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -80,7 +82,7 @@ namespace Marten.Testing.Services
             map.Remove<Target>(target.Id);
 
             var target4 = map.Get<Target>(target.Id, serializer.ToJson(target2).ToReader(), null);
-            target4.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(target4);
             target4.ShouldNotBeTheSameAs(target3);
 
         }

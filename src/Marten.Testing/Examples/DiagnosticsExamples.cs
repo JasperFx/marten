@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Shouldly;
 
 namespace Marten.Testing.Examples
@@ -18,7 +19,7 @@ namespace Marten.Testing.Examples
 
     // ENDSAMPLE
 
-    public class DiagnosticsExamples: IntegratedFixture
+    public class DiagnosticsExamples: IntegrationContext
     {
         public void use_diagnostics()
         {
@@ -58,6 +59,10 @@ namespace Marten.Testing.Examples
                 session.RequestCount.ShouldBe(3);
             }
             // ENDSAMPLE
+        }
+
+        public DiagnosticsExamples(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

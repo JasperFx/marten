@@ -1,10 +1,11 @@
 using System;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: IntegratedFixture
+    public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: IntegrationContext
     {
         [UseOptimisticConcurrency]
         public class Foo
@@ -34,6 +35,10 @@ namespace Marten.Testing.Bugs
                     session.SaveChanges();
                 }
             });
+        }
+
+        public Bug_495_concurrent_check_by_not_first_loading_from_the_session(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -6,12 +6,13 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_transformation_of_events: DocumentSessionFixture<NulloIdentityMap>
+    public class inline_transformation_of_events: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
@@ -107,6 +108,10 @@ namespace Marten.Testing.Events.Projections
                 var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
                 doc.Monster.ShouldBe(e.Data.Name);
             }
+        }
+
+        public inline_transformation_of_events(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

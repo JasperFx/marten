@@ -9,6 +9,7 @@ using Marten.Linq;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -18,7 +19,7 @@ using User = Marten.Testing.Documents.User;
 
 namespace Marten.Testing.Services.Includes
 {
-    public class end_to_end_query_with_include_Tests : DocumentSessionFixture<IdentityMap>
+    public class end_to_end_query_with_include_Tests : IntegrationContextWithIdentityMap<IdentityMap>
     {
         [Fact]
         public async Task include_within_batch_query()
@@ -60,7 +61,7 @@ namespace Marten.Testing.Services.Includes
 
                 (await found).Id.ShouldBe(issue1.Id);
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user1.Id);
 
                 (await toList).Count.ShouldBe(3);
@@ -74,7 +75,7 @@ namespace Marten.Testing.Services.Includes
 
                 dict.ContainsKey(user1.Id).ShouldBeTrue();
                 dict.ContainsKey(user2.Id).ShouldBeTrue();
-                
+
             }
         }
 
@@ -96,10 +97,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Title == issue.Title)
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
         // ENDSAMPLE
@@ -121,10 +122,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Contains("DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -148,10 +149,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Contains("DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -172,10 +173,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t=>t=="DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -198,10 +199,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -224,10 +225,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -250,10 +251,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -276,10 +277,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -306,11 +307,11 @@ namespace Marten.Testing.Services.Includes
                                   .ToList();
 
                 users.Count.ShouldBe(1);
-                users.ShouldContain(x => x.Id == user.Id);
+                SpecificationExtensions.ShouldContain(users, x => x.Id == user.Id);
 
                 issues.Count.ShouldBe(2);
-                issues.ShouldContain(x => x.Id == issue1.Id);
-                issues.ShouldContain(x => x.Id == issue2.Id);
+                SpecificationExtensions.ShouldContain(issues, x => x.Id == issue1.Id);
+                SpecificationExtensions.ShouldContain(issues, x => x.Id == issue2.Id);
             }
         }
 
@@ -336,10 +337,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(userToCompareAgainst.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -359,9 +360,9 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Title == issue.Title)
                     .Single();
 
-                included.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(included);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -582,10 +583,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Title == issue.Title)
                     .SingleAsync().ConfigureAwait(false);
 
-                included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -721,11 +722,10 @@ namespace Marten.Testing.Services.Includes
                 User assignee2 = null;
                 User reporter2 = null;
 
-                query
-                    .Query<Issue>()
-                    .Include<User>(x => x.AssigneeId, x => assignee2 = x)
-                    .Include<User>(x => x.ReporterId, x => reporter2 = x).Single()
-                    .ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(query
+                        .Query<Issue>()
+                        .Include<User>(x => x.AssigneeId, x => assignee2 = x)
+                        .Include<User>(x => x.ReporterId, x => reporter2 = x).Single());
 
                 assignee2.Id.ShouldBe(assignee.Id);
                 reporter2.Id.ShouldBe(reporter.Id);
@@ -734,5 +734,8 @@ namespace Marten.Testing.Services.Includes
         }
         // ENDSAMPLE
 
+        public end_to_end_query_with_include_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 }

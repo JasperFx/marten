@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 
 namespace Marten.Testing.Linq.Compatibility.Support
 {

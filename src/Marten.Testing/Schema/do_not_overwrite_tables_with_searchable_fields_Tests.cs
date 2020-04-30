@@ -5,11 +5,13 @@ using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class do_not_overwrite_tables_with_searchable_fields_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class do_not_overwrite_tables_with_searchable_fields_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private void searchable(Expression<Func<Target, object>> expression)
         {
@@ -26,7 +28,7 @@ namespace Marten.Testing.Schema
 
             if (!existing.Equals(configured))
             {
-                
+
                 var writer = new StringWriter();
                 writer.WriteLine("Expected:");
                 configured.Write(theStore.Schema.DdlRules, writer);
@@ -90,6 +92,10 @@ namespace Marten.Testing.Schema
         public void guid_fields()
         {
             searchable(x => x.OtherGuid);
+        }
+
+        public do_not_overwrite_tables_with_searchable_fields_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

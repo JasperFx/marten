@@ -1,6 +1,8 @@
 using Marten;
 using Marten.Testing;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 
 namespace MartenBenchmarks
 {

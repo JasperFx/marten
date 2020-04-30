@@ -1,10 +1,11 @@
 using System;
 using System.Linq;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1069_using_generic_event_types_because_why_not: IntegratedFixture
+    public class Bug_1069_using_generic_event_types_because_why_not: IntegrationContext
     {
         public class Envelope<T>
         {
@@ -68,6 +69,10 @@ namespace Marten.Testing.Bugs
                 events.Select(x => x.Data.GetType())
                     .ShouldHaveTheSameElementsAs(typeof(Envelope<Created>), typeof(Envelope<Updated>));
             }
+        }
+
+        public Bug_1069_using_generic_event_types_because_why_not(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -3,12 +3,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class computed_indexes: IntegratedFixture
+    public class computed_indexes: IntegrationContext
     {
         [Fact]
         public void example()
@@ -129,8 +130,8 @@ namespace Marten.Testing.Acceptance
                 .Select(x => x.DDL.ToLower())
                 .First();
 
-            ddl.ShouldContain("mt_doc_target_idx_number on");
-            ddl.ShouldContain("mt_doc_target using brin");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target_idx_number on");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target using brin");
         }
 
         [Fact]
@@ -149,8 +150,8 @@ namespace Marten.Testing.Acceptance
                 .Select(x => x.DDL.ToLower())
                 .First();
 
-            ddl.ShouldContain("mt_doc_target_idx_number on");
-            ddl.ShouldContain("mt_doc_target");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target_idx_number on");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target");
             ddl.ShouldEndWith(" DESC)", Case.Insensitive);
         }
 
@@ -175,9 +176,9 @@ namespace Marten.Testing.Acceptance
                 .DDL
                 .ToLower();
 
-            ddl.ShouldContain("index mt_doc_target_idx_user_idflag");
+            SpecificationExtensions.ShouldContain(ddl, "index mt_doc_target_idx_user_idflag");
 
-            ddl.ShouldContain("((((data ->> 'userid'::text))::uuid), (((data ->> 'flag'::text))::boolean))");
+            SpecificationExtensions.ShouldContain(ddl, "((((data ->> 'userid'::text))::uuid), (((data ->> 'flag'::text))::boolean))");
         }
 
         [Fact]
@@ -201,9 +202,9 @@ namespace Marten.Testing.Acceptance
                 .DDL
                 .ToLower();
 
-            ddl.ShouldContain("index mt_doc_target_idx_stringstring_field");
+            SpecificationExtensions.ShouldContain(ddl, "index mt_doc_target_idx_stringstring_field");
 
-            ddl.ShouldContain("(upper((data ->> 'string'::text)), upper((data ->> 'stringfield'::text)))");
+            SpecificationExtensions.ShouldContain(ddl, "(upper((data ->> 'string'::text)), upper((data ->> 'stringfield'::text)))");
         }
 
         [Fact]
@@ -222,8 +223,8 @@ namespace Marten.Testing.Acceptance
                 .Select(x => x.DDL.ToLower())
                 .First();
 
-            ddl.ShouldContain("mt_doc_target_idx_date on");
-            ddl.ShouldContain("mt_doc_target_idx_date");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target_idx_date on");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target_idx_date");
         }
 
         [Fact]
@@ -263,7 +264,7 @@ namespace Marten.Testing.Acceptance
 
                 // Inserting the same original string should throw
                 session.Store(item2);
-                Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+                SpecificationExtensions.ShouldContain(Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message, "duplicate");
             }
         }
 
@@ -307,10 +308,9 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            theStore.Tenancy.Default.DbObjects.AllIndexes()
-                    .Where(x => x.Name == "mt_doc_target_idx_string")
-                    .Select(x => x.DDL)
-                    .ShouldContain(x => x.Contains("WHERE (((data ->> 'Number'::text))::integer > 10)"));
+            SpecificationExtensions.ShouldContain(theStore.Tenancy.Default.DbObjects.AllIndexes()
+                        .Where(x => x.Name == "mt_doc_target_idx_string")
+                        .Select(x => x.DDL), x => x.Contains("WHERE (((data ->> 'Number'::text))::integer > 10)"));
         }
 
         [Fact]
@@ -344,7 +344,7 @@ namespace Marten.Testing.Acceptance
                 // Inserting the same string but all uppercase should throw because
                 // the index is stored with lowcased value
                 session.Store(item);
-                Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message.ShouldContain("duplicate");
+                SpecificationExtensions.ShouldContain(Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message, "duplicate");
             }
         }
 
@@ -366,7 +366,7 @@ namespace Marten.Testing.Acceptance
             {
                 var patch = store2.Schema.ToPatch();
 
-                patch.UpdateDDL.ShouldContain("mt_doc_target_idx_number");
+                SpecificationExtensions.ShouldContain(patch.UpdateDDL, "mt_doc_target_idx_number");
             }
         }
 
@@ -391,8 +391,12 @@ namespace Marten.Testing.Acceptance
             {
                 var patch = store2.Schema.ToPatch(typeof(Target));
 
-                patch.UpdateDDL.ShouldNotContain("mt_doc_target_idx_number");
+                SpecificationExtensions.ShouldNotContain(patch.UpdateDDL, "mt_doc_target_idx_number");
             }
+        }
+
+        public computed_indexes(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

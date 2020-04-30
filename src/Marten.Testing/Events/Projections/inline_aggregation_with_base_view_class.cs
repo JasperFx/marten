@@ -1,18 +1,19 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_aggregation_with_base_view_class: DocumentSessionFixture<NulloIdentityMap>
+    public class inline_aggregation_with_base_view_class: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
         private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
         private readonly Guid streamId;
 
-        public inline_aggregation_with_base_view_class()
+        public inline_aggregation_with_base_view_class(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

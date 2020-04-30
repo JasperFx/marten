@@ -2,19 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Services.Includes;
+using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1258_cannot_derive_updates_for_objects: IntegratedFixture
+    public class Bug_1258_cannot_derive_updates_for_objects: IntegrationContext
     {
         [Fact]
         public void can_properly_detect_changes_when_user_defined_type()
         {
             theStore.Advanced.Clean.CompletelyRemoveAll();
-            StoreOptions(_ =>
+            var schemaName = StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Schema.For<UserWithCustomType>();
@@ -185,6 +186,7 @@ namespace Marten.Testing.Bugs
 
             var secondStore = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = schemaName;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Schema.For<UserWithCustomType>();
@@ -211,6 +213,10 @@ namespace Marten.Testing.Bugs
 
                 issues.Length.ShouldBe(3);
             }
+        }
+
+        public Bug_1258_cannot_derive_updates_for_objects(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

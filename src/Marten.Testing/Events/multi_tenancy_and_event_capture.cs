@@ -2,12 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class multi_tenancy_and_event_capture: IntegratedFixture
+    public class multi_tenancy_and_event_capture: IntegrationContext
     {
         public static TheoryData<TenancyStyle> TenancyStyles = new TheoryData<TenancyStyle>
         {
@@ -148,14 +149,14 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
             }
 
-            Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
+            SpecificationExtensions.ShouldContain(Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.OpenSession("Red"))
                 {
                     session.Events.Append(stream, new MembersJoined(), new MembersJoined());
                     session.SaveChanges();
                 }
-            }).Message.ShouldContain("The tenantid does not match the existing stream");
+            }).Message, "The tenantid does not match the existing stream");
         }
 
         [Fact]
@@ -191,6 +192,10 @@ namespace Marten.Testing.Events
                 _.Events.StreamIdentity = streamIdentity;
                 _.Policies.AllDocumentsAreMultiTenanted();
             });
+        }
+
+        public multi_tenancy_and_event_capture(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

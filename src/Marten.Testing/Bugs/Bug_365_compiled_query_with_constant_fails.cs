@@ -4,12 +4,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_365_compiled_query_with_constant_fails: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_365_compiled_query_with_constant_fails: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         public class Route
         {
@@ -37,14 +38,14 @@ namespace Marten.Testing.Bugs
             Stopped
         }
 
-        public Bug_365_compiled_query_with_constant_fails()
+        public Bug_365_compiled_query_with_constant_fails(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
                 _.Schema.For<Route>();
             });
 
-            theStore.Tenancy.Default.StorageFor(typeof(Route)).ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Route)));
         }
 
         public class RoutesPlannedAfter: ICompiledQuery<Route, IEnumerable<Route>>

@@ -4,6 +4,7 @@ using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
 using Shouldly;
@@ -111,7 +112,7 @@ where ns.nspname = 'testbed' and pg_proc.proname = '{function.Identifier.Name}';
 
             var delta = function.FetchDelta(_conn, new DdlRules());
 
-            delta.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(delta);
         }
 
         [Fact]
@@ -158,7 +159,7 @@ where ns.nspname = 'testbed' and pg_proc.proname = '{function.Identifier.Name}';
             var patch = new SchemaPatch(ddlRules);
             delta.WritePatch(patch);
 
-            patch.RollbackDDL.ShouldContain(delta.Actual.Body);
+            SpecificationExtensions.ShouldContain(patch.RollbackDDL, delta.Actual.Body);
         }
     }
 }

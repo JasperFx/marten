@@ -1,6 +1,7 @@
 ﻿using System;
 using Xunit;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Npgsql;
 using Xunit.Sdk;
 
@@ -29,7 +30,7 @@ namespace Marten.Testing.Schema
             var dbCreated = false;
 
             using (var store = DocumentStore.For(storeOptions =>
-            {                
+            {
                 storeOptions.Connection(dbToCreateConnectionString);
                 storeOptions.PLV8Enabled = false;
                 // SAMPLE: marten_create_database
@@ -50,7 +51,7 @@ namespace Marten.Testing.Schema
                 });
                 // ENDSAMPLE
             }))
-            {                
+            {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();
                 store.Schema.AssertDatabaseMatchesConfiguration();
                 Assert.True(dbCreated);
@@ -122,7 +123,7 @@ namespace Marten.Testing.Schema
                     }
                     connection.Close();
                 }
-                
+
             }
 
             throw new XunitException("Expected plv8 extension created");
@@ -160,7 +161,7 @@ namespace Marten.Testing.Schema
                             $"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{db}' AND pid <> pg_backend_pid();";
                         cmd.CommandText += $"DROP DATABASE IF EXISTS {db};";
                         cmd.ExecuteNonQuery();
-                    }                    
+                    }
                     finally
                     {
                         connection.Close();

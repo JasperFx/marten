@@ -2,6 +2,7 @@
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -38,7 +39,7 @@ namespace Marten.Testing.Storage
 
             table2.ShouldNotBe(table1);
 
-            table2.Column("user_name").ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(table2.Column("user_name"));
         }
 
         [Fact]
@@ -75,7 +76,7 @@ namespace Marten.Testing.Storage
 
             table2.ShouldNotBe(table1);
 
-            table2.Column("user_name").ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(table2.Column("user_name"));
         }
     }
 }

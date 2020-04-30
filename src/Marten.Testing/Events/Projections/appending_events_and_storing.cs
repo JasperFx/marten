@@ -6,12 +6,13 @@ using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class appending_events_and_storing: DocumentSessionFixture<IdentityMap>
+    public class appending_events_and_storing: IntegrationContextWithIdentityMap<IdentityMap>
     {
         [Theory]
         [InlineData(TenancyStyle.Single)]
@@ -82,6 +83,10 @@ namespace Marten.Testing.Events
             public Type Produces { get; } = typeof(QuestPatchTestProjection);
 
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
+        }
+
+        public appending_events_and_storing(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

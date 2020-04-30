@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Xunit;
 
@@ -54,7 +55,7 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    public class AggregateFinder_Async: DocumentSessionFixture<IdentityMap>
+    public class AggregateFinder_Async: IntegrationContextWithIdentityMap<IdentityMap>
     {
         [Fact]
         public async Task find_when_stream_is_new_async()
@@ -90,6 +91,10 @@ namespace Marten.Testing.Events.Projections
 
             (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))
                 .ShouldNotBeNull();
+        }
+
+        public AggregateFinder_Async(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

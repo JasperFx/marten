@@ -2,13 +2,14 @@
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_is_one_of_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_is_one_of_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_query_against_integers()
@@ -63,6 +64,10 @@ namespace Marten.Testing.Linq
                 .Where(x => x.Role.IsOneOf("Admin", "Supervisor", "Director"));
 
             // ENDSAMPLE
+        }
+
+        public query_with_is_one_of_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

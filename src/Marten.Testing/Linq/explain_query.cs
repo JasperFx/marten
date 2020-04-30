@@ -1,12 +1,13 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class explain_query: DocumentSessionFixture<NulloIdentityMap>
+    public class explain_query: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void retrieves_query_plan()
@@ -29,10 +30,10 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var plan = theSession.Query<SimpleUser>().Explain();
-            plan.ShouldNotBeNull();
-            plan.PlanWidth.ShouldBeGreaterThan(0);
-            plan.PlanRows.ShouldBeGreaterThan(0);
-            plan.TotalCost.ShouldBeGreaterThan(0m);
+            SpecificationExtensions.ShouldNotBeNull(plan);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.TotalCost, 0m);
         }
 
         [Fact]
@@ -56,10 +57,10 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
-            plan.ShouldNotBeNull();
-            plan.PlanWidth.ShouldBeGreaterThan(0);
-            plan.PlanRows.ShouldBeGreaterThan(0);
-            plan.TotalCost.ShouldBeGreaterThan(0m);
+            SpecificationExtensions.ShouldNotBeNull(plan);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.TotalCost, 0m);
         }
 
         [Fact]
@@ -93,12 +94,16 @@ namespace Marten.Testing.Linq
                 .Timing()
                 .Verbose();
             });
-            plan.ShouldNotBeNull();
-            plan.ActualTotalTime.ShouldBeGreaterThan(0m);
-            plan.PlanningTime.ShouldBeGreaterThan(0m);
-            plan.ExecutionTime.ShouldBeGreaterThan(0m);
+            SpecificationExtensions.ShouldNotBeNull(plan);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.ActualTotalTime, 0m);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.PlanningTime, 0m);
+            SpecificationExtensions.ShouldBeGreaterThan(plan.ExecutionTime, 0m);
             plan.SortKey.ShouldContain("(((d.data ->> 'Number'::text))::integer)");
             plan.Plans.ShouldNotBeEmpty();
+        }
+
+        public explain_query(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

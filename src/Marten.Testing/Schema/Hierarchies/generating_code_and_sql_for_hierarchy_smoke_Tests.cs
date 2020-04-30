@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -28,7 +29,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
 
         [Fact]
@@ -43,7 +44,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER AS $function$");
         }
 
         [Fact]
@@ -55,7 +56,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
 
         [Fact]
@@ -68,7 +69,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(current_version uuid, doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_squad(current_version uuid, doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
 
         [Fact]
@@ -81,7 +82,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_squad(current_version uuid, doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_squad(current_version uuid, doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
     }
 
@@ -113,7 +114,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
 
         [Fact]
@@ -125,7 +126,7 @@ namespace Marten.Testing.Schema.Hierarchies
 
             var sql = writer.ToString();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_squad(doc JSONB, docDotNetType varchar, docId varchar, docType varchar, docVersion uuid) RETURNS UUID LANGUAGE plpgsql SECURITY INVOKER AS $function$");
         }
     }
 

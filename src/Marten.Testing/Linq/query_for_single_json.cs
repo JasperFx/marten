@@ -3,19 +3,15 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_for_single_json : DocumentSessionFixture<NulloIdentityMap>
+    public class query_for_single_json : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public query_for_single_json()
-        {
-            // The test expectations are hard-coded for Json.Net
-            StoreOptions(_ => _.Serializer<JsonNetSerializer>());
-        }
 
         [Fact]
         public void single_returns_only_match()
@@ -38,7 +34,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().Single();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -55,7 +51,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().AsJson().Single();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -101,9 +97,9 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();
-            
+
             var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().Single());
-            ex.Message.ShouldBe("Sequence contains more than one element"); 
+            ex.Message.ShouldBe("Sequence contains more than one element");
         }
 
         [Fact]
@@ -127,7 +123,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -145,7 +141,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().AsJson().SingleAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -167,10 +163,10 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();
-            
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => 
+
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
                 theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().SingleAsync()).ConfigureAwait(false);
-            ex.Message.ShouldBe("Sequence contains no elements"); 
+            ex.Message.ShouldBe("Sequence contains no elements");
         }
 
         [Fact]
@@ -192,10 +188,10 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();
-            
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => 
+
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
                 theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleAsync()).ConfigureAwait(false);
-            ex.Message.ShouldBe("Sequence contains more than one element"); 
+            ex.Message.ShouldBe("Sequence contains more than one element");
         }
 
         [Fact]
@@ -219,7 +215,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleOrDefault();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -236,7 +232,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().AsJson().SingleOrDefault();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -267,7 +263,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -284,7 +280,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().AsJson().SingleOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -330,7 +326,7 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();
-            
+
             var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().SingleOrDefault());
             ex.Message.ShouldBe("Sequence contains more than one element");
         }
@@ -357,6 +353,10 @@ namespace Marten.Testing.Linq
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().SingleOrDefaultAsync().ConfigureAwait(false);
             userJson.ShouldBeNull();
+        }
+
+        public query_for_single_json(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_distinct_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_distinct_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void get_distinct_number()
@@ -86,6 +88,10 @@ namespace Marten.Testing.Linq
             }).Distinct();
 
             queryable.ToList().Count.ShouldBe(4);
+        }
+
+        public query_with_distinct_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

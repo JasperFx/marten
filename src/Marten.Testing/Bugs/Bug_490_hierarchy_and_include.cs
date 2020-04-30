@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_490_hierarchy_and_include: DocumentSessionFixture<IdentityMap>
+    public class Bug_490_hierarchy_and_include: IntegrationContextWithIdentityMap<IdentityMap>
     {
-        public Bug_490_hierarchy_and_include()
+        public Bug_490_hierarchy_and_include(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

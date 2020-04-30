@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -27,7 +29,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 {
                     session.Store(new IntDoc());
                     session.SaveChanges();
-                }  
+                }
             }
 
             using (var store2 = DocumentStore.For(_ =>
@@ -53,7 +55,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
 
     public class DdlLogger : IMartenLogger
     {
-        public readonly IList<string> Sql = new List<string>(); 
+        public readonly IList<string> Sql = new List<string>();
 
         public IMartenSessionLogger StartSession(IQuerySession session)
         {

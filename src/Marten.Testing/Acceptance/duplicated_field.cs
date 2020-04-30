@@ -1,12 +1,14 @@
 using System;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class duplicated_field: IntegratedFixture
+    public class duplicated_field: IntegrationContext
     {
         [Fact]
         public void can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
@@ -32,7 +34,7 @@ namespace Marten.Testing.Acceptance
             {
                 var documentFromDb = query.Load<Target>(document.Id);
 
-                documentFromDb.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(documentFromDb);
                 documentFromDb.Color.ShouldBe(document.Color);
             }
         }
@@ -65,7 +67,7 @@ namespace Marten.Testing.Acceptance
             {
                 var documentFromDb = query.Load<NonNullableDuplicateFieldTestDoc>(document.Id);
 
-                documentFromDb.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(documentFromDb);
                 documentFromDb.NonNullableDuplicateField.ShouldBe(document.NonNullableDuplicateField);
                 documentFromDb.NonNullableDuplicateFieldViaAttribute.ShouldBe(document.NonNullableDuplicateFieldViaAttribute);
             }
@@ -98,10 +100,14 @@ namespace Marten.Testing.Acceptance
             {
                 var documentFromDb = query.Load<NullableDuplicateFieldTestDoc>(document.Id);
 
-                documentFromDb.ShouldNotBeNull();
-                documentFromDb.NullableDuplicateField.ShouldBeNull();
-                documentFromDb.NullableDuplicateFieldViaAttribute.ShouldBeNull();
+                SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+                SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDuplicateField);
+                SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDuplicateFieldViaAttribute);
             }
+        }
+
+        public duplicated_field(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

@@ -5,12 +5,13 @@ using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class WritePatch_smoke_tests : IntegratedFixture
+    public class WritePatch_smoke_tests : DestructiveIntegrationContext
     {
         private void configure()
         {
@@ -55,17 +56,17 @@ namespace Marten.Testing.Schema
 
             var patch = theStore.Schema.ToPatch(typeof(User));
 
-            patch.UpdateDDL.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
-            patch.UpdateDDL.ShouldContain("CREATE TABLE public.mt_doc_user");
-            patch.RollbackDDL.ShouldContain("drop table if exists public.mt_doc_user cascade;");
+            SpecificationExtensions.ShouldContain(patch.UpdateDDL, "CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            SpecificationExtensions.ShouldContain(patch.UpdateDDL, "CREATE TABLE public.mt_doc_user");
+            SpecificationExtensions.ShouldContain(patch.RollbackDDL, "drop table if exists public.mt_doc_user cascade;");
 
             var file = AppContext.BaseDirectory.AppendPath("bin", "update_users.sql");
             patch.WriteUpdateFile(file);
 
             var text = new FileSystem().ReadStringFromFile(file);
 
-            text.ShouldContain("DO LANGUAGE plpgsql $tran$");
-            text.ShouldContain("$tran$;");
+            SpecificationExtensions.ShouldContain(text, "DO LANGUAGE plpgsql $tran$");
+            SpecificationExtensions.ShouldContain(text, "$tran$;");
         }
 
         //[Fact] //-- flakey on ci
@@ -83,8 +84,8 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Target>();
             }))
             {
-                Exception<SchemaValidationException>.ShouldBeThrownBy(
-                    () => { store.Schema.AssertDatabaseMatchesConfiguration(); }).Message.ShouldContain("user_name");
+                SpecificationExtensions.ShouldContain(Exception<SchemaValidationException>.ShouldBeThrownBy(
+                    () => { store.Schema.AssertDatabaseMatchesConfiguration(); }).Message, "user_name");
             }
         }
 
@@ -125,18 +126,19 @@ namespace Marten.Testing.Schema
             */
 
 
-            
-            StoreOptions(_ =>
+
+            var schemaName = StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            
+
 
             using (var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = schemaName;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Events.AddEventType(typeof(MembersJoined));
             }))
@@ -200,7 +202,11 @@ namespace Marten.Testing.Schema
 
             var patchSql = fileSystem.ReadStringFromFile(directory.AppendPath("1.initial.sql"));
 
-            patchSql.ShouldContain("CREATE TABLE public.mt_doc_user");
+            SpecificationExtensions.ShouldContain(patchSql, "CREATE TABLE public.mt_doc_user");
+        }
+
+        public WritePatch_smoke_tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -2,12 +2,13 @@
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DbObjectsTests : IntegratedFixture
+    public class DbObjectsTests : IntegrationContext
     {
         [Fact]
         public void can_fetch_indexes_for_a_table_in_public()
@@ -52,7 +53,11 @@ namespace Marten.Testing.Schema
 
             var functionBody = store1.Tenancy.Default.DbObjects.DefinitionForFunction(upsert);
 
-            functionBody.Body.ShouldContain("mt_doc_user");
+            SpecificationExtensions.ShouldContain(functionBody.Body, "mt_doc_user");
+        }
+
+        public DbObjectsTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

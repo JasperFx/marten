@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using Marten.Testing.CoreFunctionality;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 

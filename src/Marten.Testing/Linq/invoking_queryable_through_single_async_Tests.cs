@@ -2,12 +2,14 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [SingleStoryteller]
-    public class invoking_queryable_through_single_async_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_through_single_async_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public async Task single_hit_with_only_one_document()
@@ -91,6 +93,10 @@ namespace Marten.Testing.Linq
             {
                 await theSession.Query<Target>().Where(x => x.Number == 11).SingleAsync().ConfigureAwait(false);
             });
+        }
+
+        public invoking_queryable_through_single_async_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

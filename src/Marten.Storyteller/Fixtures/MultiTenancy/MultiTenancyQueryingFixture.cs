@@ -6,6 +6,7 @@ using Marten.Linq;
 using Marten.Linq.SoftDeletes;
 using Marten.Testing;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;
 

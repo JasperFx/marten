@@ -2,12 +2,13 @@ using System;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class using_natural_identity_keys: IntegratedFixture
+    public class using_natural_identity_keys: IntegrationContext
     {
         [Fact]
         public void finds_the_id_member_with_the_attribute_on_a_field()
@@ -43,7 +44,7 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                query.Load<NonStandardDoc>("somebody").ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(query.Load<NonStandardDoc>("somebody"));
             }
         }
 
@@ -61,6 +62,10 @@ namespace Marten.Testing.Acceptance
             mapping.IdType.ShouldBe(typeof(string));
             mapping.IdMember.Name.ShouldBe(nameof(OverriddenIdDoc.Name));
             mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();
+        }
+
+        public using_natural_identity_keys(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

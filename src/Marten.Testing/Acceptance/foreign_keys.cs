@@ -1,11 +1,12 @@
 using System;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class foreign_keys: IntegratedFixture
+    public class foreign_keys: IntegrationContext
     {
         [Fact]
         public void can_insert_document_with_null_value_of_foreign_key()
@@ -144,8 +145,8 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                query.Load<Issue>(issue.Id).ShouldBeNull();
-                query.Load<User>(user.Id).ShouldNotBeNull();
+                SpecificationExtensions.ShouldBeNull(query.Load<Issue>(issue.Id));
+                SpecificationExtensions.ShouldNotBeNull(query.Load<User>(user.Id));
             }
         }
 
@@ -172,8 +173,8 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                query.Load<Issue>(issue.Id).ShouldBeNull();
-                query.Load<User>(user.Id).ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(query.Load<Issue>(issue.Id));
+                SpecificationExtensions.ShouldBeNull(query.Load<User>(user.Id));
             }
         }
 
@@ -203,8 +204,8 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                query.Load<Issue>(issue.Id).ShouldNotBeNull();
-                query.Load<User>(user.Id).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(query.Load<Issue>(issue.Id));
+                SpecificationExtensions.ShouldNotBeNull(query.Load<User>(user.Id));
             }
         }
 
@@ -229,8 +230,12 @@ namespace Marten.Testing.Acceptance
             {
                 var documentFromDb = query.Load<Issue>(issue.Id);
 
-                documentFromDb.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(documentFromDb);
             }
+        }
+
+        public foreign_keys(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

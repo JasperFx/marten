@@ -2,12 +2,13 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
-    public class IdentityKeyGenerationTests : IntegratedFixture
+    public class IdentityKeyGenerationTests : IntegrationContext
     {
         [Fact]
         public void When_documents_are_stored_after_each_other_then_the_first_id_should_be_less_than_the_second()
@@ -48,6 +49,10 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 session.Store(new UserWithString { LastName = lastName});
                 session.SaveChanges();
             }
+        }
+
+        public IdentityKeyGenerationTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

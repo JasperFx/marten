@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_properties_from_document_comparison : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_properties_from_document_comparison : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void compares_properties_correctly()
@@ -33,7 +35,11 @@ namespace Marten.Testing.Linq
                 .ToList();
 
             result.ShouldHaveSingleItem();
-            result.ShouldContain(t => t.Id == target1.Id);
+            SpecificationExtensions.ShouldContain(result, t => t.Id == target1.Id);
+        }
+
+        public query_with_properties_from_document_comparison(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

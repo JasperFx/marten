@@ -1,11 +1,12 @@
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_339_async_cache_problem: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_339_async_cache_problem: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public async Task pending_with_dirty_checks_async()
@@ -23,6 +24,10 @@ namespace Marten.Testing.Bugs
                 var user12 = await session2.LoadAsync<User>(user1.Id).ConfigureAwait(false);
                 var breakThings = await session2.LoadAsync<User>(user1.Id).ConfigureAwait(false);
             }
+        }
+
+        public Bug_339_async_cache_problem(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

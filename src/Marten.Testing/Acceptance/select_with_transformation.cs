@@ -4,15 +4,16 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Transforms;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class select_with_transformation: IntegratedFixture
+    public class select_with_transformation: IntegrationContext
     {
-        public select_with_transformation()
+        public select_with_transformation(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ => _.Transforms.LoadFile("get_fullname.js"));
         }

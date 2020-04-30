@@ -1,10 +1,11 @@
 using System;
 using System.Linq;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_997_or_queries_with_hierarchical_docs: IntegratedFixture
+    public class Bug_997_or_queries_with_hierarchical_docs: IntegrationContext
     {
         public class User
         {
@@ -40,6 +41,10 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .ShouldHaveTheSameElementsAs("Robin", "Yann");
             }
+        }
+
+        public Bug_997_or_queries_with_hierarchical_docs(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

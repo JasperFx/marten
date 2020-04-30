@@ -5,12 +5,13 @@ using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class optimistic_concurrency: IntegratedFixture
+    public class optimistic_concurrency: IntegrationContext
     {
         public void example_configuration()
         {
@@ -43,7 +44,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(coffeeShop);
                 session.SaveChanges();
 
-                session.Load<CoffeeShop>(coffeeShop.Id).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(session.Load<CoffeeShop>(coffeeShop.Id));
             }
         }
 
@@ -56,7 +57,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(coffeeShop);
                 await session.SaveChangesAsync().ConfigureAwait(false);
 
-                (await session.LoadAsync<CoffeeShop>(coffeeShop.Id).ConfigureAwait(false)).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<CoffeeShop>(coffeeShop.Id).ConfigureAwait(false)));
             }
         }
 
@@ -615,6 +616,10 @@ namespace Marten.Testing.Acceptance
                 doc1.Name = "New Name";
                 session.SaveChanges();
             }
+        }
+
+        public optimistic_concurrency(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

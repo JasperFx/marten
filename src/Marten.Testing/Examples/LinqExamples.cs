@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Marten.Testing.Documents;
 using Marten.Util;
 
 namespace Marten.Testing.Examples

@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
@@ -34,7 +35,7 @@ namespace Marten.Testing.Services
                 .ShouldBeOfType<Camaro>()
                 .Id.ShouldBe(camaro.Id);
 
-            
+
         }
 
         public class Car

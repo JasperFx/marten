@@ -1,11 +1,12 @@
 using System.IO;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Scenarios
 {
-    public class persist_and_query_via_dynamic: DocumentSessionFixture<NulloIdentityMap>
+    public class persist_and_query_via_dynamic: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: sample-scenarios-dynamic-type
         class TemperatureData
@@ -72,6 +73,10 @@ namespace Marten.Testing.Scenarios
                 }
             }
             // ENDSAMPLE
+        }
+
+        public persist_and_query_via_dynamic(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

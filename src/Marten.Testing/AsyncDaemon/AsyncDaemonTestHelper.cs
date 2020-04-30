@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Harness;
 using Shouldly;
 
 namespace Marten.Testing.AsyncDaemon

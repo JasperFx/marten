@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Marten.Testing;
+using Marten.Testing.Documents;
 
 namespace MartenBenchmarks
 {

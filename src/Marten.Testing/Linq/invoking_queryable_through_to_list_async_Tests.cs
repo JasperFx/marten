@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -9,7 +10,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [MatchingStoryteller]
-    public class invoking_queryable_through_to_list_async_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_through_to_list_async_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: using-to-list-async
         [Fact]
@@ -39,6 +40,10 @@ namespace Marten.Testing.Linq
                 .Where(x => x.FirstName == "Sam")
                 .ToListAsync().ConfigureAwait(false);
             users.ShouldBeEmpty();
+        }
+
+        public invoking_queryable_through_to_list_async_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
@@ -26,12 +27,11 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: IntegratedFixture
+    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: IntegrationContext
     {
         [Fact]
         public void string_enum_serialization_does_not_work_with_ginindexjsondata()
         {
-            EnableCommandLogging = true;
 
             StoreOptions(_ =>
             {
@@ -64,6 +64,10 @@ namespace Marten.Testing.Linq
                     Assert.Single(items);
                 }
             }
+        }
+
+        public Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

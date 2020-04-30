@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -13,7 +14,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void no_version_member_by_default()
         {
-            DocumentMapping.For<User>().VersionMember.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(DocumentMapping.For<User>().VersionMember);
         }
 
         [Fact]
@@ -53,7 +54,7 @@ namespace Marten.Testing.Acceptance
         }
     }
 
-    public class end_to_end_versioned_docs: IntegratedFixture
+    public class end_to_end_versioned_docs: IntegrationContext
     {
         [Fact]
         public void save_initial_version_of_the_doc_and_see_the_initial_version_assigned()
@@ -64,11 +65,11 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                session.VersionFor(doc).ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
 
                 session.SaveChanges();
 
-                session.VersionFor(doc).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(session.VersionFor(doc));
                 doc.Version.ShouldNotBe(Guid.Empty);
                 doc.Version.ShouldBe(session.VersionFor(doc).Value);
             }
@@ -83,11 +84,11 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                session.VersionFor(doc).ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
 
                 await session.SaveChangesAsync();
 
-                session.VersionFor(doc).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(session.VersionFor(doc));
                 doc.Version.ShouldNotBe(Guid.Empty);
                 doc.Version.ShouldBe(session.VersionFor(doc).Value);
             }
@@ -102,7 +103,7 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                session.VersionFor(doc).ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
 
                 session.SaveChanges();
 
@@ -153,7 +154,7 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                session.VersionFor(doc).ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
 
                 session.SaveChanges();
 
@@ -204,7 +205,7 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                session.VersionFor(doc).ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
 
                 await session.SaveChangesAsync();
 
@@ -278,6 +279,10 @@ namespace Marten.Testing.Acceptance
             {
                 doc.Version.ShouldNotBe(Guid.Empty);
             }
+        }
+
+        public end_to_end_versioned_docs(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [SingleStoryteller]
-    public class invoking_queryable_through_single_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_through_single_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: single_and_single_or_default
         [Fact]
@@ -19,8 +21,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target{Number = 4});
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Single(x => x.Number == 3)
-                .ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().Single(x => x.Number == 3));
         }
 
         [Fact]
@@ -32,8 +33,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().SingleOrDefault(x => x.Number == 3)
-                .ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().SingleOrDefault(x => x.Number == 3));
         }
         // ENDSAMPLE
 
@@ -46,8 +46,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().SingleOrDefault(x => x.Number == 11)
-                .ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theSession.Query<Target>().SingleOrDefault(x => x.Number == 11));
         }
 
         [Fact]
@@ -93,6 +92,10 @@ namespace Marten.Testing.Linq
             {
                 theSession.Query<Target>().Where(x => x.Number == 11).Single();
             });
+        }
+
+        public invoking_queryable_through_single_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

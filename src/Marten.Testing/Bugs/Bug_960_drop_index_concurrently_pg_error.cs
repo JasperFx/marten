@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -11,7 +12,7 @@ namespace Marten.Testing.Bugs
         public string Field2 { get; set; }
     }
 
-    public class Bug_960_drop_index_concurrently_pg_error: IntegratedFixture
+    public class Bug_960_drop_index_concurrently_pg_error: IntegrationContext
     {
         /// <summary>
         /// Fix for PG error "0A000: DROP INDEX CONCURRENTLY must be first action in transaction"
@@ -55,6 +56,10 @@ namespace Marten.Testing.Bugs
                 .Where(p => p.Field1 == "some value")
                     .ToListAsync();
             }
+        }
+
+        public Bug_960_drop_index_concurrently_pg_error(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

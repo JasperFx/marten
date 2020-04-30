@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Storage;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Events.Utils;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -217,16 +218,16 @@ namespace Marten.Testing.Events
                     var party = session.Events.AggregateStream<QuestParty>(questId);
 
                     party.Id.ShouldBe(questId);
-                    party.ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(party);
 
                     var party_at_version_3 = session.Events
                         .AggregateStream<QuestParty>(questId, 3);
 
-                    party_at_version_3.ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(party_at_version_3);
 
                     var party_yesterday = session.Events
                         .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                    party_yesterday.ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(party_yesterday);
                 }
 
                 using (var session = store.OpenSession(tenantId, sessionType))
@@ -241,7 +242,7 @@ namespace Marten.Testing.Events
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
                     var party = session.Load<QuestParty>(questId);
-                    party.ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(party);
                 }
                 //GetAll
                 using (var session = store.OpenSession(tenantId, sessionType))
@@ -249,7 +250,7 @@ namespace Marten.Testing.Events
                     var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
                     foreach (var party in parties)
                     {
-                        party.ShouldNotBeNull();
+                        SpecificationExtensions.ShouldNotBeNull(party);
                     }
                 }
                 //This AggregateStream fail with NPE
@@ -495,7 +496,7 @@ namespace Marten.Testing.Events
                     streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                     streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                    streamEvents.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
+                    streamEvents.Each(x => SpecificationExtensions.ShouldBeGreaterThan(x.Sequence, 0L));
                 }
             }).ShouldSucceed();
         }

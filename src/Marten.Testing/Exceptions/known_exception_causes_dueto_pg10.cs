@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Exceptions
 {
-    public class known_exception_causes_dueto_pg10: IntegratedFixture
+    public class known_exception_causes_dueto_pg10: IntegrationContext
     {
         [PgVersionTargetedFact(MinimumVersion = "10.0", MaximumVersion = "11.0")]
         public void can_map_web_style_search_not_supported()
@@ -21,7 +21,11 @@ namespace Marten.Testing.Exceptions
             });
 
             e.Reason.ShouldBe(NotSupportedReason.WebStyleSearchNeedsAtLeastPostgresVersion11);
-            e.Message.ShouldContain(KnownNotSupportedExceptionCause.WebStyleSearch.Description);
+            SpecificationExtensions.ShouldContain(e.Message, KnownNotSupportedExceptionCause.WebStyleSearch.Description);
+        }
+
+        public known_exception_causes_dueto_pg10(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

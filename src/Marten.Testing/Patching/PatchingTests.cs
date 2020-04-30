@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Patching
 {
-    public class PatchingTests: IntegratedFixture
+    public class PatchingTests: IntegrationContext
     {
         class Model
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
-        }       
+        }
 
         [Fact]
         public async Task Patch_And_Load_Should_Return_Non_Stale_Result()
@@ -24,8 +25,12 @@ namespace Marten.Testing.Patching
                 sess.Patch<Model>(id).Set(x => x.Name, "bar");
                 await sess.SaveChangesAsync();
                 sess.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).Single().ShouldBe("bar");
-                sess.Load<Model>(id).Name.ShouldBe("bar"); 
+                sess.Load<Model>(id).Name.ShouldBe("bar");
             }
+        }
+
+        public PatchingTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

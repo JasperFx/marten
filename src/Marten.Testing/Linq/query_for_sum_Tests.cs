@@ -1,11 +1,13 @@
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_for_sum_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class query_for_sum_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: using_sum
         [Fact]
@@ -72,6 +74,10 @@ namespace Marten.Testing.Linq
                 .Where(x => x.NullableColor != null)
                 .Sum(x => x.Number)
                 .ShouldBe(6);
+        }
+
+        public query_for_sum_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

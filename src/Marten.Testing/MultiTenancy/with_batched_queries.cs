@@ -1,17 +1,19 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using StructureMap.Building;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class with_batched_queries : IntegratedFixture
+    public class with_batched_queries : IntegrationContext
     {
         private Target[] _reds = Target.GenerateRandomData(100).ToArray();
         private Target[] _greens = Target.GenerateRandomData(100).ToArray();
 
-        public with_batched_queries()
+        public with_batched_queries(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -39,8 +41,8 @@ namespace Marten.Testing.MultiTenancy
 
                 await batch.Execute();
 
-                (await foundRed).ShouldNotBeNull();
-                (await notFoundGreen).ShouldBeNull();
+                SpecificationExtensions.ShouldNotBeNull((await foundRed));
+                SpecificationExtensions.ShouldBeNull((await notFoundGreen));
 
                 var found = await queryForReds;
 

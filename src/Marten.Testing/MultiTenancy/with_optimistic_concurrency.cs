@@ -1,16 +1,18 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using StructureMap.Building;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class with_optimistic_concurrency : IntegratedFixture
+    public class with_optimistic_concurrency : IntegrationContext
     {
         private Target target = Target.Random();
 
-        public with_optimistic_concurrency()
+        public with_optimistic_concurrency(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -34,6 +36,6 @@ namespace Marten.Testing.MultiTenancy
                 session.Store(target);
                 await session.SaveChangesAsync();
             }
-        }       
+        }
     }
 }

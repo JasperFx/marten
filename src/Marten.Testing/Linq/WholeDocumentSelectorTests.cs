@@ -5,6 +5,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
 using Xunit;

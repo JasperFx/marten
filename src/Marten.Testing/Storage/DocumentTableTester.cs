@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
 using Shouldly;
@@ -337,8 +338,8 @@ namespace Marten.Testing.Storage
 
             var ddl = table.ToDDL(rules);
 
-            ddl.ShouldNotContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
-            ddl.ShouldContain("CREATE TABLE IF NOT EXISTS public.mt_doc_user");
+            SpecificationExtensions.ShouldNotContain(ddl, "DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
+            SpecificationExtensions.ShouldContain(ddl, "CREATE TABLE IF NOT EXISTS public.mt_doc_user");
         }
 
         [Fact]
@@ -353,8 +354,8 @@ namespace Marten.Testing.Storage
 
             var ddl = table.ToDDL(rules);
 
-            ddl.ShouldContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
-            ddl.ShouldContain("CREATE TABLE public.mt_doc_user");
+            SpecificationExtensions.ShouldContain(ddl, "DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
+            SpecificationExtensions.ShouldContain(ddl, "CREATE TABLE public.mt_doc_user");
         }
 
         [Fact]
@@ -365,7 +366,7 @@ namespace Marten.Testing.Storage
             var ex =
                 Exception<InvalidDocumentException>.ShouldBeThrownBy(
                     () => new DocumentTable(docs));
-            ex.Message.ShouldContain($"Could not determine an 'id/Id' field or property for requested document type {typeof(InvalidDocument).FullName}");
+            SpecificationExtensions.ShouldContain(ex.Message, $"Could not determine an 'id/Id' field or property for requested document type {typeof(InvalidDocument).FullName}");
         }
     }
 }

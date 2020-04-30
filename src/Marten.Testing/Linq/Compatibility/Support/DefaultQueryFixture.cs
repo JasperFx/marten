@@ -1,3 +1,5 @@
+using Marten.Testing.Documents;
+
 namespace Marten.Testing.Linq.Compatibility.Support
 {
     public class DefaultQueryFixture: TargetSchemaFixture

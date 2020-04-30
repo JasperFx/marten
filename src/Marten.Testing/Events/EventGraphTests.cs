@@ -1,5 +1,6 @@
 using System;
 using Marten.Events;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 

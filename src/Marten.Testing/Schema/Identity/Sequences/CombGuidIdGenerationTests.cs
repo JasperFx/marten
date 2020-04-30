@@ -5,12 +5,13 @@ using System.Threading;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
-    public class CombGuidIdGenerationTests : IntegratedFixture
+    public class CombGuidIdGenerationTests : IntegrationContext
     {
         [Fact]
         public void generate_lots_of_guids()
@@ -42,7 +43,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             {
                 // SAMPLE: configuring-global-sequentialguid
                 options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration();
-                // ENDSAMPLE 
+                // ENDSAMPLE
             });
 
 
@@ -69,7 +70,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             {
                 // SAMPLE: configuring-mapping-specific-sequentialguid
                 options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
-                // ENDSAMPLE 
+                // ENDSAMPLE
             });
 
             theStore.Storage.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
@@ -112,6 +113,10 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 session.Store(new UserWithGuid { LastName = lastName });
                 session.SaveChanges();
             }
+        }
+
+        public CombGuidIdGenerationTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

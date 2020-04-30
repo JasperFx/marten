@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Transforms;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_select_many : IntegratedFixture
+    public class query_with_select_many : IntegrationContext
     {
         // SAMPLE: can_do_simple_select_many_against_simple_array
         [Fact]
@@ -105,7 +106,7 @@ namespace Marten.Testing.Linq
                     .Where(p => p.Tags.Length == 1)
                     .SelectMany(x => x.Tags);
                 var ex = Record.Exception(() => queryable.Count());
-                ex.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(ex);
             }
         }
 
@@ -148,7 +149,7 @@ namespace Marten.Testing.Linq
                     .Where(p => p.Tags.Length == 1)
                     .SelectMany(x => x.Tags);
                 var ex = await Record.ExceptionAsync(() => queryable.CountAsync());
-                ex.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(ex);
             }
         }
 
@@ -158,7 +159,7 @@ namespace Marten.Testing.Linq
             var targets = Target.GenerateRandomData(10).ToArray();
             var expectedCount = targets.SelectMany(x => x.Children).Count();
 
-            expectedCount.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(expectedCount, 0);
 
 
             using (var session = theStore.OpenSession())
@@ -421,7 +422,7 @@ namespace Marten.Testing.Linq
 
             }
         }
-        
+
         [Fact]
         public async Task select_many_with_includes_async()
         {
@@ -561,6 +562,10 @@ namespace Marten.Testing.Linq
                     .Select(x => x.Attribute.Name).Distinct();
 
             }
+        }
+
+        public query_with_select_many(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

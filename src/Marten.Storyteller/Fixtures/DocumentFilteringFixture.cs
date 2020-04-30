@@ -6,6 +6,7 @@ using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Npgsql;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;

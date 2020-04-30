@@ -1,5 +1,6 @@
 using System;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -13,7 +14,7 @@ namespace Marten.Testing.Bugs
 
     public class TypeB { }
 
-    public class ability_to_persist_generic_types: DocumentSessionFixture<NulloIdentityMap>
+    public class ability_to_persist_generic_types: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_persist_and_load_generic_types()
@@ -30,9 +31,13 @@ namespace Marten.Testing.Bugs
             doc2A.ShouldNotBeNull();
             doc2B.ShouldNotBeNull();
         }
+
+        public ability_to_persist_generic_types(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
-    public class ability_to_persist_nested_generic_types: DocumentSessionFixture<NulloIdentityMap>
+    public class ability_to_persist_nested_generic_types: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_persist_and_load_generic_types()
@@ -49,6 +54,10 @@ namespace Marten.Testing.Bugs
         public class NestedGenericTypeToPersist<T>
         {
             public Guid Id = Guid.NewGuid();
+        }
+
+        public ability_to_persist_nested_generic_types(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

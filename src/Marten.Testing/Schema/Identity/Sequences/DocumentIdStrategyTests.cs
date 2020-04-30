@@ -2,12 +2,13 @@
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
-    public class DocumentIdStrategyTests : IntegratedFixture
+    public class DocumentIdStrategyTests : IntegrationContext
     {
         [Fact]
         public void uses_no_id_generation_for_non_public_id()
@@ -40,6 +41,10 @@ namespace Marten.Testing.Schema.Identity.Sequences
             public Guid Id { get; }
 
             public string Name { get; set; }
+        }
+
+        public DocumentIdStrategyTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -82,8 +82,13 @@ namespace Marten.Testing.Acceptance
 
     // ENDSAMPLE
 
-    public class full_text_index: IntegratedFixture
+    [Collection("fulltext")]
+    public class full_text_index: OneOffConfigurationsContext
     {
+        public full_text_index() : base("fulltext")
+        {
+        }
+
         public void using_whole_document_full_text_index_through_store_options_with_default()
         {
             // SAMPLE: using_whole_document_full_text_index_through_store_options_with_default
@@ -186,6 +191,8 @@ namespace Marten.Testing.Acceptance
 
                                               // Create the full text index
                                               _.Schema.For<User>().FullTextIndex();
+
+                                              _.DatabaseSchemaName = "fulltext";
                                           });
             IReadOnlyList<User> result;
 
@@ -409,14 +416,14 @@ namespace Marten.Testing.Acceptance
                 var italianResults = session.Search<User>(searchFilter, italianRegConfig);
 
                 italianResults.Count.ShouldBe(1);
-                italianResults.ShouldContain(u => u.FirstName == searchFilter);
+                SpecificationExtensions.ShouldContain(italianResults, u => u.FirstName == searchFilter);
                 italianResults.ShouldNotContain(u => u.LastName == searchFilter);
 
                 var frenchResults = session.Search<User>(searchFilter, frenchRegConfig);
 
                 frenchResults.Count.ShouldBe(1);
                 frenchResults.ShouldNotContain(u => u.FirstName == searchFilter);
-                frenchResults.ShouldContain(u => u.LastName == searchFilter);
+                SpecificationExtensions.ShouldContain(frenchResults, u => u.LastName == searchFilter);
             }
         }
 
@@ -452,7 +459,7 @@ namespace Marten.Testing.Acceptance
                     var results = session.Search<User>(searchFilter);
 
                     results.Count.ShouldBe(1);
-                    results.ShouldContain(u => u.FirstName == searchFilter);
+                    SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
                     results.ShouldNotContain(u => u.LastName == searchFilter);
                 }
             }
@@ -477,8 +484,8 @@ namespace Marten.Testing.Acceptance
                 var results = session.Search<User>(searchFilter);
 
                 results.Count.ShouldBe(2);
-                results.ShouldContain(u => u.FirstName == searchFilter);
-                results.ShouldContain(u => u.LastName == searchFilter);
+                SpecificationExtensions.ShouldContain(results, u => u.FirstName == searchFilter);
+                SpecificationExtensions.ShouldContain(results, u => u.LastName == searchFilter);
             }
         }
 
@@ -501,9 +508,9 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL.ToLower())
                               .First();
 
-            ddl.ShouldContain("create index mt_doc_target_idx_fts");
-            ddl.ShouldContain("on public.mt_doc_target");
-            ddl.ShouldContain("to_tsvector");
+            SpecificationExtensions.ShouldContain(ddl, "create index mt_doc_target_idx_fts");
+            SpecificationExtensions.ShouldContain(ddl, "on fulltext.mt_doc_target");
+            SpecificationExtensions.ShouldContain(ddl, "to_tsvector");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -517,7 +524,7 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL.ToLower())
                               .First();
 
-            ddl.ShouldContain("mt_doc_target_idx_fts");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target_idx_fts");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -531,7 +538,7 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL)
                               .First();
 
-            ddl.ShouldContain("mt_doesnt_have_prefix");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doesnt_have_prefix");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -545,7 +552,7 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL)
                               .First();
 
-            ddl.ShouldContain("mt_doesnt_have_prefix");
+            SpecificationExtensions.ShouldContain(ddl, "mt_doesnt_have_prefix");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -559,7 +566,7 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL)
                               .First();
 
-            ddl.ShouldContain("mt_i_have_prefix");
+            SpecificationExtensions.ShouldContain(ddl, "mt_i_have_prefix");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -573,7 +580,7 @@ namespace Marten.Testing.Acceptance
                               .Select(x => x.DDL)
                               .First();
 
-            ddl.ShouldContain("mt_i_have_prefix");
+            SpecificationExtensions.ShouldContain(ddl, "mt_i_have_prefix");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -739,7 +746,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Book>(
-                    tableName: "public.mt_doc_book",
+                    tableName: "fulltext.mt_doc_book",
                     indexName: $"mt_doc_book_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"data"
@@ -755,7 +762,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<UserProfile>(
-                    tableName: "public.mt_doc_userprofile",
+                    tableName: "fulltext.mt_doc_userprofile",
                     indexName: $"mt_doc_userprofile_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(UserProfile.Information)}'))"
@@ -771,7 +778,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<UserDetails>(
-                    tableName: "public.mt_doc_userdetails",
+                    tableName: "fulltext.mt_doc_userdetails",
                     indexName: "mt_custom_user_details_fts_idx",
                     regConfig: "italian",
                     dataConfig: $"((data ->> '{nameof(UserDetails.Details)}'))"
@@ -787,7 +794,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Article>(
-                    tableName: "public.mt_doc_article",
+                    tableName: "fulltext.mt_doc_article",
                     indexName: $"mt_doc_article_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(Article.Heading)}') || ' ' || (data ->> '{nameof(Article.Text)}'))"
@@ -806,7 +813,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
-                    tableName: "public.mt_doc_blogpost",
+                    tableName: "fulltext.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
@@ -814,7 +821,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
-                    tableName: "public.mt_doc_blogpost",
+                    tableName: "fulltext.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_{frenchRegConfig}_idx_fts",
                     regConfig: frenchRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.FrenchText)}'))"
@@ -822,7 +829,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
-                    tableName: "public.mt_doc_blogpost",
+                    tableName: "fulltext.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_{italianRegConfig}_idx_fts",
                     regConfig: italianRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.ItalianText)}'))"
@@ -843,7 +850,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = theStore.Schema.ToPatch();
 
-            Assert.DoesNotContain("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateDDL);
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -861,7 +868,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = theStore.Schema.ToPatch();
 
-            Assert.DoesNotContain("drop index public.mt_doc_company_idx_fts", patch.UpdateDDL);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateDDL);
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -879,7 +886,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = theStore.Schema.ToPatch();
 
-            Assert.DoesNotContain("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateDDL);
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -898,6 +905,7 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "fulltext";
 
                 _.Schema.For<User>()
                     .FullTextIndex(x => x.FirstName, x => x.LastName);
@@ -906,15 +914,16 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = store.Schema.ToPatch();
 
-            Assert.Contains("drop index public.mt_doc_user_idx_fts", patch.UpdateDDL);
+            Assert.Contains("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateDDL);
         }
+
     }
 
     public static class FullTextIndexTestsExtension
     {
         public static void ShouldContainIndexDefinitionFor<TDocument>(
             this StorageFeatures storage,
-            string tableName = "public.mt_doc_target",
+            string tableName = "fulltext.mt_doc_target",
             string indexName = "mt_doc_target_idx_fts",
             string regConfig = "english",
             string dataConfig = null)
@@ -924,20 +933,20 @@ namespace Marten.Testing.Acceptance
                 .Select(x => x.ToDDL())
                 .FirstOrDefault();
 
-            ddl.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(ddl);
 
-            ddl.ShouldContain($"CREATE INDEX {indexName}");
-            ddl.ShouldContain($"ON {tableName}");
-            ddl.ShouldContain($"to_tsvector('{regConfig}', {dataConfig})");
+            SpecificationExtensions.ShouldContain(ddl, $"CREATE INDEX {indexName}");
+            SpecificationExtensions.ShouldContain(ddl, $"ON {tableName}");
+            SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}', {dataConfig})");
 
             if (regConfig != null)
             {
-                ddl.ShouldContain(regConfig);
+                SpecificationExtensions.ShouldContain(ddl, regConfig);
             }
 
             if (dataConfig != null)
             {
-                ddl.ShouldContain(dataConfig);
+                SpecificationExtensions.ShouldContain(ddl, dataConfig);
             }
         }
     }

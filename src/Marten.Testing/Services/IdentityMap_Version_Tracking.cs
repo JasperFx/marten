@@ -3,21 +3,38 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Services
 {
-    public class NulloIdentityMap_version_tracking : IdentityMap_Version_Tracking<NulloIdentityMap> { }
-    public class IdentityMap_version_tracking : IdentityMap_Version_Tracking<IdentityMap> { }
-    public class DirtyTrackingIdentityMap_version_tracking : IdentityMap_Version_Tracking<DirtyTrackingIdentityMap> { }
+    public class NulloIdentityMap_version_tracking : IdentityMap_Version_Tracking<NulloIdentityMap>
+    {
+        public NulloIdentityMap_version_tracking(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
+    public class IdentityMap_version_tracking : IdentityMap_Version_Tracking<IdentityMap>
+    {
+        public IdentityMap_version_tracking(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
+    public class DirtyTrackingIdentityMap_version_tracking : IdentityMap_Version_Tracking<DirtyTrackingIdentityMap>
+    {
+        public DirtyTrackingIdentityMap_version_tracking(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
 
 
-    public abstract class IdentityMap_Version_Tracking<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class IdentityMap_Version_Tracking<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
     {
         private IIdentityMap theIdentityMap;
 
-        public IdentityMap_Version_Tracking()
+        public IdentityMap_Version_Tracking(DefaultStoreFixture fixture) : base(fixture)
         {
             theIdentityMap = theSession.As<DocumentSession>().IdentityMap;
         }

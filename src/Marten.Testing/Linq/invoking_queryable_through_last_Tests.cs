@@ -1,11 +1,13 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_through_last_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_through_last_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void last_throws_an_exception()
@@ -21,6 +23,10 @@ namespace Marten.Testing.Linq
                 theSession.Query<Target>().Last(x => x.Number == 3)
                     .ShouldNotBeNull();
             });
+        }
+
+        public invoking_queryable_through_last_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

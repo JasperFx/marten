@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -16,7 +17,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class Bug_616_not_possible_to_use_Serializable_transactions: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_616_not_possible_to_use_Serializable_transactions: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void conccurent_write_should_throw_an_exception()
@@ -41,6 +42,10 @@ namespace Marten.Testing.Bugs
                     session2.SaveChanges();
                 });
             }
+        }
+
+        public Bug_616_not_possible_to_use_Serializable_transactions(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs

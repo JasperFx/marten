@@ -6,6 +6,7 @@ using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Services.Events;
 using Marten.Testing.Events.Projections;
+using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Shouldly;
@@ -13,9 +14,9 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class CustomAggregatorLookupTests: DocumentSessionFixture<NulloIdentityMap>
+    public class CustomAggregatorLookupTests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public CustomAggregatorLookupTests()
+        public CustomAggregatorLookupTests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(options =>
             {
@@ -112,7 +113,7 @@ namespace Marten.Testing.Events
             projection.Name.ShouldBe("Destroy the Ring");
             // ENDSAMPLE
 
-            theSession.Events.FetchStreamState(questId).ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theSession.Events.FetchStreamState(questId));
         }
     }
 

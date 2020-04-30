@@ -1,14 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class dictionary_is_translated: DocumentSessionFixture<NulloIdentityMap>
+    public class dictionary_is_translated: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public dictionary_is_translated()
+        public dictionary_is_translated(DefaultStoreFixture fixture) : base(fixture)
         {
             theStore.BulkInsert(Target.GenerateRandomData(100).ToArray());
         }

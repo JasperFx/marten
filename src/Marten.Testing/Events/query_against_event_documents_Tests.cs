@@ -1,13 +1,14 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class query_against_event_documents_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class query_against_event_documents_Tests: DestructiveIntegrationContext
     {
         private MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         private MembersDeparted departed1 = new MembersDeparted { Members = new[] { "Thom" } };
@@ -237,5 +238,9 @@ namespace Marten.Testing.Events
          * MORE!!!
          * Async everything
          */
+        public query_against_event_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+            theStore.Advanced.Clean.DeleteAllEventData();
+        }
     }
 }

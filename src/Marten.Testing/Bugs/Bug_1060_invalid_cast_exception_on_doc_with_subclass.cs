@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: IntegratedFixture
+    public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: IntegrationContext
     {
         [Fact]
         public void can_issue_query_on_doc_hierarchy_with_include()
@@ -49,6 +50,10 @@ namespace Marten.Testing.Bugs
                 // validate for subclass document
                 admins.Count(p => p != null).ShouldBe(1);
             }
+        }
+
+        public Bug_1060_invalid_cast_exception_on_doc_with_subclass(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

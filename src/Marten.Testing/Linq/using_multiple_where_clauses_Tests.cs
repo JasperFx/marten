@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class using_multiple_where_clauses_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class using_multiple_where_clauses_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void two_where_clauses()
@@ -45,6 +47,10 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Where(x => x.Number == 1).Where(x => x.String == "Foo").Where(x => x.Long == 5).ToArray()
                 .Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(target1.Id);
+        }
+
+        public using_multiple_where_clauses_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

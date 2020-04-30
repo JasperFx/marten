@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_multiple_where_clauses_and_soft_deletes_configured : IntegratedFixture
+    public class query_with_multiple_where_clauses_and_soft_deletes_configured : IntegrationContext
     {
         [Fact]
         public async Task TestMultipleWhereClausesWithSoftDeleteConfigured()
@@ -57,6 +58,10 @@ namespace Marten.Testing.Linq
                 var result = await query.ToListAsync();
                 Assert.Equal(2, result.Count);
             }
+        }
+
+        public query_with_multiple_where_clauses_and_soft_deletes_configured(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

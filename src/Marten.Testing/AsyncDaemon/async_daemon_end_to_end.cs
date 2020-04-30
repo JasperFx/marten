@@ -8,6 +8,7 @@ using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Storage;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -15,9 +16,9 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.AsyncDaemon
 {
-    public class async_daemon_end_to_end: IntegratedFixture, IClassFixture<AsyncDaemonTestHelper>
+    public class async_daemon_end_to_end: IntegrationContext, IClassFixture<AsyncDaemonTestHelper>
     {
-        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output)
+        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
         {
             _testHelper = testHelper;
             _logger = new TracingLogger(output.WriteLine);
@@ -115,7 +116,7 @@ namespace Marten.Testing.AsyncDaemon
         {
             _testHelper.LoadTwoProjectsWithOneEventEach();
 
-            StoreOptions(_ =>
+            var schemaName = StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(ProjectStarted));
                 _.Events.AsyncProjections.Add(new ProjectCountProjection());
@@ -129,7 +130,7 @@ namespace Marten.Testing.AsyncDaemon
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
-                command.CommandText = "UPDATE mt_events SET seq_id = 102 WHERE seq_id = 2";
+                command.CommandText = $"UPDATE {schemaName}.mt_events SET seq_id = 102 WHERE seq_id = 2";
                 command.CommandType = System.Data.CommandType.Text;
                 conn.Execute(command);
             }

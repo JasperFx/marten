@@ -3,13 +3,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
     public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
-        DocumentSessionFixture<NulloIdentityMap>
+        IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private IEnumerable<Target> Make(int count)
         {
@@ -73,6 +75,10 @@ namespace Marten.Testing.Bugs
 
             stats.TotalResults.ShouldBe(33);
             queryable.Count.ShouldBe(10);
+        }
+
+        public Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

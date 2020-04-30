@@ -1,17 +1,19 @@
 ﻿using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
     [Collection("DefaultSchema")]
-    public class SequenceFactoryTests : IntegratedFixture
+    public class SequenceFactoryTests : IntegrationContext
     {
         private readonly IDocumentSchema _schema;
 
-        public SequenceFactoryTests()
+        public SequenceFactoryTests(DefaultStoreFixture fixture) : base(fixture)
         {
             _schema = theStore.Schema;
 
@@ -35,9 +37,9 @@ namespace Marten.Testing.Schema.Identity.Sequences
     }
 
 
-    public class SequenceFactoryOnOtherDatabaseSchemaTests : IntegratedFixture
+    public class SequenceFactoryOnOtherDatabaseSchemaTests : IntegrationContext
     {
-        public SequenceFactoryOnOtherDatabaseSchemaTests()
+        public SequenceFactoryOnOtherDatabaseSchemaTests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(x => x.DatabaseSchemaName = "seq_other");
 

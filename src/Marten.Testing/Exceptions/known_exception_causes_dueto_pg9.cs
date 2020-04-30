@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Exceptions
 {
-    public class known_exception_causes_dueto_pg9: IntegratedFixture
+    public class known_exception_causes_dueto_pg9: IntegrationContext
     {
         [PgVersionTargetedFact(MaximumVersion = "10.0")]
         public void can_map_jsonb_FTS_not_supported()
@@ -21,7 +21,7 @@ namespace Marten.Testing.Exceptions
             });
 
             e.Reason.ShouldBe(NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10);
-            e.Message.ShouldContain(KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
+            SpecificationExtensions.ShouldContain(e.Message, KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
         }
 
         [PgVersionTargetedFact(MaximumVersion = "10.0")]
@@ -34,7 +34,11 @@ namespace Marten.Testing.Exceptions
                     session.Query<User>("to_tsvector(?)", 0).ToList();
                 }
             });
-            e.ShouldNotBeOfType<MartenCommandNotSupportedException>();
+            SpecificationExtensions.ShouldNotBeOfType<MartenCommandNotSupportedException>(e);
+        }
+
+        public known_exception_causes_dueto_pg9(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

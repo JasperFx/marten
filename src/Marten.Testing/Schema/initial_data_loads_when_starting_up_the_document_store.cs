@@ -1,10 +1,11 @@
 ﻿using Marten.Schema;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class initial_data_loads_when_starting_up_the_document_store : IntegratedFixture
+    public class initial_data_loads_when_starting_up_the_document_store : IntegrationContext
     {
         [Fact]
         public void runs_all_the_initial_data_sets_on_startup()
@@ -25,6 +26,10 @@ namespace Marten.Testing.Schema
             data1.Received().Populate(theStore);
             data2.Received().Populate(theStore);
             data3.Received().Populate(theStore);
+        }
+
+        public initial_data_loads_when_starting_up_the_document_store(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

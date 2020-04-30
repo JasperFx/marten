@@ -4,14 +4,16 @@ using System.Linq;
 using Marten.Linq;
 using Marten.Patching;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class patching_api: DocumentSessionFixture<NulloIdentityMap>
+    public class patching_api: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public patching_api()
+        public patching_api(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -178,7 +180,7 @@ namespace Marten.Testing.Acceptance
                 var result = query.Load<Target>(target.Id);
 
                 result.StringField.ShouldBe(target.String);
-                result.Inner.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(result.Inner);
                 result.Inner.String.ShouldBe(target.String);
                 result.Inner.AnotherString.ShouldBe(target.String);
             }
@@ -570,7 +572,7 @@ namespace Marten.Testing.Acceptance
             {
                 var target2 = query.Load<Target>(target.Id);
                 target2.AnotherString.ShouldBe("Foo");
-                target2.String.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(target2.String);
             }
         }
 
@@ -592,7 +594,7 @@ namespace Marten.Testing.Acceptance
             {
                 var target2 = query.Load<Target>(target.Id);
                 target2.Inner.AnotherString.ShouldBe("Foo");
-                target2.Inner.String.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(target2.Inner.String);
             }
         }
 
@@ -702,7 +704,7 @@ namespace Marten.Testing.Acceptance
             {
                 var result = query.Load<Target>(target.Id);
 
-                result.String.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(result.String);
             }
         }
 
@@ -722,7 +724,7 @@ namespace Marten.Testing.Acceptance
             {
                 var result = query.Load<Target>(target.Id);
 
-                result.Inner.String.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(result.Inner.String);
             }
         }
 
@@ -742,7 +744,7 @@ namespace Marten.Testing.Acceptance
             {
                 var result = query.Load<Target>(target.Id);
 
-                result.Inner.ShouldBeNull();
+                SpecificationExtensions.ShouldBeNull(result.Inner);
             }
         }
 

@@ -5,20 +5,21 @@ using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentSchemaOnOtherSchemaTests : IntegratedFixture
+    public class DocumentSchemaOnOtherSchemaTests : IntegrationContext
     {
         private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
         private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
 
         private IDocumentSchema theSchema => theStore.Schema;
 
-        public DocumentSchemaOnOtherSchemaTests()
+        public DocumentSchemaOnOtherSchemaTests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");
         }
@@ -34,12 +35,12 @@ namespace Marten.Testing.Schema
 
             var sql = theSchema.ToDDL();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_company");
-            sql.ShouldContain("CREATE TABLE other.mt_doc_user");
-            sql.ShouldContain("CREATE TABLE other.mt_doc_issue");
-            sql.ShouldContain("CREATE TABLE other.mt_doc_company");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_company");
+            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE other.mt_doc_user");
+            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE other.mt_doc_issue");
+            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE other.mt_doc_company");
         }
 
 
@@ -48,7 +49,7 @@ namespace Marten.Testing.Schema
         {
             theStore.Events.IsActive(null).ShouldBeFalse();
 
-            theSchema.ToDDL().ShouldNotContain("other.mt_streams");
+            SpecificationExtensions.ShouldNotContain(theSchema.ToDDL(), "other.mt_streams");
         }
 
         [Fact]
@@ -57,15 +58,15 @@ namespace Marten.Testing.Schema
             theStore.Events.AddEventType(typeof(MembersJoined));
             theStore.Events.IsActive(null).ShouldBeTrue();
 
-            theSchema.ToDDL().ShouldContain("other.mt_streams");
+            SpecificationExtensions.ShouldContain(theSchema.ToDDL(), "other.mt_streams");
         }
 
         [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
-            theStore.Tenancy.Default.StorageFor(typeof(User)).ShouldNotBeNull();
-            theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
-            theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(User)));
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Issue)));
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Company)));
 
             var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
@@ -114,7 +115,7 @@ namespace Marten.Testing.Schema
 
                 var storage = store.Storage;
 
-                storage.StorageFor(typeof(Examples.User)).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(storage.StorageFor(typeof(Examples.User)));
 
                 Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
                 {
@@ -149,10 +150,10 @@ namespace Marten.Testing.Schema
             fileSystem.FileExists(filename).ShouldBeTrue();
 
             var contents = fileSystem.ReadStringFromFile(filename);
-            
-            contents.ShouldContain("CREATE SCHEMA event_store");
-            contents.ShouldContain("CREATE SCHEMA other");
-            contents.ShouldContain("CREATE SCHEMA yet_another");
+
+            SpecificationExtensions.ShouldContain(contents, "CREATE SCHEMA event_store");
+            SpecificationExtensions.ShouldContain(contents, "CREATE SCHEMA other");
+            SpecificationExtensions.ShouldContain(contents, "CREATE SCHEMA yet_another");
         }
 
         [Fact]

@@ -8,6 +8,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Testing.Schema.Hierarchies;
 using NpgsqlTypes;
 using Shouldly;
@@ -15,7 +16,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentMappingTests: IntegratedFixture
+    public class DocumentMappingTests: IntegrationContext
     {
         public class FieldId
         {
@@ -261,7 +262,7 @@ namespace Marten.Testing.Schema
 
             // other fields are still the same
 
-            mapping.FieldFor(nameof(User.LastName)).ShouldNotBeOfType<DuplicatedField>();
+            SpecificationExtensions.ShouldNotBeOfType<DuplicatedField>(mapping.FieldFor(nameof(User.LastName)));
         }
 
         [Theory]
@@ -495,7 +496,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Organization>();
 
             mapping.FieldFor("OtherName").ShouldBeOfType<DuplicatedField>();
-            mapping.FieldFor(nameof(Organization.OtherField)).ShouldNotBeOfType<DuplicatedField>();
+            SpecificationExtensions.ShouldNotBeOfType<DuplicatedField>(mapping.FieldFor(nameof(Organization.OtherField)));
         }
 
         [Fact]
@@ -504,7 +505,7 @@ namespace Marten.Testing.Schema
             var mapping = DocumentMapping.For<Organization>();
 
             mapping.FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
-            mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
+            SpecificationExtensions.ShouldNotBeOfType<DuplicatedField>(mapping.FieldFor(nameof(Organization.OtherProp)));
         }
 
         [Fact]
@@ -802,6 +803,10 @@ namespace Marten.Testing.Schema
 
             objects.Length.ShouldBe(5);
             objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();
+        }
+
+        public DocumentMappingTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

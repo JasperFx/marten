@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
 using Baseline.Dates;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_505_contention_with_hilo: IntegratedFixture
+    public class Bug_505_contention_with_hilo: IntegrationContext
     {
         //[Fact] -- don't run this as part of the build
         public void try_to_make_hilo_fail()
@@ -30,6 +32,10 @@ namespace Marten.Testing.Bugs
             }
 
             Task.WaitAll(tasks, 5.Minutes());
+        }
+
+        public Bug_505_contention_with_hilo(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Linq;
-using Marten.Testing.Examples;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using User = Marten.Testing.Examples.User;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class cannot_update_documents_across_tenants : IntegratedFixture
+    public class cannot_update_documents_across_tenants : IntegrationContext
     {
         [Fact]
         public void will_not_cross_the_streams()
@@ -137,6 +139,10 @@ namespace Marten.Testing.MultiTenancy
             }
 
             actualGreens.Intersect(actualReds).Any().ShouldBeFalse();
+        }
+
+        public cannot_update_documents_across_tenants(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

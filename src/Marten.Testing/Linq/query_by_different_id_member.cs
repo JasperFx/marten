@@ -1,10 +1,11 @@
 ﻿using System.Linq;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_by_different_id_member : IntegratedFixture
+    public class query_by_different_id_member : IntegrationContext
     {
         private static readonly string[] listIds = {"qwe", "zxc"};
         private static readonly string[] listSystemIds = {"123", "456"};
@@ -50,6 +51,10 @@ namespace Marten.Testing.Linq
                 session.Query<BaseClass>().Count(x => x.Id.IsOneOf("123", "456")).ShouldBe(0);
                 session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf("qwe", "zxc")).ShouldBe(0);
             }
+        }
+
+        public query_by_different_id_member(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

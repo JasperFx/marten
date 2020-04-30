@@ -1,9 +1,10 @@
 using System;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_673_multiple_version_assertions: IntegratedFixture
+    public class Bug_673_multiple_version_assertions: IntegrationContext
     {
         [Fact]
         public void replaces_the_max_version_assertion()
@@ -28,6 +29,10 @@ namespace Marten.Testing.Bugs
                 session.Events.Append(streamId, expectedVersion, new WhateverEvent());
                 session.SaveChanges();
             }
+        }
+
+        public Bug_673_multiple_version_assertions(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

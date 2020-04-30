@@ -1,12 +1,14 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_updates: IntegratedFixture
+    public class document_updates: IntegrationContext
     {
         [Fact]
         public void can_update_existing_documents()
@@ -57,6 +59,10 @@ namespace Marten.Testing.Acceptance
                     await session.SaveChangesAsync();
                 });
             }
+        }
+
+        public document_updates(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

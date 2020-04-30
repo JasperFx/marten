@@ -5,6 +5,8 @@ using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Services.Deletes;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
@@ -12,11 +14,11 @@ using Xunit;
 
 namespace Marten.Testing.Util
 {
-    public class update_batch_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class update_batch_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private readonly DocumentMapping theMapping;
 
-        public update_batch_Tests()
+        public update_batch_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             theMapping = theStore.Tenancy.Default.MappingFor(typeof (Target)).As<DocumentMapping>();
         }
@@ -64,7 +66,7 @@ namespace Marten.Testing.Util
             {
                 session.DeleteWhere<Target>(t => t.Id != null);
 
-                
+
                 targets.Each(x => session.Store(x));
                 session.SaveChanges();
 

@@ -1,9 +1,10 @@
 using System;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_957_duplicating_a_string_array: IntegratedFixture
+    public class Bug_957_duplicating_a_string_array: IntegrationContext
     {
         [Fact]
         public void works_just_fine_on_the_first_cut()
@@ -22,6 +23,10 @@ namespace Marten.Testing.Bugs
             });
 
             store2.Tenancy.Default.EnsureStorageExists(typeof(HistoryDoc));
+        }
+
+        public Bug_957_duplicating_a_string_array(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Newtonsoft.Json;
 
 namespace Marten.Testing.Examples

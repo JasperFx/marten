@@ -1,11 +1,13 @@
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_any_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_any_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void any_miss_with_query()
@@ -63,6 +65,10 @@ namespace Marten.Testing.Linq
 
             theSession.Query<Target>().Where(x => x.Number == 2).Any()
                 .ShouldBeTrue();
+        }
+
+        public invoking_queryable_any_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

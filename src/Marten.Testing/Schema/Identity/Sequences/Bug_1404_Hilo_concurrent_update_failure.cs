@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten;
 using Marten.Testing;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -43,7 +45,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
                     session.InsertObjects(targets);
                     session.SaveChanges();
                 }
-                
+
             }
         }
 

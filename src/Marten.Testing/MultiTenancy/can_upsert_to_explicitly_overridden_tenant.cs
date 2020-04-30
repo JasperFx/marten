@@ -1,11 +1,13 @@
 ﻿using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Testing.TrackingSession;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class can_upsert_to_explicitly_overridden_tenant :IntegratedFixture
+    public class can_upsert_to_explicitly_overridden_tenant :IntegrationContext
     {
         private readonly Target[] reds = Target.GenerateRandomData(50).ToArray();
         private readonly Target[] greens = Target.GenerateRandomData(75).ToArray();
@@ -42,6 +44,10 @@ namespace Marten.Testing.MultiTenancy
             {
                 blue.Query<Target>().Count().ShouldBe(25);
             }
+        }
+
+        public can_upsert_to_explicitly_overridden_tenant(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

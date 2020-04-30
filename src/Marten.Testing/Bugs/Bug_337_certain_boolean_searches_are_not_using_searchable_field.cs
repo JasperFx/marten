@@ -1,11 +1,19 @@
 using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_337_certain_boolean_searches_are_not_using_searchable_field: IntegratedFixture
+
+    [Collection("bug337")]
+    public class Bug_337_certain_boolean_searches_are_not_using_searchable_field: OneOffConfigurationsContext
     {
+        public Bug_337_certain_boolean_searches_are_not_using_searchable_field() : base("bug337")
+        {
+        }
+
         [Fact]
         public void use_searchable_fields_in_generated_sql()
         {
@@ -20,8 +28,8 @@ namespace Marten.Testing.Bugs
 
                 var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
 
-                cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where d.flag = :arg0");
-                cmd2.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (d.flag IS NULL or d.flag != :arg0)");
+                cmd1.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where d.flag = :arg0");
+                cmd2.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where (d.flag IS NULL or d.flag != :arg0)");
             }
         }
 
@@ -38,8 +46,10 @@ namespace Marten.Testing.Bugs
             {
                 var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
 
-                cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where d.data @> :arg0");
+                cmd1.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where d.data @> :arg0");
             }
         }
+
+
     }
 }

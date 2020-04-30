@@ -4,6 +4,7 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
 using Shouldly;
@@ -31,7 +32,7 @@ namespace Marten.Testing.Storage
             theTable.AddColumn("name", "text");
             theTable.AddColumn("number", "int");
             theTable.AddColumn("rownum", "serial");
-        }    
+        }
 
         public void Dispose()
         {
@@ -84,7 +85,7 @@ namespace Marten.Testing.Storage
         {
             tableExists().ShouldBeFalse();
 
-            theTable.FetchExisting(_conn).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theTable.FetchExisting(_conn));
         }
 
         [Fact]
@@ -95,7 +96,7 @@ namespace Marten.Testing.Storage
 
             var existing = theTable.FetchExisting(_conn);
 
-            existing.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(existing);
 
             existing.PrimaryKey.Name.ShouldBe("id");
             existing.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number", "rownum");
@@ -109,7 +110,7 @@ namespace Marten.Testing.Storage
             writeTable();
 
             var diff = theTable.FetchDelta(_conn);
-            diff.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(diff);
             diff.Matched.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "name", "number", "rownum");
             diff.Missing.Length.ShouldBe(0);
             diff.Extras.Length.ShouldBe(0);
@@ -175,7 +176,7 @@ namespace Marten.Testing.Storage
             diff.Matches.ShouldBeTrue();
         }
 
-       
+
 
 
     }

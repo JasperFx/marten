@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -26,19 +27,19 @@ namespace Marten.Testing.Linq
     public class BrainySmurf : PapaSmurf{ }
     // ENDSAMPLE
 
-    public class query_with_inheritance_and_aliases : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_inheritance_and_aliases : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public query_with_inheritance_and_aliases()
+        public query_with_inheritance_and_aliases(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
                 // SAMPLE: add-subclass-hierarchy-with-aliases
                 _.Schema.For<ISmurf>()
                     .AddSubClassHierarchy(
-                        typeof(Smurf), 
-                        new MappedType(typeof(PapaSmurf), "papa"), 
-                        typeof(PapySmurf), 
-                        typeof(IPapaSmurf), 
+                        typeof(Smurf),
+                        new MappedType(typeof(PapaSmurf), "papa"),
+                        typeof(PapySmurf),
+                        typeof(IPapaSmurf),
                         typeof(BrainySmurf)
                     );
                 // ENDSAMPLE
@@ -64,10 +65,10 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class query_with_inheritance : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_inheritance : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: add-subclass-hierarchy
-        public query_with_inheritance()
+        public query_with_inheritance(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -77,7 +78,7 @@ namespace Marten.Testing.Linq
                 // Alternatively, you can use the following:
                 // _.Schema.For<ISmurf>().AddSubClassHierarchy();
                 // this, however, will use the assembly
-                // of type ISmurf to get all its' subclasses/implementations. 
+                // of type ISmurf to get all its' subclasses/implementations.
                 // In projects with many types, this approach will be undvisable.
 
 
@@ -140,7 +141,7 @@ namespace Marten.Testing.Linq
                 // Alternatively, you can use the following:
                 // _.Schema.For<ISmurf>().AddSubClassHierarchy();
                 // this, however, will use the assembly
-                // of type ISmurf to get all its' subclasses/implementations. 
+                // of type ISmurf to get all its' subclasses/implementations.
                 // In projects with many types, this approach will be undvisable.
 
                 _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);

@@ -1,11 +1,12 @@
 ﻿using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_update_existing_document_Tests : DocumentSessionFixture<DirtyTrackingIdentityMap>
+    public class document_session_update_existing_document_Tests : IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
     {
         [Fact]
         public void store_a_document()
@@ -89,6 +90,10 @@ namespace Marten.Testing.TrackingSession
                 user3.FirstName.ShouldBe("Jens");
                 user3.LastName.ShouldBe("Pettersson");
             }
+        }
+
+        public document_session_update_existing_document_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

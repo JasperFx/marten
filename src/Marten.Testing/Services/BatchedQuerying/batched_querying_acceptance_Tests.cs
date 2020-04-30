@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
@@ -15,7 +16,7 @@ namespace Marten.Testing.Services.BatchedQuerying
 {
 
 
-    public class batched_querying_with_aggregate_functions : DocumentSessionFixture<NulloIdentityMap>
+    public class batched_querying_with_aggregate_functions : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public async Task can_run_aggregate_functions()
@@ -37,11 +38,15 @@ namespace Marten.Testing.Services.BatchedQuerying
             (await sum).ShouldBe(1 + 3 + 5 + 6);
             (await average).ShouldBe(3.75);
         }
+
+        public batched_querying_with_aggregate_functions(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
 
     // TODO -- I vote to move this to ST specs for perf reasons
-    public class batched_querying_acceptance_Tests : DocumentSessionFixture<IdentityMap>
+    public class batched_querying_acceptance_Tests : IntegrationContextWithIdentityMap<IdentityMap>
     {
         private readonly Target target1 = Target.Random();
         private readonly Target target2 = Target.Random();
@@ -81,7 +86,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             Role = "Master"
         };
 
-        public batched_querying_acceptance_Tests()
+        public batched_querying_acceptance_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -96,7 +101,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             theSession.SaveChanges();
         }
 
-        
+
 
         public void sample_config()
         {
@@ -219,7 +224,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
 
             (await firstUser).UserName.ShouldBe("A2");
             (await firstAdmin).UserName.ShouldBe("A3");
-            (await noneUser).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await noneUser));
         }
 
         [Fact]
@@ -236,7 +241,7 @@ tamba.Result.Id.ShouldBe(user2.Id);
 
             (await tamba).FirstName.ShouldBe("Tamba");
             (await justin).FirstName.ShouldBe("Justin");
-            (await noneUser).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await noneUser));
         }
 
 
@@ -344,8 +349,8 @@ tamba.Result.Id.ShouldBe(user2.Id);
 
             await batch.Execute().ConfigureAwait(false);
 
-            (await task1).ShouldBeOfType<Target>().ShouldNotBeNull();
-            (await task3).ShouldBeOfType<Target>().ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull((await task1).ShouldBeOfType<Target>());
+            SpecificationExtensions.ShouldNotBeNull((await task3).ShouldBeOfType<Target>());
         }
 
         [Fact]
@@ -451,9 +456,9 @@ tamba.Result.Id.ShouldBe(user2.Id);
 
             (await toList).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
             (await first).ShouldBe("Derrick");
-            (await firstOrDefault).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await firstOrDefault));
             (await single).ShouldBe("Tamba");
-            (await singleOrDefault).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await singleOrDefault));
         }
 
         [Fact]
@@ -482,9 +487,9 @@ tamba.Result.Id.ShouldBe(user2.Id);
             (await toList).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
             (await first).Name.ShouldBe("Derrick");
-            (await firstOrDefault).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await firstOrDefault));
             (await single).Name.ShouldBe("Tamba");
-            (await singleOrDefault).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await singleOrDefault));
         }
 
 
@@ -519,9 +524,9 @@ tamba.Result.Id.ShouldBe(user2.Id);
             (await toList).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
             (await first).Name.ShouldBe("Derrick");
-            (await firstOrDefault).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await firstOrDefault));
             (await single).Name.ShouldBe("Tamba");
-            (await singleOrDefault).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull((await singleOrDefault));
         }
 
 

@@ -1,12 +1,13 @@
 using System.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_inserts: IntegratedFixture
+    public class document_inserts: IntegrationContext
     {
         [Fact]
         public void can_insert_all_new_documents()
@@ -71,6 +72,10 @@ namespace Marten.Testing.Acceptance
                     session.SaveChanges();
                 });
             }
+        }
+
+        public document_inserts(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

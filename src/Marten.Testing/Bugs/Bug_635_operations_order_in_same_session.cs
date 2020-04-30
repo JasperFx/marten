@@ -2,12 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_635_operations_order_in_same_session: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_635_operations_order_in_same_session: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void deletewhere_and_store()
@@ -46,6 +47,10 @@ namespace Marten.Testing.Bugs
                 //This fails as the DeleteWhere gets executed after the Store(...) in the replaceSession
                 count.ShouldBe(newBatchSize);
             }
+        }
+
+        public Bug_635_operations_order_in_same_session(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

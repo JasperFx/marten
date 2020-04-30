@@ -1,16 +1,15 @@
 ﻿using System.Linq;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class using_mix_of_tenanted_and_not_tenanted_documents : IntegratedFixture
+    public class using_mix_of_tenanted_and_not_tenanted_documents : IntegrationContext
     {
-        public using_mix_of_tenanted_and_not_tenanted_documents()
-        {
-        }
+
 
         [Fact]
         public void can_query_on_multi_tenanted_and_non_tenanted_documents()
@@ -77,6 +76,10 @@ namespace Marten.Testing.MultiTenancy
                 session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
             }
             // ENDSAMPLE
+        }
+
+        public using_mix_of_tenanted_and_not_tenanted_documents(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

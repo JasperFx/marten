@@ -1,12 +1,14 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class using_const_boolean_in_where_clause_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class using_const_boolean_in_where_clause_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void where_const_false()
@@ -44,6 +46,10 @@ namespace Marten.Testing.Linq
 
             var q = Queryable.Where<Target>(theSession.Query<Target>(), x => true && x.Number == 1);
             q.Count().ShouldBe(3);
+        }
+
+        public using_const_boolean_in_where_clause_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

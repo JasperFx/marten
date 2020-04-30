@@ -1,10 +1,12 @@
 using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Testing.Linq;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: IntegratedFixture
+    public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: IntegrationContext
     {
         [Fact]
         public void query_where_with_multiple_or_expressions_against_single_tenant()
@@ -54,6 +56,10 @@ namespace Marten.Testing.Bugs
                 var actual = query.ToList().Count;
                 Assert.Equal(expected, actual);
             }
+        }
+
+        public Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

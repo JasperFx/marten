@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_nullable_types_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_nullable_types_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void query_against_non_null()
@@ -95,6 +97,10 @@ namespace Marten.Testing.Linq
 
             theSession.Query<Target>().Where(x => x.NullableNumber.HasValue).Count()
                 .ShouldBe(2);
+        }
+
+        public query_with_nullable_types_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }
