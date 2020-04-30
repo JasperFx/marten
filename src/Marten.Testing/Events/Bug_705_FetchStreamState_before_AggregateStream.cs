@@ -1,11 +1,12 @@
 using System;
 using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class Bug_705_FetchStreamState_before_AggregateStream: IntegratedFixture
+    public class Bug_705_FetchStreamState_before_AggregateStream: IntegrationContext
     {
         [Fact]
         public async Task call_fetch_stream_state_on_new_stream()
@@ -29,6 +30,10 @@ namespace Marten.Testing.Events
                     state.Version.ShouldBe(2);
                 }
             }
+        }
+
+        public Bug_705_FetchStreamState_before_AggregateStream(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

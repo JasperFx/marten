@@ -3,6 +3,7 @@ using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Compiled;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;

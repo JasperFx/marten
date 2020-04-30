@@ -1,15 +1,16 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_964_optimistic_concurrency_with_subclass: IntegratedFixture
+    public class Bug_964_optimistic_concurrency_with_subclass: IntegrationContext
     {
-        public Bug_964_optimistic_concurrency_with_subclass(ITestOutputHelper output = null) : base(output)
+        public Bug_964_optimistic_concurrency_with_subclass(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

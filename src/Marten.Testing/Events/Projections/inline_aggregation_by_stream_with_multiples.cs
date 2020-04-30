@@ -1,11 +1,12 @@
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_aggregation_by_stream_with_multiples: DocumentSessionFixture<NulloIdentityMap>
+    public class inline_aggregation_by_stream_with_multiples: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private readonly MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
@@ -67,6 +68,10 @@ namespace Marten.Testing.Events.Projections
 
             (await theSession.LoadAsync<QuestParty>(streamId).ConfigureAwait(false)).Members
                 .ShouldHaveTheSameElementsAs("Garion", "Polgara", "Belgarath", "Silk", "Barak");
+        }
+
+        public inline_aggregation_by_stream_with_multiples(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -2,12 +2,14 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class deep_searches_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class deep_searches_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void query_two_deep()
@@ -105,6 +107,10 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Where(x => x.Inner.Number == 2).OrderBy(x => x.Inner.String).ToArray()
                 .Select(x => x.Inner.String)
                 .ShouldHaveTheSameElementsAs("Lindsey", "Max");
+        }
+
+        public deep_searches_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

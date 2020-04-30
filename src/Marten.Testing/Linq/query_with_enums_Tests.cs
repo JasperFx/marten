@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_enums_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_enums_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void use_enum_values_with_jil_that_are_not_duplicated()
@@ -115,7 +117,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1, 4, 7);
         }
-        
+
         [Fact]
         public void use_enum_values_with_newtonsoft_that_are_duplicated_as_string_storage()
         {
@@ -198,6 +200,8 @@ namespace Marten.Testing.Linq
         }
 
 
-
+        public query_with_enums_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 }

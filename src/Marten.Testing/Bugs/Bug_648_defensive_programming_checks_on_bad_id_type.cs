@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_648_defensive_programming_checks_on_bad_id_type: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_648_defensive_programming_checks_on_bad_id_type: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void try_to_load_a_guid_identified_type_with_wrong_type()
@@ -41,6 +43,10 @@ namespace Marten.Testing.Bugs
             {
                 return theSession.LoadManyAsync<Target>(111, 222);
             });
+        }
+
+        public Bug_648_defensive_programming_checks_on_bad_id_type(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

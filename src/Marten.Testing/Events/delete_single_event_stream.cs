@@ -2,12 +2,13 @@ using System;
 using System.Linq;
 using Marten.Events;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class delete_single_event_stream: IntegratedFixture
+    public class delete_single_event_stream: IntegrationContext
     {
         [Theory]
         [InlineData(TenancyStyle.Single)]
@@ -79,6 +80,10 @@ namespace Marten.Testing.Events
                 session.Events.QueryAllRawEvents().ToList().All(x => x.StreamKey == stream2)
                     .ShouldBeTrue();
             }
+        }
+
+        public delete_single_event_stream(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

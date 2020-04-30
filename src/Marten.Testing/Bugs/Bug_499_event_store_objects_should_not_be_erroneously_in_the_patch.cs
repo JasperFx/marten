@@ -1,9 +1,10 @@
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch: IntegratedFixture
+    public class Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch: IntegrationContext
     {
         [Fact]
         public void not_using_the_event_store_should_not_be_in_patch()
@@ -14,6 +15,10 @@ namespace Marten.Testing.Bugs
 
             patch.UpdateDDL.ShouldNotContain("mt_events");
             patch.UpdateDDL.ShouldNotContain("mt_streams");
+        }
+
+        public Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

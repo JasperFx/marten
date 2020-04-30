@@ -1,17 +1,16 @@
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1043_do_not_drop_unchanged_index: IntegratedFixture
+    public class Bug_1043_do_not_drop_unchanged_index: IntegrationContext
     {
         [Fact]
         public void do_not_drop_unchanged_index()
         {
-            EnableCommandLogging = true;
-
-            StoreOptions(_ =>
+            var schemaName = StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
@@ -37,12 +36,14 @@ namespace Marten.Testing.Bugs
             }
 
             var mapping = DocumentMapping.For<Bug1043.Thing>();
+            mapping.DatabaseSchemaName = schemaName;
             mapping.Index(x => x.Name, x =>
             {
                 x.IndexName = "Test_Index";
                 x.IsUnique = true;
                 x.Casing = ComputedIndex.Casings.Lower;
                 x.IsConcurrent = true;
+
             });
             var docTable = new DocumentTable(mapping);
 
@@ -56,6 +57,10 @@ namespace Marten.Testing.Bugs
                 Assert.Equal(0, diff.IndexChanges.Count);
                 Assert.Equal(0, diff.IndexRollbacks.Count);
             }
+        }
+
+        public Bug_1043_do_not_drop_unchanged_index(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

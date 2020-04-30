@@ -1,12 +1,13 @@
 ﻿using Marten.Schema;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Transforms
 {
-    public class TransformFunction_ISchemaObjects_Implementation : IntegratedFixture
+    public class TransformFunction_ISchemaObjects_Implementation : IntegrationContext
     {
-        public TransformFunction_ISchemaObjects_Implementation()
+        public TransformFunction_ISchemaObjects_Implementation(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -54,9 +55,8 @@ namespace Marten.Testing.Transforms
                 var transform2 = store2.Tenancy.Default.TransformFor("get_fullname");
 
 
-                store2.Tenancy.Default.DbObjects.DefinitionForFunction(transform2.Identifier)
-                    .Body
-                    .ShouldContain(transform2.Body);
+                SpecificationExtensions.ShouldContain(store2.Tenancy.Default.DbObjects.DefinitionForFunction(transform2.Identifier)
+                        .Body, transform2.Body);
             }
         }
     }

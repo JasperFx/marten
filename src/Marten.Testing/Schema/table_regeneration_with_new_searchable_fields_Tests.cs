@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -46,13 +47,13 @@ namespace Marten.Testing.Schema
                             list.Add(reader.GetString(0));
                         }
 
-                        
+
                     }
 
                     list.OrderBy(x => x).ShouldHaveTheSameElementsAs("Declan", "Jeremy", "Max");
 
-                    session.Query<User>().Where(x => x.FirstName == "Jeremy").Single().ShouldNotBeNull();
-                   
+                    SpecificationExtensions.ShouldNotBeNull(session.Query<User>().Where(x => x.FirstName == "Jeremy").Single());
+
                 }
             }
         }
@@ -100,7 +101,7 @@ namespace Marten.Testing.Schema
 
                     list.OrderBy(x => x).ShouldHaveTheSameElementsAs("Declan", "Jeremy", "Max");
 
-                    session.Query<User>().Where(x => x.FirstName == "Jeremy").Single().ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(session.Query<User>().Where(x => x.FirstName == "Jeremy").Single());
 
                 }
             }

@@ -1,12 +1,14 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_dates_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_dates_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_select_DateTimeOffset_and_will_return_localtime()
@@ -27,6 +29,10 @@ namespace Marten.Testing.Linq
                 // be aware of the Npgsql DateTime mapping https://www.npgsql.org/doc/types/datetime.html
                 dateOffset.ShouldBeEqualWithDbPrecision(document.DateOffset.ToLocalTime());
             }
+        }
+
+        public query_with_dates_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

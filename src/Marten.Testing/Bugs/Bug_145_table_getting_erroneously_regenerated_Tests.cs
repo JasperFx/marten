@@ -4,13 +4,14 @@ using Baseline;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_145_table_getting_erroneously_regenerated_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_145_table_getting_erroneously_regenerated_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public Bug_145_table_getting_erroneously_regenerated_Tests()
+        public Bug_145_table_getting_erroneously_regenerated_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

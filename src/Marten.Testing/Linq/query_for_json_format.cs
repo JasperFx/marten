@@ -2,7 +2,9 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Marten.Util;
+using Newtonsoft.Json.Linq;
 using Shouldly;
 using Xunit;
 
@@ -30,23 +32,18 @@ namespace Marten.Testing.Linq
         {
             return $@"
 {{
-""Id"": ""{Id}"", ""Number"": {Number}, ""Address"": 
+""Id"": ""{Id}"", ""Number"": {Number}, ""Address"":
 {{
 ""Street"": ""{Address.Street}"", ""HouseNumber"": ""{Address.HouseNumber}""
-}}, 
-""UserName"": ""{UserName}"", 
+}},
+""UserName"": ""{UserName}"",
 ""Birthdate"": ""{Birthdate.ToString("s")}""
 }}".Replace("\r\n", "").Replace("\n", "");
         }
     }
 
-    public class query_for_json_format : DocumentSessionFixture<NulloIdentityMap>
+    public class query_for_json_format : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public query_for_json_format()
-        {
-            // These tests are hard-coded for the Json that Newtonsoft puts out
-            StoreOptions(_ => _.Serializer(new JsonNetSerializer()));
-        }
 
         [Fact]
         public void to_list()
@@ -76,7 +73,8 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArray();
-            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
+
+            listJson.ShouldBeSemanticallySameJsonAs($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
         [Fact]
@@ -107,7 +105,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync().ConfigureAwait(false);
-            listJson.ShouldBe($@"[{user1.ToJson()},{user2.ToJson()}]");
+            listJson.ShouldBeSemanticallySameJsonAs($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
         [Fact]
@@ -138,7 +136,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().First();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -169,7 +167,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().AsJson().First();
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -191,9 +189,9 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1,user2);
             theSession.SaveChanges();
-            
+
             var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().First());
-            ex.Message.ShouldBe("Sequence contains no elements"); 
+            ex.Message.ShouldBe("Sequence contains no elements");
         }
 
         [Fact]
@@ -224,7 +222,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -255,7 +253,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().AsJson().FirstAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -277,10 +275,10 @@ namespace Marten.Testing.Linq
             };
             theSession.Store(user1,user2);
             theSession.SaveChanges();
-            
-            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() => 
+
+            var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
                 theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().FirstAsync()).ConfigureAwait(false);
-            ex.Message.ShouldBe("Sequence contains no elements"); 
+            ex.Message.ShouldBe("Sequence contains no elements");
         }
 
         [Fact]
@@ -311,7 +309,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefault();
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -342,7 +340,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = theSession.Query<SimpleUser>().AsJson().FirstOrDefault();
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -373,7 +371,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user1.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
         [Fact]
@@ -404,7 +402,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBe($@"{user0.ToJson()}");
+            userJson.ShouldBeSemanticallySameJsonAs($@"{user0.ToJson()}");
         }
 
         [Fact]
@@ -452,7 +450,11 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x=>x.Number != 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            userJson.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(userJson);
+        }
+
+        public query_for_json_format(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

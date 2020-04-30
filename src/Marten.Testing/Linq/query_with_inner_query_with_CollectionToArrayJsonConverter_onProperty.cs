@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Services.Json;
+using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
@@ -71,7 +72,7 @@ namespace Marten.Testing.Linq
     };
 
     [ControlledQueryStoryteller]
-    public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty : IntegratedFixture
+    public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty : IntegrationContext
     {
         private static readonly TypeWithInnerCollectionsWithJsonConverterAttribute[] TestData = new TypeWithInnerCollectionsWithJsonConverterAttribute[]
         {
@@ -120,6 +121,10 @@ namespace Marten.Testing.Linq
                 session.Store(TestData);
                 session.SaveChanges();
             }
+        }
+
+        public query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

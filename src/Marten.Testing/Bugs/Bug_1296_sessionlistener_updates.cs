@@ -2,11 +2,12 @@ using System;
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1296_sessionlistener_updates : IntegratedFixture
+    public class Bug_1296_sessionlistener_updates : IntegrationContext
     {
         [Fact]
         public void bug()
@@ -51,6 +52,10 @@ namespace Marten.Testing.Bugs
             {
                 onUpdate(session.PendingChanges);
             }
+        }
+
+        public Bug_1296_sessionlistener_updates(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

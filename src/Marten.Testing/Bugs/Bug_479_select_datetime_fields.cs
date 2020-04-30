@@ -1,14 +1,15 @@
 using System;
 using System.Linq;
 using Baseline.Dates;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_479_select_datetime_fields: IntegratedFixture
+    public class Bug_479_select_datetime_fields: IntegrationContext
     {
-        public Bug_479_select_datetime_fields()
+        public Bug_479_select_datetime_fields(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
         }

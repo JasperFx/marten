@@ -9,12 +9,13 @@ using Marten.Linq;
 using Marten.Util;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 
 namespace Marten.Testing.Linq
 {
-	public class StringNotVisitorTests : DocumentSessionFixture<NulloIdentityMap>
+	public class StringNotVisitorTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
 	{
-		public StringNotVisitorTests()
+		public StringNotVisitorTests(DefaultStoreFixture fixture) : base(fixture)
 		{
 			var entry = new User() { FirstName = "Beeblebrox" };
 			var entry2 = new User() { FirstName = "Bee" };

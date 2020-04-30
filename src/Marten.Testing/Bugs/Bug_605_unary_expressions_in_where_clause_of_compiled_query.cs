@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: IntegratedFixture
+    public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: IntegrationContext
     {
         [Fact]
         public void with_flag_as_true()
@@ -122,6 +124,10 @@ namespace Marten.Testing.Bugs
 
             public int Skip { get; set; } = 20;
             public int Take { get; set; } = 15;
+        }
+
+        public Bug_605_unary_expressions_in_where_clause_of_compiled_query(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

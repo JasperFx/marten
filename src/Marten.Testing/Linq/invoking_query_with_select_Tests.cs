@@ -4,12 +4,13 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_select_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_query_with_select_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: one_field_projection
         [Fact]
@@ -229,8 +230,8 @@ namespace Marten.Testing.Linq
 
             users.Each(x =>
             {
-                x.First.ShouldNotBeNull();
-                x.Last.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(x.First);
+                SpecificationExtensions.ShouldNotBeNull(x.Last);
             });
         }
 
@@ -251,8 +252,8 @@ namespace Marten.Testing.Linq
 
             users.Each(x =>
             {
-                x.First.ShouldNotBeNull();
-                x.Last.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(x.First);
+                SpecificationExtensions.ShouldNotBeNull(x.Last);
             });
         }
 
@@ -282,8 +283,8 @@ namespace Marten.Testing.Linq
 
             users.Each(x =>
             {
-                x.FirstName.ShouldNotBeNull();
-                x.LastName.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(x.FirstName);
+                SpecificationExtensions.ShouldNotBeNull(x.LastName);
             });
         }
 
@@ -305,9 +306,9 @@ namespace Marten.Testing.Linq
 
             users.Each(x =>
             {
-                x.FirstName.ShouldNotBeNull();
-                x.LastName.ShouldNotBeNull();
-                x.YearsOld.ShouldBeGreaterThan(0);
+                SpecificationExtensions.ShouldNotBeNull(x.FirstName);
+                SpecificationExtensions.ShouldNotBeNull(x.LastName);
+                SpecificationExtensions.ShouldBeGreaterThan(x.YearsOld, 0);
             });
         }
 
@@ -410,6 +411,10 @@ namespace Marten.Testing.Linq
             public Guid Id { get; }
             public int Number { get; }
             public int InnerNumber { get; }
+        }
+
+        public invoking_query_with_select_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

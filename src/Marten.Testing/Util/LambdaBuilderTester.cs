@@ -5,6 +5,7 @@ using System.Reflection;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -148,7 +149,7 @@ namespace Marten.Testing.Util
         [Fact]
         public void can_get_the_Enum_GetName_method()
         {
-            typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public).ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public));
         }
 
         [Fact]

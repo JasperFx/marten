@@ -1,12 +1,13 @@
 using System.Linq;
 using Marten.Linq.LastModified;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class last_modified_queries: IntegratedFixture
+    public class last_modified_queries: IntegrationContext
     {
         [Fact]
         public void query_modified_since_docs()
@@ -67,6 +68,10 @@ namespace Marten.Testing.Acceptance
                     .Select(x => x.UserName)
                     .Single().ShouldBe("foo");
             }
+        }
+
+        public last_modified_queries(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

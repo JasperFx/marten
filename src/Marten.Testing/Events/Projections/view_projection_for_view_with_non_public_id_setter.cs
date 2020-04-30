@@ -2,18 +2,19 @@ using System;
 using System.Linq;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class view_projection_for_view_with_non_public_id_setter: DocumentSessionFixture<NulloIdentityMap>
+    public class view_projection_for_view_with_non_public_id_setter: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
         private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
         private readonly Guid streamId;
 
-        public view_projection_for_view_with_non_public_id_setter()
+        public view_projection_for_view_with_non_public_id_setter(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

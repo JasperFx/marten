@@ -2,6 +2,7 @@ using Marten;
 using Marten.CommandLine;
 using Marten.Testing;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 
 namespace SampleConsoleApp
 {

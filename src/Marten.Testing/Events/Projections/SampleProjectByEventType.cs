@@ -3,11 +3,12 @@ using System.Linq;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class SampleProjectByEventType: DocumentSessionFixture<NulloIdentityMap>
+    public class SampleProjectByEventType: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void CanProjectByEventType()
@@ -55,6 +56,10 @@ namespace Marten.Testing.Events.Projections
                 Assert.Equal(18, count);
             }
             // ENDSAMPLE
+        }
+
+        public SampleProjectByEventType(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

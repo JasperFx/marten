@@ -1,15 +1,26 @@
 ﻿using System;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_load_not_yet_persisted_document_IdentityMap_Tests : document_session_load_not_yet_persisted_document_Tests<IdentityMap> { }
-    public class document_session_load_not_yet_persisted_document_DirtyChecking_Tests : document_session_load_not_yet_persisted_document_Tests<DirtyTrackingIdentityMap> { }
+    public class document_session_load_not_yet_persisted_document_IdentityMap_Tests : document_session_load_not_yet_persisted_document_Tests<IdentityMap>
+    {
+        public document_session_load_not_yet_persisted_document_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
+    public class document_session_load_not_yet_persisted_document_DirtyChecking_Tests : document_session_load_not_yet_persisted_document_Tests<DirtyTrackingIdentityMap>
+    {
+        public document_session_load_not_yet_persisted_document_DirtyChecking_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
 
-    public abstract class document_session_load_not_yet_persisted_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class document_session_load_not_yet_persisted_document_Tests<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
     {
         [Fact]
         public void then_the_document_should_be_returned()
@@ -46,6 +57,10 @@ namespace Marten.Testing.TrackingSession
 
             Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Store(user2))
                 .Message.ShouldBe("Document 'Marten.Testing.Documents.User' with same Id already added to the session.");
+        }
+
+        protected document_session_load_not_yet_persisted_document_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

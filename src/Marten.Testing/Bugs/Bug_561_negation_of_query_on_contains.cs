@@ -1,14 +1,15 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_561_negation_of_query_on_contains: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_561_negation_of_query_on_contains: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public Bug_561_negation_of_query_on_contains()
+        public Bug_561_negation_of_query_on_contains(DefaultStoreFixture fixture) : base(fixture)
         {
             var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
@@ -44,9 +45,9 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class Bug_561_negation_of_query_on_contains_with_camel_casing: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_561_negation_of_query_on_contains_with_camel_casing: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public Bug_561_negation_of_query_on_contains_with_camel_casing()
+        public Bug_561_negation_of_query_on_contains_with_camel_casing(DefaultStoreFixture fixture): base(fixture)
         {
             StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 

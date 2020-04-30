@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -93,7 +94,7 @@ namespace Marten.Testing.Linq
     }
 
     [ControlledQueryStoryteller]
-    public class query_with_inner_query_with_global_CollectionStorage_WithArray: IntegratedFixture
+    public class query_with_inner_query_with_global_CollectionStorage_WithArray: IntegrationContext
     {
         private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]
         {
@@ -156,6 +157,10 @@ namespace Marten.Testing.Linq
                 session.Store(TestData);
                 session.SaveChanges();
             }
+        }
+
+        public query_with_inner_query_with_global_CollectionStorage_WithArray(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

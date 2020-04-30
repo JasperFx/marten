@@ -3,13 +3,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_aggregate_functions : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_aggregate_functions : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: using_max
         [Fact]
@@ -112,6 +114,10 @@ namespace Marten.Testing.Linq
         {
             var e = Exception<InvalidOperationException>.ShouldBeThrownBy(() => theSession.Query<Target>().Average(t => t.Number));
             e.Message.ShouldBe("The cast to value type 'System.Double' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.");
+        }
+
+        public query_with_aggregate_functions(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

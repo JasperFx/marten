@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Services.Includes;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -16,7 +17,7 @@ using User = Marten.Testing.Documents.User;
 
 namespace Marten.Testing.Services.Includes
 {
-    public class end_to_end_query_with_compiled_include_Tests : DocumentSessionFixture<IdentityMap>
+    public class end_to_end_query_with_compiled_include_Tests : IntegrationContextWithIdentityMap<IdentityMap>
     {
         // SAMPLE: compiled_include
         [Fact]
@@ -33,10 +34,10 @@ namespace Marten.Testing.Services.Includes
                 var issueQuery = new IssueByTitleWithAssignee {Title = issue.Title};
                 var issue2 = query.Query(issueQuery);
 
-                issueQuery.Included.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
                 issueQuery.Included.Id.ShouldBe(user.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -70,12 +71,12 @@ namespace Marten.Testing.Services.Includes
                 var issueQuery = new IssueByTitleIncludingUsers {Title = issue.Title};
                 var issue2 = query.Query(issueQuery);
 
-                issueQuery.IncludedAssignee.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issueQuery.IncludedAssignee);
                 issueQuery.IncludedAssignee.Id.ShouldBe(user.Id);
-                issueQuery.IncludedReported.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issueQuery.IncludedReported);
                 issueQuery.IncludedReported.Id.ShouldBe(reporter.Id);
 
-                issue2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
 
@@ -178,5 +179,8 @@ public class IssueByTitleIncludingUsers : ICompiledQuery<Issue>
             }
         }
         // ENDSAMPLE
+        public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 }

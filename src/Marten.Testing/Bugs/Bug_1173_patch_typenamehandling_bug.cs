@@ -1,4 +1,5 @@
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -14,7 +15,7 @@ namespace Marten.Testing.Bugs
         public string Name { get; set; }
     }
 
-    public class Bug_1173_patch_typenamehandling_bug: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_1173_patch_typenamehandling_bug: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_support_typenamehandling()
@@ -64,6 +65,10 @@ namespace Marten.Testing.Bugs
                     Assert.Equal(expected, result);
                 }
             }
+        }
+
+        public Bug_1173_patch_typenamehandling_bug(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

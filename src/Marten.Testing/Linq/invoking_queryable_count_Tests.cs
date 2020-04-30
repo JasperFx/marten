@@ -1,12 +1,14 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_count_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_count_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void count_without_any_where()
@@ -114,5 +116,8 @@ namespace Marten.Testing.Linq
         }
 
         // ENDSAMPLE
+        public invoking_queryable_count_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 }

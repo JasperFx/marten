@@ -8,12 +8,13 @@ using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    
+
     public class using_custom_Linq_parser_plugins_Tests
     {
         // SAMPLE: using_custom_linq_parser
@@ -73,7 +74,7 @@ namespace Marten.Testing.Linq
         }
         // ENDSAMPLE
     }
-    
+
     // SAMPLE: IsBlue
     public class IsBlue : IMethodCallParser
     {

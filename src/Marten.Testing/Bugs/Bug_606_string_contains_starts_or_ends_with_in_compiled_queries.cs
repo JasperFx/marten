@@ -4,12 +4,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_606_string_contains_starts_or_ends_with_in_compiled_queries: IntegratedFixture
+    public class Bug_606_string_contains_starts_or_ends_with_in_compiled_queries: IntegrationContext
     {
         [Fact]
         public void compiled_query_with_ends_with()
@@ -78,6 +79,10 @@ namespace Marten.Testing.Bugs
             {
                 return q => q.Where(u => u.UserName.Contains(Contains));
             }
+        }
+
+        public Bug_606_string_contains_starts_or_ends_with_in_compiled_queries(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

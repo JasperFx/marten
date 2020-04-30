@@ -5,15 +5,17 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_against_child_collections_integrated_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_against_child_collections_integrated_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public query_against_child_collections_integrated_Tests()
+        public query_against_child_collections_integrated_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
         }
@@ -150,11 +152,11 @@ namespace Marten.Testing.Linq
             {
                 // This works
                 var o1 = session2.Query<Outer>().FirstOrDefault(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
-                o1.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(o1);
 
                 var o2 = session2.Query(new FindOuterByInner("T1", "V12"));
 
-                o2.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(o2);
 
                 o2.Id.ShouldBe(o1.Id);
             }

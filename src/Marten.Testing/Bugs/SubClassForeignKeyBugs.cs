@@ -1,8 +1,9 @@
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class SubClassForeignKeyBugs: IntegratedFixture
+    public class SubClassForeignKeyBugs: IntegrationContext
     {
         public class Person
         {
@@ -25,7 +26,7 @@ namespace Marten.Testing.Bugs
             public int Id { get; set; }
         }
 
-        public SubClassForeignKeyBugs()
+        public SubClassForeignKeyBugs(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

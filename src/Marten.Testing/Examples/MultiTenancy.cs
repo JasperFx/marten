@@ -1,4 +1,5 @@
 using System.Linq;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Examples

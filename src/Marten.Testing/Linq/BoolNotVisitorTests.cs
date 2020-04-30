@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class BoolNotVisitorTests : DocumentSessionFixture<NulloIdentityMap>
+    public class BoolNotVisitorTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private class TestClass
         {
@@ -59,6 +60,10 @@ namespace Marten.Testing.Linq
                 Assert.Single(items);
                 Assert.Equal(docWithFlagFalse.Id, items[0].Id);
             }
+        }
+
+        public BoolNotVisitorTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

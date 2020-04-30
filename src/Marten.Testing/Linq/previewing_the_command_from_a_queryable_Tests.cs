@@ -1,13 +1,15 @@
 ﻿using System.Linq;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [Collection("DefaultSchema")]
-    public class previewing_the_command_from_a_queryable_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class previewing_the_command_from_a_queryable_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void preview_basic_select_command()
@@ -73,11 +75,15 @@ namespace Marten.Testing.Linq
             cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data -> 'Inner' ->> 'TagsArray' as jsonb) ?| :arg0");
             cmd.Parameters["arg0"].Value.ShouldBe(tags);
         }
+
+        public previewing_the_command_from_a_queryable_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
-    public class previewing_the_command_from_a_queryable_inb_different_schema_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class previewing_the_command_from_a_queryable_inb_different_schema_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public previewing_the_command_from_a_queryable_inb_different_schema_Tests()
+        public previewing_the_command_from_a_queryable_inb_different_schema_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");
         }

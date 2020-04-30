@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Marten.Testing.Documents;
 
 namespace Marten.Testing.Linq.Compatibility.Support
 {

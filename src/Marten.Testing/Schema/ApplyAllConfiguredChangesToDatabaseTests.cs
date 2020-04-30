@@ -1,10 +1,11 @@
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class ApplyAllConfiguredChangesToDatabaseTests : IntegratedFixture
+    public class ApplyAllConfiguredChangesToDatabaseTests : IntegrationContext
     {
         [Fact]
         public void can_apply_schema_changes_independent_of_store_options_auto_create()
@@ -40,6 +41,10 @@ namespace Marten.Testing.Schema
                 theStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
                 theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
+        }
+
+        public ApplyAllConfiguredChangesToDatabaseTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

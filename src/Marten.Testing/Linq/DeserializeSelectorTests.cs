@@ -2,6 +2,8 @@ using System.Data.Common;
 using System.IO;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Xunit;
 

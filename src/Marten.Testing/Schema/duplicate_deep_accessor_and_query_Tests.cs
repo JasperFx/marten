@@ -2,12 +2,14 @@
 using Baseline;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class duplicate_deep_accessor_and_query_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class duplicate_deep_accessor_and_query_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void duplicate_and_search_off_of_deep_accessor_by_number()
@@ -47,8 +49,11 @@ namespace Marten.Testing.Schema
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
-            queryable.ToCommand(FetchType.FetchMany).CommandText
-                .ShouldContain("inner_date = :arg0");
+            SpecificationExtensions.ShouldContain(queryable.ToCommand(FetchType.FetchMany).CommandText, "inner_date = :arg0");
+        }
+
+        public duplicate_deep_accessor_and_query_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -20,9 +21,9 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void can_derive_steps_for_apply_methods()
         {
-            theAggregator.AggregatorFor<MembersJoined>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<MembersDeparted>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<QuestStarted>().ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersJoined>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersDeparted>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<QuestStarted>());
         }
 
         [Fact]
@@ -102,9 +103,9 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void can_derive_steps_for_apply_methods()
         {
-            theAggregator.AggregatorFor<MembersJoined>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<MembersDeparted>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<QuestStarted>().ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersJoined>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersDeparted>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<QuestStarted>());
         }
 
         [Fact]
@@ -167,10 +168,10 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void can_derive_steps_for_apply_methods()
         {
-            theAggregator.AggregatorFor<MembersJoined>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<MembersDeparted>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<QuestStarted>().ShouldNotBeNull();
-            theAggregator.AggregatorFor<MembersEscaped>().ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersJoined>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersDeparted>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<QuestStarted>());
+            SpecificationExtensions.ShouldNotBeNull(theAggregator.AggregatorFor<MembersEscaped>());
         }
 
         [Fact]

@@ -3,14 +3,17 @@ using System.IO;
 using Baseline;
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class ddl_generation_with_templates : IntegratedFixture
+
+    [Collection("patching")]
+    public class ddl_generation_with_templates : OneOffConfigurationsContext
     {
-        public ddl_generation_with_templates()
+        public ddl_generation_with_templates() : base("patching")
         {
             // I am neither proud nor ashamed of this code
             // Really need to put this in a helper somewhere because
@@ -36,8 +39,8 @@ namespace Marten.Testing.Schema
         public void use_the_default_template_if_it_exists()
         {
             var ddl = theStore.Schema.ToDDL();
-            ddl.ShouldContain("Default for public.mt_doc_user");
-            ddl.ShouldContain("Default for public.mt_upsert_user");
+            ddl.ShouldContain($"Default for {SchemaName}.mt_doc_user");
+            ddl.ShouldContain($"Default for {SchemaName}.mt_upsert_user");
         }
 
         [Fact]
@@ -49,8 +52,8 @@ namespace Marten.Testing.Schema
              */
 
             var ddl = theStore.Schema.ToDDL();
-            ddl.ShouldContain("Blue for public.mt_doc_bluedoc");
-            ddl.ShouldContain("Blue for public.mt_upsert_bluedoc");
+            ddl.ShouldContain($"Blue for {SchemaName}.mt_doc_bluedoc");
+            ddl.ShouldContain($"Blue for {SchemaName}.mt_upsert_bluedoc");
         }
 
         [Fact]

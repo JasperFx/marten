@@ -5,15 +5,16 @@ using System.Linq;
 using Marten.Events;
 using Marten.Services;
 using Marten.Services.Events;
+using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class ScenarioAggregateAndRepository: DocumentSessionFixture<NulloIdentityMap>
+    public class ScenarioAggregateAndRepository: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public ScenarioAggregateAndRepository()
+        public ScenarioAggregateAndRepository(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(options =>
             {

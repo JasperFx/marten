@@ -1,9 +1,11 @@
 ﻿using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_is_empty : IntegratedFixture
+    public class query_with_is_empty : IntegrationContext
     {
         [Fact]
         public void use_is_empty()
@@ -30,6 +32,10 @@ namespace Marten.Testing.Linq
 
 
             }
+        }
+
+        public query_with_is_empty(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using Marten.Schema;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -32,7 +34,7 @@ namespace Marten.Testing.Schema
         {
             new IndexDefinition(mapping, "foo").SortOrder.ShouldBe(SortOrder.Asc);
         }
-        
+
         [Fact]
         public void default_unique_is_false()
         {
@@ -48,7 +50,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void default_modifier_is_null()
         {
-            new IndexDefinition(mapping, "foo").Modifier.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(new IndexDefinition(mapping, "foo").Modifier);
         }
 
         [Fact]
@@ -74,7 +76,7 @@ namespace Marten.Testing.Schema
             definition.ToDDL()
                 .ShouldBe("CREATE INDEX mt_bar ON public.mt_doc_target (\"foo\");");
         }
-        
+
         [Fact]
         public void generate_ddl_for_descending_sort_order()
         {
@@ -84,7 +86,7 @@ namespace Marten.Testing.Schema
             definition.ToDDL()
                 .ShouldBe("CREATE INDEX mt_doc_target_idx_foo ON public.mt_doc_target (\"foo\" DESC);");
         }
-        
+
         [InlineData(IndexMethod.btree, true)]
         [InlineData(IndexMethod.gin, false)]
         [InlineData(IndexMethod.brin, false)]

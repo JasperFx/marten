@@ -1,10 +1,12 @@
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1155_null_duplicate_fields: IntegratedFixture
+    public class Bug_1155_null_duplicate_fields: IntegrationContext
     {
         [Fact]
         public void when_enum_is_null_due_to_nullable_type()
@@ -193,6 +195,10 @@ namespace Marten.Testing.Bugs
                     .Select(x => x.Number)
                     .ShouldHaveTheSameElementsAs(1);
             }
+        }
+
+        public Bug_1155_null_duplicate_fields(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

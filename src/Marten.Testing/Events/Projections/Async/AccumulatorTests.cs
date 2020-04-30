@@ -1,5 +1,6 @@
 using Marten.Events;
 using Marten.Events.Projections.Async;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -26,8 +27,8 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public void initial_state()
         {
-            theAccumulator.First.ShouldBeNull();
-            theAccumulator.Last.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theAccumulator.First);
+            SpecificationExtensions.ShouldBeNull(theAccumulator.Last);
 
             theAccumulator.CachedEventCount.ShouldBe(0);
         }

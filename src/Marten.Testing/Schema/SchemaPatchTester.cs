@@ -2,6 +2,7 @@
 using System.IO;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace Marten.Testing.Schema
         public void write_transactional_script_with_no_role()
         {
             var rules = new DdlRules();
-            rules.Role.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(rules.Role);
 
             var patch = new SchemaPatch(rules);
 
@@ -32,8 +33,8 @@ namespace Marten.Testing.Schema
                 w.WriteLine("Hello.");
             });
 
-            writer.ToString().ShouldNotContain("SET ROLE");
-            writer.ToString().ShouldNotContain("RESET ROLE;");
+            SpecificationExtensions.ShouldNotContain(writer.ToString(), "SET ROLE");
+            SpecificationExtensions.ShouldNotContain(writer.ToString(), "RESET ROLE;");
         }
 
         [Fact]
@@ -51,8 +52,8 @@ namespace Marten.Testing.Schema
                 w.WriteLine("Hello.");
             });
 
-            writer.ToString().ShouldContain("SET ROLE OCD_DBA;");
-            writer.ToString().ShouldContain("RESET ROLE;");
+            SpecificationExtensions.ShouldContain(writer.ToString(), "SET ROLE OCD_DBA;");
+            SpecificationExtensions.ShouldContain(writer.ToString(), "RESET ROLE;");
         }
 
         [Fact]

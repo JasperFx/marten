@@ -1,10 +1,12 @@
 using System.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegratedFixture
+    public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegrationContext
     {
         [Fact]
         public void does_indeed_assign_the_id_during_bulk_insert()
@@ -21,6 +23,10 @@ namespace Marten.Testing.Bugs
             {
                 session.Query<IntDoc>().Count().ShouldBe(50);
             }
+        }
+
+        public Bug_187_not_assigning_id_in_BulkInsert_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

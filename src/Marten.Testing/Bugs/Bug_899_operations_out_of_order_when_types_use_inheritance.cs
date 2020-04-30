@@ -1,9 +1,10 @@
 using System;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_899_operations_out_of_order_when_types_use_inheritance: IntegratedFixture
+    public class Bug_899_operations_out_of_order_when_types_use_inheritance: IntegrationContext
     {
         [Fact]
         public void performs_soft_delete_then_store_operations_in_order()
@@ -40,6 +41,10 @@ namespace Marten.Testing.Bugs
 
                 session.SaveChanges();
             }
+        }
+
+        public Bug_899_operations_out_of_order_when_types_use_inheritance(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

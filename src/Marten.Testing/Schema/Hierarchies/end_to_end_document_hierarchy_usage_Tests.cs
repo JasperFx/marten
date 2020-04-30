@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -48,6 +49,10 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Query<AdminUser>().Count().ShouldBe(1);
             theSession.Query<User>().Count().ShouldBe(4);
         }
+
+        public delete_by_where_for_hierarchy_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
     public class persist_and_load_for_hierarchy_Tests : end_to_end_document_hierarchy_usage_Tests<IdentityMap>
@@ -75,7 +80,7 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Delete<User>(user1.Id);
             theSession.SaveChanges();
 
-            theSession.Load<User>(user1.Id).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theSession.Load<User>(user1.Id));
         }
 
         [Fact]
@@ -87,7 +92,7 @@ namespace Marten.Testing.Schema.Hierarchies
             theSession.Delete(user1);
             theSession.SaveChanges();
 
-            theSession.Load<User>(user1.Id).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theSession.Load<User>(user1.Id));
         }
 
 
@@ -133,8 +138,8 @@ namespace Marten.Testing.Schema.Hierarchies
 
             theSession.SaveChanges();
 
-            theSession.Load<User>(admin1.Id).ShouldBeNull();
-            theSession.Load<AdminUser>(admin1.Id).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theSession.Load<User>(admin1.Id));
+            SpecificationExtensions.ShouldBeNull(theSession.Load<AdminUser>(admin1.Id));
         }
 
 
@@ -148,14 +153,18 @@ namespace Marten.Testing.Schema.Hierarchies
 
             theSession.SaveChanges();
 
-            theSession.Load<User>(admin1.Id).ShouldBeNull();
-            theSession.Load<AdminUser>(admin1.Id).ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theSession.Load<User>(admin1.Id));
+            SpecificationExtensions.ShouldBeNull(theSession.Load<AdminUser>(admin1.Id));
+        }
+
+        public persist_and_load_for_hierarchy_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 
     public class query_through_mixed_population_Tests : end_to_end_document_hierarchy_usage_Tests<IdentityMap>
     {
-        public query_through_mixed_population_Tests()
+        public query_through_mixed_population_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             loadData();
         }
@@ -282,9 +291,9 @@ namespace Marten.Testing.Schema.Hierarchies
         }
     }
 
-    public class query_through_mixed_population_Tests_tenanted: IntegratedFixture
+    public class query_through_mixed_population_Tests_tenanted: IntegrationContext
     {
-        public query_through_mixed_population_Tests_tenanted()
+        public query_through_mixed_population_Tests_tenanted(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(
             _ =>
@@ -311,12 +320,12 @@ namespace Marten.Testing.Schema.Hierarchies
             using (var session = theStore.OpenSession())
             {
                 var users = session.Query<AdminUser>().Where(u => u.AnyTenant()).ToArray();
-                users.Length.ShouldBeGreaterThan(0);
+                SpecificationExtensions.ShouldBeGreaterThan(users.Length, 0);
             }
         }
     }
 
-    public abstract class end_to_end_document_hierarchy_usage_Tests<T> : DocumentSessionFixture<T>
+    public abstract class end_to_end_document_hierarchy_usage_Tests<T> : IntegrationContextWithIdentityMap<T>
         where T : IIdentityMap
     {
         protected User user1 = new User {UserName = "A1", FirstName = "Justin", LastName = "Houston"};
@@ -354,7 +363,7 @@ namespace Marten.Testing.Schema.Hierarchies
             Role = "Master"
         };
 
-        protected end_to_end_document_hierarchy_usage_Tests()
+        protected end_to_end_document_hierarchy_usage_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(
                 _ =>

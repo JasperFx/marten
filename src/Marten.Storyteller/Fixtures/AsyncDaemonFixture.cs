@@ -8,6 +8,7 @@ using Marten.Storage;
 using Marten.Testing;
 using Marten.Testing.AsyncDaemon;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Harness;
 using Marten.Util;
 using StoryTeller;
 

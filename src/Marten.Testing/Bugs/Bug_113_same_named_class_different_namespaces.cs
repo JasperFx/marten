@@ -1,10 +1,11 @@
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_113_same_named_class_different_namespaces: IntegratedFixture
+    public class Bug_113_same_named_class_different_namespaces: IntegrationContext
     {
         // SAMPLE: can_select_from_the_same_table
         [Fact]
@@ -23,6 +24,9 @@ namespace Marten.Testing.Bugs
         }
 
         // ENDSAMPLE
+        public Bug_113_same_named_class_different_namespaces(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
     // SAMPLE: structural_typing_classes

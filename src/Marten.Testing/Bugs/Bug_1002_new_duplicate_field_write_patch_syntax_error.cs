@@ -1,14 +1,13 @@
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1002_new_duplicate_field_write_patch_syntax_error: IntegratedFixture
+    public class Bug_1002_new_duplicate_field_write_patch_syntax_error: IntegrationContext
     {
         [Fact]
         public void update_patch_should_not_contain_double_semicolon()
         {
-            EnableCommandLogging = true;
-
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
@@ -28,6 +27,10 @@ namespace Marten.Testing.Bugs
                 // check if the patch script does not contain double colon between alter and update statements
                 store.Schema.ToPatch().UpdateDDL.ShouldNotContain(";;");
             }
+        }
+
+        public Bug_1002_new_duplicate_field_write_patch_syntax_error(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

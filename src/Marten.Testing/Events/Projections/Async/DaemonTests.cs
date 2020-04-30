@@ -4,6 +4,7 @@ using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Storage;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
 using Xunit;

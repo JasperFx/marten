@@ -2,11 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    public class SequenceCustomization : IntegratedFixture
+    public class SequenceCustomization : IntegrationContext
     {
         public class SequenceWithStart : FeatureSchemaBase
         {
@@ -40,6 +41,10 @@ namespace Marten.Testing.Storage
 
                 Assert.Equal(1337, value);
             }
+        }
+
+        public SequenceCustomization(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

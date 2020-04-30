@@ -1,12 +1,18 @@
 using System;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_550_schema_diff_with_precision: IntegratedFixture
+    [Collection("bug550")]
+    public class Bug_550_schema_diff_with_precision: OneOffConfigurationsContext
     {
+        public Bug_550_schema_diff_with_precision() : base("bug550")
+        {
+        }
+
         [Fact]
         public void can_handle_the_explicit_precision()
         {
@@ -20,6 +26,7 @@ namespace Marten.Testing.Bugs
 
             var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = SchemaName;
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
@@ -28,6 +35,8 @@ namespace Marten.Testing.Bugs
             var patch = store.Schema.ToPatch(typeof(DocWithPrecision));
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
+
+
     }
 
     public class DocWithPrecision

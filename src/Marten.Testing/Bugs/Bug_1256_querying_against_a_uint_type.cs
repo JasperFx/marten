@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1256_querying_against_a_uint_type: IntegratedFixture
+    public class Bug_1256_querying_against_a_uint_type: IntegrationContext
     {
         public class DocWithUint
         {
@@ -29,6 +30,10 @@ namespace Marten.Testing.Bugs
 
                 session.Query<DocWithUint>().Count(x => x.Number > 3).ShouldBe(2);
             }
+        }
+
+        public Bug_1256_querying_against_a_uint_type(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

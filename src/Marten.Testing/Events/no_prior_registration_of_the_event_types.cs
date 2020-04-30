@@ -1,12 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class no_prior_registration_of_the_event_types: IntegratedFixture
+    public class no_prior_registration_of_the_event_types: IntegrationContext
     {
         [Fact]
         public void can_fetch_sync_with_guids()
@@ -33,7 +34,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_fetch_sync_with_strings()
         {
-            StoreOptions(_ => _.Events.StreamIdentity = StreamIdentity.AsString);
+            var schemaName = StoreOptions(_ => _.Events.StreamIdentity = StreamIdentity.AsString);
 
             var stream = "Something";
             using (var session = theStore.OpenSession())
@@ -45,6 +46,7 @@ namespace Marten.Testing.Events
             // Needs to be an isolated, separate document store to the same db
             using (var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = schemaName;
                 _.Events.StreamIdentity = StreamIdentity.AsString;
                 _.Connection(ConnectionSource.ConnectionString);
             }))
@@ -83,7 +85,7 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task can_fetch_async_with_strings()
         {
-            StoreOptions(_ => _.Events.StreamIdentity = StreamIdentity.AsString);
+            var schemaName = StoreOptions(_ => _.Events.StreamIdentity = StreamIdentity.AsString);
 
             var stream = "Something";
             using (var session = theStore.OpenSession())
@@ -95,6 +97,7 @@ namespace Marten.Testing.Events
             // Needs to be an isolated, separate document store to the same db
             using (var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = schemaName;
                 _.Events.StreamIdentity = StreamIdentity.AsString;
                 _.Connection(ConnectionSource.ConnectionString);
             }))
@@ -106,6 +109,11 @@ namespace Marten.Testing.Events
                     events[1].Data.ShouldBeOfType<MembersDeparted>();
                 }
             }
+        }
+
+        public no_prior_registration_of_the_event_types(DefaultStoreFixture fixture) : base(fixture)
+        {
+            theStore.Advanced.Clean.DeleteAllEventData();
         }
     }
 }

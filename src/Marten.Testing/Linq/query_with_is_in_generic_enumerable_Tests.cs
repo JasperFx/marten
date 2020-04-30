@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_is_in_generic_enumerable_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_is_in_generic_enumerable_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_query_against_number_in_iList()
@@ -53,7 +54,11 @@ namespace Marten.Testing.Linq
             public Guid Id;
             public int Number;
         }
+
+        public query_with_is_in_generic_enumerable_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
-    
+
 }

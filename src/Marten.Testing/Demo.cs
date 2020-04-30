@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -50,8 +51,7 @@ namespace Marten.Testing
                 session.SaveChanges();
 
                 var user2 = session.Query(new FindUser("ian"));
-                user2
-                    .ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(user2);
 
             }
 

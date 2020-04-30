@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using Marten.NodaTime.Testing.TestData;
 using Marten.Testing;
 using Marten.Testing.Events.Projections;
+using Marten.Testing.Harness;
 using NodaTime;
 using Shouldly;
 using Xunit;
 
 namespace Marten.NodaTime.Testing.Acceptance
 {
-    public class noda_time_acceptance: IntegratedFixture
+    public class noda_time_acceptance: IntegrationContext
     {
         public void noda_time_default_setup()
         {
@@ -132,32 +133,6 @@ namespace Marten.NodaTime.Testing.Acceptance
         }
 
         [Fact]
-        public void cannot_query_document_clr_datetime_types()
-        {
-            StoreOptions(_ => _.UseNodaTime());
-
-            var dateTime = DateTime.UtcNow;
-            var localDateTime = LocalDateTime.FromDateTime(dateTime);
-            var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
-            var testDoc = TargetWithDates.Generate(dateTime);
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Insert(testDoc);
-                session.SaveChanges();
-            }
-
-            using (var query = theStore.QuerySession())
-            {
-                Should.Throw<NotSupportedException>
-                (
-                    () => query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
-                    "The CLR type System.DateTime isn't natively supported by Npgsql or your PostgreSQL. To use it with a PostgreSQL composite you need to specify DataTypeName or to map it, please refer to the documentation."
-                );
-            }
-        }
-
-        [Fact]
         public async Task can_append_and_query_events()
         {
             StoreOptions(_ => _.UseNodaTime());
@@ -256,6 +231,10 @@ namespace Marten.NodaTime.Testing.Acceptance
             Instant toDbPrecision(Instant date) => Instant.FromUnixTimeMilliseconds(date.ToUnixTimeMilliseconds() / 100 * 100);
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
+        }
+
+        public noda_time_acceptance(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

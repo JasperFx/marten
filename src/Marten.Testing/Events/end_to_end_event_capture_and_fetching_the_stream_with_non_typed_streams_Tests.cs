@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Testing.Events.Projections;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -209,7 +210,7 @@ namespace Marten.Testing.Events
                 var parties = Enumerable.ToArray<QuestParty>(session.Events.QueryRawEventDataOnly<QuestParty>());
                 foreach (var party in parties)
                 {
-                    party.ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(party);
                 }
             }
             //This AggregateStream fail with NPE

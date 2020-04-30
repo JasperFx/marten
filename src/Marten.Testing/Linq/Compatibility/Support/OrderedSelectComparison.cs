@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Testing.Documents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Shouldly;

@@ -5,14 +5,16 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_statistics: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_query_with_statistics: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public invoking_query_with_statistics()
+        public invoking_query_with_statistics(DefaultStoreFixture fixture) : base(fixture)
         {
             theStore.BulkInsert(Target.GenerateRandomData(100).ToArray());
         }
@@ -43,7 +45,7 @@ namespace Marten.Testing.Linq
         public void can_get_the_total_from_a_compiled_query()
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             var query = new TargetPaginationQuery(2, 5);
             var list = theSession
@@ -59,7 +61,7 @@ namespace Marten.Testing.Linq
         public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch()
         {
             var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             var query = new TargetPaginationQuery(2, 5);
 
@@ -79,7 +81,7 @@ namespace Marten.Testing.Linq
         public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             var query = new TargetPaginationQuery(2, 5);
 
@@ -99,7 +101,7 @@ namespace Marten.Testing.Linq
         public async Task can_get_the_total_in_batch_query()
         {
             var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             QueryStatistics stats = null;
 
@@ -119,7 +121,7 @@ namespace Marten.Testing.Linq
         public void can_get_the_total_in_batch_query_sync()
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             QueryStatistics stats = null;
 
@@ -140,7 +142,7 @@ namespace Marten.Testing.Linq
         public void can_get_the_total_in_results()
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             // We're going to use stats as an output
             // parameter to the call below, so we
@@ -167,7 +169,7 @@ namespace Marten.Testing.Linq
         public async Task can_get_the_total_in_results_async()
         {
             var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
-            count.ShouldBeGreaterThan(0);
+            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             QueryStatistics stats = null;
 

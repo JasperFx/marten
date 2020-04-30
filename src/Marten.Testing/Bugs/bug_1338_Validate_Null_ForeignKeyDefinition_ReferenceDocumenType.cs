@@ -3,23 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
+using Marten.Util;
 using Npgsql;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType : IntegratedFixture
+    [Collection("Bug1338")]
+    public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType : OneOffConfigurationsContext
     {
+        public const string SchemaName = "bug1338";
+
         [Fact]
         public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
         {
             CreateExternalTableForTesting();
 
             StoreOptions(_ =>
-                         {
-                             _.Schema.For<ClassWithExternalForeignKey>().ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
-                         });
+            {
+                 _.Schema.For<ClassWithExternalForeignKey>().ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
+             });
 
             theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default).All(x => x != null).ShouldBeTrue();
         }
@@ -40,7 +45,7 @@ namespace Marten.Testing.Bugs
             //  UnitOfWork.determineChanges()
             //  UnitOfWork.shouldSort()
             //  and finally, the function that we want to regression test"
-            //  UnitOfWork.GetTypeDependencies(ClassWithExternalForeignKey) 
+            //  UnitOfWork.GetTypeDependencies(ClassWithExternalForeignKey)
             using (var session = theStore.LightweightSession())
             {
                 session.Insert(new ClassWithExternalForeignKey{Id  = 1, ForeignId = 1});
@@ -50,17 +55,20 @@ namespace Marten.Testing.Bugs
 
         private static void CreateExternalTableForTesting()
         {
-            const string dropSql = "DROP TABLE IF EXISTS public.external_table CASCADE;";
-            const string createSql =
-@"CREATE TABLE public.external_table (
+            string createSchema = $"create schema if not exists {SchemaName}";
+            string dropSql = $"DROP TABLE IF EXISTS {SchemaName}.external_table CASCADE;";
+            string createSql =
+$@"CREATE TABLE {SchemaName}.external_table (
     id integer,
     CONSTRAINT ""external_table_pkey"" PRIMARY KEY (id)
 );";
-            const string insertSql = "INSERT INTO public.external_table VALUES (1);";
+            string insertSql = $"INSERT INTO {SchemaName}.external_table VALUES (1);";
 
             using (var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString))
             {
                 dbConn.Open();
+
+                dbConn.CreateCommand(createSchema).ExecuteNonQuery();
 
                 NpgsqlCommand cmd;
                 using (cmd = new NpgsqlCommand(dropSql, dbConn))
@@ -80,6 +88,10 @@ namespace Marten.Testing.Bugs
             }
         }
 
+
+        public Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType() : base(SchemaName)
+        {
+        }
     }
 
     public class FakeExternalTable: FeatureSchemaBase

@@ -1,8 +1,9 @@
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1151_assert_db_matches_config_exception: IntegratedFixture
+    public class Bug_1151_assert_db_matches_config_exception: IntegrationContext
     {
         [Fact]
         public void check_assert_db_matches_config_for_doc_with_pg_keyword_prop()
@@ -16,6 +17,10 @@ namespace Marten.Testing.Bugs
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
             theStore.Schema.AssertDatabaseMatchesConfiguration();
+        }
+
+        public Bug_1151_assert_db_matches_config_exception(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

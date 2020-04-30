@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Testing;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -172,22 +173,22 @@ namespace Marten.Testing.Events
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
 
-                party.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party);
 
                 var party_at_version_3 = session.Events
                                                 .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
 
-                party_at_version_3.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party_at_version_3);
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                party_yesterday.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party_yesterday);
             }
 
             using (var session = store.OpenSession())
             {
                 var party = session.Load<QuestPartyWithStringIdentifier>(questId);
-                party.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party);
             }
 
             var newStore = InitStore("event_store", false);
@@ -196,7 +197,7 @@ namespace Marten.Testing.Events
             using (var session = store.OpenSession())
             {
                 var party = session.Load<QuestPartyWithStringIdentifier>(questId);
-                party.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party);
             }
             //GetAll
             using (var session = store.OpenSession())
@@ -204,7 +205,7 @@ namespace Marten.Testing.Events
                 var parties = session.Events.QueryRawEventDataOnly<QuestPartyWithStringIdentifier>().ToArray();
                 foreach (var party in parties)
                 {
-                    party.ShouldNotBeNull();
+                    SpecificationExtensions.ShouldNotBeNull(party);
                 }
             }
             //This AggregateStream fail with NPE
@@ -212,15 +213,15 @@ namespace Marten.Testing.Events
             {
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);//Here we get NPE
-                party.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party);
 
                 var party_at_version_3 = session.Events
                                                 .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
-                party_at_version_3.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party_at_version_3);
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                party_yesterday.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party_yesterday);
             }
         }
 
@@ -246,7 +247,7 @@ namespace Marten.Testing.Events
                 session.SaveChanges();
 
                 var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
-                party.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party);
             }
         }
 
@@ -272,7 +273,7 @@ namespace Marten.Testing.Events
                 await session.SaveChangesAsync();
 
                 var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-                party.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(party);
             }
         }
 
@@ -408,7 +409,7 @@ namespace Marten.Testing.Events
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
+                streamEvents.Each(x => SpecificationExtensions.ShouldBeGreaterThan(x.Sequence, 0L));
             }
         }
 

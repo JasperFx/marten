@@ -1,12 +1,13 @@
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class applying_document_policies: IntegratedFixture
+    public class applying_document_policies: IntegrationContext
     {
-        public applying_document_policies()
+        public applying_document_policies(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

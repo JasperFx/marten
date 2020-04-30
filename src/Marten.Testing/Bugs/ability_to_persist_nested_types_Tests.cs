@@ -1,11 +1,12 @@
 using System;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
     // This was to address GH-86
-    public class ability_to_persist_nested_types_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class ability_to_persist_nested_types_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_persist_and_load_nested_types()
@@ -22,6 +23,10 @@ namespace Marten.Testing.Bugs
         public class MyDocument
         {
             public Guid Id = Guid.NewGuid();
+        }
+
+        public ability_to_persist_nested_types_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

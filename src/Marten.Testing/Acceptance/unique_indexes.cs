@@ -2,11 +2,12 @@ using System;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class unique_indexes: IntegratedFixture
+    public class unique_indexes: IntegrationContext
     {
         // SAMPLE: using_a_single_property_computed_unique_index_through_attribute
         public class Account
@@ -133,6 +134,10 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Client>().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name);
             });
             // ENDSAMPLE
+        }
+
+        public unique_indexes(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

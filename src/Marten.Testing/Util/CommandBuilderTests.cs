@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing.Util

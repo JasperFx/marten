@@ -2,6 +2,8 @@ using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -27,7 +29,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 var doc3 = new IntDoc();
 
                 session.Store(doc1, doc2, doc3);
-                
+
                 doc1.Id.ShouldBeGreaterThanOrEqualTo(2500);
                 doc2.Id.ShouldBeGreaterThanOrEqualTo(2500);
                 doc3.Id.ShouldBeGreaterThanOrEqualTo(2500);

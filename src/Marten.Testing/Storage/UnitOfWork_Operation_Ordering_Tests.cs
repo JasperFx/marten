@@ -2,12 +2,13 @@ using System;
 using System.Linq;
 using Marten.Schema.Identity;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    public class UnitOfWork_Operation_Ordering_Tests : IntegratedFixture
+    public class UnitOfWork_Operation_Ordering_Tests : IntegrationContext
     {
         private readonly Company _company;
 
@@ -21,7 +22,7 @@ namespace Marten.Testing.Storage
         private readonly int _existingUserCount = 2;
         private readonly int _existingIssueCount = 2;
 
-        public UnitOfWork_Operation_Ordering_Tests()
+        public UnitOfWork_Operation_Ordering_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

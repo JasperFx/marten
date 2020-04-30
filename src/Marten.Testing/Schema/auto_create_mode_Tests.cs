@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -15,7 +16,7 @@ var store = DocumentStore.For(_ =>
 {
     // Marten will create any new objects that are missing,
     // attempt to update tables if it can, but drop and replace
-    // tables that it cannot patch. 
+    // tables that it cannot patch.
     _.AutoCreateSchemaObjects = AutoCreate.All;
 
 
@@ -29,7 +30,7 @@ var store = DocumentStore.For(_ =>
     // will not change any existing schema objects
     _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
 
-    // Marten will not create or update any schema objects 
+    // Marten will not create or update any schema objects
     // and throws an exception in the case of a schema object
     // not reflecting the Marten configuration
     _.AutoCreateSchemaObjects = AutoCreate.None;
@@ -40,7 +41,7 @@ var store = DocumentStore.For(_ =>
 	    [Fact]
 	    public void DefaultAutoCreateShouldBeCreateOrUpdate()
 	    {
-		    var settings = new StoreOptions();			
+		    var settings = new StoreOptions();
 
 			Assert.Equal(AutoCreate.CreateOrUpdate, settings.AutoCreateSchemaObjects);
 	    }

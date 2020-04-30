@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -33,7 +34,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
     }
     // ENDSAMPLE
 
-    public class CustomKeyGenerationTests : IntegratedFixture
+    public class CustomKeyGenerationTests : IntegrationContext
     {
         [Fact]
         public void When_a_custom_id_generation_is_used()
@@ -67,10 +68,14 @@ namespace Marten.Testing.Schema.Identity.Sequences
             {
                 // SAMPLE: configuring-mapping-specific-custom
                 options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration());
-                // ENDSAMPLE 
+                // ENDSAMPLE
             });
 
             theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
+        }
+
+        public CustomKeyGenerationTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

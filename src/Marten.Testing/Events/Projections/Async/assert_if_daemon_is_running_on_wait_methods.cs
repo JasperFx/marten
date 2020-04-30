@@ -2,15 +2,16 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections.Async
 {
-    public class assert_if_daemon_is_running_on_wait_methods: IntegratedFixture
+    public class assert_if_daemon_is_running_on_wait_methods: IntegrationContext
     {
         private IDaemon theDaemon;
 
-        public assert_if_daemon_is_running_on_wait_methods()
+        public assert_if_daemon_is_running_on_wait_methods(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

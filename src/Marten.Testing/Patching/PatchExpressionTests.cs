@@ -4,6 +4,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -398,8 +399,8 @@ namespace Marten.Testing.Patching
         [Fact]
         public void duplicate_property_no_target()
         {
-            Assert.Throws<ArgumentException>(() => _expression.Duplicate(x => x.String))
-                .Message.ShouldContain("At least one destination must be given");
+            SpecificationExtensions.ShouldContain(Assert.Throws<ArgumentException>(() => _expression.Duplicate(x => x.String))
+                    .Message, "At least one destination must be given");
         }
 
         [Fact]

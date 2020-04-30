@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Linq;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_717_permutation_of_Linq_queries: IntegratedFixture
+    public class Bug_717_permutation_of_Linq_queries: IntegrationContext
     {
         [Fact]
         public void do_not_blow_up()
@@ -92,6 +93,10 @@ namespace Marten.Testing.Bugs
             TestEnum1,
             TestEnum2,
             TestEnum3
+        }
+
+        public Bug_717_permutation_of_Linq_queries(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

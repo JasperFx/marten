@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Storage;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace Marten.Testing.MultiTenancy
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
             });
-            
+
             store.Advanced.Clean.CompletelyRemoveAll();
 
             store.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -64,14 +65,14 @@ namespace Marten.Testing.MultiTenancy
             using (var session = store.OpenSession("123"))
             {
                 var target = session.Load<Target>(guid);
-                target.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(target);
                 target.String.ShouldBe("123");
             }
 
             using (var session = store.OpenSession("abc"))
             {
                 var target = session.Load<Target>(guid);
-                target.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(target);
                 target.String.ShouldBe("abc");
             }
         }

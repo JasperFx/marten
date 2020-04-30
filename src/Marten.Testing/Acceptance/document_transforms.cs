@@ -1,18 +1,31 @@
 using System;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class document_transforms: IntegratedFixture
+    public class JsTransformsFixture : StoreFixture
     {
-        public document_transforms()
+        public JsTransformsFixture() : base("js")
         {
-            StoreOptions(_ =>
-            {
-                _.Transforms.LoadFile("default_username.js");
-            });
+            Options.DatabaseSchemaName = "js";
+            Options.Transforms.LoadFile("default_username.js");
+            Options.Schema.For<MultiTenantUser>().MultiTenanted();
+        }
+    }
+
+    public class MultiTenantUser: User
+    {
+
+    }
+
+    public class document_transforms: StoreContext<JsTransformsFixture>
+    {
+        public document_transforms(JsTransformsFixture fixture) : base(fixture)
+        {
+            theStore.Advanced.Clean.DeleteAllDocuments();
         }
 
         public void example()
@@ -62,15 +75,8 @@ namespace Marten.Testing.Acceptance
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-                _.Transforms.LoadFile("default_username.js");
-                _.AutoCreateSchemaObjects = AutoCreate.None;
-            }))
-            {
-                store.Transform.All<User>("default_username");
-            }
+            theStore.Transform.All<User>("default_username");
+
         }
 
         [Fact]
@@ -95,29 +101,24 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void transform_for_tenants()
         {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<User>().MultiTenanted();
-                _.Transforms.LoadFile("default_username.js");
-            });
 
-            var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
-            var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
-            var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed" };
+            var user1 = new MultiTenantUser() { FirstName = "Jeremy", LastName = "Miller" };
+            var user2 = new MultiTenantUser { FirstName = "Corey", LastName = "Kaylor" };
+            var user3 = new MultiTenantUser { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed" };
 
-            theStore.BulkInsert("Purple", new User[] { user1, user2 });
-            theStore.BulkInsert("Orange", new User[] { user3 });
+            theStore.BulkInsert("Purple", new MultiTenantUser[] { user1, user2 });
+            theStore.BulkInsert("Orange", new MultiTenantUser[] { user3 });
 
-            theStore.Transform.Tenant<User>("default_username", "Purple");
+            theStore.Transform.Tenant<MultiTenantUser>("default_username", "Purple");
 
             using (var query = theStore.QuerySession("Purple"))
             {
-                query.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+                query.Load<MultiTenantUser>(user1.Id).UserName.ShouldBe("jeremy.miller");
             }
 
             using (var query = theStore.QuerySession("Orange"))
             {
-                query.Load<User>(user3.Id).UserName.ShouldBe("NotTransformed");
+                query.Load<MultiTenantUser>(user3.Id).UserName.ShouldBe("NotTransformed");
             }
         }
 

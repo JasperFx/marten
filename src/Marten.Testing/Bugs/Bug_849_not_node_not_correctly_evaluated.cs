@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_849_not_node_not_correctly_evaluated: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_849_not_node_not_correctly_evaluated: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         public class TestClass
         {
@@ -36,6 +37,10 @@ namespace Marten.Testing.Bugs
                 Assert.Single(items);
                 Assert.Equal(flagTrue.Id, items[0].Id);
             }
+        }
+
+        public Bug_849_not_node_not_correctly_evaluated(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

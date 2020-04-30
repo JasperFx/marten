@@ -2,12 +2,13 @@ using System.Linq;
 using Marten.Linq;
 using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class matches_sql_queries: IntegratedFixture
+    public class matches_sql_queries: IntegrationContext
     {
         [Fact]
         public void query_using_matches_sql()
@@ -63,6 +64,10 @@ namespace Marten.Testing.Acceptance
                     .Select(x => x.UserName)
                     .Single().ShouldBe("foo");
             }
+        }
+
+        public matches_sql_queries(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

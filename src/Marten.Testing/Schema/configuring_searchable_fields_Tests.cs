@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -36,7 +37,7 @@ namespace Marten.Testing.Schema
 
             indexDefinition.Method.ShouldBe(IndexMethod.hash);
         }
-        
+
         [Fact]
         public void can_override_index_sort_order_on_the_attribute()
         {
@@ -74,13 +75,13 @@ namespace Marten.Testing.Schema
 
             [DuplicateField]
             public string Name { get; set; }
-            
+
             [DuplicateField(IndexMethod = IndexMethod.hash, IndexName = "idx_foo")]
             public string OtherName;
 
             [DuplicateField(IndexSortOrder = SortOrder.Desc)]
             public string YetAnotherName { get; set; }
-            
+
             [DuplicateField(PgType = "timestamp")]
             public DateTime Time { get; set; }
 

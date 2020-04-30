@@ -6,17 +6,18 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq.Compiled
 {
-    public class compiled_query_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class compiled_query_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private readonly User _user1;
         private readonly User _user5;
 
-        public compiled_query_Tests()
+        public compiled_query_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             _user1 = new User { FirstName = "Jeremy", UserName = "jdm", LastName = "Miller" };
             var user2 = new User { FirstName = "Jens" };
@@ -45,19 +46,16 @@ namespace Marten.Testing.Linq.Compiled
 
             var plan = theStore.Diagnostics.ExplainPlan(query);
 
-            plan.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(plan);
         }
 
         [Fact]
         public void a_single_item_compiled_query()
         {
-            UserByUsername.Count = 0;
-
             var user = theSession.Query(new UserByUsername { UserName = "myusername" });
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = theSession.Query(new UserByUsername { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
-            UserByUsername.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -66,7 +64,7 @@ namespace Marten.Testing.Linq.Compiled
             UserByUsernameWithFields.Count = 0;
 
             var user = theSession.Query(new UserByUsernameWithFields { UserName = "myusername" });
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = theSession.Query(new UserByUsernameWithFields { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
             UserByUsernameWithFields.Count.ShouldBe(1);
@@ -78,10 +76,9 @@ namespace Marten.Testing.Linq.Compiled
             UserByUsername.Count = 0;
 
             var user = theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "myusername" });
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
 
-            theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" })
-                .ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" }));
         }
 
         // SAMPLE: FindJsonUserByUsername
@@ -90,7 +87,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var user = theSession.Query(new FindJsonUserByUsername() { Username = "jdm" });
 
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             user.ShouldBe(_user1.ToJson());
         }
 
@@ -102,7 +99,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var user = theSession.Query(new FindJsonOrderedUsersByUsername() { FirstName = "Jeremy" });
 
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
         }
 
@@ -113,7 +110,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var user = theSession.Query(new FindJsonUsersByUsername() { FirstName = "Jeremy" });
 
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             user.ShouldNotBeEmpty();
         }
 
@@ -122,7 +119,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var user = await theSession.QueryAsync(new FindJsonUsersByUsername() { FirstName = "Jeremy" }).ConfigureAwait(false);
 
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             user.ShouldNotBeEmpty();
         }
 
@@ -130,10 +127,10 @@ namespace Marten.Testing.Linq.Compiled
         public void several_parameters_for_compiled_query()
         {
             var user = theSession.Query(new FindUserByAllTheThings { Username = "jdm", FirstName = "Jeremy", LastName = "Miller" });
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             user.UserName.ShouldBe("jdm");
             user = theSession.Query(new FindUserByAllTheThings { Username = "shadetreedev", FirstName = "Jeremy", LastName = "Miller" });
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             user.UserName.ShouldBe("shadetreedev");
         }
 
@@ -143,7 +140,7 @@ namespace Marten.Testing.Linq.Compiled
             UserByUsername.Count = 0;
 
             var user = await theSession.QueryAsync(new UserByUsername { UserName = "myusername" }).ConfigureAwait(false);
-            user.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = await theSession.QueryAsync(new UserByUsername { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
         }
@@ -151,15 +148,12 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public void a_list_query_compiled()
         {
-            UsersByFirstName.Count = 0;
-
             var users = theSession.Query(new UsersByFirstName { FirstName = "Jeremy" }).ToList();
             users.Count.ShouldBe(2);
             users.ElementAt(0).UserName.ShouldBe("jdm");
             users.ElementAt(1).UserName.ShouldBe("shadetreedev");
             var differentUsers = theSession.Query(new UsersByFirstName { FirstName = "Jeremy" });
             differentUsers.Count().ShouldBe(2);
-            UsersByFirstName.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -179,15 +173,12 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public async Task a_list_query_compiled_async()
         {
-            UsersByFirstName.Count = 0;
-
             var users = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" }).ConfigureAwait(false);
             users.Count().ShouldBe(2);
             users.ElementAt(0).UserName.ShouldBe("jdm");
             users.ElementAt(1).UserName.ShouldBe("shadetreedev");
             var differentUsers = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" });
             differentUsers.Count().ShouldBe(2);
-            UsersByFirstName.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -345,8 +336,6 @@ namespace Marten.Testing.Linq.Compiled
 
         public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
         {
-            // Ignore this line, it's from a unit test;)
-            Count++;
             return query => query.Where(x => x.FirstName == FirstName);
         }
     }

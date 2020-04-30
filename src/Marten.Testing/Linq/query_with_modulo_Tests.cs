@@ -1,11 +1,13 @@
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_modulo_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_modulo_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         // SAMPLE: querying-with-modulo
         [Fact]
@@ -41,6 +43,10 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Where(x => 0 == x.Number % 2 && Colors.Green > x.Color).ToArray()
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(2, 4);
+        }
+
+        public query_with_modulo_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

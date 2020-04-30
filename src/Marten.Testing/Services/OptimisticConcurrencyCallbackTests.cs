@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
 using NSubstitute;
 using Shouldly;
 using Xunit;

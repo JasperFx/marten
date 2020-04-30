@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Schema.Identity;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 

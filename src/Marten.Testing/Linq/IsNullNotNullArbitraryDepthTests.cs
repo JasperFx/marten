@@ -2,13 +2,14 @@ using System.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;
 
 namespace Marten.Testing.Linq
-{	
+{
 	// Change type mapping to treat "unknown" PG types as jsonb -> null checks depths at arbitrary depths don't fail due to CAST
-	public class IsNullNotNullArbitraryDepthTests : DocumentSessionFixture<NulloIdentityMap>
+	public class IsNullNotNullArbitraryDepthTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
 	{
 		class UserNested : User
 		{
@@ -35,7 +36,7 @@ namespace Marten.Testing.Linq
 
 			using (var s = theStore.QuerySession())
 			{
-				var notNull = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested != null);				
+				var notNull = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested != null);
 				var notNullAlso = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested.Nested.Nested == null);
 				var shouldBeNull = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested == null);
 
@@ -51,5 +52,9 @@ namespace Marten.Testing.Linq
             var locator = JsonLocatorField.For<UserNested>(EnumStorage.AsInteger, Casing.Default, x => x.Nested);
             Assert.Equal("CAST(d.data ->> 'Nested' as jsonb)", locator.SqlLocator);
         }
-	}
+
+        public IsNullNotNullArbitraryDepthTests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
 }

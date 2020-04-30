@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Npgsql;
 using Xunit;
 
@@ -88,7 +89,7 @@ namespace Marten.Testing.Examples
 
     // ENDSAMPLE
 
-    public sealed class RetryPolicyTests: IntegratedFixture
+    public sealed class RetryPolicyTests: IntegrationContext
     {
         [Fact]
         public void CanPlugInRetryPolicyThatRetriesOnException()
@@ -125,6 +126,10 @@ namespace Marten.Testing.Examples
 
             // Our retry exception filter should have triggered twice
             Assert.True(m.Count(s => s.IndexOf("relation \"mt_nonexistenttable\" does not exist", StringComparison.OrdinalIgnoreCase) > -1) == 2);
+        }
+
+        public RetryPolicyTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

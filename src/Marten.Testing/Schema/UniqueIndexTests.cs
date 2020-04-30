@@ -1,6 +1,7 @@
 ﻿using System;
 using Marten.Events.Projections;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Xunit;

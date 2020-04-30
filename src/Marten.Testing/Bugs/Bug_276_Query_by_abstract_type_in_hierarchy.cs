@@ -1,12 +1,13 @@
 using System;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_276_Query_by_abstract_type_in_hierarchy: DocumentSessionFixture<IdentityMap>
+    public class Bug_276_Query_by_abstract_type_in_hierarchy: IntegrationContextWithIdentityMap<IdentityMap>
     {
-        public Bug_276_Query_by_abstract_type_in_hierarchy()
+        public Bug_276_Query_by_abstract_type_in_hierarchy(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {

@@ -1,12 +1,14 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_any_async_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_any_async_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public async Task any_miss_with_query()
@@ -65,6 +67,10 @@ namespace Marten.Testing.Linq
 
             var result = await theSession.Query<Target>().Where(x => x.Number == 2).AnyAsync().ConfigureAwait(false);
             result.ShouldBeTrue();
+        }
+
+        public invoking_queryable_any_async_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

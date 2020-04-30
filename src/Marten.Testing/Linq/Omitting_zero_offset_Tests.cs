@@ -1,11 +1,13 @@
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class Omitting_zero_offset_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class Omitting_zero_offset_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Theory]
         [InlineData(0, true)]
@@ -29,6 +31,10 @@ namespace Marten.Testing.Linq
             {
                 sql.ShouldContain("OFFSET :", Case.Insensitive);
             }
+        }
+
+        public Omitting_zero_offset_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

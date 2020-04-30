@@ -2,13 +2,15 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [SingleStoryteller]
-    public class invoking_queryable_through_first_async_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class invoking_queryable_through_first_async_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public async Task first_hit_with_only_one_document()
@@ -20,7 +22,7 @@ namespace Marten.Testing.Linq
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var target = await theSession.Query<Target>().FirstAsync(x => x.Number == 3).ConfigureAwait(false);
-            target.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(target);
         }
 
         [Fact]
@@ -33,7 +35,7 @@ namespace Marten.Testing.Linq
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 3).ConfigureAwait(false);
-            target.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(target);
         }
 
         [Fact]
@@ -46,7 +48,7 @@ namespace Marten.Testing.Linq
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
             var target = await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 11).ConfigureAwait(false);
-            target.ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(target);
         }
 
         [Fact]
@@ -88,6 +90,10 @@ namespace Marten.Testing.Linq
             {
                 await theSession.Query<Target>().Where(x => x.Number == 11).FirstAsync().ConfigureAwait(false);
             });
+        }
+
+        public invoking_queryable_through_first_async_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

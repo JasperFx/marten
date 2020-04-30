@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Testing;
 using Marten.Testing.Events;
 using Marten.Testing.Events.Projections;
+using Marten.Testing.Harness;
 using Marten.Util;
 using NpgsqlTypes;
 using StoryTeller;

@@ -2,14 +2,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class event_store_with_string_identifiers_for_stream: IntegratedFixture
+    public class event_store_with_string_identifiers_for_stream: IntegrationContext
     {
-        public event_store_with_string_identifiers_for_stream()
+        public event_store_with_string_identifiers_for_stream(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(storeOptions =>
             {
@@ -139,8 +140,8 @@ namespace Marten.Testing.Events
 
             using (var query = theStore.QuerySession())
             {
-                query.Load<QuestPartyWithStringIdentifier>("First").ShouldNotBeNull();
-                query.Load<QuestPartyWithStringIdentifier>("Second").ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(query.Load<QuestPartyWithStringIdentifier>("First"));
+                SpecificationExtensions.ShouldNotBeNull(query.Load<QuestPartyWithStringIdentifier>("Second"));
             }
         }
     }

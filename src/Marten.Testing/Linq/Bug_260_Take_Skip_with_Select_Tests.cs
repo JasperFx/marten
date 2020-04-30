@@ -1,13 +1,15 @@
 using System.Linq;
 using Marten.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [SelectionStoryteller]
-    public class Bug_260_Take_Skip_with_Select_Tests: DocumentSessionFixture<NulloIdentityMap>
+    public class Bug_260_Take_Skip_with_Select_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void return_the_correct_number_of_results()
@@ -22,11 +24,15 @@ namespace Marten.Testing.Linq
 
             var cmd = queryable.ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldContain("LIMIT :arg1");
+            SpecificationExtensions.ShouldContain(cmd.CommandText, "LIMIT :arg1");
 
             cmd.Parameters["arg1"].Value.ShouldBe(10);
 
             queryable.ToArray().Length.ShouldBe(10);
+        }
+
+        public Bug_260_Take_Skip_with_Select_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

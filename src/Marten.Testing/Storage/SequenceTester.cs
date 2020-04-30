@@ -2,6 +2,7 @@
 using System.IO;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
 using Shouldly;

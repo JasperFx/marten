@@ -3,14 +3,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class optimistic_concurrency_with_subclass_hierarchies: IntegratedFixture
+    public class optimistic_concurrency_with_subclass_hierarchies: IntegrationContext
     {
-        public optimistic_concurrency_with_subclass_hierarchies()
+        public optimistic_concurrency_with_subclass_hierarchies(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -27,7 +28,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(coffeeShop);
                 session.SaveChanges();
 
-                session.Load<CoffeeShop>(coffeeShop.Id).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(session.Load<CoffeeShop>(coffeeShop.Id));
             }
         }
 
@@ -40,7 +41,7 @@ namespace Marten.Testing.Acceptance
                 session.Store(coffeeShop);
                 await session.SaveChangesAsync().ConfigureAwait(false);
 
-                (await session.LoadAsync<CoffeeShop>(coffeeShop.Id).ConfigureAwait(false)).ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull((await session.LoadAsync<CoffeeShop>(coffeeShop.Id).ConfigureAwait(false)));
             }
         }
 

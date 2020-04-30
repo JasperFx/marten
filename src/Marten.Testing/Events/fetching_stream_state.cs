@@ -2,12 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Events.Projections;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class fetching_stream_state_before_aggregator_is_registered: IntegratedFixture
+    public class fetching_stream_state_before_aggregator_is_registered: IntegrationContext
     {
         [Fact]
         public async Task bug_705_order_of_operation()
@@ -28,8 +29,8 @@ namespace Marten.Testing.Events
                 var state = await query.Events.FetchStreamStateAsync(streamId);
                 var aggregate = await query.Events.AggregateStreamAsync<QuestParty>(streamId);
 
-                state.ShouldNotBeNull();
-                aggregate.ShouldNotBeNull();
+                SpecificationExtensions.ShouldNotBeNull(state);
+                SpecificationExtensions.ShouldNotBeNull(aggregate);
             }
         }
 
@@ -65,6 +66,10 @@ namespace Marten.Testing.Events
                 var aggregate = session.Events.AggregateStream<FooAggregate>(aid);
             }
         }
+
+        public fetching_stream_state_before_aggregator_is_registered(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
     public class FooEvent { }
@@ -75,11 +80,11 @@ namespace Marten.Testing.Events
     }
 
     // SAMPLE: fetching_stream_state
-    public class fetching_stream_state: DocumentSessionFixture<NulloIdentityMap>
+    public class fetching_stream_state: IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         private Guid theStreamId;
 
-        public fetching_stream_state()
+        public fetching_stream_state(DefaultStoreFixture fixture) : base(fixture)
         {
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };

@@ -1,11 +1,12 @@
 ﻿using System.Threading.Tasks;
 using Marten.Testing.Examples;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class fetch_tenant_id_as_part_of_metadata : IntegratedFixture
+    public class fetch_tenant_id_as_part_of_metadata : IntegrationContext
     {
         [Fact]
         public void tenant_id_on_metadata()
@@ -44,6 +45,10 @@ namespace Marten.Testing.MultiTenancy
             var metadata = await theStore.Tenancy.Default.MetadataForAsync(user1);
             metadata.TenantId.ShouldBe("Green");
 
+        }
+
+        public fetch_tenant_id_as_part_of_metadata(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

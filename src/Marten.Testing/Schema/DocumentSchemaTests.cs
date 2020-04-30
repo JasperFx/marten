@@ -5,8 +5,10 @@ using Baseline;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Schema.Hierarchies;
+using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
+using Marten.Testing.Harness;
 using Marten.Testing.Schema.Hierarchies;
 using Shouldly;
 using Xunit;
@@ -15,7 +17,7 @@ using Issue = Marten.Testing.Documents.Issue;
 namespace Marten.Testing.Schema
 {
     [Collection("DefaultSchema")]
-    public class DocumentSchemaTests : IntegratedFixture
+    public class DocumentSchemaTests : DestructiveIntegrationContext
     {
         private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
         private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
@@ -25,7 +27,7 @@ namespace Marten.Testing.Schema
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
         {
             var storage = theStore.Tenancy.Default.StorageFor(typeof(User));
-            storage.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(storage);
         }
 
         [Fact]
@@ -36,7 +38,7 @@ namespace Marten.Testing.Schema
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            theStore.Tenancy.Default.StorageFor(typeof(Squad)).ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Squad)));
         }
 
         [Fact]
@@ -89,37 +91,40 @@ namespace Marten.Testing.Schema
 
             var sql = theStore.Schema.ToDDL();
 
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_issue");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_company");
-            sql.ShouldContain("CREATE TABLE public.mt_doc_user");
-            sql.ShouldContain("CREATE TABLE public.mt_doc_issue");
-            sql.ShouldContain("CREATE TABLE public.mt_doc_company");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_issue");
+            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_company");
+            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE public.mt_doc_user");
+            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE public.mt_doc_issue");
+            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE public.mt_doc_company");
         }
 
         [Fact]
         public void generate_the_ddl_with_the_event_store()
         {
-            StoreOptions(_ =>
+            var schemaName = StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
 
             var sql = theStore.Schema.ToDDL();
 
-            sql.ShouldContain("CREATE TABLE public.mt_streams");
+            sql.ShouldContain($"CREATE TABLE {schemaName}.mt_streams");
 
             // Crude way of checking that it should only be dumped once
-            sql.IndexOf("CREATE TABLE public.mt_streams").ShouldBe(sql.LastIndexOf("CREATE TABLE public.mt_streams"));
+            sql.IndexOf($"CREATE TABLE {schemaName}.mt_streams").ShouldBe(sql.LastIndexOf($"CREATE TABLE {schemaName}.mt_streams"));
         }
 
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
+            // Need to force an empty document store here
+            StoreOptions(x => { });
+
             theStore.Events.IsActive(null).ShouldBeFalse();
 
-            theStore.Schema.ToDDL().ShouldNotContain("public.mt_streams");
+            theStore.Schema.ToDDL().ShouldNotContain( "public.mt_streams");
         }
 
         [Fact]
@@ -348,6 +353,9 @@ namespace Marten.Testing.Schema
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 
+        public DocumentSchemaTests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
     public class building_id_assignment_for_document_types
@@ -357,22 +365,20 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_build_with_guid_property()
         {
-            theStore.Tenancy.Default.IdAssignmentFor<User>()
-                .ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.IdAssignmentFor<User>());
         }
 
         [Fact]
         public void can_build_for_int_and_long_id()
         {
-            theStore.Tenancy.Default.IdAssignmentFor<IntDoc>().ShouldNotBeNull();
-            theStore.Tenancy.Default.IdAssignmentFor<LongDoc>().ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.IdAssignmentFor<IntDoc>());
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.IdAssignmentFor<LongDoc>());
         }
 
         [Fact]
         public void can_build_for_a_field()
         {
-            theStore.Tenancy.Default.IdAssignmentFor<StringFieldGuy>()
-                .ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.IdAssignmentFor<StringFieldGuy>());
         }
 
         public class StringFieldGuy
@@ -382,14 +388,14 @@ namespace Marten.Testing.Schema
     }
 
     [Collection("DefaultSchema")]
-    public class DocumentSchemaWithOverridenSchemaTests : IntegratedFixture
+    public class DocumentSchemaWithOverridenSchemaTests : IntegrationContext
     {
         private readonly string _sql;
         private readonly DbObjectName[] _tables;
         private readonly DbObjectName[] _functions;
         private readonly IDocumentSchema _schema;
 
-        public DocumentSchemaWithOverridenSchemaTests()
+        public DocumentSchemaWithOverridenSchemaTests(DefaultStoreFixture fixture) : base(fixture)
         {
             // SAMPLE: override_schema_per_table
             StoreOptions(_ =>
@@ -426,56 +432,56 @@ namespace Marten.Testing.Schema
         [Fact]
         public void include_the_hilo_table_by_default()
         {
-            _sql.ShouldContain("public.mt_hilo");
+            SpecificationExtensions.ShouldContain(_sql, "public.mt_hilo");
         }
 
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
             theStore.Events.IsActive(null).ShouldBeFalse();
-            _sql.ShouldNotContain("public.mt_streams");
+            SpecificationExtensions.ShouldNotContain(_sql, "public.mt_streams");
         }
 
         [Fact]
         public void then_the_hilo_function_should_be_generated_in_the_default_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
         }
 
         [Fact]
         public void then_the_user_function_should_be_generated_in_the_default_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_user");
         }
 
         [Fact]
         public void then_the_issue_function_should_be_generated_in_the_overriden_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
         }
 
         [Fact]
         public void then_the_company_function_should_be_generated_in_the_default_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_company");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_company");
         }
 
         [Fact]
         public void then_the_user_table_should_be_generated_in_the_other_schema()
         {
-            _sql.ShouldContain("CREATE TABLE other.mt_doc_user");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE other.mt_doc_user");
         }
 
         [Fact]
         public void then_the_issue_table_should_be_generated_in_the_overriden_schema()
         {
-            _sql.ShouldContain("CREATE TABLE overriden.mt_doc_issue");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE overriden.mt_doc_issue");
         }
 
         [Fact]
         public void then_company_table_should_be_generated_in_the_default()
         {
-            _sql.ShouldContain("CREATE TABLE public.mt_doc_company");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE public.mt_doc_company");
         }
 
         [Fact]
@@ -542,14 +548,14 @@ namespace Marten.Testing.Schema
         }
     }
 
-    public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests : IntegratedFixture
+    public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests : IntegrationContext
     {
         private readonly string _sql;
         private readonly DbObjectName[] _tables;
         private readonly DbObjectName[] _functions;
         private readonly IDocumentSchema _schema;
 
-        public DocumentSchemaWithOverridenDefaultSchemaAndEventsTests()
+        public DocumentSchemaWithOverridenDefaultSchemaAndEventsTests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
             {
@@ -583,44 +589,44 @@ namespace Marten.Testing.Schema
         public void do_write_the_event_sql_if_the_event_graph_is_active()
         {
             theStore.Events.IsActive(null).ShouldBeTrue();
-            _schema.ToDDL().ShouldContain("other.mt_streams");
+            SpecificationExtensions.ShouldContain(_schema.ToDDL(), "other.mt_streams");
         }
 
 
         [Fact]
         public void then_the_user_function_should_be_generated_in_the_default_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION yet_another.mt_upsert_user");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION yet_another.mt_upsert_user");
         }
 
         [Fact]
         public void then_the_issue_function_should_be_generated_in_the_overriden_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
         }
 
         [Fact]
         public void then_the_company_function_should_be_generated_in_the_default_schema()
         {
-            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_company");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_company");
         }
 
         [Fact]
         public void then_the_user_table_should_be_generated_in_the_default_schema()
         {
-            _sql.ShouldContain("CREATE TABLE yet_another.mt_doc_user");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE yet_another.mt_doc_user");
         }
 
         [Fact]
         public void then_the_issue_table_should_be_generated_in_the_overriden_schema()
         {
-            _sql.ShouldContain("CREATE TABLE overriden.mt_doc_issue");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE overriden.mt_doc_issue");
         }
 
         [Fact]
         public void then_company_table_should_be_generated_in_the_default()
         {
-            _sql.ShouldContain("CREATE TABLE other.mt_doc_company");
+            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE other.mt_doc_company");
         }
 
         [Fact]

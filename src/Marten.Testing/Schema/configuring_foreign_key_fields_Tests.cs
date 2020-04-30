@@ -1,6 +1,7 @@
 using System;
 using Baseline;
 using Marten.Schema;
+using Marten.Testing.Harness;
 using Marten.Testing.Schema.Identity.Sequences;
 using Xunit;
 

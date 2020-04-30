@@ -1,6 +1,7 @@
 using System;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
+using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Xunit;

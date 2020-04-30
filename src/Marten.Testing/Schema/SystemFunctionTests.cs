@@ -1,11 +1,12 @@
 ﻿using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class SystemFunctionTests : IntegratedFixture
+    public class SystemFunctionTests : IntegrationContext
     {
         [Fact]
         public void generate_schema_objects_if_necessary()
@@ -25,6 +26,10 @@ namespace Marten.Testing.Schema
 
             theStore.Tenancy.Default.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamptz"))
                 .ShouldNotBeNull();
+        }
+
+        public SystemFunctionTests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1325_Any_with_contains_on_IList_of_string: IntegratedFixture
+    public class Bug_1325_Any_with_contains_on_IList_of_string: IntegrationContext
     {
         public class DocWithLists
         {
@@ -67,6 +68,10 @@ namespace Marten.Testing.Bugs
                 ids.ShouldContain(doc1.Id);
                 ids.ShouldContain(doc2.Id);
             }
+        }
+
+        public Bug_1325_Any_with_contains_on_IList_of_string(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

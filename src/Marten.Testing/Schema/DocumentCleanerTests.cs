@@ -5,6 +5,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Events;
+using Marten.Testing.Harness;
 using Marten.Testing.Storage;
 using Shouldly;
 using Xunit;
@@ -12,14 +13,21 @@ using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentCleanerTests : DocumentSessionFixture<NulloIdentityMap>
+    public class CleanFixture: StoreFixture
     {
-        private readonly Lazy<DocumentCleaner> _theCleaner;
-        private DocumentCleaner theCleaner => _theCleaner.Value;
-
-        public DocumentCleanerTests()
+        public CleanFixture() : base("cleaner")
         {
-            _theCleaner = new Lazy<DocumentCleaner>(() => theStore.Advanced.Clean.As<DocumentCleaner>());
+            Options.Storage.Add<SequenceCustomization.SequenceWithStart>();
+        }
+    }
+
+    public class DocumentCleanerTests : StoreContext<CleanFixture>
+    {
+        private IDocumentCleaner theCleaner => theStore.Advanced.Clean;
+
+        public DocumentCleanerTests(CleanFixture fixture) : base(fixture)
+        {
+            theStore.Advanced.Clean.CompletelyRemoveAll();
         }
 
         [Fact]
@@ -140,28 +148,6 @@ namespace Marten.Testing.Schema
             theSession.Events.FetchStream(streamId).ShouldBeEmpty();
         }
 
-        [Fact]
-        public void delete_all_event_data_with_different_schema_names()
-        {
-            StoreOptions(_ =>
-            {
-                _.DatabaseSchemaName = "test";
-                _.Events.DatabaseSchemaName = "events";
-            });
-
-            var streamId = Guid.NewGuid();
-
-            theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
-
-            theSession.SaveChanges();
-
-            theCleaner.DeleteAllEventData();
-
-            // Todo: theSession.Events.Query<>() uses the wrong schema name when using Event type.
-            //theSession.Events.Query<QuestStarted>().ShouldBeEmpty();
-            theSession.Events.FetchStream(streamId).ShouldBeEmpty();
-        }
-
         private static void ShouldBeEmpty<T>(T[] documentTables)
         {
             var stillInDatabase = string.Join(",", documentTables);
@@ -197,11 +183,6 @@ namespace Marten.Testing.Schema
         [Fact]
         public void CanCleanSequences()
         {
-            StoreOptions(_ =>
-            {
-                _.Storage.Add<SequenceCustomization.SequenceWithStart>();
-            });
-
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var allSchemas = theStore.Storage.AllSchemaNames();

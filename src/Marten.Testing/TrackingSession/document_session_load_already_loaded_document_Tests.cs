@@ -1,15 +1,26 @@
 ﻿using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_load_already_loaded_document_with_IdentityMap_Tests : document_session_load_already_loaded_document_Tests<IdentityMap> { }
-    public class document_session_load_already_loaded_document_with_DirtyTracking_Tests : document_session_load_already_loaded_document_Tests<DirtyTrackingIdentityMap> { }
+    public class document_session_load_already_loaded_document_with_IdentityMap_Tests : document_session_load_already_loaded_document_Tests<IdentityMap>
+    {
+        public document_session_load_already_loaded_document_with_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
+    public class document_session_load_already_loaded_document_with_DirtyTracking_Tests : document_session_load_already_loaded_document_Tests<DirtyTrackingIdentityMap>
+    {
+        public document_session_load_already_loaded_document_with_DirtyTracking_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+    }
 
-    public abstract class document_session_load_already_loaded_document_Tests<T> : DocumentSessionFixture<T> where T : IIdentityMap
+    public abstract class document_session_load_already_loaded_document_Tests<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
     {
         [Fact]
         public void when_loading_then_the_document_should_be_returned()
@@ -42,6 +53,10 @@ namespace Marten.Testing.TrackingSession
 
                 first.ShouldBeSameAs(second);
             }
+        }
+
+        protected document_session_load_already_loaded_document_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

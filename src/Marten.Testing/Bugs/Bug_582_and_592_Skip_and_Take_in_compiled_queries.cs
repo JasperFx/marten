@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: IntegratedFixture
+    public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: IntegrationContext
     {
         [Fact]
         public void can_get_separate_pages()
@@ -69,6 +71,10 @@ namespace Marten.Testing.Bugs
                     query.Query(new WrongOrderedPageOfTargets());
                 });
             }
+        }
+
+        public Bug_582_and_592_Skip_and_Take_in_compiled_queries(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

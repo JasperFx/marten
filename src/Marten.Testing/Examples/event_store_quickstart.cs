@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Testing.Events;
 using Marten.Testing.Events.Projections;
+using Marten.Testing.Harness;
 using Shouldly;
 
 namespace Marten.Testing.Examples

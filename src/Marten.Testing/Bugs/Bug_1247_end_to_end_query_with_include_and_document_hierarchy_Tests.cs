@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Services.Includes;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Testing.Schema.Hierarchies;
 using Shouldly;
 using Xunit;
@@ -72,6 +73,10 @@ namespace Marten.Testing.Bugs
 
                 issues.Count.ShouldBe(4);
             }
+        }
+
+        public Bug_1247_end_to_end_query_with_include_and_document_hierarchy_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

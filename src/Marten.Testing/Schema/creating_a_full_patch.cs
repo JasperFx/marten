@@ -1,4 +1,5 @@
 ﻿using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 using IssueAssigned = Marten.Testing.Events.IssueAssigned;
 

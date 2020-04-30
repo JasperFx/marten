@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -8,7 +9,7 @@ namespace Marten.Testing.TrackingSession
 {
     public class document_session_update_existing_documents_in_collection_Tests
     {
-        public class IdentityMapTests : DocumentSessionFixture<DirtyTrackingIdentityMap>
+        public class IdentityMapTests : IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
         {
             [Fact]
             public void when_querying_and_modifying_multiple_documents_should_track_and_persist()
@@ -40,9 +41,13 @@ namespace Marten.Testing.TrackingSession
                     users.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Worthy 1 - updated", "Worthy 2 - updated", "Worthy 3 - updated");
                 }
             }
+
+            public IdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
+            {
+            }
         }
 
-        public class DirtyTrackingIdentityMapTests : DocumentSessionFixture<DirtyTrackingIdentityMap>
+        public class DirtyTrackingIdentityMapTests : IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
         {
             [Fact]
             public void when_querying_and_modifying_multiple_documents_should_track_and_persist()
@@ -75,6 +80,10 @@ namespace Marten.Testing.TrackingSession
 
                     users.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Worthy 1 - updated", "Worthy 2 - updated", "Worthy 3 - updated");
                 }
+            }
+
+            public DirtyTrackingIdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
+            {
             }
         }
     }

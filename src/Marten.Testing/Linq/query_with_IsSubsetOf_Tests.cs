@@ -2,15 +2,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_IsSubsetOf_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_IsSubsetOf_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public query_with_IsSubsetOf_Tests()
+        public query_with_IsSubsetOf_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
             _allTargets = new[]
             {

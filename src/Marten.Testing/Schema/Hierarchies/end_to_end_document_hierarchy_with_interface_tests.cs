@@ -1,13 +1,14 @@
 ﻿using System;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Xunit;
 
 namespace Marten.Testing.Schema.Hierarchies
 {
-    public class end_to_end_document_hierarchy_with_interface_tests : DocumentSessionFixture<NulloIdentityMap>
+    public class end_to_end_document_hierarchy_with_interface_tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        public end_to_end_document_hierarchy_with_interface_tests()
+        public end_to_end_document_hierarchy_with_interface_tests(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(
                 _ =>

@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using Baseline.Reflection;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections

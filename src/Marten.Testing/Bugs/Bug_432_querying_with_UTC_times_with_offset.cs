@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Baseline;
 using Baseline.Dates;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -9,10 +10,13 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_432_querying_with_UTC_times_with_offset: IntegratedFixture
+    public class Bug_432_querying_with_UTC_times_with_offset: IntegrationContext
     {
-        public Bug_432_querying_with_UTC_times_with_offset(ITestOutputHelper output) : base(output)
+        private readonly ITestOutputHelper _output;
+
+        public Bug_432_querying_with_UTC_times_with_offset(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
         {
+            _output = output;
         }
 
         [Fact]

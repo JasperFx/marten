@@ -1,11 +1,13 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_float_Tests : DocumentSessionFixture<NulloIdentityMap>
+    public class query_with_float_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
         public void can_query_by_float()
@@ -20,6 +22,10 @@ namespace Marten.Testing.Linq
 
             theSession.Query<Target>().Where(x => x.Float > 400).ToArray().Select(x => x.Id)
                 .ShouldContain(x => x == target2.Id);
-        }         
+        }
+
+        public query_with_float_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 }

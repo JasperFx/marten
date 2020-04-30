@@ -1,11 +1,12 @@
 using System;
 using Marten.Events;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1019_event_type_not_found_bad_exception_message: IntegratedFixture
+    public class Bug_1019_event_type_not_found_bad_exception_message: IntegrationContext
     {
         [Fact]
         public void unknown_type_should_report_type_name()
@@ -34,6 +35,10 @@ where
                 command.ExecuteNonQuery();
                 Assert.Throws<UnknownEventTypeException>(() => session.Events.FetchStream(streamGuid)).Message.ShouldContain(newTypeName);
             }
+        }
+
+        public Bug_1019_event_type_not_found_bad_exception_message(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

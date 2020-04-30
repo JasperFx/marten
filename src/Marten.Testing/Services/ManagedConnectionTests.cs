@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Xunit;

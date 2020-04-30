@@ -2,6 +2,7 @@
 using Baseline;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 

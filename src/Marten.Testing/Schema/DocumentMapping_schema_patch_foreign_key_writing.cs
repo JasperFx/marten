@@ -1,10 +1,11 @@
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DocumentMapping_schema_patch_foreign_key_writing: IntegratedFixture
+    public class DocumentMapping_schema_patch_foreign_key_writing: DestructiveIntegrationContext
     {
         [Fact]
         public void can_update_foreignkeys_todocuments_with_cascade_delete_that_were_added()
@@ -420,6 +421,10 @@ namespace Marten.Testing.Schema
                     name                varchar(100) NULL
                 )");
             }
+        }
+
+        public DocumentMapping_schema_patch_foreign_key_writing(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

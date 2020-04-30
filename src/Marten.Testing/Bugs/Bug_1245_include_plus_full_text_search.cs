@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1245_include_plus_full_text_search: IntegratedFixture
+    public class Bug_1245_include_plus_full_text_search: IntegrationContext
     {
         public sealed class Email
         {
@@ -89,6 +89,10 @@ namespace Marten.Testing.Bugs
 
                 query.ShouldNotBeNull();
             }
+        }
+
+        public Bug_1245_include_plus_full_text_search(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
 using Marten.Services;
+using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -11,7 +13,7 @@ namespace Marten.Testing.Services
         public void detect_changes_with_no_document()
         {
             var entity = new TrackedEntity(Guid.NewGuid(), new TestsSerializer(), typeof(Target), null, null);
-            entity.DetectChange().ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(entity.DetectChange());
         }
 
         [Fact]
@@ -23,7 +25,7 @@ namespace Marten.Testing.Services
 
             var change = entity.DetectChange();
 
-            change.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(change);
             change.DocumentType.ShouldBe(typeof(Target));
             change.Id.ShouldBe(target.Id);
             change.Json.ShouldBe(new TestsSerializer().ToJson(target));
@@ -35,7 +37,7 @@ namespace Marten.Testing.Services
             var target = Target.Random();
             var entity = new TrackedEntity(target.Id, new TestsSerializer(), typeof(Target), target, null);
 
-            entity.DetectChange().ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(entity.DetectChange());
         }
 
         [Fact]
@@ -48,7 +50,7 @@ namespace Marten.Testing.Services
             var change = entity.DetectChange();
             change.ChangeCommitted();
 
-            entity.DetectChange().ShouldBeNull();
+            SpecificationExtensions.ShouldBeNull(entity.DetectChange());
         }
     }
 }
