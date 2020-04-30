@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class Bug_705_FetchStreamState_before_AggregateStream: IntegrationContext
+    public class Bug_705_FetchStreamState_before_AggregateStream: BugIntegrationContext
     {
         [Fact]
         public async Task call_fetch_stream_state_on_new_stream()
@@ -22,7 +22,7 @@ namespace Marten.Testing.Events
                 await session.SaveChangesAsync();
             }
 
-            using (var store2 = DocumentStore.For(ConnectionSource.ConnectionString))
+            using (var store2 = SeparateStore())
             {
                 using (var session = store2.OpenSession())
                 {
@@ -32,8 +32,5 @@ namespace Marten.Testing.Events
             }
         }
 
-        public Bug_705_FetchStreamState_before_AggregateStream(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

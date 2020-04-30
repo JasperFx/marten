@@ -6,6 +6,14 @@ using Xunit;
 
 namespace Marten.Testing.Harness
 {
+    [Collection("bugs")]
+    public class BugIntegrationContext: OneOffConfigurationsContext
+    {
+        public BugIntegrationContext() : base("bugs")
+        {
+        }
+    }
+
     /// <summary>
     /// Use this if the tests in a fixture are going to use
     /// all custom StoreOptions configuration
@@ -37,16 +45,17 @@ namespace Marten.Testing.Harness
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
-        protected DocumentStore SeparateStore(Action<StoreOptions> configure)
+        protected DocumentStore SeparateStore(Action<StoreOptions> configure = null)
         {
             var options = new StoreOptions
             {
-                DatabaseSchemaName = SchemaName
+                DatabaseSchemaName = SchemaName,
+
             };
 
             options.Connection(ConnectionSource.ConnectionString);
 
-            configure(options);
+            configure?.Invoke(options);
 
             var store = new DocumentStore(options);
 
@@ -72,7 +81,18 @@ namespace Marten.Testing.Harness
             _store.Advanced.Clean.CompletelyRemoveAll();
         }
 
-        protected DocumentStore theStore => _store;
+        protected DocumentStore theStore
+        {
+            get
+            {
+                if (_store == null)
+                {
+                    StoreOptions(x => {});
+                }
+
+                return _store;
+            }
+        }
 
         protected virtual IDocumentSession theSession
         {

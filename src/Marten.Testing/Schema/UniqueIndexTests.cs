@@ -8,59 +8,61 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class UniqueIndexTests
+    public class UniqueIndexFixture: StoreFixture
     {
-        private class UserCreated
+        public UniqueIndexFixture() : base("unique_indexes")
         {
-            public Guid UserId { get; set; }
-            public string Email { get; set; }
-            public string FirstName { get; set; }
-            public string Surname { get; set; }
+            Options.Events.AddEventTypes(new[] { typeof(UserCreated) });
+            Options.Events.InlineProjections.Add(new UserViewProjection());
+            Options.RegisterDocumentType<UniqueUser>();
+        }
+    }
+
+    public class UserCreated
+    {
+        public Guid UserId { get; set; }
+        public string Email { get; set; }
+        public string FirstName { get; set; }
+        public string Surname { get; set; }
+    }
+
+    public class UserViewProjection : ViewProjection<UniqueUser, Guid>
+    {
+        public UserViewProjection()
+        {
+            ProjectEvent<UserCreated>(Apply);
         }
 
-        private class User
+        private void Apply(UniqueUser view, UserCreated @event)
         {
-            public Guid Id { get; set; }
-
-            public string UserName { get; set; }
-
-            [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]
-            public string Email { get; set; }
-
-            [UniqueIndex(IndexName = "fullname")]
-            public string FirstName { get; set; }
-
-            [UniqueIndex(IndexName = "fullname")]
-            public string Surname { get; set; }
+            view.Id = @event.UserId;
+            view.Email = @event.Email;
+            view.UserName = @event.Email;
+            view.FirstName = @event.Email;
+            view.Surname = @event.Surname;
         }
+    }
 
-        private class UserViewProjection : ViewProjection<User, Guid>
-        {
-            public UserViewProjection()
-            {
-                ProjectEvent<UserCreated>(Apply);
-            }
+    public class UniqueUser
+    {
+        public Guid Id { get; set; }
 
-            private void Apply(User view, UserCreated @event)
-            {
-                view.Id = @event.UserId;
-                view.Email = @event.Email;
-                view.UserName = @event.Email;
-                view.FirstName = @event.Email;
-                view.Surname = @event.Surname;
-            }
-        }
+        public string UserName { get; set; }
 
-        public IDocumentStore InitStore()
-        {
-            var options = new StoreOptions();
-            options.Connection(ConnectionSource.ConnectionString);
-            options.Events.AddEventTypes(new[] { typeof(UserCreated) });
-            options.Events.InlineProjections.Add(new UserViewProjection());
-            options.RegisterDocumentType<User>();
+        [UniqueIndex(IndexType = UniqueIndexType.DuplicatedField)]
+        public string Email { get; set; }
 
-            return DocumentStore.For(ConnectionSource.ConnectionString);
-        }
+        [UniqueIndex(IndexName = "fullname")]
+        public string FirstName { get; set; }
+
+        [UniqueIndex(IndexName = "fullname")]
+        public string Surname { get; set; }
+    }
+
+    public class UniqueIndexTests : StoreContext<UniqueIndexFixture>
+    {
+
+
 
         public const string UniqueSqlState = "23505";
 
@@ -68,26 +70,24 @@ namespace Marten.Testing.Schema
         public void given_two_documents_with_the_same_value_for_unique_field_with_multiple_properties_when_created_then_throws_exception()
         {
             //1. Create Events
-            var firstDocument = new User { Id = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
-            var secondDocument = new User { Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
+            var firstDocument = new UniqueUser { Id = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
+            var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
 
-            using (var store = InitStore())
+
+            using (var session = theStore.OpenSession())
             {
-                using (var session = store.OpenSession())
-                {
-                    //2. Save documents
-                    session.Store(firstDocument);
-                    session.Store(secondDocument);
+                //2. Save documents
+                session.Store(firstDocument);
+                session.Store(secondDocument);
 
-                    //3. Unique Exception Was thrown
-                    try
-                    {
-                        session.SaveChanges();
-                    }
-                    catch (Marten.Exceptions.MartenCommandException exception)
-                    {
-                        ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-                    }
+                //3. Unique Exception Was thrown
+                try
+                {
+                    session.SaveChanges();
+                }
+                catch (Marten.Exceptions.MartenCommandException exception)
+                {
+                    ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
             }
         }
@@ -97,26 +97,23 @@ namespace Marten.Testing.Schema
         {
             //1. Create Events
             const string email = "john.smith@mail.com";
-            var firstDocument = new User { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
-            var secondDocument = new User { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
+            var firstDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
+            var secondDocument = new UniqueUser { Id = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
-            using (var store = InitStore())
+            using (var session = theStore.OpenSession())
             {
-                using (var session = store.OpenSession())
-                {
-                    //2. Save documents
-                    session.Store(firstDocument);
-                    session.Store(secondDocument);
+                //2. Save documents
+                session.Store(firstDocument);
+                session.Store(secondDocument);
 
-                    //3. Unique Exception Was thrown
-                    try
-                    {
-                        session.SaveChanges();
-                    }
-                    catch (Marten.Exceptions.MartenCommandException exception)
-                    {
-                        ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-                    }
+                //3. Unique Exception Was thrown
+                try
+                {
+                    session.SaveChanges();
+                }
+                catch (Marten.Exceptions.MartenCommandException exception)
+                {
+                    ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
             }
         }
@@ -128,23 +125,20 @@ namespace Marten.Testing.Schema
             var firstEvent = new UserCreated { UserId = Guid.NewGuid(), Email = "john.doe@gmail.com", FirstName = "John", Surname = "Doe" };
             var secondEvent = new UserCreated { UserId = Guid.NewGuid(), Email = "some.mail@outlook.com", FirstName = "John", Surname = "Doe" };
 
-            using (var store = InitStore())
+            using (var session = theStore.OpenSession())
             {
-                using (var session = store.OpenSession())
-                {
-                    //2. Publish Events
-                    session.Events.Append(firstEvent.UserId, firstEvent);
-                    session.Events.Append(secondEvent.UserId, secondEvent);
+                //2. Publish Events
+                session.Events.Append(firstEvent.UserId, firstEvent);
+                session.Events.Append(secondEvent.UserId, secondEvent);
 
-                    //3. Unique Exception Was thrown
-                    try
-                    {
-                        session.SaveChanges();
-                    }
-                    catch (Marten.Exceptions.MartenCommandException exception)
-                    {
-                        ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-                    }
+                //3. Unique Exception Was thrown
+                try
+                {
+                    session.SaveChanges();
+                }
+                catch (Marten.Exceptions.MartenCommandException exception)
+                {
+                    ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
             }
         }
@@ -157,25 +151,26 @@ namespace Marten.Testing.Schema
             var firstEvent = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Smith" };
             var secondEvent = new UserCreated { UserId = Guid.NewGuid(), Email = email, FirstName = "John", Surname = "Doe" };
 
-            using (var store = InitStore())
+            using (var session = theStore.OpenSession())
             {
-                using (var session = store.OpenSession())
-                {
-                    //2. Publish Events
-                    session.Events.Append(firstEvent.UserId, firstEvent);
-                    session.Events.Append(secondEvent.UserId, secondEvent);
+                //2. Publish Events
+                session.Events.Append(firstEvent.UserId, firstEvent);
+                session.Events.Append(secondEvent.UserId, secondEvent);
 
-                    //3. Unique Exception Was thrown
-                    try
-                    {
-                        session.SaveChanges();
-                    }
-                    catch (Marten.Exceptions.MartenCommandException exception)
-                    {
-                        ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
-                    }
+                //3. Unique Exception Was thrown
+                try
+                {
+                    session.SaveChanges();
+                }
+                catch (Marten.Exceptions.MartenCommandException exception)
+                {
+                    ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
             }
+        }
+
+        public UniqueIndexTests(UniqueIndexFixture fixture) : base(fixture)
+        {
         }
     }
 }
