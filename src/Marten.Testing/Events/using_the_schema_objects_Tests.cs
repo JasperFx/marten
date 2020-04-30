@@ -14,7 +14,11 @@ namespace Marten.Testing.Events
         {
             var id = Guid.NewGuid();
 
-            using (var store1 = DocumentStore.For(ConnectionSource.ConnectionString))
+            using (var store1 = DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = "samples";
+            }))
             {
                 using (var session = store1.OpenSession())
                 {
@@ -27,6 +31,7 @@ namespace Marten.Testing.Events
             // SAMPLE: registering-event-types
             var store2 = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = "samples";
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.None;
 

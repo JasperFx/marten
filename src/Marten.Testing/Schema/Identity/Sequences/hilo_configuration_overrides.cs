@@ -9,13 +9,18 @@ using Xunit;
 
 namespace Marten.Testing.Schema.Identity.Sequences
 {
+    [Collection("sequences")]
     public class hilo_configuration_overrides
     {
         [Fact]
         public void can_establish_the_hilo_starting_point()
         {
             // SAMPLE: ResetHiloSequenceFloor
-            var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = "sequences";
+            });
 
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
@@ -42,7 +47,12 @@ namespace Marten.Testing.Schema.Identity.Sequences
         {
             var defaults = new HiloSettings();
 
-            var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = "sequences";
+            });
+
             var mapping = store.Storage.MappingFor(typeof (IntDoc));
 
             mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
@@ -61,6 +71,7 @@ namespace Marten.Testing.Schema.Identity.Sequences
             {
                 _.HiloSequenceDefaults.MaxLo = 55;
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "sequences";
             });
             // ENDSAMPLE
 
@@ -85,6 +96,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
                     .HiloSettings(new HiloSettings {MaxLo = 66});
 
                 _.Connection(ConnectionSource.ConnectionString);
+
+                _.DatabaseSchemaName = "sequences";
             });
             // ENDSAMPLE
 
@@ -107,6 +120,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
             {
                 _.HiloSequenceDefaults.MaxLo = 33;
                 _.Connection(ConnectionSource.ConnectionString);
+
+                _.DatabaseSchemaName = "sequences";
             });
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
@@ -141,6 +156,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
                 _.HiloSequenceDefaults.MaxLo = 33;
                 _.HiloSequenceDefaults.SequenceName = "ID";
                 _.Connection(ConnectionSource.ConnectionString);
+
+                _.DatabaseSchemaName = "sequences";
             });
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
@@ -170,6 +187,8 @@ namespace Marten.Testing.Schema.Identity.Sequences
             {
                 _.HiloSequenceDefaults.SequenceName = "Entity";
                 _.Connection(ConnectionSource.ConnectionString);
+
+                _.DatabaseSchemaName = "sequences";
             });
             // ENDSAMPLE
             using (var session = store.OpenSession())

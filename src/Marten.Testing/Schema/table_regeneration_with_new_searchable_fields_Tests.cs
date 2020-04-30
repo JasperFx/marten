@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class table_regeneration_with_new_searchable_fields_Tests
+    public class table_regeneration_with_new_searchable_fields_Tests : DestructiveIntegrationContext
     {
         [Fact]
         public void do_not_lose_data_if_only_change_is_searchable_field()
@@ -17,12 +17,7 @@ namespace Marten.Testing.Schema
             var user2 = new User {FirstName = "Max"};
             var user3 = new User {FirstName = "Declan"};
 
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-
-                store.BulkInsert(new User[] {user1, user2, user3});
-            }
+            theStore.BulkInsert(new User[] {user1, user2, user3});
 
             using (var store2 = DocumentStore.For(_ =>
             {
@@ -52,7 +47,7 @@ namespace Marten.Testing.Schema
 
                     list.OrderBy(x => x).ShouldHaveTheSameElementsAs("Declan", "Jeremy", "Max");
 
-                    SpecificationExtensions.ShouldNotBeNull(session.Query<User>().Where(x => x.FirstName == "Jeremy").Single());
+                    session.Query<User>().Single(x => x.FirstName == "Jeremy").ShouldNotBeNull();
 
                 }
             }
@@ -65,12 +60,7 @@ namespace Marten.Testing.Schema
             var user2 = new User { FirstName = "Max" };
             var user3 = new User { FirstName = "Declan" };
 
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-
-                store.BulkInsert(new User[] { user1, user2, user3 });
-            }
+            theStore.BulkInsert(new User[] { user1, user2, user3 });
 
             using (var store2 = DocumentStore.For(_ =>
             {
@@ -105,6 +95,10 @@ namespace Marten.Testing.Schema
 
                 }
             }
+        }
+
+        public table_regeneration_with_new_searchable_fields_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

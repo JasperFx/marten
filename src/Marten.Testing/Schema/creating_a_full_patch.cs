@@ -5,20 +5,15 @@ using IssueAssigned = Marten.Testing.Events.IssueAssigned;
 
 namespace Marten.Testing.Schema
 {
-    public class creating_a_full_patch
+    public class creating_a_full_patch : DestructiveIntegrationContext
     {
         [Fact]
         public void patch_for_multiple_tables()
         {
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-
-                store.Tenancy.Default.EnsureStorageExists(typeof(User));
-                store.Tenancy.Default.EnsureStorageExists(typeof(Target));
-                store.Tenancy.Default.EnsureStorageExists(typeof(Issue));
-                store.Tenancy.Default.EnsureStorageExists(typeof(Company));
-            }
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(Issue));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(Company));
 
             using (var store2 = DocumentStore.For(_ =>
             {
@@ -45,10 +40,6 @@ namespace Marten.Testing.Schema
         [Fact]
         public void base_patch_should_drop_system_functions_correctly()
         {
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-            }
 
             using (var store2 = DocumentStore.For(_ =>
             {
@@ -65,6 +56,10 @@ namespace Marten.Testing.Schema
                 patch.RollbackDDL.ShouldContain("drop function if exists public.mt_append_event (uuid, varchar, varchar, uuid[], varchar[], jsonb[]);");
                 patch.RollbackDDL.ShouldContain("drop function if exists public.mt_mark_event_progression(varchar, bigint) cascade;");
             }
+        }
+
+        public creating_a_full_patch(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }

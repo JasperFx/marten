@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class auto_create_mode_Tests
+    public class auto_create_mode_Tests : IntegrationContext
     {
 
         public void using_auto_create_field()
@@ -61,12 +61,7 @@ var store = DocumentStore.For(_ =>
             var user2 = new User { FirstName = "Max" };
             var user3 = new User { FirstName = "Declan" };
 
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-
-                store.BulkInsert(new User[] { user1, user2, user3 });
-            }
+            theStore.BulkInsert(new User[] { user1, user2, user3 });
 
             using (var store2 = DocumentStore.For(_ =>
             {
@@ -82,6 +77,10 @@ var store = DocumentStore.For(_ =>
 
                 ex.Message.ShouldBe($"Marten cannot apply updates in CreateOnly mode to existing items public.mt_doc_user, public.mt_upsert_user, public.mt_insert_user, public.mt_update_user");
             }
+        }
+
+        public auto_create_mode_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

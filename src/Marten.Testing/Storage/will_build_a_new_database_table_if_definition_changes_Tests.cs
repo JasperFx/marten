@@ -8,38 +8,38 @@ using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    public class will_build_a_new_database_table_if_definition_changes_Tests
+    [Collection("patching")]
+    public class will_build_a_new_database_table_if_definition_changes_Tests : OneOffConfigurationsContext
     {
+        public will_build_a_new_database_table_if_definition_changes_Tests() : base("patching")
+        {
+        }
+
         [Fact]
         public void will_build_the_new_table_if_the_configured_table_does_not_match_the_existing_table()
         {
             DocumentTable table1;
             DocumentTable table2;
 
-            using (var store = TestingDocumentStore.Basic())
-            {
-                store.Tenancy.Default.StorageFor(typeof(User));
 
-                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
+            theStore.Tenancy.Default.StorageFor(typeof(User));
 
-                table1 = store.TableSchema(typeof(User));
-                table1.ShouldNotContain(x => x.Name == "user_name");
-            }
+            theStore.Tenancy.Default.DbObjects.DocumentTables().ShouldContain($"{SchemaName}.mt_doc_user");
 
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("UserName");
+            table1 = theStore.TableSchema(typeof(User));
+            table1.ShouldNotContain(x => x.Name == "user_name");
 
-                store.Tenancy.Default.StorageFor(typeof(User));
+            var store = SeparateStore(opts => opts.Schema.For<User>().Duplicate(x => x.UserName));
 
-                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("public.mt_doc_user");
+            store.Tenancy.Default.StorageFor(typeof(User));
 
-                table2 = store.TableSchema(typeof(User));
-            }
+            store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain($"{SchemaName}.mt_doc_user");
+
+            table2 = store.TableSchema(typeof(User));
 
             table2.ShouldNotBe(table1);
 
-            SpecificationExtensions.ShouldNotBeNull(table2.Column("user_name"));
+            table2.Column("user_name").ShouldNotBeNull();
         }
 
         [Fact]
@@ -48,35 +48,33 @@ namespace Marten.Testing.Storage
             DocumentTable table1;
             DocumentTable table2;
 
-            using (var store = TestingDocumentStore.For(_ => _.DatabaseSchemaName = "other"))
+            StoreOptions(_ => _.DatabaseSchemaName = "other");
+
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+
+            theStore.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
+
+            table1 = theStore.TableSchema(typeof(User));
+            table1.ShouldNotContain(x => x.Name == "user_name");
+
+
+            var store2 = SeparateStore(_ =>
             {
-                store.Tenancy.Default.EnsureStorageExists(typeof(User));
-
-                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
-
-                table1 = store.TableSchema(typeof(User));
-                table1.ShouldNotContain(x => x.Name == "user_name");
-            }
-
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = "other";
-            }))
-            {
-                store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("UserName");
+                _.Schema.For<User>().Duplicate(x => x.UserName);
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+            });
 
-                store.Tenancy.Default.EnsureStorageExists(typeof(User));
+            store2.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
+            store2.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
 
-                table2 = store.TableSchema(typeof(User));
-            }
+            table2 = store2.TableSchema(typeof(User));
 
 
             table2.ShouldNotBe(table1);
 
-            SpecificationExtensions.ShouldNotBeNull(table2.Column("user_name"));
+            table2.Column("user_name").ShouldNotBeNull();
         }
     }
 }
