@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Baseline;
 using Marten.Testing.Events;
 using Xunit;
@@ -71,6 +72,7 @@ namespace Marten.Testing.Harness
             _store = new DocumentStore(options);
 
             _store.Advanced.Clean.CompletelyRemoveAll();
+
         }
 
         protected DocumentStore theStore
