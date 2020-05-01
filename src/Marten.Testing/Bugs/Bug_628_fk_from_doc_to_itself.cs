@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_628_fk_from_doc_to_itself: IntegrationContext
+    public class Bug_628_fk_from_doc_to_itself: BugIntegrationContext
     {
         public class Category
         {
@@ -24,8 +24,5 @@ namespace Marten.Testing.Bugs
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
         }
 
-        public Bug_628_fk_from_doc_to_itself(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

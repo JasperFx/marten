@@ -14,7 +14,7 @@ namespace Marten.Testing.Bugs
 
     public class TypeB { }
 
-    public class ability_to_persist_generic_types: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class ability_to_persist_generic_types: BugIntegrationContext
     {
         [Fact]
         public void can_persist_and_load_generic_types()
@@ -32,12 +32,12 @@ namespace Marten.Testing.Bugs
             doc2B.ShouldNotBeNull();
         }
 
-        public ability_to_persist_generic_types(DefaultStoreFixture fixture) : base(fixture)
+        public ability_to_persist_generic_types()
         {
         }
     }
 
-    public class ability_to_persist_nested_generic_types: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class ability_to_persist_nested_generic_types: BugIntegrationContext
     {
         [Fact]
         public void can_persist_and_load_generic_types()
@@ -56,8 +56,5 @@ namespace Marten.Testing.Bugs
             public Guid Id = Guid.NewGuid();
         }
 
-        public ability_to_persist_nested_generic_types(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

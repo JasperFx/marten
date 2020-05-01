@@ -8,7 +8,7 @@ using Xunit;
 namespace Marten.Testing.Bugs
 {
     [ControlledQueryStoryteller]
-    public class Bug_261_double_take_or_skip: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_261_double_take_or_skip: IntegrationContext
     {
         [Fact]
         public void does_not_blow_up_with_double_take()

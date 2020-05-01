@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1245_include_plus_full_text_search: IntegrationContext
+    public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     {
         public sealed class Email
         {
@@ -79,7 +79,7 @@ namespace Marten.Testing.Bugs
                     session.Store(newEmail);
                 }
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 var query = await session.Query<Email>()
                     .Include(x => x.UserId, userDictionary)
@@ -91,8 +91,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1245_include_plus_full_text_search(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

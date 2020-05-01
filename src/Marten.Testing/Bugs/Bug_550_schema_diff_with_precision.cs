@@ -6,12 +6,8 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    [Collection("bug550")]
-    public class Bug_550_schema_diff_with_precision: OneOffConfigurationsContext
+    public class Bug_550_schema_diff_with_precision: BugIntegrationContext
     {
-        public Bug_550_schema_diff_with_precision() : base("bug550")
-        {
-        }
 
         [Fact]
         public void can_handle_the_explicit_precision()
@@ -24,11 +20,9 @@ namespace Marten.Testing.Bugs
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            var store = DocumentStore.For(_ =>
+            var store = SeparateStore(_ =>
             {
-                _.DatabaseSchemaName = SchemaName;
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 

@@ -9,13 +9,13 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1258_cannot_derive_updates_for_objects: IntegrationContext
+    public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
     {
         [Fact]
         public void can_properly_detect_changes_when_user_defined_type()
         {
             theStore.Advanced.Clean.CompletelyRemoveAll();
-            var schemaName = StoreOptions(_ =>
+            StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Schema.For<UserWithCustomType>();
@@ -184,10 +184,8 @@ namespace Marten.Testing.Bugs
                 issues.Length.ShouldBe(3);
             }
 
-            var secondStore = DocumentStore.For(_ =>
+            var secondStore = SeparateStore(_ =>
             {
-                _.DatabaseSchemaName = schemaName;
-                _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Schema.For<UserWithCustomType>();
                 _.Schema.For<IssueForUserWithCustomType>().ForeignKey<UserWithCustomType>(x => x.UserId);
@@ -215,9 +213,6 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1258_cannot_derive_updates_for_objects(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
     public class UserWithCustomType

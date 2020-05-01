@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: IntegrationContext
+    public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: BugIntegrationContext
     {
         [Fact]
         public void can_get_separate_pages()
@@ -73,9 +73,6 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_582_and_592_Skip_and_Take_in_compiled_queries(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
     public class PageOfTargets: ICompiledListQuery<Target>

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_339_async_cache_problem: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_339_async_cache_problem: IntegrationContext
     {
         [Fact]
         public async Task pending_with_dirty_checks_async()

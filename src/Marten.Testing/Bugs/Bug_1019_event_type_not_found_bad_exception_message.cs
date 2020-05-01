@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1019_event_type_not_found_bad_exception_message: IntegrationContext
+    public class Bug_1019_event_type_not_found_bad_exception_message: BugIntegrationContext
     {
         [Fact]
         public void unknown_type_should_report_type_name()
@@ -22,7 +22,7 @@ namespace Marten.Testing.Bugs
                 var command = session.Connection.CreateCommand();
                 command.CommandText = @"
 update
-	public.mt_events
+	bugs.mt_events
 set
 	mt_dotnet_type = :newDotnetTypeName
 	, type = :newTypeName
@@ -37,9 +37,6 @@ where
             }
         }
 
-        public Bug_1019_event_type_not_found_bad_exception_message(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
     namespace Bug1019

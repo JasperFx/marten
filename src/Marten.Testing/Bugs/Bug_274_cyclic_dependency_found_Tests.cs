@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_274_cyclic_dependency_found_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_274_cyclic_dependency_found_Tests: BugIntegrationContext
     {
         [Fact]
         public void save()
@@ -21,8 +21,5 @@ namespace Marten.Testing.Bugs
             theSession.SaveChanges();
         }
 
-        public Bug_274_cyclic_dependency_found_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

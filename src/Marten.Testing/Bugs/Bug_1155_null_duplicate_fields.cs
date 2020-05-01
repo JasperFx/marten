@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1155_null_duplicate_fields: IntegrationContext
+    public class Bug_1155_null_duplicate_fields: BugIntegrationContext
     {
         [Fact]
         public void when_enum_is_null_due_to_nullable_type()
@@ -197,8 +197,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1155_null_duplicate_fields(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

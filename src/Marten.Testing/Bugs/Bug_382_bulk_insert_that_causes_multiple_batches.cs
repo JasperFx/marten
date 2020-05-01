@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_382_bulk_insert_that_causes_multiple_batches: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationContext
     {
         [Fact]
         public void load_with_batch_larger_than_batch_size_and_overwrite_existing_on_empty_database()
@@ -24,8 +24,6 @@ namespace Marten.Testing.Bugs
             theSession.Query<Target>().Count().ShouldBe(data.Length);
         }
 
-        public Bug_382_bulk_insert_that_causes_multiple_batches(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+
     }
 }

@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
         public Guid ShortEnough { get; set; }
     }
 
-    public class Bug_953_too_long_index_names: IntegrationContext
+    public class Bug_953_too_long_index_names: BugIntegrationContext
     {
         [Fact]
         public void can_ensure_storage_with_index_id_greater_than_63_bytes()
@@ -28,8 +28,5 @@ namespace Marten.Testing.Bugs
             });
         }
 
-        public Bug_953_too_long_index_names(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

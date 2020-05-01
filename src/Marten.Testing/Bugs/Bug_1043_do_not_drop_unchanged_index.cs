@@ -5,12 +5,12 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1043_do_not_drop_unchanged_index: IntegrationContext
+    public class Bug_1043_do_not_drop_unchanged_index: BugIntegrationContext
     {
         [Fact]
         public void do_not_drop_unchanged_index()
         {
-            var schemaName = StoreOptions(_ =>
+            StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
@@ -36,7 +36,7 @@ namespace Marten.Testing.Bugs
             }
 
             var mapping = DocumentMapping.For<Bug1043.Thing>();
-            mapping.DatabaseSchemaName = schemaName;
+            mapping.DatabaseSchemaName = SchemaName;
             mapping.Index(x => x.Name, x =>
             {
                 x.IndexName = "Test_Index";
@@ -59,9 +59,6 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1043_do_not_drop_unchanged_index(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }
 

@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class SubClassForeignKeyBugs: IntegrationContext
+    public class SubClassForeignKeyBugs: BugIntegrationContext
     {
         public class Person
         {
@@ -26,7 +26,7 @@ namespace Marten.Testing.Bugs
             public int Id { get; set; }
         }
 
-        public SubClassForeignKeyBugs(DefaultStoreFixture fixture) : base(fixture)
+        public SubClassForeignKeyBugs()
         {
             StoreOptions(_ =>
             {

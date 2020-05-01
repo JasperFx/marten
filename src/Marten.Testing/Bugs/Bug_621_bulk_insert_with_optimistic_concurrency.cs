@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_621_bulk_insert_with_optimistic_concurrency: IntegrationContext
+    public class Bug_621_bulk_insert_with_optimistic_concurrency: BugIntegrationContext
     {
         [Fact]
         public void can_do_a_bulk_insert()
@@ -26,8 +26,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_621_bulk_insert_with_optimistic_concurrency(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

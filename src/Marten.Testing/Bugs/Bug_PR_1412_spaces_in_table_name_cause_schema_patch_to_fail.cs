@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail : IntegrationContext
+    public class Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail : BugIntegrationContext
     {
 
         internal class testSchema : IFeatureSchema
@@ -124,8 +124,5 @@ namespace Marten.Testing.Bugs
             });
         }
 
-        public Bug_PR_1412_spaces_in_table_name_cause_schema_patch_to_fail(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

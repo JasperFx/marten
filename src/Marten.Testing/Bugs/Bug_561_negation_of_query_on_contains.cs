@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_561_negation_of_query_on_contains: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_561_negation_of_query_on_contains: IntegrationContext
     {
         public Bug_561_negation_of_query_on_contains(DefaultStoreFixture fixture) : base(fixture)
         {
@@ -45,9 +45,9 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class Bug_561_negation_of_query_on_contains_with_camel_casing: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegrationContext
     {
-        public Bug_561_negation_of_query_on_contains_with_camel_casing(DefaultStoreFixture fixture): base(fixture)
+        public Bug_561_negation_of_query_on_contains_with_camel_casing()
         {
             StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 

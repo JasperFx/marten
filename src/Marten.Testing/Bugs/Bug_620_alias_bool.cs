@@ -1,25 +1,25 @@
 using System;
 using Marten.Schema;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_620_alias_bool
+    public class Bug_620_alias_bool : BugIntegrationContext
     {
         [Fact]
         public void can_canonicize_bool()
         {
-            using (var store1 = TestingDocumentStore.Basic())
+            using (var store1 = SeparateStore())
             {
                 store1.Tenancy.Default.EnsureStorageExists(typeof(DocWithBool));
 
                 store1.Schema.ApplyAllConfiguredChangesToDatabase();
             }
 
-            using (var store2 = DocumentStore.For(_ =>
+            using (var store2 = SeparateStore(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<DocWithBool>();
             }))
             {

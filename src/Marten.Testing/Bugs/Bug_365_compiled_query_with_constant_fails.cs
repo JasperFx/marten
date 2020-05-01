@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_365_compiled_query_with_constant_fails: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
     {
         public class Route
         {
@@ -38,7 +38,7 @@ namespace Marten.Testing.Bugs
             Stopped
         }
 
-        public Bug_365_compiled_query_with_constant_fails(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_365_compiled_query_with_constant_fails()
         {
             StoreOptions(_ =>
             {

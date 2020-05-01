@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch: IntegrationContext
+    public class Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch: BugIntegrationContext
     {
         [Fact]
         public void not_using_the_event_store_should_not_be_in_patch()
@@ -17,8 +17,5 @@ namespace Marten.Testing.Bugs
             patch.UpdateDDL.ShouldNotContain("mt_streams");
         }
 
-        public Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

@@ -5,9 +5,9 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_276_Query_by_abstract_type_in_hierarchy: IntegrationContextWithIdentityMap<IdentityMap>
+    public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
     {
-        public Bug_276_Query_by_abstract_type_in_hierarchy(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_276_Query_by_abstract_type_in_hierarchy()
         {
             StoreOptions(_ =>
             {
@@ -47,11 +47,16 @@ namespace Marten.Testing.Bugs
                 StatusText = "testing status"
             };
 
-            theSession.Store(activity);
-            theSession.SaveChanges();
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(activity);
+                session.SaveChanges();
 
-            theSession.Load<Activity>(activity.Id).ShouldBeTheSameAs(activity);
-            theSession.Load<StatusActivity>(activity.Id).ShouldBeTheSameAs(activity);
+                session.Load<Activity>(activity.Id).ShouldBeTheSameAs(activity);
+                session.Load<StatusActivity>(activity.Id).ShouldBeTheSameAs(activity);
+            }
+
+
 
             using (var session = theStore.QuerySession())
             {

@@ -8,9 +8,9 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_964_optimistic_concurrency_with_subclass: IntegrationContext
+    public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
     {
-        public Bug_964_optimistic_concurrency_with_subclass(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_964_optimistic_concurrency_with_subclass()
         {
             StoreOptions(_ =>
             {

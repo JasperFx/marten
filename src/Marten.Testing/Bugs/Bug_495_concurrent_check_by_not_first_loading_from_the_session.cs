@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: IntegrationContext
+    public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: BugIntegrationContext
     {
         [UseOptimisticConcurrency]
         public class Foo
@@ -37,8 +37,5 @@ namespace Marten.Testing.Bugs
             });
         }
 
-        public Bug_495_concurrent_check_by_not_first_loading_from_the_session(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

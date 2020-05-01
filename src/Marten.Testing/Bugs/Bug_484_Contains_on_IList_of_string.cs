@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_484_Contains_on_IList_of_string: IntegrationContext
+    public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
     {
         public class DocWithLists
         {
@@ -65,8 +65,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_484_Contains_on_IList_of_string(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

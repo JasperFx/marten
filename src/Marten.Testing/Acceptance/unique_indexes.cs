@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
+    [Collection("unique_text")]
     public class unique_indexes: IntegrationContext
     {
         // SAMPLE: using_a_single_property_computed_unique_index_through_attribute
@@ -70,6 +71,7 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "unique_text";
 
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.UserName);
@@ -84,6 +86,7 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "unique_text";
 
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.UserName);
@@ -98,6 +101,7 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "unique_text";
 
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.FirstName, x => x.FullName);
@@ -112,6 +116,7 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "unique_text";
 
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.FirstName, x => x.FullName);
@@ -126,6 +131,7 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "unique_text";
 
                 // This creates a duplicated field unique index on firstname, lastname and tenant_id
                 _.Schema.For<User>().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField, "index_name", TenancyScope.PerTenant, x => x.FirstName, x => x.LastName);

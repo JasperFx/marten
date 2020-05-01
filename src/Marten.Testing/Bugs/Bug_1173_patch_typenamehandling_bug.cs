@@ -15,7 +15,7 @@ namespace Marten.Testing.Bugs
         public string Name { get; set; }
     }
 
-    public class Bug_1173_patch_typenamehandling_bug: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
     {
         [Fact]
         public void can_support_typenamehandling()
@@ -67,8 +67,6 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1173_patch_typenamehandling_bug(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+
     }
 }

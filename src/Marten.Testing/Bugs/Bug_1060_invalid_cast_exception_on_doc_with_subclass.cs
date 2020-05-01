@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: IntegrationContext
+    public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: BugIntegrationContext
     {
         [Fact]
         public void can_issue_query_on_doc_hierarchy_with_include()
@@ -52,8 +52,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1060_invalid_cast_exception_on_doc_with_subclass(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

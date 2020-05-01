@@ -9,9 +9,9 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_145_table_getting_erroneously_regenerated_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_145_table_getting_erroneously_regenerated_Tests: BugIntegrationContext
     {
-        public Bug_145_table_getting_erroneously_regenerated_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_145_table_getting_erroneously_regenerated_Tests()
         {
             StoreOptions(_ =>
             {

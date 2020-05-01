@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_593_patch_doc_function_should_be_built_in_designated_schema: IntegrationContext
+    public class Bug_593_patch_doc_function_should_be_built_in_designated_schema: BugIntegrationContext
     {
         [Fact]
         public void should_stick_the_patch_doc_function_in_the_right_schema()
@@ -19,8 +19,5 @@ namespace Marten.Testing.Bugs
             theStore.Tenancy.Default.DbObjects.Functions().Contains(expected).ShouldBeTrue();
         }
 
-        public Bug_593_patch_doc_function_should_be_built_in_designated_schema(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

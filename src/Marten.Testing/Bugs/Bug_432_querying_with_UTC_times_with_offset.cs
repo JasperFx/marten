@@ -10,11 +10,11 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_432_querying_with_UTC_times_with_offset: IntegrationContext
+    public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     {
         private readonly ITestOutputHelper _output;
 
-        public Bug_432_querying_with_UTC_times_with_offset(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
+        public Bug_432_querying_with_UTC_times_with_offset(ITestOutputHelper output)
         {
             _output = output;
         }
@@ -51,7 +51,7 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-                var sql = "select public.mt_immutable_timestamp(d.data ->> \'DateTimeField\') as time from public.mt_doc_dateclass as d";
+                var sql = $"select {SchemaName}.mt_immutable_timestamp(d.data ->> \'DateTimeField\') as time from {SchemaName}.mt_doc_dateclass as d";
 
                 using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
                 {
@@ -105,7 +105,7 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-                var sql = "select public.mt_immutable_timestamp(d.data ->> \'dateTimeField\') as time from public.mt_doc_dateclass as d";
+                var sql = $"select {SchemaName}.mt_immutable_timestamp(d.data ->> \'dateTimeField\') as time from {SchemaName}.mt_doc_dateclass as d";
 
                 using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
                 {
@@ -159,7 +159,7 @@ namespace Marten.Testing.Bugs
 
                 _output.WriteLine(cmd.CommandText);
 
-                var sql = "select public.mt_immutable_timestamp(d.data ->> \'date_time_field\') as time from public.mt_doc_dateclass as d";
+                var sql = $"select {SchemaName}.mt_immutable_timestamp(d.data ->> \'date_time_field\') as time from {SchemaName}.mt_doc_dateclass as d";
 
                 using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
                 {

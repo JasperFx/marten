@@ -18,22 +18,6 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ => _.Transforms.LoadFile("get_fullname.js"));
         }
 
-        public void load_transformation()
-        {
-            var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-
-                // Let Marten derive the transform name
-                // from the file name
-                _.Transforms.LoadFile("get_fullname.js");
-
-                // or override the transform name
-                _.Transforms.LoadFile("get_fullname.js", "fullname");
-            });
-
-            store.Dispose();
-        }
 
         // SAMPLE: transform_to_json_in_compiled_query
         public class JsonQuery: ICompiledQuery<User, string>

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_849_not_node_not_correctly_evaluated: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_849_not_node_not_correctly_evaluated: IntegrationContext
     {
         public class TestClass
         {

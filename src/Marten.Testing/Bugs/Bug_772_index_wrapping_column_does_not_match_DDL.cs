@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_772_index_wrapping_column_does_not_match_DDL: IntegrationContext
+    public class Bug_772_index_wrapping_column_does_not_match_DDL: BugIntegrationContext
     {
         [Fact] // Control
         public void index_with_no_expression_should_match_DDL()
@@ -76,8 +76,5 @@ namespace Marten.Testing.Bugs
             theStore.Schema.AssertDatabaseMatchesConfiguration();
         }
 
-        public Bug_772_index_wrapping_column_does_not_match_DDL(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

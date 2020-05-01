@@ -11,7 +11,7 @@ using Xunit;
 namespace Marten.Testing.Bugs
 {
     public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
-        IntegrationContextWithIdentityMap<NulloIdentityMap>
+        IntegrationContext
     {
         private IEnumerable<Target> Make(int count)
         {

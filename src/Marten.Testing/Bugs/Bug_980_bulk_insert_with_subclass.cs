@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_980_bulk_insert_with_subclass: IntegrationContext
+    public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
     {
         [Fact]
         public void can_do_a_bulk_insert_against_the_parent()
@@ -60,8 +60,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_980_bulk_insert_with_subclass(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }
