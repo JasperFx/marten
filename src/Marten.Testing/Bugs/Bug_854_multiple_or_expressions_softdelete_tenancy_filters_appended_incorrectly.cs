@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: IntegrationContext
+    public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: BugIntegrationContext
     {
         [Fact]
         public void query_where_with_multiple_or_expressions_against_single_tenant()
@@ -58,8 +58,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

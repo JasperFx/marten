@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
@@ -11,11 +12,8 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    [Collection("Bug1338")]
-    public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType : OneOffConfigurationsContext
+    public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType : BugIntegrationContext
     {
-        public const string SchemaName = "bug1338";
-
         [Fact]
         public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
         {
@@ -53,7 +51,7 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        private static void CreateExternalTableForTesting()
+        private void CreateExternalTableForTesting()
         {
             string createSchema = $"create schema if not exists {SchemaName}";
             string dropSql = $"DROP TABLE IF EXISTS {SchemaName}.external_table CASCADE;";
@@ -88,10 +86,6 @@ $@"CREATE TABLE {SchemaName}.external_table (
             }
         }
 
-
-        public Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType() : base(SchemaName)
-        {
-        }
     }
 
     public class FakeExternalTable: FeatureSchemaBase

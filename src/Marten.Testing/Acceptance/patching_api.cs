@@ -11,13 +11,13 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class patching_api: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    [Collection("patching_api")]
+    public class patching_api: OneOffConfigurationsContext
     {
-        public patching_api(DefaultStoreFixture fixture) : base(fixture)
+        public patching_api() : base("patching_api")
         {
             StoreOptions(_ =>
             {
-                _.DatabaseSchemaName = "other";
                 _.UseDefaultSerialization(EnumStorage.AsString);
             });
         }
@@ -31,11 +31,12 @@ namespace Marten.Testing.Acceptance
             theSession.Store(entity);
             theSession.SaveChanges();
 
-            var store = DocumentStore.For(o =>
+
+
+            var store = SeparateStore(o =>
             {
-                o.DatabaseSchemaName = "other";
                 o.Connection(ConnectionSource.ConnectionString);
-                o.Serializer<TestsSerializer>();
+                o.UseDefaultSerialization(EnumStorage.AsString);
                 o.AutoCreateSchemaObjects = AutoCreate.None;
             });
             using (var session = store.LightweightSession())

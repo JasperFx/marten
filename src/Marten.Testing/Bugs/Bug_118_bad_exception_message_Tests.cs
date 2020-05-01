@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_118_bad_exception_message_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_118_bad_exception_message_Tests: BugIntegrationContext
     {
         public class TestClass
         {
@@ -24,8 +24,5 @@ namespace Marten.Testing.Bugs
             });
         }
 
-        public Bug_118_bad_exception_message_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

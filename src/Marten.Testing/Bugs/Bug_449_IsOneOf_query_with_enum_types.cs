@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_449_IsOneOf_query_with_enum_types: IntegrationContext
+    public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
     {
         [Fact]
         public void can_query_with_is_one_of_on_an_enum_type_with_jil()
@@ -57,8 +57,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_449_IsOneOf_query_with_enum_types(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

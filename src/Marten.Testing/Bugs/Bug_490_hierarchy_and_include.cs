@@ -9,9 +9,9 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_490_hierarchy_and_include: IntegrationContextWithIdentityMap<IdentityMap>
+    public class Bug_490_hierarchy_and_include: BugIntegrationContext
     {
-        public Bug_490_hierarchy_and_include(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_490_hierarchy_and_include()
         {
             StoreOptions(_ =>
             {

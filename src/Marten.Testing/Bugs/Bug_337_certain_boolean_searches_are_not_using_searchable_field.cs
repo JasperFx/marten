@@ -7,13 +7,8 @@ using Xunit;
 namespace Marten.Testing.Bugs
 {
 
-    [Collection("bug337")]
-    public class Bug_337_certain_boolean_searches_are_not_using_searchable_field: OneOffConfigurationsContext
+    public class Bug_337_certain_boolean_searches_are_not_using_searchable_field: BugIntegrationContext
     {
-        public Bug_337_certain_boolean_searches_are_not_using_searchable_field() : base("bug337")
-        {
-        }
-
         [Fact]
         public void use_searchable_fields_in_generated_sql()
         {

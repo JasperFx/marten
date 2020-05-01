@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class computed_indexes: IntegrationContext
+    public class computed_indexes: DestructiveIntegrationContext
     {
         [Fact]
         public void example()

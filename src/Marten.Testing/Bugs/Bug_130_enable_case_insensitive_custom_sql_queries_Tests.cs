@@ -8,7 +8,7 @@ using Xunit;
 namespace Marten.Testing.Bugs
 {
     [Collection("DefaultSchema")]
-    public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests: BugIntegrationContext
     {
         [Fact]
         public void query()
@@ -17,11 +17,7 @@ namespace Marten.Testing.Bugs
             theSession.Store(entity);
             theSession.SaveChanges();
 
-            theSession.Query<Target>("SELECT data FROM mt_doc_target").Single().Id.ShouldBe(entity.Id);
-        }
-
-        public Bug_130_enable_case_insensitive_custom_sql_queries_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
+            theSession.Query<Target>($"SELECT data FROM {SchemaName}.mt_doc_target").Single().Id.ShouldBe(entity.Id);
         }
     }
 }

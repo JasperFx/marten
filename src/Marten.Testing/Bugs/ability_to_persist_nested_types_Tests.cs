@@ -6,7 +6,7 @@ using Xunit;
 namespace Marten.Testing.Bugs
 {
     // This was to address GH-86
-    public class ability_to_persist_nested_types_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class ability_to_persist_nested_types_Tests: BugIntegrationContext
     {
         [Fact]
         public void can_persist_and_load_nested_types()
@@ -25,8 +25,5 @@ namespace Marten.Testing.Bugs
             public Guid Id = Guid.NewGuid();
         }
 
-        public ability_to_persist_nested_types_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_443_erroneously_creating_the_event_tables_when_unnecessary: IntegrationContext
+    public class Bug_443_erroneously_creating_the_event_tables_when_unnecessary: BugIntegrationContext
     {
         [Fact]
         public void event_table_should_not_be_there_if_unused()
@@ -55,8 +55,5 @@ namespace Marten.Testing.Bugs
                 .ShouldBeFalse();
         }
 
-        public Bug_443_erroneously_creating_the_event_tables_when_unnecessary(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

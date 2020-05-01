@@ -6,9 +6,9 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_634_include_against_soft_deleted_docs: IntegrationContext
+    public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
     {
-        public Bug_634_include_against_soft_deleted_docs(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_634_include_against_soft_deleted_docs()
         {
             StoreOptions(_ =>
             {

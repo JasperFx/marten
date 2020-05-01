@@ -17,7 +17,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    public class Bug_616_not_possible_to_use_Serializable_transactions: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_616_not_possible_to_use_Serializable_transactions: IntegrationContext
     {
         [Fact]
         public void conccurent_write_should_throw_an_exception()

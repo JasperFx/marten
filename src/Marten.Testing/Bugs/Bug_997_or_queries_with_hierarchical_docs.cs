@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_997_or_queries_with_hierarchical_docs: IntegrationContext
+    public class Bug_997_or_queries_with_hierarchical_docs: BugIntegrationContext
     {
         public class User
         {
@@ -43,8 +43,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_997_or_queries_with_hierarchical_docs(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

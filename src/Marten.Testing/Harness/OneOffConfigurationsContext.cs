@@ -6,14 +6,6 @@ using Xunit;
 
 namespace Marten.Testing.Harness
 {
-    [Collection("bugs")]
-    public class BugIntegrationContext: OneOffConfigurationsContext
-    {
-        public BugIntegrationContext() : base("bugs")
-        {
-        }
-    }
-
     /// <summary>
     /// Use this if the tests in a fixture are going to use
     /// all custom StoreOptions configuration

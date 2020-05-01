@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1069_using_generic_event_types_because_why_not: IntegrationContext
+    public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationContext
     {
         public class Envelope<T>
         {
@@ -57,9 +57,8 @@ namespace Marten.Testing.Bugs
                 session.SaveChanges();
             }
 
-            var store2 = DocumentStore.For(_ =>
+            var store2 = SeparateStore(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
             });
 
@@ -71,8 +70,5 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1069_using_generic_event_types_because_why_not(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

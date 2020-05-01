@@ -7,9 +7,9 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_479_select_datetime_fields: IntegrationContext
+    public class Bug_479_select_datetime_fields: BugIntegrationContext
     {
-        public Bug_479_select_datetime_fields(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_479_select_datetime_fields()
         {
             StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
         }

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_237_duplicate_indexing_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_237_duplicate_indexing_Tests: BugIntegrationContext
     {
         [Fact]
         public void save()
@@ -21,8 +21,5 @@ namespace Marten.Testing.Bugs
             theSession.SaveChanges();
         }
 
-        public Bug_237_duplicate_indexing_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

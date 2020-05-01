@@ -12,27 +12,23 @@ namespace Marten.Testing.Bugs
         public string Field2 { get; set; }
     }
 
-    public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: IntegrationContext
+    public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: BugIntegrationContext
     {
         [Fact]
         public void check_database_matches_configuration_with_multi_key_unique_index()
         {
-            var store = DocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<Doc_1018>()
                     .Duplicate(x => x.Field1)
                     .Duplicate(x => x.Field2)
                     .UniqueIndex(UniqueIndexType.DuplicatedField, x => x.Field1, x => x.Field2);
             });
 
-            store.Schema.ApplyAllConfiguredChangesToDatabase();
-            store.Schema.AssertDatabaseMatchesConfiguration();
+            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            theStore.Schema.AssertDatabaseMatchesConfiguration();
         }
 
-        public Bug_1018_multi_key_unique_index_schema_update_assert_failure(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }
