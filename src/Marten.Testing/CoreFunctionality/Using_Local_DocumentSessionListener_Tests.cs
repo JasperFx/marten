@@ -9,8 +9,13 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class Using_Local_DocumentSessionListener_Tests
+    [Collection("listeners")]
+    public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsContext
     {
+        public Using_Local_DocumentSessionListener_Tests() : base("listeners")
+        {
+        }
+
         [Fact]
         public void call_listener_events_on_synchronous_session_saves()
         {
@@ -18,7 +23,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -49,7 +54,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -78,7 +83,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -108,7 +113,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -138,7 +143,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -171,7 +176,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -207,7 +212,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -237,7 +242,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -267,7 +272,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -300,7 +305,7 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
