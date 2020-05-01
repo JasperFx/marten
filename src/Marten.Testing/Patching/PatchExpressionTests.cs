@@ -11,13 +11,13 @@ using Xunit;
 
 namespace Marten.Testing.Patching
 {
-    public class PatchExpressionTests
+    public class PatchExpressionTests : IntegrationContext
     {
         private readonly PatchExpression<Target> _expression;
         private readonly ITenant _schema = Substitute.For<ITenant>();
 
 
-        public PatchExpressionTests()
+        public PatchExpressionTests(DefaultStoreFixture fixture) : base(fixture)
         {
             var queryable = Substitute.For<IQueryableDocument>();
             queryable.DocumentType.Returns(typeof(Target));
@@ -27,8 +27,7 @@ namespace Marten.Testing.Patching
 
             _schema.MappingFor(typeof(Target)).Returns(mapping);
 
-            var store = TestingDocumentStore.Basic();
-            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), new JsonNetSerializer());
+            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(theStore, theStore.Tenancy.Default), new JsonNetSerializer());
         }
 
         [Fact]
@@ -406,16 +405,16 @@ namespace Marten.Testing.Patching
         [Fact]
         public void check_camel_case_serialized_property()
         {
-            var store = TestingDocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
                 _.UseDefaultSerialization(casing: Casing.CamelCase);
             });
 
-            var expressionWithSimpleProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
+            var expressionWithSimpleProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(theStore, theStore.Tenancy.Default), theStore.Serializer);
             expressionWithSimpleProperty.Set(x => x.Color, Colors.Blue);
             expressionWithSimpleProperty.Patch["path"].ShouldBe("color");
 
-            var expressionWithNestedProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(store, store.Tenancy.Default), store.Serializer);
+            var expressionWithNestedProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(theStore, theStore.Tenancy.Default), theStore.Serializer);
             expressionWithNestedProperty.Delete(x => x.Inner.AnotherString);
             expressionWithNestedProperty.Patch["path"].ShouldBe("inner.anotherString");
         }

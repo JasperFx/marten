@@ -9,8 +9,13 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class configuring_mapping_deletion_style
+    [Collection("soft_deletes")]
+    public class configuring_mapping_deletion_style : OneOffConfigurationsContext
     {
+        public configuring_mapping_deletion_style() : base("soft_deletes")
+        {
+        }
+
         [Fact]
         public void default_delete_style_is_remove()
         {
@@ -69,7 +74,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_configure_deletion_style_by_fluent_interface()
         {
-            using (var store = TestingDocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
             }))

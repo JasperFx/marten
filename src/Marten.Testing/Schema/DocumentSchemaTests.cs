@@ -358,9 +358,10 @@ namespace Marten.Testing.Schema
         }
     }
 
-    public class building_id_assignment_for_document_types
+    public class building_id_assignment_for_document_types : IntegrationContext
     {
-        private readonly DocumentStore theStore = TestingDocumentStore.Basic();
+
+
 
         [Fact]
         public void can_build_with_guid_property()
@@ -384,6 +385,10 @@ namespace Marten.Testing.Schema
         public class StringFieldGuy
         {
             public string Id;
+        }
+
+        public building_id_assignment_for_document_types(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

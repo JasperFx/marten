@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Marten.Testing.Transforms
 {
-    public class TransformFunctionTests
+    public class TransformFunctionTests : IntegrationContext
     {
         private readonly string _getFullnameJs = AppContext.BaseDirectory.AppendPath("get_fullname.js");
 
@@ -69,31 +69,29 @@ namespace Marten.Testing.Transforms
         [Fact]
         public void end_to_end_test_using_the_transform()
         {
-            using (var store = TestingDocumentStore.Basic())
+            var user = new User {FirstName = "Jeremy", LastName = "Miller"};
+            var json = new TestsSerializer().ToCleanJson(user);
+
+            var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
+
+            using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
-                var user = new User {FirstName = "Jeremy", LastName = "Miller"};
-                var json = new TestsSerializer().ToCleanJson(user);
+                conn.Execute(cmd => cmd.Sql(func.GenerateFunction()).ExecuteNonQuery());
 
-                var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
-
-                using (var conn = store.Tenancy.Default.OpenConnection())
+                var actual = conn.Execute(cmd =>
                 {
-                    conn.Execute(cmd => cmd.Sql(func.GenerateFunction()).ExecuteNonQuery());
+                    return cmd.Sql("select mt_transform_get_fullname(:json)")
+                        .WithJsonParameter("json", json).ExecuteScalar().As<string>();
+                });
 
-                    var actual = conn.Execute(cmd =>
-                    {
-                        return cmd.Sql("select mt_transform_get_fullname(:json)")
-                            .WithJsonParameter("json", json).ExecuteScalar().As<string>();
-                    });
-
-                    actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
-                }
-
-
+                actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
             }
         }
 
 
+        public TransformFunctionTests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
     }
 
 

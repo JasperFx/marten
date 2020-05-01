@@ -10,13 +10,14 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class MartenRegistryTests
+    [Collection("martenregistry")]
+    public class MartenRegistryTests : OneOffConfigurationsContext
     {
         private readonly StorageFeatures theStorage;
 
-        public MartenRegistryTests()
+        public MartenRegistryTests() : base("registry")
         {
-            var store = TestingDocumentStore.For(_ => _.Schema.Include<TestRegistry>());
+            var store = SeparateStore(_ => _.Schema.Include<TestRegistry>());
 
             theStorage = store.Storage;
         }

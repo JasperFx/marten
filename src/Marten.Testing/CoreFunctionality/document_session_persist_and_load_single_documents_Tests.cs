@@ -88,23 +88,23 @@ namespace Marten.Testing.CoreFunctionality
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
-            using (var store = TestingDocumentStore.For(_ => { _.UseCharBufferPooling = true; }))
+            StoreOptions(_ => { _.UseCharBufferPooling = true; });
+
+            using (var session1 = theStore.OpenSession())
             {
-                using (var session1 = store.OpenSession())
-                {
-                    session1.Store(user);
-                    session1.SaveChanges();
-                }
-
-                using (var session2 = store.OpenSession())
-                {
-                    var user2 = session2.Load<User>(user.Id);
-
-                    user.ShouldNotBeSameAs(user2);
-                    user2.FirstName.ShouldBe(user.FirstName);
-                    user2.LastName.ShouldBe(user.LastName);
-                }
+                session1.Store(user);
+                session1.SaveChanges();
             }
+
+            using (var session2 = theStore.OpenSession())
+            {
+                var user2 = session2.Load<User>(user.Id);
+
+                user.ShouldNotBeSameAs(user2);
+                user2.FirstName.ShouldBe(user.FirstName);
+                user2.LastName.ShouldBe(user.LastName);
+            }
+
         }
 
         [Fact]
@@ -133,22 +133,23 @@ namespace Marten.Testing.CoreFunctionality
         {
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
-            using (var store = TestingDocumentStore.For(_ => { _.UseCharBufferPooling = true; }))
+            StoreOptions(_ => { _.UseCharBufferPooling = true; });
+
+            var store = theStore;
+
+            using (var session1 = store.OpenSession())
             {
-                using (var session1 = store.OpenSession())
-                {
-                    session1.Store(user);
-                    await session1.SaveChangesAsync().ConfigureAwait(false);
-                }
+                session1.Store(user);
+                await session1.SaveChangesAsync().ConfigureAwait(false);
+            }
 
-                using (var session2 = store.OpenSession())
-                {
-                    var user2 = await session2.LoadAsync<User>(user.Id).ConfigureAwait(false);
+            using (var session2 = store.OpenSession())
+            {
+                var user2 = await session2.LoadAsync<User>(user.Id).ConfigureAwait(false);
 
-                    user.ShouldNotBeSameAs(user2);
-                    user2.FirstName.ShouldBe(user.FirstName);
-                    user2.LastName.ShouldBe(user.LastName);
-                }
+                user.ShouldNotBeSameAs(user2);
+                user2.FirstName.ShouldBe(user.FirstName);
+                user2.LastName.ShouldBe(user.LastName);
             }
         }
 

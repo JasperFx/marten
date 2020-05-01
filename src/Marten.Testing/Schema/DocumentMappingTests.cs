@@ -328,7 +328,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void generate_a_table_to_the_database_with_duplicated_field()
         {
-            using (var store = TestingDocumentStore.Basic())
+            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
             {
                 store.Advanced.Clean.CompletelyRemove(typeof(User));
 

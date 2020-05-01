@@ -9,11 +9,12 @@ using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    public class when_generating_a_table_for_soft_deletes
+    [Collection("soft_deletes")]
+    public class when_generating_a_table_for_soft_deletes : OneOffConfigurationsContext
     {
         private DocumentTable theTable;
 
-        public when_generating_a_table_for_soft_deletes()
+        public when_generating_a_table_for_soft_deletes() : base("soft_deletes")
         {
             var mapping = DocumentMapping.For<Target>();
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
@@ -41,14 +42,14 @@ namespace Marten.Testing.Storage
         [Fact]
         public void can_generate_the_patch()
         {
-            using (var store1 = TestingDocumentStore.Basic())
+            using (var store1 = SeparateStore(x=> x.AutoCreateSchemaObjects = AutoCreate.All))
             {
+
                 store1.BulkInsert(new User [] {new User {UserName = "foo"}, new User { UserName = "bar" } });
             }
 
-            using (var store2 = DocumentStore.For(_ =>
+            using (var store2 = SeparateStore(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<User>().SoftDeleted();
             }))
             {
@@ -70,7 +71,7 @@ namespace Marten.Testing.Storage
         [Fact]
         public void can_generate_the_patch_with_camel_casing()
         {
-            using (var store1 = TestingDocumentStore.For(_ =>
+            using (var store1 = StoreOptions(_ =>
             {
                 _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
             }))
@@ -78,9 +79,8 @@ namespace Marten.Testing.Storage
                 store1.BulkInsert(new User[] { new User { UserName = "foo" }, new User { UserName = "bar" } });
             }
 
-            using (var store2 = DocumentStore.For(_ =>
+            using (var store2 = SeparateStore(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<User>().SoftDeleted();
                 _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
             }))

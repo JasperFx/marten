@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Storage
 {
-    public class will_name_nested_class_documents_appropriately
+    public class will_name_nested_class_documents_appropriately : IntegrationContext
     {
         [Fact]
         public void will_name_nested_class_table_with_containing_class_name_prefix()
@@ -16,21 +16,20 @@ namespace Marten.Testing.Storage
             DocumentTable table1;
             DocumentTable table2;
 
-            using (var store = TestingDocumentStore.Basic())
-            {
-                store.Tenancy.Default.StorageFor(typeof(Foo.Document));
-                store.Tenancy.Default.StorageFor(typeof(Bar.Document));
 
-                var documentTables = store.Tenancy.Default.DbObjects.DocumentTables();
-                documentTables.ShouldContain("public.mt_doc_foo_document");
-                documentTables.ShouldContain("public.mt_doc_bar_document");
+            theStore.Tenancy.Default.StorageFor(typeof(Foo.Document));
+            theStore.Tenancy.Default.StorageFor(typeof(Bar.Document));
 
-                table1 = store.TableSchema(typeof(Foo.Document));
-                table1.Identifier.Name.ShouldBe("mt_doc_foo_document");
+            var documentTables = theStore.Tenancy.Default.DbObjects.DocumentTables();
+            documentTables.ShouldContain("public.mt_doc_foo_document");
+            documentTables.ShouldContain("public.mt_doc_bar_document");
 
-                table2 = store.TableSchema(typeof(Bar.Document));
-                table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
-            }
+            table1 = theStore.TableSchema(typeof(Foo.Document));
+            table1.Identifier.Name.ShouldBe("mt_doc_foo_document");
+
+            table2 = theStore.TableSchema(typeof(Bar.Document));
+            table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
+
 
 
             table2.Equals(table1).ShouldBeFalse();
@@ -42,24 +41,26 @@ namespace Marten.Testing.Storage
             DocumentTable table1;
             DocumentTable table2;
 
-            using (var store = TestingDocumentStore.For(_ => _.DatabaseSchemaName = "other"))
-            {
-                store.Tenancy.Default.StorageFor(typeof(Foo.Document));
-                store.Tenancy.Default.StorageFor(typeof(Bar.Document));
+            StoreOptions(x => x.DatabaseSchemaName = "other");
 
-                var documentTables = store.Tenancy.Default.DbObjects.DocumentTables();
+                theStore.Tenancy.Default.StorageFor(typeof(Foo.Document));
+                theStore.Tenancy.Default.StorageFor(typeof(Bar.Document));
+
+                var documentTables = theStore.Tenancy.Default.DbObjects.DocumentTables();
                 documentTables.ShouldContain("other.mt_doc_foo_document");
                 documentTables.ShouldContain("other.mt_doc_bar_document");
 
-                table1 = store.TableSchema(typeof(Foo.Document));
+                table1 = theStore.TableSchema(typeof(Foo.Document));
                 table1.Identifier.Name.ShouldBe("mt_doc_foo_document");
 
-                table2 = store.TableSchema(typeof(Bar.Document));
+                table2 = theStore.TableSchema(typeof(Bar.Document));
                 table2.Identifier.Name.ShouldBe("mt_doc_bar_document");
-            }
-
 
             table2.Equals(table1).ShouldBeFalse();
+        }
+
+        public will_name_nested_class_documents_appropriately(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 

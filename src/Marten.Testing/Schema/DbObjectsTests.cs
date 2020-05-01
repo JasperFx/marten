@@ -8,12 +8,13 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class DbObjectsTests : IntegrationContext
+    [Collection("dbobjects")]
+    public class DbObjectsTests : OneOffConfigurationsContext
     {
         [Fact]
         public void can_fetch_indexes_for_a_table_in_public()
         {
-            var store1 = TestingDocumentStore.For(_ =>
+            var store1 = StoreOptions(_ =>
             {
                 _.DatabaseSchemaName = "other";
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
@@ -21,7 +22,7 @@ namespace Marten.Testing.Schema
 
             store1.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            var store2 = TestingDocumentStore.For(_ =>
+            var store2 = StoreOptions(_ =>
             {
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.FirstName);
@@ -41,7 +42,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_fetch_the_function_ddl()
         {
-            var store1 = TestingDocumentStore.For(_ =>
+            var store1 = StoreOptions(_ =>
             {
                 _.DatabaseSchemaName = "other";
                 _.Schema.For<User>().Duplicate(x => x.UserName).Duplicate(x => x.Internal);
@@ -53,10 +54,10 @@ namespace Marten.Testing.Schema
 
             var functionBody = store1.Tenancy.Default.DbObjects.DefinitionForFunction(upsert);
 
-            SpecificationExtensions.ShouldContain(functionBody.Body, "mt_doc_user");
+            functionBody.Body.ShouldContain( "mt_doc_user");
         }
 
-        public DbObjectsTests(DefaultStoreFixture fixture) : base(fixture)
+        public DbObjectsTests() : base("dbobjects")
         {
         }
     }

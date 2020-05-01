@@ -18,6 +18,7 @@ namespace Marten.Testing.Bugs
 
             var store2 = SeparateStore(_ =>
             {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.DatabaseSchemaName = "other";
             });
 
