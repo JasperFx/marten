@@ -10,7 +10,7 @@ namespace Marten.Schema
     public class DocumentCleaner: IDocumentCleaner
     {
         public static string DropAllFunctionSql = @"
-SELECT format('DROP FUNCTION %s.%s(%s);'
+SELECT format('DROP FUNCTION IF EXISTS %s.%s(%s);'
              ,n.nspname
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
@@ -19,7 +19,7 @@ LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 WHERE  p.proname like 'mt_%' and n.nspname = ANY(?)";
 
         public static readonly string DropFunctionSql = @"
-SELECT format('DROP FUNCTION %s.%s(%s);'
+SELECT format('DROP FUNCTION IF EXISTS %s.%s(%s);'
              ,n.nspname
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))

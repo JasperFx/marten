@@ -20,7 +20,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void can_support_typenamehandling()
         {
-            using (var store = DocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 var serializer = new JsonNetSerializer();
                 serializer.Customize(config =>
@@ -29,7 +29,6 @@ namespace Marten.Testing.Bugs
                 });
                 _.Serializer(serializer);
                 _.AutoCreateSchemaObjects = Marten.AutoCreate.All;
-                _.Connection(ConnectionSource.ConnectionString);
             }))
             {
                 using (var session = store.OpenSession())

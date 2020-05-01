@@ -35,7 +35,7 @@ namespace Marten.Storage
 SELECT pg_get_functiondef(pg_proc.oid)
 FROM pg_proc JOIN pg_namespace as ns ON pg_proc.pronamespace = ns.oid WHERE ns.nspname = :{schemaParam} and proname = :{nameParam};
 
-SELECT format('DROP FUNCTION %s.%s(%s);'
+SELECT format('DROP FUNCTION IF EXISTS %s.%s(%s);'
              ,n.nspname
              ,p.proname
              ,pg_get_function_identity_arguments(p.oid))
