@@ -57,7 +57,7 @@ namespace Marten.Testing.Harness
             return store;
         }
 
-        protected void StoreOptions(Action<StoreOptions> configure)
+        protected DocumentStore StoreOptions(Action<StoreOptions> configure)
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
@@ -73,6 +73,7 @@ namespace Marten.Testing.Harness
 
             _store.Advanced.Clean.CompletelyRemoveAll();
 
+            return _store;
         }
 
         protected DocumentStore theStore

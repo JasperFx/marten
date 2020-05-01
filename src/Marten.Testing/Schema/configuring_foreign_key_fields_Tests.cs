@@ -7,12 +7,17 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class configuring_foreign_key_fields_Tests
+    [Collection("foreign_keys")]
+    public class configuring_foreign_key_fields_Tests : OneOffConfigurationsContext
     {
+        public configuring_foreign_key_fields_Tests() : base("foreign_keys")
+        {
+        }
+
         [Fact]
         public void should_get_foreign_key_from_attribute()
         {
-            TestingDocumentStore.Basic().Storage.MappingFor(typeof(Issue))
+            theStore.Storage.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnName == "user_id");
@@ -24,7 +29,7 @@ namespace Marten.Testing.Schema
             var storeOptions = new StoreOptions();
             storeOptions.Schema.For<Issue>().ForeignKey<User>(i => i.OtherUserId);
 
-            var store = TestingDocumentStore.For(_ =>
+            var store = SeparateStore(_ =>
             {
                 _.Schema.For<Issue>().ForeignKey<User>(i => i.OtherUserId);
             });
@@ -38,7 +43,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void should_allow_self_reference()
         {
-            TestingDocumentStore.Basic().Storage.MappingFor(typeof(Employee))
+            theStore.Storage.MappingFor(typeof(Employee))
                 .As<DocumentMapping>()
                 .ForeignKeys
                 .ShouldContain(x => x.ColumnName == "manager_id");
@@ -50,7 +55,7 @@ namespace Marten.Testing.Schema
             var storeOptions = new StoreOptions();
 
 
-            var store = TestingDocumentStore.For(_ =>
+            var store = SeparateStore(_ =>
             {
                 _.Schema.For<Foo>()
                     .Identity(x => x.FooId);

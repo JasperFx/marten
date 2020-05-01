@@ -82,7 +82,8 @@ namespace Marten.Testing.Schema
         [Fact]
         public void do_not_rebuild_a_table_that_already_exists()
         {
-            using (var store = TestingDocumentStore.Basic())
+            // This usage of DocumentStore.For() is okay
+            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
             {
                 using (var session = store.LightweightSession())
                 {
@@ -110,7 +111,7 @@ namespace Marten.Testing.Schema
         [Fact]
         public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
         {
-            using (var store = TestingDocumentStore.Basic())
+            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
             {
 
                 var storage = store.Storage;

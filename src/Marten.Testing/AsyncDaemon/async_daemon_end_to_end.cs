@@ -16,6 +16,7 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.AsyncDaemon
 {
+    [Collection("daemon")]
     public class async_daemon_end_to_end: IntegrationContext, IClassFixture<AsyncDaemonTestHelper>
     {
         public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)

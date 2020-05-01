@@ -9,7 +9,8 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class assigning_versions_to_documents
+    [Collection("acceptance")]
+    public class assigning_versions_to_documents : OneOffConfigurationsContext
     {
         [Fact]
         public void no_version_member_by_default()
@@ -43,7 +44,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void set_the_version_member_through_the_fluent_interface()
         {
-            using (var store = TestingDocumentStore.For(_ =>
+            using (var store = SeparateStore(_ =>
             {
                 _.Schema.For<DocThatCouldBeVersioned>().VersionedWith(x => x.Revision);
             }))
@@ -51,6 +52,10 @@ namespace Marten.Testing.Acceptance
                 store.Storage.MappingFor(typeof(DocThatCouldBeVersioned))
                     .VersionMember.Name.ShouldBe(nameof(DocThatCouldBeVersioned.Revision));
             }
+        }
+
+        public assigning_versions_to_documents() : base("acceptance")
+        {
         }
     }
 

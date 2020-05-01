@@ -26,7 +26,11 @@ namespace Marten.Storyteller.Fixtures.EventStore
         {
             _streams.ClearAll();
 
-            _store = TestingDocumentStore.Basic();
+            _store = DocumentStore.For(opts =>
+            {
+              opts.Connection(ConnectionSource.ConnectionString);
+              opts.AutoCreateSchemaObjects = AutoCreate.All;
+            });
 
             Context.State.Store(_store);
         }

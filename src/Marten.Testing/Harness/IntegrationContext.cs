@@ -12,7 +12,7 @@ namespace Marten.Testing.Harness
 
         public IntegrationContext(DefaultStoreFixture fixture) : base(fixture)
         {
-            theStore.Advanced.Clean.DeleteAllDocuments();
+
         }
 
         /// <summary>
@@ -43,7 +43,23 @@ namespace Marten.Testing.Harness
             return options.DatabaseSchemaName;
         }
 
-        protected override DocumentStore theStore => _store ?? base.theStore;
+        private bool _hasBuiltStore = false;
+
+        protected override DocumentStore theStore
+        {
+            get
+            {
+                if (_store != null) return _store;
+
+                if (!_hasBuiltStore)
+                {
+                    base.theStore.Advanced.Clean.DeleteAllDocuments();
+                    _hasBuiltStore = true;
+                }
+
+                return base.theStore;
+            }
+        }
 
         protected virtual IDocumentSession theSession
         {

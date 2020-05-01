@@ -9,8 +9,13 @@ using Xunit;
 
 namespace Marten.Testing.Schema
 {
-    public class configuring_searchable_fields_Tests
+    [Collection("searchable")]
+    public class configuring_searchable_fields_Tests : OneOffConfigurationsContext
     {
+        public configuring_searchable_fields_Tests() : base("searchable")
+        {
+        }
+
         [Fact]
         public void use_the_default_pg_type_for_the_member_type_if_not_overridden()
         {
@@ -59,12 +64,12 @@ namespace Marten.Testing.Schema
         [Fact]
         public void can_override_with_MartenRegistry()
         {
-            var store = TestingDocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
                 _.Schema.For<Organization>().Duplicate(x => x.Time2, pgType: "timestamp");
             });
 
-            store.Storage.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
+            theStore.Storage.MappingFor(typeof(Organization)).As<DocumentMapping>().DuplicatedFields.Single(x => x.MemberName == "Time2")
                 .PgType.ShouldBe("timestamp");
         }
 

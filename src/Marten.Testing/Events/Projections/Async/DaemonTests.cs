@@ -97,6 +97,7 @@ namespace Marten.Testing.Events.Projections.Async
         }
     }
 
+    [Collection("projection_track")]
     public abstract class ProjectionTrackContext
     {
         protected readonly IFetcher theFetcher = Substitute.For<IFetcher>();
@@ -109,7 +110,14 @@ namespace Marten.Testing.Events.Projections.Async
 
             projection.AsyncOptions.Returns(new AsyncOptions());
 
-            theProjectionTrack = new ProjectionTrack(theFetcher, TestingDocumentStore.Basic(), projection, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), Substitute.For<ITenant>());
+            var store = DocumentStore.For(x =>
+            {
+                x.Connection(ConnectionSource.ConnectionString);
+                x.AutoCreateSchemaObjects = AutoCreate.All;
+                x.DatabaseSchemaName = "projection_track";
+            });
+
+            theProjectionTrack = new ProjectionTrack(theFetcher, store, projection, Substitute.For<IDaemonLogger>(), new StubErrorHandler(), Substitute.For<ITenant>());
         }
     }
 }

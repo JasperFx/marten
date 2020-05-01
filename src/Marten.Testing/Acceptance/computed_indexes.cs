@@ -9,7 +9,8 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class computed_indexes: DestructiveIntegrationContext
+    [Collection("acceptance")]
+    public class computed_indexes: OneOffConfigurationsContext
     {
         [Fact]
         public void example()
@@ -18,6 +19,8 @@ namespace Marten.Testing.Acceptance
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+
+                _.DatabaseSchemaName = "examples";
 
                 // This creates
                 _.Schema.For<User>().Index(x => x.UserName);
@@ -351,7 +354,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void patch_if_missing()
         {
-            using (var store1 = TestingDocumentStore.Basic())
+            using (var store1 = SeparateStore())
             {
                 store1.Advanced.Clean.CompletelyRemoveAll();
 
@@ -373,7 +376,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void no_patch_if_not_missing()
         {
-            using (var store1 = TestingDocumentStore.For(_ =>
+            using (var store1 = StoreOptions(_ =>
             {
                 _.Schema.For<Target>().Index(x => x.Number);
             }))
@@ -383,7 +386,7 @@ namespace Marten.Testing.Acceptance
                 store1.Tenancy.Default.EnsureStorageExists(typeof(Target));
             }
 
-            using (var store2 = DocumentStore.For(_ =>
+            using (var store2 = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<Target>().Index(x => x.Number);
@@ -395,7 +398,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        public computed_indexes(DefaultStoreFixture fixture) : base(fixture)
+        public computed_indexes() : base("acceptance")
         {
         }
     }
