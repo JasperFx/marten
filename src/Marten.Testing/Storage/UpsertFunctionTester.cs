@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Storage
 {
+    [Collection("UpsertFunction")]
     public class UpsertFunctionTester : IDisposable
     {
         private readonly NpgsqlConnection _conn;
