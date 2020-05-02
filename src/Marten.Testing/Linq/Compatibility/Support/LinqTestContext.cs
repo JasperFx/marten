@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq.Compatibility.Support
 {
+        [Collection("linq")]
     public abstract class LinqTestContext<TFixture, TSelf>: IClassFixture<TFixture> where TFixture : TargetSchemaFixture
     {
         protected static IList<LinqTestCase> testCases = new List<LinqTestCase>();

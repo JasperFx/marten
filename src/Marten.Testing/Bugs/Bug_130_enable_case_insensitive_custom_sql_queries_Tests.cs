@@ -7,7 +7,6 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    [Collection("DefaultSchema")]
     public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests: BugIntegrationContext
     {
         [Fact]

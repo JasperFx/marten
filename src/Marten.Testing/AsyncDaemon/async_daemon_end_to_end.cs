@@ -17,9 +17,9 @@ using Xunit.Abstractions;
 namespace Marten.Testing.AsyncDaemon
 {
     [Collection("daemon")]
-    public class async_daemon_end_to_end: IntegrationContext, IClassFixture<AsyncDaemonTestHelper>
+    public class async_daemon_end_to_end: OneOffConfigurationsContext, IClassFixture<AsyncDaemonTestHelper>
     {
-        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
+        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output) : base("daemon")
         {
             _testHelper = testHelper;
             _logger = new TracingLogger(output.WriteLine);
@@ -45,7 +45,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _testHelper.PublishAllProjectEvents(theStore, true);
+            await _testHelper.PublishAllProjectEventsAsync(theStore, true);
 
             // SAMPLE: rebuild-single-projection
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -117,7 +117,7 @@ namespace Marten.Testing.AsyncDaemon
         {
             _testHelper.LoadTwoProjectsWithOneEventEach();
 
-            var schemaName = StoreOptions(_ =>
+            StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(ProjectStarted));
                 _.Events.AsyncProjections.Add(new ProjectCountProjection());
@@ -131,7 +131,7 @@ namespace Marten.Testing.AsyncDaemon
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
                 var command = conn.Connection.CreateCommand();
-                command.CommandText = $"UPDATE {schemaName}.mt_events SET seq_id = 102 WHERE seq_id = 2";
+                command.CommandText = $"UPDATE {SchemaName}.mt_events SET seq_id = 102 WHERE seq_id = 2";
                 command.CommandType = System.Data.CommandType.Text;
                 conn.Execute(command);
             }
