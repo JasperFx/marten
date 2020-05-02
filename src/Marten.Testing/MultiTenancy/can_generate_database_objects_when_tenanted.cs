@@ -8,44 +8,44 @@ using Xunit;
 
 namespace Marten.Testing.MultiTenancy
 {
-    public class can_generate_database_objects_when_tenanted
+    [Collection("multi_tenancy")]
+    public class can_generate_database_objects_when_tenanted : OneOffConfigurationsContext
     {
+        public can_generate_database_objects_when_tenanted() : base("multi_tenancy")
+        {
+        }
+
         [Fact]
         public void do_not_blow_up()
         {
-            var store = DocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
-                _.DatabaseSchemaName = "multi2";
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
             });
 
-            store.Advanced.Clean.CompletelyRemoveAll();
 
-            store.Tenancy.Default.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
         }
 
         [Fact]
         public void can_add_same_primary_key_to_multiple_tenant()
         {
             var guid = Guid.NewGuid();
-            var store = DocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
-                _.DatabaseSchemaName = "multi3";
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
                 _.Logger(new ConsoleMartenLogger());
             });
 
-            store.Tenancy.Default.EnsureStorageExists(typeof(Target));
-            var existing = store.Tenancy.Default.DbObjects.ExistingTableFor(typeof(Target));
-            var mapping = store.Options.Storage.MappingFor(typeof(Target));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
+            var existing = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(Target));
+            var mapping = theStore.Options.Storage.MappingFor(typeof(Target));
             var expected = new DocumentTable(mapping);
 
             var delta = new TableDelta(expected, existing);
             delta.Matches.ShouldBeTrue();
 
-            using (var session = store.OpenSession("123"))
+            using (var session = theStore.OpenSession("123"))
             {
                 var target = Target.Random();
                 target.Id = guid;
@@ -53,7 +53,7 @@ namespace Marten.Testing.MultiTenancy
                 session.Store("123", target);
                 session.SaveChanges();
             }
-            using (var session = store.OpenSession("abc"))
+            using (var session = theStore.OpenSession("abc"))
             {
                 var target = Target.Random();
                 target.Id = guid;
@@ -62,14 +62,14 @@ namespace Marten.Testing.MultiTenancy
                 session.SaveChanges();
             }
 
-            using (var session = store.OpenSession("123"))
+            using (var session = theStore.OpenSession("123"))
             {
                 var target = session.Load<Target>(guid);
                 SpecificationExtensions.ShouldNotBeNull(target);
                 target.String.ShouldBe("123");
             }
 
-            using (var session = store.OpenSession("abc"))
+            using (var session = theStore.OpenSession("abc"))
             {
                 var target = session.Load<Target>(guid);
                 SpecificationExtensions.ShouldNotBeNull(target);
@@ -80,14 +80,12 @@ namespace Marten.Testing.MultiTenancy
         [Fact]
         public void can_upsert_in_multi_tenancy()
         {
-            var store = DocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
-                _.DatabaseSchemaName = "multitenancy";
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
             });
 
-            using (var session = store.OpenSession("123"))
+            using (var session = theStore.OpenSession("123"))
             {
                 session.Store(Target.GenerateRandomData(10).ToArray());
                 session.SaveChanges();
@@ -97,15 +95,14 @@ namespace Marten.Testing.MultiTenancy
         [Fact]
         public void can_bulk_insert_with_multi_tenancy_on()
         {
-            var store = DocumentStore.For(_ =>
+            StoreOptions(_ =>
             {
-                _.Connection(ConnectionSource.ConnectionString);
                 _.Policies.AllDocumentsAreMultiTenanted();
             });
 
-            store.Advanced.Clean.CompletelyRemoveAll();
+            theStore.Advanced.Clean.CompletelyRemoveAll();
 
-            store.BulkInsert("345",Target.GenerateRandomData(100).ToArray());
+            theStore.BulkInsert("345",Target.GenerateRandomData(100).ToArray());
         }
     }
 }
