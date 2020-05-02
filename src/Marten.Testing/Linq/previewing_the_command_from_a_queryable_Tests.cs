@@ -8,7 +8,6 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [Collection("DefaultSchema")]
     public class previewing_the_command_from_a_queryable_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
         [Fact]
