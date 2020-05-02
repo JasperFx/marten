@@ -41,6 +41,7 @@ namespace Marten.Testing.CoreFunctionality
             {
                 _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
             });
+
             var user = new UserWithReadonlyCollectionWithPrivateSetter(Guid.NewGuid(), "James", new[] { 1, 2, 3 });
 
             theSession.Store(user);

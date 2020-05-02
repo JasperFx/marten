@@ -28,6 +28,9 @@ namespace Marten.Testing.Linq
                 // IsBlue is a custom parser I used for testing this
                 _.Linq.MethodCallParsers.Add(new IsBlue());
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                // This is just to isolate the test
+                _.DatabaseSchemaName = "isblue";
             }))
             {
 
@@ -50,7 +53,7 @@ namespace Marten.Testing.Linq
 
                 using (var session = store.QuerySession())
                 {
-                    session.Query<ColorTarget>().Where(x => x.IsBlue()).Count()
+                    session.Query<ColorTarget>().Count(x => CustomExtensions.IsBlue(x))
                         .ShouldBe(count);
                 }
             }
