@@ -81,6 +81,7 @@ namespace Marten.Testing.Events.Projections
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
+                _.DatabaseSchemaName = "monster_defeated";
 
                 _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
             });

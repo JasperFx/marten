@@ -11,8 +11,13 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers
+    [Collection("projections")]
+    public class end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers : OneOffConfigurationsContext
     {
+        public end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers() : base("projections")
+        {
+        }
+
         [Fact]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {
@@ -197,7 +202,7 @@ namespace Marten.Testing.Events
             using (var session = store.OpenSession())
             {
                 var party = session.Load<QuestPartyWithStringIdentifier>(questId);
-                SpecificationExtensions.ShouldNotBeNull(party);
+                party.ShouldNotBeNull();
             }
             //GetAll
             using (var session = store.OpenSession())
@@ -205,7 +210,7 @@ namespace Marten.Testing.Events
                 var parties = session.Events.QueryRawEventDataOnly<QuestPartyWithStringIdentifier>().ToArray();
                 foreach (var party in parties)
                 {
-                    SpecificationExtensions.ShouldNotBeNull(party);
+                    party.ShouldNotBeNull();
                 }
             }
             //This AggregateStream fail with NPE
@@ -213,15 +218,15 @@ namespace Marten.Testing.Events
             {
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);//Here we get NPE
-                SpecificationExtensions.ShouldNotBeNull(party);
+                party.ShouldNotBeNull();
 
                 var party_at_version_3 = session.Events
                                                 .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
-                SpecificationExtensions.ShouldNotBeNull(party_at_version_3);
+                party_at_version_3.ShouldNotBeNull();
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                SpecificationExtensions.ShouldNotBeNull(party_yesterday);
+                party_yesterday.ShouldNotBeNull();
             }
         }
 
@@ -498,9 +503,9 @@ namespace Marten.Testing.Events
             }
         }
 
-        private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)
+        private DocumentStore InitStore(string databascSchema = null, bool cleanSchema = true)
         {
-            var store = DocumentStore.For(_ =>
+            var store = StoreOptions(_ =>
             {
                 if (databascSchema != null)
                 {
@@ -517,12 +522,8 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
                 _.Events.AddEventType(typeof(QuestStarted));
-            });
+            }, cleanSchema);
 
-            if (cleanShema)
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-            }
 
             return store;
         }

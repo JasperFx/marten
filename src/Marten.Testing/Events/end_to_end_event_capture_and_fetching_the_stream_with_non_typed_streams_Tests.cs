@@ -10,13 +10,18 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests
+    [Collection("projections")]
+    public class end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests : OneOffConfigurationsContext
     {
         public static TheoryData<DocumentTracking> SessionTypes = new TheoryData<DocumentTracking>
         {
             DocumentTracking.IdentityOnly,
             DocumentTracking.DirtyTracking
         };
+
+        public end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests() : base("projections")
+        {
+        }
 
         [Theory]
         [MemberData(nameof(SessionTypes))]
@@ -550,13 +555,13 @@ namespace Marten.Testing.Events
             }
         }
 
-        private static DocumentStore InitStore(string databascSchema = null, bool cleanShema = true)
+        private DocumentStore InitStore(string databaseSchema = null, bool cleanSchema = true)
         {
-            var store = DocumentStore.For(_ =>
+            var store = StoreOptions(_ =>
             {
-                if (databascSchema != null)
+                if (databaseSchema != null)
                 {
-                    _.Events.DatabaseSchemaName = databascSchema;
+                    _.Events.DatabaseSchemaName = databaseSchema;
                 }
 
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -568,12 +573,8 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
                 _.Events.AddEventType(typeof(QuestStarted));
-            });
+            }, cleanSchema);
 
-            if (cleanShema)
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-            }
 
             return store;
         }

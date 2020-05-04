@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Marten.Testing.Storage
 {
+    [Collection("testbed")]
     public class DocumentTableTester : IDisposable
     {
         public DocumentTableTester()

@@ -2,8 +2,8 @@
 
 -> id = cc2c6a38-6533-43b1-81c3-a77c80e26ca4
 -> lifecycle = Regression
--> max-retries = 0
--> last-updated = 2017-03-31T20:21:06.6249834Z
+-> max-retries = 3
+-> last-updated = 2020-05-04T15:26:00.5082410Z
 -> tags = 
 
 [AsyncDaemon]
