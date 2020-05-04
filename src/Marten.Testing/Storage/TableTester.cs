@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Storage
 {
+    [Collection("testbed")]
     public class TableTester : IDisposable
     {
         private readonly NpgsqlConnection _conn;

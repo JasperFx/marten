@@ -19,7 +19,7 @@ namespace Marten.Testing.Bugs
             var store2 = SeparateStore(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.DatabaseSchemaName = "other";
+                _.DatabaseSchemaName = "other_bug";
             });
 
             store2.BulkInsert(Target.GenerateRandomData(5).ToArray());

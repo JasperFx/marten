@@ -11,11 +11,16 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class end_to_end_event_capture_and_fetching_the_stream_Tests
+    [Collection("projections")]
+    public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConfigurationsContext
     {
         private static readonly string[] SameTenants = { "tenant", "tenant" };
         private static readonly string[] DiffetentTenants = { "tenant", "differentTenant" };
         private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
+
+        public end_to_end_event_capture_and_fetching_the_stream_Tests() : base("projections")
+        {
+        }
 
         public static TheoryData<DocumentTracking, TenancyStyle, string[]> SessionParams = new TheoryData<DocumentTracking, TenancyStyle, string[]>
         {
@@ -223,7 +228,7 @@ namespace Marten.Testing.Events
                     var party_at_version_3 = session.Events
                         .AggregateStream<QuestParty>(questId, 3);
 
-                    SpecificationExtensions.ShouldNotBeNull(party_at_version_3);
+                    party_at_version_3.ShouldNotBeNull();
 
                     var party_yesterday = session.Events
                         .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
@@ -677,11 +682,11 @@ namespace Marten.Testing.Events
             );
         }
 
-        private static DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanShema = true, bool useAppendEventForUpdateLock = false)
+        private DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanSchema = true, bool useAppendEventForUpdateLock = false)
         {
             var databaseSchema = $"end_to_end_event_capture_{tenancyStyle.ToString().ToLower()}";
 
-            var store = DocumentStore.For(_ =>
+            var store = StoreOptions(_ =>
             {
                 _.Events.DatabaseSchemaName = databaseSchema;
                 _.Events.TenancyStyle = tenancyStyle;
@@ -699,12 +704,8 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
                 _.Events.AddEventType(typeof(QuestStarted));
-            });
+            }, cleanSchema);
 
-            if (cleanShema)
-            {
-                store.Advanced.Clean.CompletelyRemoveAll();
-            }
 
             return store;
         }
