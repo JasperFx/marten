@@ -72,6 +72,30 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 
 > Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
 
+### xUnit.Net Specs
+
+To aid in integration testing, Marten.Testing has a couple reusable base classes that can be use
+to make integration testing through Postgresql be more efficient and allow the xUnit.Net tests
+to run in parallel for better throughput.
+
+* `IntegrationContext` -- if most of the tests will use an out of the box configuration
+  (i.e., no fluent interface configuration of any document types), use this base type. Warning though,
+  this context type will **not** clean out the main `public` database schema between runs,
+  but will delete any existing data
+* `DestructiveIntegrationContext` -- similar to `IntegrationContext`, but will wipe out any and all
+  Postgresql schema objects in the `public` schema between tests. Use this sparingly please.
+* `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
+  the `DocumentStore`, this context is appropriate. You will need to decorate any of these
+  test classes with the `[Collection]` attribute, typically using the schema name for the 
+  collection name as a convention
+* `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
+  configuration, and this context is a specialization of `OneOffConfigurationsContext` for
+  the *bugs* schema. 
+* `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
+  `DocumentStore` configuration. You'd need to write a subclass of `StoreFixture`, then use
+  `StoreContext<YourNewStoreFixture>` as the base class to share the `DocumentStore` between
+  test runs with xUnit.Net's shared context (`IClassFixture<T>`)
+
 ### Mocha Specs
 
 Refer to the build commands section to look up the commands to run Mocha tests. There is also `npm run tdd` to run the mocha specifications
