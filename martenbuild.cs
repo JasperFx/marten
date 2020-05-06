@@ -39,28 +39,28 @@ namespace martenbuild
             Target("compile", DependsOn("clean"), () =>
             {
                 Run("dotnet",
-                    $"build src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}");
+                    $"build src/Marten.Testing/Marten.Testing.csproj --configuration {configuration}");
 
                 Run("dotnet",
                     $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --configuration {configuration}");
             });
 
             Target("compile-noda-time", DependsOn("clean"), () =>
-                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework netcoreapp2.1 --configuration {configuration}"));
+                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --configuration {configuration}"));
 
             Target("test-noda-time", DependsOn("compile-noda-time"), () =>
-                Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
+                Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --configuration {configuration} --no-build"));
 
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
-                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework netcoreapp2.1 --configuration {configuration} --no-build"));
+                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --configuration {configuration} --no-build"));
 
             Target("test", DependsOn("test-marten", "test-noda-time"));
 
             Target("storyteller", DependsOn("compile"), () =>
-                Run("dotnet", $"run --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller"));
+                Run("dotnet", $"run --culture en-US", "src/Marten.Storyteller"));
 
             Target("open_st", DependsOn("compile"), () =>
-                Run("dotnet", $"storyteller open --framework netcoreapp2.1 --culture en-US", "src/Marten.Storyteller"));
+                Run("dotnet", $"storyteller open --culture en-US", "src/Marten.Storyteller"));
 
             Target("docs", () =>
                 Run("dotnet", $"stdocs run -d documentation -c src -v {BUILD_VERSION}"));
