@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Threading;
 using Npgsql;
 using static Bullseye.Targets;
@@ -17,6 +19,8 @@ namespace martenbuild
 
         private static void Main(string[] args)
         {
+            var framework = GetFramework();
+
             var configuration = Environment.GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
 
@@ -39,28 +43,28 @@ namespace martenbuild
             Target("compile", DependsOn("clean"), () =>
             {
                 Run("dotnet",
-                    $"build src/Marten.Testing/Marten.Testing.csproj --configuration {configuration}");
+                    $"build src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration}");
 
                 Run("dotnet",
                     $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --configuration {configuration}");
             });
 
             Target("compile-noda-time", DependsOn("clean"), () =>
-                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --configuration {configuration}"));
+                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration}"));
 
             Target("test-noda-time", DependsOn("compile-noda-time"), () =>
-                Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --configuration {configuration} --no-build"));
+                Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
-                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --configuration {configuration} --no-build"));
+                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
             Target("test", DependsOn("test-marten", "test-noda-time"));
 
             Target("storyteller", DependsOn("compile"), () =>
-                Run("dotnet", $"run --culture en-US", "src/Marten.Storyteller"));
+                Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
 
             Target("open_st", DependsOn("compile"), () =>
-                Run("dotnet", $"storyteller open --culture en-US", "src/Marten.Storyteller"));
+                Run("dotnet", $"storyteller open --framework {framework} --culture en-US", "src/Marten.Storyteller"));
 
             Target("docs", () =>
                 Run("dotnet", $"stdocs run -d documentation -c src -v {BUILD_VERSION}"));
@@ -159,6 +163,12 @@ namespace martenbuild
                     DeleteDirectory(dir);
                 }
             }
+        }
+
+        private static string GetFramework()
+        {
+            var frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
+            return frameworkName.Replace(",Version=v", "").Replace(".NET", "NET").ToLower();
         }
 
         private static void DeleteDirectory(DirectoryInfo baseDir)
