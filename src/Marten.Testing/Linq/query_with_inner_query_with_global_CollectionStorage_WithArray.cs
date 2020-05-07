@@ -117,6 +117,7 @@ namespace Marten.Testing.Linq
             x => x.ICollection.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Contains(SearchPhrase),
             x => x.IReadonlyCollection.Where(e => e == SearchPhrase).Any(),
+            x => x.IReadonlyCollectionOfInnerClasses.Any(e => e.Flatten == "12") || x.IReadonlyCollectionOfInnerClasses.Any(e => e.Flatten == "23"),
             x => x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "12").Any() || x.IReadonlyCollectionOfInnerClasses.Where(e => e.Flatten == "23").Any(),
             x => x.ArrayWithInt.Contains(IntSearchPhrase),
             x => x.EnumerableWithInt.Contains(IntSearchPhrase),
