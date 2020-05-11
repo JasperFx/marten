@@ -4,21 +4,23 @@
 
 We've got the typical problems of needing to address incoming pull requests and bug issues in master while probably needing to have a long lived branch for *v4*. 
 
-Here are some thoughts:
+As an initial plan, let's:
 
-* First do a bug sweep 3.12 release to address as many of the tactical problems as we can before branching to v4?
-* Start with the unit testing improvements as a way to speed up the build before we dive into much more of this? 
-* Possibly do a series of v4, then v5 releases to do this in smaller chunks? We've mostly said do the event store as v4, then Linq improvements as v5
-* Do the Event Store v4 work in a separate project built as an add on from the very beginning, but leave the existing event store in place. That would enable us to do a lot of work *and* mostly be able to keep that work in master so we don't have long-lived branch problems
-* Damn the torpedos and full speed ahead!
+1. Start with the unit testing improvements as a way to speed up the build before we dive into much more of this? *This is in progress with about a 25% reduction in test throughput time so far [in this pull request](https://github.com/JasperFx/marten/pull/1463)*
+1. Do a bug sweep v3.12 release to address as many of the tactical problems as we can before branching to v4
+1. ~~Possibly do a series of v4, then v5 releases to do this in smaller chunks? We've mostly said do the event store as v4, then Linq improvements as v5~~ -- *Nope, full speed ahead with a large v4 release in order to do as many breaking changes as possible in one release*
+1. [Extract the generic database manipulation code to its own library](https://github.com/JasperFx/marten/issues/1467) to clean up Marten, and speed up our builds to make the development work be more efficient.
+1. Do the Event Store v4 work in a separate project built as an add on from the very beginning, but leave the existing event store in place. That would enable us to do a lot of work *and* mostly be able to keep that work in master so we don't have long-lived branch problems. Break open the event store improvement work because that's where most of the interest is for this release.
+
 
 ## Miscellaneous Ideas
 
 * Look at some kind of object pooling for the `DocumentSession` / `QuerySession` objects?
-* Ditch the document by document type schema configuration. Do that, and I think we open the door for multi-tenancy by schema
-* Eliminate `ManagedConnection` altogether. I think it results in unnecessary object allocations and it's causing more harm that help as it's been extended over time
-* Can we consider ditching < .Net Core or .Net v5 for v4? 
-
+* Ditch the document by document type schema configuration where Document *A* can be in one schema, and Document "B" is in another schema. Do that, and I think we open the door for multi-tenancy by schema. 
+* ~~Eliminate `ManagedConnection` altogether. I think it results in unnecessary object allocations and it's causing more harm that help as it's been extended over time.~~ **After studying that more today, it's just too damn embedded. At least try to kill off the `Execute` methods that take in a Lambda**. See [this GitHub issue](https://github.com/JasperFx/marten/issues/1469).
+* ~~Can we consider ditching < .Net Core or .Net v5 for v4?~~ **The probable answer is "no," so let's just take this off the table.**
+* Do a hunt for classes in Marten marked `public` that should be `internal`. Here's [the GitHub issue](https://github.com/JasperFx/marten/issues/1470).
+* [Make the exceptions a bit more consistent](https://github.com/JasperFx/marten/issues/1471)
 
 ## Dynamic Code Generation
 
@@ -37,8 +39,14 @@ What could be generated in the future:
 * Much more of the `ISelector` implementations, especially since there's going to be more variability when we do the document metadata
 * Finer-grained manipulation of the `IIdentityMap` 
 
+*Jeremy's note: After doing some detailed analysis through the codebase and the spots that would be impacted by the change to dynamic code generation, I'm convinced that this will lead to significant performance improvements by eliminating many existing runtime conditional checks and casts*
+
+Track [this work here](https://github.com/JasperFx/marten/issues/1468).
+
 
 ## Unit Testing Approach
+
+[This is in progress, and going well](https://github.com/JasperFx/marten/pull/1463).
 
 If we introduce the runtime code generation back into Marten, that's unfortunately a non-trivial "cold start" testing issue. To soften that, I suggest we get a lot more aggressive with reusable [xUnit.Net class fixtures](https://xunit.net/docs/shared-context) between tests to reuse generated code between tests, cut way down on the sheer number of database calls by not having to frequently check the schema configuration, and other `DocumentStore` overhead. 
 
@@ -93,21 +101,27 @@ session.UseMetadata<MyMetadta>(metadata);
 Either through docs or through the new, official .Net Core integration, we have patterns to have that automatically set upon
 new `DocumentSession` objects being created from the IoC to make the tracking be seemless.
 
-## Project / Assembly Restructuring
+## Extract Generic Database Helpers to its own Library
 
-* Pull everything to do with Schema object generation and difference detection to a separate library (`IFeatureSchema`, `ISchemaObject`, etc.). Mostly to clean out the main library, but also because this code could easily be reused outside of Marten. Separating it out might make it easier to test and extend that functionality, which is something that occasionally gets requested. There's also the possibility of further breaking that into abstractions and implementations for the long run of getting us ready for Sql Server or other database engine support
+* Pull everything to do with Schema object generation, difference detection, and DDL generation to a separate library (`IFeatureSchema`, `ISchemaObject`, etc.). Mostly to clean out the main library, but also because this code could easily be reused outside of Marten. Separating it out might make it easier to test and extend that functionality, which is something that occasionally gets requested. There's also the possibility of further breaking that into abstractions and implementations for the long run of getting us ready for Sql Server or other database engine support. **The tests for this functionality are slow, and rarely change. It would be advantageous to get this out of the main Marten library and testing project**.
 
-* *Possibly* pull the ADO.Net helper code like `CommandBuilder` and the extension methods into a small helper library somewhere else (I'm nominating the [Baseline](https://jasperfx.github.io/baseline) repository). This code is copied around to other projects as it is, and it's another way of getting stuff out of the main library and the test suite.
+* Pull the ADO.Net helper code like `CommandBuilder` and the extension methods into a small helper library somewhere else (I'm nominating the [Baseline](https://jasperfx.github.io/baseline) repository). This code is copied around to other projects as it is, and it's another way of getting stuff out of the main library and the test suite.
 
-* More in the event store section, but let's get the event store functionality into its own library (or possibly a couple other libraries for async projection support).
+Track this work in [this GitHub issue](https://github.com/JasperFx/marten/issues/1467).
 
 ## F# Improvements
 
-WE NEED TO HAVE AN F# SUBCOMMITTEE TO HELP HERE. 
+We'll have a virtual F# subcommittee to be watching this work for F#-friendliness:
+
+* [Fred](https://github.com/wastaz)
+* [Chet Husk](https://twitter.com/ChetHusk)
+* [Jimmy Byrd](https://github.com/TheAngryByrd)
 
 ## HostBuilder Integration
 
-If he's okay with this, I'd vote to bring Joona-Pekka Kokko's ASP.Net Core integration library into the main repository and make that the officially blessed and documented recipe for integrating Marten into .Net Core applications based on the `HostBuilder` in .Net Core. I suppose we could also multi-target `IWebHostBuilder` for ASP.Net Core 2.*.
+We'll bring Joona-Pekka Kokko's [ASP.Net Core integration library](https://github.com/jokokko/marten.aspnetcore) into the main repository and make that the officially blessed and documented recipe for integrating Marten into .Net Core applications based on the `HostBuilder` in .Net Core. I suppose we could also multi-target `IWebHostBuilder` for ASP.Net Core 2.*.
+
+
 
 That `HostBuilder` integration could be extended to:
 
@@ -115,12 +129,15 @@ That `HostBuilder` integration could be extended to:
 * Optionally register some kind of `IDocumentSessionBuilder` that could be used to customize session construction? 
 * Have some way to have container resolved `IDocumentSessionListener` objects attached to `IDocumentSession`. This is to have an easy recipe for folks who want events broadcast through messaging infrastructure in CQRS architectures
 
+See [the GitHub issue for this](https://github.com/JasperFx/marten/issues/1466).
+
 ## Command Line Support
 
 The `Marten.CommandLine` package already uses Oakton for command line parsing. For easier integration in .Net Core applications, we could shift that to using the [Oakton.AspNetCore](https://jasperfx.github.io/oakton/documentation/aspnetcore/) package so the command line support can be added to any ASP.net Core 2.* or .Net Core 3.* project by installing the Nuget. This might simplify the usage because you'd no longer need a separate project for the command line support.
 
 There are some long standing stories about extending the command line support for the event store projection rebuilding. I think that would be more effective if it switches over to Oakton.AspNetCore.
 
+See the [GitHub issue](https://github.com/JasperFx/marten/issues/1472)
 
 ## Linq
 
@@ -138,13 +155,7 @@ This is also covered by the [Linq Overhaul](https://github.com/JasperFx/marten/i
 
 * Do the [Json streaming story](https://github.com/JasperFx/marten/issues/585) because it should be compelling, especially as part of the readside of a CQRS architecture using Marten's event store functionality. 
 
-## Dynamic Code Generation
-
-* Adopt LamarCodeGeneration for building out the dynamic code. The current Expression building is wonky, and it's getting creaky. This will make the document metadata functionality
-  easier to build. We can do this either by continuing to build Expressions and compiling to Funcs, or we could re-introduce code compilation via LamarCompiler (which was originally
-  built into Marten pre-V1)
-
-**The potential downside is that this doesn't work well at all with `internal` properties, so we'll have to watch that**
+* *Possibly* use a PLV8-based [JsonPath](https://goessner.net/articles/JsonPath/) polyfill so we could use sql/json immediately in the Linq support. More research necessary.
 
 
 ## Partial Updates
