@@ -93,3 +93,12 @@ At this point, you would be able to query against `QuestParty` as just another d
 Projections need to be rebuilt when the code that defines them changes in a way that requires events to be reapplied in order to maintain correct state. Using an `IDaemon` this is easy to execute on-demand:
 
 <[sample:rebuild-single-projection]>
+
+<div class="alert alert-warning">
+<b><u>Warning:</u></b>
+<br />
+Marten by default while creating new object tries to use <b>default constructor</b>. <br />
+Default constructor doesn't have to be public, might be also private or protected. <br />
+If class does not have the default constructor then it creates an uninitialized object (see <a href="https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8" target="_parent">more</a>).<br />
+Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
+</div>
