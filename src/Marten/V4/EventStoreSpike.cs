@@ -146,5 +146,21 @@ namespace Marten.V4
     }
 
 
+    public class Event1{}
+    public class Event2{}
+    public class Event3{}
+    public class Event4{}
 
+    public class ProjectedDocument1{}
+    public class ProjectedDocument2{}
+
+    public class TransformerSample
+    {
+        public void Apply(Event1 @event1, ProjectedDocument1 doc1)
+        {
+            // do what you need to do
+        }
+
+
+    }
 }
