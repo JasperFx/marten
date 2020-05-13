@@ -21,7 +21,7 @@ namespace Marten.Testing.Acceptance
 
     }
 
-    public class document_transforms: StoreContext<JsTransformsFixture>
+    public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixture<JsTransformsFixture>
     {
         public document_transforms(JsTransformsFixture fixture) : base(fixture)
         {

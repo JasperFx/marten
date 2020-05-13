@@ -23,12 +23,12 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public sealed class User
+        public sealed class Bug1245User
         {
             public Guid Id { get; private set; }
             public string Name { get; private set; }
 
-            public User(Guid id, string name)
+            public Bug1245User(Guid id, string name)
             {
                 Id = id;
                 Name = name;
@@ -39,12 +39,12 @@ namespace Marten.Testing.Bugs
         public void can_do_include_with_full_text_search()
         {
             var term = "content";
-            var userDictionary = new Dictionary<Guid, User>();
+            var userDictionary = new Dictionary<Guid, Bug1245User>();
             using (var session = theStore.OpenSession())
             {
                 for (var i = 0; i < 3; i++)
                 {
-                    var newUser = new User(Guid.NewGuid(), $"Test user {i}");
+                    var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
                     var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
 
                     session.Store(newUser);
@@ -67,12 +67,12 @@ namespace Marten.Testing.Bugs
         public async Task can_do_include_with_full_text_search_async()
         {
             var term = "content";
-            var userDictionary = new Dictionary<Guid, User>();
+            var userDictionary = new Dictionary<Guid, Bug1245User>();
             using (var session = theStore.OpenSession())
             {
                 for (var i = 0; i < 3; i++)
                 {
-                    var newUser = new User(Guid.NewGuid(), $"Test user {i}");
+                    var newUser = new Bug1245User(Guid.NewGuid(), $"Test user {i}");
                     var newEmail = new Email(Guid.NewGuid(), newUser.Id, $"Some content {i} {newUser.Name} ");
 
                     session.Store(newUser);

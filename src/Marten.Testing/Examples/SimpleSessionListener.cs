@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Baseline;
 using Marten.Services;
+using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
 

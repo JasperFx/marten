@@ -4,8 +4,14 @@ using Xunit;
 
 namespace Marten.Testing.Harness
 {
+    [CollectionDefinition("integration")]
+    public class IntegrationCollection : ICollectionFixture<DefaultStoreFixture>
+    {
+
+    }
+
     [Collection("integration")]
-    public class IntegrationContext: StoreContext<DefaultStoreFixture>
+    public class IntegrationContext : StoreContext<DefaultStoreFixture>
     {
         private IDocumentSession _session;
         private DocumentStore _store;
@@ -23,6 +29,8 @@ namespace Marten.Testing.Harness
         /// <returns></returns>
         protected string StoreOptions(Action<StoreOptions> configure)
         {
+            _overrodeStore = true;
+
             _session?.Dispose();
             _session = null;
 
@@ -41,9 +49,12 @@ namespace Marten.Testing.Harness
             _store.Advanced.Clean.CompletelyRemoveAll();
 
             return options.DatabaseSchemaName;
+
+
         }
 
         private bool _hasBuiltStore = false;
+        private bool _overrodeStore;
 
         protected override DocumentStore theStore
         {
@@ -76,6 +87,11 @@ namespace Marten.Testing.Harness
 
         public override void Dispose()
         {
+            if (_overrodeStore)
+            {
+                Fixture.Store.Advanced.Clean.CompletelyRemoveAll();
+            }
+
             _session?.Dispose();
             _store?.Dispose();
             base.Dispose();

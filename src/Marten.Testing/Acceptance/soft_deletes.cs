@@ -24,7 +24,7 @@ namespace Marten.Testing.Acceptance
         }
     }
 
-    public class soft_deletes: StoreContext<SoftDeletedFixture>
+    public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftDeletedFixture>
     {
         public soft_deletes(SoftDeletedFixture fixture): base(fixture)
         {

@@ -8,12 +8,16 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class duplicate_fields_in_table_and_upsert_Tests : IntegrationContext
+    [Collection("duplicated")]
+    public class duplicate_fields_in_table_and_upsert_Tests : OneOffConfigurationsContext
     {
         [Fact]
         public void end_to_end()
         {
-            theStore.Storage.MappingFor(typeof(User)).As<DocumentMapping>().DuplicateField("FirstName");
+            StoreOptions(opts =>
+            {
+                opts.Schema.For<User>().Duplicate(x => x.FirstName);
+            });
 
             var user1 = new User { FirstName = "Byron", LastName = "Scott" };
             using (var session = theStore.OpenSession())
@@ -23,11 +27,11 @@ namespace Marten.Testing.CoreFunctionality
             }
 
             var runner = theStore.Tenancy.Default.OpenConnection();
-            runner.QueryScalar<string>($"select first_name from mt_doc_user where id = '{user1.Id}'")
+            runner.QueryScalar<string>($"select first_name from duplicated.mt_doc_user where id = '{user1.Id}'")
                   .ShouldBe("Byron");
         }
 
-        public duplicate_fields_in_table_and_upsert_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public duplicate_fields_in_table_and_upsert_Tests() : base("duplicated")
         {
         }
     }

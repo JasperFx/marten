@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

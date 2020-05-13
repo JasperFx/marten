@@ -1,21 +1,19 @@
-﻿using System;
-using System.Linq;
-using Marten.Schema;
+﻿using System.Linq;
+using Marten.Schema.Testing.Documents;
 using Marten.Storage;
-using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     [Collection("soft_deletes")]
-    public class when_generating_a_table_for_soft_deletes : OneOffConfigurationsContext
+    public class when_generating_a_table_for_soft_deletes : IntegrationContext
     {
         private DocumentTable theTable;
 
-        public when_generating_a_table_for_soft_deletes() : base("soft_deletes")
+        public when_generating_a_table_for_soft_deletes()
         {
+
             var mapping = DocumentMapping.For<Target>();
             mapping.DeleteStyle = DeleteStyle.SoftDelete;
 

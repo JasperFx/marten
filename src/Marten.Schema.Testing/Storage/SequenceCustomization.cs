@@ -1,11 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Schema;
 using Marten.Storage;
-using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     public class SequenceCustomization : IntegrationContext
     {
@@ -43,8 +41,5 @@ namespace Marten.Testing.Storage
             }
         }
 
-        public SequenceCustomization(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

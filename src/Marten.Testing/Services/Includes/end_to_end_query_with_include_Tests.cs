@@ -117,15 +117,15 @@ namespace Marten.Testing.Services.Includes
             using (var query = theStore.QuerySession())
             {
                 User included = null;
-                var issue2 = query.Query<Issue>()
+                var issue2 = query
+                    .Query<Issue>()
                     .Include<User>(x => x.AssigneeId, x => included = x)
-                    .Where(x => x.Tags.Contains("DIY"))
-                    .Single();
+                    .Single(x => Enumerable.Contains(x.Tags, "DIY"));
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 

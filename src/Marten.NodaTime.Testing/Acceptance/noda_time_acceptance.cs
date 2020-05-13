@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.NodaTime.Testing.TestData;
-using Marten.Testing;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using NodaTime;
@@ -233,8 +232,5 @@ namespace Marten.NodaTime.Testing.Acceptance
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
 
-        public noda_time_acceptance(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

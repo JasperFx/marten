@@ -1,14 +1,12 @@
 ﻿using System.IO;
 using Baseline;
-using Marten.Schema;
+using Marten.Schema.Testing.Documents;
 using Marten.Storage;
-using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     public class creating_diffs_when_system_columns_are_missing : IntegrationContext
     {
@@ -90,8 +88,5 @@ namespace Marten.Testing.Storage
             actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
         }
 
-        public creating_diffs_when_system_columns_are_missing(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

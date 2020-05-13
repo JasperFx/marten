@@ -1,12 +1,10 @@
 ﻿using System.Linq;
-using Marten.Schema;
+using Marten.Schema.Testing.Documents;
 using Marten.Storage;
-using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     public class TableDeltaTests
     {

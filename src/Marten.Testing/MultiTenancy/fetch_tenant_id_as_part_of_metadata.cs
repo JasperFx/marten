@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Marten.Testing.Documents;
 using Marten.Testing.Examples;
 using Marten.Testing.Harness;
 using Shouldly;

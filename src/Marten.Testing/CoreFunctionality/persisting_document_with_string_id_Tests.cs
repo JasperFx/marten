@@ -2,17 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class Account
-    {
-        public string Id { get;set; }
-    }
-
     public class persisting_document_with_string_id_Tests : IntegrationContext
     {
         [Fact]

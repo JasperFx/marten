@@ -1,11 +1,16 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 
 namespace Marten.Testing.Examples
 {
+    // Leave this commented out please, and always use the User
+    // in Marten.Testing.Documents
+    /*
+
     // SAMPLE: user_document
     public class User
     {
@@ -18,6 +23,9 @@ namespace Marten.Testing.Examples
     }
 
     // ENDSAMPLE
+    */
+
+
     public class ConfiguringDocumentStore
     {
         public void start_a_basic_store()

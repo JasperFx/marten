@@ -3,17 +3,15 @@ using Xunit;
 
 namespace Marten.Testing.Harness
 {
-    public abstract class StoreContext<T> : IClassFixture<T>, IDisposable where T : StoreFixture
+    public abstract class StoreContext<T> : IDisposable where T : StoreFixture
     {
 #if NET461
         private CultureInfo _originalCulture;
 #endif
 
-        private readonly T _fixture;
-
         protected StoreContext(T fixture)
         {
-            _fixture = fixture;
+            Fixture = fixture;
 
 #if NET461
             _originalCulture = Thread.CurrentThread.CurrentCulture;
@@ -32,7 +30,9 @@ namespace Marten.Testing.Harness
             _session?.Dispose();
         }
 
-        protected virtual DocumentStore theStore => _fixture.Store;
+        protected virtual DocumentStore theStore => Fixture.Store;
+
+        protected T Fixture { get; }
 
         private IDocumentSession _session;
 

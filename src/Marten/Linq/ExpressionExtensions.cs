@@ -25,7 +25,7 @@ namespace Marten.Linq
                 return expression.As<ConstantExpression>().Value;
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException($"The Expression is {expression} of type {expression.GetType().Name}");
         }
 
         public static bool IsValueExpression(this Expression expression)

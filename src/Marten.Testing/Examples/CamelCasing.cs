@@ -1,3 +1,4 @@
+using Marten.Testing.Documents;
 using Xunit;
 
 namespace Marten.Testing.Examples
