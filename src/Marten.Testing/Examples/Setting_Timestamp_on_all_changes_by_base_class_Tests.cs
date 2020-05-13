@@ -14,6 +14,7 @@ namespace Marten.Testing.Examples
         {
             using (var store = DocumentStore.For(_ =>
             {
+                _.DatabaseSchemaName = "setting_timestamp";
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Listeners.Add(new TimestampListener());

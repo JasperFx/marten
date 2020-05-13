@@ -1,12 +1,9 @@
 ﻿using System;
-using Baseline;
-using Marten.Schema;
 using Marten.Storage;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     public class will_name_nested_class_documents_appropriately : IntegrationContext
     {
@@ -59,9 +56,6 @@ namespace Marten.Testing.Storage
             table2.Equals(table1).ShouldBeFalse();
         }
 
-        public will_name_nested_class_documents_appropriately(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
     public class Foo

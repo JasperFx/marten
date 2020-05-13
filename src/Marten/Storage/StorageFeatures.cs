@@ -133,7 +133,7 @@ namespace Marten.Storage
                 var message = duplicates.Select(group =>
                 {
                     return
-                        $"Document types {group.Select(x => x.DocumentType.Name).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
+                        $"Document types {group.Select(x => x.DocumentType.FullName).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
                 }).Join("\n");
 
                 throw new AmbiguousDocumentTypeAliasesException(message);

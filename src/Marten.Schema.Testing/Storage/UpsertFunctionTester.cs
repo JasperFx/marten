@@ -1,16 +1,15 @@
 ﻿using System;
 using System.IO;
 using Baseline;
-using Marten.Schema;
+using Marten.Schema.Testing.Documents;
 using Marten.Storage;
-using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     [Collection("UpsertFunction")]
     public class UpsertFunctionTester : IDisposable

@@ -7,7 +7,6 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    [Collection("unique_text")]
     public class unique_indexes: IntegrationContext
     {
         // SAMPLE: using_a_single_property_computed_unique_index_through_attribute

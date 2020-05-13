@@ -60,7 +60,11 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_two_deep_with_containment_operator()
         {
-            theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>().PropertySearching = PropertySearching.ContainmentOperator;
+            StoreOptions(opts =>
+            {
+                opts.Schema.For<Target>().PropertySearching(PropertySearching.ContainmentOperator);
+            });
+
 
             theSession.Store(new Target { Inner = new Target { Number = 1, String = "Jeremy" } });
             theSession.Store(new Target { Inner = new Target { Number = 2, String = "Max" } });
@@ -78,7 +82,10 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_three_deep_with_containment_operator()
         {
-            theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>().PropertySearching = PropertySearching.ContainmentOperator;
+            StoreOptions(opts =>
+            {
+                opts.Schema.For<Target>().PropertySearching(PropertySearching.ContainmentOperator);
+            });
 
             theSession.Store(new Target { Number = 1, Inner = new Target { Inner = new Target { Long = 1 } } });
             theSession.Store(new Target { Number = 2, Inner = new Target { Inner = new Target { Long = 2 } } });
@@ -94,7 +101,10 @@ namespace Marten.Testing.Linq
         [Fact]
         public void order_by_2_deep_with_containment_operator()
         {
-            theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>().PropertySearching = PropertySearching.ContainmentOperator;
+            StoreOptions(opts =>
+            {
+                opts.Schema.For<Target>().PropertySearching(PropertySearching.ContainmentOperator);
+            });
 
             theSession.Store(new Target { Inner = new Target { Number = 1, String = "Jeremy" } });
             theSession.Store(new Target { Inner = new Target { Number = 2, String = "Max" } });

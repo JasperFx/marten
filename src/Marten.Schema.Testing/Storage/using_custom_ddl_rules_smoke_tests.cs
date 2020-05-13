@@ -1,8 +1,7 @@
-﻿using Marten.Testing.Documents;
-using Marten.Testing.Harness;
+﻿using Marten.Schema.Testing.Documents;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     public class using_custom_ddl_rules_smoke_tests : IntegrationContext
     {
@@ -18,9 +17,5 @@ namespace Marten.Testing.Storage
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
         }
 
-
-        public using_custom_ddl_rules_smoke_tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

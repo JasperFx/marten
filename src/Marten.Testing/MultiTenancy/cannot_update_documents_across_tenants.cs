@@ -4,7 +4,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using User = Marten.Testing.Examples.User;
 
 namespace Marten.Testing.MultiTenancy
 {

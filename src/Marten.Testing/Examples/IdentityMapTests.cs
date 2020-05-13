@@ -1,3 +1,4 @@
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
 namespace Marten.Testing.Examples

@@ -1,5 +1,6 @@
 using System;
 using Baseline;
+using Marten.Schema.Testing.Documents;
 using Shouldly;
 using Xunit;
 
@@ -80,17 +81,6 @@ namespace Marten.Schema.Testing
 
         // ENDSAMPLE
 
-        public class User
-        {
-            public User()
-            {
-                Id = Guid.NewGuid();
-            }
-
-            public Guid Id { get; set; }
-
-            public string Name { get; set; }
-        }
 
         public class Employee
         {

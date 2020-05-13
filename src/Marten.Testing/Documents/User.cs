@@ -21,13 +21,15 @@ namespace Marten.Testing.Documents
 
         public bool Internal { get; set; }
 
+        public string Department { get; set; } = "";
+
         public string FullName => "{0} {1}".ToFormat(FirstName, LastName);
 
         public int Age { get; set; }
 
         public string ToJson()
         {
-            return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\"}}";
+            return $"{{\"Id\": \"{Id}\", \"Age\": {Age}, \"FullName\": \"{FullName}\", \"Internal\": {Internal.ToString().ToLowerInvariant()}, \"LastName\": \"{LastName}\", \"UserName\": \"{UserName}\", \"FirstName\": \"{FirstName}\", \"Department\": \"{Department}\"}}";
         }
 
         public void From(User user)

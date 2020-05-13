@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_count_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_count_Tests: IntegrationContext
     {
         [Fact]
         public void count_without_any_where()
@@ -79,7 +79,7 @@ namespace Marten.Testing.Linq
             theSession.Store(t2);
             theSession.Store(new Target());
             theSession.Store(new Target());
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
             var count = await theSession.Query<Target>().CountAsync(x => x.Id == x.OtherGuid);
             count.ShouldBe(2);
         }

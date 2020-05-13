@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Schema;
 using Marten.Storage;
-using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
     public class ScenarioUsingSequenceForUniqueId : IntegrationContext
     {
@@ -87,9 +85,7 @@ namespace Marten.Testing.Storage
             // Other fields...
         }
         // ENDSAMPLE
-        public ScenarioUsingSequenceForUniqueId(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+
     }
     // SAMPLE: scenario-usingsequenceforuniqueid-setup-extensions
     public static class SessionExtensions

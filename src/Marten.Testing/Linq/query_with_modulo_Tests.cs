@@ -7,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_modulo_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_modulo_Tests : IntegrationContext
     {
         // SAMPLE: querying-with-modulo
         [Fact]

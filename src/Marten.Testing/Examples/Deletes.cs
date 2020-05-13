@@ -1,3 +1,5 @@
+using Marten.Testing.Documents;
+
 namespace Marten.Testing.Examples
 {
     public class Deletes

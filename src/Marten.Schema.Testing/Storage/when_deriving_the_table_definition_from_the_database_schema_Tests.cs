@@ -1,13 +1,11 @@
 using System.Linq;
 using Baseline;
-using Marten.Schema;
+using Marten.Schema.Testing.Documents;
 using Marten.Storage;
-using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Storage
+namespace Marten.Schema.Testing.Storage
 {
 
     public class when_deriving_the_table_definition_from_the_database_schema_Tests : IntegrationContext
@@ -17,7 +15,7 @@ namespace Marten.Testing.Storage
         private IDocumentStorage _storage;
         private DocumentTable theDerivedTable;
 
-        public when_deriving_the_table_definition_from_the_database_schema_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public when_deriving_the_table_definition_from_the_database_schema_Tests()
         {
             _schema = theStore.Schema;
 
