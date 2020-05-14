@@ -32,8 +32,8 @@ variables:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   dotnet_core_version: 3.1.x
   node_version: 10.x
-  pg_db: marten_test
-  marten_testing_database: "Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
+  pg_db: marten_testing
+  marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
 
 jobs:
   - job: Build
