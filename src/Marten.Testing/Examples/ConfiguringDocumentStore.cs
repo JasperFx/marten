@@ -32,7 +32,7 @@ namespace Marten.Testing.Examples
         {
             // SAMPLE: start_a_store
             var store = DocumentStore
-                .For("host=localhost;database=marten_test;password=mypassword;username=someuser");
+                .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
             // ENDSAMPLE
 
             // SAMPLE: start_a_query_session

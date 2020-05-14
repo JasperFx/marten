@@ -6,8 +6,8 @@ dotnet: 2.1.400
 
 env:
   global:
-    - marten_testing_database="Host=localhost;Port=5432;Database=marten_test;Username=postgres;Password=Password12!"
-    - config=Release  
+    - marten_testing_database="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
+    - config=Release
 
 addons:
   postgresql: "10"
@@ -21,8 +21,8 @@ install:
   - travis_retry npm install
 
 before_script:
-  - psql -c 'create database marten_test;' -U postgres
-  - psql -d marten_test -c 'create extension if not exists plv8;'
+  - psql -c 'create database marten_testing;' -U postgres
+  - psql -d marten_testing -c 'create extension if not exists plv8;'
 
 script:
   - dotnet run -p martenbuild.csproj -- ci
