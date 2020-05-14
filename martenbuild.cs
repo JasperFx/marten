@@ -15,7 +15,7 @@ namespace martenbuild
         private const string BUILD_VERSION = "3.11.0";
 
         private const string DockerConnectionString =
-            "Host=localhost;Port=5432;Database=postgres;Username=postgres;password=postgres";
+            "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
         private static void Main(string[] args)
         {

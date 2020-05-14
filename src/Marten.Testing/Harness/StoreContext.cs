@@ -34,7 +34,7 @@ namespace Marten.Testing.Harness
 
         protected T Fixture { get; }
 
-        private IDocumentSession _session;
+        protected IDocumentSession _session;
 
         protected virtual IDocumentSession theSession
         {
