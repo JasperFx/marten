@@ -13,7 +13,6 @@ namespace Marten.Testing.Harness
     [Collection("integration")]
     public class IntegrationContext : StoreContext<DefaultStoreFixture>
     {
-        private IDocumentSession _session;
         private DocumentStore _store;
 
         public IntegrationContext(DefaultStoreFixture fixture) : base(fixture)
@@ -65,23 +64,11 @@ namespace Marten.Testing.Harness
                 if (!_hasBuiltStore)
                 {
                     base.theStore.Advanced.Clean.DeleteAllDocuments();
+                    base.theStore.Advanced.Clean.DeleteAllEventData();
                     _hasBuiltStore = true;
                 }
 
                 return base.theStore;
-            }
-        }
-
-        protected virtual IDocumentSession theSession
-        {
-            get
-            {
-                if (_session == null)
-                {
-                    _session = theStore.LightweightSession();
-                }
-
-                return _session;
             }
         }
 
