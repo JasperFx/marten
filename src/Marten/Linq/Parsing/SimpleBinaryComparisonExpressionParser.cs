@@ -97,6 +97,12 @@ namespace Marten.Linq.Parsing
                 op = _operators[ExpressionType.NotEqual];
             }
 
+            // field.HasValue == true or field.HasValue == false
+            if (expression.Left.NodeType == ExpressionType.NotEqual && value is bool)
+            {
+                jsonLocator = $"({jsonLocator}) is not null";
+            }
+
             if (memberAccess != null)
             {
                 return new WhereFragment($"{_wherePrefix}{jsonLocator} {op} {value}");
