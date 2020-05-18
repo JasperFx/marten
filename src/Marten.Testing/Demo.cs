@@ -34,10 +34,9 @@ namespace Marten.Testing
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Logger(new ConsoleMartenLogger());
+                _.DatabaseSchemaName = "Demo";
 
                 _.Schema.For<User>().Duplicate(x => x.UserName);
-
-
             });
 
             // Cleans out all the database artifacts
@@ -52,9 +51,7 @@ namespace Marten.Testing
 
                 var user2 = session.Query(new FindUser("ian"));
                 SpecificationExtensions.ShouldNotBeNull(user2);
-
             }
-
         }
     }
 }
