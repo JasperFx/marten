@@ -85,6 +85,18 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void query_against_null_6()
+        {
+            theSession.Store(new Target { NullableBoolean = null });
+            theSession.Store(new Target { NullableBoolean = true });
+
+            theSession.SaveChanges();
+
+            theSession.Query<Target>().Where(x => x.NullableBoolean.HasValue == false).Count()
+                .ShouldBe(1);
+        }
+
+        [Fact]
         public void query_against_not_null()
         {
             theSession.Store(new Target { NullableNumber = 3 });
