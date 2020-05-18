@@ -1,6 +1,7 @@
 using System;
 using Marten.Services;
 using Marten.Testing.Harness;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Marten.NodaTime.Testing

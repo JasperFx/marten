@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Marten.NodaTime.Testing.Acceptance
 {
+    [Collection("noda-time-integration")]
     public class noda_time_acceptance: IntegrationContext
     {
         public void noda_time_default_setup()
@@ -67,7 +68,11 @@ namespace Marten.NodaTime.Testing.Acceptance
         [Fact]
         public void can_query_document_with_noda_time_types()
         {
-            StoreOptions(_ => _.UseNodaTime());
+            StoreOptions(_ =>
+            {
+                _.UseNodaTime();
+                _.DatabaseSchemaName = "NodaTime";
+            });
 
             var dateTime = DateTime.UtcNow;
             var localDateTime = LocalDateTime.FromDateTime(dateTime);
