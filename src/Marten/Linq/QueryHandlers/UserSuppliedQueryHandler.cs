@@ -16,6 +16,7 @@ namespace Marten.Linq.QueryHandlers
         private readonly object[] _parameters;
         private readonly ISelector<T> _selector;
         private readonly string _sql;
+        private readonly bool _sqlContainsCustomSelect;
         private readonly DocumentStore _store;
 
         public UserSuppliedQueryHandler(DocumentStore store, string sql, object[] parameters)
@@ -23,6 +24,7 @@ namespace Marten.Linq.QueryHandlers
             _store = store;
             _sql = sql;
             _parameters = parameters;
+            _sqlContainsCustomSelect = _sql.Contains("select", StringComparison.OrdinalIgnoreCase);
 
             _selector = GetSelector();
         }
@@ -31,7 +33,7 @@ namespace Marten.Linq.QueryHandlers
 
         public void ConfigureCommand(CommandBuilder builder)
         {
-            if (!_sql.Contains("select", StringComparison.OrdinalIgnoreCase))
+            if (!_sqlContainsCustomSelect)
             {
                 var mapping = _store.Storage.MappingFor(typeof(T)).ToQueryableDocument();
                 var tableName = mapping.Table.QualifiedName;
@@ -71,7 +73,7 @@ namespace Marten.Linq.QueryHandlers
 
         private ISelector<T> GetSelector()
         {
-            if (typeof(T).IsSimple())
+            if (typeof(T).IsSimple() || _sqlContainsCustomSelect)
                 return new DeserializeSelector<T>(_store.Serializer);
 
             var mapping = _store.Tenancy.Default.MappingFor(typeof(T)).As<DocumentMapping>();
