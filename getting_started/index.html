@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -103,7 +103,7 @@ make sure that your user account has rights to execute <code>CREATE TABLE/FUNCTI
 <h2 id="bootstrapping-a-document-store">Bootstrapping a Document Store</h2>
 <p>To start up Marten in a running application, you need to create a single <code>IDocumentStore</code> object. The quickest way is to start with
 all the default behavior and a connection string:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(&quot;host=localhost;database=marten_testing;password=mypassword;username=someuser&quot;);&#xD;&#xA;</code></pre>
 <p>Now, for your first document type, let's represent the users in our system:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class User&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string FirstName { get; set; }&#xD;&#xA;    public string LastName { get; set; }&#xD;&#xA;    public bool Internal { get; set; }&#xD;&#xA;    public string UserName { get; set; }&#xD;&#xA;    public string Department { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p><em>For more information on document id's, see <a href="/marten/documentation/documents/identity">Document Identity</a>.</em></p>

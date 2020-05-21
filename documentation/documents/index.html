@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -90,7 +90,7 @@ for RavenDb in several existing applications. As such, you may clearly see some 
 <h2 id="document-store">Document Store</h2>
 <p>To use Marten as a document database, you first need a Postgresql schema that will store your documents. Once you have that, getting started
 with Marten can be as simple as opening a <code>DocumentStore</code> to your new Postgresql schema:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(&quot;host=localhost;database=marten_test;password=mypassword;username=someuser&quot;);&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore&#xD;&#xA;    .For(&quot;host=localhost;database=marten_testing;password=mypassword;username=someuser&quot;);&#xD;&#xA;</code></pre>
 <p>The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this &quot;quickstart&quot; configuration,
 Marten will build new database tables and functions for each new document type as needed <strong>if those database schema objects do not already exist</strong>.</p>
 <div class="alert alert-info">As of Marten v3.0, document storage tables, by default, are created and updated, but never dropped (destroyed). To let Marten perform any destructive operations, such as adding a searchable field or changing the document id type, change the store configuration to <i>StoreOptions.AutoCreateSchemaObjects = AutoCreate.All</i>.</div>

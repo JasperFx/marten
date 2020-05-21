@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -98,7 +98,7 @@ this column in its optimistic concurrency checks</li>
 <h2 id="finding-the-metadata-for-a-document">Finding the Metadata for a Document</h2>
 <p>You can find the metadata values for a given document object with the following mechanism
 on <code>IDocumentStore.Advanced</code>:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void hit_returns_values()&#xD;&#xA;{&#xD;&#xA;    var shop = new CoffeeShop();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(shop);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Tenancy.Default.MetadataFor(shop);&#xD;&#xA;&#xD;&#xA;    metadata.ShouldNotBeNull();&#xD;&#xA;    metadata.CurrentVersion.ShouldNotBe(Guid.Empty);&#xD;&#xA;    metadata.LastModified.ShouldNotBe(default(DateTime));&#xD;&#xA;    metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);&#xD;&#xA;    metadata.DocumentType.ShouldBeNull();&#xD;&#xA;    metadata.Deleted.ShouldBeFalse();&#xD;&#xA;    metadata.DeletedAt.ShouldBeNull();&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void hit_returns_values()&#xD;&#xA;{&#xD;&#xA;    var shop = new CoffeeShop();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(shop);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    var metadata = theStore.Tenancy.Default.MetadataFor(shop);&#xD;&#xA;&#xD;&#xA;    SpecificationExtensions.ShouldNotBeNull(metadata);&#xD;&#xA;    metadata.CurrentVersion.ShouldNotBe(Guid.Empty);&#xD;&#xA;    metadata.LastModified.ShouldNotBe(default(DateTime));&#xD;&#xA;    metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);&#xD;&#xA;    SpecificationExtensions.ShouldBeNull(metadata.DocumentType);&#xD;&#xA;    metadata.Deleted.ShouldBeFalse();&#xD;&#xA;    SpecificationExtensions.ShouldBeNull(metadata.DeletedAt);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />

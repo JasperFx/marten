@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -95,7 +95,7 @@ to resort to a duplicated field for these types.
 <p>If you want to optimize a document type for searches on a certain field within the JSON body without
 incurring the potential cost of the duplicated field, you can take advantage of Postgresql's
 <a href="https://www.postgresql.org/docs/9.5/static/indexes-expressional.html">computed index feature</a> within Marten with this syntax:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // Postgresql will be able to use the computed&#xD;&#xA;    // index generated from above&#xD;&#xA;    var somebody = session.Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.UserName == &quot;somebody&quot;)&#xD;&#xA;        .FirstOrDefault();&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.DatabaseSchemaName = &quot;examples&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().Index(x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // Postgresql will be able to use the computed&#xD;&#xA;    // index generated from above&#xD;&#xA;    var somebody = session.Query&lt;User&gt;()&#xD;&#xA;        .Where(x =&gt; x.UserName == &quot;somebody&quot;)&#xD;&#xA;        .FirstOrDefault();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>In the configuration shown above, Marten generates a database index in Postgresql:</p>
 <pre>
 CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserName'));

@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/marten" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/marten" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -87,7 +87,7 @@
 <h2 id="multistream-projections-using-viewprojection">Multistream Projections using ViewProjection</h2>
 <p>The <code>ViewProjection</code> class is an implementation of the <code>IProjection</code> that can handle building a projection from multiple streams.</p>
 <p>This can be setup from configuration like:</p>
-<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;    _.Events.ProjectView&lt;PersistedView, Guid&gt;()&#xD;&#xA;        .ProjectEventAsync&lt;QuestStarted&gt;((view, @event) =&gt; { view.Events.Add(@event); return Task.CompletedTask; })&#xD;&#xA;        .ProjectEventAsync&lt;MembersJoined&gt;(e =&gt; e.QuestId, (view, @event) =&gt; { view.Events.Add(@event); return Task.CompletedTask; })&#xD;&#xA;        .ProjectEventAsync&lt;ProjectionEvent&lt;MonsterSlayed&gt;&gt;(e =&gt; e.Data.QuestId, (view, @event) =&gt; { view.Events.Add(@event.Data); return Task.CompletedTask; })&#xD;&#xA;        .DeleteEvent&lt;QuestEnded&gt;()&#xD;&#xA;        .DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId)&#xD;&#xA;        .DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;});&#xD;&#xA;</code></pre> 
+<pre><code class="language-csharp">&#xD;&#xA;StoreOptions(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;    _.Events.ProjectView&lt;PersistedView, Guid&gt;()&#xD;&#xA;        .ProjectEvent&lt;ProjectionEvent&lt;QuestStarted&gt;&gt;((view, @event) =&gt; { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })&#xD;&#xA;        .ProjectEvent&lt;MembersJoined&gt;(e =&gt; e.QuestId, (view, @event) =&gt; { view.Events.Add(@event); })&#xD;&#xA;        .ProjectEvent&lt;ProjectionEvent&lt;MonsterSlayed&gt;&gt;(e =&gt; e.Data.QuestId, (view, @event) =&gt; { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })&#xD;&#xA;        .DeleteEvent&lt;QuestEnded&gt;()&#xD;&#xA;        .DeleteEvent&lt;MembersDeparted&gt;(e =&gt; e.QuestId)&#xD;&#xA;        .DeleteEvent&lt;MonsterDestroyed&gt;((session, e) =&gt; session.Load&lt;QuestParty&gt;(e.QuestId).Id);&#xD;&#xA;});&#xD;&#xA;</code></pre> 
  
 or through a class like: 
  
@@ -108,16 +108,18 @@ or through a class like:
 <div class="alert alert-warning">
 <b><u>Warning:</u></b>
 <br />
-Projection class needs to have:
-<ul>
-<li>public default constructor,</li>
-<li><b>Id</b> property with public getter or setter.</li>
-</ul>
+Projection class needs to have <b>Id</b> property with public getter or property marked with <b>Identity</b> attribute.
+<br /><br />
 It comes of the way how Marten handles projection mechanism:
 <br />
 <ol>
 <li>Try to find document that has the same <b>Id</b> as the value of the property selected from event (so eg. for <b>UserCreated</b> event it will be <b>UserId</b>).</li>
-<li>If such document exists, then new record needs to be created. It's done using <b>default constructor</b>.</li>
+<li>
+    If such document exists, then new record needs to be created. Marten by default tries to use <b>default constructor</b>. <br />
+    Default constructor doesn't have to be public, might be also private or protected. <br />
+    If class does not have the default constructor then it creates an uninitialized object (see <a href="https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8" target="_parent">more</a>).<br />
+    Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
+</li>
 <li>If document with such <b>Id</b> was found then it's being loaded from database.</li>
 <li>Document is updated with the defined in <b>ViewProjection</b> logic (using expression from second <b>ProjectEvent</b> parameter).</li>
 <li>Created or updated document is upserted to database.</li>
