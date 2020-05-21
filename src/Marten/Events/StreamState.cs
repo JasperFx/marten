@@ -1,10 +1,11 @@
 using System;
+using Marten.Schema.Identity;
 
 namespace Marten.Events
 {
     public class StreamState
     {
-        public Guid Id { get; } = Guid.NewGuid();
+        public Guid Id { get; } = CombGuidIdGeneration.NewGuid();
         public int Version { get; }
         public Type AggregateType { get; }
 

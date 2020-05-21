@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Storage;
 
@@ -164,12 +165,12 @@ namespace Marten.Events
 
         public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class
         {
-            return StartStream<TAggregate>(Guid.NewGuid(), events);
+            return StartStream<TAggregate>(CombGuidIdGeneration.NewGuid(), events);
         }
 
         public EventStream StartStream(params object[] events)
         {
-            return StartStream(Guid.NewGuid(), events);
+            return StartStream(CombGuidIdGeneration.NewGuid(), events);
         }
 
         public IReadOnlyList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
