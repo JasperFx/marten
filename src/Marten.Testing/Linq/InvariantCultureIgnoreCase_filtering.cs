@@ -1,12 +1,13 @@
 using System;
 using System.Linq;
 using Marten.Testing.Documents;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class InvariantCultureIgnoreCase_filtering: IntegratedFixture
+    public class InvariantCultureIgnoreCase_filtering: IntegrationContext
     {
         [Fact]
         public void can_search_case_insensitive()
@@ -23,6 +24,10 @@ namespace Marten.Testing.Linq
             {
                 query.Query<User>().Single(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase)).Id.ShouldBe(user.Id);
             }
+        }
+
+        public InvariantCultureIgnoreCase_filtering(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 }
