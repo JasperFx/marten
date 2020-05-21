@@ -74,7 +74,7 @@ Sample usage could be loading other document/projection to create denormalized v
 <div class="alert alert-warning">
 <b><u>Warning:</u></b>
 <br />
-Note the "async projections" in this context is that they're using the .NET async/await mechanism that helps to use threads efficiently without locking them. <br />
+Note the "async projections" term in this context means that they are using the .NET async/await mechanism that helps to use threads efficiently without locking them. <br />
 It does not refer to async projections as eventually consistent. Such option provides <[linkto:documentation/events/projections/async_daemon;title=Async Daemon]>.
 </div>
 
