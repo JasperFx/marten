@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -94,11 +94,11 @@
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;unique_text&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.FirstName, x =&gt; x.FullName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;unique_text&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.Computed, x =&gt; x.FirstName, x =&gt; x.FullName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <div class="alert alert-info">
 If you don't specify first parameter (index type) - by default it will be created as computed index.
 </div>
@@ -108,11 +108,11 @@ If you don't specify first parameter (index type) - by default it will be create
 <ul>
 <li>single property</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;unique_text&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.UserName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <ul>
 <li>multiple properties</li>
 </ul>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.FirstName, x =&gt; x.FullName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;unique_text&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates&#xD;&#xA;    _.Schema.For&lt;User&gt;().UniqueIndex(UniqueIndexType.DuplicatedField, x =&gt; x.FirstName, x =&gt; x.FullName);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <h2 id="defining-unique-index-through-attribute">Defining Unique Index through Attribute</h2>
 <p>Unique Indexes can be created using the <code>[UniqueIndex]</code> attribute like this:</p>
 <ol>
@@ -151,7 +151,7 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 <pre><code class="language-csharp">&#xD;&#xA;public class IndexExamples: MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public IndexExamples()&#xD;&#xA;    {&#xD;&#xA;        // Add a gin index to the User document type&#xD;&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xD;&#xA;&#xD;&#xA;        // Adds a basic btree index to the duplicated&#xD;&#xA;        // field for this property that also overrides&#xD;&#xA;        // the Postgresql database type for the column&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xD;&#xA;&#xD;&#xA;        // Defining a duplicate column with not null constraint&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.Department, pgType: &quot;varchar(50)&quot;, notNull: true);&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for FirstName&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xD;&#xA;            idx.Method = IndexMethod.hash;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for UserName to be unique&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IsUnique = true;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for LastName to be in descending order&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.LastName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.SortOrder = SortOrder.Desc;&#xD;&#xA;        });&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="unique-index-per-tenant">Unique Index per Tenant</h2>
 <p>For tables which have been configured for <a href="/documentation/documents/tenancy">Tenancy</a>, index definitions may also be scoped per tenant.</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    // This creates a duplicated field unique index on firstname, lastname and tenant_id&#xD;&#xA;    _.Schema.For&lt;User&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.FirstName, x =&gt; x.LastName);&#xD;&#xA;&#xD;&#xA;    // This creates a computed unique index on client name and tenant_id&#xD;&#xA;    _.Schema.For&lt;Client&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.Name);&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;unique_text&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates a duplicated field unique index on firstname, lastname and tenant_id&#xD;&#xA;    _.Schema.For&lt;User&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.FirstName, x =&gt; x.LastName);&#xD;&#xA;&#xD;&#xA;    // This creates a computed unique index on client name and tenant_id&#xD;&#xA;    _.Schema.For&lt;Client&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.Name);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />

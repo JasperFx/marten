@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -147,7 +147,7 @@ being 0 so that a new item would be inserted at the beginning of the child colle
 <p>In the case of changing the name of a property or field in your document type that's already persisted
 in your Marten database, you have the option to apply a patch that will move the value from the
 old name to the new name.</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void rename_deep_prop()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Inner.String = &quot;Foo&quot;;&#xD;&#xA;    target.Inner.AnotherString = &quot;Bar&quot;;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Rename(&quot;String&quot;, x =&gt; x.Inner.AnotherString);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Inner.AnotherString.ShouldBe(&quot;Foo&quot;);&#xD;&#xA;        target2.Inner.String.ShouldBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void rename_deep_prop()&#xD;&#xA;{&#xD;&#xA;    var target = Target.Random(true);&#xD;&#xA;    target.Inner.String = &quot;Foo&quot;;&#xD;&#xA;    target.Inner.AnotherString = &quot;Bar&quot;;&#xD;&#xA;&#xD;&#xA;    theSession.Store(target);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Patch&lt;Target&gt;(target.Id).Rename(&quot;String&quot;, x =&gt; x.Inner.AnotherString);&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    using (var query = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        var target2 = query.Load&lt;Target&gt;(target.Id);&#xD;&#xA;        target2.Inner.AnotherString.ShouldBe(&quot;Foo&quot;);&#xD;&#xA;        SpecificationExtensions.ShouldBeNull(target2.Inner.String);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Renaming can be used on nested values.</p>
 <h2 id="delete-a-propertyfield">Delete a Property/Field</h2>
 <p>The <code>Patch.Delete()</code> operation can be used to remove a persisted property or field without the need

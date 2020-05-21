@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -104,7 +104,7 @@ The Marten community is working to create more samples of event store projection
 <code>IEventStore.Query&lt;MonsterSlayed&gt;()</code>, but it would be more efficient to keep a separate &quot;read side&quot; copy of this data in a new data collection. We could build a new transform class and readside document like this:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class MonsterDefeatedTransform: ITransform&lt;MonsterSlayed, MonsterDefeated&gt;&#xD;&#xA;{&#xD;&#xA;    public MonsterDefeated Transform(EventStream stream, Event&lt;MonsterSlayed&gt; input)&#xD;&#xA;    {&#xD;&#xA;        return new MonsterDefeated&#xD;&#xA;        {&#xD;&#xA;            Id = input.Id,&#xD;&#xA;            Monster = input.Data.Name&#xD;&#xA;        };&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;public class MonsterDefeated&#xD;&#xA;{&#xD;&#xA;    public Guid Id { get; set; }&#xD;&#xA;    public string Monster { get; set; }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>Now, we can plug our new transform type above as a projection when we configure our document store like this:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;&#xD;&#xA;    _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;monster_defeated&quot;;&#xD;&#xA;&#xD;&#xA;    _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <pre><code class="language-csharp">&#xD;&#xA;public void using_live_transformed_events(IDocumentSession session)&#xD;&#xA;{&#xD;&#xA;    var started = new QuestStarted { Name = &quot;Find the Orb&quot; };&#xD;&#xA;    var joined = new MembersJoined { Day = 2, Location = &quot;Faldor&#x27;s Farm&quot;, Members = new string[] { &quot;Garion&quot;, &quot;Polgara&quot;, &quot;Belgarath&quot; } };&#xD;&#xA;    var slayed1 = new MonsterSlayed { Name = &quot;Troll&quot; };&#xD;&#xA;    var slayed2 = new MonsterSlayed { Name = &quot;Dragon&quot; };&#xD;&#xA;&#xD;&#xA;    MembersJoined joined2 = new MembersJoined { Day = 5, Location = &quot;Sendaria&quot;, Members = new string[] { &quot;Silk&quot;, &quot;Barak&quot; } };&#xD;&#xA;&#xD;&#xA;    session.Events.StartStream&lt;Quest&gt;(started, joined, slayed1, slayed2);&#xD;&#xA;    session.SaveChanges();&#xD;&#xA;&#xD;&#xA;    // Our MonsterDefeated documents are created inline&#xD;&#xA;    // with the SaveChanges() call above and are available&#xD;&#xA;    // for querying&#xD;&#xA;    session.Query&lt;MonsterDefeated&gt;().Count()&#xD;&#xA;        .ShouldBe(2);&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="aggregates">Aggregates</h2>
 <p>Aggregates condense data described by a single stream. As of v1.0, Marten only supports aggregation via .Net classes. Aggregates are calculated upon every request by running the event stream through them, as compared to inline projections, which are computed at event commit time and stored as documents.</p>
@@ -137,11 +137,19 @@ custom <code>IAggregateFinder&lt;T&gt;</code>, where <code>T</code> is the proje
 <h2 id="inline-projections">Inline Projections</h2>
 <p><em>First off, be aware that event metadata (e.g. stream version and sequence number) are not available duing the execution of inline projections. If you need to use event metadata in your projections, please use asynchronous or live projections.</em></p>
 <p>If you would prefer that the projected aggregate document be updated <em>inline</em> with the events being appended, you simply need to register the aggregation type in the <code>StoreOptions</code> upfront when you build up your document store like this:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xD;&#xA;&#xD;&#xA;    // This is all you need to create the QuestParty projected&#xD;&#xA;    // view&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.Events.TenancyStyle = tenancyStyle;&#xD;&#xA;    _.DatabaseSchemaName = &quot;quest_sample&quot;;&#xD;&#xA;&#xD;&#xA;    // This is all you need to create the QuestParty projected&#xD;&#xA;    // view&#xD;&#xA;    _.Events.InlineProjections.AggregateStreamsWith&lt;QuestParty&gt;();&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>At this point, you would be able to query against <code>QuestParty</code> as just another document type.</p>
 <h2 id="rebuilding-projections">Rebuilding Projections</h2>
 <p>Projections need to be rebuilt when the code that defines them changes in a way that requires events to be reapplied in order to maintain correct state. Using an <code>IDaemon</code> this is easy to execute on-demand:</p>
 <pre><code class="language-csharp">&#xD;&#xA;using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings&#xD;&#xA;{&#xD;&#xA;    LeadingEdgeBuffer = 0.Seconds()&#xD;&#xA;}))&#xD;&#xA;{&#xD;&#xA;    await daemon.Rebuild&lt;ActiveProject&gt;().ConfigureAwait(false);&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<div class="alert alert-warning">
+<b><u>Warning:</u></b>
+<br />
+Marten by default while creating new object tries to use <b>default constructor</b>. <br />
+Default constructor doesn't have to be public, might be also private or protected. <br />
+If class does not have the default constructor then it creates an uninitialized object (see <a href="https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8" target="_parent">more</a>).<br />
+Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
+</div>
 
                 </div>
                 <hr />

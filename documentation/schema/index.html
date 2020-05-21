@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -89,7 +89,7 @@
 <p>In all cases, the Marten schema objects are all prefixed with &quot;mt_.&quot;</p>
 <p>As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the
 <code>StoreOptions.AutoCreateSchemaObjects</code> like so:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch. &#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects &#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch.&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects&#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:</p>
 <ol>
 <li>Compare the current schema table to what's configured for that document type</li>

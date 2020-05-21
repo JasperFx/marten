@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -105,7 +105,7 @@
 <h2 id="named-parameter-queries">Named Parameter Queries</h2>
 <p>Some of the Postgresql operators include the &quot;?&quot; character that Marten normally uses to denote an input parameter in user supplied queries.
 To solve that conflict, Marten 1.2 introduces support for named parameters in the user supplied queries:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_by_two_named_parameters()&#xD;&#xA;{&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(new User { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;        session.Store(new User { FirstName = &quot;Lindsey&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;        session.Store(new User { FirstName = &quot;Max&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;        session.Store(new User { FirstName = &quot;Frank&quot;, LastName = &quot;Zombo&quot; });&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;        var user =&#xD;&#xA;            session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = :FirstName and data -&gt;&gt; &#x27;LastName&#x27; = :LastName&quot;, new { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; })&#xD;&#xA;                   .Single();&#xD;&#xA;&#xD;&#xA;        user.ShouldNotBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_by_two_named_parameters()&#xD;&#xA;{&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(new User { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;        session.Store(new User { FirstName = &quot;Lindsey&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;        session.Store(new User { FirstName = &quot;Max&quot;, LastName = &quot;Miller&quot; });&#xD;&#xA;        session.Store(new User { FirstName = &quot;Frank&quot;, LastName = &quot;Zombo&quot; });&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;        var user =&#xD;&#xA;            session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = :FirstName and data -&gt;&gt; &#x27;LastName&#x27; = :LastName&quot;, new { FirstName = &quot;Jeremy&quot;, LastName = &quot;Miller&quot; })&#xD;&#xA;                   .Single();&#xD;&#xA;&#xD;&#xA;        SpecificationExtensions.ShouldNotBeNull(user);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />

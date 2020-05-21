@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -90,7 +90,7 @@ with the Marten <code>StoreOptions</code> configuration in your system.</p>
 <h2 id="development-time-with-auto-create-mode">Development Time with &quot;Auto Create&quot; Mode</h2>
 <p>As long as you have rights to alter your Postgresql database, you can happily set up Marten in one of the permissive &quot;AutoCreate&quot;
 modes and not worry about schema changes at all as you happily code new features and change existing document types:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch. &#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects &#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    // Marten will create any new objects that are missing,&#xD;&#xA;    // attempt to update tables if it can, but drop and replace&#xD;&#xA;    // tables that it cannot patch.&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create any new objects that are missing or&#xD;&#xA;    // attempt to update tables if it can. Will *never* drop&#xD;&#xA;    // any existing objects, so no data loss&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;    // Marten will create missing objects on demand, but&#xD;&#xA;    // will not change any existing schema objects&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;&#xD;&#xA;&#xD;&#xA;    // Marten will not create or update any schema objects&#xD;&#xA;    // and throws an exception in the case of a schema object&#xD;&#xA;    // not reflecting the Marten configuration&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <p>As long as you're using a permissive auto creation mode (i.e., not <em>None</em>), you should be able to code in your application model
 and let Marten change your development database as needed behind the scenes to match the active configuration.</p>
 <h2 id="exporting-schema-patches">Exporting Schema Patches</h2>

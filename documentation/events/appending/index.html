@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -96,15 +96,15 @@ keep metadata describing the state of an individual stream. Appending events to 
 </ol>
 <p>Marten does need to know what the event types are before you issue queries against the event data (it's just to handle the deserialization from JSON). The event registration will happen automatically when you append events,
 but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var store2 = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;&#xD;&#xA;    _.Events.AddEventType(typeof(QuestStarted));&#xD;&#xA;    _.Events.AddEventType(typeof(MonsterSlayed));&#xD;&#xA;});&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var store2 = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.DatabaseSchemaName = &quot;samples&quot;;&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.AutoCreateSchemaObjects = AutoCreate.None;&#xD;&#xA;&#xD;&#xA;    _.Events.AddEventType(typeof(QuestStarted));&#xD;&#xA;    _.Events.AddEventType(typeof(MonsterSlayed));&#xD;&#xA;});&#xD;&#xA;</code></pre>
 <h2 id="stream-or-aggregate-types">Stream or Aggregate Types</h2>
 <p>At this point there are no specific requirements about stream aggregate types as they are purely marker types. In the future we will probably support aggregating events via snapshot caching using the aggregate type.</p>
 <h2 id="starting-a-new-stream">Starting a new Stream</h2>
 <p>As of Marten v0.9, you can <strong>optionally</strong> start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing. Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that you could just supply either a string to mark the &quot;stream type&quot; or work without a stream type.</p>
 <p>As usual, our sample problem domain is the Lord of the Rings style &quot;Quest.&quot; For now, you can either start a new stream and let Marten assign the Guid id for the stream:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = session.Events.StartStream&lt;Quest&gt;(joined, departed).Id;&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = &quot;Fourth&quot;;&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <p>Or have Marten use a Guid value that you provide yourself:</p>
-<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream&lt;Quest&gt;(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;var joined = new MembersJoined { Members = new[] { &quot;Rand&quot;, &quot;Matt&quot;, &quot;Perrin&quot;, &quot;Thom&quot; } };&#xD;&#xA;var departed = new MembersDeparted { Members = new[] { &quot;Thom&quot; } };&#xD;&#xA;&#xD;&#xA;var id = Guid.NewGuid();&#xD;&#xA;session.Events.StartStream(id, joined, departed);&#xD;&#xA;session.SaveChanges();&#xD;&#xA;</code></pre>
 <p>For stream identity (strings vs. Guids), see <a href="/documentation/events/identity">Stream Identity</a>.</p>
 <p>Note that <code>StartStream</code> checks for an existing stream and throws <code>ExistingStreamIdCollisionException</code> if a matching stream already exists.</p>
 <h2 id="appending-events">Appending Events</h2>

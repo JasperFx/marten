@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.10.0</a>
+                <a href="/" class="navbar-brand">Marten 3.11.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -86,7 +86,7 @@
                     <!--title:Ejecting Documents from a Session-->
 <p>If for some reason you need to completely remove a document from a session's <a href="/documentation/documents/advanced/identitymap">identity map</a> and <a href="/documentation/documents/basics/persisting">unit of work tracking</a>, as of Marten 2.4.0 you can use the
 <code>IDocumentSession.Eject&lt;T&gt;(T document)</code> syntax shown below in one of the tests:</p>
-<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void demonstrate_eject()&#xD;&#xA;{&#xD;&#xA;    var target1 = Target.Random();&#xD;&#xA;    var target2 = Target.Random();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(target1, target2);&#xD;&#xA;&#xD;&#xA;        // Both documents are in the identity map&#xD;&#xA;        session.Load&lt;Target&gt;(target1.Id).ShouldBeTheSameAs(target1);&#xD;&#xA;        session.Load&lt;Target&gt;(target2.Id).ShouldBeTheSameAs(target2);&#xD;&#xA;&#xD;&#xA;        // Eject the 2nd document&#xD;&#xA;        session.Eject(target2);&#xD;&#xA;&#xD;&#xA;        // Now that 2nd document is no longer in the identity map&#xD;&#xA;        session.Load&lt;Target&gt;(target2.Id).ShouldBeNull();&#xD;&#xA;        &#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        // The 2nd document was ejected before the session&#xD;&#xA;        // was saved, so it was never persisted&#xD;&#xA;        session.Load&lt;Target&gt;(target2.Id).ShouldBeNull();&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void demonstrate_eject()&#xD;&#xA;{&#xD;&#xA;    var target1 = Target.Random();&#xD;&#xA;    var target2 = Target.Random();&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        session.Store(target1, target2);&#xD;&#xA;&#xD;&#xA;        // Both documents are in the identity map&#xD;&#xA;        session.Load&lt;Target&gt;(target1.Id).ShouldBeTheSameAs(target1);&#xD;&#xA;        session.Load&lt;Target&gt;(target2.Id).ShouldBeTheSameAs(target2);&#xD;&#xA;&#xD;&#xA;        // Eject the 2nd document&#xD;&#xA;        session.Eject(target2);&#xD;&#xA;&#xD;&#xA;        // Now that 2nd document is no longer in the identity map&#xD;&#xA;        SpecificationExtensions.ShouldBeNull(session.Load&lt;Target&gt;(target2.Id));&#xD;&#xA;&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    using (var session = theStore.QuerySession())&#xD;&#xA;    {&#xD;&#xA;        // The 2nd document was ejected before the session&#xD;&#xA;        // was saved, so it was never persisted&#xD;&#xA;        SpecificationExtensions.ShouldBeNull(session.Load&lt;Target&gt;(target2.Id));&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />
