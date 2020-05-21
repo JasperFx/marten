@@ -42,7 +42,7 @@ namespace Marten.Events
 
         public EventStream(string stream, IEvent[] events, bool isNew)
         {
-            Id = Guid.NewGuid();
+            Id = CombGuidIdGeneration.NewGuid();
             Key = stream;
             AddEvents(events);
             IsNew = isNew;
