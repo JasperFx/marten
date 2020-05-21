@@ -379,6 +379,45 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
+        public async Task updateonly_event_for_custom_view_projection_should_not_create_new_document()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+                _.Events.InlineProjections.Add<NewsletterSubscriptionProjection>();
+            });
+
+            var subscriptionId = Guid.NewGuid();
+            var newsletterId = Guid.NewGuid();
+            var readerId = Guid.NewGuid();
+
+            var readerSubscribed = new ReaderSubscribed(subscriptionId, newsletterId, readerId, "John Doe");
+            theSession.Events.StartStream<NewsletterSubscription>(streamId, readerSubscribed);
+            await theSession.SaveChangesAsync();
+            var subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+            subscription.ShouldNotBeNull();
+
+            var newsletterOpened = new NewsletterOpened(subscriptionId, DateTime.Now);
+            theSession.Events.Append(subscriptionId, newsletterOpened);
+            await theSession.SaveChangesAsync();
+            subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+            subscription.ShouldNotBeNull();
+
+            var readerUnsubscribed = new ReaderUnsubscribed(subscriptionId);
+            theSession.Events.Append(subscriptionId, readerUnsubscribed);
+            await theSession.SaveChangesAsync();
+            subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+            subscription.ShouldBeNull();
+
+            var newsletterOpenedAfterUnsubscribe = new NewsletterOpened(subscriptionId, DateTime.Now);
+            theSession.Events.Append(subscriptionId, newsletterOpenedAfterUnsubscribe);
+            await theSession.SaveChangesAsync();
+            subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
+            subscription.ShouldBeNull();
+        }
+
+        [Fact]
         public async Task default_id_event_should_not_create_new_document()
         {
             StoreOptions(_ =>
@@ -478,6 +517,89 @@ namespace Marten.Testing.Events.Projections
         private void Persist(Lap view, ProjectionEvent<LapFinished> eventData)
         {
             view.End = eventData.Timestamp;
+        }
+    }
+
+    // ENDSAMPLE
+
+    // SAMPLE: viewprojection-with-update-only
+
+    public class NewsletterSubscription
+    {
+        public Guid Id { get; set; }
+
+        public Guid NewsletterId { get; set; }
+
+        public Guid ReaderId { get; set; }
+
+        public string FirstName { get; set; }
+
+        public int OpensCount { get; set; }
+    }
+
+    public class ReaderSubscribed
+    {
+        public Guid SubscriptionId { get; }
+
+        public Guid NewsletterId { get; }
+
+        public Guid ReaderId { get; }
+
+        public string FirstName { get; }
+
+        public ReaderSubscribed(Guid subscriptionId, Guid newsletterId, Guid readerId, string firstName)
+        {
+            SubscriptionId = subscriptionId;
+            NewsletterId = newsletterId;
+            ReaderId = readerId;
+            FirstName = firstName;
+        }
+    }
+
+    public class NewsletterOpened
+    {
+        public Guid SubscriptionId { get; }
+
+        public DateTime OpenedAt { get; }
+
+        public NewsletterOpened(Guid subscriptionId, DateTime openedAt)
+        {
+            SubscriptionId = subscriptionId;
+            OpenedAt = openedAt;
+        }
+    }
+
+    public class ReaderUnsubscribed
+    {
+        public Guid SubscriptionId { get; }
+
+        public ReaderUnsubscribed(Guid subscriptionId)
+        {
+            SubscriptionId = subscriptionId;
+        }
+    }
+
+    public class NewsletterSubscriptionProjection : ViewProjection<NewsletterSubscription, Guid>
+    {
+        public NewsletterSubscriptionProjection()
+        {
+            ProjectEvent<ReaderSubscribed>(@event => @event.SubscriptionId, Persist);
+            ProjectEvent<NewsletterOpened>(@event => @event.SubscriptionId, Persist, onlyUpdate: true);
+            DeleteEvent<ReaderUnsubscribed>(@event => @event.SubscriptionId);
+        }
+
+        private void Persist(NewsletterSubscription view, ReaderSubscribed @event)
+        {
+            view.Id = @event.SubscriptionId;
+            view.NewsletterId = @event.NewsletterId;
+            view.ReaderId = @event.ReaderId;
+            view.FirstName = @event.FirstName;
+            view.OpensCount = 0;
+        }
+
+        private void Persist(NewsletterSubscription view, NewsletterOpened @event)
+        {
+            view.OpensCount++;
         }
     }
 
