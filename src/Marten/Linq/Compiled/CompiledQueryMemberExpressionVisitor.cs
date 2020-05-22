@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
+using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
@@ -77,7 +78,7 @@ namespace Marten.Linq.Compiled
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            _lastMember = _mapping.FieldFor(new[] { node.Member });
+            _lastMember = _mapping.FieldFor(node.Member);
 
             if (node.NodeType != ExpressionType.MemberAccess || node.Member.DeclaringType != _queryType)
                 return base.VisitMember(node);
@@ -108,7 +109,7 @@ namespace Marten.Linq.Compiled
         {
             if (node.Type != _queryType)
             {
-                var value = _lastMember.GetValue(node);
+                var value = _lastMember.GetValueForCompiledQueryParameter(node);
 
                 var setter = new ConstantDbParameterSetter(value);
                 ParameterSetters.Add(setter);

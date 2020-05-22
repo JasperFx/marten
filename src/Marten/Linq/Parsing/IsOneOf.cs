@@ -21,7 +21,7 @@ namespace Marten.Linq.Parsing
         {
             var members = FindMembers.Determine(expression);
 
-            var locator = mapping.FieldFor(members).SqlLocator;
+            var locator = mapping.FieldFor(members).TypedLocator;
             var values = expression.Arguments.Last().Value();
 
             if (members.Last().GetMemberType().IsEnum)

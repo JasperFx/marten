@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 

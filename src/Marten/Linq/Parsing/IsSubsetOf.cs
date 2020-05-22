@@ -33,12 +33,10 @@ namespace Marten.Linq.Parsing
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            MemberInfo[] members = FindMembers.Determine(expression);
+            var locator = mapping.FieldFor(expression).JSONBLocator;
+            var values = expression.Arguments.Last().Value();
 
-            string locator = mapping.FieldFor(members).SqlLocator;
-            object values = expression.Arguments.Last().Value();
-
-            string json = serializer.ToJson(values);
+            var json = serializer.ToJson(values);
             return new CustomizableWhereFragment($"{locator} <@ ?", "?", Tuple.Create<object, NpgsqlDbType?>(json, NpgsqlDbType.Jsonb));
         }
     }

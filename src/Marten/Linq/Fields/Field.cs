@@ -3,17 +3,17 @@ using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Util;
-using NpgsqlTypes;
 
-namespace Marten.Schema
+namespace Marten.Linq.Fields
 {
+    [Obsolete("Replace with new FieldBase")]
     public abstract class Field
     {
-        protected Field(EnumStorage enumStorage, MemberInfo member, bool notNull = false) : this(enumStorage, new[] { member }, notNull)
+        protected Field(EnumStorage enumStorage, MemberInfo member) : this(enumStorage, new[] { member })
         {
         }
 
-        protected Field(EnumStorage enumStorage, MemberInfo[] members, bool notNull = false)
+        protected Field(EnumStorage enumStorage, MemberInfo[] members)
         {
             Members = members;
             MemberName = members.Select(x => x.Name).Join("");
@@ -22,8 +22,6 @@ namespace Marten.Schema
 
             PgType = TypeMappings.GetPgType(FieldType, enumStorage);
             _enumStorage = enumStorage;
-
-            NotNull = notNull;
         }
 
         public Type FieldType { get; }
@@ -32,10 +30,7 @@ namespace Marten.Schema
         public MemberInfo[] Members { get; }
         public string MemberName { get; }
 
-        public NpgsqlDbType NpgsqlDbType => TypeMappings.ToDbType(FieldType);
-
-        public bool NotNull { get; }
-
+        [Obsolete("Try to eliminate this")]
         protected readonly EnumStorage _enumStorage;
     }
 }

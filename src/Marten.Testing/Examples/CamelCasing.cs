@@ -20,7 +20,7 @@ namespace Marten.Testing.Examples
             var field = store.Storage.MappingFor(typeof(User))
                 .FieldFor(nameof(User.FirstName));
 
-            Assert.Equal(@"d.data ->> 'firstName'", field.SqlLocator);
+            Assert.Equal(@"d.data ->> 'firstName'", field.TypedLocator);
         }
     }
 }

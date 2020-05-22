@@ -16,12 +16,7 @@ namespace Marten.Linq.Parsing
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            var finder = new FindMembers();
-            finder.Visit(expression);
-
-            var members = finder.Members;
-
-            var locator = mapping.FieldFor(members).SqlLocator;
+            var locator = mapping.FieldFor(expression).TypedLocator;
             var values = expression.Object.Value();
 
             return new WhereFragment($"{locator} = ANY(?)", values);

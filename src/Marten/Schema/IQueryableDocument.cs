@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Services.Includes;
 using Remotion.Linq;
 
@@ -17,6 +19,8 @@ namespace Marten.Schema
 
         IField FieldFor(IEnumerable<MemberInfo> members);
 
+        IField FieldFor(MemberInfo member);
+
         string[] SelectFields();
 
         PropertySearching PropertySearching { get; }
@@ -28,5 +32,13 @@ namespace Marten.Schema
         DeleteStyle DeleteStyle { get; }
 
         Type DocumentType { get; }
+    }
+
+    public static class QueryableDocumentExtensions
+    {
+        public static IField FieldFor(this IQueryableDocument document, Expression expression)
+        {
+            return document.FieldFor(FindMembers.Determine(expression));
+        }
     }
 }

@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Conversion;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Services;
 
@@ -12,7 +13,7 @@ namespace Marten.Linq
     {
         private readonly Func<string, object> _converter;
 
-        public ArrayElementFieldSelector(bool distinct, IField field, Conversions conversions) : base(distinct, $"jsonb_array_elements_text({field.SqlLocator})")
+        public ArrayElementFieldSelector(bool distinct, IField field, Conversions conversions) : base(distinct, $"jsonb_array_elements_text({field.JSONBLocator})")
         {
             _converter = conversions.FindConverter(typeof(T));
         }

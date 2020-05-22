@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Baseline.Conversion;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Services.Includes;
 using Marten.Util;
@@ -34,8 +35,7 @@ namespace Marten.Linq.Model
 
             _from = query.BodyClauses[index - 1].As<AdditionalFromClause>();
 
-            var members = FindMembers.Determine(_from.FromExpression);
-            _field = mapping.FieldFor(members);
+            _field = mapping.FieldFor(_from.FromExpression);
 
             IsDistinct = query.HasOperator<DistinctResultOperator>();
 
@@ -45,13 +45,13 @@ namespace Marten.Linq.Model
             _take = _query.BodyClauses.Count - index;
 
             _tableAlias = "sub" + Index;
-            _documentType = _field.MemberType.DeriveElementType();
+            _documentType = _field.FieldType.DeriveElementType();
             _document = _store.Options.GetChildDocument(_tableAlias + ".x", _documentType);
         }
 
         public int Index { get; set; }
 
-        public string SqlLocator => _field.SqlLocator;
+        public string SqlLocator => _field.JSONBLocator;
 
         public bool IsDistinct { get; }
 
@@ -94,16 +94,16 @@ namespace Marten.Linq.Model
             }
 
             if (typeof(T) == typeof(string))
-                return new SingleFieldSelector<T>(IsDistinct, $"jsonb_array_elements_text({_field.SqlLocator}) as x");
+                return new SingleFieldSelector<T>(IsDistinct, $"jsonb_array_elements_text({_field.JSONBLocator}) as x");
             if (TypeMappings.HasTypeMapping(typeof(T)))
                 return new ArrayElementFieldSelector<T>(IsDistinct, _field, conversions);
 
-            return new DeserializeSelector<T>(serializer, $"jsonb_array_elements_text({_field.SqlLocator}) as x");
+            return new DeserializeSelector<T>(serializer, $"jsonb_array_elements_text({_field.JSONBLocator}) as x");
         }
 
         public string RawChildElementField()
         {
-            return $"jsonb_array_elements({_field.SqlLocator}) as x";
+            return $"jsonb_array_elements({_field.RawLocator}) as x";
         }
 
         public bool HasSelectTransform()

@@ -13,11 +13,9 @@ namespace Marten.Linq.Parsing
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            var members = FindMembers.Determine(expression);
+            var field = mapping.FieldFor(expression);
 
-            var field = mapping.FieldFor(members);
-
-            return new WhereFragment($"({field.SelectionLocator} is null or jsonb_array_length({field.SelectionLocator}) = 0)");
+            return new WhereFragment($"({field.RawLocator} is null or jsonb_array_length({field.RawLocator}) = 0)");
         }
     }
 }

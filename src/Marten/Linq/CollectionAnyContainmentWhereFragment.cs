@@ -204,7 +204,7 @@ namespace Marten.Linq
             var members = visitor.Members;
             if (!members.Any())
                 throwNotSupportedContains();
-            var path = _mapping?.FieldFor(members).SqlLocator ?? $"CAST ({CommandBuilder.BuildJsonStringLocator("d.data", members.ToArray(), _serializer.Casing)} as jsonb)";
+            var path = _mapping?.FieldFor(members).JSONBLocator ?? $"CAST ({CommandBuilder.BuildJsonStringLocator("d.data", members.ToArray(), _serializer.Casing)} as jsonb)";
             return $"{path} ?| :{fromParam.ParameterName}";
         }
 

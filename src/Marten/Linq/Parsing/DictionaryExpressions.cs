@@ -30,10 +30,7 @@ namespace Marten.Linq.Parsing
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            var finder = new FindMembers();
-            finder.Visit(expression);
-            var members = finder.Members;
-            var fieldlocator = mapping.FieldFor(members).SqlLocator;
+            var fieldlocator = mapping.FieldFor(expression).TypedLocator;
 
             if (IsCollectionContainsWithStringKey(expression.Method))
             {
