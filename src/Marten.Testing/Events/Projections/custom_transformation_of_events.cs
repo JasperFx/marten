@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Baseline.Dates;
 using Marten.Events.Projections;
+using Marten.Events.Projections.Async;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -441,6 +445,51 @@ namespace Marten.Testing.Events.Projections
             documentCount.ShouldBe(0);
         }
 
+        [Fact]
+        public async Task projectview_withdeleteevent_should_be_respected_during_projection_rebuild()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<Project>();
+                _.Events.ProjectView<Project, Guid>().DeleteEvent<ProjectClosed>();
+            });
+
+            var projectId = Guid.NewGuid();
+
+            theSession.Events.Append(projectId, new ProjectStarted { Id = projectId, Name = "Marten"});
+            theSession.SaveChanges();
+
+            theSession.Query<Project>().Count().ShouldBe(1);
+
+            theSession.Events.Append(projectId, new ProjectClosed { Id = projectId });
+            theSession.SaveChanges();
+
+            theSession.Query<Project>().Count().ShouldBe(0);
+
+            var settings = new DaemonSettings
+            {
+                LeadingEdgeBuffer = 0.Seconds()
+            };
+
+            using (var daemon = theStore.BuildProjectionDaemon(new[] {typeof(User)}, settings: settings))
+            {
+                await daemon.RebuildAll();
+            }
+
+            //fails as user is back in the database after rebuilding
+            theSession.Query<Project>().Count().ShouldBe(0);
+
+            theSession.Events.StartStream<QuestParty>(streamId, started);
+            theSession.SaveChanges();
+
+            var document = await theSession.LoadAsync<PersistedView>(streamId);
+            document.ShouldBeNull();
+
+            var documentCount = await theSession.Query<PersistedView>().CountAsync();
+            documentCount.ShouldBe(0);
+        }
+
         public project_events_from_multiple_streams_into_view(DefaultStoreFixture fixture) : base(fixture)
         {
         }
@@ -604,4 +653,31 @@ namespace Marten.Testing.Events.Projections
     }
 
     // ENDSAMPLE
+
+    public class Project
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+
+        public void Apply(ProjectStarted e)
+        {
+            Id = e.Id;
+            Name = e.Name;
+        }
+
+        public void Apply(ProjectClosed e)
+        {
+        }
+    }
+
+    public class ProjectStarted
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class ProjectClosed
+    {
+        public Guid Id { get; set; }
+    }
 }
