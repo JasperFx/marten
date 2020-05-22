@@ -3,10 +3,12 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Util;
 
 namespace Marten.Schema
 {
+    [Obsolete("Going away with better Linq IField support")]
     public class JsonLocatorField: Field, IField
     {
         public static JsonLocatorField For<T>(EnumStorage enumStyle, Casing casing, Expression<Func<T, object>> expression)
@@ -27,34 +29,34 @@ namespace Marten.Schema
         {
             var locator = CommandBuilder.BuildJsonStringLocator(dataLocator, members, casing);
 
-            var isStringEnum = MemberType.IsEnum && enumStyle == EnumStorage.AsString;
+            var isStringEnum = FieldType.IsEnum && enumStyle == EnumStorage.AsString;
 
             if (!string.IsNullOrWhiteSpace(pgType))
             {
                 PgType = pgType;
             }
 
-            if (MemberType == typeof(string) || isStringEnum)
+            if (FieldType == typeof(string) || isStringEnum)
             {
-                SqlLocator = $"{locator}";
+                TypedLocator = $"{locator}";
             }
-            else if (TypeMappings.TimespanTypes.Contains(MemberType))
+            else if (TypeMappings.TimespanTypes.Contains(FieldType))
             {
-                SqlLocator = $"{options?.DatabaseSchemaName ?? StoreOptions.DefaultDatabaseSchemaName}.mt_immutable_timestamp({locator})";
-                SelectionLocator = $"CAST({locator} as {PgType})";
+                TypedLocator = $"{options?.DatabaseSchemaName ?? StoreOptions.DefaultDatabaseSchemaName}.mt_immutable_timestamp({locator})";
+                RawLocator = $"CAST({locator} as {PgType})";
             }
-            else if (TypeMappings.TimespanZTypes.Contains(MemberType))
+            else if (TypeMappings.TimespanZTypes.Contains(FieldType))
             {
-                SqlLocator = $"{options?.DatabaseSchemaName ?? StoreOptions.DefaultDatabaseSchemaName}.mt_immutable_timestamptz({locator})";
-                SelectionLocator = $"CAST({locator} as {PgType})";
+                TypedLocator = $"{options?.DatabaseSchemaName ?? StoreOptions.DefaultDatabaseSchemaName}.mt_immutable_timestamptz({locator})";
+                RawLocator = $"CAST({locator} as {PgType})";
             }
-            else if (MemberType.IsArray)
+            else if (FieldType.IsArray)
             {
-                SqlLocator = $"CAST({locator} as jsonb)";
+                TypedLocator = $"CAST({locator} as jsonb)";
             }
             else
             {
-                SqlLocator = $"CAST({locator} as {PgType})";
+                TypedLocator = $"CAST({locator} as {PgType})";
             }
 
             if (isStringEnum)
@@ -62,29 +64,24 @@ namespace Marten.Schema
                 _parseObject = expression =>
                 {
                     var raw = expression.Value();
-                    return raw != null ? Enum.GetName(MemberType, raw) : null;
+                    return raw != null ? Enum.GetName(FieldType, raw) : null;
                 };
             }
 
-            if (SelectionLocator.IsEmpty())
+            if (RawLocator.IsEmpty())
             {
-                SelectionLocator = SqlLocator;
+                RawLocator = TypedLocator;
             }
         }
 
-        [Obsolete("Use a constructor that takes StoreOptions instead. This might be removed in v4.0.")]
-        public JsonLocatorField(string dataLocator, EnumStorage enumStyle, Casing casing, MemberInfo[] members) :
-            this(dataLocator, null, enumStyle, casing, members, null)
-        {
-        }
 
         public string ToComputedIndex(DbObjectName tableName)
         {
-            return $"CREATE INDEX {tableName.Name}_{MemberName.ToTableAlias()} ON {tableName.QualifiedName} (({SqlLocator}));";
+            return $"CREATE INDEX {tableName.Name}_{MemberName.ToTableAlias()} ON {tableName.QualifiedName} (({TypedLocator}));";
         }
 
-        public string SqlLocator { get; }
-        public string SelectionLocator { get; }
+        public string TypedLocator { get; }
+        public string RawLocator { get; }
         public string ColumnName => string.Empty;
 
         public void WritePatch(DocumentMapping mapping, SchemaPatch patch)
@@ -92,20 +89,27 @@ namespace Marten.Schema
             throw new NotSupportedException();
         }
 
-        public object GetValue(Expression valueExpression)
+        public object GetValueForCompiledQueryParameter(Expression valueExpression)
         {
             return _parseObject(valueExpression);
         }
 
         public bool ShouldUseContainmentOperator()
         {
-            return TypeMappings.ContainmentOperatorTypes.Contains(MemberType);
+            return TypeMappings.ContainmentOperatorTypes.Contains(FieldType);
         }
+
+        public string SelectorForDuplication(string pgType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string JSONBLocator { get; }
 
         public string LocatorFor(string rootTableAlias)
         {
             // Super hokey.
-            return SqlLocator.Replace("d.", rootTableAlias + ".");
+            return TypedLocator.Replace("d.", rootTableAlias + ".");
         }
     }
 }

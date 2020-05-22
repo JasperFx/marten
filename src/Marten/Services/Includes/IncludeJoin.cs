@@ -1,6 +1,7 @@
 using System;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Util;

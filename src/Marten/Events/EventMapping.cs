@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -58,6 +59,11 @@ namespace Marten.Events
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _inner.FieldFor(members);
+        }
+
+        public IField FieldFor(MemberInfo member)
+        {
+            return _inner.FieldFor(member);
         }
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)

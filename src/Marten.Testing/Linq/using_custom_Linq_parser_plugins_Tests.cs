@@ -90,7 +90,7 @@ namespace Marten.Testing.Linq
 
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
-            var locator = mapping.FieldFor(new MemberInfo[] {_property}).SqlLocator;
+            var locator = mapping.FieldFor(new MemberInfo[] {_property}).TypedLocator;
 
             return new WhereFragment($"{locator} = 'Blue'");
         }

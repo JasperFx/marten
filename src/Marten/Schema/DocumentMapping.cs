@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.Unique;
@@ -611,7 +612,9 @@ namespace Marten.Schema
         public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
         {
             var field = FieldFor(memberName);
-            var duplicate = new DuplicatedField(_storeOptions, field.Members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+
+            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+
             if (pgType.IsNotEmpty())
             {
                 duplicate.PgType = pgType;
@@ -624,9 +627,12 @@ namespace Marten.Schema
 
         public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null, bool notNull = false)
         {
+            var field = FieldFor(members);
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions, members, _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field,
+                _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+
             if (pgType.IsNotEmpty())
             {
                 duplicatedField.PgType = pgType;

@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Events;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -147,7 +149,10 @@ namespace Marten
         public EnumStorage DuplicatedFieldEnumStorage
         {
             get { return _duplicatedFieldEnumStorage ?? EnumStorage; }
-            set { _duplicatedFieldEnumStorage = value; }
+            set
+            {
+                _duplicatedFieldEnumStorage = value;
+            }
         }
 
         /// <summary>
@@ -349,6 +354,7 @@ namespace Marten
         public PoliciesExpression Policies => new PoliciesExpression(this);
 
         public bool PLV8Enabled { get; set; } = true;
+        public IList<IFieldSource> FieldSources { get; } = new List<IFieldSource>();
 
         /// <summary>
         /// Option to enable or disable usage of default tenant when using multi-tenanted documents

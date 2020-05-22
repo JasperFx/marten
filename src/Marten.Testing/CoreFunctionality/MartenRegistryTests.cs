@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;

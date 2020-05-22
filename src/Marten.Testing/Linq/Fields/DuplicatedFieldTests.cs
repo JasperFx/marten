@@ -1,25 +1,21 @@
-using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿﻿using System.Collections.Generic;
+ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
-using Marten.Schema.Testing.Documents;
-using Marten.Services;
+using Marten.Linq.Fields;
+ using Marten.Schema;
+ using Marten.Services;
+ using Marten.Testing.Documents;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Schema.Testing
+namespace Marten.Testing.Linq.Fields
 {
     public class DuplicatedFieldTests
     {
-        private DuplicatedField theField = new DuplicatedField(new StoreOptions(), new MemberInfo[] { ReflectionHelper.GetProperty<User>(x => x.FirstName) });
-
-        [Fact]
-        public void default_role_is_search()
-        {
-            theField
-                .Role.ShouldBe(DuplicatedFieldRole.Search);
-        }
+        private DuplicatedField theField =
+            DuplicatedField.For<User>(new StoreOptions{DuplicatedFieldEnumStorage = EnumStorage.AsInteger}, x => x.FirstName);
 
         [Fact]
         public void create_table_column_for_non_indexed_search()
@@ -40,29 +36,32 @@ namespace Marten.Schema.Testing
         [Fact]
         public void sql_locator_with_default_column_name()
         {
-            theField.SqlLocator.ShouldBe("d.first_name");
+            theField.TypedLocator.ShouldBe("d.first_name");
         }
 
         [Fact]
         public void sql_locator_with_custom_column_name()
         {
             theField.ColumnName = "x_first_name";
-            theField.SqlLocator.ShouldBe("d.x_first_name");
+            theField.TypedLocator.ShouldBe("d.x_first_name");
         }
 
         [Fact]
         public void enum_field()
         {
-            var storeOptions = new StoreOptions();
-            storeOptions.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString });
+            var options = new StoreOptions();
+            options.Serializer(new JsonNetSerializer
+            {
+                EnumStorage = EnumStorage.AsString
+            });
 
-            var field = DuplicatedField.For<Target>(storeOptions, x => x.Color);
+            var field = DuplicatedField.For<Target>(options, x => x.Color);
             field.UpsertArgument.DbType.ShouldBe(NpgsqlDbType.Varchar);
             field.UpsertArgument.PostgresType.ShouldBe("varchar");
 
             var constant = Expression.Constant((int)Colors.Blue);
 
-            field.GetValue(constant).ShouldBe(Colors.Blue.ToString());
+            field.GetValueForCompiledQueryParameter(constant).ShouldBe(Colors.Blue.ToString());
         }
 
         [Theory]
@@ -171,6 +170,10 @@ namespace Marten.Schema.Testing
         {
             public List<string> TagsList { get; set; }
         }
+
+
+
+
 
     }
 }

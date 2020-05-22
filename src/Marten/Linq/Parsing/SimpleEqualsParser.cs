@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 
@@ -44,7 +45,7 @@ namespace Marten.Linq.Parsing
         public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var field = GetField(mapping, expression);
-            var locator = field.SqlLocator;
+            var locator = field.TypedLocator;
 
             var value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
             if (value == null)
@@ -54,7 +55,7 @@ namespace Marten.Linq.Parsing
 
             if (valueToQuery == null)
             {
-                return new WhereFragment($"({locator}) {_isOperator} null");
+                return new WhereFragment($"({field.RawLocator}) {_isOperator} null");
             }
 
             if (valueToQuery.GetType() != expression.Method.DeclaringType)
@@ -71,8 +72,7 @@ namespace Marten.Linq.Parsing
             }
 
             if (_supportContainment && ((mapping.PropertySearching == PropertySearching.ContainmentOperator ||
-                                         field.ShouldUseContainmentOperator()) &&
-                                        !(field is DuplicatedField)))
+                                         field.ShouldUseContainmentOperator())))
             {
                 var dict = new Dictionary<string, object>();
                 ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery, serializer);

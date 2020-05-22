@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Services.Includes;
 using Remotion.Linq;
 

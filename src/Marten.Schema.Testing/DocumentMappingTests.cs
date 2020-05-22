@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Testing.Documents;
@@ -344,10 +345,10 @@ namespace Marten.Schema.Testing
         public void get_the_sql_locator_for_the_Id_member()
         {
             DocumentMapping.For<User>().FieldFor("Id")
-                .SqlLocator.ShouldBe("d.id");
+                .TypedLocator.ShouldBe("d.id");
 
             DocumentMapping.For<FieldId>().FieldFor("id")
-                .SqlLocator.ShouldBe("d.id");
+                .TypedLocator.ShouldBe("d.id");
         }
 
         [Fact]
@@ -530,22 +531,6 @@ namespace Marten.Schema.Testing
         {
             var mapping = DocumentMapping.For<User>();
             mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn);
-        }
-
-        [Fact]
-        public void switch_to_only_using_json_locator_fields()
-        {
-            var mapping = DocumentMapping.For<User>();
-
-            mapping.DuplicateField(nameof(User.FirstName));
-
-            mapping.PropertySearching = PropertySearching.JSON_Locator_Only;
-
-            mapping.FieldFor(nameof(User.LastName)).ShouldBeOfType<JsonLocatorField>();
-
-            // leave duplicates alone
-
-            mapping.FieldFor(nameof(User.FirstName)).ShouldBeOfType<DuplicatedField>();
         }
 
         [Fact]

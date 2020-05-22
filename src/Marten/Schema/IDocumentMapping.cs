@@ -35,7 +35,7 @@ namespace Marten.Schema
 
             var field = mapping.FieldFor(visitor.Members);
 
-            return field.SqlLocator;
+            return field.TypedLocator;
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Baseline;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Schema.Hierarchies;
 using Marten.Schema.Identity;
 using Marten.Services.Includes;
@@ -81,6 +82,11 @@ namespace Marten.Schema
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return Parent.FieldFor(members) ?? _inner.FieldFor(members);
+        }
+
+        public IField FieldFor(MemberInfo member)
+        {
+            return Parent.FieldFor(member);
         }
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)

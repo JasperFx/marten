@@ -103,7 +103,7 @@ namespace Marten.Schema
                         casing = Casings.Default;
                     }
 
-                    var sql = field.SqlLocator.Replace("d.", "");
+                    var sql = field.TypedLocator.Replace("d.", "");
                     switch (casing)
                     {
                         case Casings.Upper:
