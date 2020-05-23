@@ -187,7 +187,7 @@ namespace Marten
             store(tenantId, entities);
         }
 
-        private void store<T>(string tenantId, params T[] entities)
+        private void store<T>(string tenantId, IEnumerable<T> entities)
         {
             if (typeof(T) == typeof(object))
             {
