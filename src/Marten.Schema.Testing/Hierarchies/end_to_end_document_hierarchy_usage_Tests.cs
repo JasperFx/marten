@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema.Testing.Documents;
 using Marten.Services;
