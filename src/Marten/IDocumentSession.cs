@@ -70,14 +70,29 @@ namespace Marten
         Task SaveChangesAsync(CancellationToken token = default(CancellationToken));
 
         /// <summary>
-        /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
+        /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Store<T>(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Explicitly marks one or more documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         void Store<T>(params T[] entities);
 
         /// <summary>
-        /// Explicitly marks a document as needing to be inserted or updated upon the next call to SaveChanges()
+        /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
+        /// to a specific tenant
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Store<T>(string tenantId, IEnumerable<T> entities);
+
+        /// <summary>
+        /// Explicitly marks one or more documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// to a specific tenant
         /// </summary>
         /// <typeparam name="T"></typeparam>
