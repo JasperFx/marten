@@ -37,5 +37,15 @@ namespace Marten.Schema
 
             return field.TypedLocator;
         }
+
+        public static string RawLocator(this IQueryableDocument mapping, Expression expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
+
+            var field = mapping.FieldFor(visitor.Members);
+
+            return field.RawLocator;
+        }
     }
 }

@@ -76,20 +76,28 @@ namespace Marten.Linq.Parsing
         /// <param name="mapping"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        protected virtual string GetLocator(IQueryableDocument mapping, MethodCallExpression expression)
+        protected string GetLocator(IQueryableDocument mapping, MethodCallExpression expression)
+        {
+            var memberExpression = determineStringField(expression);
+            return mapping.RawLocator(memberExpression);
+        }
+
+        private static Expression determineStringField(MethodCallExpression expression)
         {
             if (!expression.Method.IsStatic && expression.Object != null && expression.Object.NodeType != ExpressionType.Constant)
             {
                 // x.member.Equals(...)
-                return mapping.JsonLocator(expression.Object);
+                return expression.Object;
             }
+
             if (expression.Arguments[0].NodeType == ExpressionType.Constant)
             {
                 // string.Equals("value", x.member)
-                return mapping.JsonLocator(expression.Arguments[1]);
+                return expression.Arguments[1];
             }
+
             // string.Equals(x.member, "value")
-            return mapping.JsonLocator(expression.Arguments[0]);
+            return expression.Arguments[0];
         }
     }
 }

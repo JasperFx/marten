@@ -41,9 +41,9 @@ namespace Marten.Linq
 
         public IWhereFragment ParseWhereFragment(IQueryableDocument mapping, Expression expression)
         {
-            if (expression is LambdaExpression)
+            if (expression is LambdaExpression l)
             {
-                expression = expression.As<LambdaExpression>().Body;
+                expression = l.Body;
             }
 
             var visitor = new WhereClauseVisitor(this, mapping);
@@ -52,10 +52,17 @@ namespace Marten.Linq
 
             if (whereFragment == null)
             {
-                throw new NotSupportedException("Marten does not (yet) support this Linq query type");
+                throw new NotSupportedException($"Marten does not (yet) support this Linq query type ({expression})");
             }
 
             return whereFragment;
+        }
+
+        internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
+        {
+            return _options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
+                         ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+
         }
 
         // The out of the box method call parsers
