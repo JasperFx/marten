@@ -63,19 +63,20 @@ namespace Marten.Linq
 
             protected override Expression VisitMethodCall(MethodCallExpression expression)
             {
-                var parser = _parent._options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
-                             ?? _parsers.FirstOrDefault(x => x.Matches(expression));
+                var parser = _parent.FindMethodParser(expression);
 
-                if (parser != null)
+                if (parser == null)
                 {
-                    var where = parser.Parse(_mapping, _parent._serializer, expression);
-                    _register.Peek()(where);
-
-                    return null;
+                    throw new NotSupportedException(
+                        $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
                 }
 
-                throw new NotSupportedException(
-                    $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
+                var where = parser.Parse(_mapping, _parent._serializer, expression);
+                _register.Peek()(@where);
+
+                // ReSharper disable once AssignNullToNotNullAttribute
+                return null;
+
             }
 
             protected override Expression VisitUnary(UnaryExpression node)
