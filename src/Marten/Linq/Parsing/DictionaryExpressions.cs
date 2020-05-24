@@ -9,16 +9,16 @@ namespace Marten.Linq.Parsing
     public class DictionaryExpressions: IMethodCallParser
     {
         private static bool IsCollectionContainsWithStringKey(MethodInfo m) =>
-                m.Name == "Contains"
-            && m.DeclaringType.IsConstructedGenericType
+                m.Name == nameof(IDictionary<string, string>.Contains)
+            && (m.DeclaringType != null && m.DeclaringType.IsConstructedGenericType)
             && m.DeclaringType.GetGenericTypeDefinition() == typeof(ICollection<>)
             && m.DeclaringType.GenericTypeArguments[0].IsConstructedGenericType
             && m.DeclaringType.GenericTypeArguments[0].GetGenericTypeDefinition() == typeof(KeyValuePair<,>)
             && m.DeclaringType.GenericTypeArguments[0].GenericTypeArguments[0] == typeof(string);
 
         private static bool IsDictionaryContainsKey(MethodInfo m) =>
-               m.Name == "ContainsKey"
-            && m.DeclaringType.IsConstructedGenericType
+            m.Name == nameof(IDictionary<string, string>.ContainsKey)
+            && (m.DeclaringType != null && m.DeclaringType.IsConstructedGenericType)
             && m.DeclaringType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
             && m.DeclaringType.GenericTypeArguments[0] == typeof(string);
 
