@@ -156,7 +156,7 @@ namespace Marten.Linq
                 return new WhereFragment($"jsonb_array_length({field.JSONBLocator}) {op} ?", value);
             }
 
-            throw new NotSupportedException("Marten does not yet support this type of Linq query against child collections");
+            throw new NotSupportedException($"Marten does not yet support this type of Linq query against child collections");
         }
 
 
