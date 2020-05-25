@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Baseline;
 using Oakton;
 
@@ -26,7 +27,11 @@ namespace Marten.CommandLine.Commands.Dump
 
                 try
                 {
-                    new FileSystem().CleanDirectory(input.FileName);
+                    var directory = Path.GetDirectoryName(input.FileName);
+                    if (Directory.Exists(directory))
+                    {
+                        new FileSystem().CleanDirectory(directory);
+                    }
                 }
                 catch (Exception)
                 {
