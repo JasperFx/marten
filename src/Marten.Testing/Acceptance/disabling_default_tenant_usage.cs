@@ -1,11 +1,13 @@
 using System;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    public class disabling_default_tenant_usage : IntegratedFixture
+    [Collection("multitenancy")]
+    public class disabling_default_tenant_usage : OneOffConfigurationsContext
     {
         [Fact]
         public void get_exception_when_creating_session_with_default_tenant_usage_disabled()
@@ -91,6 +93,10 @@ namespace Marten.Testing.Acceptance
                 var sessionOptions = new SessionOptions {TenantId = Tenancy.DefaultTenantId};
                 using (var session = theStore.QuerySession(sessionOptions)) { }
             });
+        }
+
+        public disabling_default_tenant_usage() : base("multitenancy")
+        {
         }
     }
 }
