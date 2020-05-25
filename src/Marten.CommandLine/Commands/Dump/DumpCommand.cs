@@ -20,23 +20,26 @@ namespace Marten.CommandLine.Commands.Dump
             {
                 input.WriteLine("Writing DDL files to " + input.FileName);
                 store.Schema.WriteDDLByType(input.FileName, input.TransactionalScriptFlag);
-            }
-            else
-            {
-                input.WriteLine("Writing DDL file to " + input.FileName);
 
+                // You only need to clean out the existing folder when dumping
+                // by type
                 try
                 {
-                    var directory = Path.GetDirectoryName(input.FileName);
-                    if (Directory.Exists(directory))
+                    if (Directory.Exists(input.FileName))
                     {
-                        new FileSystem().CleanDirectory(directory);
+                        new FileSystem().CleanDirectory(input.FileName);
                     }
                 }
                 catch (Exception)
                 {
                     input.WriteLine(ConsoleColor.Yellow, $"Unable to clean the directory at {input.FileName} before writing new files");
                 }
+            }
+            else
+            {
+                input.WriteLine("Writing DDL file to " + input.FileName);
+
+
 
                 store.Schema.WriteDDL(input.FileName, input.TransactionalScriptFlag);
             }
