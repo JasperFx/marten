@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>        
+        <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+        <AssemblyName>Marten.AspNetCore.Tests</AssemblyName>
+		<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+        <LangVersion>7.2</LangVersion>
+    </PropertyGroup>	
+    <PropertyGroup>
+        <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735</NoWarn>
+    </PropertyGroup>    
+    <ItemGroup>
+        <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="xunit" Version="2.4.1" />
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    </ItemGroup>
+</Project>

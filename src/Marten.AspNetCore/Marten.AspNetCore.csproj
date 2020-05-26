@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Postgresql as a Document Db and Event Store for .Net Development</Description>
+        <VersionPrefix>3.11.0</VersionPrefix>
+        <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <AssemblyName>Marten.AspNetCore</AssemblyName>
+        <PackageId>Marten.AspNetCore</PackageId>
+        <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
+        <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+        <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+        <LangVersion>7.2</LangVersion>
+    </PropertyGroup>
+	
+    <!--SourceLink specific settings-->
+    <PropertyGroup>
+        <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+    <PropertyGroup>
+        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
+        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
+    </PropertyGroup>
+    <PropertyGroup>
+        <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735</NoWarn>
+    </PropertyGroup>    
+    <ItemGroup>
+        <ProjectReference Include="..\Marten.DependencyInjection\Marten.DependencyInjection.csproj" />
+		<PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.0" />
+    </ItemGroup>
+</Project>

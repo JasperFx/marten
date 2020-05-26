@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten", "Marten\Marten.csproj", "{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}"
 EndProject
@@ -25,6 +25,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		..\.editorconfig = ..\.editorconfig
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.DependencyInjection", "Marten.DependencyInjection\Marten.DependencyInjection.csproj", "{803AFF32-1234-42B9-A1B9-84474C448134}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.AspNetCore", "Marten.AspNetCore\Marten.AspNetCore.csproj", "{7A3454C0-F633-448E-BCC9-0EC6876B5686}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.AspNetCore.Tests", "Marten.AspNetCore.Tests\Marten.AspNetCore.Tests.csproj", "{8FF50A58-02E6-4233-8B27-1D97593CAEBA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,6 +74,18 @@ Global
 		{8F7354B7-AAAE-4DD0-AA86-805F50F7850D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F7354B7-AAAE-4DD0-AA86-805F50F7850D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F7354B7-AAAE-4DD0-AA86-805F50F7850D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{803AFF32-1234-42B9-A1B9-84474C448134}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{803AFF32-1234-42B9-A1B9-84474C448134}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{803AFF32-1234-42B9-A1B9-84474C448134}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{803AFF32-1234-42B9-A1B9-84474C448134}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A3454C0-F633-448E-BCC9-0EC6876B5686}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A3454C0-F633-448E-BCC9-0EC6876B5686}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A3454C0-F633-448E-BCC9-0EC6876B5686}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A3454C0-F633-448E-BCC9-0EC6876B5686}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FF50A58-02E6-4233-8B27-1D97593CAEBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FF50A58-02E6-4233-8B27-1D97593CAEBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FF50A58-02E6-4233-8B27-1D97593CAEBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FF50A58-02E6-4233-8B27-1D97593CAEBA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
