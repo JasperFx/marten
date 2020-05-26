@@ -51,6 +51,8 @@ namespace Marten.Linq.Fields
             return FieldFor(FindMembers.Determine(expression));
         }
 
+
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             if (members.Count() == 1)

@@ -29,6 +29,7 @@ namespace Marten.Linq.Parsing
         /// <param name="serializer"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
+        // TODO -- eliminate serializer as a call here
         IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);
     }
 

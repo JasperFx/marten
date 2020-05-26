@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
-using Marten.Linq.LastModified;
-using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
-using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Remotion.Linq;
 using Remotion.Linq.Clauses.Expressions;
@@ -30,8 +27,12 @@ namespace Marten.Linq
             {ExpressionType.LessThanOrEqual, "<="}
         };
 
-        private readonly ISerializer _serializer;
+
+        private static readonly object[] _supplementalParsers = {new SimpleBinaryComparisonExpressionParser()};
+
         private readonly StoreOptions _options;
+
+        private readonly ISerializer _serializer;
 
         public MartenExpressionParser(ISerializer serializer, StoreOptions options)
         {
@@ -41,92 +42,17 @@ namespace Marten.Linq
 
         public IWhereFragment ParseWhereFragment(IQueryableDocument mapping, Expression expression)
         {
-            if (expression is LambdaExpression l)
-            {
-                expression = l.Body;
-            }
+            if (expression is LambdaExpression l) expression = l.Body;
 
             var visitor = new WhereClauseVisitor(this, mapping);
             visitor.Visit(expression);
             var whereFragment = visitor.ToWhereFragment();
 
             if (whereFragment == null)
-            {
                 throw new NotSupportedException($"Marten does not (yet) support this Linq query type ({expression})");
-            }
 
             return whereFragment;
         }
-
-        internal IWhereFragment BuildWhereFragment(IQueryableDocument mapping, MethodCallExpression expression)
-        {
-            var parser = FindMethodParser(expression);
-
-            if (parser == null)
-            {
-                throw new NotSupportedException(
-                    $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
-            }
-
-            return parser.Parse(mapping, _serializer, expression);
-        }
-
-        internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
-        {
-            return _options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
-                         ?? _parsers.FirstOrDefault(x => x.Matches(expression));
-
-        }
-
-        // The out of the box method call parsers
-        private static readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
-        {
-            new StringContains(),
-            new EnumerableContains(),
-            new StringEndsWith(),
-            new StringStartsWith(),
-            new StringEquals(),
-            new SimpleEqualsParser(),
-
-            // Added
-            new IsOneOf(),
-            new EqualsIgnoreCaseParser(),
-            new IsInGenericEnumerable(),
-            new IsEmpty(),
-            new IsSupersetOf(),
-            new IsSubsetOf(),
-
-            // multi-tenancy
-            new AnyTenant(),
-            new TenantIsOneOf(),
-
-            // soft deletes
-            new MaybeDeletedParser(),
-            new IsDeletedParser(),
-            new DeletedSinceParser(),
-            new DeletedBeforeParser(),
-
-            // last modified
-            new ModifiedSinceParser(),
-            new ModifiedBeforeParser(),
-
-            // matches sql
-            new MatchesSqlParser(),
-
-            // dictionaries
-            new DictionaryExpressions(),
-
-            // full text search
-            new Search(),
-            new PhraseSearch(),
-            new PlainTextSearch(),
-            new WebStyleSearch()
-        };
-
-        private static readonly object[] _supplementalParsers = new[]
-        {
-            new SimpleBinaryComparisonExpressionParser(),
-        };
 
         private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
         {
@@ -143,10 +69,12 @@ namespace Marten.Linq
 
                 var op = _operators[binary.NodeType];
 
-                return buildChildCollectionQuery(mapping, jsonLocatorExpression.As<SubQueryExpression>().QueryModel, valueExpression, op);
+                return buildChildCollectionQuery(mapping, jsonLocatorExpression.As<SubQueryExpression>().QueryModel,
+                    valueExpression, op);
             }
 
-            var parser = _supplementalParsers.OfType<IExpressionParser<BinaryExpression>>()?.FirstOrDefault(x => x.Matches(binary));
+            var parser = _supplementalParsers.OfType<IExpressionParser<BinaryExpression>>()
+                ?.FirstOrDefault(x => x.Matches(binary));
 
             if (parser != null)
             {
@@ -158,7 +86,8 @@ namespace Marten.Linq
             throw new NotSupportedException("Marten does not yet support this type of Linq query");
         }
 
-        private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query, Expression valueExpression, string op)
+        private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query,
+            Expression valueExpression, string op)
         {
             var field = mapping.FieldFor(query.MainFromClause.FromExpression);
 
@@ -169,9 +98,14 @@ namespace Marten.Linq
                 return new WhereFragment($"jsonb_array_length({field.JSONBLocator}) {op} ?", value);
             }
 
-            throw new NotSupportedException($"Marten does not yet support this type of Linq query against child collections");
+            throw new NotSupportedException(
+                "Marten does not yet support this type of Linq query against child collections");
         }
 
 
+        internal IWhereFragment BuildWhereFragment(IQueryableDocument mapping, MethodCallExpression expression)
+        {
+            return _options.Linq.BuildWhereFragment(mapping, expression, _serializer);
+        }
     }
 }
