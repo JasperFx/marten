@@ -58,6 +58,19 @@ namespace Marten.Linq
             return whereFragment;
         }
 
+        internal IWhereFragment BuildWhereFragment(IQueryableDocument mapping, MethodCallExpression expression)
+        {
+            var parser = FindMethodParser(expression);
+
+            if (parser == null)
+            {
+                throw new NotSupportedException(
+                    $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
+            }
+
+            return parser.Parse(mapping, _serializer, expression);
+        }
+
         internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
         {
             return _options.Linq.MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
