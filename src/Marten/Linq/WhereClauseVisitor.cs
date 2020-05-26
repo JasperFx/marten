@@ -63,15 +63,7 @@ namespace Marten.Linq
 
             protected override Expression VisitMethodCall(MethodCallExpression expression)
             {
-                var parser = _parent.FindMethodParser(expression);
-
-                if (parser == null)
-                {
-                    throw new NotSupportedException(
-                        $"Marten does not (yet) support Linq queries using the {expression.Method.DeclaringType.FullName}.{expression.Method.Name}() method");
-                }
-
-                var where = parser.Parse(_mapping, _parent._serializer, expression);
+                var @where = _parent.BuildWhereFragment(_mapping, expression);
                 _register.Peek()(@where);
 
                 // ReSharper disable once AssignNullToNotNullAttribute
