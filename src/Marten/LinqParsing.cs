@@ -90,9 +90,31 @@ namespace Marten
 
         internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
         {
+
+            if (_methodParsing.TryFind(expression.Method.DeclaringType, out var byName))
+            {
+                if (byName.TryFind(expression.Method.Name, out var p))
+                {
+                    return p;
+                }
+            }
+
+            byName = byName ?? ImHashMap<string, IMethodCallParser>.Empty;
+            var parser = determineMethodParser(expression);
+            byName = byName.AddOrUpdate(expression.Method.Name, parser);
+            _methodParsing = _methodParsing.AddOrUpdate(expression.Method.DeclaringType, byName);
+
+            return parser;
+        }
+
+        private IMethodCallParser determineMethodParser(MethodCallExpression expression)
+        {
             return MethodCallParsers.FirstOrDefault(x => x.Matches(expression))
                    ?? _parsers.FirstOrDefault(x => x.Matches(expression));
-
         }
+
+        private ImHashMap<Type, ImHashMap<string, IMethodCallParser>> _methodParsing = ImHashMap<Type, ImHashMap<string, IMethodCallParser>>.Empty;
+
+
     }
 }
