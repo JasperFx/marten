@@ -724,6 +724,16 @@ namespace Marten.Schema
         }
 
         /// <summary>
+        /// Find a field by lambda expression representing a property or field
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public IField FieldFor(Expression<Func<T, object>>  expression)
+        {
+            return FieldFor(FindMembers.Determine(expression));
+        }
+
+        /// <summary>
         /// Marks a property or field on this document type as a searchable field that is also duplicated in the
         /// database document table
         /// </summary>

@@ -49,8 +49,11 @@ namespace Marten.Testing.Linq
         [Fact]
         public void UnknownPGTypesMapToJsonb()
         {
-            var locator = JsonLocatorField.For<UserNested>(EnumStorage.AsInteger, Casing.Default, x => x.Nested);
-            Assert.Equal("CAST(d.data ->> 'Nested' as jsonb)", locator.TypedLocator);
+            var mapping = new DocumentMapping<UserNested>(new StoreOptions());
+
+            var field = mapping.FieldFor(x => x.Nested);
+
+            Assert.Equal("CAST(d.data ->> 'Nested' as jsonb)", field.TypedLocator);
         }
 
         public IsNullNotNullArbitraryDepthTests(DefaultStoreFixture fixture) : base(fixture)

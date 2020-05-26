@@ -118,7 +118,7 @@ namespace Marten
         /// <summary>
         ///     Extension point to add custom Linq query parsers
         /// </summary>
-        public LinqCustomizations Linq { get; } = new LinqCustomizations();
+        public LinqParsing Linq { get; } = new LinqParsing();
 
         public ITransforms Transforms { get; }
 
