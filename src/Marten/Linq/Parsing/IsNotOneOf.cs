@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 using NpgsqlTypes;
@@ -17,7 +18,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var members = FindMembers.Determine(expression);
 

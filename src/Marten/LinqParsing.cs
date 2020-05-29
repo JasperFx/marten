@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
@@ -71,7 +72,7 @@ namespace Marten
 
 
 
-        internal IWhereFragment BuildWhereFragment(IQueryableDocument mapping, MethodCallExpression expression, ISerializer serializer)
+        internal IWhereFragment BuildWhereFragment(IFieldMapping mapping, MethodCallExpression expression, ISerializer serializer)
         {
             var parser = FindMethodParser(expression);
 

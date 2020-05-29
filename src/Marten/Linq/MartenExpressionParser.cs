@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Remotion.Linq;
@@ -40,7 +41,7 @@ namespace Marten.Linq
             _options = options;
         }
 
-        public IWhereFragment ParseWhereFragment(IQueryableDocument mapping, Expression expression)
+        public IWhereFragment ParseWhereFragment(IFieldMapping mapping, Expression expression)
         {
             if (expression is LambdaExpression l) expression = l.Body;
 
@@ -54,7 +55,7 @@ namespace Marten.Linq
             return whereFragment;
         }
 
-        private IWhereFragment buildSimpleWhereClause(IQueryableDocument mapping, BinaryExpression binary)
+        private IWhereFragment buildSimpleWhereClause(IFieldMapping mapping, BinaryExpression binary)
         {
             var isValueExpressionOnRight = binary.Right.IsValueExpression();
 
@@ -84,7 +85,7 @@ namespace Marten.Linq
             throw new NotSupportedException("Marten does not yet support this type of Linq query");
         }
 
-        private IWhereFragment buildChildCollectionQuery(IQueryableDocument mapping, QueryModel query,
+        private IWhereFragment buildChildCollectionQuery(IFieldMapping mapping, QueryModel query,
             Expression valueExpression, string op)
         {
             var field = mapping.FieldFor(query.MainFromClause.FromExpression);
@@ -101,7 +102,7 @@ namespace Marten.Linq
         }
 
 
-        internal IWhereFragment BuildWhereFragment(IQueryableDocument mapping, MethodCallExpression expression)
+        internal IWhereFragment BuildWhereFragment(IFieldMapping mapping, MethodCallExpression expression)
         {
             return _options.Linq.BuildWhereFragment(mapping, expression, _serializer);
         }

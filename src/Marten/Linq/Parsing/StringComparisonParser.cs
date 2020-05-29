@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -21,7 +22,7 @@ namespace Marten.Linq.Parsing
             return _supportedMethods.Any(m => AreMethodsEqual(m, expression.Method));
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var locator = GetLocator(mapping, expression);
 
@@ -76,10 +77,10 @@ namespace Marten.Linq.Parsing
         /// <param name="mapping"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        protected string GetLocator(IQueryableDocument mapping, MethodCallExpression expression)
+        protected string GetLocator(IFieldMapping mapping, MethodCallExpression expression)
         {
             var memberExpression = determineStringField(expression);
-            return mapping.RawLocator(memberExpression);
+            return mapping.FieldFor(memberExpression).RawLocator;
         }
 
         private static Expression determineStringField(MethodCallExpression expression)

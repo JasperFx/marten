@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq;
@@ -19,14 +20,14 @@ namespace Marten.Linq
         private readonly SubQueryExpression _expression;
         private readonly Action<IWhereFragment> _registerFilter;
         private readonly QueryModel _query;
-        private readonly IQueryableDocument _mapping;
+        private readonly IFieldMapping _mapping;
 
         [Obsolete("Use the constructor that takes IQueryableDocument instead. This might be removed in v4.0.")]
         public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter) : this(serializer, expression, registerFilter, null)
         {
         }
 
-        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter, IQueryableDocument mapping)
+        public ChildCollectionWhereVisitor(ISerializer serializer, SubQueryExpression expression, Action<IWhereFragment> registerFilter, IFieldMapping mapping)
         {
             _serializer = serializer;
             _expression = expression;

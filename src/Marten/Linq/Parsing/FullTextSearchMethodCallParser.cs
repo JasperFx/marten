@@ -1,5 +1,6 @@
 using System;
 using System.Linq.Expressions;
+using Marten.Linq.Fields;
 using Marten.Linq.WhereFragments;
 using Marten.Schema;
 
@@ -30,7 +31,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             if (expression.Arguments.Count < 2 || expression.Arguments[1].Value() == null)
                 throw new ArgumentException("Search Term needs to be provided", "searchTerm");

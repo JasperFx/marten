@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using NpgsqlTypes;
 
@@ -31,7 +32,7 @@ namespace Marten.Linq.Parsing
                        .Any(i => i.GetGenericTypeDefinition() == typeof(ISet<>));
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var locator = mapping.FieldFor(expression).JSONBLocator;
             var values = expression.Arguments.Last().Value();

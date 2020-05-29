@@ -7,7 +7,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class ChildDocument: FieldCollection, IQueryableDocument
+    public class ChildDocument: FieldMapping, IQueryableDocument
     {
         public ChildDocument(string locator, Type documentType, StoreOptions options) : base(locator, documentType, options)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Parsing;
@@ -13,12 +14,12 @@ namespace Marten.Linq
     {
         public class WhereClauseVisitor: RelinqExpressionVisitor
         {
-            private readonly IQueryableDocument _mapping;
+            private readonly IFieldMapping _mapping;
             private readonly MartenExpressionParser _parent;
             private readonly Stack<Action<IWhereFragment>> _register = new Stack<Action<IWhereFragment>>();
             private IWhereFragment _top;
 
-            public WhereClauseVisitor(MartenExpressionParser parent, IQueryableDocument mapping)
+            public WhereClauseVisitor(MartenExpressionParser parent, IFieldMapping mapping)
             {
                 _parent = parent;
                 _mapping = mapping;
@@ -117,7 +118,7 @@ namespace Marten.Linq
             {
                 if (expression.Type == typeof(bool))
                 {
-                    var locator = _mapping.JsonLocator(expression);
+                    var locator = _mapping.FieldFor(expression).TypedLocator;
                     var where = new WhereFragment("{0} = True".ToFormat(locator), true);
                     _register.Peek()(where);
                     return null;

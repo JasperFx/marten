@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 using NpgsqlTypes;
@@ -20,14 +21,14 @@ namespace Marten.Linq
         private readonly MemberInfo[] _members;
         private readonly ISerializer _serializer;
         private readonly SubQueryExpression _expression;
-        private readonly IQueryableDocument _mapping;
+        private readonly IFieldMapping _mapping;
 
         [Obsolete("Use the constructor that takes IQueryableDocument instead. This might be removed in v4.0.")]
         public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression) : this(members, serializer, expression, null)
         {
         }
 
-        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression, IQueryableDocument mapping)
+        public CollectionAnyContainmentWhereFragment(MemberInfo[] members, ISerializer serializer, SubQueryExpression expression, IFieldMapping mapping)
         {
             _members = members;
             _serializer = serializer;

@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -13,7 +14,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType == typeof(StringExtensions);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var locator = mapping.FieldFor(expression).RawLocator;
             var value = expression.Arguments.Last().Value();

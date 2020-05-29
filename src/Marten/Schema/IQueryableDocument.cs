@@ -9,7 +9,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public interface IQueryableDocument : IFieldCollection
+    public interface IQueryableDocument : IFieldMapping
     {
         IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
 
@@ -19,13 +19,9 @@ namespace Marten.Schema
 
         string[] SelectFields();
 
-        PropertySearching PropertySearching { get; }
-
         DbObjectName Table { get; }
 
         DuplicatedField[] DuplicatedFields { get; }
-
-        DeleteStyle DeleteStyle { get; }
 
         Type DocumentType { get; }
     }

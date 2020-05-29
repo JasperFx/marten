@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -30,7 +31,7 @@ namespace Marten.Linq.Parsing
         /// <param name="expression"></param>
         /// <returns></returns>
         // TODO -- eliminate serializer as a call here
-        IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);
+        IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression);
     }
 
     // ENDSAMPLE

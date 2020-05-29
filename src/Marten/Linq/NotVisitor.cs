@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Remotion.Linq.Parsing;
@@ -12,7 +13,7 @@ namespace Marten.Linq
     public class NotVisitor: RelinqExpressionVisitor
     {
         private readonly MartenExpressionParser.WhereClauseVisitor _parent;
-        private readonly IQueryableDocument _mapping;
+        private readonly IFieldMapping _mapping;
         private readonly Action<IWhereFragment> _callback;
 
         private static readonly IMethodCallParser[] _parsers = {
@@ -31,7 +32,7 @@ namespace Marten.Linq
 
         private readonly ISerializer _serializer;
 
-        public NotVisitor(MartenExpressionParser.WhereClauseVisitor parent, IQueryableDocument mapping, Action<IWhereFragment> callback, ISerializer serializer)
+        public NotVisitor(MartenExpressionParser.WhereClauseVisitor parent, IFieldMapping mapping, Action<IWhereFragment> callback, ISerializer serializer)
         {
             _parent = parent;
             _mapping = mapping;
@@ -58,7 +59,7 @@ namespace Marten.Linq
         {
             if (expression.Type == typeof(bool))
             {
-                var locator = _mapping.JsonLocator(expression);
+                var locator = _mapping.FieldFor(expression).TypedLocator;
                 var whereFragments = new List<IWhereFragment>
                 {
                     new WhereFragment($"{locator} IS NULL"),
@@ -76,7 +77,7 @@ namespace Marten.Linq
             if (expression.Type == typeof(bool) && expression.NodeType == ExpressionType.NotEqual)
             {
                 var binaryExpression = expression.As<BinaryExpression>();
-                var locator = _mapping.JsonLocator(binaryExpression.Left);
+                var locator = _mapping.FieldFor(binaryExpression.Left).TypedLocator;
                 if (binaryExpression.Right.NodeType == ExpressionType.Constant &&
                     binaryExpression.Right.As<ConstantExpression>().Value == null)
                 {
