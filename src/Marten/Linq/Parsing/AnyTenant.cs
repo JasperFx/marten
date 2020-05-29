@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Util;
@@ -24,7 +25,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             return this;
         }
@@ -38,7 +39,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var values = expression.Arguments.Last().Value().As<string[]>();
             return new TenantIsOneOfWhereFragment(values);

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 
@@ -19,7 +20,7 @@ namespace Marten.Linq.MatchesSql
             return Equals(expression.Method, _sqlMethod) || Equals(expression.Method, _fragmentMethod);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             if (expression.Method.Equals(_sqlMethod))
                 return new WhereFragment(expression.Arguments[1].Value().As<string>(), expression.Arguments[2].Value().As<object[]>());

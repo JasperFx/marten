@@ -20,7 +20,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping: FieldCollection, IDocumentMapping, IQueryableDocument, IFeatureSchema
+    public class DocumentMapping: FieldMapping, IDocumentMapping, IQueryableDocument, IFeatureSchema
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
@@ -282,8 +282,6 @@ namespace Marten.Schema
                 : new[] { "data", "id", VersionColumn };
         }
 
-        public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
-        public DeleteStyle DeleteStyle { get; set; } = DeleteStyle.Remove;
         public bool StructuralTyped { get; set; }
 
         public string DdlTemplate { get; set; }

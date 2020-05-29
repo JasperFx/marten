@@ -42,7 +42,7 @@ namespace Marten.Linq.Parsing
                    expression.Method.Name.Equals("Equals", StringComparison.Ordinal);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var field = GetField(mapping, expression);
             var locator = field.TypedLocator;
@@ -82,7 +82,7 @@ namespace Marten.Linq.Parsing
             return new WhereFragment($"{locator} {_equalsOperator} ?", valueToQuery);
         }
 
-        private static IField GetField(IQueryableDocument mapping, MethodCallExpression expression)
+        private static IField GetField(IFieldMapping mapping, MethodCallExpression expression)
         {
             IField GetField(Expression e)
             {

@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -22,6 +23,7 @@ namespace Marten.Linq.Parsing
             return expression.Object?.Type == typeof(T) && expression.Method.Name == _method.Name;
         }
 
-        public abstract IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression);
+        public abstract IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer,
+            MethodCallExpression expression);
     }
 }

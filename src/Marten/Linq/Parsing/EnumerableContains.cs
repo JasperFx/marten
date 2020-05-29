@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -24,7 +25,7 @@ namespace Marten.Linq.Parsing
             return type.Closes(typeof(IReadOnlyList<>));
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var value = expression.Arguments.Single().Value();
             return ContainmentWhereFragment.SimpleArrayContains(FindMembers.Determine(expression.Object), serializer, expression.Object, value);

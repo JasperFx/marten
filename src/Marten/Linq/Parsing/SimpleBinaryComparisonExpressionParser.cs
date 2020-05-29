@@ -35,7 +35,7 @@ namespace Marten.Linq.Parsing
             return expression.Type == typeof(bool) && _operators.ContainsKey(expression.NodeType);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, BinaryExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, BinaryExpression expression)
         {
             var areBothMemberExpressions = !expression.Left.IsValueExpression() && !expression.Right.IsValueExpression();
             var isValueExpressionOnRight = areBothMemberExpressions || expression.Right.IsValueExpression();

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -11,7 +12,7 @@ namespace Marten.Linq.Parsing
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 
-        public IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, MethodCallExpression expression)
+        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var field = mapping.FieldFor(expression);
 

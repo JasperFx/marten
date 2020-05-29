@@ -5,19 +5,22 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
-using Marten.Util;
+ using Marten.Schema;
+ using Marten.Util;
 
 namespace Marten.Linq.Fields
 {
-    public interface IFieldCollection
+    public interface IFieldMapping
     {
         IField FieldFor(Expression expression);
         IField FieldFor(IEnumerable<MemberInfo> members);
         IField FieldFor(MemberInfo member);
         IField FieldFor(string memberName);
+        PropertySearching PropertySearching { get; }
+        DeleteStyle DeleteStyle { get; }
     }
 
-    public class FieldCollection: IFieldCollection
+    public class FieldMapping: IFieldMapping
     {
         private readonly string _dataLocator;
         private readonly Type _documentType;
@@ -25,13 +28,16 @@ namespace Marten.Linq.Fields
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private readonly ISerializer _serializer;
 
-        public FieldCollection(string dataLocator, Type documentType, StoreOptions options)
+        public FieldMapping(string dataLocator, Type documentType, StoreOptions options)
         {
             _dataLocator = dataLocator;
             _documentType = documentType;
             _options = options;
             _serializer = options.Serializer();
         }
+
+        public PropertySearching PropertySearching { get; set; } = PropertySearching.JSON_Locator_Only;
+        public DeleteStyle DeleteStyle { get; set; } = DeleteStyle.Remove;
 
 
         protected void removeIdField()

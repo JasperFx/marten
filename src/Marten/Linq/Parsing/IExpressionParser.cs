@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -16,6 +17,6 @@ namespace Marten.Linq.Parsing
         /// uses to help construct the underlying Sql
         /// command
         /// </summary>
-        IWhereFragment Parse(IQueryableDocument mapping, ISerializer serializer, T expression);
+        IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, T expression);
     }
 }
