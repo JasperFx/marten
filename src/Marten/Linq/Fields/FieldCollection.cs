@@ -9,7 +9,15 @@ using Marten.Util;
 
 namespace Marten.Linq.Fields
 {
-    public class FieldCollection
+    public interface IFieldCollection
+    {
+        IField FieldFor(Expression expression);
+        IField FieldFor(IEnumerable<MemberInfo> members);
+        IField FieldFor(MemberInfo member);
+        IField FieldFor(string memberName);
+    }
+
+    public class FieldCollection: IFieldCollection
     {
         private readonly string _dataLocator;
         private readonly Type _documentType;

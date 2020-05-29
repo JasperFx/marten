@@ -12,24 +12,6 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Model
 {
-    public interface ILinqQuery
-    {
-        QueryModel Model { get; }
-        Type SourceType { get; }
-
-        void ConfigureCommand(CommandBuilder command);
-
-        void ConfigureCommand(CommandBuilder command, int limit);
-
-        void AppendWhere(CommandBuilder sql1);
-
-        void ConfigureCount(CommandBuilder command);
-
-        void ConfigureAny(CommandBuilder command);
-
-        void ConfigureAggregate(CommandBuilder command, string @operator);
-    }
-
     public class LinqQuery<T>: ILinqQuery
     {
         private readonly DocumentStore _store;
@@ -60,7 +42,7 @@ namespace Marten.Linq.Model
                 }
             }
 
-            Selector = BuildSelector(joins, stats, _subQuery, joins);
+            Selector = BuildSelector(joins, stats, _subQuery);
             SourceType = Model.SourceType();
 
             Where = buildWhereFragment();
@@ -83,6 +65,7 @@ namespace Marten.Linq.Model
         {
             var isComplexSubQuery = _subQuery != null && _subQuery.IsComplex(_joins);
 
+            // TODO -- lift a new ISelectClause w/ a WriteSelectClause() method
             if (isComplexSubQuery)
             {
                 if (_subQuery.HasSelectTransform())
@@ -118,7 +101,8 @@ namespace Marten.Linq.Model
             }
         }
 
-        public void AppendWhere(CommandBuilder sql)
+        [Obsolete("Replace with SelectStatement")]
+        internal void AppendWhere(CommandBuilder sql)
         {
             if (Where != null)
             {
@@ -191,6 +175,7 @@ namespace Marten.Linq.Model
             return new ListQueryHandler<T>(this);
         }
 
+        [Obsolete("Replace with SelectStatement")]
         private void writeOrderClause(CommandBuilder sql)
         {
             var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
@@ -252,8 +237,7 @@ namespace Marten.Linq.Model
         }
 
         // Leave this code here, because it will need to use the SubQuery logic in its selection
-        public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats, SelectManyQuery subQuery,
-            IIncludeJoin[] includeJoins)
+        public ISelector<T> BuildSelector(IIncludeJoin[] joins, QueryStatistics stats, SelectManyQuery subQuery)
         {
             var selector =
                 _innerSelector = SelectorParser.ChooseSelector<T>("d.data", _store.Tenancy.Default, _mapping, Model, subQuery, _store.Serializer, joins);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,6 +57,11 @@ namespace Marten.Events
             return new[] { "id", "data" };
         }
 
+        public IField FieldFor(Expression expression)
+        {
+            return FieldFor(FindMembers.Determine(expression));
+        }
+
         public IField FieldFor(IEnumerable<MemberInfo> members)
         {
             return _inner.FieldFor(members);
@@ -64,6 +70,11 @@ namespace Marten.Events
         public IField FieldFor(MemberInfo member)
         {
             return _inner.FieldFor(member);
+        }
+
+        public IField FieldFor(string memberName)
+        {
+            throw new NotSupportedException();
         }
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)

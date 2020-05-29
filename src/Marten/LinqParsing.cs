@@ -64,10 +64,6 @@ namespace Marten
         };
 
 
-        public LinqParsing()
-        {
-        }
-
         /// <summary>
         ///     Add custom Linq expression parsers for your own methods
         /// </summary>
