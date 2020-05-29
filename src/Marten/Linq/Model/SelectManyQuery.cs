@@ -57,10 +57,6 @@ namespace Marten.Linq.Model
 
         public bool IsComplex(IIncludeJoin[] joins) => joins.Any() || bodyClauses().Any() || HasSelectTransform();
 
-        private T findOperator<T>()
-        {
-            return _query.BodyClauses.Skip(Index).Take(_take).OfType<T>().FirstOrDefault();
-        }
 
         private IEnumerable<T> findOperators<T>()
         {

@@ -20,9 +20,9 @@ namespace Marten.Linq
             if (fragment == null)
                 return new IWhereFragment[0];
 
-            if (fragment is CompoundWhereFragment)
+            if (fragment is CompoundWhereFragment c)
             {
-                return fragment.As<CompoundWhereFragment>().Children.ToArray();
+                return c.Children.ToArray();
             }
 
             return new [] { fragment };

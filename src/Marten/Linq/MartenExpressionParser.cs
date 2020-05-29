@@ -78,9 +78,7 @@ namespace Marten.Linq
 
             if (parser != null)
             {
-                var where = parser.Parse(mapping, _serializer, binary);
-
-                return where;
+                return parser.Parse(mapping, _serializer, binary);
             }
 
             throw new NotSupportedException("Marten does not yet support this type of Linq query");

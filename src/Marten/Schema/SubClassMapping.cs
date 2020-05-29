@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Marten.Linq;
@@ -87,6 +88,16 @@ namespace Marten.Schema
         public IField FieldFor(MemberInfo member)
         {
             return Parent.FieldFor(member);
+        }
+
+        public IField FieldFor(Expression expression)
+        {
+            return FieldFor(FindMembers.Determine(expression));
+        }
+
+        public IField FieldFor(string memberName)
+        {
+            throw new NotSupportedException();
         }
 
         public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)

@@ -9,17 +9,13 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public interface IQueryableDocument
+    public interface IQueryableDocument : IFieldCollection
     {
         IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
 
         IWhereFragment DefaultWhereFragment();
 
         IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback);
-
-        IField FieldFor(IEnumerable<MemberInfo> members);
-
-        IField FieldFor(MemberInfo member);
 
         string[] SelectFields();
 
