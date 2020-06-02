@@ -159,9 +159,15 @@ namespace Marten.Events
             return aggregator.Alias;
         }
 
+        //TODO: This should be merged in V4 with AllForView method to return IEnumerable
         public IProjection ProjectionFor(Type viewType)
         {
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
+        }
+
+        public IEnumerable<IProjection> AllProjectionFor(Type viewType)
+        {
+            return AsyncProjections.AllForView(viewType) ?? InlineProjections.AllForView(viewType);
         }
 
         public ViewProjection<TView, TId> ProjectView<TView, TId>() where TView : class

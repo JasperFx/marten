@@ -84,9 +84,16 @@ namespace Marten.Events.Projections
             _projections.Add(lazyLoadedProjection);
         }
 
+
+        //TODO: This should be merged in V4 with AllForView method to return IEnumerable
         public IProjection ForView(Type viewType)
         {
             return _projections.FirstOrDefault(x => x.ProjectedType() == viewType);
+        }
+        
+        public IEnumerable<IProjection> AllForView(Type viewType)
+        {
+            return _projections.Where(x => x.ProjectedType() == viewType).ToList();
         }
     }
 }
