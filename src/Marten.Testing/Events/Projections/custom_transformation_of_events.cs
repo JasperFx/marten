@@ -458,12 +458,12 @@ namespace Marten.Testing.Events.Projections
             var projectId = Guid.NewGuid();
 
             theSession.Events.Append(projectId, new ProjectStarted { Id = projectId, Name = "Marten"});
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             theSession.Query<Project>().Count().ShouldBe(1);
 
             theSession.Events.Append(projectId, new ProjectClosed { Id = projectId });
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             theSession.Query<Project>().Count().ShouldBe(0);
 
@@ -472,22 +472,13 @@ namespace Marten.Testing.Events.Projections
                 LeadingEdgeBuffer = 0.Seconds()
             };
 
-            using (var daemon = theStore.BuildProjectionDaemon(new[] {typeof(User)}, settings: settings))
+            using (var daemon = theStore.BuildProjectionDaemon(new[] {typeof(Project)}, settings: settings))
             {
                 await daemon.RebuildAll();
             }
 
             //fails as user is back in the database after rebuilding
             theSession.Query<Project>().Count().ShouldBe(0);
-
-            theSession.Events.StartStream<QuestParty>(streamId, started);
-            theSession.SaveChanges();
-
-            var document = await theSession.LoadAsync<PersistedView>(streamId);
-            document.ShouldBeNull();
-
-            var documentCount = await theSession.Query<PersistedView>().CountAsync();
-            documentCount.ShouldBe(0);
         }
 
         public project_events_from_multiple_streams_into_view(DefaultStoreFixture fixture) : base(fixture)
