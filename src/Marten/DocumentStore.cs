@@ -97,11 +97,11 @@ namespace Marten
 
             Transform = new DocumentTransforms(this, Tenancy.Default);
 
-            options.InitialData.Each(x => x.Populate(this));
-
             Parser = new MartenExpressionParser(Serializer, options);
 
             HandlerFactory = new QueryHandlerFactory(this);
+
+            options.InitialData.Each(x => x.Populate(this));
         }
 
         public ITenancy Tenancy => Options.Tenancy;
