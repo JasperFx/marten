@@ -357,7 +357,7 @@ namespace Marten
 
             if (projections == null)
             {
-                projections = viewTypes?.Select(x => Events.ProjectionFor(x)).Where(x => x != null).ToArray() ?? Events.AsyncProjections.ToArray();
+                projections = viewTypes?.SelectMany(x => Events.AllProjectionFor(x)).Where(x => x != null).ToArray() ?? Events.AsyncProjections.ToArray();
             }
 
             return new Daemon(this, Tenancy.Default, settings ?? new DaemonSettings(), logger ?? new NulloDaemonLogger(), projections);
