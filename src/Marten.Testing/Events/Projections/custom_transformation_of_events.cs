@@ -6,7 +6,6 @@ using Baseline.Dates;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Services;
-using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
