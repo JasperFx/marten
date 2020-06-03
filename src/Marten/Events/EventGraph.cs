@@ -165,7 +165,7 @@ namespace Marten.Events
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
-        public IEnumerable<IProjection> AllProjectionFor(Type viewType)
+        public IEnumerable<IProjection> AllProjectionsFor(Type viewType)
         {
             return AsyncProjections.AllForView(viewType) ?? InlineProjections.AllForView(viewType);
         }
