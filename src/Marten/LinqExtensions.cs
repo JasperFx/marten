@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
@@ -15,6 +16,18 @@ namespace Marten
         /// <param name="matches"></param>
         /// <returns></returns>
         public static bool IsOneOf<T>(this T variable, params T[] matches)
+        {
+            return matches.Contains(variable);
+        }
+
+        /// <summary>
+        /// Used for Linq queries to match an element to one of a list of values
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="variable"></param>
+        /// <param name="matches"></param>
+        /// <returns></returns>
+        public static bool IsOneOf<T>(this T variable, IList<T> matches)
         {
             return matches.Contains(variable);
         }

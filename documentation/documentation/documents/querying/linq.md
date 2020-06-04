@@ -189,6 +189,10 @@ To find one of for an array you can use this strategy:
 
 <[sample:is_one_of_array]>
 
+To find one of for a list you can use this strategy:
+
+<[sample:is_one_of_list]>
+
 ## IsSupersetOf
 
 <[sample:is_superset_of]>
