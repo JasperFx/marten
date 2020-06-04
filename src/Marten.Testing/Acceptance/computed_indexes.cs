@@ -211,6 +211,59 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public void create_multi_property_type_index_with_casing()
+        {
+            StoreOptions(_ =>
+            {
+                var columns = new Expression<Func<Target, object>>[]
+                {
+                    x => x.String,
+                    x => x.Long,
+                    x => x.OtherGuid
+                };
+                _.Schema.For<Target>().Index(columns, c =>
+                {
+                    c.Casing = ComputedIndex.Casings.Upper;
+                    c.IsUnique = true;
+                });
+            });
+
+            var guid = Guid.NewGuid();
+            using (var session = theStore.LightweightSession())
+            {
+                var item = new Target
+                {
+                    String = "string value",
+                    Long = 123,
+                    OtherGuid = guid
+                };
+                session.Store(item);
+                session.SaveChanges();
+            }
+
+            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
+                .Single(x => x.Name == "mt_doc_target_uidx_stringlongother_guid")
+                .DDL
+                .ToLower();
+
+            SpecificationExtensions.ShouldContain(ddl, "index mt_doc_target_uidx_stringlongother_guid");
+            SpecificationExtensions.ShouldContain(ddl, "(upper((data ->> 'string'::text)), (((data ->> 'long'::text))::bigint), (((data ->> 'otherguid'::text))::uuid))");
+
+            using (var session = theStore.LightweightSession())
+            {
+                var item = new Target
+                {
+                    String = "String Value",
+                    Long = 123,
+                    OtherGuid = guid
+                };
+                session.Store(item);
+                var exception = Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges());
+                Assert.Contains("duplicate key value violates unique constraint", exception.ToString());
+            }
+        }
+
+        [Fact]
         public void creating_index_using_date_should_work()
         {
             StoreOptions(_ =>

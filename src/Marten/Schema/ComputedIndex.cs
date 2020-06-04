@@ -95,8 +95,16 @@ namespace Marten.Schema
             var membersLocator = _members
                 .Select(m =>
                 {
-                    var sql = _mapping.FieldFor(m).SqlLocator.Replace("d.", "");
-                    switch (Casing)
+                    var field = _mapping.FieldFor(m);
+                    var casing = Casing;
+                    if (field.MemberType != typeof(string))
+                    {
+                        // doesn't make sense to lower-case this particular member
+                        casing = Casings.Default;
+                    }
+
+                    var sql = field.SqlLocator.Replace("d.", "");
+                    switch (casing)
                     {
                         case Casings.Upper:
                             return $" upper({sql})";
