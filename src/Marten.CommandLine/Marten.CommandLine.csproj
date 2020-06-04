@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>Command line tooling for managing Marten development</Description>
+        <Description>Command line tooling for Marten</Description>
         <VersionPrefix>3.11.0</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
