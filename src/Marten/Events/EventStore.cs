@@ -143,6 +143,11 @@ namespace Marten.Events
             return StartStream(typeof(T), id, events);
         }
 
+        public EventStream StartStream(Type aggregateType, Guid id, IEnumerable<object> events)
+        {
+            return StartStream(aggregateType, id, events?.ToArray());
+        }
+
         public EventStream StartStream(Type aggregateType, Guid id, params object[] events)
         {
             ensureAsGuidStorage();
@@ -165,6 +170,11 @@ namespace Marten.Events
         public EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
         {
             return StartStream(typeof(TAggregate), streamKey, events);
+        }
+
+        public EventStream StartStream(Type aggregateType, string streamKey, IEnumerable<object> events)
+        {
+            return StartStream(aggregateType, streamKey, events?.ToArray());
         }
 
         public EventStream StartStream(Type aggregateType, string streamKey, params object[] events)
@@ -221,6 +231,11 @@ namespace Marten.Events
         public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class
         {
             return StartStream(typeof(TAggregate), events);
+        }
+
+        public EventStream StartStream(Type aggregateType, IEnumerable<object> events)
+        {
+            return StartStream(aggregateType, events?.ToArray());
         }
 
         public EventStream StartStream(Type aggregateType, params object[] events)
