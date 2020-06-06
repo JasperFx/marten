@@ -12,7 +12,8 @@ namespace Marten.Linq.Parsing
     {
         public bool Matches(MethodCallExpression expression)
         {
-            return expression.Method.Name == nameof(LinqExtensions.IsOneOf)
+            return (expression.Method.Name == nameof(LinqExtensions.IsOneOf)
+                    || expression.Method.Name == nameof(LinqExtensions.In))
                    && expression.Method.DeclaringType == typeof(LinqExtensions);
         }
 

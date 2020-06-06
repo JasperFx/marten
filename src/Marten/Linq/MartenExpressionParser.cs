@@ -69,7 +69,6 @@ namespace Marten.Linq
             new SimpleEqualsParser(),
 
             // Added
-            new In(),
             new IsOneOf(),
             new EqualsIgnoreCaseParser(),
             new IsInGenericEnumerable(),
