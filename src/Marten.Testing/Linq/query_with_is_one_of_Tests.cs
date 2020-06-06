@@ -1,6 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marten;
+using System.Linq.Expressions;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -12,15 +13,45 @@ namespace Marten.Testing.Linq
     [ControlledQueryStoryteller]
     public class query_with_is_one_of_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
     {
-        [Fact]
-        public void can_query_against_integers()
+        public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithArray =
+            new TheoryData<Func<int[], Expression<Func<Target, bool>>>>
+            {
+                validNumbers => x => x.Number.IsOneOf(validNumbers),
+                validNumbers => x => x.Number.In(validNumbers)
+            };
+
+        public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithArray =
+            new TheoryData<Func<int[], Expression<Func<Target, bool>>>>
+            {
+                validNumbers => x => !x.Number.IsOneOf(validNumbers),
+                validNumbers => x => !x.Number.In(validNumbers)
+            };
+
+        public static TheoryData<Func<List<int>, Expression<Func<Target, bool>>>> SupportedIsOneOfWithList =
+            new TheoryData<Func<List<int>, Expression<Func<Target, bool>>>>
+            {
+                validNumbers => x => x.Number.IsOneOf(validNumbers),
+                validNumbers => x => x.Number.In(validNumbers)
+            };
+
+        public static TheoryData<Func<List<int>, Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithList =
+            new TheoryData<Func<List<int>, Expression<Func<Target, bool>>>>
+            {
+                validNumbers => x => !x.Number.IsOneOf(validNumbers),
+                validNumbers => x => !x.Number.In(validNumbers)
+            };
+
+        [Theory]
+        [MemberData(nameof(SupportedIsOneOfWithArray))]
+        public void can_query_against_integers(Func<int[], Expression<Func<Target, bool>>> isOneOf)
         {
+
             var targets = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(targets);
 
             var validNumbers = targets.Select(x => x.Number).Distinct().Take(3).ToArray();
 
-            var found = theSession.Query<Target>().Where(x => x.Number.IsOneOf(validNumbers)).ToArray();
+            var found = theSession.Query<Target>().Where(isOneOf(validNumbers)).ToArray();
 
             found.Count().ShouldBeLessThan(100);
 
@@ -35,15 +66,16 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(expected);
         }
 
-        [Fact]
-        public void can_query_against_integers_with_not_operator()
+        [Theory]
+        [MemberData(nameof(SupportedNotIsOneOfWithArray))]
+        public void can_query_against_integers_with_not_operator(Func<int[], Expression<Func<Target, bool>>> notIsOneOf)
         {
             var targets = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(targets);
 
             var validNumbers = targets.Select(x => x.Number).Distinct().Take(3).ToArray();
 
-            var found = theSession.Query<Target>().Where(x => !x.Number.IsOneOf(validNumbers)).ToArray();
+            var found = theSession.Query<Target>().Where(notIsOneOf(validNumbers)).ToArray();
 
             var expected = targets
                 .Where(x => !validNumbers
@@ -56,15 +88,16 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(expected);
         }
 
-        [Fact]
-        public void can_query_against_integers_list()
+        [Theory]
+        [MemberData(nameof(SupportedIsOneOfWithList))]
+        public void can_query_against_integers_list(Func<List<int>, Expression<Func<Target, bool>>> isOneOf)
         {
             var targets = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(targets);
 
             var validNumbers = targets.Select(x => x.Number).Distinct().Take(3).ToList();
 
-            var found = theSession.Query<Target>().Where(x => x.Number.IsOneOf(validNumbers)).ToArray();
+            var found = theSession.Query<Target>().Where(isOneOf(validNumbers)).ToArray();
 
             found.Length.ShouldBeLessThan(100);
 
@@ -79,15 +112,16 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs(expected);
         }
 
-        [Fact]
-        public void can_query_against_integers_with_not_operator_list()
+        [Theory]
+        [MemberData(nameof(SupportedNotIsOneOfWithList))]
+        public void can_query_against_integers_with_not_operator_list(Func<List<int>, Expression<Func<Target, bool>>> notIsOneOf)
         {
             var targets = Target.GenerateRandomData(100).ToArray();
             theStore.BulkInsert(targets);
 
             var validNumbers = targets.Select(x => x.Number).Distinct().Take(3).ToList();
 
-            var found = theSession.Query<Target>().Where(x => !x.Number.IsOneOf(validNumbers)).ToArray();
+            var found = theSession.Query<Target>().Where(notIsOneOf(validNumbers)).ToArray();
 
             var expected = targets
                 .Where(x => !validNumbers
