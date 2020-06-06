@@ -19,6 +19,12 @@ Because I’ve read way too much epic fantasy fiction, my sample problem domain 
 
 Now, let's say that we're starting a new "quest" with the first couple of events, then appending a couple more as other quest party members join up:
 
-<[sample:event-store-quickstart]>
+<[sample:event-store-start-stream-with-explicit-type]>
 
-In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload to create streams without associating them with aggregate type (stored in `mt_streams` table).
+In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
+
+<[sample:event-store-quickstart]>
+ 
+It has also overload to create streams without associating them with aggregate type (stored in `mt_streams` table).
+
+<[sample:event-store-start-stream-with-explicit-type]>

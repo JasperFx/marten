@@ -175,7 +175,12 @@ namespace Marten.Events
 
         public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class
         {
-            return StartStream<TAggregate>(CombGuidIdGeneration.NewGuid(), events);
+            return StartStream(typeof(TAggregate), events);
+        }
+
+        public EventStream StartStream(Type aggregateType, params object[] events)
+        {
+            return StartStream(aggregateType, CombGuidIdGeneration.NewGuid(), events);
         }
 
         public EventStream StartStream(params object[] events)
