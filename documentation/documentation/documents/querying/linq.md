@@ -180,7 +180,7 @@ Combine your Linq queries with raw SQL using the `MatchesSql(sql)` method like s
 
 ## IsOneOf
 
-Marten v0.8 added a new extension method called `IsOneOf()` that can be used to query for documents having
+`IsOneOf()` extension can be used to query for documents having
 a field or property matching one of many supplied values:
 
 <[sample:is_one_of]>
@@ -193,6 +193,21 @@ To find one of for a list you can use this strategy:
 
 <[sample:is_one_of_list]>
 
+## In
+
+`In()` extension works exactly the same as `IsOneOf()`. It was introduced as syntactic sugar to ease RavenDB transition:
+
+<[sample:in]>
+
+To find one of for an array you can use this strategy:
+
+<[sample:in_array]>
+
+To find one of for a list you can use this strategy:
+
+<[sample:in_list]>
+
+
 ## IsSupersetOf
 
 <[sample:is_superset_of]>
@@ -203,7 +218,7 @@ To find one of for a list you can use this strategy:
 
 ## Modulo Queries
 
-Marten v0.8 added the ability to use the modulo operator in Linq queries:
+Marten has the ability to use the modulo operator in Linq queries:
 
 <[sample:querying-with-modulo]>
 
