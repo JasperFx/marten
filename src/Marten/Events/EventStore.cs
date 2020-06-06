@@ -57,6 +57,11 @@ namespace Marten.Events
 
         public StreamIdentity StreamIdentity { get; }
 
+        public EventStream Append(Guid stream, IEnumerable<object> events)
+        {
+            return Append(stream, events?.ToArray());
+        }
+
         public EventStream Append(Guid stream, params object[] events)
         {
             ensureAsGuidStorage();
@@ -75,6 +80,11 @@ namespace Marten.Events
             }
 
             return eventStream;
+        }
+
+        public EventStream Append(string stream, IEnumerable<object> events)
+        {
+            return Append(stream, events?.ToArray());
         }
 
         public EventStream Append(string stream, params object[] events)
@@ -97,6 +107,11 @@ namespace Marten.Events
             return eventStream;
         }
 
+        public EventStream Append(Guid stream, int expectedVersion, IEnumerable<object> events)
+        {
+            return Append(stream, expectedVersion, events?.ToArray());
+        }
+
         public EventStream Append(Guid stream, int expectedVersion, params object[] events)
         {
             var eventStream = Append(stream, events);
@@ -105,12 +120,22 @@ namespace Marten.Events
             return eventStream;
         }
 
+        public EventStream Append(string stream, int expectedVersion, IEnumerable<object> events)
+        {
+            return Append(stream, expectedVersion, events?.ToArray());
+        }
+
         public EventStream Append(string stream, int expectedVersion, params object[] events)
         {
             var eventStream = Append(stream, events);
             eventStream.ExpectedVersionOnServer = expectedVersion;
 
             return eventStream;
+        }
+
+        public EventStream StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class
+        {
+            return StartStream<TAggregate>(id, events?.ToArray());
         }
 
         public EventStream StartStream<T>(Guid id, params object[] events) where T : class
@@ -132,6 +157,11 @@ namespace Marten.Events
             return stream;
         }
 
+        public EventStream StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class
+        {
+            return StartStream<TAggregate>(streamKey, events?.ToArray());
+        }
+
         public EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
         {
             return StartStream(typeof(TAggregate), streamKey, events);
@@ -151,6 +181,11 @@ namespace Marten.Events
             return stream;
         }
 
+        public EventStream StartStream(Guid id, IEnumerable<object> events)
+        {
+            return StartStream(id, events?.ToArray());
+        }
+
         public EventStream StartStream(Guid id, params object[] events)
         {
             ensureAsGuidStorage();
@@ -160,6 +195,11 @@ namespace Marten.Events
             _unitOfWork.StoreStream(stream);
 
             return stream;
+        }
+
+        public EventStream StartStream(string streamKey, IEnumerable<object> events)
+        {
+            return StartStream(streamKey, events?.ToArray());
         }
 
         public EventStream StartStream(string streamKey, params object[] events)
@@ -173,6 +213,11 @@ namespace Marten.Events
             return stream;
         }
 
+        public EventStream StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class
+        {
+            return StartStream<TAggregate>(events?.ToArray());
+        }
+
         public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class
         {
             return StartStream(typeof(TAggregate), events);
@@ -181,6 +226,11 @@ namespace Marten.Events
         public EventStream StartStream(Type aggregateType, params object[] events)
         {
             return StartStream(aggregateType, CombGuidIdGeneration.NewGuid(), events);
+        }
+
+        public EventStream StartStream(IEnumerable<object> events)
+        {
+            return StartStream(events?.ToArray());
         }
 
         public EventStream StartStream(params object[] events)

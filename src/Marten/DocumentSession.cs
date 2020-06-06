@@ -108,6 +108,11 @@ namespace Marten
             _unitOfWork.Add(deletion);
         }
 
+        public void Store<T>(IEnumerable<T> entities)
+        {
+            Store(entities?.ToArray());
+        }
+
         public void Store<T>(params T[] entities)
         {
             assertNotDisposed();
@@ -118,16 +123,6 @@ namespace Marten
             if (typeof(T).IsGenericEnumerable())
                 throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. Either cast entities to an array instead or use the IEnumerable<T> Store() overload instead.");
 
-            store(entities);
-        }
-
-        public void Store<T>(IEnumerable<T> entities)
-        {
-            assertNotDisposed();
-
-            if (entities == null)
-                throw new ArgumentNullException(nameof(entities));
-            
             store(entities);
         }
 
@@ -164,12 +159,7 @@ namespace Marten
 
         public void Store<T>(string tenantId, IEnumerable<T> entities)
         {
-            assertNotDisposed();
-
-            if (entities == null)
-                throw new ArgumentNullException(nameof(entities));
-            
-            store(tenantId, entities);
+            Store(tenantId, entities?.ToArray());
         }
 
         public void Store<T>(string tenantId, params T[] entities)
@@ -211,6 +201,11 @@ namespace Marten
             }
         }
 
+        public void Insert<T>(IEnumerable<T> entities)
+        {
+            Insert(entities?.ToArray());
+        }
+
         public void Insert<T>(params T[] entities)
         {
             assertNotDisposed();
@@ -243,6 +238,11 @@ namespace Marten
                     _unitOfWork.StoreInserts(entity);
                 }
             }
+        }
+
+        public void Update<T>(IEnumerable<T> entities)
+        {
+            Update(entities?.ToArray());
         }
 
         public void Update<T>(params T[] entities)
