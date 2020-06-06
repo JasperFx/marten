@@ -41,6 +41,32 @@ namespace Marten.Testing.Examples
             }
             // ENDSAMPLE
 
+
+            // SAMPLE: event-store-start-stream-with-explicit-type
+            using (var session = store.OpenSession())
+            {
+                var started = new QuestStarted { Name = "Destroy the One Ring" };
+                var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
+
+                // Start a brand new stream and commit the new events as
+                // part of a transaction
+                // no stream type will be stored in database
+                session.Events.StartStream(typeof(Quest), questId, started, joined1);
+            }
+
+            // SAMPLE: event-store-start-stream-with-no-type
+            using (var session = store.OpenSession())
+            {
+                var started = new QuestStarted { Name = "Destroy the One Ring" };
+                var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
+
+                // Start a brand new stream and commit the new events as
+                // part of a transaction
+                // no stream type will be stored in database
+                session.Events.StartStream(questId, started, joined1);
+            }
+            // ENDSAMPLE
+
             // SAMPLE: events-fetching-stream
             using (var session = store.OpenSession())
             {
