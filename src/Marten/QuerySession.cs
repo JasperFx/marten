@@ -122,7 +122,7 @@ namespace Marten
             if (id.GetType() != mapping.IdType && (id.GetType() != typeof(int) || mapping.IdType != typeof(long)))
             {
                 throw new InvalidOperationException(
-                    "The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
+                    $"The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
             }
         }
 
