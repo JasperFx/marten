@@ -119,8 +119,11 @@ namespace Marten
         private void assertCorrectIdType<T>(object id)
         {
             var mapping = Tenant.MappingFor(typeof(T));
-            if (id.GetType() != mapping.IdType && (id.GetType() != typeof(int) || mapping.IdType != typeof(long)))
+            if (id.GetType() != mapping.IdType)
             {
+                if (id.GetType() == typeof(int) && mapping.IdType == typeof(long))
+                    return;
+
                 throw new InvalidOperationException(
                     $"The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
             }
