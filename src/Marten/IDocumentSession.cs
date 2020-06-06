@@ -67,7 +67,7 @@ namespace Marten
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task SaveChangesAsync(CancellationToken token = default(CancellationToken));
+        Task SaveChangesAsync(CancellationToken token = default);
 
         /// <summary>
         /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
@@ -114,7 +114,23 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
+        void Insert<T>(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
+        /// Will throw an exception if the document already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
         void Insert<T>(params T[] entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
+        /// Will throw an exception if the document does not already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Update<T>(IEnumerable<T> entities);
 
         /// <summary>
         /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
@@ -261,6 +277,6 @@ namespace Marten
         /// <param name="keys"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default(CancellationToken));
+        Task<IReadOnlyList<TDoc>> ByIdAsync<TKey>(IEnumerable<TKey> keys, CancellationToken token = default);
     }
 }

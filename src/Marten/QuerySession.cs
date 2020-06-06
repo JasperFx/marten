@@ -119,13 +119,10 @@ namespace Marten
         private void assertCorrectIdType<T>(object id)
         {
             var mapping = Tenant.MappingFor(typeof(T));
-            if (id.GetType() != mapping.IdType)
+            if (id.GetType() != mapping.IdType && (id.GetType() != typeof(int) || mapping.IdType != typeof(long)))
             {
-                if (id.GetType() == typeof(int) && mapping.IdType == typeof(long))
-                    return;
-
                 throw new InvalidOperationException(
-                    $"The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
+                    "The id type for {typeof(T).FullName} is {mapping.IdType.Name}, but got {id.GetType().Name}");
             }
         }
 
@@ -142,14 +139,19 @@ namespace Marten
             return new LoadByKeys<T>(this);
         }
 
+        public IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids)
+        {
+            return LoadMany<T>(ids?.ToArray());
+        }
+
         public IReadOnlyList<T> LoadMany<T>(params string[] ids)
         {
             return LoadMany<T>().ById(ids);
         }
 
-        public IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids)
+        public IReadOnlyList<T> LoadMany<T>(IEnumerable<Guid> ids)
         {
-            return LoadMany<T>().ById(ids);
+            return LoadMany<T>(ids?.ToArray());
         }
 
         public IReadOnlyList<T> LoadMany<T>(params Guid[] ids)
@@ -157,9 +159,9 @@ namespace Marten
             return LoadMany<T>().ById(ids);
         }
 
-        public IReadOnlyList<T> LoadMany<T>(IEnumerable<Guid> ids)
+        public IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids)
         {
-            return LoadMany<T>().ById(ids);
+            return LoadMany<T>(ids?.ToArray());
         }
 
         public IReadOnlyList<T> LoadMany<T>(params int[] ids)
@@ -167,9 +169,9 @@ namespace Marten
             return LoadMany<T>().ById(ids);
         }
 
-        public IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids)
+        public IReadOnlyList<T> LoadMany<T>(IEnumerable<long> ids)
         {
-            return LoadMany<T>().ById(ids);
+            return LoadMany<T>(ids?.ToArray());
         }
 
         public IReadOnlyList<T> LoadMany<T>(params long[] ids)
@@ -177,9 +179,9 @@ namespace Marten
             return LoadMany<T>().ById(ids);
         }
 
-        public IReadOnlyList<T> LoadMany<T>(IEnumerable<long> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<string> ids)
         {
-            return LoadMany<T>().ById(ids);
+            return LoadManyAsync<T>(ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids)
@@ -187,9 +189,9 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<string> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<Guid> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids);
+            return LoadManyAsync<T>(ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params Guid[] ids)
@@ -197,9 +199,9 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<Guid> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<int> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids);
+            return LoadManyAsync<T>(ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params int[] ids)
@@ -207,9 +209,9 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<int> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<long> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids);
+            return LoadManyAsync<T>(ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params long[] ids)
@@ -217,9 +219,9 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<long> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<string> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids);
+            return LoadManyAsync<T>(token, ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids)
@@ -227,9 +229,9 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<string> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<Guid> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids, token);
+            return LoadManyAsync<T>(token, ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids)
@@ -237,9 +239,9 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<Guid> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<int> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids, token);
+            return LoadManyAsync<T>(token, ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids)
@@ -247,17 +249,12 @@ namespace Marten
             return LoadMany<T>().ByIdAsync(ids, token);
         }
 
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<int> ids)
+        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<long> ids)
         {
-            return LoadMany<T>().ByIdAsync(ids, token);
+            return LoadManyAsync<T>(token, ids?.ToArray());
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids)
-        {
-            return LoadMany<T>().ByIdAsync(ids, token);
-        }
-
-        public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<long> ids)
         {
             return LoadMany<T>().ByIdAsync(ids, token);
         }
