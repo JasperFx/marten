@@ -52,9 +52,6 @@ namespace Marten.Schema.Testing
 
     public class UniqueIndexTests : IntegrationContext
     {
-
-
-
         public const string UniqueSqlState = "23505";
 
         public UniqueIndexTests(ITestOutputHelper output = null) : base(output)

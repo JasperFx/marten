@@ -207,6 +207,14 @@ namespace Marten.Services
                 throw new ConcurrentUpdateException(e);
             }
 
+            // TODO -- this is fine for now, but we might wanna do more to centralize the
+            // exception transformations
+            if (EventStreamUnexpectedMaxEventIdExceptionTransform.Instance.TryTransform(e,
+                out var eventStreamUnexpectedMaxEventIdException))
+            {
+                throw eventStreamUnexpectedMaxEventIdException;
+            }
+
             if (e is NpgsqlException)
             {
                 throw MartenCommandExceptionFactory.Create(cmd, e);
