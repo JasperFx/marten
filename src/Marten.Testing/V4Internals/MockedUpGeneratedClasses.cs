@@ -18,66 +18,7 @@ using IStorageOperation = Marten.V4Internals.IStorageOperation;
 
 namespace Marten.Testing.V4Internals
 {
-    public abstract class DocOperation : IStorageOperation
-    {
-        private readonly User _doc;
-        public const string Command = "some command";
 
-        public DocOperation(User doc)
-        {
-            _doc = doc;
-        }
-
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            var parameters = builder.AppendWithParameters(Command);
-
-            // Id
-            parameters[0].NpgsqlDbType = NpgsqlDbType.Uuid;
-            parameters[0].Value = _doc.Id;
-
-            // Document
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameters[1].Value = session.Serializer.ToJson(_doc);
-
-            // What else?
-        }
-
-        public Type DocumentType => typeof(User);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // Nothing for now
-        }
-
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            // Nothing for now
-            return Task.CompletedTask;
-        }
-
-        public StorageRole Role => StorageRole.Deletion;
-    }
-
-    public class UpsertUserOperation: IStorageOperation
-    {
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Type DocumentType { get; } = typeof(User);
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            throw new NotImplementedException();
-        }
-
-        public StorageRole Role { get; }
-    }
 
     public class UserStorage: Marten.V4Internals.IDocumentStorage<User>
     {
@@ -241,39 +182,4 @@ namespace Marten.Testing.V4Internals
         public Type IdType { get; }
     }
 
-    public class UpdateUserOperation: IStorageOperation
-    {
-        private readonly User _user;
-
-        // Might also be the tenant and version
-        public UpdateUserOperation(User user)
-        {
-            _user = user;
-        }
-
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            //var parameters = builder.AppendWithParameters("select mt_update_user(?, ?, ?)");
-            var parameters = new NpgsqlParameter[5];
-
-            parameters[0].NpgsqlDbType = NpgsqlDbType.Integer;
-            parameters[0].Value = _user.Id;
-
-            // and more!
-        }
-
-        public Type DocumentType => typeof(User);
-
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // Nothing
-        }
-
-        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
-
-        public StorageRole Role => StorageRole.Update;
-    }
 }

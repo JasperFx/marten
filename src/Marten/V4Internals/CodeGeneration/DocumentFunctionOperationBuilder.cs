@@ -18,25 +18,20 @@ namespace Marten.V4Internals
     public class DocumentFunctionOperationBuilder
     {
         private readonly DocumentMapping _mapping;
-        private readonly Setter _commandText;
         private readonly UpsertFunction _function;
-        private InjectedField _documentField;
-        private InjectedField _versionField;
-        public const string CommandTextConstantName = "CommandText";
+        private readonly StorageRole _role;
 
-        public DocumentFunctionOperationBuilder(DocumentMapping mapping, UpsertFunction function)
+        public DocumentFunctionOperationBuilder(DocumentMapping mapping, UpsertFunction function, StorageRole role)
         {
             _function = function;
+            _role = role;
 
             CommandText = $"select {_function.Identifier}({_function.Arguments.Select(x => "?").Join(", ")})";
 
             ClassName = $"{function.GetType().Name.Replace("Function", "")}{ReflectionExtensions.NameInCode(mapping.DocumentType)}Operation";
 
-            _commandText = Setter.Constant(CommandTextConstantName, Constant.ForString(CommandText));
             _mapping = mapping;
 
-            _documentField = new InjectedField(_mapping.DocumentType, "document");
-            _versionField = new InjectedField(typeof(Guid), "version");
         }
 
         public string ClassName { get; }
@@ -44,21 +39,14 @@ namespace Marten.V4Internals
 
         public GeneratedType BuildType(GeneratedAssembly assembly)
         {
-            var type = assembly.AddType(ClassName, typeof(object));
-            type.Implements<IStorageOperation>();
+            var baseType = typeof(StorageOperation<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+            var type = assembly.AddType(ClassName, baseType);
 
-            // TODO -- this is a LamarCodeGeneration bug. Needs to walk up the hierarchy
-            type.Implements<IQueryHandler>();
+            type.MethodFor("Role").Frames.Return(Constant.ForEnum(_role));
+            type.MethodFor("DbType").Frames.Return(Constant.ForEnum(TypeMappings.ToDbType(_mapping.IdType)));
+            type.MethodFor("CommandText").Frames.Return(Constant.ForString(CommandText));
 
-            type.AllInjectedFields.Add(_documentField);
-            type.AllInjectedFields.Add(_versionField);
-
-            type.Setters.Add(_commandText);
-            type.Setters.Add(Setter.ReadOnly(nameof(IStorageOperation.Role), Constant.ForEnum(StorageRole.Upsert)));
-            type.Setters.Add(Setter.ReadOnly(nameof(IStorageOperation.DocumentType), Constant.ForType(_mapping.DocumentType)));
-
-
-            buildConfigureMethod(type.MethodFor(nameof(IStorageOperation.ConfigureCommand)));
+            buildConfigureMethod(type);
 
             if (_mapping.UseOptimisticConcurrency)
             {
@@ -75,38 +63,29 @@ namespace Marten.V4Internals
             return type;
         }
 
-        private void buildConfigureMethod(GeneratedMethod method)
+        private void buildConfigureMethod(GeneratedType type)
         {
-            method.Frames.Add(new CommentFrame("Nothing yet..."));
+            var method = type.MethodFor("ConfigureParameters");
+            var parameters = method.Arguments[0];
 
-            var append = MethodCall.For<CommandBuilder>(x => x.AppendWithParameters(null));
-            append.Arguments[0] = _commandText;
-
-            var parameters = append.ReturnVariable;
-
-            for (int i = 0; i < _function.Arguments.Count; i++)
+            for (int i = 2; i < _function.Arguments.Count; i++)
             {
                 var argument = _function.Arguments[i];
-                var frame = buildArgumentFrame(argument, i, parameters);
+                var frame = buildArgumentFrame(argument, i, parameters, type);
                 method.Frames.Add(frame);
             }
 
 
         }
 
-        private Frame buildArgumentFrame(UpsertArgument argument, int position, Variable parameters)
+        private Frame buildArgumentFrame(UpsertArgument argument, int position, Variable parameters, GeneratedType type)
         {
             switch (argument.Arg)
             {
-                case "docId":
-                    var id = new Variable(_mapping.IdType, $"{_documentField.Usage}.{_mapping.IdMember.Name}");
-                    return new SetParameterFrame(parameters, id, position, TypeMappings.ToDbType(_mapping.IdType));
-
-                case "doc":
-                    return new WriteJsonBFrame(parameters, _documentField, position);
 
                 case "docVersion":
-                    return new SetParameterFrame(parameters, _versionField, position, NpgsqlDbType.Uuid);
+                    var version = type.AllInjectedFields[2];
+                    return new SetParameterFrame(parameters, version, position, NpgsqlDbType.Uuid);
 
                 case "docDotNetType":
                     var typeName = new Variable(typeof(string), $"_document.GetType().FullName");

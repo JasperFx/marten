@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
 using Marten.Schema;
@@ -35,7 +36,7 @@ namespace Marten.Testing.V4Internals.CodeGeneration
                 var realType = theGeneratedType.CompiledType;
 
                 var user = new User();
-                return (IStorageOperation) Activator.CreateInstance(realType, user, Guid.NewGuid());
+                return (IStorageOperation) Activator.CreateInstance(realType, user, Guid.NewGuid(), Guid.NewGuid());
             }
         }
 
@@ -45,7 +46,7 @@ namespace Marten.Testing.V4Internals.CodeGeneration
             {
                 if (_builder == null)
                 {
-                    _builder = new DocumentFunctionOperationBuilder(theMapping, new UpsertFunction(theMapping));
+                    _builder = new DocumentFunctionOperationBuilder(theMapping, new UpsertFunction(theMapping), StorageRole.Upsert);
                 }
 
                 return _builder;
@@ -83,20 +84,14 @@ namespace Marten.Testing.V4Internals.CodeGeneration
         [Fact]
         public void should_implement_istorageoperation()
         {
-            theGeneratedType.Interfaces.ShouldContain(typeof(IStorageOperation));
-        }
-
-        [Fact]
-        public void should_add_a_constant_for_the_command_text()
-        {
-            theGeneratedType.Setters.Any(x => x.Type == SetterType.Constant && x.PropName == "CommandText")
+            theOperation.GetType().CanBeCastTo<IStorageOperation>()
                 .ShouldBeTrue();
         }
 
         [Fact]
         public void role_should_be_upsert()
         {
-            theOperation.Role.ShouldBe(StorageRole.Upsert);
+            theOperation.Role().ShouldBe(StorageRole.Upsert);
         }
 
         [Fact]
