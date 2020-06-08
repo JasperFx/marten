@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Baseline;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Storage;
@@ -169,6 +168,24 @@ namespace Marten.Util
             var sql = _sql.ToString();
             _sql.Clear();
             _sql.Append(sql.UseParameter(parameter));
+        }
+
+        public NpgsqlParameter[] AppendWithParameters(string text)
+        {
+            var split = text.Split('?');
+            var parameters = new NpgsqlParameter[split.Length - 1];
+
+            _sql.Append(split[0]);
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var parameter = _command.AddParameter(DBNull.Value);
+                parameters[i] = parameter;
+                _sql.Append(':');
+                _sql.Append(parameter.ParameterName);
+                _sql.Append(split[i + 1]);
+            }
+
+            return parameters;
         }
     }
 }
