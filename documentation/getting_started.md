@@ -24,6 +24,23 @@ make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` s
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
 
+
+## Adding Marten to a .Net Core Application
+
+<[info]>
+There's a very small [sample project in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten) that shows the mechanics for wiring
+Marten into a .Net Core application.
+<[/info]>
+
+By popular demand, Marten 3.12 added extension methods to quickly integrate Marten into any .Net Core application that uses the `IServiceCollection` abstractions to register IoC services.
+
+In the `Startup.ConfigureServices()` method of your .Net Core application (or you can use `IHostBuilder.ConfigureServices()` as well) make a call to `AddMarten()` to register Marten services like so:
+
+<[sample:StartupConfigureServices]>
+
+See <[linkto:documentation/integration]> for more information and options about this integration.
+
+
 ## Bootstrapping a Document Store
 
 To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with 
@@ -44,10 +61,15 @@ And now that we've got a PostgreSQL schema and an `IDocumentStore`, let's start 
 
 ## Integrating Marten with IoC Containers
 
+<[info]>
+Lamar supports the .Net Core abstractions for IoC service registrations, so you *could* happily
+use the `AddMarten()` method directly with Lamar.
+<[/info]>
+
 The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to
 use an IoC container specifically to manage dependencies and the life cycle of Marten objects.
 
-Using [StructureMap](http://structuremap.github.io) as the example container, we recommend registering Marten something like this:
+Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we recommend registering Marten something like this:
 
 <[sample:MartenServices]>
 

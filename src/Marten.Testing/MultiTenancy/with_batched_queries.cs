@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using StructureMap.Building;
 using Xunit;
 
 namespace Marten.Testing.MultiTenancy
