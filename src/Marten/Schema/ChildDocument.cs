@@ -37,7 +37,6 @@ namespace Marten.Schema
             return new[] { "x" };
         }
 
-        public PropertySearching PropertySearching { get; } = PropertySearching.JSON_Locator_Only;
 
         public DbObjectName Table
         {
@@ -45,6 +44,5 @@ namespace Marten.Schema
         }
 
         public DuplicatedField[] DuplicatedFields { get; }
-        public DeleteStyle DeleteStyle { get; }
     }
 }

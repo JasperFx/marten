@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq.Clauses;
@@ -12,7 +13,7 @@ namespace Marten.Linq
         private readonly IList<IWhereFragment> _children = new List<IWhereFragment>();
         private readonly string _separator;
 
-        public CompoundWhereFragment(MartenExpressionParser parser, IQueryableDocument mapping, string separator,
+        public CompoundWhereFragment(MartenExpressionParser parser, IFieldMapping mapping, string separator,
             IEnumerable<WhereClause> wheres)
         {
             _separator = separator;

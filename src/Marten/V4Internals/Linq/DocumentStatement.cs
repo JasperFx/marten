@@ -1,12 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Baseline;
+using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 
-namespace Marten.Linq.Model
+namespace Marten.V4Internals.Linq
 {
     // Types?
     // SelectDocumentStatement -- the main selector
@@ -21,17 +23,46 @@ namespace Marten.Linq.Model
         /// </summary>
         public abstract string ExportName { get; }
 
-        public void Configure(CommandBuilder sql, int rowsLimit)
+        public void Configure(CommandBuilder sql, int rowsLimit, bool withStatistics)
         {
-            configure(sql, rowsLimit);
+            configure(sql, rowsLimit, withStatistics);
             if (Next != null)
             {
                 sql.Append(" ");
-                Next.Configure(sql, rowsLimit);
+                Next.Configure(sql, rowsLimit, withStatistics);
             }
         }
 
-        protected abstract void configure(CommandBuilder command, int rowsLimit);
+        public V4Internals.ISelector Selector { get; protected set; }
+        public IList<Ordering> Orderings { get; } = new List<Ordering>();
+        public IFieldMapping Mapping { get; protected set; }
+
+        protected abstract void configure(CommandBuilder command, int rowsLimit, bool withStatistics);
+
+        protected void writeOrderByFragment(CommandBuilder sql, Ordering clause)
+        {
+            var locator = Mapping.FieldFor(clause.Expression).TypedLocator;
+            sql.Append(locator);
+
+            if (clause.OrderingDirection == OrderingDirection.Desc)
+            {
+                sql.Append(" desc");
+            }
+        }
+
+        protected void writeOrderClause(CommandBuilder sql)
+        {
+            if (Orderings.Any())
+            {
+                sql.Append(" order by ");
+                writeOrderByFragment(sql, Orderings[0]);
+                for (var i = 1; i < Orderings.Count; i++)
+                {
+                    sql.Append(", ");
+                    writeOrderByFragment(sql, Orderings[i]);
+                }
+            }
+        }
     }
 
     public class CreateTemporaryTableStatement: Statement
@@ -42,7 +73,7 @@ namespace Marten.Linq.Model
         }
 
         public override string ExportName { get; }
-        protected override void configure(CommandBuilder command, int rowsLimit)
+        protected override void configure(CommandBuilder command, int rowsLimit, bool withStatistics)
         {
             command.Append("create temporary table ");
             command.Append(ExportName);
@@ -50,35 +81,12 @@ namespace Marten.Linq.Model
         }
     }
 
-    public class Selector: ISelector
-    {
-        private readonly string _from;
-        private readonly string[] _fields;
-
-        public Selector(string from, string[] fields)
-        {
-            _from = @from;
-            _fields = fields;
-        }
-
-        public string[] SelectFields()
-        {
-            return _fields;
-        }
-
-        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
-        {
-            sql.Append($"select {_fields.Join(", ")} from ");
-            sql.Append(_from);
-            sql.Append(" ");
-        }
-    }
 
     public class CommonTableExpressionStatement: Statement
     {
         private readonly IQueryableDocument _mapping;
 
-        public CommonTableExpressionStatement(string exportName, ISelector selector, IQueryableDocument mapping)
+        public CommonTableExpressionStatement(string exportName, Marten.Linq.ISelector selector, IQueryableDocument mapping)
         {
             _mapping = mapping;
             ExportName = exportName;
@@ -86,9 +94,9 @@ namespace Marten.Linq.Model
         }
 
         public override string ExportName { get; }
-        public ISelector Selector { get; }
+        public Marten.Linq.ISelector Selector { get; }
 
-        protected override void configure(CommandBuilder command, int rowsLimit)
+        protected override void configure(CommandBuilder command, int rowsLimit, bool withStatistics)
         {
             command.Append(Previous == null ? "WITH " : " , ");
 
@@ -110,17 +118,22 @@ namespace Marten.Linq.Model
     // TODO -- SelectStatement is going to have to understand if it's
     // inside a CTE or last. Combine CTE and SelectStatement!
 
-    public class DocumentStatement : Statement
+    public class DocumentStatement<T> : Statement
     {
-        public DocumentStatement(IQueryableDocument mapping, QueryModel model)
+        public DocumentStatement(V4Internals.IDocumentStorage<T> storage, QueryModel model)
         {
             Model = model;
-            Mapping = mapping;
+            Mapping = storage.Fields;
+            _storage = storage;
+
+            throw new NotImplementedException();
+            //Selector = storage;
         }
 
         public IList<WhereClause> WhereClauses { get; } = new List<WhereClause>();
 
         private IWhereFragment _where;
+        private V4Internals.IDocumentStorage<T> _storage;
 
         // TODO -- this is going to set up CTEs later for sub query
         // usage
@@ -133,27 +146,21 @@ namespace Marten.Linq.Model
         {
             var wheres = WhereClauses;
             if (wheres.Count == 0)
-                return Mapping.DefaultWhereFragment();
+                return _storage.DefaultWhereFragment();
 
             var where = wheres.Count == 1
                 ? parser.ParseWhereFragment(Mapping, wheres.Single().Predicate)
                 : new CompoundWhereFragment(parser, Mapping, "and", wheres);
 
-            return Mapping.FilterDocuments(Model, where);
+            return _storage.FilterDocuments(Model, where);
         }
-
-        public ISelector Selector { get; private set; }
-        public IList<Ordering> Orderings { get; } = new List<Ordering>();
 
         public QueryModel Model { get; set; }
 
-        public IQueryableDocument Mapping { get; set; }
-
-        public int RecordLimit { get; set; } = 0;
-
-        public void Configure(CommandBuilder sql)
+        public override string ExportName => null;
+        protected override void configure(CommandBuilder sql, int rowsLimit, bool withStatistics)
         {
-            Selector.WriteSelectClause(sql, Mapping);
+            Selector.WriteSelectClause(sql, withStatistics);
 
             // TODO -- GOING TO BE UGLY, but don't write out the "From" in Selector?
 
@@ -163,37 +170,10 @@ namespace Marten.Linq.Model
                 _where.Apply(sql);
             }
 
-            if (Orderings.Any())
-            {
-                sql.Append(" order by ");
-                writeOrderByFragment(sql, Orderings[0]);
-                for (var i = 1; i < Orderings.Count; i++)
-                {
-                    sql.Append(", ");
-                    writeOrderByFragment(sql, Orderings[i]);
-                }
-            }
+            writeOrderClause(sql);
 
             Model?.ApplySkip(sql);
-            Model?.ApplyTake(RecordLimit, sql);
-
-        }
-
-        private void writeOrderByFragment(CommandBuilder sql, Ordering clause)
-        {
-            var locator = Mapping.JsonLocator(clause.Expression);
-            sql.Append(locator);
-
-            if (clause.OrderingDirection == OrderingDirection.Desc)
-            {
-                sql.Append(" desc");
-            }
-        }
-
-        public override string ExportName => null;
-        protected override void configure(CommandBuilder command, int rowsLimit)
-        {
-            throw new System.NotImplementedException();
+            Model?.ApplyTake(rowsLimit, sql);
         }
     }
 }

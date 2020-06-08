@@ -9,11 +9,7 @@ namespace Marten.Schema.BulkLoading
     {
         void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter pool);
 
-        void Load(ITenant tenant, DbObjectName table, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter pool);
-
         string CreateTempTableForCopying();
-
-        DbObjectName StorageTable { get; }
 
         void LoadIntoTempTable(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CharArrayTextWriter pool);
 
