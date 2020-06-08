@@ -12,7 +12,7 @@ namespace martenbuild
 {
     internal class MartenBuild
     {
-        private const string BUILD_VERSION = "3.11.0";
+        private const string BUILD_VERSION = "3.12.0";
 
         private const string DockerConnectionString =
             "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
