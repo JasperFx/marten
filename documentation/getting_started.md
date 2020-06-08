@@ -27,6 +27,11 @@ Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL fro
 
 ## Adding Marten to a .Net Core Application
 
+<[info]>
+There's a very small [sample project in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten) that shows the mechanics for wiring
+Marten into a .Net Core application.
+<[/info]>
+
 By popular demand, Marten 3.12 added extension methods to quickly integrate Marten into any .Net Core application that uses the `IServiceCollection` abstractions to register IoC services.
 
 In the `Startup.ConfigureServices()` method of your .Net Core application (or you can use `IHostBuilder.ConfigureServices()` as well) make a call to `AddMarten()` to register Marten services like so:
