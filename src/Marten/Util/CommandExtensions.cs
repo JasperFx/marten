@@ -72,7 +72,7 @@ namespace Marten.Util
 
         public static NpgsqlParameter AddParameter(this NpgsqlCommand command, object value, NpgsqlDbType? dbType = null)
         {
-            var name = "arg" + command.Parameters.Count;
+            var name = "p" + command.Parameters.Count;
 
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
