@@ -24,6 +24,18 @@ make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` s
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
 
+
+## Adding Marten to a .Net Core Application
+
+By popular demand, Marten 3.12 added extension methods to quickly integrate Marten into any .Net Core application that uses the `IServiceCollection` abstractions to register IoC services.
+
+In the `Startup.ConfigureServices()` method of your .Net Core application (or you can use `IHostBuilder.ConfigureServices()` as well) make a call to `AddMarten()` to register Marten services like so:
+
+<[sample:StartupConfigureServices]>
+
+See <[linkto:documentation/integration]> for more information and options about this integration.
+
+
 ## Bootstrapping a Document Store
 
 To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with 

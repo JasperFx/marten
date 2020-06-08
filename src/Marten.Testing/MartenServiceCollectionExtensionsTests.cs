@@ -1,3 +1,4 @@
+using Castle.Core.Configuration;
 using Lamar;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -138,5 +139,9 @@ namespace Marten.Testing
             container.GetInstance<IDocumentSession>().ShouldNotBeNull();
             container.GetInstance<IQuerySession>().ShouldNotBeNull();
         }
+
+
     }
+
+
 }

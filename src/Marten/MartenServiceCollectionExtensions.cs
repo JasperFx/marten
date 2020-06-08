@@ -1,4 +1,6 @@
 using System;
+using System.Data;
+using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten
