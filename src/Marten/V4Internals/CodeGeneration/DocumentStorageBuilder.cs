@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
-using LamarCodeGeneration.Model;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
+using Marten.Storage;
 
 namespace Marten.V4Internals
 {
@@ -61,6 +58,9 @@ namespace Marten.V4Internals
         {
             var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
 
+            var upsertOperationType = new UpsertOperationBuilder(_mapping).BuildType(assembly);
+
+
             var queryOnly = buildQueryOnlyStorage(assembly);
             var lightweight = buildLightweightStorage(assembly);
             var identityMap = buildIdentityMapStorage(assembly);
@@ -85,6 +85,7 @@ namespace Marten.V4Internals
 
         private GeneratedType buildDirtyTrackingStorage(GeneratedAssembly assembly)
         {
+
             var typeName = $"DirtyTracking{_mapping.DocumentType.NameInCode()}DocumentStorage";
             var baseType = typeof(DirtyTrackingDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
             var type = assembly.AddType(typeName, baseType);
@@ -152,38 +153,4 @@ namespace Marten.V4Internals
             }
         }
     }
-
-    public class ReturnPropertyFrame: SyncFrame
-    {
-        private readonly Type _documentType;
-        private readonly MemberInfo _member;
-        private Variable _document;
-
-        public ReturnPropertyFrame(Type documentType, MemberInfo member)
-        {
-            _documentType = documentType;
-            _member = member;
-        }
-
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            writer.WriteLine($"return {_document.Usage}.{_member.Name};");
-        }
-
-        public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
-        {
-            _document = chain.FindVariable(_documentType);
-            yield return _document;
-        }
-    }
-
-    public class NotImplementedFrame: SyncFrame
-    {
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            writer.WriteLine($"throw new {typeof(NotImplementedException).FullNameInCode()}();");
-        }
-    }
-
-
 }

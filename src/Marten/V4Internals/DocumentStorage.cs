@@ -57,13 +57,5 @@ namespace Marten.V4Internals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public abstract TId Identity(T document);
 
-        public abstract void WriteSelectClause(CommandBuilder sql, bool withStatistics);
-        public abstract IQueryHandler<List<T1>> ToListHandler<T1>(Statement statement, bool withStatistics);
-        public abstract IQueryHandler<T1> ToSingleHandler<T1>(Statement statement, ChoiceResultOperatorBase @operator);
-
-        public IQueryHandler<T1> ToScalarHandler<T1>(Statement statement, ChoiceResultOperatorBase @operator)
-        {
-            throw new NotSupportedException();
-        }
     }
 }

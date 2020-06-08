@@ -78,7 +78,7 @@ namespace Marten.V4Internals
     // Same this time
     public interface IQueryHandler
     {
-        void ConfigureCommand(CommandBuilder builder);
+        void ConfigureCommand(CommandBuilder builder, IMartenSession session);
     }
 
     public interface ISelector
