@@ -91,7 +91,7 @@ namespace martenbuild
             });
 
             Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime"), project =>
-                Run("dotnet", $"pack {project} -o ./../../artifacts --configuration Release"));
+                Run("dotnet", $"pack {project} -o ./artifacts --configuration Release"));
 
             Target("init-db", () =>
             {
