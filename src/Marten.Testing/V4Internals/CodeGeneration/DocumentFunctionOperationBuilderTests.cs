@@ -3,6 +3,7 @@ using System.Linq;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.V4Internals;
@@ -11,12 +12,12 @@ using Xunit;
 
 namespace Marten.Testing.V4Internals.CodeGeneration
 {
-    public class UpsertOperationBuilderTests
+    public class DocumentFunctionOperationBuilderTests
     {
         private readonly DocumentMapping theMapping = DocumentMapping.For<User>();
 
         private GeneratedType _type;
-        private UpsertOperationBuilder _builder;
+        private DocumentFunctionOperationBuilder _builder;
         private GeneratedAssembly theGeneratedAssembly;
 
         private IStorageOperation theOperation
@@ -38,13 +39,13 @@ namespace Marten.Testing.V4Internals.CodeGeneration
             }
         }
 
-        protected UpsertOperationBuilder theBuilder
+        protected DocumentFunctionOperationBuilder theBuilder
         {
             get
             {
                 if (_builder == null)
                 {
-                    _builder = new UpsertOperationBuilder(theMapping);
+                    _builder = new DocumentFunctionOperationBuilder(theMapping, new UpsertFunction(theMapping));
                 }
 
                 return _builder;
@@ -64,12 +65,6 @@ namespace Marten.Testing.V4Internals.CodeGeneration
                 return _type;
             }
         }
-
-        /*
-         * TODO
-         * With optimistic locking
-         * With multi-tenancy
-         */
 
         [Fact]
         public void class_name_basic()

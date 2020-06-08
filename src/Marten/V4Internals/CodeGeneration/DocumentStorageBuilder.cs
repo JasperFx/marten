@@ -58,7 +58,13 @@ namespace Marten.V4Internals
         {
             var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
 
-            var upsertOperationType = new UpsertOperationBuilder(_mapping).BuildType(assembly);
+            var upsertOperationType = new DocumentFunctionOperationBuilder(_mapping, new UpsertFunction(_mapping)).BuildType(assembly);
+            var insertOperationType = new DocumentFunctionOperationBuilder(_mapping, new InsertFunction(_mapping)).BuildType(assembly);
+            var updateOperationType = new DocumentFunctionOperationBuilder(_mapping, new UpdateFunction(_mapping)).BuildType(assembly);
+            if (_mapping.UseOptimisticConcurrency)
+            {
+                var overwriteOperationType = new DocumentFunctionOperationBuilder(_mapping, new OverwriteFunction(_mapping)).BuildType(assembly);
+            }
 
 
             var queryOnly = buildQueryOnlyStorage(assembly);

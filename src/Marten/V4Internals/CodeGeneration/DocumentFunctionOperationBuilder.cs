@@ -15,7 +15,7 @@ using ReflectionExtensions = LamarCodeGeneration.ReflectionExtensions;
 
 namespace Marten.V4Internals
 {
-    public class UpsertOperationBuilder
+    public class DocumentFunctionOperationBuilder
     {
         private readonly DocumentMapping _mapping;
         private readonly Setter _commandText;
@@ -24,13 +24,13 @@ namespace Marten.V4Internals
         private InjectedField _versionField;
         public const string CommandTextConstantName = "CommandText";
 
-        public UpsertOperationBuilder(DocumentMapping mapping)
+        public DocumentFunctionOperationBuilder(DocumentMapping mapping, UpsertFunction function)
         {
-            _function = new UpsertFunction(mapping);
+            _function = function;
 
             CommandText = $"select {_function.Identifier}({_function.Arguments.Select(x => "?").Join(", ")})";
 
-            ClassName = $"Upsert{ReflectionExtensions.NameInCode(mapping.DocumentType)}Operation";
+            ClassName = $"{function.GetType().Name.Replace("Function", "")}{ReflectionExtensions.NameInCode(mapping.DocumentType)}Operation";
 
             _commandText = Setter.Constant(CommandTextConstantName, Constant.ForString(CommandText));
             _mapping = mapping;
