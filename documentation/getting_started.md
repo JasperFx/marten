@@ -56,10 +56,15 @@ And now that we've got a PostgreSQL schema and an `IDocumentStore`, let's start 
 
 ## Integrating Marten with IoC Containers
 
+<[info]>
+Lamar supports the .Net Core abstractions for IoC service registrations, so you *could* happily
+use the `AddMarten()` method directly with Lamar.
+<[/info]>
+
 The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to
 use an IoC container specifically to manage dependencies and the life cycle of Marten objects.
 
-Using [StructureMap](http://structuremap.github.io) as the example container, we recommend registering Marten something like this:
+Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we recommend registering Marten something like this:
 
 <[sample:MartenServices]>
 

@@ -1,29 +1,35 @@
-using StructureMap;
-using StructureMap.Pipeline;
+
+using Lamar;
 
 namespace Marten.Testing
 {
 
 
     // SAMPLE: MartenServices
-    public class MartenServices : Registry
+    public class MartenServices : ServiceRegistry
     {
         public MartenServices()
         {
-            ForSingletonOf<IDocumentStore>().Use("Build the DocumentStore", () =>
+            ForSingletonOf<IDocumentStore>().Use(c =>
             {
-                return DocumentStore.For(_ =>
+                return DocumentStore.For(options =>
                 {
-                    _.Connection("your connection string");
-                    _.AutoCreateSchemaObjects = AutoCreate.None;
-                    
+                    options.Connection("your connection string");
+                    options.AutoCreateSchemaObjects = AutoCreate.None;
+
                     // other Marten configuration options
                 });
             });
 
+            // Register IDocumentSession as Scoped
             For<IDocumentSession>()
-                .LifecycleIs<ContainerLifecycle>() // not really necessary in some frameworks
-                .Use("Lightweight Session", c => c.GetInstance<IDocumentStore>().LightweightSession());
+                .Use(c => c.GetInstance<IDocumentStore>().LightweightSession())
+                .Scoped();
+
+            // Register IQuerySession as Scoped
+            For<IQuerySession>()
+                .Use(c => c.GetInstance<IDocumentStore>().QuerySession())
+                .Scoped();
         }
     }
     // ENDSAMPLE
