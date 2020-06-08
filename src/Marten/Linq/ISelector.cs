@@ -24,29 +24,6 @@ namespace Marten.Linq
         Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token);
     }
 
-    public class StandInSelector<T>: ISelector<T>
-    {
-        public T Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
-        {
-            throw new NotSupportedException();
-        }
-
-        public Task<T> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
-        {
-            throw new NotSupportedException();
-        }
-
-        public string[] SelectFields()
-        {
-            throw new NotSupportedException();
-        }
-
-        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
-        {
-            throw new NotSupportedException();
-        }
-    }
-
     public abstract class BasicSelector
     {
         private readonly string[] _selectFields;

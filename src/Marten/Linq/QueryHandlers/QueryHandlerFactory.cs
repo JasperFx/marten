@@ -16,11 +16,9 @@ namespace Marten.Linq.QueryHandlers
 {
     public interface IQueryHandlerFactory
     {
-        IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model);
 
         IQueryHandler<T> HandlerForScalarQuery<T>(QueryModel model, IIncludeJoin[] toArray, QueryStatistics statistics);
 
-        IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, bool returnDefaultWhenEmpty);
 
         IQueryHandler<T> HandlerForSingleQuery<T>(QueryModel model, IIncludeJoin[] joins, QueryStatistics statistics,
             bool returnDefaultWhenEmpty);

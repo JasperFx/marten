@@ -26,11 +26,4 @@ namespace Marten.Schema
         Type DocumentType { get; }
     }
 
-    public static class QueryableDocumentExtensions
-    {
-        public static IField FieldFor(this IQueryableDocument document, Expression expression)
-        {
-            return document.FieldFor(FindMembers.Determine(expression));
-        }
-    }
 }

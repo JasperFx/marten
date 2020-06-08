@@ -6,6 +6,7 @@ using Remotion.Linq.Parsing.Structure;
 
 namespace Marten.Linq
 {
+    [Obsolete("Will be replaced in 4.0")]
     public class MartenQueryProvider: QueryProviderBase
     {
         private readonly Type _queryableType;

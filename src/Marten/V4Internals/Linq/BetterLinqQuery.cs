@@ -1,19 +1,18 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Baseline;
+using Marten.Linq;
+using Marten.Linq.Model;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 
-namespace Marten.Linq.Model
+namespace Marten.V4Internals.Linq
 {
     public class BetterLinqQuery<T>: ILinqQuery
     {
         private readonly DocumentStore _store;
 
 
-        private DocumentStatement statement;
+        //private DocumentStatement statement;
 
         public BetterLinqQuery(DocumentStore store, QueryModel model)
         {
@@ -71,6 +70,8 @@ namespace Marten.Linq.Model
             // // Hokey to set this, but we'll see
             // _mainStatement.RecordLimit = limit;
             // _mainStatement.Configure(command);
+
+            //statement.Root().ConfigureCommand(command, limit);
         }
 
         public void ConfigureCount(CommandBuilder command)
