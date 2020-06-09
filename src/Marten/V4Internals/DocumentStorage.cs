@@ -45,7 +45,11 @@ namespace Marten.V4Internals
         public abstract IStorageOperation Overwrite(T document, IMartenSession session);
         public abstract IStorageOperation DeleteForDocument(T document);
         public abstract IStorageOperation DeleteForWhere(IWhereFragment where);
-        public abstract IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
+
+        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        {
+            return _document.FilterDocuments(model, query);
+        }
 
         public IWhereFragment DefaultWhereFragment()
         {
