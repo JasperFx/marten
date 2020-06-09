@@ -9,6 +9,7 @@ using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 using Marten.V4Internals.Linq;
@@ -16,16 +17,6 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.V4Internals
 {
-    /*
-     * IDEAS
-     *
-     * 1. Eliminate IQueryableDocument in favor of IDocumentStorage<T>
-     * 2. Have a new DocumentStorageGraph to access IDocumentStorage<T>, make
-     *    it do the "does exist" checks right there and then
-     *    a.) Subclass this storage graph so you don't even do the check
-     *        if AutoCreate.None
-     *
-     */
 
     public interface IMartenSession : IQueryProvider
     {
@@ -62,11 +53,7 @@ namespace Marten.V4Internals
     }
 
 
-    // What if we use three different implementations depending on
-    // query only, lightweight, identity map, and dirty tracking?
 
-    // Needs to have access to the assignment strategy!!!!
-    // Encapsulates the assignment strategy
     public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
     {
         IStorageOperation DeleteForId(TId id);
@@ -75,7 +62,6 @@ namespace Marten.V4Internals
     }
 
 
-    // Same this time
     public interface IQueryHandler
     {
         void ConfigureCommand(CommandBuilder builder, IMartenSession session);
@@ -104,7 +90,6 @@ namespace Marten.V4Internals
 
 
 
-    // Same this time
     public interface IQueryHandler<T> : IQueryHandler
     {
         Type SourceType { get; }

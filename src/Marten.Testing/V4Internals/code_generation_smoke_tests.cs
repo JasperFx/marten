@@ -39,6 +39,8 @@ namespace Marten.Testing.V4Internals
         void CanBuildUpdateOperation();
         void CanBuildInsertOperation();
         void CanBuildOverwriteOperation();
+
+        void CanBuildDeleteByDocument();
     }
 
     public class DocWithVersionField
@@ -198,6 +200,13 @@ namespace Marten.Testing.V4Internals
 
             slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
             slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildDeleteByDocument()
+        {
+            var slot = CreateSlot();
+            slot.Lightweight.DeleteForDocument(Document).ShouldNotBeNull();
+            slot.IdentityMap.DeleteForDocument(Document).ShouldNotBeNull();
         }
 
         public void CanStoreIdentityMap()

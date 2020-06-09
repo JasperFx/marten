@@ -26,6 +26,8 @@ namespace Marten.V4Internals
 
 
         IStorageOperation DeleteForDocument(T document);
+
+
         IStorageOperation DeleteForWhere(IWhereFragment where);
 
 

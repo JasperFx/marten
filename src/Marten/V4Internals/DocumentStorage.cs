@@ -13,7 +13,7 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.V4Internals
 {
-    public abstract class DocumentStorage<T, TId>: IDocumentStorage<T>
+    public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>
     {
         private readonly IWhereFragment _defaultWhere;
         private readonly IQueryableDocument _document;
@@ -57,5 +57,8 @@ namespace Marten.V4Internals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public abstract TId Identity(T document);
 
+        public abstract IStorageOperation DeleteForId(TId id);
+        public abstract IQueryHandler<T> Load(TId id);
+        public abstract IQueryHandler<T> LoadMany(TId[] ids);
     }
 }
