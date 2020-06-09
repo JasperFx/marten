@@ -33,6 +33,7 @@ namespace Marten.V4Internals
             public GeneratedType Overwrite { get; set; }
 
             public GeneratedType DeleteById { get; set; }
+            public GeneratedType DeleteByWhere { get; set; }
         }
 
         public StorageSlot<T> Generate<T>()
@@ -42,6 +43,7 @@ namespace Marten.V4Internals
             var operations = new Operations
             {
                 DeleteById = buildDeleteById(assembly),
+                DeleteByWhere = buildDeleteForWhere(assembly),
                 Upsert = new DocumentFunctionOperationBuilder(_mapping, new UpsertFunction(_mapping), StorageRole.Upsert).BuildType(assembly),
                 Insert = new DocumentFunctionOperationBuilder(_mapping, new InsertFunction(_mapping), StorageRole.Insert).BuildType(assembly),
                 Update = new DocumentFunctionOperationBuilder(_mapping, new UpdateFunction(_mapping), StorageRole.Update).BuildType(assembly)
@@ -73,6 +75,47 @@ namespace Marten.V4Internals
             };
 
             return slot;
+        }
+
+        private GeneratedType buildDeleteForWhere(GeneratedAssembly assembly)
+        {
+            var baseType = typeof(DeleteMany<>).MakeGenericType(_mapping.DocumentType);
+            var type = assembly.AddType($"Delete{_mapping.DocumentType.Name}ByWhere", baseType);
+
+            var sql = $"delete from {_mapping.Table.QualifiedName} where ";
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                sql = $"update {_mapping.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now() where ";
+            }
+
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                sql += $" d.{TenantIdColumn.Name} = ? and ";
+            }
+
+
+            var commandText = Setter.Constant("CommandText", Constant.For(sql));
+            type.Setters.Add(commandText);
+
+            var configure = type.MethodFor(nameof(IQueryHandler.ConfigureCommand));
+            configure.Frames.Call<CommandBuilder>(x => x.AppendWithParameters(null), @call =>
+            {
+                @call.Arguments[0] = commandText;
+            });
+
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                configure.Frames.Code($@"
+// tenant
+{{0}}[0].NpgsqlDbType = {{1}};
+{{0}}[0].Value = {{2}}.{nameof(IMartenSession.Tenant)}.{nameof(ITenant.TenantId)};
+", Use.Type<NpgsqlParameter[]>(), NpgsqlDbType.Varchar, Use.Type<IMartenSession>());
+            }
+
+            configure.Frames.Code("{0}.Apply({1});", type.AllInjectedFields[0], Use.Type<CommandBuilder>());
+
+
+            return type;
         }
 
         private GeneratedType buildDeleteById(GeneratedAssembly assembly)
@@ -205,6 +248,10 @@ return new Marten.Generated.{operations.DeleteById.TypeName}(Identity({{0}}));
             type.MethodFor("DeleteForId").Frames.Code($@"
 return new Marten.Generated.{operations.DeleteById.TypeName}({{0}});
 ", new Use(_mapping.IdType));
+
+            type.MethodFor("DeleteForWhere").Frames.Code($@"
+return new Marten.Generated.{operations.DeleteByWhere.TypeName}({{0}});
+", Use.Type<IWhereFragment>());
 
         }
 

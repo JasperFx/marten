@@ -6,13 +6,16 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten.Util;
 using Marten.V4Internals;
+using Npgsql;
 using NSubstitute;
 using Xunit;
 using VersionTracker = Marten.V4Internals.VersionTracker;
@@ -41,6 +44,8 @@ namespace Marten.Testing.V4Internals
         void CanBuildOverwriteOperation();
 
         void CanBuildDeleteByDocument();
+
+        void CanBuildDeleteByWhere();
     }
 
     public class DocWithVersionField
@@ -207,6 +212,13 @@ namespace Marten.Testing.V4Internals
             var slot = CreateSlot();
             slot.Lightweight.DeleteForDocument(Document).ShouldNotBeNull();
             slot.IdentityMap.DeleteForDocument(Document).ShouldNotBeNull();
+        }
+
+        public void CanBuildDeleteByWhere()
+        {
+            var slot = CreateSlot();
+            slot.Lightweight.DeleteForWhere(new WhereFragment("1 = 1")).ShouldNotBeNull();
+            slot.IdentityMap.DeleteForWhere(new WhereFragment("1 = 1")).ShouldNotBeNull();
         }
 
         public void CanStoreIdentityMap()
