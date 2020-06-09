@@ -28,6 +28,9 @@ namespace Marten.Schema.Arguments
             return Expression.Call(call, _paramMethod, argName, Expression.Convert(currentVersion, typeof(object)), Expression.Constant(DbType));
         }
 
-
+        public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
+        {
+            method.Frames.Code("setCurrentVersionParameter({0}[{1}]);", parameters, i);
+        }
     }
 }

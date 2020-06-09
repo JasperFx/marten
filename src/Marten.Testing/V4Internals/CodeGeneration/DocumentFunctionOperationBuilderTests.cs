@@ -1,11 +1,10 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using Baseline;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Model;
+using LamarCompiler;
 using Marten.Schema;
 using Marten.Storage;
-using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.V4Internals;
 using Shouldly;
@@ -27,7 +26,7 @@ namespace Marten.Testing.V4Internals.CodeGeneration
             {
                 theGeneratedType.ShouldNotBeNull();
 
-                var compiler = new LamarCompiler.AssemblyGenerator();
+                var compiler = new AssemblyGenerator();
                 compiler.ReferenceAssembly(typeof(DocumentStorageBuilder).Assembly);
                 compiler.ReferenceAssembly(typeof(User).Assembly);
 
@@ -36,7 +35,7 @@ namespace Marten.Testing.V4Internals.CodeGeneration
                 var realType = theGeneratedType.CompiledType;
 
                 var user = new User();
-                return (IStorageOperation) Activator.CreateInstance(realType, user, Guid.NewGuid(), Guid.NewGuid());
+                return (IStorageOperation)Activator.CreateInstance(realType, user, Guid.NewGuid(), new Dictionary<Guid, Guid>());
             }
         }
 
@@ -45,9 +44,8 @@ namespace Marten.Testing.V4Internals.CodeGeneration
             get
             {
                 if (_builder == null)
-                {
-                    _builder = new DocumentFunctionOperationBuilder(theMapping, new UpsertFunction(theMapping), StorageRole.Upsert);
-                }
+                    _builder = new DocumentFunctionOperationBuilder(theMapping, new UpsertFunction(theMapping),
+                        StorageRole.Upsert);
 
                 return _builder;
             }
@@ -68,6 +66,20 @@ namespace Marten.Testing.V4Internals.CodeGeneration
         }
 
         [Fact]
+        public void build_command_text_basic()
+        {
+            theBuilder
+                .CommandText.ShouldBe("select public.mt_upsert_user(?, ?, ?, ?)");
+        }
+
+        [Fact]
+        public void can_compile_as_optimistic_concurrency()
+        {
+            theMapping.UseOptimisticConcurrency = true;
+            theOperation.DocumentType.ShouldBe(typeof(User));
+        }
+
+        [Fact]
         public void class_name_basic()
         {
             theBuilder
@@ -75,10 +87,9 @@ namespace Marten.Testing.V4Internals.CodeGeneration
         }
 
         [Fact]
-        public void build_command_text_basic()
+        public void role_should_be_upsert()
         {
-            theBuilder
-                .CommandText.ShouldBe("select public.mt_upsert_user(?, ?, ?, ?)");
+            theOperation.Role().ShouldBe(StorageRole.Upsert);
         }
 
         [Fact]
@@ -89,17 +100,9 @@ namespace Marten.Testing.V4Internals.CodeGeneration
         }
 
         [Fact]
-        public void role_should_be_upsert()
-        {
-            theOperation.Role().ShouldBe(StorageRole.Upsert);
-        }
-
-        [Fact]
         public void the_document_type()
         {
             theOperation.DocumentType.ShouldBe(typeof(User));
         }
-
-
     }
 }

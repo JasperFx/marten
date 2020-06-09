@@ -62,11 +62,7 @@ namespace Marten.Schema.Arguments
 
         public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
         {
-            var version = type.AllInjectedFields[2];
-
-            method.Frames.Code("// Version");
-            method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
-            method.Frames.Code("{0}[{1}].Value = {2};", parameters, i, version);
+            method.Frames.Code("setVersionParameter({0}[{1}]);", parameters, i);
         }
     }
 }

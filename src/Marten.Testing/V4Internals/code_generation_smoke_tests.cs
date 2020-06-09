@@ -41,6 +41,20 @@ namespace Marten.Testing.V4Internals
         void CanBuildOverwriteOperation();
     }
 
+    public class DocWithVersionField
+    {
+        public Guid Id { get; set; }
+
+        [Version] public Guid Version;
+    }
+
+    public class DocWithVersionProperty
+    {
+        public Guid Id { get; set; }
+
+        [Version] public Guid Version { get; set; }
+    }
+
     public class StubMartenSession: IMartenSession
     {
         public ISerializer Serializer { get; } = new JsonNetSerializer();
@@ -226,6 +240,13 @@ namespace Marten.Testing.V4Internals
             Scenario("Long Id", x => x.Schema.For<LongDoc>());
             Scenario("String Id", x => x.Schema.For<StringDoc>())
                 .Id = "foo";
+
+            Scenario("Doc with Version Field, no optimistic concurrency", x => x.Schema.For<DocWithVersionField>());
+            Scenario("Doc with Version Field, *with* optimistic concurrency", x => x.Schema.For<DocWithVersionField>().UseOptimisticConcurrency(true));
+
+
+            Scenario("Doc with Version Property, no optimistic concurrency", x => x.Schema.For<DocWithVersionProperty>());
+            Scenario("Doc with Version Property, *with* optimistic concurrency", x => x.Schema.For<DocWithVersionProperty>().UseOptimisticConcurrency(true));
 
         }
 

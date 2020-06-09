@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using Marten.Schema;
 using Marten.Schema.BulkLoading;
 using Marten.Storage;
@@ -82,7 +83,7 @@ namespace Marten.V4Internals
             var queryOnly = buildQueryOnlyStorage(assembly, operations);
             var lightweight = buildLightweightStorage(assembly, operations);
             var identityMap = buildIdentityMapStorage(assembly, operations);
-            var dirtyTracking = buildDirtyTrackingStorage(assembly);
+            var dirtyTracking = buildDirtyTrackingStorage(assembly, operations);
 
             var compiler = new LamarCompiler.AssemblyGenerator();
             compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
@@ -101,7 +102,7 @@ namespace Marten.V4Internals
             return slot;
         }
 
-        private GeneratedType buildDirtyTrackingStorage(GeneratedAssembly assembly)
+        private GeneratedType buildDirtyTrackingStorage(GeneratedAssembly assembly, Operations operations)
         {
 
             var typeName = $"DirtyTracking{_mapping.DocumentType.NameInCode()}DocumentStorage";
@@ -109,7 +110,7 @@ namespace Marten.V4Internals
             var type = assembly.AddType(typeName, baseType);
 
             writeIdentityMethod(type);
-
+            buildStorageOperationMethods(operations, type);
             writeNotImplementedStubs(type);
 
             return type;
@@ -122,7 +123,7 @@ namespace Marten.V4Internals
             var type = assembly.AddType(typeName, baseType);
 
             writeIdentityMethod(type);
-
+            buildStorageOperationMethods(operations, type);
             writeNotImplementedStubs(type);
 
             return type;
@@ -135,6 +136,8 @@ namespace Marten.V4Internals
             var type = assembly.AddType(typeName, baseType);
 
             writeIdentityMethod(type);
+
+            buildStorageOperationMethods(operations, type);
 
             writeNotImplementedStubs(type);
 
@@ -149,15 +152,39 @@ namespace Marten.V4Internals
 
             writeIdentityMethod(type);
 
+            buildStorageOperationMethods(operations, type);
+
             writeNotImplementedStubs(type);
 
             return type;
         }
 
+        private void buildStorageOperationMethods(Operations operations, GeneratedType type)
+        {
+            buildOperationMethod(type, operations, "Upsert");
+            buildOperationMethod(type, operations, "Insert");
+            buildOperationMethod(type, operations, "Update");
+        }
+
+        private void buildOperationMethod(GeneratedType type, Operations operations, string methodName)
+        {
+            var operationType = (GeneratedType)typeof(Operations).GetProperty(methodName).GetValue(operations);
+            var method = type.MethodFor(methodName);
+
+            method.Frames
+                .Code($@"return new Marten.Generated.{operationType.TypeName}
+    (
+        {{0}}, Identity({{0}}),
+        {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()},
+        {_mapping.IdType.FullNameInCode()}>()
+    );", new Use(_mapping.DocumentType), Use.Type<IMartenSession>());
+        }
+
+
         private void writeIdentityMethod(GeneratedType type)
         {
             var identity = type.MethodFor("Identity");
-            identity.Frames.Code($"return {{0}}.{_mapping.IdMember.Name};");
+            identity.Frames.Code($"return {{0}}.{_mapping.IdMember.Name};", identity.Arguments[0]);
         }
 
         private static void writeNotImplementedStubs(GeneratedType type)

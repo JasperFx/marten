@@ -12,8 +12,6 @@ using Marten.Schema.BulkLoading;
 using Marten.Storage;
 using Marten.Util;
 using Marten.V4Internals.Linq;
-using Npgsql;
-using NpgsqlTypes;
 using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.V4Internals
@@ -136,56 +134,4 @@ namespace Marten.V4Internals
 
         StorageRole Role();
     }
-
-    public abstract class StorageOperation<T, TId> : IStorageOperation
-    {
-        private readonly T _document;
-        private readonly TId _id;
-
-        public StorageOperation(T document, TId id, Guid version)
-        {
-            _document = document;
-            _id = id;
-            Version = version;
-        }
-
-        public Guid Version { get; }
-
-        // TODO -- improve Lamar to make it possible to use protected members
-        public abstract string CommandText();
-
-        // TODO -- simple return for method. Like MethodReturnsValue(string name, Variable)
-        public abstract NpgsqlDbType DbType();
-
-        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
-        {
-            var parameters = builder.AppendWithParameters(CommandText());
-            parameters[0].NpgsqlDbType = DbType();
-            parameters[0].Value = _id;
-
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameters[1].Value = session.Serializer.ToJson(_document);
-
-            ConfigureParameters(parameters, _document);
-        }
-
-        // TODO -- need some Lamar improvements here
-        public abstract void ConfigureParameters(NpgsqlParameter[] parameters, T document);
-
-        public Type DocumentType => typeof(T);
-
-        public virtual void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            // Nothing
-        }
-
-        public virtual Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-        {
-            return Task.CompletedTask;
-        }
-        public abstract StorageRole Role();
-    }
-
-
-
 }
