@@ -22,7 +22,7 @@ namespace Marten.V4Internals
         IStorageOperation Update(T document, IMartenSession session);
         IStorageOperation Insert(T document, IMartenSession session);
         IStorageOperation Upsert(T document, IMartenSession session);
-        IStorageOperation Override(T document, IMartenSession session);
+        IStorageOperation Overwrite(T document, IMartenSession session);
 
 
         IStorageOperation DeleteForDocument(T document);

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using Marten.Schema;
@@ -164,6 +165,15 @@ namespace Marten.V4Internals
             buildOperationMethod(type, operations, "Upsert");
             buildOperationMethod(type, operations, "Insert");
             buildOperationMethod(type, operations, "Update");
+
+            if (_mapping.UseOptimisticConcurrency)
+            {
+                buildOperationMethod(type, operations, "Overwrite");
+            }
+            else
+            {
+                type.MethodFor("Overwrite").Frames.ThrowNotSupportedException();
+            }
         }
 
         private void buildOperationMethod(GeneratedType type, Operations operations, string methodName)
@@ -189,6 +199,12 @@ namespace Marten.V4Internals
 
         private static void writeNotImplementedStubs(GeneratedType type)
         {
+            var missing = type.Methods.Where(x => !x.Frames.Any()).Select(x => x.MethodName);
+            if (missing.Any())
+            {
+                throw new Exception("Missing methods: " + missing.Join(", "));
+            }
+
             foreach (var method in type.Methods)
             {
                 if (!method.Frames.Any())
