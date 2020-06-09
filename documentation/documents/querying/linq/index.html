@@ -27,7 +27,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="banner">
         <div class="container">
             <div class="navbar-header">
-                <a href="/" class="navbar-brand">Marten 3.11.0</a>
+                <a href="/" class="navbar-brand">Marten 3.12.0</a>
             </div>
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
@@ -179,17 +179,26 @@ rather than the parent document regardless of the order in which the operators a
 <p>Combine your Linq queries with raw SQL using the <code>MatchesSql(sql)</code> method like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_with_matches_sql()&#xD;&#xA;{&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        var u = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Smith&quot; };&#xD;&#xA;        session.Store(u);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var user = session.Query&lt;User&gt;().Where(x =&gt; x.MatchesSql(&quot;data-&gt;&gt; &#x27;FirstName&#x27; = ?&quot;, &quot;Eric&quot;)).Single();&#xD;&#xA;        user.LastName.ShouldBe(&quot;Smith&quot;);&#xD;&#xA;        user.Id.ShouldBe(u.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="isoneof">IsOneOf</h2>
-<p>Marten v0.8 added a new extension method called <code>IsOneOf()</code> that can be used to query for documents having
+<p><code>IsOneOf()</code> extension can be used to query for documents having
 a field or property matching one of many supplied values:</p>
-<pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var users = theSession.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.IsOneOf(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var users = session.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.IsOneOf(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
 <p>To find one of for an array you can use this strategy:</p>
-<pre><code class="language-csharp">&#xD;&#xA;// Finds all UserWithNicknames&#x27;s whose nicknames matches either &quot;Melinder&quot; or &quot;Norrland&quot;&#xD;&#xA;&#xD;&#xA;var nickNames = new[] { &quot;Melinder&quot;, &quot;Norrland&quot; };&#xD;&#xA;&#xD;&#xA;var users = session.Query&lt;UserWithNicknames&gt;()&#xD;&#xA;    .Where(x =&gt; x.Nicknames.Any(n =&gt; nickNames.Contains(n)));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all UserWithNicknames&#x27;s whose nicknames matches either &quot;Melinder&quot; or &quot;Norrland&quot;&#xD;&#xA;&#xD;&#xA;var nickNames = new[] {&quot;Melinder&quot;, &quot;Norrland&quot;};&#xD;&#xA;&#xD;&#xA;var users = session.Query&lt;UserWithNicknames&gt;()&#xD;&#xA;    .Where(x =&gt; x.Nicknames.IsOneOf(nickNames));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<p>To find one of for a list you can use this strategy:</p>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var listOfRoles = new List&lt;string&gt; {&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;};&#xD;&#xA;&#xD;&#xA;var users = session.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.IsOneOf(listOfRoles));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<h2 id="in">In</h2>
+<p><code>In()</code> extension works exactly the same as <code>IsOneOf()</code>. It was introduced as syntactic sugar to ease RavenDB transition:</p>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var users = session.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.In(&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<p>To find one of for an array you can use this strategy:</p>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all UserWithNicknames&#x27;s whose nicknames matches either &quot;Melinder&quot; or &quot;Norrland&quot;&#xD;&#xA;&#xD;&#xA;var nickNames = new[] {&quot;Melinder&quot;, &quot;Norrland&quot;};&#xD;&#xA;&#xD;&#xA;var users = session.Query&lt;UserWithNicknames&gt;()&#xD;&#xA;    .Where(x =&gt; x.Nicknames.In(nickNames));&#xD;&#xA;&#xD;&#xA;</code></pre>
+<p>To find one of for a list you can use this strategy:</p>
+<pre><code class="language-csharp">&#xD;&#xA;// Finds all SuperUser&#x27;s whose role is either&#xD;&#xA;// Admin, Supervisor, or Director&#xD;&#xA;var listOfRoles = new List&lt;string&gt; {&quot;Admin&quot;, &quot;Supervisor&quot;, &quot;Director&quot;};&#xD;&#xA;&#xD;&#xA;var users = session.Query&lt;SuperUser&gt;()&#xD;&#xA;    .Where(x =&gt; x.Role.In(listOfRoles));&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="issupersetof">IsSupersetOf</h2>
 <pre><code class="language-csharp">&#xD;&#xA;// Finds all Posts whose Tags is superset of&#xD;&#xA;// c#, json, or postgres&#xD;&#xA;var posts = theSession.Query&lt;Post&gt;()&#xD;&#xA;    .Where(x =&gt; x.Tags.IsSupersetOf(&quot;c#&quot;, &quot;json&quot;, &quot;postgres&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="issubsetof">IsSubsetOf</h2>
 <pre><code class="language-csharp">&#xD;&#xA;// Finds all Posts whose Tags is subset of&#xD;&#xA;// c#, json, or postgres&#xD;&#xA;var posts = theSession.Query&lt;Post&gt;()&#xD;&#xA;    .Where(x =&gt; x.Tags.IsSubsetOf(&quot;c#&quot;, &quot;json&quot;, &quot;postgres&quot;));&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="modulo-queries">Modulo Queries</h2>
-<p>Marten v0.8 added the ability to use the modulo operator in Linq queries:</p>
+<p>Marten has the ability to use the modulo operator in Linq queries:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void use_modulo()&#xD;&#xA;{&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 1});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 2});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 3});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 4});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Blue, Number = 5});&#xD;&#xA;    theSession.Store(new Target{Color = Colors.Green, Number = 6});&#xD;&#xA;&#xD;&#xA;    theSession.SaveChanges();&#xD;&#xA;&#xD;&#xA;    theSession.Query&lt;Target&gt;().Where(x =&gt; x.Number % 2 == 0 &amp;&amp; x.Color &lt; Colors.Green).ToArray()&#xD;&#xA;        .Select(x =&gt; x.Number)&#xD;&#xA;        .ShouldHaveTheSameElementsAs(2, 4);&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <h2 id="anytenant">AnyTenant</h2>
 <p>Query data from all tenants using <code>AnyTenant</code> method.</p>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Integrating Marten into .Net Core Applications</title>
+    <link href="/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
+
+<!-- HTML code from Bootply.com editor -->
+
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/" class="navbar-brand">Marten 3.12.0</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/documentation" title="Documentation">Previous</a></li>
+                <li><a href="/documentation/schema" title="Marten and the Postgresql Schema">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/">Marten</a></li><li><a href="/documentation">Documentation</a></li><li class="active">Integrating Marten into .Net Core Applications</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
+
+            <div class="col-md-3" id="leftCol">
+
+                <img src="/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/documentation/schema">Marten and the Postgresql Schema</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/documentation">Documentation</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Integrating Marten into .Net Core Applications <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/integration.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+
+                <hr />
+                <div id="main-pane">
+                    <!--title:Integrating Marten into .Net Core Applications-->
+<div class="alert-info alert"><p><strong>Note!</strong>
+The built in DI service registration helpers were introduced in Marten v3.12.</p>
+</div>
+<p>If your application uses an <a href="https://en.wikipedia.org/wiki/Inversion_of_control">IoC container</a>,
+the easiest way to integrate Marten into a .Net application is to add the key Marten services to
+the underlying IoC container for the application.</p>
+<p>As briefly shown in the <a href="/getting_started">Getting Started</a> page, Marten comes with extension methods
+for the .Net Core standard <code>IServiceCollection</code> to quickly add Marten services to any .Net Core application that is bootstrapped by
+either the <a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1">Generic IHostBuilder abstraction</a> or the slightly older <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder?view=aspnetcore-3.1">ASP.Net Core IWebHostBuilder</a>
+hosting models.</p>
+<p>Jumping right into a basic ASP.Net MVC Core application using the out of the box Web API template, you'd have a class called <code>Startup</code> that holds most of the configuration for your application including
+the IoC service registrations for your application in the <code>ConfigureServices()</code> method. To add Marten
+to your application, use the <code>AddMarten()</code> method as shown below:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;&#xD;&#xA;    public Startup(IConfiguration configuration)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // This method gets called by the runtime. Use this method to add services to the container.&#xD;&#xA;    // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;        // This is the absolute, simplest way to integrate Marten into your&#xD;&#xA;        // .Net Core application with Marten&#x27;s default configuration&#xD;&#xA;        services.AddMarten(Configuration.GetConnectionString(&quot;Marten&quot;));&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // and other methods we don&#x27;t care about right now...&#xD;&#xA;</code></pre>
+<p>The <code>AddMarten()</code> method will add these service registrations to your application:</p>
+<ol>
+<li><code>IDocumentStore</code> with a <em>Singleton</em> lifetime. The document store can be used to create sessions, query the configuration of Marten, generate schema migrations, and do bulk inserts.</li>
+<li><code>IDocumentSession</code> with a <em>Scoped</em> lifetime for all read and write operations. By default, this is done with the <code>IDocumentStore.OpenSession()</code> method and the session created will have the identity map behavior</li>
+<li><code>IQuerySession</code> with a <em>Scoped</em> lifetime for all read operations against the document store.</li>
+</ol>
+<p>For more information, see:</p>
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-3.1">Dependency injection in ASP.NET Core</a> for more explanation about the service lifetime behavior.</li>
+<li><a href="/documentation/documents/advanced/identitymap">Identity Map Mechanics</a> for an explanation of Marten session behavior</li>
+<li><a href="/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a> for session basics</li>
+</ul>
+<h2 id="addmarten-usages">AddMarten() Usages</h2>
+<div class="alert-info alert"><p><strong>Note!</strong>
+All the examples in this page are assuming the usage of the <code>IServiceCollection</code> interface for service
+registrations within a <code>Startup</code> class, but Marten can be used with any IoC container or with no IoC container whatsoever.</p>
+</div>
+<p>First, if you are using Marten completely out of the box with no customizations (besides attributes on your documents), you can just supply a connection string to the underlying Postgresql database like this:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public Startup(IConfiguration configuration)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        // By only the connection string&#xD;&#xA;        services.AddMarten(connectionString);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>The second option is to supply a <a href="https://martinfowler.com/dslCatalog/nestedClosure.html">nested closure</a> to configure Marten inline like so:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;    public IHostEnvironment Hosting { get; }&#xD;&#xA;&#xD;&#xA;    public Startup(IConfiguration configuration, IHostEnvironment hosting)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;        Hosting = hosting;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;        services.AddMarten(opts =&gt;&#xD;&#xA;        {&#xD;&#xA;            opts.Connection(connectionString);&#xD;&#xA;&#xD;&#xA;            // Use the more permissive schema auto create behavior&#xD;&#xA;            // while in development&#xD;&#xA;            if (Hosting.IsDevelopment())&#xD;&#xA;            {&#xD;&#xA;                opts.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;            }&#xD;&#xA;        });&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>Lastly, if you prefer, you can pass a Marten <code>StoreOptions</code> object to <code>AddMarten()</code> like this example:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;    public IHostEnvironment Hosting { get; }&#xD;&#xA;&#xD;&#xA;    public Startup(IConfiguration configuration, IHostEnvironment hosting)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;        Hosting = hosting;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;        var options = BuildStoreOptions();&#xD;&#xA;&#xD;&#xA;        services.AddMarten(options);&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    private StoreOptions BuildStoreOptions()&#xD;&#xA;    {&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;        // Or lastly, build a StoreOptions object yourself&#xD;&#xA;        var options = new StoreOptions();&#xD;&#xA;        options.Connection(connectionString);&#xD;&#xA;&#xD;&#xA;        // Use the more permissive schema auto create behavior&#xD;&#xA;        // while in development&#xD;&#xA;        if (Hosting.IsDevelopment())&#xD;&#xA;        {&#xD;&#xA;            options.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;        }&#xD;&#xA;&#xD;&#xA;        return options;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as <code>Startup</code> classes can become convoluted.</p>
+<h2 id="customizing-session-creation-globally">Customizing Session Creation Globally</h2>
+<p>By default, Marten will create a document session with the basic identity map enabled and a <a href="https://docs.microsoft.com/en-us/dotnet/api/system.transactions.isolationlevel?view=netcore-3.1">ReadCommitted</a> transaction isolation level. If you want to use a different configuration for sessions globally in your application, you can use a custom implementation of the <code>ISessionFactory</code> class
+as shown in this example:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class CustomSessionFactory: ISessionFactory&#xD;&#xA;{&#xD;&#xA;    private readonly IDocumentStore _store;&#xD;&#xA;&#xD;&#xA;    // This is important! You will need to use the&#xD;&#xA;    // IDocumentStore to open sessions&#xD;&#xA;    public CustomSessionFactory(IDocumentStore store)&#xD;&#xA;    {&#xD;&#xA;        _store = store;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IQuerySession QuerySession()&#xD;&#xA;    {&#xD;&#xA;        return _store.QuerySession();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IDocumentSession OpenSession()&#xD;&#xA;    {&#xD;&#xA;        // Opting for the &quot;lightweight&quot; session&#xD;&#xA;        // option with no identity map tracking&#xD;&#xA;        // and choosing to use Serializable transactions&#xD;&#xA;        // just to be different&#xD;&#xA;        return _store.LightweightSession(IsolationLevel.Serializable);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>To register the custom session factory, use the <code>BuildSessionsWith()</code> method as shown in this example:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;    public IHostEnvironment Hosting { get; }&#xD;&#xA;&#xD;&#xA;    public Startup(IConfiguration configuration, IHostEnvironment hosting)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;        Hosting = hosting;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;        services.AddMarten(opts =&gt;&#xD;&#xA;        {&#xD;&#xA;            opts.Connection(connectionString);&#xD;&#xA;&#xD;&#xA;            // Use the more permissive schema auto create behavior&#xD;&#xA;            // while in development&#xD;&#xA;            if (Hosting.IsDevelopment())&#xD;&#xA;            {&#xD;&#xA;                opts.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;            }&#xD;&#xA;        })&#xD;&#xA;&#xD;&#xA;            // Chained helper to replace the built in&#xD;&#xA;            // session factory behavior&#xD;&#xA;            .BuildSessionsWith&lt;CustomSessionFactory&gt;();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>The session factories can also be used to build out and attach custom <code>IDocumentSessionListener</code> objects or replace the logging as we'll see in the next section.</p>
+<p>See <a href="/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information.</p>
+<h2 id="customizing-session-creation-by-scope">Customizing Session Creation by Scope</h2>
+<p>From a recent user request to Marten, what if you want to log the database statement activity in Marten with some kind of correlation to the active HTTP request or service bus message or some other logical
+session identification in your application? That's now possible by using a custom <code>ISessionFactory</code>.</p>
+<p>Taking the example of an ASP.Net Core application, let's say that you have a small service scoped to an HTTP request that tracks a correlation identifier for the request like this:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public interface ISession&#xD;&#xA;{&#xD;&#xA;    Guid CorrelationId { get; set; }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>And a custom Marten session logger to add the correlation identifier to the log output like this:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class CorrelatedMartenLogger: IMartenSessionLogger&#xD;&#xA;{&#xD;&#xA;    private readonly ILogger&lt;IDocumentSession&gt; _logger;&#xD;&#xA;    private readonly ISession _session;&#xD;&#xA;&#xD;&#xA;    public CorrelatedMartenLogger(ILogger&lt;IDocumentSession&gt; logger, ISession session)&#xD;&#xA;    {&#xD;&#xA;        _logger = logger;&#xD;&#xA;        _session = session;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void LogSuccess(NpgsqlCommand command)&#xD;&#xA;    {&#xD;&#xA;        // Do some kind of logging using the correlation id of the ISession&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void LogFailure(NpgsqlCommand command, Exception ex)&#xD;&#xA;    {&#xD;&#xA;        // Do some kind of logging using the correlation id of the ISession&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)&#xD;&#xA;    {&#xD;&#xA;        // Do some kind of logging using the correlation id of the ISession&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>Now, let's move on to building out a custom session factory that will attach our correlated marten logger to sessions being resolved from the IoC container:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class ScopedSessionFactory: ISessionFactory&#xD;&#xA;{&#xD;&#xA;    private readonly IDocumentStore _store;&#xD;&#xA;    private readonly ILogger&lt;IDocumentSession&gt; _logger;&#xD;&#xA;    private readonly ISession _session;&#xD;&#xA;&#xD;&#xA;    // This is important! You will need to use the&#xD;&#xA;    // IDocumentStore to open sessions&#xD;&#xA;    public ScopedSessionFactory(IDocumentStore store, ILogger&lt;IDocumentSession&gt; logger, ISession session)&#xD;&#xA;    {&#xD;&#xA;        _store = store;&#xD;&#xA;        _logger = logger;&#xD;&#xA;        _session = session;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IQuerySession QuerySession()&#xD;&#xA;    {&#xD;&#xA;        return _store.QuerySession();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IDocumentSession OpenSession()&#xD;&#xA;    {&#xD;&#xA;        var session = _store.LightweightSession();&#xD;&#xA;&#xD;&#xA;        // Replace the Marten session logger with our new&#xD;&#xA;        // correlated marten logger&#xD;&#xA;        session.Logger = new CorrelatedMartenLogger(_logger, _session);&#xD;&#xA;&#xD;&#xA;        return session;&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>Lastly, let's register our new session factory, but this time we need to take care to register the session factory as <code>Scoped</code> in the underlying container so we're using the correct <code>ISession</code> at runtime:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;    public IHostEnvironment Hosting { get; }&#xD;&#xA;&#xD;&#xA;    public Startup(IConfiguration configuration, IHostEnvironment hosting)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;        Hosting = hosting;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;        services.AddMarten(opts =&gt;&#xD;&#xA;        {&#xD;&#xA;            opts.Connection(connectionString);&#xD;&#xA;&#xD;&#xA;            // Use the more permissive schema auto create behavior&#xD;&#xA;            // while in development&#xD;&#xA;            if (Hosting.IsDevelopment())&#xD;&#xA;            {&#xD;&#xA;                opts.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;            }&#xD;&#xA;        })&#xD;&#xA;&#xD;&#xA;            // Chained helper to replace the CustomSessionFactory&#xD;&#xA;            .BuildSessionsPerScopeWith&lt;ScopedSessionFactory&gt;();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p><em>This correlation tracking might be better with structural logging with something like Serilog, but we'll leave that to users</em></p>
+<h2 id="eager-initialization-of-the-documentstore">Eager Initialization of the DocumentStore</h2>
+<p>Lastly, if desirable, you can force Marten to initialize the applications document store as part of bootstrapping instead of waiting for it to be initialized on the first usage with this syntax:</p>
+<pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public Startup(IConfiguration configuration)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;        // By only the connection string&#xD;&#xA;        services.AddMarten(connectionString)&#xD;&#xA;&#xD;&#xA;            // Spin up the DocumentStore right this second!&#xD;&#xA;            .InitializeStore();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
+
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/documentation">Documentation</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/documentation/schema">Marten and the Postgresql Schema</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
+</body>
+
+<foot>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/content/prism.js"></script>
+    <script type="text/javascript" src="/content/sidebar.js"></script>
+    <script type="text/javascript" src="/content/affix.js"></script>
+
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
+
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
+
+                //alert(url);
+
+                window.location.href = url;
+
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
+
+        });
+    </script>
+</foot>
+</html>
