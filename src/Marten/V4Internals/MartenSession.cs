@@ -309,7 +309,7 @@ namespace Marten.V4Internals
             foreach (var entity in entities)
             {
                 storage.Store(this, entity);
-                var operation = storage.Upsert(entity, this, Tenant);
+                var operation = storage.Upsert(entity, this);
                 _pendingOperations.Add(operation);
             }
         }

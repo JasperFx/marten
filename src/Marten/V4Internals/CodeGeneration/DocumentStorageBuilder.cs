@@ -54,22 +54,34 @@ namespace Marten.V4Internals
             _options = options;
         }
 
+        private class Operations
+        {
+            public GeneratedType Upsert { get; set; }
+            public GeneratedType Insert { get; set; }
+            public GeneratedType Update { get; set; }
+            public GeneratedType Overwrite { get; set; }
+        }
+
         public StorageSlot<T> Generate<T>()
         {
             var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
 
-            var upsertOperationType = new DocumentFunctionOperationBuilder(_mapping, new UpsertFunction(_mapping), StorageRole.Upsert).BuildType(assembly);
-            var insertOperationType = new DocumentFunctionOperationBuilder(_mapping, new InsertFunction(_mapping), StorageRole.Insert).BuildType(assembly);
-            var updateOperationType = new DocumentFunctionOperationBuilder(_mapping, new UpdateFunction(_mapping), StorageRole.Update).BuildType(assembly);
+            var operations = new Operations
+            {
+                Upsert = new DocumentFunctionOperationBuilder(_mapping, new UpsertFunction(_mapping), StorageRole.Upsert).BuildType(assembly),
+                Insert = new DocumentFunctionOperationBuilder(_mapping, new InsertFunction(_mapping), StorageRole.Insert).BuildType(assembly),
+                Update = new DocumentFunctionOperationBuilder(_mapping, new UpdateFunction(_mapping), StorageRole.Update).BuildType(assembly)
+            };
+
             if (_mapping.UseOptimisticConcurrency)
             {
-                var overwriteOperationType = new DocumentFunctionOperationBuilder(_mapping, new OverwriteFunction(_mapping), StorageRole.Update).BuildType(assembly);
+                operations.Overwrite = new DocumentFunctionOperationBuilder(_mapping, new OverwriteFunction(_mapping), StorageRole.Update).BuildType(assembly);
             }
 
 
-            var queryOnly = buildQueryOnlyStorage(assembly);
-            var lightweight = buildLightweightStorage(assembly);
-            var identityMap = buildIdentityMapStorage(assembly);
+            var queryOnly = buildQueryOnlyStorage(assembly, operations);
+            var lightweight = buildLightweightStorage(assembly, operations);
+            var identityMap = buildIdentityMapStorage(assembly, operations);
             var dirtyTracking = buildDirtyTrackingStorage(assembly);
 
             var compiler = new LamarCompiler.AssemblyGenerator();
@@ -103,7 +115,7 @@ namespace Marten.V4Internals
             return type;
         }
 
-        private GeneratedType buildIdentityMapStorage(GeneratedAssembly assembly)
+        private GeneratedType buildIdentityMapStorage(GeneratedAssembly assembly, Operations operations)
         {
             var typeName = $"IdentityMap{_mapping.DocumentType.NameInCode()}DocumentStorage";
             var baseType = typeof(IdentityMapDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
@@ -116,7 +128,7 @@ namespace Marten.V4Internals
             return type;
         }
 
-        private GeneratedType buildLightweightStorage(GeneratedAssembly assembly)
+        private GeneratedType buildLightweightStorage(GeneratedAssembly assembly, Operations operations)
         {
             var typeName = $"Lightweight{_mapping.DocumentType.NameInCode()}DocumentStorage";
             var baseType = typeof(LightweightDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
@@ -129,7 +141,7 @@ namespace Marten.V4Internals
             return type;
         }
 
-        private GeneratedType buildQueryOnlyStorage(GeneratedAssembly assembly)
+        private GeneratedType buildQueryOnlyStorage(GeneratedAssembly assembly, Operations operations)
         {
             var typeName = $"QueryOnly{_mapping.DocumentType.NameInCode()}DocumentStorage";
             var baseType = typeof(QueryOnlyDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
@@ -145,7 +157,7 @@ namespace Marten.V4Internals
         private void writeIdentityMethod(GeneratedType type)
         {
             var identity = type.MethodFor("Identity");
-            identity.Frames.Add(new ReturnPropertyFrame(_mapping.DocumentType, _mapping.IdMember));
+            identity.Frames.Code($"return {{0}}.{_mapping.IdMember.Name};");
         }
 
         private static void writeNotImplementedStubs(GeneratedType type)
@@ -154,7 +166,7 @@ namespace Marten.V4Internals
             {
                 if (!method.Frames.Any())
                 {
-                    method.Frames.Add(new NotImplementedFrame());
+                    method.Frames.ThrowNotImplementedException();
                 }
             }
         }

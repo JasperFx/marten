@@ -2,6 +2,8 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Model;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -56,6 +58,15 @@ namespace Marten.Schema.Arguments
         {
             var dbType = Expression.Constant(DbType);
             return Expression.Call(call, _paramMethod, Expression.Constant(Arg), Expression.Convert(newVersion, typeof(object)), dbType);
+        }
+
+        public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
+        {
+            var version = type.AllInjectedFields[2];
+
+            method.Frames.Code("// Version");
+            method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
+            method.Frames.Code("{0}[{1}].Value = {2};", parameters, i, version);
         }
     }
 }

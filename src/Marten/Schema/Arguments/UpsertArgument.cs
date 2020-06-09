@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Model;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -60,6 +62,7 @@ namespace Marten.Schema.Arguments
             return $"{Arg} {PostgresType}";
         }
 
+        [Obsolete("Will go away in v4")]
         public virtual Expression CompileBulkImporter(DocumentMapping mapping, EnumStorage enumStorage, Expression writer, ParameterExpression document, ParameterExpression alias, ParameterExpression serializer, ParameterExpression textWriter, ParameterExpression tenantId)
         {
             var memberType = Members.Last().GetMemberType();
@@ -79,6 +82,7 @@ namespace Marten.Schema.Arguments
             return Expression.Call(writer, method, value, dbType);
         }
 
+        [Obsolete("Will go away in v4")]
         public virtual Expression CompileUpdateExpression(EnumStorage enumStorage, ParameterExpression call, ParameterExpression doc, ParameterExpression updateBatch, ParameterExpression mapping, ParameterExpression currentVersion, ParameterExpression newVersion, ParameterExpression tenantId, bool useCharBufferPooling)
         {
             var argName = Expression.Constant(Arg);
@@ -91,6 +95,11 @@ namespace Marten.Schema.Arguments
             }
 
             return Expression.Call(call, _paramMethod, argName, body, Expression.Constant(DbType));
+        }
+
+        public virtual void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
+        {
+            throw new NotSupportedException();
         }
     }
 }

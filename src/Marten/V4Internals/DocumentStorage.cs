@@ -39,10 +39,10 @@ namespace Marten.V4Internals
         public abstract void Store(IMartenSession session, T document);
         public abstract void Store(IMartenSession session, T document, Guid? version);
         public abstract void Eject(IMartenSession session, T document);
-        public abstract IStorageOperation Update(T document, IMartenSession session, ITenant tenant);
-        public abstract IStorageOperation Insert(T document, ITenant tenant);
-        public abstract IStorageOperation Upsert(T document, IMartenSession session, ITenant tenant);
-        public abstract IStorageOperation Override(T document, IMartenSession session, ITenant tenant);
+        public abstract IStorageOperation Update(T document, IMartenSession session);
+        public abstract IStorageOperation Insert(T document, IMartenSession session);
+        public abstract IStorageOperation Upsert(T document, IMartenSession session);
+        public abstract IStorageOperation Override(T document, IMartenSession session);
         public abstract IStorageOperation DeleteForDocument(T document);
         public abstract IStorageOperation DeleteForWhere(IWhereFragment where);
         public abstract IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);

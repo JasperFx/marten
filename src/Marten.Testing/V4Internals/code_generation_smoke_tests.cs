@@ -34,6 +34,11 @@ namespace Marten.Testing.V4Internals
         //void CanStoreDirtyChecking();
         void CanEjectLightweight();
         void CanEjectIdentityMap();
+
+        void CanBuildUpsertOperation();
+        void CanBuildUpdateOperation();
+        void CanBuildInsertOperation();
+        void CanBuildOverwriteOperation();
     }
 
     public class StubMartenSession: IMartenSession
@@ -145,6 +150,40 @@ namespace Marten.Testing.V4Internals
             var session = new StubMartenSession();
             CreateSlot().IdentityMap.Store(session, Document);
             CreateSlot().IdentityMap.Eject(session, Document);
+        }
+
+        public void CanBuildUpsertOperation()
+        {
+            var slot = CreateSlot();
+
+            slot.Lightweight.Upsert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Upsert(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildUpdateOperation()
+        {
+            var slot = CreateSlot();
+
+            slot.Lightweight.Update(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Update(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildInsertOperation()
+        {
+            var slot = CreateSlot();
+
+            slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildOverwriteOperation()
+        {
+            if (!Mapping.UseOptimisticConcurrency) return;
+
+            var slot = CreateSlot();
+
+            slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
         }
 
         public void CanStoreIdentityMap()

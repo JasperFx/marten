@@ -1,5 +1,7 @@
 using System;
 using System.Linq.Expressions;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Model;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -25,5 +27,7 @@ namespace Marten.Schema.Arguments
 
             return Expression.Call(call, _paramMethod, argName, Expression.Convert(currentVersion, typeof(object)), Expression.Constant(DbType));
         }
+
+
     }
 }
