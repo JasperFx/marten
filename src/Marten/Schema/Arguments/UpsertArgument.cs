@@ -101,5 +101,11 @@ namespace Marten.Schema.Arguments
         {
             throw new NotSupportedException();
         }
+
+        public virtual void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            // Assuming this is an id
+            load.Frames.Code($"writer.Write(document.{_members.Last().Name}, {{0}});", DbType);
+        }
     }
 }

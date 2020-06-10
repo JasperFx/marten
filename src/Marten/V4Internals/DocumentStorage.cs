@@ -13,7 +13,7 @@ namespace Marten.V4Internals
     {
         private readonly IWhereFragment _defaultWhere;
         private readonly IQueryableDocument _document;
-        private string _selectClause;
+        private readonly string _selectClause;
 
         public DocumentStorage(IQueryableDocument document)
         {

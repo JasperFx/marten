@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
+using LamarCodeGeneration;
 using Marten.Services;
 using NpgsqlTypes;
 
@@ -59,6 +60,14 @@ namespace Marten.Schema.Arguments
                 Expression.Call(serializer, _tojsonWithWriter, document, textWriter),
                 Expression.Call(writer, method, Expression.Call(textWriter, _toSegment), dbType)
                 );
+        }
+
+        public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            // TODO -- this could be optimized for memory usage
+            load.Frames.Code(
+                $"writer.Write(serializer.ToJson(document), {{0}});",
+                NpgsqlDbType.Jsonb);
         }
     }
 }

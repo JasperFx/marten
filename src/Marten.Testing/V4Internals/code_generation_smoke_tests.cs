@@ -49,6 +49,8 @@ namespace Marten.Testing.V4Internals
 
         void CanBuildSelectors();
 
+        void CanBuildBulkLoader();
+
     }
 
     public class DocWithVersionField
@@ -232,6 +234,10 @@ namespace Marten.Testing.V4Internals
             slot.IdentityMap.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
         }
 
+        public void CanBuildBulkLoader()
+        {
+            CreateSlot().BulkLoader.ShouldNotBeNull();
+        }
 
 
         public void CanStoreIdentityMap()
@@ -313,4 +319,6 @@ namespace Marten.Testing.V4Internals
 
 
     }
+
+
 }

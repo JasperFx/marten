@@ -54,5 +54,10 @@ namespace Marten.Schema.Arguments
             method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
             method.Frames.Code("{0}[{1}].Value = {2}.GetType().FullName;", parameters, i, version);
         }
+
+        public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            load.Frames.Code($"writer.Write(document.GetType().FullName, {{0}});", DbType);
+        }
     }
 }

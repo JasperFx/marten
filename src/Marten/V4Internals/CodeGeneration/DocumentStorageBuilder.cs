@@ -6,6 +6,7 @@ using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Linq;
 using Marten.Schema;
+using Marten.Schema.BulkLoading;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
@@ -66,6 +67,8 @@ namespace Marten.V4Internals
             var identityMap = buildIdentityMapStorage(assembly, operations);
             var dirtyTracking = buildDirtyTrackingStorage(assembly, operations);
 
+            var bulkWriterType = new BulkLoaderBuilder(_mapping).BuildType(assembly);
+
             var compiler = new LamarCompiler.AssemblyGenerator();
             compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
             compiler.ReferenceAssembly(typeof(T).Assembly);
@@ -77,7 +80,8 @@ namespace Marten.V4Internals
                 QueryOnly = (IDocumentStorage<T>)Activator.CreateInstance(queryOnly.CompiledType, _mapping),
                 Lightweight = (IDocumentStorage<T>)Activator.CreateInstance(lightweight.CompiledType, _mapping),
                 IdentityMap = (IDocumentStorage<T>)Activator.CreateInstance(identityMap.CompiledType, _mapping),
-                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking.CompiledType, _mapping)
+                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking.CompiledType, _mapping),
+                BulkLoader = (IBulkLoader<T>) Activator.CreateInstance(bulkWriterType.CompiledType),
             };
 
             return slot;

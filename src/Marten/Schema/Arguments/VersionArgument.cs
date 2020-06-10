@@ -4,6 +4,7 @@ using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
+using Marten.Schema.Identity;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -63,6 +64,11 @@ namespace Marten.Schema.Arguments
         public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
         {
             method.Frames.Code("setVersionParameter({0}[{1}]);", parameters, i);
+        }
+
+        public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            load.Frames.Code($"writer.Write({typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid(), {{0}});", NpgsqlDbType.Uuid);
         }
     }
 }
