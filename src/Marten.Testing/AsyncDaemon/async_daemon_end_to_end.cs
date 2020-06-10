@@ -8,11 +8,13 @@ using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
 using Marten.Storage;
 using Marten.Testing.CodeTracker;
+using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
+using ProjectStarted = Marten.Testing.CodeTracker.ProjectStarted;
 
 namespace Marten.Testing.AsyncDaemon
 {
@@ -245,6 +247,38 @@ namespace Marten.Testing.AsyncDaemon
             }
 
             projection.Observed.ShouldHaveSingleItem().ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task rebuild_all_should_recreate_inline_projection()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.InlineProjections.AggregateStreamsWith<Project>();
+            });
+
+            var projectId = Guid.NewGuid();
+
+            theSession.Events.Append(projectId, new Events.Projections.ProjectStarted { Id = projectId, Name = "Marten"});
+            await theSession.SaveChangesAsync();
+
+            theSession.Query<Project>().SingleOrDefault(x=>x.Id == projectId).ShouldNotBeNull();
+            theSession.Delete<Project>(projectId);
+            await theSession.SaveChangesAsync();
+
+            theSession.Query<Project>().SingleOrDefault(x=>x.Id == projectId).ShouldBeNull();
+
+            using (var daemon = theSession.DocumentStore.BuildProjectionDaemon(new[] {typeof(Project)},
+                settings: new DaemonSettings
+                {
+                    LeadingEdgeBuffer = 0.Seconds()
+                }))
+            {
+                await daemon.RebuildAll();
+            }
+
+            theSession.Query<Project>().SingleOrDefault(x=>x.Id == projectId).ShouldNotBeNull();
         }
 
         public class ProjectCountProjection: IProjection
