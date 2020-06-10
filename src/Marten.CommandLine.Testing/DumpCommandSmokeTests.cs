@@ -4,9 +4,10 @@ using Baseline;
 using Marten.CommandLine.Commands.Dump;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 
-namespace Marten.Testing.Commands
+namespace Marten.CommandLine.Testing
 {
     public class DumpCommandSmokeTests
     {
@@ -20,7 +21,7 @@ namespace Marten.Testing.Commands
 
             var input = new DumpInput
             {
-                Store = new DocumentStore(options),
+                HostBuilder = new HostBuilder().ConfigureServices(x => x.AddMarten(options)),
                 FileName = Path.GetTempPath().AppendPath("dump1"),
 
 
@@ -28,6 +29,8 @@ namespace Marten.Testing.Commands
 
             new DumpCommand().Execute(input);
             Thread.Sleep(100); // Let the file system calm down
+
+            input.HostBuilder = new HostBuilder().ConfigureServices(x => x.AddMarten(options));
             new DumpCommand().Execute(input);
         }
 
@@ -43,7 +46,7 @@ namespace Marten.Testing.Commands
 
             var input = new DumpInput
             {
-                Store = new DocumentStore(options),
+                HostBuilder = new HostBuilder().ConfigureServices(x => x.AddMarten(options)),
                 FileName = Path.GetTempPath().AppendPath("dump2", "file.sql"),
 
 
@@ -51,6 +54,8 @@ namespace Marten.Testing.Commands
 
             new DumpCommand().Execute(input);
             Thread.Sleep(100); // Let the file system calm down
+
+            input.HostBuilder = new HostBuilder().ConfigureServices(x => x.AddMarten(options));
             new DumpCommand().Execute(input);
         }
     }

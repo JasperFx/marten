@@ -1,17 +1,18 @@
 <!--title:Command Line Tooling for Marten Management-->
 
+<[warning]>
+As of v4.0, the usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the .Net Core 
+[generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) with Marten registered in the application's IoC container.
+<[/warning]>
 
-There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly generate your own command-line tooling to
-use for managing Marten schemas at development time. In usage, you would create a new .NET console application in your system's
-solution that would reference the _Marten.CommandLine_ nuget and all of the relevant libraries from your own system. 
+There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
+your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton.AspNetCore](https://jasperfx.github.io/oakton/documentation/aspnetcore/). 
 
-Once you have the project and dependencies set up, setting up your command line tool is just this:
+To use the expanded command line options to a .Net Core application bootstrapped by `IHostBuilder`, add a reference to the _Marten.CommandLine_ Nuget and ever so slightly change your `Program.Main()` entry point as shown below:
 
 <[sample:SampleConsoleApp]>
 
-Replace the method `configureStoreOptions()` with whatever your application does to bootstrap and configure Marten. Doing this exposes 
-commands to write or apply schema patches and verify an existing schema against the application configuration. If you named your
-application "marten.exe", the commands supported in 1.0 are these:
+If you named your application "marten.exe", the commands supported are these:
 
 <pre>
 ------------------------------------------------------------------------------------------------------------------------------------

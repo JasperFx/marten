@@ -40,7 +40,7 @@
         <PackageReference Include="Npgsql" Version="[4.1.2,4.2.0)" />
         <PackageReference Include="Npgsql.Json.NET" Version="[4.1.2,4.2.0)" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
-        <PackageReference Include="Baseline" Version="1.5.0" />
+        <PackageReference Include="Baseline" Version="2.1.0" />
         <PackageReference Include="System.Memory" Version="4.5.3" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.10.0" />
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.6.0" />

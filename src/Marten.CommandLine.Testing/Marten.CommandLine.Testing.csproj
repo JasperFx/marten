@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="NSubstitute" Version="4.2.1" />
+        <PackageReference Include="Shouldly" Version="3.0.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="..\Marten.Testing\Documents\Account.cs">
+        <Link>Account.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\Company.cs">
+        <Link>Company.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\CriticalIssue.cs">
+        <Link>CriticalIssue.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\IntDoc.cs">
+        <Link>IntDoc.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\InvalidDocument.cs">
+        <Link>InvalidDocument.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\Issue.cs">
+        <Link>Issue.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\StringDoc.cs">
+        <Link>StringDoc.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\Target.cs">
+        <Link>Target.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\TargetIntId.cs">
+        <Link>TargetIntId.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Documents\User.cs">
+        <Link>User.cs</Link>
+      </Compile>
+      <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
+        <Link>ConnectionSource.cs</Link>
+      </Compile>
+    </ItemGroup>
+
+</Project>

@@ -1,36 +1,18 @@
 using System;
 using System.IO;
-using Baseline;
 using Oakton;
+using Oakton.AspNetCore;
+
+[assembly: OaktonCommandAssembly]
 
 namespace Marten.CommandLine
 {
-    public class MartenInput
-    {
-        [Description("Use to override the Postgresql connection string")]
-        public string ConnFlag { get; set; }
 
+
+    public class MartenInput : NetCoreInput
+    {
         [Description("Option to store all output into a log file")]
         public string LogFlag { get; set; }
-
-        [IgnoreOnCommandLine]
-        public IDocumentStore Store { get; set; }
-
-        internal StoreOptions Options { get; set; }
-
-        internal IDocumentStore CreateStore()
-        {
-            if (Store != null)
-                return Store;
-
-            if (ConnFlag.IsNotEmpty())
-            {
-                WriteLine($"Connecting to '{ConnFlag}'");
-                Options.Connection(ConnFlag);
-            }
-
-            return new DocumentStore(Options);
-        }
 
         private readonly StringWriter _log = new StringWriter();
 
