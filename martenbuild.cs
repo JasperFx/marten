@@ -55,10 +55,17 @@ namespace martenbuild
             Target("test-noda-time", DependsOn("compile-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
+            Target("test-schema", () =>
+                Run("dotnet", $"test src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+
+            Target("test-commands", () =>
+                Run("dotnet", $"test src/Marten.CommandLine.Testing/Marten.CommandLine.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+
+
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
-            Target("test", DependsOn("test-marten", "test-noda-time"));
+            Target("test", DependsOn("test-marten", "test-noda-time", "test-commands", "test-schema"));
 
             Target("storyteller", DependsOn("compile"), () =>
                 Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));

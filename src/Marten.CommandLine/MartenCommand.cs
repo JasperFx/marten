@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Oakton;
 
 namespace Marten.CommandLine
@@ -8,9 +9,12 @@ namespace Marten.CommandLine
         {
             try
             {
-                using (var store = input.CreateStore())
+                using (var host = input.BuildHost())
                 {
-                    return execute(store, input);
+                    using (var store = host.Services.GetRequiredService<IDocumentStore>())
+                    {
+                        return execute(store, input);
+                    }
                 }
             }
             finally
