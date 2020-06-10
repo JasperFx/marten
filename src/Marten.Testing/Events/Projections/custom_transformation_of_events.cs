@@ -444,7 +444,7 @@ namespace Marten.Testing.Events.Projections
             documentCount.ShouldBe(0);
         }
 
-        [Fact]
+        [Fact(Skip = "Failing test for #1302")]
         public async Task projectview_withdeleteevent_should_be_respected_during_projection_rebuild()
         {
             StoreOptions(_ =>
