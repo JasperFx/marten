@@ -46,6 +46,9 @@ namespace Marten.Testing.V4Internals
         void CanBuildDeleteByDocument();
 
         void CanBuildDeleteByWhere();
+
+        void CanBuildSelectors();
+
     }
 
     public class DocWithVersionField
@@ -220,6 +223,16 @@ namespace Marten.Testing.V4Internals
             slot.Lightweight.DeleteForWhere(new WhereFragment("1 = 1")).ShouldNotBeNull();
             slot.IdentityMap.DeleteForWhere(new WhereFragment("1 = 1")).ShouldNotBeNull();
         }
+
+        public void CanBuildSelectors()
+        {
+            var slot = CreateSlot();
+            slot.QueryOnly.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
+            slot.Lightweight.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
+        }
+
+
 
         public void CanStoreIdentityMap()
         {

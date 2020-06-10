@@ -67,25 +67,13 @@ namespace Marten.V4Internals
         void ConfigureCommand(CommandBuilder builder, IMartenSession session);
     }
 
-    public interface ISelector
+    public interface ISelectClause
     {
         void WriteSelectClause(CommandBuilder sql, bool withStatistics);
 
-        IQueryHandler<List<T>> ToListHandler<T>(Statement statement, bool withStatistics);
+        string[] SelectFields();
 
-        IQueryHandler<T> ToSingleHandler<T>(Statement statement, ChoiceResultOperatorBase @operator);
-
-        IQueryHandler<T> ToScalarHandler<T>(Statement statement, ChoiceResultOperatorBase @operator);
-
-        IQueryHandler<int> ToCount(Statement statement);
-        IQueryHandler<int> ToLongCount(Statement statement);
-        IQueryHandler<bool> ToAny(Statement statement);
-
-        IQueryHandler<T> ToSingle<T>(Statement statement);
-        IQueryHandler<T> ToSingleOrDefault<T>(Statement statement);
-
-        IQueryHandler<T> ToFirst<T>(Statement statement);
-        IQueryHandler<T> ToFirstOrDefault<T>(Statement statement);
+        ISelector BuildSelector(IMartenSession session);
     }
 
 

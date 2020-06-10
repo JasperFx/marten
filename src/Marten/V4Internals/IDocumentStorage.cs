@@ -2,12 +2,11 @@ using System;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Schema;
-using Marten.Storage;
 using Remotion.Linq;
 
 namespace Marten.V4Internals
 {
-    public interface IDocumentStorage<T>
+    public interface IDocumentStorage<T> : ISelectClause
     {
         IFieldMapping Fields { get; }
 
@@ -31,8 +30,6 @@ namespace Marten.V4Internals
         IStorageOperation DeleteForWhere(IWhereFragment where);
 
 
-        // These actually need to be here, because there's some branching
-        // logic we can eliminate
         IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
 
         IWhereFragment DefaultWhereFragment();

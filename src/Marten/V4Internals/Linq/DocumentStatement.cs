@@ -33,7 +33,7 @@ namespace Marten.V4Internals.Linq
             }
         }
 
-        public V4Internals.ISelector Selector { get; protected set; }
+        public V4Internals.ISelectClause SelectClause { get; protected set; }
         public IList<Ordering> Orderings { get; } = new List<Ordering>();
         public IFieldMapping Mapping { get; protected set; }
 
@@ -160,7 +160,7 @@ namespace Marten.V4Internals.Linq
         public override string ExportName => null;
         protected override void configure(CommandBuilder sql, int rowsLimit, bool withStatistics)
         {
-            Selector.WriteSelectClause(sql, withStatistics);
+            SelectClause.WriteSelectClause(sql, withStatistics);
 
             // TODO -- GOING TO BE UGLY, but don't write out the "From" in Selector?
 

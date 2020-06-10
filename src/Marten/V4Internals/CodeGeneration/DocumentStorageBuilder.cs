@@ -34,6 +34,9 @@ namespace Marten.V4Internals
 
             public GeneratedType DeleteById { get; set; }
             public GeneratedType DeleteByWhere { get; set; }
+            public GeneratedType QueryOnlySelector { get; set; }
+            public GeneratedType LightweightSelector { get; set; }
+            public GeneratedType IdentityMapSelector { get; set; }
         }
 
         public StorageSlot<T> Generate<T>()
@@ -46,7 +49,10 @@ namespace Marten.V4Internals
                 DeleteByWhere = buildDeleteForWhere(assembly),
                 Upsert = new DocumentFunctionOperationBuilder(_mapping, new UpsertFunction(_mapping), StorageRole.Upsert).BuildType(assembly),
                 Insert = new DocumentFunctionOperationBuilder(_mapping, new InsertFunction(_mapping), StorageRole.Insert).BuildType(assembly),
-                Update = new DocumentFunctionOperationBuilder(_mapping, new UpdateFunction(_mapping), StorageRole.Update).BuildType(assembly)
+                Update = new DocumentFunctionOperationBuilder(_mapping, new UpdateFunction(_mapping), StorageRole.Update).BuildType(assembly),
+                QueryOnlySelector = new SelectorBuilder(_mapping, StorageStyle.QueryOnly).BuildType(assembly),
+                LightweightSelector = new SelectorBuilder(_mapping, StorageStyle.Lightweight).BuildType(assembly),
+                IdentityMapSelector = new SelectorBuilder(_mapping, StorageStyle.IdentityMap).BuildType(assembly)
             };
 
             if (_mapping.UseOptimisticConcurrency)
@@ -190,7 +196,14 @@ namespace Marten.V4Internals
 
             writeIdentityMethod(type);
             buildStorageOperationMethods(operations, type);
+
+
+            type.MethodFor(nameof(ISelectClause.BuildSelector))
+                .Frames.Code($"return new Marten.Generated.{operations.IdentityMapSelector.TypeName}({{0}});", Use.Type<IMartenSession>());
+
+
             writeNotImplementedStubs(type);
+
 
             return type;
         }
@@ -204,6 +217,10 @@ namespace Marten.V4Internals
             writeIdentityMethod(type);
 
             buildStorageOperationMethods(operations, type);
+
+            type.MethodFor(nameof(ISelectClause.BuildSelector))
+                .Frames.Code($"return new Marten.Generated.{operations.LightweightSelector.TypeName}({{0}});", Use.Type<IMartenSession>());
+
 
             writeNotImplementedStubs(type);
 
@@ -219,6 +236,9 @@ namespace Marten.V4Internals
             writeIdentityMethod(type);
 
             buildStorageOperationMethods(operations, type);
+
+            type.MethodFor(nameof(ISelectClause.BuildSelector))
+                .Frames.Code($"return new Marten.Generated.{operations.QueryOnlySelector.TypeName}({{0}});", Use.Type<IMartenSession>());
 
 
             writeNotImplementedStubs(type);

@@ -1,15 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Baseline;
 using Marten.Linq;
 using Marten.Linq.Fields;
-using Marten.Linq.Model;
 using Marten.Schema;
-using Marten.Storage;
 using Marten.Util;
-using Marten.V4Internals.Linq;
 using Remotion.Linq;
-using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.V4Internals
 {
@@ -17,6 +13,7 @@ namespace Marten.V4Internals
     {
         private readonly IWhereFragment _defaultWhere;
         private readonly IQueryableDocument _document;
+        private string _selectClause;
 
         public DocumentStorage(IQueryableDocument document)
         {
@@ -25,6 +22,9 @@ namespace Marten.V4Internals
             TableName = document.Table;
 
             _defaultWhere = document.DefaultWhereFragment();
+
+            _selectClause = $"select {_document.SelectFields().Join(", ")} from {document.Table.QualifiedName} as d";
+
         }
 
         public DbObjectName TableName { get; }
@@ -58,11 +58,25 @@ namespace Marten.V4Internals
 
         public IFieldMapping Fields { get; }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract TId Identity(T document);
-
         public abstract IStorageOperation DeleteForId(TId id);
         public abstract IQueryHandler<T> Load(TId id);
         public abstract IQueryHandler<T> LoadMany(TId[] ids);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public abstract TId Identity(T document);
+
+
+        public void WriteSelectClause(CommandBuilder sql, bool withStatistics)
+        {
+            if (withStatistics) throw new NotImplementedException("Come back to this");
+            sql.Append(_selectClause);
+        }
+
+        public string[] SelectFields()
+        {
+            return _document.SelectFields();
+        }
+
+        public abstract ISelector BuildSelector(IMartenSession session);
     }
 }
