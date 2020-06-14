@@ -1,6 +1,6 @@
 using System;
 
-namespace Marten.Schema
+namespace Marten.Exceptions
 {
 #if SERIALIZE
     [Serializable]

@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;

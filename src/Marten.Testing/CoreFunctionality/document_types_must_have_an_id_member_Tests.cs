@@ -1,4 +1,4 @@
-﻿using Marten.Schema;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Xunit;
 

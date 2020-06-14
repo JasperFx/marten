@@ -1,6 +1,5 @@
 using System.Linq;
-using Marten.Linq;
-using Marten.Services;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Xunit;
 

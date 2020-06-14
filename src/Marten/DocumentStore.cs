@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;

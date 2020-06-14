@@ -1,10 +1,9 @@
 using System;
 using System.Linq;
-using Marten.Services;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {

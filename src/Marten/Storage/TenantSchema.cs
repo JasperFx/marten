@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Schema;
 
 namespace Marten.Storage

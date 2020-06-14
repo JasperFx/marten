@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

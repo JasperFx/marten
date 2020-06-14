@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Baseline;
 using Baseline.Reflection;
+using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;

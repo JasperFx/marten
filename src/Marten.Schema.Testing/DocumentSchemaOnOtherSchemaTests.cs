@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Baseline;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Services;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

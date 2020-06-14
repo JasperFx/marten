@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Linq.Compiled;
 using Marten.Linq.Model;
 using Marten.Linq.QueryHandlers.CompiledInclude;

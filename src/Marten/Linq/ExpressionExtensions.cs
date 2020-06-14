@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Exceptions;
 using Remotion.Linq.Clauses.Expressions;
 
 namespace Marten.Linq

@@ -6,6 +6,7 @@ using System.Reflection;
 using Baseline;
 using Marten;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Util;

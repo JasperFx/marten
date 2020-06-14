@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;

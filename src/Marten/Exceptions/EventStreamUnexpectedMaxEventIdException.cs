@@ -1,6 +1,7 @@
 using System;
+using System.Runtime.Serialization;
 
-namespace Marten.Services
+namespace Marten.Exceptions
 {
     public class EventStreamUnexpectedMaxEventIdException: Exception
     {
@@ -12,6 +13,10 @@ namespace Marten.Services
         {
             Id = id;
             AggregateType = aggregateType;
+        }
+
+        protected EventStreamUnexpectedMaxEventIdException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

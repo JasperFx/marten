@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 
 namespace Marten.Services
 {
@@ -35,18 +36,6 @@ namespace Marten.Services
             {
                 throw new NonExistentDocumentException(typeof(T), Id);
             }
-        }
-    }
-
-    public class NonExistentDocumentException: Exception
-    {
-        public Type DocType { get; }
-        public object Id { get; }
-
-        public NonExistentDocumentException(Type docType, object id) : base((string)$"Nonexistent document {docType.FullName}: {id}")
-        {
-            DocType = docType;
-            Id = id;
         }
     }
 }

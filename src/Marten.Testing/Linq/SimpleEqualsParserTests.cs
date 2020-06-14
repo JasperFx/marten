@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Xunit;
 using System.Linq;
 using System.Linq.Expressions;
+using Marten.Exceptions;
 using Marten.Services;
 using Marten.Linq;
 using Marten.Schema;

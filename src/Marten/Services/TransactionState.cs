@@ -2,6 +2,7 @@ using System;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Npgsql;
 
 namespace Marten.Services
@@ -181,13 +182,6 @@ namespace Marten.Services
                 cmd.Transaction = Transaction;
 
             return cmd;
-        }
-    }
-
-    public class RollbackException: Exception
-    {
-        public RollbackException(Exception innerException) : base("Failed while trying to rollback an exception", innerException)
-        {
         }
     }
 }
