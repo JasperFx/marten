@@ -19,6 +19,7 @@ namespace Marten.Services
         private TransactionState _connection;
         private readonly bool _ownsConnection;
         private readonly IRetryPolicy _retryPolicy;
+        private NpgsqlConnection _npgsqlConn;
 
         public ManagedConnection(IConnectionFactory factory, IRetryPolicy retryPolicy) : this(factory, CommandRunnerMode.AutoCommit, retryPolicy)
         {
@@ -30,11 +31,10 @@ namespace Marten.Services
             _mode = options.OwnsTransactionLifecycle ? mode : CommandRunnerMode.External;
             _isolationLevel = options.IsolationLevel;
 
-            var conn = options.Connection ?? options.Transaction?.Connection;
+            _npgsqlConn = options.Connection ?? options.Transaction?.Connection;
+            _commandTimeout = options.Timeout ?? _npgsqlConn?.CommandTimeout;
 
-            _commandTimeout = options.Timeout ?? conn?.CommandTimeout;
-
-            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
+            _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, _npgsqlConn, _ownsConnection, options.Transaction);
             _retryPolicy = retryPolicy;
         }
 
@@ -54,7 +54,9 @@ namespace Marten.Services
         {
             if (_connection == null)
             {
-                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
+                _connection = _factory is null ?
+                    new TransactionState(_mode, _isolationLevel, _commandTimeout, _npgsqlConn, _ownsConnection) :
+                    new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
 
                 _retryPolicy.Execute(() => _connection.Open());
             }
@@ -64,7 +66,9 @@ namespace Marten.Services
         {
             if (_connection == null)
             {
-                _connection = new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
+                _connection = _factory is null ?
+                    new TransactionState(_mode, _isolationLevel, _commandTimeout, _npgsqlConn, _ownsConnection) :
+                    new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
 
                 await _retryPolicy.ExecuteAsync(async () => await _connection.OpenAsync(token), token);
             }
