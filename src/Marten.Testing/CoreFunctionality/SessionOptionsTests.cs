@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Baseline;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -112,6 +112,56 @@ public void ConfigureCommandTimeout(IDocumentStore store)
                 var cmd = query.Query<FryGuy>().Explain();
                 Assert.Equal(60, cmd.Command.CommandTimeout);
                 Assert.Equal(1, query.Connection.CommandTimeout);
+            }
+        }
+
+        [Fact]
+        public void session_with_custom_connection_reusable_after_saveChanges()
+        {
+            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+            var documentStore = DocumentStore.For(c =>
+            {
+                c.Connection(connectionStringBuilder.ToString());
+            });
+
+            var connection = new NpgsqlConnection(connectionStringBuilder.ToString());
+            connection.Open();
+
+            var options = new SessionOptions() { Connection = connection };
+
+            var testobject = new FryGuy();
+
+            using (var session = documentStore.OpenSession(options))
+            {
+                session.Store(testobject);
+                session.SaveChanges();
+                session.Load<FryGuy>(testobject.Id).ShouldNotBeNull();
+            }
+        }
+
+        [Fact]
+        public void session_with_custom_connection_reusable_after_saveChangesAsync()
+        {
+            var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+            var documentStore = DocumentStore.For(c =>
+            {
+                c.Connection(connectionStringBuilder.ToString());
+            });
+
+            var connection = new NpgsqlConnection(connectionStringBuilder.ToString());
+            connection.Open();
+
+            var options = new SessionOptions() { Connection = connection };
+
+            var testobject = new FryGuy();
+
+            using (var query = documentStore.OpenSession(options))
+            {
+                query.Store(testobject);
+                query.SaveChangesAsync().Wait();
+                query.LoadAsync<FryGuy>(testobject.Id).GetAwaiter().GetResult().ShouldNotBeNull();
             }
         }
 
