@@ -1,13 +1,20 @@
+using System;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Npgsql;
 
 namespace Marten.V4Internals
 {
-    public interface IDatabase
+    public interface IDatabase : IDisposable
     {
-        T Execute<T>(IQueryHandler<T> handler, IMartenSession session);
-        Task<T> ExecuteAsync<T>(IQueryHandler<T> handler, IMartenSession session, CancellationToken token);
-
         int RequestCount { get; }
+        NpgsqlConnection Connection { get; }
+
+        DbDataReader ExecuteReader(NpgsqlCommand command);
+        Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token);
     }
+
+
+
 }

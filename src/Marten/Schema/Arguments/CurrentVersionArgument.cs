@@ -1,5 +1,7 @@
 using System;
 using System.Linq.Expressions;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Model;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
@@ -24,6 +26,11 @@ namespace Marten.Schema.Arguments
             var argName = Expression.Constant(Arg);
 
             return Expression.Call(call, _paramMethod, argName, Expression.Convert(currentVersion, typeof(object)), Expression.Constant(DbType));
+        }
+
+        public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
+        {
+            method.Frames.Code("setCurrentVersionParameter({0}[{1}]);", parameters, i);
         }
     }
 }

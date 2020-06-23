@@ -24,9 +24,9 @@ namespace Marten.Testing.Linq
 
             var cmd = queryable.ToCommand(FetchType.FetchMany);
 
-            SpecificationExtensions.ShouldContain(cmd.CommandText, "LIMIT :arg1");
+            SpecificationExtensions.ShouldContain(cmd.CommandText, "LIMIT :p1");
 
-            cmd.Parameters["arg1"].Value.ShouldBe(10);
+            cmd.Parameters["p1"].Value.ShouldBe(10);
 
             queryable.ToArray().Length.ShouldBe(10);
         }

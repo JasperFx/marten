@@ -1,6 +1,11 @@
 using System.Linq.Expressions;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
+using LamarCodeGeneration.Model;
 using Marten.Storage;
+using Marten.V4Internals;
 using NpgsqlTypes;
+using ITenant = Marten.V4Internals.ITenant;
 
 namespace Marten.Schema.Arguments
 {
@@ -32,6 +37,17 @@ namespace Marten.Schema.Arguments
             var dbType = Expression.Constant(NpgsqlDbType.Varchar);
 
             return Expression.Call(call, _paramMethod, argName, tenantId, dbType);
+        }
+
+        public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters)
+        {
+            method.Frames.Code($"{{0}}[{{1}}].Value = {{2}}.{nameof(IMartenSession.Tenant)}.{nameof(ITenant.TenantId)};", parameters, i, Use.Type<IMartenSession>());
+            method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
+        }
+
+        public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            load.Frames.Code($"writer.Write(tenant.TenantId, {{0}});", DbType);
         }
     }
 }

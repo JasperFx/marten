@@ -7,6 +7,7 @@ using NpgsqlTypes;
 
 namespace Marten.Services
 {
+    [Obsolete("Going away in v4")]
     public class SprocCall: IStorageOperation
     {
         private readonly DbObjectName _function;

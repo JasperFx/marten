@@ -1,36 +1,26 @@
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
+using Marten.V4Internals;
 using Npgsql;
 
 namespace Marten.Services
 {
-    public class ManagedConnection: IManagedConnection
+    public class ManagedConnection: IManagedConnection, IDatabase
     {
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
         private readonly int? _commandTimeout;
         private TransactionState _connection;
-        private bool _ownsConnection;
-        private IRetryPolicy _retryPolicy;
-
-        // keeping this for binary compatibility (but not used)
-        [Obsolete("Use the method which includes IRetryPolicy instead")]
-        public ManagedConnection(IConnectionFactory factory) : this(factory, new NulloRetryPolicy())
-        {
-        }
+        private readonly bool _ownsConnection;
+        private readonly IRetryPolicy _retryPolicy;
 
         public ManagedConnection(IConnectionFactory factory, IRetryPolicy retryPolicy) : this(factory, CommandRunnerMode.AutoCommit, retryPolicy)
-        {
-        }
-
-        // keeping this for binary compatibility (but not used)
-        [Obsolete("Use the method which includes IRetryPolicy instead")]
-        public ManagedConnection(SessionOptions options, CommandRunnerMode mode) : this(options, mode, new NulloRetryPolicy())
         {
         }
 
@@ -46,14 +36,6 @@ namespace Marten.Services
 
             _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, conn, options.OwnsConnection, options.Transaction);
             _retryPolicy = retryPolicy;
-        }
-
-        // keeping this for binary compatibility (but not used)
-        [Obsolete("Use the method which includes IRetryPolicy instead")]
-        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
-            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30) : this(factory, mode,
-            new NulloRetryPolicy(), isolationLevel, commandTimeout)
-        {
         }
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
@@ -210,6 +192,8 @@ namespace Marten.Services
             }
         }
 
+
+
         private void handleCommandException(NpgsqlCommand cmd, Exception e)
         {
             this.SafeDispose();
@@ -265,6 +249,49 @@ namespace Marten.Services
             catch (Exception e)
             {
                 handleCommandException(cmd, e);
+                throw;
+            }
+        }
+
+        public DbDataReader ExecuteReader(NpgsqlCommand command)
+        {
+            buildConnection();
+
+            command.Connection = _connection.Connection;
+
+            RequestCount++;
+
+            try
+            {
+                var returnValue = _retryPolicy.Execute<DbDataReader>(command.ExecuteReader);
+                Logger.LogSuccess(command);
+                return returnValue;
+            }
+            catch (Exception e)
+            {
+                handleCommandException(command, e);
+                throw;
+            }
+        }
+
+        public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token)
+        {
+            await buildConnectionAsync(token).ConfigureAwait(false);
+
+            command.Connection = _connection.Connection;
+
+            RequestCount++;
+
+            try
+            {
+                var reader = await _retryPolicy.ExecuteAsync(async () => await command.ExecuteReaderAsync(token).ConfigureAwait(false), token);
+                Logger.LogSuccess(command);
+
+                return reader;
+            }
+            catch (Exception e)
+            {
+                handleCommandException(command, e);
                 throw;
             }
         }

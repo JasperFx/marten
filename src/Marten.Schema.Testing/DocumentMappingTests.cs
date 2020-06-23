@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Linq.Fields;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -103,6 +104,10 @@ namespace Marten.Schema.Testing
             }
 
             public bool RequiresSequences { get; } = false;
+            public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         // SAMPLE: ConfigureMarten-generic

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Marten.Linq.Fields;
 using Marten.Schema;
 
 namespace Marten.Linq
@@ -31,7 +32,7 @@ namespace Marten.Linq
             return new SelectTransformer<T>(mapping, this, distinct);
         }
 
-        public string ToSelectField(IQueryableDocument mapping)
+        public string ToSelectField(IFieldMapping mapping)
         {
             var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
             return $"jsonb_build_object({jsonBuildObjectArgs}) as json";
@@ -53,7 +54,7 @@ namespace Marten.Linq
             private string Name { get; }
             public SelectedField Field { get; } = new SelectedField();
 
-            public string ToJsonBuildObjectPair(IQueryableDocument mapping)
+            public string ToJsonBuildObjectPair(IFieldMapping mapping)
             {
                 var field = mapping.FieldFor(Field.ToArray());
                 var locator = field.RawLocator ?? field.TypedLocator;

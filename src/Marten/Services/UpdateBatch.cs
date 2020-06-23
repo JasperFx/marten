@@ -10,6 +10,7 @@ using Npgsql;
 
 namespace Marten.Services
 {
+    [Obsolete("Kill this in v4")]
     public class UpdateBatch: IDisposable
     {
         private readonly MemoryPool<char> _writerPool;
@@ -95,6 +96,7 @@ namespace Marten.Services
             batch.AddCall(operation, operation as ICallback);
         }
 
+        [Obsolete("Going away in v4")]
         public SprocCall Sproc(DbObjectName function, ICallback callback = null, IExceptionTransform exceptionTransform = null)
         {
             if (function == null)

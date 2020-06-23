@@ -16,6 +16,18 @@ namespace Marten.Testing.V4Internals
         private VersionTracker theTracker = new VersionTracker();
 
         [Fact]
+        public void can_retrieve_dictionary_for_document_type()
+        {
+            var dict = theTracker.ForType<IntDoc, int>();
+            var dict2 = theTracker.ForType<IntDoc, int>();
+            var dict3 = theTracker.ForType<IntDoc, int>();
+
+            dict.ShouldNotBeNull();
+            dict.ShouldBeSameAs(dict2);
+            dict.ShouldBeSameAs(dict3);
+        }
+
+        [Fact]
         public void can_get_version_when_it_is_empty_always_null()
         {
             theTracker.VersionFor<StringDoc, string>(stringDoc.Id)

@@ -8,6 +8,24 @@ namespace Marten.V4Internals
         private readonly Dictionary<Type, object> _byType
             = new Dictionary<Type, object>();
 
+        public Dictionary<TId, Guid> ForType<TDoc, TId>()
+        {
+            if (_byType.TryGetValue(typeof(TDoc), out var item))
+            {
+                if (item is Dictionary<TId, Guid> d)
+                {
+                    return d;
+                }
+
+                throw new InvalidOperationException($"Invalid id of type {typeof(TId)} for document type {typeof(TDoc)}");
+            }
+
+            var dict = new Dictionary<TId, Guid>();
+            _byType[typeof(TDoc)] = dict;
+
+            return dict;
+        }
+
         public Guid? VersionFor<TDoc, TId>(TId id)
         {
             if (_byType.TryGetValue(typeof(TDoc), out var item))

@@ -1,16 +1,27 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Linq.Fields;
-using Marten.Schema;
-using Marten.Storage;
+using Marten.V4Internals.Linq;
 using Remotion.Linq;
 
 namespace Marten.V4Internals
 {
-    public interface IDocumentStorage<T>
+    public interface IDocumentStorage : ISelectClause
     {
+        Type SourceType { get; }
+
         IFieldMapping Fields { get; }
 
+        IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
+
+        IWhereFragment DefaultWhereFragment();
+    }
+
+    public interface IDocumentStorage<T> : IDocumentStorage
+    {
         Type IdType { get; }
         Guid? VersionFor(T document, IMartenSession session);
 
@@ -19,27 +30,28 @@ namespace Marten.V4Internals
 
         void Eject(IMartenSession session, T document);
 
-        IStorageOperation Update(T document, IMartenSession session, ITenant tenant);
-        IStorageOperation Insert(T document, ITenant tenant);
-        IStorageOperation Upsert(T document, IMartenSession session, ITenant tenant);
-        IStorageOperation Override(T document, IMartenSession session, ITenant tenant);
+        IStorageOperation Update(T document, IMartenSession session);
+        IStorageOperation Insert(T document, IMartenSession session);
+        IStorageOperation Upsert(T document, IMartenSession session);
+        IStorageOperation Overwrite(T document, IMartenSession session);
 
 
         IStorageOperation DeleteForDocument(T document);
+
+
         IStorageOperation DeleteForWhere(IWhereFragment where);
 
-
-        // These actually need to be here, because there's some branching
-        // logic we can eliminate
-        IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
-
-        IWhereFragment DefaultWhereFragment();
     }
 
-    public abstract class DirtyTrackingDocumentStorage<T, TId>: DocumentStorage<T, TId>
+    public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
     {
-        public DirtyTrackingDocumentStorage(IQueryableDocument document): base(document)
-        {
-        }
+        IStorageOperation DeleteForId(TId id);
+
+        T Load(TId id, IMartenSession session);
+        Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+
+        IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
+        Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
+
     }
 }

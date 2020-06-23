@@ -9,6 +9,7 @@ using NpgsqlTypes;
 
 namespace Marten.Services
 {
+    [Obsolete("Kill this in v4")]
     public interface IBatchCommand
     {
         NpgsqlParameter AddParameter(object value, NpgsqlDbType dbType);
@@ -17,6 +18,7 @@ namespace Marten.Services
         NpgsqlCommand Command { get; }
     }
 
+    [Obsolete("Kill this in v4")]
     public class BatchCommand: IBatchCommand
     {
         private readonly ITenant _tenant;

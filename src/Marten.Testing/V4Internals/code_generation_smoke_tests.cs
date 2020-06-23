@@ -6,15 +6,19 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Storage;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten.Util;
 using Marten.V4Internals;
+using Npgsql;
 using NSubstitute;
+using Remotion.Linq.Clauses;
 using Xunit;
+using IDocumentStorage = Marten.V4Internals.IDocumentStorage;
 using VersionTracker = Marten.V4Internals.VersionTracker;
 
 namespace Marten.Testing.V4Internals
@@ -34,6 +38,36 @@ namespace Marten.Testing.V4Internals
         //void CanStoreDirtyChecking();
         void CanEjectLightweight();
         void CanEjectIdentityMap();
+
+        void CanBuildUpsertOperation();
+        void CanBuildUpdateOperation();
+        void CanBuildInsertOperation();
+        void CanBuildOverwriteOperation();
+
+        void CanBuildDeleteByDocument();
+
+        void CanBuildDeleteByWhere();
+
+        void CanBuildSelectors();
+
+        void CanBuildBulkLoader();
+
+        //void HasSourceCode();
+
+    }
+
+    public class DocWithVersionField
+    {
+        public Guid Id { get; set; }
+
+        [Version] public Guid Version;
+    }
+
+    public class DocWithVersionProperty
+    {
+        public Guid Id { get; set; }
+
+        [Version] public Guid Version { get; set; }
     }
 
     public class StubMartenSession: IMartenSession
@@ -42,6 +76,14 @@ namespace Marten.Testing.V4Internals
         public Dictionary<Type, object> ItemMap { get; } = new Dictionary<Type, object>();
         public ITenant Tenant { get; } = Substitute.For<ITenant>();
         public VersionTracker Versions { get; } = new VersionTracker();
+        public IDatabase Database { get; }
+        public IDocumentStorage StorageFor(Type documentType)
+        {
+            throw new NotImplementedException();
+        }
+
+        public StoreOptions Options { get; }
+
         public Task<T> ExecuteQuery<T>(IQueryHandler<T> handler, CancellationToken token)
         {
             throw new NotImplementedException();
@@ -70,6 +112,26 @@ namespace Marten.Testing.V4Internals
         public TResult Execute<TResult>(Expression expression)
         {
             throw new NotImplementedException();
+        }
+
+        public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TResult Execute<TResult>(Expression expression, ResultOperatorBase op)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token, ResultOperatorBase op)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+            Database?.Dispose();
         }
     }
 
@@ -147,15 +209,82 @@ namespace Marten.Testing.V4Internals
             CreateSlot().IdentityMap.Eject(session, Document);
         }
 
+        public void CanBuildUpsertOperation()
+        {
+            var slot = CreateSlot();
+
+            slot.Lightweight.Upsert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Upsert(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildUpdateOperation()
+        {
+            var slot = CreateSlot();
+
+            slot.Lightweight.Update(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Update(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildInsertOperation()
+        {
+            var slot = CreateSlot();
+
+            slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildOverwriteOperation()
+        {
+            if (!Mapping.UseOptimisticConcurrency) return;
+
+            var slot = CreateSlot();
+
+            slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildDeleteByDocument()
+        {
+            var slot = CreateSlot();
+            slot.Lightweight.DeleteForDocument(Document).ShouldNotBeNull();
+            slot.IdentityMap.DeleteForDocument(Document).ShouldNotBeNull();
+        }
+
+        public void CanBuildDeleteByWhere()
+        {
+            var slot = CreateSlot();
+            slot.Lightweight.DeleteForWhere(new WhereFragment("1 = 1")).ShouldNotBeNull();
+            slot.IdentityMap.DeleteForWhere(new WhereFragment("1 = 1")).ShouldNotBeNull();
+        }
+
+        public void CanBuildSelectors()
+        {
+            var slot = CreateSlot();
+            slot.QueryOnly.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
+            slot.Lightweight.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
+            slot.IdentityMap.BuildSelector(new StubMartenSession()).ShouldNotBeNull();
+        }
+
+        public void CanBuildBulkLoader()
+        {
+            CreateSlot().BulkLoader.ShouldNotBeNull();
+        }
+
+        public void HasSourceCode()
+        {
+            CreateSlot().SourceCode.ShouldNotBeEmpty();
+        }
+
+
         public void CanStoreIdentityMap()
         {
             CreateSlot().IdentityMap.Store(new StubMartenSession(), Document);
             CreateSlot().IdentityMap.Store(new StubMartenSession(), Document, Guid.NewGuid());
         }
 
-        private StorageSlot<T> CreateSlot()
+        private DocumentPersistence<T> CreateSlot()
         {
-            var builder = new DocumentStorageBuilder(Mapping, Options);
+            var builder = new DocumentPersistenceBuilder(Mapping, Options);
             return builder.Generate<T>();
         }
     }
@@ -188,6 +317,21 @@ namespace Marten.Testing.V4Internals
             Scenario("String Id", x => x.Schema.For<StringDoc>())
                 .Id = "foo";
 
+            Scenario("Doc with Version Field, no optimistic concurrency", x => x.Schema.For<DocWithVersionField>());
+            Scenario("Doc with Version Field, *with* optimistic concurrency", x => x.Schema.For<DocWithVersionField>().UseOptimisticConcurrency(true));
+
+
+            Scenario("Doc with Version Property, no optimistic concurrency", x => x.Schema.For<DocWithVersionProperty>());
+            Scenario("Doc with Version Property, *with* optimistic concurrency", x => x.Schema.For<DocWithVersionProperty>().UseOptimisticConcurrency(true));
+
+            Scenario("Multi-tenanted", x => x.Schema.For<Target>().MultiTenanted());
+            Scenario("Soft-deleted", x => x.Schema.For<Target>().SoftDeleted());
+            Scenario("Soft-deleted & multi-tenanted", x => x.Schema.For<Target>().SoftDeleted().MultiTenanted());
+
+            Scenario("Duplicated Fields",
+                x => x.Schema.For<Target>().Duplicate(t => t.Color).Duplicate(t => t.Decimal));
+
+            Scenario("Hierarchy root type", x => x.Schema.For<User>().AddSubClass<AdminUser>());
         }
 
         public static IEnumerable<object[]> TestCases()
@@ -219,4 +363,6 @@ namespace Marten.Testing.V4Internals
 
 
     }
+
+
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Baseline;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using Marten.Storage;
 
 namespace Marten.Schema.Identity
@@ -15,6 +17,12 @@ namespace Marten.Schema.Identity
         }
 
         public bool RequiresSequences { get; } = false;
+        public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
+        {
+            var document = new Use(mapping.DocumentType);
+            method.Frames.Code($"if (string.IsNullOrEmpty({{0}}.{mapping.IdMember.Name})) throw new InvalidOperationException(\"Id/id values cannot be null or empty\");", document);
+            method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
+        }
 
         public string Assign(ITenant tenant, string existing, out bool assigned)
         {

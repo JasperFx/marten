@@ -48,7 +48,7 @@ namespace Marten.Schema.Testing
             results
                 .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
-            SpecificationExtensions.ShouldContain(queryable.ToCommand(FetchType.FetchMany).CommandText, "inner_date = :arg0");
+            queryable.ToCommand(FetchType.FetchMany).CommandText.ShouldContain("inner_date = :p0");
         }
 
     }

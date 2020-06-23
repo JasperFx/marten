@@ -97,7 +97,7 @@ namespace Marten.Schema
                 {
                     var field = _mapping.FieldFor(m);
                     var casing = Casing;
-                    if (field.MemberType != typeof(string))
+                    if (field.FieldType != typeof(string))
                     {
                         // doesn't make sense to lower-case this particular member
                         casing = Casings.Default;

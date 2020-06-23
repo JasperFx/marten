@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using Marten.Storage;
 
 namespace Marten.Schema.Identity.Sequences
@@ -25,6 +27,13 @@ namespace Marten.Schema.Identity.Sequences
         }
 
         public bool RequiresSequences { get; } = true;
+        public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
+        {
+            var document = new Use(mapping.DocumentType);
+
+            method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) {{0}}.Id = \"{_mapping.Alias}\"/ + {{1}}.Sequences.SequenceFor({{2}}).NextLong();", document, Use.Type<ITenant>(), mapping.DocumentType);
+            method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
+        }
 
         public Type[] DependentFeatures()
         {

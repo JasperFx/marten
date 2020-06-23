@@ -8,6 +8,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
+    [Obsolete("Goes away with v4")]
     public class AnyQueryHandler: IQueryHandler<bool>
     {
         private readonly ILinqQuery _query;

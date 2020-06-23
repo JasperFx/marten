@@ -16,7 +16,7 @@ namespace Marten.Testing.Util
             var param = command.AddParameter("a");
 
             param.Value.ShouldBe("a");
-            param.ParameterName.ShouldBe("arg0");
+            param.ParameterName.ShouldBe("p0");
 
             param.NpgsqlDbType.ShouldBe(NpgsqlDbType.Text);
 
@@ -31,9 +31,9 @@ namespace Marten.Testing.Util
             command.AddParameter("a");
             var param = command.AddParameter("b");
 
-            param.ParameterName.ShouldBe("arg1");
+            param.ParameterName.ShouldBe("p1");
         }
 
-        
+
     }
 }

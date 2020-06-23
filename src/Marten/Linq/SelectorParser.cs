@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -24,6 +25,7 @@ namespace Marten.Linq
         TransformTo
     }
 
+    [Obsolete("Being replaced in v4")]
     public class SelectorParser: RelinqExpressionVisitor
     {
         public static ISelector<T> ChooseSelector<T>(string dataLocator, ITenant tenant, IQueryableDocument mapping, QueryModel query, SelectManyQuery subQuery, ISerializer serializer, IIncludeJoin[] joins)

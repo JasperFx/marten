@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Schema;

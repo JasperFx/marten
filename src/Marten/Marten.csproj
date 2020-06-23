@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
-        <VersionPrefix>3.12.1</VersionPrefix>
+        <VersionPrefix>4.0.0</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
-        <TargetFrameworks>net462;netstandard2.0</TargetFrameworks>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <AssemblyName>Marten</AssemblyName>
         <PackageId>Marten</PackageId>
         <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
@@ -16,10 +16,10 @@
         <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
-        <LangVersion>7.2</LangVersion>
+        <LangVersion>8</LangVersion>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
-        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.1/1.0.1/lib/net461/</FrameworkPathOverride>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net462'">
+        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.2/1.0.1/lib/net462/</FrameworkPathOverride>
         <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
     </PropertyGroup>
     <ItemGroup>
@@ -36,7 +36,8 @@
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="LamarCompiler" Version="2.2.0" />
+        <PackageReference Include="LamarCodeGeneration" Version="2.3.0" />
+        <PackageReference Include="LamarCompiler" Version="2.3.0" />
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
         <PackageReference Include="Npgsql" Version="[4.1.2,4.2.0)" />
         <PackageReference Include="Npgsql.Json.NET" Version="[4.1.2,4.2.0)" />
@@ -56,12 +57,12 @@
     <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
         <Reference Include="System.Transactions" />
     </ItemGroup>
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
+    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net462'">
         <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
     </ItemGroup>
 
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.0.0, 3.0.0)" />
     </ItemGroup>
 

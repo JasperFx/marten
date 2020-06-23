@@ -12,6 +12,7 @@ using Npgsql;
 
 namespace Marten.Storage
 {
+    [Obsolete("This gets dramatically thinned down in v4. See the version in the V4 internals")]
     public interface ITenant
     {
         string TenantId { get; }

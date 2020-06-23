@@ -1,136 +1,74 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
-using LamarCodeGeneration.Model;
+using Marten.Linq;
 using Marten.Schema;
-using Marten.Schema.BulkLoading;
+using Marten.Storage;
+using Marten.V4Internals.Linq;
 
 namespace Marten.V4Internals
 {
-    /*
- * TODO -- needs to generate:
- * 1. QueryOnly IDocumentStorage
- * 2. Lightweight IDocumentStorage -- tracks version
- * 3. IdentityMap IDocumentStorage
- * 4. DirtyTracing IDocumentStorage
- * 5. IBulkLoader<T> implementation
- * 6. Update operation
- * 7. Upsert operation
- * 8. Insert operation
- * 9. Overwrite operation
- * 10. Delete by id operation
- * 11. Delete by where clause operation
- */
-
-
-    public enum StorageStyle
+    internal class DocumentStorageBuilder
     {
-        QueryOnly,
-        Lightweight,
-        IdentityMap,
-        DirtyTracking
-    }
+        private readonly Func<DocumentOperations, GeneratedType> _selectorTypeSource;
+        private Type _baseType;
+        private string _typeName;
+        private DocumentMapping _mapping;
 
-    public class StorageSlot<T>
-    {
-        public IDocumentStorage<T> QueryOnly { get; set; }
-        public IDocumentStorage<T> Lightweight { get; set; }
-        public IDocumentStorage<T> IdentityMap { get; set; }
-        public IDocumentStorage<T> DirtyTracking { get; set; }
-        public IBulkLoader<T> BulkLoader { get; set; }
-
-        public string SourceCode { get; set; }
-    }
-
-
-    public class DocumentStorageBuilder
-    {
-        private readonly DocumentMapping _mapping;
-        private readonly StoreOptions _options;
-
-        public DocumentStorageBuilder(DocumentMapping mapping, StoreOptions options)
+        public DocumentStorageBuilder(DocumentMapping mapping, StorageStyle style, Func<DocumentOperations, GeneratedType> selectorTypeSource)
         {
             _mapping = mapping;
-            _options = options;
+            _selectorTypeSource = selectorTypeSource;
+            _typeName = $"{style}{mapping.DocumentType.NameInCode()}DocumentStorage";
+
+            _baseType =
+                determineOpenDocumentStorageType(style).MakeGenericType(mapping.DocumentType, mapping.IdType);
         }
 
-        public StorageSlot<T> Generate<T>()
+        private Type determineOpenDocumentStorageType(StorageStyle style)
         {
-            var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
-
-            var queryOnly = buildQueryOnlyStorage(assembly);
-            var lightweight = buildLightweightStorage(assembly);
-            var identityMap = buildIdentityMapStorage(assembly);
-            var dirtyTracking = buildDirtyTrackingStorage(assembly);
-
-            var compiler = new LamarCompiler.AssemblyGenerator();
-            compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
-            compiler.ReferenceAssembly(typeof(T).Assembly);
-
-            compiler.Compile(assembly);
-
-            var slot = new StorageSlot<T>
+            switch (style)
             {
-                QueryOnly = (IDocumentStorage<T>)Activator.CreateInstance(queryOnly.CompiledType, _mapping),
-                Lightweight = (IDocumentStorage<T>)Activator.CreateInstance(lightweight.CompiledType, _mapping),
-                IdentityMap = (IDocumentStorage<T>)Activator.CreateInstance(identityMap.CompiledType, _mapping),
-                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking.CompiledType, _mapping)
-            };
+                case StorageStyle.Lightweight:
+                    return typeof(LightweightDocumentStorage<,>);
 
-            return slot;
+                case StorageStyle.IdentityMap:
+                    return typeof(IdentityMapDocumentStorage<,>);
+
+                case StorageStyle.QueryOnly:
+                    return typeof(QueryOnlyDocumentStorage<,>);
+
+                case StorageStyle.DirtyTracking:
+                    return typeof(DirtyTrackingDocumentStorage<,>);
+            }
+
+            throw new NotSupportedException();
         }
 
-        private GeneratedType buildDirtyTrackingStorage(GeneratedAssembly assembly)
+        public GeneratedType Build(GeneratedAssembly assembly, DocumentOperations operations)
         {
-            var typeName = $"DirtyTracking{_mapping.DocumentType.NameInCode()}DocumentStorage";
-            var baseType = typeof(DirtyTrackingDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
+            var selectorType = _selectorTypeSource(operations);
+
+            return buildDocumentStorageType(assembly, operations, _typeName, _baseType, selectorType);
+        }
+
+        private GeneratedType buildDocumentStorageType(GeneratedAssembly assembly, DocumentOperations operations, string typeName,
+            Type baseType, GeneratedType selectorType)
+        {
             var type = assembly.AddType(typeName, baseType);
 
             writeIdentityMethod(type);
+            buildStorageOperationMethods(operations, type);
 
+            type.MethodFor(nameof(ISelectClause.BuildSelector))
+                .Frames.Code($"return new Marten.Generated.{selectorType.TypeName}({{0}}, {{1}});",
+                    Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
+
+            buildLoaderCommands(type);
             writeNotImplementedStubs(type);
 
-            return type;
-        }
-
-        private GeneratedType buildIdentityMapStorage(GeneratedAssembly assembly)
-        {
-            var typeName = $"IdentityMap{_mapping.DocumentType.NameInCode()}DocumentStorage";
-            var baseType = typeof(IdentityMapDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
-            var type = assembly.AddType(typeName, baseType);
-
-            writeIdentityMethod(type);
-
-            writeNotImplementedStubs(type);
-
-            return type;
-        }
-
-        private GeneratedType buildLightweightStorage(GeneratedAssembly assembly)
-        {
-            var typeName = $"Lightweight{_mapping.DocumentType.NameInCode()}DocumentStorage";
-            var baseType = typeof(LightweightDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
-            var type = assembly.AddType(typeName, baseType);
-
-            writeIdentityMethod(type);
-
-            writeNotImplementedStubs(type);
-
-            return type;
-        }
-
-        private GeneratedType buildQueryOnlyStorage(GeneratedAssembly assembly)
-        {
-            var typeName = $"QueryOnly{_mapping.DocumentType.NameInCode()}DocumentStorage";
-            var baseType = typeof(QueryOnlyDocumentStorage<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType);
-            var type = assembly.AddType(typeName, baseType);
-
-            writeIdentityMethod(type);
-
-            writeNotImplementedStubs(type);
 
             return type;
         }
@@ -138,52 +76,105 @@ namespace Marten.V4Internals
         private void writeIdentityMethod(GeneratedType type)
         {
             var identity = type.MethodFor("Identity");
-            identity.Frames.Add(new ReturnPropertyFrame(_mapping.DocumentType, _mapping.IdMember));
+            identity.Frames.Code($"return {{0}}.{_mapping.IdMember.Name};", identity.Arguments[0]);
+
+            var assign = type.MethodFor("AssignIdentity");
+            _mapping.IdStrategy.GenerateCode(assign, _mapping);
         }
 
         private static void writeNotImplementedStubs(GeneratedType type)
         {
-            foreach (var method in type.Methods)
+            var missing = type.Methods.Where(x => !x.Frames.Any()).Select(x => x.MethodName);
+            if (missing.Any())
             {
+                throw new Exception("Missing methods: " + missing.Join(", "));
+            }
+
+            foreach (var method in type.Methods)
                 if (!method.Frames.Any())
-                {
-                    method.Frames.Add(new NotImplementedFrame());
-                }
+                    method.Frames.ThrowNotImplementedException();
+        }
+
+        private void buildLoaderCommands(GeneratedType type)
+        {
+            var load = type.MethodFor("BuildLoadCommand");
+            var loadByArray = type.MethodFor("BuildLoadManyCommand");
+
+
+            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                load.Frames.Code(
+                    "return new NpgsqlCommand(_loaderSql).With(\"id\", id).With(TenantIdArgument.ArgName, tenant.TenantId);");
+                loadByArray.Frames.Code(
+                    "return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids).With(TenantIdArgument.ArgName, tenant.TenantId);");
+            }
+            else
+            {
+                load.Frames.Code("return new NpgsqlCommand(_loaderSql).With(\"id\", id);");
+                loadByArray.Frames.Code("return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids);");
             }
         }
+
+        private void buildStorageOperationMethods(DocumentOperations operations, GeneratedType type)
+        {
+            buildOperationMethod(type, operations, "Upsert");
+            buildOperationMethod(type, operations, "Insert");
+            buildOperationMethod(type, operations, "Update");
+
+            if (_mapping.UseOptimisticConcurrency)
+            {
+                buildOperationMethod(type, operations, "Overwrite");
+            }
+            else
+            {
+                type.MethodFor("Overwrite").Frames.ThrowNotSupportedException();
+            }
+
+            type.MethodFor("DeleteForDocument").Frames.Code($@"
+return new Marten.Generated.{operations.DeleteById.TypeName}(Identity({{0}}));
+", new Use(_mapping.DocumentType));
+
+            type.MethodFor("DeleteForId").Frames.Code($@"
+return new Marten.Generated.{operations.DeleteById.TypeName}({{0}});
+", new Use(_mapping.IdType));
+
+            type.MethodFor("DeleteForWhere").Frames.Code($@"
+return new Marten.Generated.{operations.DeleteByWhere.TypeName}({{0}});
+", Use.Type<IWhereFragment>());
+        }
+
+        // TODO -- just inject the type alias and simplify the operation classes
+        private void buildOperationMethod(GeneratedType type, DocumentOperations operations, string methodName)
+        {
+            var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName).GetValue(operations);
+            var method = type.MethodFor(methodName);
+
+            if (_mapping.IsHierarchy())
+            {
+                method.Frames
+                    .Code($@"
+return new Marten.Generated.{operationType.TypeName}
+(
+    {{0}}, Identity({{0}}),
+    {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()},
+    {_mapping.IdType.FullNameInCode()}>(),
+    {{2}}
+);"
+                        , new Use(_mapping.DocumentType), Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
+            }
+            else
+            {
+                method.Frames
+                    .Code($@"
+return new Marten.Generated.{operationType.TypeName}
+(
+    {{0}}, Identity({{0}}),
+    {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()},
+    {_mapping.IdType.FullNameInCode()}>()
+);"
+                        , new Use(_mapping.DocumentType), Use.Type<IMartenSession>());
+            }
+        }
+
     }
-
-    public class ReturnPropertyFrame: SyncFrame
-    {
-        private readonly Type _documentType;
-        private readonly MemberInfo _member;
-        private Variable _document;
-
-        public ReturnPropertyFrame(Type documentType, MemberInfo member)
-        {
-            _documentType = documentType;
-            _member = member;
-        }
-
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            writer.WriteLine($"return {_document.Usage}.{_member.Name};");
-        }
-
-        public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
-        {
-            _document = chain.FindVariable(_documentType);
-            yield return _document;
-        }
-    }
-
-    public class NotImplementedFrame: SyncFrame
-    {
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            writer.WriteLine($"throw new {typeof(NotImplementedException).FullNameInCode()}();");
-        }
-    }
-
-
 }

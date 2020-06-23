@@ -24,11 +24,11 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :arg0 and CAST(d.data ->> 'Double' as double precision) > :arg1)");
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
 
             cmd.Parameters.Count.ShouldBe(2);
-            cmd.Parameters["arg0"].Value.ShouldBe(3);
-            cmd.Parameters["arg1"].Value.ShouldBe(2);
+            cmd.Parameters["p0"].Value.ShouldBe(3);
+            cmd.Parameters["p1"].Value.ShouldBe(2);
         }
 
         [Fact]
@@ -61,8 +61,8 @@ namespace Marten.Testing.Linq
             var tags = new[] { "ONE", "TWO" };
             var cmd = theSession.Query<Target>().Where(x => x.TagsArray.Any(t => tags.Contains(t))).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data ->> 'TagsArray' as jsonb) ?| :arg0");
-            cmd.Parameters["arg0"].Value.ShouldBe(tags);
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data ->> 'TagsArray' as jsonb) ?| :p0");
+            cmd.Parameters["p0"].Value.ShouldBe(tags);
         }
 
         [Fact]
@@ -71,8 +71,8 @@ namespace Marten.Testing.Linq
             var tags = new[] { "ONE", "TWO" };
             var cmd = theSession.Query<Target>().Where(x => x.Inner.TagsArray.Any(t => tags.Contains(t))).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data -> 'Inner' ->> 'TagsArray' as jsonb) ?| :arg0");
-            cmd.Parameters["arg0"].Value.ShouldBe(tags);
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data -> 'Inner' ->> 'TagsArray' as jsonb) ?| :p0");
+            cmd.Parameters["p0"].Value.ShouldBe(tags);
         }
 
         public previewing_the_command_from_a_queryable_Tests(DefaultStoreFixture fixture) : base(fixture)
@@ -101,11 +101,11 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :arg0 and CAST(d.data ->> 'Double' as double precision) > :arg1)");
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
 
             cmd.Parameters.Count.ShouldBe(2);
-            cmd.Parameters["arg0"].Value.ShouldBe(3);
-            cmd.Parameters["arg1"].Value.ShouldBe(2);
+            cmd.Parameters["p0"].Value.ShouldBe(3);
+            cmd.Parameters["p1"].Value.ShouldBe(2);
         }
 
         [Fact]

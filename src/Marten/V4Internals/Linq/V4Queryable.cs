@@ -7,83 +7,100 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Linq.Model;
 using Marten.Services.Includes;
+using Marten.V4Internals.Sessions;
 using Remotion.Linq;
+using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.V4Internals.Linq
 {
     public class V4Queryable<T> : QueryableBase<T>, IMartenQueryable<T>
     {
+        private readonly IMartenSession _session;
 
-        public V4Queryable(IMartenSession session) : base(session)
+        public V4Queryable(MartenSessionBase session) : base(session)
         {
+            _session = session;
         }
 
-        public V4Queryable(IMartenSession session, Expression expression) : base(session, expression)
+        public V4Queryable(MartenSessionBase session, Expression expression) : base(session, expression)
         {
+            _session = session;
         }
 
 
 
         public IEnumerable<IIncludeJoin> Includes { get; }
         public QueryStatistics Statistics { get; }
+
         public Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            return _session.ExecuteAsync<IReadOnlyList<TResult>>(Expression, token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<bool>(Expression, token, new AnyResultOperator());
         }
 
         public Task<int> CountAsync(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<int>(Expression, token, new CountResultOperator());
         }
 
         public Task<long> CountLongAsync(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<long>(Expression, token, new LongCountResultOperator());
         }
 
         public Task<TResult> FirstAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new FirstResultOperator(false));
         }
 
         public Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new FirstResultOperator(true));
         }
 
         public Task<TResult> SingleAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new SingleResultOperator(false));
         }
 
         public Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new SingleResultOperator(true));
         }
 
         public Task<TResult> SumAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new SumResultOperator());
         }
 
         public Task<TResult> MinAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new MinResultOperator());
         }
 
         public Task<TResult> MaxAsync<TResult>(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<TResult>(Expression, token, new MaxResultOperator());
         }
 
         public Task<double> AverageAsync(CancellationToken token)
         {
-            throw new NotImplementedException();
+            // TODO -- flyweight for the operator
+            return _session.ExecuteAsync<double>(Expression, token, new AverageResultOperator());
         }
 
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions> configureExplain = null)
