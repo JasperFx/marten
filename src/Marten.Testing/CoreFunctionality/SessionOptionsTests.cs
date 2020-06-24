@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -130,18 +131,18 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 
             var options = new SessionOptions() { Connection = connection };
 
-            var testobject = new FryGuy();
+            var testObject = new FryGuy();
 
             using (var session = documentStore.OpenSession(options))
             {
-                session.Store(testobject);
+                session.Store(testObject);
                 session.SaveChanges();
-                session.Load<FryGuy>(testobject.Id).ShouldNotBeNull();
+                session.Load<FryGuy>(testObject.Id).ShouldNotBeNull();
             }
         }
 
         [Fact]
-        public void session_with_custom_connection_reusable_after_saveChangesAsync()
+        public async Task session_with_custom_connection_reusable_after_saveChangesAsync()
         {
             var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -155,13 +156,14 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 
             var options = new SessionOptions() { Connection = connection };
 
-            var testobject = new FryGuy();
+            var testObject = new FryGuy();
 
             using (var query = documentStore.OpenSession(options))
             {
-                query.Store(testobject);
-                query.SaveChangesAsync().Wait();
-                query.LoadAsync<FryGuy>(testobject.Id).GetAwaiter().GetResult().ShouldNotBeNull();
+                query.Store(testObject);
+                await query.SaveChangesAsync();
+                var loadedObject = await query.LoadAsync<FryGuy>(testObject.Id);
+                loadedObject.ShouldNotBeNull();
             }
         }
 
