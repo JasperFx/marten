@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -167,10 +168,26 @@ namespace Marten.Schema.Testing
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
         }
 
+        [Theory]
+        [InlineData(Casing.Default, "other_id = CAST(data ->> 'OtherId' as uuid)")]
+        [InlineData(Casing.CamelCase, "other_id = CAST(data ->> 'otherId' as uuid)")]
+        public void store_options_serializer_with_casing(Casing casing, string expectedUpdateFragment)
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.UseDefaultSerialization(casing:casing);
+            var field = DuplicatedField.For<DuplicateFieldCasingTestDoc>(storeOptions, x => x.OtherId);
+            field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
+        }
+
         private class ListTarget
         {
             public List<string> TagsList { get; set; }
         }
 
+        private class DuplicateFieldCasingTestDoc
+        {
+            public Guid Id { get; set; }
+            public Guid OtherId { get; set; }
+        }
     }
 }
