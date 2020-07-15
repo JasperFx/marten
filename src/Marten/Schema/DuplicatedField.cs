@@ -105,14 +105,16 @@ namespace Marten.Schema
         // TODO -- have this take in CommandBuilder
         public string UpdateSqlFragment()
         {
+            var serializer = _storeOptions.Serializer();
+
             if ((DbType & NpgsqlDbType.Array) == NpgsqlDbType.Array && PgType != "jsonb")
             {
-                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, "jsonb");
+                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, serializer.Casing, Members, "jsonb");
                 return $"{ColumnName} = CAST(ARRAY(SELECT jsonb_array_elements_text({jsonField.SqlLocator})) as {PgType})";
             }
             else
             {
-                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, PgType);
+                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, serializer.Casing, Members, PgType);
                 return $"{ColumnName} = {jsonField.SqlLocator}";
             }
         }
