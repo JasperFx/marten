@@ -2,7 +2,9 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Harness;
+using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
@@ -63,36 +65,41 @@ namespace Marten.Testing.Events.SchemaChange
         {
             // test events data
             var taskId = Guid.NewGuid();
-            const string initialDescription = "initial description";
-            const string updatedDescription = "updated description";
 
-            // events types
-            const string taskCreatedType = "task_created";
-            const string taskDescriptionUpdatedType = "task_description_updated";
+            var oldTaskCreatedEvent = new
+            {
+                Id = Guid.NewGuid(),
+                StreamId = taskId,
+                EventTypeName = "task_created",
 
-            // simulate namespace change from `Old` to `New`
-            const string oldTaskCreatedClrType = "Marten.Testing.Events.SchemaChange.Old.TaskCreated, Marten.Testing";
-            // simulate namespace change from `TaskDescriptionUpdated` to `TaskDescriptionUpdatedNewName`
-            const string oldTaskUpdatedClrType = "Marten.Testing.Events.SchemaChange.Old.TaskDescriptionUpdated, Marten.Testing";
+                // simulate namespace change from `Old` to `New`
+                DotnetTypeName = "Marten.Testing.Events.SchemaChange.Old.TaskCreated, Marten.Testing",
+
+                Body = new {TaskId = taskId, Description = "initial description"}
+            };
+
+            var oldTaskDescriptionUpdatedEvent = new
+            {
+                Id = Guid.NewGuid(),
+                StreamId = taskId,
+                EventTypeName = "task_description_updated",
+
+                // simulate namespace change from `Old` to `New`
+                // and type name change from `TaskDescriptionUpdated` to `TaskDescriptionUpdatedNewName`
+                DotnetTypeName = "Marten.Testing.Events.SchemaChange.Old.TaskDescriptionUpdated, Marten.Testing",
+                Body = new {TaskId = taskId, Description = "updated description"}
+            };
 
             using (var session = theStore.OpenSession())
             {
                 // ensure events tables already exists
                 session.Tenant.EnsureStorageExists(typeof(EventStream));
 
-                using (var conn = session.Tenant.OpenConnection())
-                {
-                    // we need to insert data manually, as if we keep old type in assembly then Marten would use it.
-                    // Marten at first tries to find concrete type based on the `mt_dotnet_type` column value.
-                    // When Marten cannot find concrete CLR type then it searches it by `type` column value
-                    conn.Execute(
-                        $@"INSERT INTO events_namespace_migration.mt_streams (id, type, version, timestamp, snapshot, snapshot_version, created, tenant_id)
-                        VALUES ('{taskId}', null, 2, '2020-07-16 19:32:43.912171', null, null, '2020-07-16 19:32:43.912171', '*DEFAULT*');");
-                    conn.Execute("INSERT INTO events_namespace_migration.mt_events (seq_id, id, stream_id, version, data, type, timestamp, tenant_id, mt_dotnet_type) " +
-                        $"VALUES (1, '{Guid.NewGuid()}', '{taskId}', 1, '{{\"TaskId\": \"{taskId}\", \"Description\": \"{initialDescription}\"}}', '{taskCreatedType}', '2020-07-16 19:32:43.912171', '*DEFAULT*', '{oldTaskCreatedClrType}');");
-                    conn.Execute("INSERT INTO events_namespace_migration.mt_events (seq_id, id, stream_id, version, data, type, timestamp, tenant_id, mt_dotnet_type)" +
-                        $"VALUES (2, '{Guid.NewGuid()}', '{taskId}', 2, '{{\"TaskId\": \"{taskId}\", \"Description\": \"{updatedDescription}\"}}', '{taskDescriptionUpdatedType}', '2020-07-16 19:32:43.912171', '*DEFAULT*', '{oldTaskUpdatedClrType}');");
-                }
+                // we need to insert data manually, as if we keep old type in assembly then Marten would use it.
+                // Marten at first tries to find concrete type based on the `mt_dotnet_type` column value.
+                // When Marten cannot find concrete CLR type then it searches it by `type` column value
+                AppendRawEvent(session, oldTaskCreatedEvent);
+                AppendRawEvent(session, oldTaskDescriptionUpdatedEvent);
 
                 await session.SaveChangesAsync();
             }
@@ -105,7 +112,7 @@ namespace Marten.Testing.Events.SchemaChange
 
                 // When type name has changed we need to define custom mapping
                 _.Events.EventMappingFor<New.TaskDescriptionUpdatedNewName>()
-                        .EventTypeName = taskDescriptionUpdatedType;
+                        .EventTypeName = oldTaskDescriptionUpdatedEvent.EventTypeName;
             }))
             {
                 using (var session = store.OpenSession())
@@ -113,8 +120,23 @@ namespace Marten.Testing.Events.SchemaChange
                     var taskNew = await session.Events.AggregateStreamAsync<New.Task>(taskId);
 
                     taskNew.Id.ShouldBe(taskId);
-                    taskNew.Description.ShouldBe(updatedDescription);
+                    taskNew.Description.ShouldBe(oldTaskDescriptionUpdatedEvent.Body.Description);
                 }
+            }
+
+            static void AppendRawEvent(IDocumentSession session, dynamic @event)
+            {
+                using var conn = session.Tenant.OpenConnection();
+
+                conn.Execute(
+                    $@"select * from {session.DocumentStore.Events.DatabaseSchemaName}.mt_append_event(
+                                stream := '{@event.StreamId}',
+                                stream_type := null,
+                                tenantid := '{Tenancy.DefaultTenantId}',
+                                event_ids := '{{""{@event.Id}""}}',
+                                event_types := '{{""{@event.EventTypeName}""}}',
+                                dotnet_types := '{{""{@event.DotnetTypeName}""}}',
+                                bodies := '{{""{JsonConvert.SerializeObject(@event.Body).Replace("\"", "\\\"")}""}}')");
             }
         }
 
