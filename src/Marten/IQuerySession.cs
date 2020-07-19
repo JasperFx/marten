@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
@@ -109,6 +110,16 @@ namespace Marten
         /// <param name="parameters"></param>
         /// <returns></returns>
         Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
+
+        /// <summary>
+        /// Asynchronously queries the document storage table for the document type T by supplied handler. See http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sql"></param>
+        /// <param name="token"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        Task<T> QueryAsync<T>(IQueryHandler<T> handler, CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
