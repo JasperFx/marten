@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -149,13 +150,12 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 session2.SaveChanges();
 
-                var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
+                var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
                 {
                     session1.SaveChanges();
                 });
 
-                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
-                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+                ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
             }
             finally
             {
@@ -239,13 +239,12 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 await session2.SaveChangesAsync().ConfigureAwait(false);
 
-                var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                var ex = await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
                 {
                     await session1.SaveChangesAsync().ConfigureAwait(false);
                 });
 
-                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
-                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+                ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
             }
             finally
             {
@@ -460,7 +459,11 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            var metadata = theStore.Tenancy.Default.MetadataFor(doc1);
+            DocumentMetadata metadata;
+            using (var session = theStore.QuerySession())
+            {
+                metadata = session.MetadataFor(doc1);
+            }
 
             using (var session = theStore.OpenSession())
             {
@@ -489,7 +492,11 @@ namespace Marten.Testing.Acceptance
                 await session.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            var metadata = theStore.Tenancy.Default.MetadataFor(doc1);
+            DocumentMetadata metadata;
+            using (var session = theStore.QuerySession())
+            {
+                metadata = await session.MetadataForAsync(doc1).ConfigureAwait(false);
+            }
 
             using (var session = theStore.OpenSession())
             {
@@ -523,7 +530,7 @@ namespace Marten.Testing.Acceptance
                 // Some random version that won't match
                 session.Store(doc1, Guid.NewGuid());
 
-                Exception<AggregateException>.ShouldBeThrownBy(() =>
+                Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
                 {
                     session.SaveChanges();
                 });
@@ -547,7 +554,7 @@ namespace Marten.Testing.Acceptance
                 // Some random version that won't match
                 session.Store(doc1, Guid.NewGuid());
 
-                await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
                 {
                     await session.SaveChangesAsync().ConfigureAwait(false);
                 });

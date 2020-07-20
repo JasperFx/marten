@@ -21,7 +21,6 @@ namespace Marten.Linq.Fields
             FieldType = members.Last().GetMemberType();
 
             PgType = TypeMappings.GetPgType(FieldType, enumStorage);
-            _enumStorage = enumStorage;
         }
 
         public Type FieldType { get; }
@@ -30,7 +29,5 @@ namespace Marten.Linq.Fields
         public MemberInfo[] Members { get; }
         public string MemberName { get; }
 
-        [Obsolete("Try to eliminate this")]
-        protected readonly EnumStorage _enumStorage;
     }
 }

@@ -424,5 +424,22 @@ namespace Marten
         /// See: https://www.postgresql.org/docs/11/static/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
         /// </remarks>
         Task<IReadOnlyList<TDoc>> WebStyleSearchAsync<TDoc>(string searchTerm, string regConfig = FullTextIndex.DefaultRegConfig, CancellationToken token = default);
+
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        DocumentMetadata MetadataFor<T>(T entity);
+
+        /// <summary>
+        ///     Fetch the entity version and last modified time from the database
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<DocumentMetadata> MetadataForAsync<T>(T entity,
+            CancellationToken token = default(CancellationToken));
     }
 }

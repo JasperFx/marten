@@ -42,7 +42,7 @@ namespace Marten.Linq.Parsing
                 return QueryFromDictionaryContainsKey(expression, fieldlocator);
             }
             else
-                throw new NotImplementedException("Could not understand the format of the dictionary access");
+                throw new InvalidOperationException("Could not understand the format of the dictionary access");
         }
 
         private static IWhereFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)

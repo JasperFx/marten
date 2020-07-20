@@ -3,8 +3,9 @@ using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Schema;
-using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
@@ -52,14 +53,19 @@ namespace Marten.Storage
 
         public string TenantId { get; }
 
-        public IDocumentStorage StorageFor(Type documentType)
+        public IDocumentStorage<T> StorageFor<T>()
         {
-            return _inner.StorageFor(documentType);
+            return _inner.StorageFor<T>();
         }
 
         public IDocumentMapping MappingFor(Type documentType)
         {
             return _inner.MappingFor(documentType);
+        }
+
+        void ITenantStorage.MarkAllFeaturesAsChecked()
+        {
+            _inner.MarkAllFeaturesAsChecked();
         }
 
         public void EnsureStorageExists(Type documentType)
@@ -69,10 +75,6 @@ namespace Marten.Storage
 
         public ISequences Sequences => _inner.Sequences;
 
-        public IDocumentStorage<T> StorageFor<T>()
-        {
-            return _inner.StorageFor<T>();
-        }
 
         public IdAssignment<T> IdAssignmentFor<T>()
         {
@@ -89,11 +91,6 @@ namespace Marten.Storage
             _inner.ResetSchemaExistenceChecks();
         }
 
-        public IBulkLoader<T> BulkLoaderFor<T>()
-        {
-            return _inner.BulkLoaderFor<T>();
-        }
-
         public IManagedConnection OpenConnection(CommandRunnerMode mode = CommandRunnerMode.AutoCommit,
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int? timeout = null)
         {
@@ -105,37 +102,11 @@ namespace Marten.Storage
             _inner.ResetHiloSequenceFloor<T>(floor);
         }
 
-        public DocumentMetadata MetadataFor<T>(T entity)
-        {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
-
-            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
-                MappingFor(typeof(T)).As<DocumentMapping>());
-
-            using (var connection = OpenConnection())
-            {
-                return connection.Fetch(handler, null, null, this);
-            }
-        }
-
-        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = new CancellationToken())
-        {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
-
-            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
-                MappingFor(typeof(T)).As<DocumentMapping>());
-
-            using (var connection = OpenConnection())
-            {
-                return await connection.FetchAsync(handler, null, null, this, token).ConfigureAwait(false);
-            }
-        }
-
         public NpgsqlConnection CreateConnection()
         {
             return _inner.CreateConnection();
         }
+
+        public IProviderGraph Providers => _inner.Providers;
     }
 }

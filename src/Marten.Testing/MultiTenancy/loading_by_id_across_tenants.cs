@@ -57,14 +57,14 @@ namespace Marten.Testing.MultiTenancy
         {
             using (var red = theStore.QuerySession("Red"))
             {
-                SpecificationExtensions.ShouldNotBeNull(red.Json.FindById<Target>(targetRed1.Id));
-                SpecificationExtensions.ShouldBeNull(red.Json.FindById<Target>(targetBlue1.Id));
+                red.Json.FindById<Target>(targetRed1.Id).ShouldNotBeNull();
+                red.Json.FindById<Target>(targetBlue1.Id).ShouldBeNull();
             }
 
             using (var blue = theStore.QuerySession("Blue"))
             {
-                SpecificationExtensions.ShouldNotBeNull(blue.Json.FindById<Target>(targetBlue1.Id));
-                SpecificationExtensions.ShouldBeNull(blue.Json.FindById<Target>(targetRed1.Id));
+                blue.Json.FindById<Target>(targetBlue1.Id).ShouldNotBeNull();
+                blue.Json.FindById<Target>(targetRed1.Id).ShouldBeNull();
             }
         }
 
@@ -74,14 +74,14 @@ namespace Marten.Testing.MultiTenancy
         {
             using (var red = theStore.QuerySession("Red"))
             {
-                SpecificationExtensions.ShouldNotBeNull((await red.Json.FindByIdAsync<Target>(targetRed1.Id)));
-                SpecificationExtensions.ShouldBeNull((await red.Json.FindByIdAsync<Target>(targetBlue1.Id)));
+                (await red.Json.FindByIdAsync<Target>(targetRed1.Id)).ShouldNotBeNull();
+                (await red.Json.FindByIdAsync<Target>(targetBlue1.Id)).ShouldBeNull();
             }
 
             using (var blue = theStore.QuerySession("Blue"))
             {
-                SpecificationExtensions.ShouldNotBeNull((await blue.Json.FindByIdAsync<Target>(targetBlue1.Id)));
-                SpecificationExtensions.ShouldBeNull((await blue.Json.FindByIdAsync<Target>(targetRed1.Id)));
+                (await blue.Json.FindByIdAsync<Target>(targetBlue1.Id)).ShouldNotBeNull();
+                (await blue.Json.FindByIdAsync<Target>(targetRed1.Id)).ShouldBeNull();
             }
         }
 

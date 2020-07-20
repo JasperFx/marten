@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class CustomAggregatorLookupTests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class CustomAggregatorLookupTests: IntegrationContext
     {
         public CustomAggregatorLookupTests(DefaultStoreFixture fixture) : base(fixture)
         {

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_any_async_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_any_async_Tests: IntegrationContext
     {
         [Fact]
         public async Task any_miss_with_query()

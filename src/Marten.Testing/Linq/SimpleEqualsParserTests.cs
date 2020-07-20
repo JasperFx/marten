@@ -11,9 +11,9 @@ using Marten.Testing.Harness;
 
 namespace Marten.Testing.Linq
 {
-	public class SimpleEqualsParserTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+	public class SimpleEqualsParserTests : IntegrationContext
 	{
-		class QueryTarget
+		public class QueryTarget
 		{
 			public int IntProp { get; set; }
 			public long LongProp { get; set; }
@@ -223,12 +223,12 @@ namespace Marten.Testing.Linq
 			Assert.NotNull(itemFromDb);
 		}
 
-		class CompiledQueryTarget : ICompiledQuery<QueryTarget, QueryTarget>
+		public class CompiledQueryTarget : ICompiledQuery<QueryTarget, QueryTarget>
 		{
 			public Guid IdProp { get; set; }
 			public int IntProp { get; set; }
 
-			public Expression<Func<IQueryable<QueryTarget>, QueryTarget>> QueryIs()
+			public Expression<Func<IMartenQueryable<QueryTarget>, QueryTarget>> QueryIs()
 			{
 				return q => q.FirstOrDefault(x => x.IntProp.Equals(IntProp) && x.Id.Equals(IdProp));
 			}

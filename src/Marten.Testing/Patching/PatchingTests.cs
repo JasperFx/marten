@@ -9,7 +9,7 @@ namespace Marten.Testing.Patching
 {
     public class PatchingTests: IntegrationContext
     {
-        class Model
+        public class Model
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
@@ -19,7 +19,7 @@ namespace Marten.Testing.Patching
         public async Task Patch_And_Load_Should_Return_Non_Stale_Result()
         {
             var id = Guid.NewGuid();
-            using (var sess = theStore.OpenSession())
+            using (var sess = theStore.LightweightSession())
             {
                 sess.Store(new Model() { Id = id, Name = "foo" });
                 sess.Patch<Model>(id).Set(x => x.Name, "bar");

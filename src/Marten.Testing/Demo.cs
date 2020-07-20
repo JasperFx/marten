@@ -20,7 +20,7 @@ namespace Marten.Testing
 
             public string Name { get; set; }
 
-            public Expression<Func<IQueryable<User>, User>> QueryIs()
+            public Expression<Func<IMartenQueryable<User>, User>> QueryIs()
             {
                 return x => x.FirstOrDefault(_ => _.UserName == Name);
             }

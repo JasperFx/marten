@@ -20,6 +20,7 @@ namespace Marten.Linq
             r.Register(StatsExpressionNode.SupportedMethods, typeof(StatsExpressionNode));
             r.Register(TransformToJsonNode.SupportedMethods, typeof(TransformToJsonNode));
             r.Register(TransformToOtherTypeNode.SupportedMethods, typeof(TransformToOtherTypeNode));
+
         });
 
         private readonly QueryParser _parser;

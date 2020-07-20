@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -6,40 +7,25 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Testing.Services;
+using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class document_session_persist_and_load_single_documents_with_nullo_Tests : document_session_persist_and_load_single_documents_Tests<NulloIdentityMap>
-    {
-        public document_session_persist_and_load_single_documents_with_nullo_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-    public class document_session_persist_and_load_single_documents_with_identity_map_Tests : document_session_persist_and_load_single_documents_Tests<IdentityMap>
-    {
-        public document_session_persist_and_load_single_documents_with_identity_map_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-    public class document_session_persist_and_load_single_documents_with_dirty_tracking_Tests : document_session_persist_and_load_single_documents_Tests<DirtyTrackingIdentityMap>
-    {
-        public document_session_persist_and_load_single_documents_with_dirty_tracking_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
 
-
-    public abstract class document_session_persist_and_load_single_documents_Tests<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
+    public class document_session_persist_and_load_single_documents_Tests : IntegrationContext
     {
-        protected document_session_persist_and_load_single_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public document_session_persist_and_load_single_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }
 
-        [Fact]
-        public void persist_a_single_document()
+        [Theory]
+        [SessionTypes]
+        public void persist_a_single_document(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User {FirstName = "Magic", LastName = "Johnson"};
 
 
@@ -54,7 +40,7 @@ namespace Marten.Testing.CoreFunctionality
 
                 json.ShouldNotBeNull();
 
-                var loadedUser = new JsonNetSerializer().FromJson<User>(json.ToReader());
+                var loadedUser = new JsonNetSerializer().FromJson<User>(new StringReader(json));
 
                 user.ShouldNotBeSameAs(loadedUser);
                 loadedUser.FirstName.ShouldBe(user.FirstName);
@@ -62,9 +48,12 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public void persist_and_reload_a_document()
+        [Theory]
+        [SessionTypes]
+        public void persist_and_reload_a_document(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             // theSession is Marten's IDocumentSession service
@@ -83,9 +72,12 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public void persist_and_reload_a_document_using_buffers()
+        [Theory]
+        [SessionTypes]
+        public void persist_and_reload_a_document_using_buffers(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             StoreOptions(_ => { _.UseCharBufferPooling = true; });
@@ -107,9 +99,12 @@ namespace Marten.Testing.CoreFunctionality
 
         }
 
-        [Fact]
-        public async Task persist_and_reload_a_document_async()
+        [Theory]
+        [SessionTypes]
+        public async Task persist_and_reload_a_document_async(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             // theSession is Marten's IDocumentSession service
@@ -128,9 +123,12 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public async Task persist_and_reload_a_document_async_using_buffers()
+        [Theory]
+        [SessionTypes]
+        public async Task persist_and_reload_a_document_async_using_buffers(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             StoreOptions(_ => { _.UseCharBufferPooling = true; });
@@ -153,15 +151,20 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public void try_to_load_a_document_that_does_not_exist()
+        [Theory]
+        [SessionTypes]
+        public void try_to_load_a_document_that_does_not_exist(DocumentTracking tracking)
         {
-            SpecificationExtensions.ShouldBeNull(theSession.Load<User>(Guid.NewGuid()));
+            DocumentTracking = tracking;
+            theSession.Load<User>(Guid.NewGuid()).ShouldBeNull();
         }
 
-        [Fact]
-        public void load_by_id_array()
+        [Theory]
+        [SessionTypes]
+        public void load_by_id_array(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
             var user2 = new User { FirstName = "James", LastName = "Worthy" };
             var user3 = new User { FirstName = "Michael", LastName = "Cooper" };
@@ -182,9 +185,12 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public async Task load_by_id_array_async()
+        [Theory]
+        [SessionTypes]
+        public async Task load_by_id_array_async(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             // SAMPLE: saving-changes-async
             var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
             var user2 = new User { FirstName = "James", LastName = "Worthy" };

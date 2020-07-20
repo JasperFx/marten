@@ -6,9 +6,7 @@ using System.Reflection;
 using Baseline;
 using Marten.Linq;
 using Marten.Linq.Fields;
-using Marten.Schema.Hierarchies;
 using Marten.Schema.Identity;
-using Marten.Services.Includes;
 using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
@@ -70,7 +68,7 @@ namespace Marten.Schema
 
         DuplicatedField[] IQueryableDocument.DuplicatedFields
         {
-            get { throw new NotImplementedException(); }
+            get { throw new NotSupportedException(); }
         }
 
         public PropertySearching PropertySearching => Parent.PropertySearching;
@@ -162,13 +160,6 @@ namespace Marten.Schema
             return new WhereFragment(sql);
         }
 
-        public IDocumentStorage BuildStorage(StoreOptions options)
-        {
-            var parentStorage = Parent.As<IDocumentMapping>().BuildStorage(options);
-            return typeof(SubClassDocumentStorage<,>).CloseAndBuildAs<IDocumentStorage>(parentStorage, this, DocumentType,
-                Parent.DocumentType);
-        }
-
         public void DeleteAllDocuments(ITenant factory)
         {
             factory.RunSql(
@@ -183,12 +174,6 @@ namespace Marten.Schema
         public IQueryableDocument ToQueryableDocument()
         {
             return this;
-        }
-
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members,
-            Action<TOther> callback)
-        {
-            return Parent.JoinToInclude(joinType, other, members, callback);
         }
 
         public Type TypeFor(string alias)

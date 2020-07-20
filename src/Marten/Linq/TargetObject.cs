@@ -27,21 +27,10 @@ namespace Marten.Linq
             return setter.Field;
         }
 
-        public ISelector<T> ToSelector<T>(IQueryableDocument mapping, bool distinct = false)
-        {
-            return new SelectTransformer<T>(mapping, this, distinct);
-        }
-
         public string ToSelectField(IFieldMapping mapping)
         {
             var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(mapping)).Join(", ");
-            return $"jsonb_build_object({jsonBuildObjectArgs}) as json";
-        }
-
-        public ISelector<T> ToJsonSelector<T>(IQueryableDocument mapping)
-        {
-            var field = ToSelectField(mapping);
-            return new JsonSelector(field).As<ISelector<T>>();
+            return $"jsonb_build_object({jsonBuildObjectArgs})";
         }
 
         private class SetterBinding

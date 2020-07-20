@@ -7,8 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
+using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Schema;
-using Marten.Schema.BulkLoading;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
@@ -34,6 +35,10 @@ namespace Marten.Storage
             _factory = factory;
 
             resetSequences();
+
+            Providers = options.AutoCreateSchemaObjects == AutoCreate.None
+                ? options.Providers
+                : new StorageCheckingProviderGraph(this, options.Providers);
         }
 
         private void resetSequences()
@@ -68,6 +73,10 @@ namespace Marten.Storage
         {
             _checks.Clear();
             resetSequences();
+            if (Providers is StorageCheckingProviderGraph)
+            {
+                Providers = new StorageCheckingProviderGraph(this, _options.Providers);
+            }
         }
 
         public void EnsureStorageExists(Type featureType)
@@ -83,7 +92,6 @@ namespace Marten.Storage
             if (_checks.ContainsKey(featureType))
                 return;
 
-            // TODO -- ensure the system type here too?
             var feature = _features.FindFeature(featureType);
 
             if (feature == null)
@@ -162,10 +170,9 @@ namespace Marten.Storage
             }
         }
 
-        public IDocumentStorage StorageFor(Type documentType)
+        public IDocumentStorage<T> StorageFor<T>()
         {
-            EnsureStorageExists(documentType);
-            return _features.StorageFor(documentType);
+            return Providers.StorageFor<T>().QueryOnly;
         }
 
         public IDocumentMapping MappingFor(Type documentType)
@@ -175,12 +182,6 @@ namespace Marten.Storage
         }
 
         public ISequences Sequences => _sequences.Value;
-
-        public IDocumentStorage<T> StorageFor<T>()
-        {
-            EnsureStorageExists(typeof(T));
-            return _features.StorageFor(typeof(T)).As<IDocumentStorage<T>>();
-        }
 
         private readonly ConcurrentDictionary<Type, object> _identityAssignments =
              new ConcurrentDictionary<Type, object>();
@@ -202,20 +203,6 @@ namespace Marten.Storage
         }
 
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
-
-        public IBulkLoader<T> BulkLoaderFor<T>()
-        {
-            EnsureStorageExists(typeof(T));
-            return _bulkLoaders.GetOrAdd(typeof(T), t =>
-            {
-                var assignment = IdAssignmentFor<T>();
-
-                if (!(MappingFor(typeof(T)).Root is DocumentMapping mapping))
-                    throw new ArgumentOutOfRangeException("Marten cannot do bulk inserts on documents of type " + typeof(T).FullName);
-
-                return new BulkLoader<T>(_options.Serializer(), mapping, assignment);
-            }).As<IBulkLoader<T>>();
-        }
 
         public void MarkAllFeaturesAsChecked()
         {
@@ -246,6 +233,8 @@ namespace Marten.Storage
             return _factory.Create();
         }
 
+        public IProviderGraph Providers { get; private set; }
+
         /// <summary>
         ///     Set the minimum sequence number for a Hilo sequence for a specific document type
         ///     to the specified floor. Useful for migrating data between databases
@@ -260,45 +249,6 @@ namespace Marten.Storage
             sequence.SetFloor(floor);
         }
 
-        /// <summary>
-        ///     Fetch the entity version and last modified time from the database
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        public DocumentMetadata MetadataFor<T>(T entity)
-        {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
 
-            var mapping = MappingFor(typeof(T));
-            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
-                mapping);
-
-            using (var connection = OpenConnection())
-            {
-                return connection.Fetch(handler, null, null, this);
-            }
-        }
-
-        /// <summary>
-        ///     Fetch the entity version and last modified time from the database
-        /// </summary>
-        /// <param name="entity"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity,
-            CancellationToken token = default(CancellationToken))
-        {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity));
-
-            var handler = new EntityMetadataQueryHandler(entity, StorageFor(typeof(T)),
-                MappingFor(typeof(T)));
-
-            using (var connection = OpenConnection())
-            {
-                return await connection.FetchAsync(handler, null, null, this, token).ConfigureAwait(false);
-            }
-        }
     }
 }

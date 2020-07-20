@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Baseline;
 using Marten.Services;
@@ -8,6 +10,8 @@ using Xunit.Abstractions;
 
 namespace Marten.Schema.Testing
 {
+
+
     public abstract class IntegrationContext : IDisposable
     {
         protected ITestOutputHelper _output;
@@ -34,6 +38,7 @@ namespace Marten.Schema.Testing
         }
 
         protected bool EnableCommandLogging { get; set; }
+
 
 
         protected DocumentStore theStore
@@ -117,9 +122,11 @@ namespace Marten.Schema.Testing
             }
         }
 
-        protected virtual IDocumentSession buildSession()
+        public DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
+
+        protected IDocumentSession buildSession()
         {
-            return theStore.LightweightSession();
+            return theStore.OpenSession(DocumentTracking);
         }
 
         public virtual void Dispose()
@@ -132,21 +139,5 @@ namespace Marten.Schema.Testing
         }
     }
 
-    public abstract class IntegrationContextWithIdentityMap<T>: IntegrationContext where T : IIdentityMap
-    {
-        protected override IDocumentSession buildSession()
-        {
-            if (typeof(T) == typeof(NulloIdentityMap))
-            {
-                return theStore.OpenSession(tracking:DocumentTracking.None);
-            }
 
-            if (typeof(T) == typeof(IdentityMap))
-            {
-                return theStore.OpenSession();
-            }
-
-            return theStore.DirtyTrackedSession();
-        }
-    }
 }

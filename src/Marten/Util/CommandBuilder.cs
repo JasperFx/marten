@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Marten.Internal.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Storage;
@@ -57,7 +58,7 @@ namespace Marten.Util
 
             using (var builder = new CommandBuilder(command))
             {
-                handler.ConfigureCommand(builder);
+                handler.ConfigureCommand(builder, null);
                 command.CommandText = builder._sql.ToString();
 
                 if (command.CommandText.Contains(TenantIdArg))
@@ -67,36 +68,6 @@ namespace Marten.Util
 
                 return command;
             }
-        }
-
-        public static NpgsqlCommand ToBatchCommand(ITenant tenant, IEnumerable<IQueryHandler> handlers)
-        {
-            if (handlers.Count() == 1)
-                return ToCommand(tenant, handlers.Single());
-
-            var wholeStatement = new StringBuilder();
-            var command = new NpgsqlCommand();
-
-            foreach (var handler in handlers)
-            {
-                // Maybe have it use a shared pool here.
-                using (var builder = new CommandBuilder(command))
-                {
-                    handler.ConfigureCommand(builder);
-                    if (wholeStatement.Length > 0)
-                    {
-                        wholeStatement.Append(";");
-                    }
-
-                    wholeStatement.Append(builder);
-                }
-            }
-
-            command.CommandText = wholeStatement.ToString();
-
-            command.AddTenancy(tenant);
-
-            return command;
         }
 
         // TEMP -- will shift this to being pooled later

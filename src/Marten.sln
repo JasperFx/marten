@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreWithMarten", "Asp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.CommandLine.Testing", "Marten.CommandLine.Testing\Marten.CommandLine.Testing.csproj", "{D1D4DF75-17B4-4FFD-82DC-1137112AA340}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StorytellerRunner", "StorytellerRunner\StorytellerRunner.csproj", "{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +82,10 @@ Global
 		{D1D4DF75-17B4-4FFD-82DC-1137112AA340}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1D4DF75-17B4-4FFD-82DC-1137112AA340}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1D4DF75-17B4-4FFD-82DC-1137112AA340}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

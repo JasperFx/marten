@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_654_document_session_delete_Tests: IntegrationContextWithIdentityMap<IdentityMap>
+    public class Bug_654_document_session_delete_Tests: IntegrationContext
     {
         [Fact]
         public void upsert_then_delete_should_delete()
@@ -23,6 +23,7 @@ namespace Marten.Testing.Bugs
 
         public Bug_654_document_session_delete_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 }

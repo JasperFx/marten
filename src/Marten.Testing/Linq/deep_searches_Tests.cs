@@ -9,7 +9,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class deep_searches_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class deep_searches_Tests: IntegrationContext
     {
         [Fact]
         public void query_two_deep()

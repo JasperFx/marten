@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_for_sum_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_for_sum_Tests: IntegrationContext
     {
         // SAMPLE: using_sum
         [Fact]

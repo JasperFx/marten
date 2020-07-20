@@ -1,6 +1,8 @@
 using System;
+using Marten.Internal;
+using Marten.Internal.CodeGeneration;
+using Marten.Internal.Storage;
 using Marten.Testing.Documents;
-using Marten.V4Internals;
 using Shouldly;
 using Xunit;
 
@@ -11,7 +13,7 @@ namespace Marten.Testing.V4Internals
         [Fact]
         public void build_a_storage_solution()
         {
-            var graph = new PersistenceGraph(new StoreOptions());
+            var graph = new ProviderGraph(new StoreOptions());
 
             graph.StorageFor<User>()
                 .ShouldBeSameAs(graph.StorageFor<User>());
@@ -23,7 +25,7 @@ namespace Marten.Testing.V4Internals
             var options = new StoreOptions();
             options.Storage.MappingFor(typeof(User)).AddSubClass(typeof(AdminUser));
 
-            var graph = new PersistenceGraph(options);
+            var graph = new ProviderGraph(options);
 
             var persistence = graph.StorageFor<AdminUser>();
             persistence

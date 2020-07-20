@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_for_single_json : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_for_single_json : IntegrationContext
     {
 
         [Fact]

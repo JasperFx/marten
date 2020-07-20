@@ -99,7 +99,7 @@ namespace Marten.Storage
 
         public override int GetHashCode()
         {
-            throw new System.NotImplementedException();
+            return Identifier.QualifiedName.GetHashCode();
         }
     }
 

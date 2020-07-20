@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_running_through_the_IdentityMap_Tests : IntegrationContextWithIdentityMap<IdentityMap>
+    public class query_running_through_the_IdentityMap_Tests : IntegrationContext
     {
         private User user1;
         private User user2;
@@ -19,6 +19,8 @@ namespace Marten.Testing.Linq
 
         public query_running_through_the_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
+
             // SAMPLE: using-store-with-multiple-docs
             user1 = new User {FirstName = "Jeremy"};
             user2 = new User {FirstName = "Jens"};
@@ -36,11 +38,11 @@ namespace Marten.Testing.Linq
         [Fact]
         public void single_runs_through_the_identity_map()
         {
-            theSession.Query<User>().Where(x => x.FirstName == "Jeremy")
-                .Single().ShouldBeTheSameAs(user1);
+            theSession.Query<User>()
+                .Single(x => x.FirstName == "Jeremy").ShouldBeTheSameAs(user1);
 
-            theSession.Query<User>().Where(x => x.FirstName == user4.FirstName)
-                .SingleOrDefault().ShouldBeTheSameAs(user4);
+            theSession.Query<User>()
+                .SingleOrDefault(x => x.FirstName == user4.FirstName).ShouldBeTheSameAs(user4);
 
 
         }

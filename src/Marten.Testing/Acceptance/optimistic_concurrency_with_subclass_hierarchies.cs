@@ -119,13 +119,13 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 session2.SaveChanges();
 
-                var ex = Exception<AggregateException>.ShouldBeThrownBy(() =>
+                var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
                 {
                     session1.SaveChanges();
                 });
 
-                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
-                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
+
+                ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
             }
             finally
             {
@@ -163,13 +163,12 @@ namespace Marten.Testing.Acceptance
                 // Should go through just fine
                 await session2.SaveChangesAsync().ConfigureAwait(false);
 
-                var ex = await Exception<AggregateException>.ShouldBeThrownByAsync(async () =>
+                var ex = await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
                 {
                     await session1.SaveChangesAsync().ConfigureAwait(false);
                 });
 
-                var concurrency = ex.InnerExceptions.OfType<ConcurrencyException>().Single();
-                concurrency.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
+                ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
             }
             finally
             {

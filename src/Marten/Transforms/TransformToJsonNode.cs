@@ -1,12 +1,31 @@
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Transforms
 {
+    public class TransformToJsonMatcher: IMethodCallMatcher
+    {
+        public bool TryMatch(MethodCallExpression expression, ExpressionVisitor selectorVisitor,
+            out ResultOperatorBase op)
+        {
+            if (expression.Method.Name == nameof(TransformExtensions.TransformToJson))
+            {
+                var transformName = (string)expression.Arguments.Last().As<ConstantExpression>().Value;
+                op = new TransformToJsonResultOperator(transformName);
+                return true;
+            }
+
+            op = null;
+            return false;
+        }
+    }
+
     public class TransformToJsonNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
@@ -33,5 +52,7 @@ namespace Marten.Transforms
                 expressionToBeResolved,
                 clauseGenerationContext);
         }
+
+
     }
 }

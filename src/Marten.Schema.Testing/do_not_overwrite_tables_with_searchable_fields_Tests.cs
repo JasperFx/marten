@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing
 {
-    public class do_not_overwrite_tables_with_searchable_fields_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class do_not_overwrite_tables_with_searchable_fields_Tests : IntegrationContext
     {
         private void searchable(Expression<Func<Target, object>> expression)
         {
@@ -18,7 +18,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Target>().Duplicate(expression);
             });
 
-            theStore.Tenancy.Default.StorageFor(typeof(Target)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<Target>().ShouldNotBeNull();
 
             var existing = theStore.TableSchema(typeof (Target));
 

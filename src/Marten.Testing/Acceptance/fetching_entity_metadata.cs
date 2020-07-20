@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
 
@@ -13,7 +14,9 @@ namespace Marten.Testing.Acceptance
         {
             var shop = new CoffeeShop();
 
-            SpecificationExtensions.ShouldBeNull(theStore.Tenancy.Default.MetadataFor(shop));
+            theSession.MetadataFor(shop)
+                .ShouldBeNull();
+
         }
 
         // SAMPLE: resolving_metadata
@@ -28,15 +31,20 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            var metadata = theStore.Tenancy.Default.MetadataFor(shop);
+            using (var session = theStore.QuerySession())
+            {
+                var metadata = session.MetadataFor(shop);
 
-            SpecificationExtensions.ShouldNotBeNull(metadata);
-            metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
-            metadata.LastModified.ShouldNotBe(default(DateTime));
-            metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
-            SpecificationExtensions.ShouldBeNull(metadata.DocumentType);
-            metadata.Deleted.ShouldBeFalse();
-            SpecificationExtensions.ShouldBeNull(metadata.DeletedAt);
+                metadata.ShouldNotBeNull();
+                metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+                metadata.LastModified.ShouldNotBe(default(DateTime));
+                metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
+                metadata.DocumentType.ShouldBeNull();
+                metadata.Deleted.ShouldBeFalse();
+                metadata.DeletedAt.ShouldBeNull();
+            }
+
+
         }
 
         // ENDSAMPLE
@@ -60,15 +68,16 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
             }
 
-            var metadata = await theStore.Tenancy.Default.MetadataForAsync(shop);
+            using var query = theStore.QuerySession();
+            var metadata = await query.MetadataForAsync(shop);
 
-            SpecificationExtensions.ShouldNotBeNull(metadata);
+            metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
             metadata.LastModified.ShouldNotBe(default(DateTime));
             metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
             metadata.DocumentType.ShouldBe("coffee_shop");
             metadata.Deleted.ShouldBeTrue();
-            SpecificationExtensions.ShouldNotBeNull(metadata.DeletedAt);
+            metadata.DeletedAt.ShouldNotBeNull();
         }
 
         public fetching_entity_metadata(DefaultStoreFixture fixture) : base(fixture)

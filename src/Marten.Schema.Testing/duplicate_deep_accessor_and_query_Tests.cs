@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing
 {
-    public class duplicate_deep_accessor_and_query_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class duplicate_deep_accessor_and_query_Tests : IntegrationContext
     {
         [Fact]
         public void duplicate_and_search_off_of_deep_accessor_by_number()

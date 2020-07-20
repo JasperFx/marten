@@ -10,19 +10,17 @@ namespace Marten.Linq
         : SequenceTypePreservingResultOperatorBase
     {
         public LambdaExpression IdSource { get; set; }
-        public LambdaExpression Callback { get; set; }
-        public ConstantExpression JoinType { get; set; }
+        public Expression Callback { get; set; }
 
         public IncludeResultOperator(Expression parameter)
         {
             Parameter = parameter;
         }
 
-        public IncludeResultOperator(LambdaExpression idSource, LambdaExpression callback, ConstantExpression joinType)
+        public IncludeResultOperator(LambdaExpression idSource, Expression callback)
         {
             IdSource = idSource;
             Callback = callback;
-            JoinType = joinType;
         }
 
         public Expression Parameter { get; private set; }

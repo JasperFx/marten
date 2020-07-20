@@ -1,4 +1,5 @@
 using System;
+using Marten.Internal.Sessions;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
@@ -27,7 +28,11 @@ namespace Marten.Testing.Patching
 
             _schema.MappingFor(typeof(Target)).Returns(mapping);
 
-            _expression = new PatchExpression<Target>(null, _schema, new UnitOfWork(theStore, theStore.Tenancy.Default), new JsonNetSerializer());
+            var session = theStore.LightweightSession();
+
+            Disposables.Add(session);
+
+            _expression = new PatchExpression<Target>(null, (DocumentSessionBase) session);
         }
 
         [Fact]
@@ -410,11 +415,13 @@ namespace Marten.Testing.Patching
                 _.UseDefaultSerialization(casing: Casing.CamelCase);
             });
 
-            var expressionWithSimpleProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(theStore, theStore.Tenancy.Default), theStore.Serializer);
+            using var session = theStore.LightweightSession();
+
+            var expressionWithSimpleProperty = new PatchExpression<Target>(null, (DocumentSessionBase) session);
             expressionWithSimpleProperty.Set(x => x.Color, Colors.Blue);
             expressionWithSimpleProperty.Patch["path"].ShouldBe("color");
 
-            var expressionWithNestedProperty = new PatchExpression<Target>(null, _schema, new UnitOfWork(theStore, theStore.Tenancy.Default), theStore.Serializer);
+            var expressionWithNestedProperty = new PatchExpression<Target>(null, (DocumentSessionBase) session);
             expressionWithNestedProperty.Delete(x => x.Inner.AnotherString);
             expressionWithNestedProperty.Patch["path"].ShouldBe("inner.anotherString");
         }

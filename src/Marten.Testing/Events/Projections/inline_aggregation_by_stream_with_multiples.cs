@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_aggregation_by_stream_with_multiples: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class inline_aggregation_by_stream_with_multiples: IntegrationContext
     {
         private readonly QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private readonly MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };

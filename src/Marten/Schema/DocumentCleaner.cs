@@ -76,7 +76,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
         public void CompletelyRemove(Type documentType)
         {
             var mapping = _options.Storage.MappingFor(documentType);
-
             using (var conn = _tenant.CreateConnection())
             {
                 conn.Open();

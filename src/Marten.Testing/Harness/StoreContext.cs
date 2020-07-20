@@ -30,19 +30,25 @@ namespace Marten.Testing.Harness
             _session?.Dispose();
         }
 
+        /// <summary>
+        /// Sets the default DocumentTracking for this context. Default is "None"
+        /// </summary>
+        protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
+
+
         protected virtual DocumentStore theStore => Fixture.Store;
 
         protected T Fixture { get; }
 
         protected IDocumentSession _session;
 
-        protected virtual IDocumentSession theSession
+        protected IDocumentSession theSession
         {
             get
             {
                 if (_session == null)
                 {
-                    _session = theStore.LightweightSession();
+                    _session = theStore.OpenSession(DocumentTracking);
                 }
 
                 return _session;

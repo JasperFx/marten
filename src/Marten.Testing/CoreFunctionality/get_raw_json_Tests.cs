@@ -7,7 +7,7 @@ using Shouldly;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class get_raw_json_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class get_raw_json_Tests : IntegrationContext
     {
         // SAMPLE: get-raw-json
         //[Fact]

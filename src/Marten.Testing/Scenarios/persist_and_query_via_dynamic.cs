@@ -6,10 +6,10 @@ using Xunit;
 
 namespace Marten.Testing.Scenarios
 {
-    public class persist_and_query_via_dynamic: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class persist_and_query_via_dynamic: IntegrationContext
     {
         // SAMPLE: sample-scenarios-dynamic-type
-        class TemperatureData
+        public class TemperatureData
         {
             public int Id { get; set; }
             public dynamic Values { get; set; }

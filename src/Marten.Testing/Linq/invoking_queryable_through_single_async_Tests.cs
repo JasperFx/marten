@@ -9,7 +9,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [SingleStoryteller]
-    public class invoking_queryable_through_single_async_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_through_single_async_Tests: IntegrationContext
     {
         [Fact]
         public async Task single_hit_with_only_one_document()

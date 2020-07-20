@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class appending_events_and_storing: IntegrationContextWithIdentityMap<IdentityMap>
+    public class appending_events_and_storing: IntegrationContext
     {
         [Theory]
         [InlineData(TenancyStyle.Single)]
@@ -87,6 +87,7 @@ namespace Marten.Testing.Events
 
         public appending_events_and_storing(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 }

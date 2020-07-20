@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Services.Includes;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -173,7 +172,7 @@ namespace Marten.Testing.Bugs
             {
                 var userList = new List<UserWithCustomType>();
 
-                var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList, JoinType.LeftOuter).ToArray();
+                var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
 
                 userList.Count.ShouldBe(2);
 
@@ -201,7 +200,7 @@ namespace Marten.Testing.Bugs
             {
                 var userList = new List<UserWithCustomType>();
 
-                var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList, JoinType.LeftOuter).ToArray();
+                var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
 
                 userList.Count.ShouldBe(2);
 

@@ -36,6 +36,11 @@ namespace Marten.Testing.Documents
         {
             Id = user.Id;
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(FirstName)}: {FirstName}, {nameof(LastName)}: {LastName}";
+        }
     }
 
     public class SuperUser: User

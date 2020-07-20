@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Patching;
 using Marten.Services;

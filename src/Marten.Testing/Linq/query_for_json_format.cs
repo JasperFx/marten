@@ -42,7 +42,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class query_for_json_format : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_for_json_format : IntegrationContext
     {
 
         [Fact]
@@ -219,7 +219,7 @@ namespace Marten.Testing.Linq
                 Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync().ConfigureAwait(false);
             userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");

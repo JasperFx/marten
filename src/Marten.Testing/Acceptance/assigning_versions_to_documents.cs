@@ -70,11 +70,11 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldBeNull();
 
                 session.SaveChanges();
 
-                SpecificationExtensions.ShouldNotBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldNotBeNull();
                 doc.Version.ShouldNotBe(Guid.Empty);
                 doc.Version.ShouldBe(session.VersionFor(doc).Value);
             }
@@ -89,11 +89,11 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldBeNull();
 
                 await session.SaveChangesAsync();
 
-                SpecificationExtensions.ShouldNotBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldNotBeNull();
                 doc.Version.ShouldNotBe(Guid.Empty);
                 doc.Version.ShouldBe(session.VersionFor(doc).Value);
             }
@@ -108,7 +108,7 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldBeNull();
 
                 session.SaveChanges();
 
@@ -159,7 +159,7 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldBeNull();
 
                 session.SaveChanges();
 
@@ -210,7 +210,7 @@ namespace Marten.Testing.Acceptance
             {
                 session.Store(doc);
 
-                SpecificationExtensions.ShouldBeNull(session.VersionFor(doc));
+                session.VersionFor(doc).ShouldBeNull();
 
                 await session.SaveChangesAsync();
 

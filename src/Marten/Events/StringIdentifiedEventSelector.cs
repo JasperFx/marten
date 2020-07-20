@@ -23,7 +23,7 @@ namespace Marten.Events
             _serializer = serializer;
         }
 
-        public IEvent Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public IEvent Resolve(DbDataReader reader)
         {
             var id = reader.GetGuid(0);
             var eventTypeName = reader.GetString(1);
@@ -62,7 +62,7 @@ namespace Marten.Events
             return @event;
         }
 
-        public async Task<IEvent> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public async Task<IEvent> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
             var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
@@ -106,7 +106,7 @@ namespace Marten.Events
             return new[] { "id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, DocumentMapping.DotNetTypeColumn };
         }
 
-        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql)
         {
             sql.Append($"select id, type, version, data, seq_id, stream_id, timestamp, tenant_id, {DocumentMapping.DotNetTypeColumn} from ");
             sql.Append(Events.DatabaseSchemaName);

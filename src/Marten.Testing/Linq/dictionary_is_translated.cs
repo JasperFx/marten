@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class dictionary_is_translated: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class dictionary_is_translated: IntegrationContext
     {
         public dictionary_is_translated(DefaultStoreFixture fixture) : base(fixture)
         {

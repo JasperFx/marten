@@ -7,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_beginning_with_equal_to_value_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_beginning_with_equal_to_value_Tests : IntegrationContext
     {
         [Fact]
         public void start_with_constant()

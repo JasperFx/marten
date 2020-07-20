@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class Omitting_zero_offset_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Omitting_zero_offset_Tests : IntegrationContext
     {
         [Theory]
         [InlineData(0, true)]

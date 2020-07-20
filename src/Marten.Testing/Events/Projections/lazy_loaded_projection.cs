@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class lazy_loaded_projection: IntegrationContextWithIdentityMap<IdentityMap>
+    public class lazy_loaded_projection: IntegrationContext
     {
         public class Logger
         {
@@ -97,6 +97,7 @@ namespace Marten.Testing.Events.Projections
 
         public lazy_loaded_projection(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 }

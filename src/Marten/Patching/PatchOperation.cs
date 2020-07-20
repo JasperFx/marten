@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Marten.Internal;
+using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -32,7 +37,22 @@ namespace Marten.Patching
         // TODO -- come back and do this with a single command!
         private const string VALUE_LOOKUP = "___VALUE___";
 
-        public void ConfigureCommand(CommandBuilder builder)
+        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+        {
+            // Nothing
+        }
+
+        public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+        {
+            return Task.CompletedTask;
+        }
+
+        public OperationRole Role()
+        {
+            return OperationRole.Patch;
+        }
+
+        public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
             var patchParam = builder.AddJsonParameter(_serializer.ToCleanJson(_patch));
             if (_patch.ContainsKey("value"))

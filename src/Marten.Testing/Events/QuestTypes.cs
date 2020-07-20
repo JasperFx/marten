@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Baseline;
 
 namespace Marten.Testing.Events
@@ -46,6 +47,24 @@ namespace Marten.Testing.Events
         {
             return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
         }
+
+        protected bool Equals(MembersJoined other)
+        {
+            return QuestId.Equals(other.QuestId) && Day == other.Day && Location == other.Location && Members.SequenceEqual(other.Members);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((MembersJoined) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(QuestId, Day, Location, Members);
+        }
     }
 
     public class QuestStarted
@@ -56,6 +75,24 @@ namespace Marten.Testing.Events
         public override string ToString()
         {
             return $"Quest {Name} started";
+        }
+
+        protected bool Equals(QuestStarted other)
+        {
+            return Name == other.Name && Id.Equals(other.Id);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((QuestStarted) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Id);
         }
     }
 

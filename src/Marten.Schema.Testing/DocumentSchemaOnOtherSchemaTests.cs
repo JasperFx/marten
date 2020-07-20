@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Baseline;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -25,20 +26,20 @@ namespace Marten.Schema.Testing
         [Fact]
         public void generate_ddl()
         {
-            theStore.Tenancy.Default.StorageFor(typeof(User));
-            theStore.Tenancy.Default.StorageFor(typeof(Issue));
-            theStore.Tenancy.Default.StorageFor(typeof(Company));
+            theStore.Tenancy.Default.StorageFor<User>();
+            theStore.Tenancy.Default.StorageFor<Issue>();
+            theStore.Tenancy.Default.StorageFor<Company>();
 
 
 
             var sql = theSchema.ToDDL();
 
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_user");
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_company");
-            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE other.mt_doc_user");
-            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE other.mt_doc_issue");
-            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE other.mt_doc_company");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_company");
+            sql.ShouldContain("CREATE TABLE other.mt_doc_user");
+            sql.ShouldContain("CREATE TABLE other.mt_doc_issue");
+            sql.ShouldContain("CREATE TABLE other.mt_doc_company");
         }
 
 
@@ -47,7 +48,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.IsActive(null).ShouldBeFalse();
 
-            SpecificationExtensions.ShouldNotContain(theSchema.ToDDL(), "other.mt_streams");
+            theSchema.ToDDL().ShouldNotContain("other.mt_streams");
         }
 
         [Fact]
@@ -56,15 +57,15 @@ namespace Marten.Schema.Testing
             theStore.Events.AddEventType(typeof(MembersJoined));
             theStore.Events.IsActive(null).ShouldBeTrue();
 
-            SpecificationExtensions.ShouldContain(theSchema.ToDDL(), "other.mt_streams");
+            theSchema.ToDDL().ShouldContain("other.mt_streams");
         }
 
         [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
-            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(User)));
-            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Issue)));
-            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Company)));
+            theStore.Tenancy.Default.StorageFor<User>().ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<Issue>().ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<Company>().ShouldNotBeNull();
 
             var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("other.mt_doc_user");
@@ -112,13 +113,12 @@ namespace Marten.Schema.Testing
             using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
             {
 
-                var storage = store.Storage;
+                store.Options.Providers.StorageFor<User>().ShouldNotBeNull();
 
-                storage.StorageFor(typeof(User)).ShouldNotBeNull();
 
                 Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
                 {
-                    storage.StorageFor(typeof(User2));
+                    store.Options.Providers.StorageFor<User2>().ShouldNotBeNull();
                 });
             }
         }
@@ -283,7 +283,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.Tenancy.Default.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

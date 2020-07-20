@@ -1,5 +1,6 @@
 using System;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -26,7 +27,7 @@ namespace Marten.Testing.Bugs
                 session.SaveChanges();
             }
 
-            Exception<AggregateException>.ShouldBeThrownBy(() =>
+            Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
             {
                 using (var session = theStore.LightweightSession())
                 {

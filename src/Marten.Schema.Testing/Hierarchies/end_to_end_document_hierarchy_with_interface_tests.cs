@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing.Hierarchies
 {
-    public class end_to_end_document_hierarchy_with_interface_tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class end_to_end_document_hierarchy_with_interface_tests: IntegrationContext
     {
         public end_to_end_document_hierarchy_with_interface_tests()
         {

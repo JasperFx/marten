@@ -8,7 +8,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class using_const_boolean_in_where_clause_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class using_const_boolean_in_where_clause_Tests : IntegrationContext
     {
         [Fact]
         public void where_const_false()

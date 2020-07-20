@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class marking_stream_as_isnew_on_capture: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class marking_stream_as_isnew_on_capture: IntegrationContext
     {
         [Fact]
         public void isnew_on_start_stream()

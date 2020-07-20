@@ -29,7 +29,7 @@ namespace Marten.Testing.Bugs
                 EndsWith = endsWith;
             }
 
-            public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
+            public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
             {
                 return q => q.Where(u => u.UserName.EndsWith(EndsWith));
             }
@@ -52,7 +52,7 @@ namespace Marten.Testing.Bugs
                 StartsWith = startsWith;
             }
 
-            public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
+            public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
             {
                 return q => q.Where(u => u.UserName.StartsWith(StartsWith));
             }
@@ -75,7 +75,7 @@ namespace Marten.Testing.Bugs
                 Contains = contains;
             }
 
-            public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
+            public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
             {
                 return q => q.Where(u => u.UserName.Contains(Contains));
             }

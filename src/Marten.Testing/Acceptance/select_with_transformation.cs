@@ -22,7 +22,7 @@ namespace Marten.Testing.Acceptance
         // SAMPLE: transform_to_json_in_compiled_query
         public class JsonQuery: ICompiledQuery<User, string>
         {
-            public Expression<Func<IQueryable<User>, string>> QueryIs()
+            public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
             {
                 return _ => _.Where(x => x.FirstName == FirstName)
                 .TransformToJson("get_fullname").Single();
@@ -152,7 +152,7 @@ namespace Marten.Testing.Acceptance
 
         public class FullNameViewQuery: ICompiledQuery<User, FullNameView>
         {
-            public Expression<Func<IQueryable<User>, FullNameView>> QueryIs()
+            public Expression<Func<IMartenQueryable<User>, FullNameView>> QueryIs()
             {
                 return _ => _.Where(x => x.FirstName == FirstName).TransformTo<FullNameView>("get_fullname").Single();
             }

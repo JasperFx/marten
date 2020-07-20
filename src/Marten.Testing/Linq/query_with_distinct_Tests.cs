@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_distinct_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_distinct_Tests : IntegrationContext
     {
         [Fact]
         public void get_distinct_number()

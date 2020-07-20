@@ -4,6 +4,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Events;
+using Marten.Internal;
+using Marten.Internal.CompiledQueries;
+using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -11,6 +14,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Transforms;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten
@@ -70,12 +74,16 @@ namespace Marten
 
         public Action<IDatabaseCreationExpressions> CreateDatabases { get; set; }
 
+        public IProviderGraph Providers { get; }
+
         public StoreOptions()
         {
             Events = new EventGraph(this);
             Schema = new MartenRegistry();
             Transforms = new Transforms.Transforms(this);
             Storage = new StorageFeatures(this);
+
+            Providers = new ProviderGraph(this);
         }
 
         /// <summary>
@@ -361,6 +369,28 @@ namespace Marten
         /// </summary>
         public bool DefaultTenantUsageEnabled { get; set; } = true;
 
+        private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
+
+        /// <summary>
+        /// These mappings should only be used for Linq querying within the SelectMany() body
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        internal IFieldMapping ChildTypeMappingFor(Type type)
+        {
+            if (_childFieldMappings.TryFind(type, out var mapping))
+            {
+                return mapping;
+            }
+
+            mapping = new FieldMapping("d.data", type, this);
+
+            _childFieldMappings = _childFieldMappings.AddOrUpdate(type, mapping);
+
+            return mapping;
+
+        }
+
         public class PoliciesExpression
         {
             private readonly StoreOptions _parent;
@@ -390,6 +420,22 @@ namespace Marten
             {
                 return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
             }
+        }
+
+        private ImHashMap<Type, ICompiledQuerySource> _querySources = ImHashMap<Type, ICompiledQuerySource>.Empty;
+
+        internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc,TOut> query, IMartenSession session)
+        {
+            if (_querySources.TryFind(query.GetType(), out var source))
+            {
+                return source;
+            }
+
+            var plan = QueryCompiler.BuildPlan(session, query, this);
+            source = new CompiledQuerySourceBuilder(plan, this).Build();
+            _querySources = _querySources.AddOrUpdate(query.GetType(), source);
+
+            return source;
         }
     }
 

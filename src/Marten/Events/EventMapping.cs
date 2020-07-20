@@ -7,12 +7,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Internal;
+using Marten.Internal.Linq;
+using Marten.Internal.Operations;
+using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
-using Marten.Services.Includes;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
@@ -23,7 +26,7 @@ namespace Marten.Events
 {
     public abstract class EventMapping: IDocumentMapping, IQueryableDocument
     {
-        private readonly EventGraph _parent;
+        protected readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
 
         protected EventMapping(EventGraph parent, Type eventType)
@@ -88,8 +91,6 @@ namespace Marten.Events
             return new WhereFragment($"d.type = '{EventTypeName}'");
         }
 
-        public abstract IDocumentStorage BuildStorage(StoreOptions options);
-
         public void DeleteAllDocuments(ITenant factory)
         {
             factory.RunSql($"delete from mt_events where type = '{Alias}'");
@@ -105,143 +106,146 @@ namespace Marten.Events
             return this;
         }
 
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback)
-        {
-            return _inner.JoinToInclude<TOther>(joinType, other, members, callback);
-        }
     }
 
     public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
     {
         private readonly string _tableName;
+        private Type _idType;
 
         public EventMapping(EventGraph parent) : base(parent, typeof(T))
         {
             var schemaName = parent.DatabaseSchemaName;
             _tableName = schemaName == StoreOptions.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
+
+            _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }
 
-        public override IDocumentStorage BuildStorage(StoreOptions options)
+        public bool UseOptimisticConcurrency { get; } = false;
+
+        string ISelectClause.FromObject => _tableName;
+
+        Type ISelectClause.SelectedType => typeof(T);
+
+        void ISelectClause.WriteSelectClause(CommandBuilder sql)
         {
-            return this;
+            sql.Append("select data from ");
+            sql.Append(_tableName);
+            sql.Append(" as d");
         }
 
-        public Type TopLevelBaseType => DocumentType;
-
-        public NpgsqlCommand LoaderCommand(object id)
+        ISelector ISelectClause.BuildSelector(IMartenSession session)
         {
-            return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = :id and type = '{Alias}'").With("id", id);
+            return new EventSelector<T>(session.Serializer);
         }
 
-        public NpgsqlCommand LoadByArrayCommand<TKey>(TKey[] ids)
+        IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IMartenSession session, Statement topStatement, Statement currentStatement)
         {
-            return new NpgsqlCommand($"select d.data, d.id from {_tableName} as d where id = ANY(:ids) and type = '{Alias}'").With("ids", ids);
+            var selector = new EventSelector<T>(session.Serializer);
+
+            return LinqHandlerBuilder.BuildHandler<T, TResult>(selector, topStatement);
         }
 
-        public object Identity(object document)
+        internal class EventSelector<TEvent>: ISelector<TEvent>
         {
-            return document.As<IEvent>().Id;
-        }
+            private readonly ISerializer _serializer;
 
-        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity)
-        {
-            // Do nothing
-        }
-
-        public void RegisterUpdate(string tenantIdOverride, UpdateStyle updateStyle, UpdateBatch batch, object entity, string json)
-        {
-            // Do nothing
-        }
-
-        public void Remove(IIdentityMap map, object entity)
-        {
-            throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
-        }
-
-        public void Delete(IIdentityMap map, object id)
-        {
-            throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
-        }
-
-        public void Store(IIdentityMap map, object id, object entity)
-        {
-            throw new InvalidOperationException("Use IDocumentSession.Events for all persistence of IEvent objects");
-        }
-
-        public IStorageOperation DeletionForId(object id)
-        {
-            throw new NotSupportedException("You cannot delete events at this time");
-        }
-
-        public IStorageOperation DeletionForEntity(object entity)
-        {
-            throw new NotSupportedException("You cannot delete events at this time");
-        }
-
-        public IStorageOperation DeletionForWhere(IWhereFragment @where)
-        {
-            throw new NotSupportedException("You cannot delete events at this time");
-        }
-
-        public T Resolve(int startingIndex, DbDataReader reader, IIdentityMap map)
-        {
-            var id = reader.GetGuid(startingIndex);
-            var json = reader.GetTextReader(startingIndex + 1);
-
-            return map.Get<T>(id, json, null);
-        }
-
-        public async Task<T> ResolveAsync(int startingIndex, DbDataReader reader, IIdentityMap map, CancellationToken token)
-        {
-            var id = await reader.GetFieldValueAsync<Guid>(startingIndex, token).ConfigureAwait(false);
-
-            var json = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(startingIndex + 1).ConfigureAwait(false);
-
-            return map.Get<T>(id, json, null);
-        }
-
-        public T Resolve(IIdentityMap map, IQuerySession session, object id)
-        {
-            if (map.Has<T>(id))
-                return map.Retrieve<T>(id);
-
-            var cmd = LoaderCommand(id);
-            cmd.Connection = session.Connection;
-            using (var reader = cmd.ExecuteReader())
+            public EventSelector(ISerializer serializer)
             {
-                if (!reader.Read())
-                    return null;
+                _serializer = serializer;
+            }
 
-                var json = reader.GetTextReader(0);
-                var doc = session.Serializer.FromJson<T>(json);
-                map.Store(id, doc);
+            public TEvent Resolve(DbDataReader reader)
+            {
+                using var json = reader.GetTextReader(0);
+                return _serializer.FromJson<TEvent>(json);
+            }
 
-                return doc;
+            public Task<TEvent> ResolveAsync(DbDataReader reader, CancellationToken token)
+            {
+                using var json = reader.GetTextReader(0);
+                var doc = _serializer.FromJson<TEvent>(json);
+
+                return Task.FromResult(doc);
             }
         }
 
-        public async Task<T> ResolveAsync(IIdentityMap map, IQuerySession session, CancellationToken token, object id)
+        ISelectClause ISelectClause.UseStatistics(QueryStatistics statistics)
         {
-            if (map.Has<T>(id))
-                return map.Retrieve<T>(id);
+            throw new NotSupportedException();
+        }
 
-            var cmd = LoaderCommand(id);
-            cmd.Connection = session.Connection;
+        Type IDocumentStorage.SourceType => typeof(IEvent);
 
-            using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
-            {
-                var found = await reader.ReadAsync(token).ConfigureAwait(false);
+        IFieldMapping IDocumentStorage.Fields => this;
 
-                if (!found)
-                    return null;
+        IQueryableDocument IDocumentStorage.QueryableDocument => this;
 
-                var json = reader.GetTextReader(0);
-                //var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-                var doc = session.Serializer.FromJson<T>(json);
-                map.Store(id, doc);
+        object IDocumentStorage<T>.IdentityFor(T document)
+        {
+            throw new NotSupportedException();
+        }
 
-                return doc;
-            }
+        Type IDocumentStorage<T>.IdType => _idType;
+
+        Guid? IDocumentStorage<T>.VersionFor(T document, IMartenSession session)
+        {
+            throw new NotSupportedException();
+        }
+
+        void IDocumentStorage<T>.Store(IMartenSession session, T document)
+        {
+            throw new NotSupportedException();
+        }
+
+        void IDocumentStorage<T>.Store(IMartenSession session, T document, Guid? version)
+        {
+            throw new NotSupportedException();
+        }
+
+        void IDocumentStorage<T>.Eject(IMartenSession session, T document)
+        {
+            throw new NotSupportedException();
+        }
+
+        IStorageOperation IDocumentStorage<T>.Update(T document, IMartenSession session, ITenant tenant)
+        {
+            throw new NotSupportedException();
+        }
+
+        IStorageOperation IDocumentStorage<T>.Insert(T document, IMartenSession session, ITenant tenant)
+        {
+            throw new NotSupportedException();
+        }
+
+        IStorageOperation IDocumentStorage<T>.Upsert(T document, IMartenSession session, ITenant tenant)
+        {
+            throw new NotSupportedException();
+        }
+
+        IStorageOperation IDocumentStorage<T>.Overwrite(T document, IMartenSession session, ITenant tenant)
+        {
+            throw new NotSupportedException();
+        }
+
+        IStorageOperation IDocumentStorage<T>.DeleteForDocument(T document)
+        {
+            throw new NotSupportedException();
+        }
+
+        IStorageOperation IDocumentStorage<T>.DeleteForWhere(IWhereFragment @where)
+        {
+            throw new NotSupportedException();
+        }
+
+        void IDocumentStorage<T>.EjectById(IMartenSession session, object id)
+        {
+            // Nothing
+        }
+
+        void IDocumentStorage<T>.RemoveDirtyTracker(IMartenSession session, object id)
+        {
+            // Nothing
         }
     }
 }

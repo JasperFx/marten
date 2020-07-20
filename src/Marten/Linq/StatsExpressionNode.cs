@@ -11,7 +11,7 @@ namespace Marten.Linq
         public LambdaExpression Stats { get; set; }
 
         public static MethodInfo[] SupportedMethods =
-            typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.Stats)).ToArray();
+            typeof(IMartenQueryable<>).GetMethods().Where(m => m.Name == nameof(IMartenQueryable<string>.Stats)).ToArray();
 
         public StatsExpressionNode(
             MethodCallExpressionParseInfo parseInfo, LambdaExpression stats)

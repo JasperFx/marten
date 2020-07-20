@@ -30,8 +30,8 @@ namespace Marten.Testing.Events
                 .OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-            theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
-                .Single().Id.ShouldBe(departed2.Id);
+            theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+                .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
         }
 
         // ENDSAMPLE
@@ -134,8 +134,8 @@ namespace Marten.Testing.Events
                 .OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-            theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
-                .Single().Id.ShouldBe(departed2.Id);
+            theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+                .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
         }
 
         [Fact]

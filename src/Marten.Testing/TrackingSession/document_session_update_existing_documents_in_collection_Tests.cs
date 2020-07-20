@@ -9,7 +9,7 @@ namespace Marten.Testing.TrackingSession
 {
     public class document_session_update_existing_documents_in_collection_Tests
     {
-        public class IdentityMapTests : IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
+        public class IdentityMapTests : IntegrationContext
         {
             [Fact]
             public void when_querying_and_modifying_multiple_documents_should_track_and_persist()
@@ -44,10 +44,11 @@ namespace Marten.Testing.TrackingSession
 
             public IdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
             {
+                DocumentTracking = DocumentTracking.DirtyTracking;
             }
         }
 
-        public class DirtyTrackingIdentityMapTests : IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
+        public class DirtyTrackingIdentityMapTests : IntegrationContext
         {
             [Fact]
             public void when_querying_and_modifying_multiple_documents_should_track_and_persist()
@@ -84,6 +85,7 @@ namespace Marten.Testing.TrackingSession
 
             public DirtyTrackingIdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
             {
+                DocumentTracking = DocumentTracking.DirtyTracking;
             }
         }
     }

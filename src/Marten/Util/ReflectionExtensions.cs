@@ -50,6 +50,18 @@ namespace Marten.Util
             return rawType.IsNullable() ? rawType.GetInnerTypeFromNullable() : rawType;
         }
 
+        public static Type GetRawMemberType(this MemberInfo member)
+        {
+            Type rawType = null;
+
+            if (member is FieldInfo)
+                rawType = member.As<FieldInfo>().FieldType;
+            if (member is PropertyInfo)
+                rawType = member.As<PropertyInfo>().PropertyType;
+
+            return rawType;
+        }
+
         public static MemberInfo GetPublicPropertyOrField(this Type type, string memberName)
         {
             return type.GetPublicMembersFromTypeHierarchy(

@@ -30,7 +30,7 @@ namespace Marten.Testing.Bugs
 
     public class CompiledNestedQuery: ICompiledListQuery<Target>
     {
-        Expression<Func<IQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.QueryIs()
+        Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.QueryIs()
         {
             return q => q.Where(x => x.Inner.Number == Number);
         }

@@ -13,7 +13,7 @@ using Marten.Testing.Harness;
 
 namespace Marten.Testing.Linq
 {
-	public class StringNotVisitorTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+	public class StringNotVisitorTests : IntegrationContext
 	{
 		public StringNotVisitorTests(DefaultStoreFixture fixture) : base(fixture)
 		{

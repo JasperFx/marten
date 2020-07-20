@@ -73,7 +73,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _testHelper.PublishAllProjectEvents(theStore, true);
+            await _testHelper.PublishAllProjectEventsAsync(theStore, true);
 
             // Really just kind of a smoke test here
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
@@ -100,7 +100,7 @@ namespace Marten.Testing.AsyncDaemon
                 _.Events.DatabaseSchemaName = "events";
             });
 
-            _testHelper.PublishAllProjectEvents(theStore, true);
+            await _testHelper.PublishAllProjectEventsAsync(theStore, true);
 
             using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: new DaemonSettings
             {

@@ -16,7 +16,7 @@ namespace Marten.Schema.Testing.Storage
             DocumentTable table2;
 
 
-            theStore.Tenancy.Default.StorageFor(typeof(User));
+            theStore.Tenancy.Default.StorageFor<User>();
 
             theStore.Tenancy.Default.DbObjects.DocumentTables().ShouldContain($"public.mt_doc_user");
 
@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing.Storage
 
             var store = SeparateStore(opts => opts.Schema.For<User>().Duplicate(x => x.UserName));
 
-            store.Tenancy.Default.StorageFor(typeof(User));
+            store.Tenancy.Default.StorageFor<User>();
 
             store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain($"public.mt_doc_user");
 

@@ -9,7 +9,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_nullable_types_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_nullable_types_Tests : IntegrationContext
     {
         [Fact]
         public void query_against_non_null()

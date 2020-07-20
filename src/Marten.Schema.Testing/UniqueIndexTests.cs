@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Npgsql;
 using Shouldly;
 using Xunit;
@@ -85,7 +86,7 @@ namespace Marten.Schema.Testing
                 {
                     session.SaveChanges();
                 }
-                catch (Marten.Exceptions.MartenCommandException exception)
+                catch (DocumentAlreadyExistsException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
@@ -111,7 +112,7 @@ namespace Marten.Schema.Testing
                 {
                     session.SaveChanges();
                 }
-                catch (Marten.Exceptions.MartenCommandException exception)
+                catch (DocumentAlreadyExistsException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }
@@ -162,7 +163,7 @@ namespace Marten.Schema.Testing
                 {
                     session.SaveChanges();
                 }
-                catch (Marten.Exceptions.MartenCommandException exception)
+                catch (DocumentAlreadyExistsException exception)
                 {
                     ((PostgresException)exception.InnerException).SqlState.ShouldBe(UniqueSqlState);
                 }

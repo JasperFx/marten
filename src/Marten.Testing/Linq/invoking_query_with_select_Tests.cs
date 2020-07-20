@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_select_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_query_with_select_Tests: IntegrationContext
     {
         // SAMPLE: one_field_projection
         [Fact]
@@ -111,7 +111,7 @@ namespace Marten.Testing.Linq
 
             theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
                 .FirstOrDefault()
-                .Name.ShouldBe("Bill");
+                ?.Name.ShouldBe("Bill");
         }
 
         // ENDSAMPLE

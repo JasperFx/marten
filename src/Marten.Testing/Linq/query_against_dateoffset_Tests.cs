@@ -11,7 +11,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_against_dateoffset_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_against_dateoffset_Tests : IntegrationContext
     {
         [Fact]
         public void query()

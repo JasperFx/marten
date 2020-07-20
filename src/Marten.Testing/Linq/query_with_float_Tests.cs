@@ -7,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_float_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_float_Tests : IntegrationContext
     {
         [Fact]
         public void can_query_by_float()

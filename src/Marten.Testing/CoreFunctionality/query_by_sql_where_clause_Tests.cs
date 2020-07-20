@@ -11,6 +11,11 @@ namespace Marten.Testing.CoreFunctionality
     public class query_by_sql_where_clause_Tests : IntegrationContext
     {
 
+        [Fact]
+        public void query_by_string_scalar()
+        {
+
+        }
 
         [Fact]
         public void query_by_one_parameter()
@@ -95,7 +100,7 @@ namespace Marten.Testing.CoreFunctionality
                            .Single();
                 // ENDSAMPLE
 
-                SpecificationExtensions.ShouldNotBeNull(user);
+                user.ShouldNotBeNull();
             }
         }
 

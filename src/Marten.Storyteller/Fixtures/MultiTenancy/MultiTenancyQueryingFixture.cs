@@ -212,7 +212,7 @@ namespace Marten.Storyteller.Fixtures.MultiTenancy
 
     public class UserNameStartsWithA: ICompiledListQuery<User, string>
     {
-        Expression<Func<IQueryable<User>, IEnumerable<string>>> ICompiledQuery<User, IEnumerable<string>>.QueryIs()
+        Expression<Func<IMartenQueryable<User>, IEnumerable<string>>> ICompiledQuery<User, IEnumerable<string>>.QueryIs()
         {
             return query => query.Where(x => x.UserName.StartsWith("A")).Select(x => x.UserName);
         }

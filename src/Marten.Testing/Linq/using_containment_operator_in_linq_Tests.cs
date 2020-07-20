@@ -7,10 +7,11 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class using_containment_operator_in_linq_Tests : IntegrationContextWithIdentityMap<IdentityMap>
+    public class using_containment_operator_in_linq_Tests : IntegrationContext
     {
         public using_containment_operator_in_linq_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
             StoreOptions(_ => { _.Schema.For<Target>().GinIndexJsonData(); });
         }
 
@@ -62,7 +63,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class using_containment_operator_in_linq_with_camel_casing_Tests : IntegrationContextWithIdentityMap<IdentityMap>
+    public class using_containment_operator_in_linq_with_camel_casing_Tests : IntegrationContext
     {
         public using_containment_operator_in_linq_with_camel_casing_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
@@ -77,6 +78,8 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_by_date()
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
+
             var targets = Target.GenerateRandomData(6).ToArray();
             theSession.Store(targets);
 

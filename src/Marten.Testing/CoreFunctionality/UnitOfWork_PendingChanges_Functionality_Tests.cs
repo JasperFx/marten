@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Baseline;
+using Marten.Internal.Operations;
 using Marten.Services;
-using Marten.Services.Deletes;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -63,17 +63,19 @@ namespace Marten.Testing.CoreFunctionality
 
                 session.PendingChanges.Operations().Count().ShouldBe(8);
 
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is UpsertDocument doc && doc.Document == user1);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is InsertDocument doc && doc.Document == user2);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is UpdateDocument doc && doc.Document == user3);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is DeleteById doc && doc.Document == user4);
+                session.ShouldHaveUpsertFor(user1);
+                session.ShouldHaveInsertFor(user2);
+                session.ShouldHaveUpdateFor(user3);
+                session.ShouldHaveDeleteFor(user4);
 
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is UpsertDocument doc && doc.Document == target1);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is InsertDocument doc && doc.Document == target2);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is UpdateDocument doc && doc.Document == target3);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.Operations(), o => o is DeleteById doc && doc.Document == target4);
+                session.ShouldHaveUpsertFor(target1);
+                session.ShouldHaveInsertFor(target2);
+                session.ShouldHaveUpdateFor(target3);
+                session.ShouldHaveDeleteFor(target4);
             }
         }
+
+
 
         [Fact]
         public void pending_changes_operations_by_generic_type()
@@ -101,16 +103,18 @@ namespace Marten.Testing.CoreFunctionality
                 session.Delete(target4);
 
                 session.PendingChanges.OperationsFor<User>().Count().ShouldBe(4);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<User>(), o => o is UpsertDocument doc && doc.Document == user1);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<User>(), o => o is InsertDocument doc && doc.Document == user2);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<User>(), o => o is UpdateDocument doc && doc.Document == user3);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<User>(), o => o is DeleteById doc && doc.Document == user4);
+                session.ShouldHaveUpsertFor(user1);
+                session.ShouldHaveInsertFor(user2);
+                session.ShouldHaveUpdateFor(user3);
+                session.ShouldHaveDeleteFor(user4);
+
 
                 session.PendingChanges.OperationsFor<Target>().Count().ShouldBe(4);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<Target>(), o => o is UpsertDocument doc && doc.Document == target1);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<Target>(), o => o is InsertDocument doc && doc.Document == target2);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<Target>(), o => o is UpdateDocument doc && doc.Document == target3);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor<Target>(), o => o is DeleteById doc && doc.Document == target4);
+                session.ShouldHaveUpsertFor(target1);
+                session.ShouldHaveInsertFor(target2);
+                session.ShouldHaveUpdateFor(target3);
+                session.ShouldHaveDeleteFor(target4);
+
             }
         }
 
@@ -141,16 +145,18 @@ namespace Marten.Testing.CoreFunctionality
                 session.Delete(target4);
 
                 session.PendingChanges.OperationsFor(typeof(User)).Count().ShouldBe(4);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(User)), o => o is UpsertDocument doc && doc.Document == user1);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(User)), o => o is InsertDocument doc && doc.Document == user2);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(User)), o => o is UpdateDocument doc && doc.Document == user3);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(User)), o => o is DeleteById doc && doc.Document == user4);
+
+                session.ShouldHaveUpsertFor(user1);
+                session.ShouldHaveInsertFor(user2);
+                session.ShouldHaveUpdateFor(user3);
+                session.ShouldHaveDeleteFor(user4);
+
 
                 session.PendingChanges.OperationsFor(typeof(Target)).Count().ShouldBe(4);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(Target)), o => o is UpsertDocument doc && doc.Document == target1);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(Target)), o => o is InsertDocument doc && doc.Document == target2);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(Target)), o => o is UpdateDocument doc && doc.Document == target3);
-                SpecificationExtensions.ShouldContain(session.PendingChanges.OperationsFor(typeof(Target)), o => o is DeleteById doc && doc.Document == target4);
+                session.ShouldHaveUpsertFor(target1);
+                session.ShouldHaveInsertFor(target2);
+                session.ShouldHaveUpdateFor(target3);
+                session.ShouldHaveDeleteFor(target4);
             }
         }
 
@@ -191,12 +197,14 @@ namespace Marten.Testing.CoreFunctionality
                 session.Delete(target1);
 
                 session.PendingChanges.Deletions().Count().ShouldBe(3);
-                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<DeleteById>().Single().Id.ShouldBe(target1.Id);
-                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<DeleteById>().Single().Document.ShouldBe(target1);
+
+
+
+                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<DeleteOne<Target, Guid>>().Single().Id.ShouldBe(target1.Id);
 
                 session.PendingChanges.DeletionsFor<User>().Count().ShouldBe(2);
-                session.PendingChanges.DeletionsFor<User>().OfType<DeleteById>().Any(x => x.Document == user1).ShouldBeTrue();
-                session.PendingChanges.DeletionsFor<User>().OfType<DeleteById>().Any(x => x.Id.As<Guid>() == user2.Id).ShouldBeTrue();
+                session.PendingChanges.DeletionsFor<User>().OfType<DeleteOne<User, Guid>>().Any(x => x.Id == user1.Id).ShouldBeTrue();
+                session.PendingChanges.DeletionsFor<User>().OfType<DeleteOne<User, Guid>>().Any(x => x.Id == user2.Id).ShouldBeTrue();
             }
         }
 

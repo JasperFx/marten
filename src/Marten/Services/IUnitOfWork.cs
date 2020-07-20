@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Events;
+using Marten.Internal.Operations;
 using Marten.Patching;
 
 namespace Marten.Services
@@ -32,6 +33,7 @@ namespace Marten.Services
 
         /// <summary>
         /// All the documents that will be updated when this session is committed
+        /// This is inclusive of both Upsert and Updates
         /// </summary>
         /// <returns></returns>
         IEnumerable<object> Updates();
@@ -43,7 +45,8 @@ namespace Marten.Services
         IEnumerable<object> Inserts();
 
         /// <summary>
-        /// All the documents of type T that will be updated when this session is committed
+        /// All the documents of type T that will be updated when this session is committed.
+        /// This is inclusive of both Upsert and Updates
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -96,5 +99,6 @@ namespace Marten.Services
         /// <param name="documentType"></param>
         /// <returns></returns>
         IEnumerable<IStorageOperation> OperationsFor(Type documentType);
+
     }
 }

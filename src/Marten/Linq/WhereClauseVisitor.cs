@@ -119,7 +119,7 @@ namespace Marten.Linq
                 if (expression.Type == typeof(bool))
                 {
                     var locator = _mapping.FieldFor(expression).TypedLocator;
-                    var where = new WhereFragment("{0} = True".ToFormat(locator), true);
+                    var where = new WhereFragment("{0} = True".ToFormat(locator));
                     _register.Peek()(where);
                     return null;
                 }

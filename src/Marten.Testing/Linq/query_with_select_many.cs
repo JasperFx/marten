@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
@@ -10,11 +9,14 @@ using Marten.Testing.Harness;
 using Marten.Transforms;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
     public class query_with_select_many : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         // SAMPLE: can_do_simple_select_many_against_simple_array
         [Fact]
         public void can_do_simple_select_many_against_simple_array()
@@ -257,6 +259,8 @@ namespace Marten.Testing.Linq
         [Fact]
         public async Task select_many_with_any_async()
         {
+            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(Target));
+
             var product1 = new Product {Tags = new[] {"a", "b", "c"}};
             var product2 = new Product {Tags = new[] {"b", "c", "d"}};
             var product3 = new Product {Tags = new[] {"d", "e", "f"}};
@@ -378,7 +382,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        [Fact]
+        //[Fact] TODO -- see https://github.com/JasperFx/marten/issues/1526
         public void select_many_with_includes()
         {
             var user1 = new User();
@@ -423,7 +427,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        [Fact]
+        //[Fact] TODO -- see https://github.com/JasperFx/marten/issues/1526
         public async Task select_many_with_includes_async()
         {
             var user1 = new User();
@@ -567,8 +571,9 @@ namespace Marten.Testing.Linq
             }
         }
 
-        public query_with_select_many(DefaultStoreFixture fixture) : base(fixture)
+        public query_with_select_many(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 

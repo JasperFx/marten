@@ -27,7 +27,7 @@ namespace Marten.Testing.Linq
     public class BrainySmurf : PapaSmurf{ }
     // ENDSAMPLE
 
-    public class query_with_inheritance_and_aliases : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_inheritance_and_aliases : IntegrationContext
     {
         public query_with_inheritance_and_aliases(DefaultStoreFixture fixture) : base(fixture)
         {
@@ -65,7 +65,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class query_with_inheritance : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_inheritance : IntegrationContext
     {
         // SAMPLE: add-subclass-hierarchy
         public query_with_inheritance(DefaultStoreFixture fixture) : base(fixture)

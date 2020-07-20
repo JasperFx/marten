@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq.Compiled
 {
-    public class compiled_query_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class compiled_query_Tests: IntegrationContext
     {
         private readonly User _user1;
         private readonly User _user5;
@@ -34,9 +34,9 @@ namespace Marten.Testing.Linq.Compiled
         {
             var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" });
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT 1");
+            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
 
-            cmd.Parameters.Single().Value.ShouldBe("hank");
+            cmd.Parameters.First().Value.ShouldBe("hank");
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace Marten.Testing.Linq.Compiled
         public void a_single_item_compiled_query()
         {
             var user = theSession.Query(new UserByUsername { UserName = "myusername" });
-            SpecificationExtensions.ShouldNotBeNull(user);
+            user.ShouldNotBeNull();
             var differentUser = theSession.Query(new UserByUsername { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
         }
@@ -61,24 +61,20 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public void a_single_item_compiled_query_with_fields()
         {
-            UserByUsernameWithFields.Count = 0;
-
             var user = theSession.Query(new UserByUsernameWithFields { UserName = "myusername" });
             SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = theSession.Query(new UserByUsernameWithFields { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
-            UserByUsernameWithFields.Count.ShouldBe(1);
         }
 
         [Fact]
         public void a_single_item_compiled_query_SingleOrDefault()
         {
-            UserByUsername.Count = 0;
 
             var user = theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "myusername" });
-            SpecificationExtensions.ShouldNotBeNull(user);
+            user.ShouldNotBeNull();
 
-            SpecificationExtensions.ShouldBeNull(theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" }));
+            theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" }).ShouldBeNull();
         }
 
         // SAMPLE: FindJsonUserByUsername
@@ -99,7 +95,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             var user = theSession.Query(new FindJsonOrderedUsersByUsername() { FirstName = "Jeremy" });
 
-            SpecificationExtensions.ShouldNotBeNull(user);
+            user.ShouldNotBeNull();
             user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
         }
 
@@ -137,8 +133,6 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public async Task a_single_item_compiled_query_async()
         {
-            UserByUsername.Count = 0;
-
             var user = await theSession.QueryAsync(new UserByUsername { UserName = "myusername" }).ConfigureAwait(false);
             SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = await theSession.QueryAsync(new UserByUsername { UserName = "jdm" });
@@ -159,7 +153,6 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public void a_list_query_with_fields_compiled()
         {
-            UsersByFirstNameWithFields.Count = 0;
 
             var users = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
             users.Count.ShouldBe(2);
@@ -167,7 +160,6 @@ namespace Marten.Testing.Linq.Compiled
             users.ElementAt(1).UserName.ShouldBe("shadetreedev");
             var differentUsers = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
             differentUsers.Count().ShouldBe(2);
-            UsersByFirstNameWithFields.Count.ShouldBe(1);
         }
 
         [Fact]
@@ -209,7 +201,7 @@ namespace Marten.Testing.Linq.Compiled
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
-        public Expression<Func<IQueryable<User>, User>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, User>> QueryIs()
         {
             return query =>
                     query.Where(x => x.FirstName == FirstName && Username == x.UserName)
@@ -225,7 +217,7 @@ namespace Marten.Testing.Linq.Compiled
     {
         public string Username { get; set; }
 
-        public Expression<Func<IQueryable<User>, string>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
         {
             return query =>
                     query.Where(x => Username == x.UserName)
@@ -240,7 +232,7 @@ namespace Marten.Testing.Linq.Compiled
     {
         public string FirstName { get; set; }
 
-        public Expression<Func<IQueryable<User>, string>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
         {
             return query =>
                     query.Where(x => FirstName == x.FirstName)
@@ -255,7 +247,7 @@ namespace Marten.Testing.Linq.Compiled
     {
         public string FirstName { get; set; }
 
-        public Expression<Func<IQueryable<User>, string>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
         {
             return query =>
                     query.Where(x => FirstName == x.FirstName)
@@ -267,7 +259,7 @@ namespace Marten.Testing.Linq.Compiled
     {
         public string UserName { get; set; }
 
-        public Expression<Func<IQueryable<User>, LoginPayload>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, LoginPayload>> QueryIs()
         {
             return query => query.Where(x => x.UserName == UserName)
             .Select(x => new LoginPayload { Username = x.UserName }).Single();
@@ -283,7 +275,7 @@ namespace Marten.Testing.Linq.Compiled
     {
         public string FirstName { get; set; }
 
-        public Expression<Func<IQueryable<User>, int>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, int>> QueryIs()
         {
             return query => query.Count(x => x.FirstName == FirstName);
         }
@@ -291,27 +283,22 @@ namespace Marten.Testing.Linq.Compiled
 
     public class UserByUsername: ICompiledQuery<User>
     {
-        public static int Count;
         public string UserName { get; set; }
 
-        public Expression<Func<IQueryable<User>, User>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, User>> QueryIs()
         {
-            Count++;
-            return query => query.Where(x => x.UserName == UserName)
-                .FirstOrDefault();
+            return query => query
+                .FirstOrDefault(x => x.UserName == UserName);
         }
     }
 
     public class UserByUsernameWithFields: ICompiledQuery<User>
     {
-        public static int Count;
         public string UserName;
 
-        public Expression<Func<IQueryable<User>, User>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, User>> QueryIs()
         {
-            Count++;
-            return query => query.Where(x => x.UserName == UserName)
-                .FirstOrDefault();
+            return query => Queryable.FirstOrDefault(query.Where(x => x.UserName == UserName));
         }
     }
 
@@ -320,7 +307,7 @@ namespace Marten.Testing.Linq.Compiled
         public static int Count;
         public string UserName { get; set; }
 
-        public Expression<Func<IQueryable<User>, User>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, User>> QueryIs()
         {
             Count++;
             return query => query.Where(x => x.UserName == UserName)
@@ -334,7 +321,7 @@ namespace Marten.Testing.Linq.Compiled
         public static int Count;
         public string FirstName { get; set; }
 
-        public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
         {
             return query => query.Where(x => x.FirstName == FirstName);
         }
@@ -344,13 +331,10 @@ namespace Marten.Testing.Linq.Compiled
 
     public class UsersByFirstNameWithFields: ICompiledListQuery<User>
     {
-        public static int Count;
         public string FirstName;
 
-        public Expression<Func<IQueryable<User>, IEnumerable<User>>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
         {
-            // Ignore this line, it's from a unit test;)
-            Count++;
             return query => query.Where(x => x.FirstName == FirstName);
         }
     }
@@ -358,7 +342,7 @@ namespace Marten.Testing.Linq.Compiled
     // SAMPLE: UserNamesForFirstName
     public class UserNamesForFirstName: ICompiledListQuery<User, string>
     {
-        public Expression<Func<IQueryable<User>, IEnumerable<string>>> QueryIs()
+        public Expression<Func<IMartenQueryable<User>, IEnumerable<string>>> QueryIs()
         {
             return q => q
                 .Where(x => x.FirstName == FirstName)
