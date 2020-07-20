@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_query_with_statistics: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_query_with_statistics: IntegrationContext
     {
         public invoking_query_with_statistics(DefaultStoreFixture fixture) : base(fixture)
         {
@@ -28,14 +28,17 @@ namespace Marten.Testing.Linq
                 PageSize = pageSize;
             }
 
-            public QueryStatistics Stats { get; set; }
             public int PageNumber { get; set; }
             public int PageSize { get; set; }
 
-            public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
+            public QueryStatistics Stats { get; } = new QueryStatistics();
+
+            public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
-                return query => query.Stats<Target, TargetPaginationQuery>(x => x.Stats)
-                    .Where(x => x.Number > 10).Skip(PageNumber).Take(PageSize);
+                return query => query
+                    .Where(x => x.Number > 10)
+                    .Skip(PageNumber)
+                    .Take(PageSize);
             }
         }
 
@@ -45,7 +48,7 @@ namespace Marten.Testing.Linq
         public void can_get_the_total_from_a_compiled_query()
         {
             var count = theSession.Query<Target>().Count(x => x.Number > 10);
-            SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+            count.ShouldBeGreaterThan(0);
 
             var query = new TargetPaginationQuery(2, 5);
             var list = theSession

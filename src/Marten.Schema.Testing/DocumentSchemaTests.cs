@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Events;
-using Marten.Schema.Hierarchies;
+using Marten.Internal.Storage;
 using Marten.Schema.Testing.Documents;
 using Marten.Schema.Testing.Hierarchies;
 using Marten.Testing.Harness;
@@ -22,8 +22,8 @@ namespace Marten.Schema.Testing
         [Fact]
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
         {
-            var storage = theStore.Tenancy.Default.StorageFor(typeof(User));
-            SpecificationExtensions.ShouldNotBeNull(storage);
+            var storage = theStore.Tenancy.Default.StorageFor<User>();
+            storage.ShouldNotBeNull();
         }
 
         [Fact]
@@ -34,7 +34,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Squad)));
+            theStore.Tenancy.Default.StorageFor<Squad>().ShouldNotBeNull();
         }
 
         [Fact]
@@ -60,29 +60,29 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            theStore.Tenancy.Default.StorageFor(typeof(BaseballTeam))
-                .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad>>();
+            theStore.Tenancy.Default.StorageFor<BaseballTeam>()
+                 .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad, string>>();
         }
 
         [Fact]
         public void caches_storage_for_a_document_type()
         {
-            theStore.Tenancy.Default.StorageFor(typeof(User))
-                .ShouldBeSameAs(theStore.Tenancy.Default.StorageFor(typeof(User)));
+            theStore.Tenancy.Default.StorageFor<User>()
+                .ShouldBeSameAs(theStore.Tenancy.Default.StorageFor<User>());
 
-            theStore.Tenancy.Default.StorageFor(typeof(Issue))
-                .ShouldBeSameAs(theStore.Tenancy.Default.StorageFor(typeof(Issue)));
+            theStore.Tenancy.Default.StorageFor<Issue>()
+                .ShouldBeSameAs(theStore.Tenancy.Default.StorageFor<Issue>());
 
-            theStore.Tenancy.Default.StorageFor(typeof(Company))
-                .ShouldBeSameAs(theStore.Tenancy.Default.StorageFor(typeof(Company)));
+            theStore.Tenancy.Default.StorageFor<Company>()
+                .ShouldBeSameAs(theStore.Tenancy.Default.StorageFor<Company>());
         }
 
         [Fact]
         public void generate_ddl()
         {
-            theStore.Tenancy.Default.StorageFor(typeof(User));
-            theStore.Tenancy.Default.StorageFor(typeof(Issue));
-            theStore.Tenancy.Default.StorageFor(typeof(Company));
+            theStore.Tenancy.Default.StorageFor<User>();
+            theStore.Tenancy.Default.StorageFor<Issue>();
+            theStore.Tenancy.Default.StorageFor<Company>();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(IntDoc));
 
             var sql = theStore.Schema.ToDDL();
@@ -135,9 +135,9 @@ namespace Marten.Schema.Testing
         [Fact]
         public void builds_schema_objects_on_the_fly_as_needed()
         {
-            theStore.Tenancy.Default.StorageFor(typeof(User)).ShouldNotBeNull();
-            theStore.Tenancy.Default.StorageFor(typeof(Issue)).ShouldNotBeNull();
-            theStore.Tenancy.Default.StorageFor(typeof(Company)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<User>().ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<Issue>().ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<Company>().ShouldNotBeNull();
 
             var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
             tables.ShouldContain("public.mt_doc_user");
@@ -345,7 +345,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.Tenancy.Default.StorageFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

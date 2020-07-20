@@ -9,7 +9,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_IsSupersetOf_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_IsSupersetOf_Tests : IntegrationContext
     {
         public void is_superset_of_example()
         {

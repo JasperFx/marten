@@ -5,12 +5,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
-using Marten.V4Internals;
+using Marten.Schema.Arguments;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services
 {
-    public class ManagedConnection: IManagedConnection, IDatabase
+    public class ManagedConnection: IManagedConnection
     {
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;
@@ -98,8 +99,6 @@ namespace Marten.Services
 
             await buildConnectionAsync(token).ConfigureAwait(false);
             await _retryPolicy.ExecuteAsync(async () => await _connection.CommitAsync(token).ConfigureAwait(false), token);
-
-            await _connection.CommitAsync(token).ConfigureAwait(false);
 
             _connection.Dispose();
             _connection = null;
@@ -427,5 +426,7 @@ namespace Marten.Services
         {
             _connection?.Dispose();
         }
+
+
     }
 }

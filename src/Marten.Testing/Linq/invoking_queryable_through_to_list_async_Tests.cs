@@ -10,7 +10,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [MatchingStoryteller]
-    public class invoking_queryable_through_to_list_async_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_through_to_list_async_Tests : IntegrationContext
     {
         // SAMPLE: using-to-list-async
         [Fact]

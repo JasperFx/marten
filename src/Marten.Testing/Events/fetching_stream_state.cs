@@ -21,7 +21,7 @@ namespace Marten.Testing.Events
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 session.Events.StartStream<QuestParty>(streamId, joined, departed);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var query = theStore.OpenSession())
@@ -29,8 +29,8 @@ namespace Marten.Testing.Events
                 var state = await query.Events.FetchStreamStateAsync(streamId);
                 var aggregate = await query.Events.AggregateStreamAsync<QuestParty>(streamId);
 
-                SpecificationExtensions.ShouldNotBeNull(state);
-                SpecificationExtensions.ShouldNotBeNull(aggregate);
+                state.ShouldNotBeNull();
+                aggregate.ShouldNotBeNull();
             }
         }
 
@@ -80,7 +80,7 @@ namespace Marten.Testing.Events
     }
 
     // SAMPLE: fetching_stream_state
-    public class fetching_stream_state: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class fetching_stream_state: IntegrationContext
     {
         private Guid theStreamId;
 

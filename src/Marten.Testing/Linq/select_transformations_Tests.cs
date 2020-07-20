@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class select_transformations_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class select_transformations_Tests : IntegrationContext
     {
         [Fact]
         public void build_query_for_a_single_field()
@@ -25,7 +25,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class select_transformations_with_database_schema_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class select_transformations_with_database_schema_Tests : IntegrationContext
     {
 
         [Fact]

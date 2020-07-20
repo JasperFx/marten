@@ -9,9 +9,9 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
 	// Change type mapping to treat "unknown" PG types as jsonb -> null checks depths at arbitrary depths don't fail due to CAST
-	public class IsNullNotNullArbitraryDepthTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+	public class IsNullNotNullArbitraryDepthTests : IntegrationContext
 	{
-		class UserNested : User
+		public class UserNested : User
 		{
 			public UserNested Nested { get; set; }
 		}

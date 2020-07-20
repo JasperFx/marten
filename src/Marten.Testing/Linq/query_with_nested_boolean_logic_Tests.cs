@@ -10,7 +10,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_nested_boolean_logic_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_nested_boolean_logic_Tests : IntegrationContext
     {
         [Fact]
         public void TestModalOrQuery()

@@ -18,11 +18,9 @@ namespace Marten.Linq
                 throw new BadLinqExpressionException($"Error in value expression inside of the query for '{partialEvaluationExceptionExpression.EvaluatedExpression}'. See the inner exception:", inner);
             }
 
-            if (expression is ConstantExpression)
+            if (expression is ConstantExpression c)
             {
-                // TODO -- handle nulls
-                // TODO -- check out more types here.
-                return expression.As<ConstantExpression>().Value;
+                return c.Value;
             }
 
             throw new NotSupportedException($"The Expression is {expression} of type {expression.GetType().Name}");

@@ -9,7 +9,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [SingleStoryteller]
-    public class invoking_queryable_through_single_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_through_single_Tests : IntegrationContext
     {
         // SAMPLE: single_and_single_or_default
         [Fact]

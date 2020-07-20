@@ -6,20 +6,26 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Internal;
+using Marten.Internal.CodeGeneration;
+using Marten.Internal.DirtyTracking;
+using Marten.Internal.Linq;
+using Marten.Internal.Storage;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
-using Marten.V4Internals;
 using Npgsql;
 using NSubstitute;
 using Remotion.Linq.Clauses;
 using Xunit;
-using IDocumentStorage = Marten.V4Internals.IDocumentStorage;
-using VersionTracker = Marten.V4Internals.VersionTracker;
+using IDocumentStorage = Marten.Internal.Storage.IDocumentStorage;
+using VersionTracker = Marten.Internal.VersionTracker;
 
 namespace Marten.Testing.V4Internals
 {
@@ -52,8 +58,6 @@ namespace Marten.Testing.V4Internals
 
         void CanBuildBulkLoader();
 
-        //void HasSourceCode();
-
     }
 
     public class DocWithVersionField
@@ -76,13 +80,37 @@ namespace Marten.Testing.V4Internals
         public Dictionary<Type, object> ItemMap { get; } = new Dictionary<Type, object>();
         public ITenant Tenant { get; } = Substitute.For<ITenant>();
         public VersionTracker Versions { get; } = new VersionTracker();
-        public IDatabase Database { get; }
+        public IManagedConnection Database { get; }
+        public IList<IChangeTracker> ChangeTrackers { get; } = new List<IChangeTracker>();
+
         public IDocumentStorage StorageFor(Type documentType)
         {
             throw new NotImplementedException();
         }
 
         public StoreOptions Options { get; }
+        public void MarkAsAddedForStorage(object id, object document)
+        {
+        }
+
+        public void MarkAsDocumentLoaded(object id, object document)
+        {
+
+
+        }
+
+        public IDocumentStorage<T> StorageFor<T>()
+        {
+            throw new NotImplementedException();
+        }
+
+        public ConcurrencyChecks Concurrency { get; } = ConcurrencyChecks.Enabled;
+
+        private int _tableNumber;
+        public string NextTempTableName()
+        {
+            return LinqConstants.IdListTableName + ++_tableNumber;
+        }
 
         public Task<T> ExecuteQuery<T>(IQueryHandler<T> handler, CancellationToken token)
         {
@@ -213,24 +241,24 @@ namespace Marten.Testing.V4Internals
         {
             var slot = CreateSlot();
 
-            slot.Lightweight.Upsert(Document, new StubMartenSession()).ShouldNotBeNull();
-            slot.IdentityMap.Upsert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.Lightweight.Upsert(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
+            slot.IdentityMap.Upsert(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
         }
 
         public void CanBuildUpdateOperation()
         {
             var slot = CreateSlot();
 
-            slot.Lightweight.Update(Document, new StubMartenSession()).ShouldNotBeNull();
-            slot.IdentityMap.Update(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.Lightweight.Update(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
+            slot.IdentityMap.Update(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
         }
 
         public void CanBuildInsertOperation()
         {
             var slot = CreateSlot();
 
-            slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
-            slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.Lightweight.Insert(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
+            slot.IdentityMap.Insert(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
         }
 
         public void CanBuildOverwriteOperation()
@@ -239,8 +267,8 @@ namespace Marten.Testing.V4Internals
 
             var slot = CreateSlot();
 
-            slot.Lightweight.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
-            slot.IdentityMap.Insert(Document, new StubMartenSession()).ShouldNotBeNull();
+            slot.Lightweight.Insert(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
+            slot.IdentityMap.Insert(Document, new StubMartenSession(), Substitute.For<ITenant>()).ShouldNotBeNull();
         }
 
         public void CanBuildDeleteByDocument()
@@ -270,6 +298,7 @@ namespace Marten.Testing.V4Internals
             CreateSlot().BulkLoader.ShouldNotBeNull();
         }
 
+
         public void HasSourceCode()
         {
             CreateSlot().SourceCode.ShouldNotBeEmpty();
@@ -282,7 +311,7 @@ namespace Marten.Testing.V4Internals
             CreateSlot().IdentityMap.Store(new StubMartenSession(), Document, Guid.NewGuid());
         }
 
-        private DocumentPersistence<T> CreateSlot()
+        private DocumentProvider<T> CreateSlot()
         {
             var builder = new DocumentPersistenceBuilder(Mapping, Options);
             return builder.Generate<T>();

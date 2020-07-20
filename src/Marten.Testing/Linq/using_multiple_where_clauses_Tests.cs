@@ -7,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class using_multiple_where_clauses_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class using_multiple_where_clauses_Tests : IntegrationContext
     {
         [Fact]
         public void two_where_clauses()

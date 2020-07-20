@@ -45,7 +45,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Route>();
             });
 
-            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor(typeof(Route)));
+            SpecificationExtensions.ShouldNotBeNull(theStore.Tenancy.Default.StorageFor<Route>());
         }
 
         public class RoutesPlannedAfter: ICompiledQuery<Route, IEnumerable<Route>>
@@ -57,7 +57,7 @@ namespace Marten.Testing.Bugs
                 DateTime = dateTime;
             }
 
-            public Expression<Func<IQueryable<Route>, IEnumerable<Route>>> QueryIs()
+            public Expression<Func<IMartenQueryable<Route>, IEnumerable<Route>>> QueryIs()
             {
                 return query => query.Where(route => route.Status == RouteStatus.Planned && route.Date > DateTime);
             }

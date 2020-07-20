@@ -53,7 +53,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
         {
             var options = new SessionOptions();
 
-            using (var query = theStore.QuerySession(options).As<QuerySession>())
+            using (var query = theStore.QuerySession(options))
             {
                 var cmd = query.Query<FryGuy>().Explain();
                 Assert.Equal(30, cmd.Command.CommandTimeout);
@@ -67,7 +67,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
         {
             var options = new SessionOptions() { Timeout = 15 };
 
-            using (var query = theStore.QuerySession(options).As<QuerySession>())
+            using (var query = theStore.QuerySession(options))
             {
                 var cmd = query.Query<FryGuy>().Explain();
                 Assert.Equal(15, cmd.Command.CommandTimeout);

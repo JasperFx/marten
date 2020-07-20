@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class inline_transformation_of_events: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class inline_transformation_of_events: IntegrationContext
     {
         private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };

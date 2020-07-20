@@ -1,4 +1,5 @@
 using System.Linq;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

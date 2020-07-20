@@ -113,7 +113,8 @@ namespace Marten.Transforms
             QueryModel queryModel;
             using (var session = _store.QuerySession())
             {
-                queryModel = session.Query<T>().Where(@where).As<MartenQueryable<T>>().ToQueryModel();
+                var expression = session.Query<T>().Where(@where).Expression;
+                queryModel = MartenQueryParser.Flyweight.GetParsedQuery(expression);
             }
 
             var wheres = queryModel.BodyClauses.OfType<WhereClause>().ToArray();

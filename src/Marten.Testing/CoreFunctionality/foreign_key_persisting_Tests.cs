@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class foreign_key_persisting_Tests: IntegrationContextWithIdentityMap<IdentityMap>
+    public class foreign_key_persisting_Tests: IntegrationContext
     {
         [Fact]
         public void persist_and_overwrite_foreign_key()
@@ -156,6 +156,7 @@ namespace Marten.Testing.CoreFunctionality
 
         public foreign_key_persisting_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 }

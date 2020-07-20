@@ -13,13 +13,14 @@ namespace Marten.Testing.CoreFunctionality
 	{
 		[Fact]
 		public void should_respect_command_timeout_options()
-		{
-			using (var session = theStore.QuerySession(new SessionOptions() { Timeout = -1 }))
-			{
-				var e = Assert.Throws<ArgumentOutOfRangeException>(() => session.Query<int>("select 1"));
-				Assert.StartsWith("CommandTimeout can't be less than zero", e.Message);
-			}
-		}
+        {
+            var ex = Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(() =>
+            {
+                var session = theStore.QuerySession(new SessionOptions() {Timeout = -1});
+            });
+
+            ex.Message.ShouldContain("CommandTimeout can't be less than zero");
+        }
 
 		[Fact]
 		public void should_respect_isolationlevel_and_be_read_only_transaction_when_serializable_isolation()

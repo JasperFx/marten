@@ -55,7 +55,7 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    public class AggregateFinder_Async: IntegrationContextWithIdentityMap<IdentityMap>
+    public class AggregateFinder_Async: IntegrationContext
     {
         [Fact]
         public async Task find_when_stream_is_new_async()
@@ -74,7 +74,7 @@ namespace Marten.Testing.Events.Projections
 
             var persisted = new QuestParty { Id = id };
             theSession.Store(persisted);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             var finder = new AggregateFinder<QuestParty>();
 
@@ -95,6 +95,7 @@ namespace Marten.Testing.Events.Projections
 
         public AggregateFinder_Async(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 }

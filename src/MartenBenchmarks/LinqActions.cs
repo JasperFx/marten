@@ -59,7 +59,7 @@ namespace MartenBenchmarks
 
     public class BlueTargets: ICompiledListQuery<Target>
     {
-        public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
+        public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
         {
             return x => x.Where(_ => _.Color == Colors.Blue);
         }

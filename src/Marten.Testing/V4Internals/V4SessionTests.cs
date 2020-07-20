@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Internal.Sessions;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.V4Internals;
-using Marten.V4Internals.Sessions;
 using Npgsql;
 using NSubstitute;
 using Xunit;
@@ -37,14 +37,15 @@ namespace Marten.Testing.V4Internals
 
         }
 
-        private Marten.V4Internals.Sessions.QuerySession BuildQuerySession()
+        private QuerySession BuildQuerySession()
         {
             using var database =
                 new ManagedConnection(new ConnectionFactory(ConnectionSource.ConnectionString), new NulloRetryPolicy());
 
-            var persistence = new PersistenceGraph(theStore.Options);
-            var newSession = new Marten.V4Internals.Sessions.QuerySession(theStore, database, new JsonNetSerializer(),
-                Substitute.For<ITenant>(), persistence, theStore.Options);
+
+
+            var newSession = new QuerySession(theStore, null, database,
+                theStore.Tenancy.Default);
             return newSession;
         }
 
@@ -444,8 +445,7 @@ namespace Marten.Testing.V4Internals
 
             using var database =  new ManagedConnection(new ConnectionFactory(ConnectionSource.ConnectionString), new NulloRetryPolicy());
 
-            var persistence = new PersistenceGraph(theStore.Options);
-            using var session = new LightweightSession(theStore, database, new JsonNetSerializer(), Substitute.For<ITenant>(), persistence, theStore.Options);
+            using var session = new LightweightSession(theStore, new SessionOptions(), database, theStore.Tenancy.Default);
 
             session.Store(target1, target2, target3);
             session.SaveChanges();
@@ -469,7 +469,7 @@ namespace Marten.Testing.V4Internals
             using var newSession = BuildQuerySession();
 
             // .Where(x => x.Color == Colors.Blue)
-            var numbers = newSession.Query<Target>().Select(x => x.Number).ToList();
+            var numbers = newSession.Query<Target>().Select(x => x.Number).Take(1).ToList();
             numbers.ShouldNotBeNull();
         }
 

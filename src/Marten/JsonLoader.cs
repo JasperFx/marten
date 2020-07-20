@@ -1,21 +1,17 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Services;
-using Marten.Storage;
-using Marten.Util;
+using Marten.Internal.Sessions;
 
 namespace Marten
 {
     public class JsonLoader: IJsonLoader
     {
-        private readonly IManagedConnection _connection;
-        private readonly ITenant _tenant;
+        private readonly QuerySession _session;
 
-        public JsonLoader(IManagedConnection connection, ITenant tenant)
+        public JsonLoader(QuerySession session)
         {
-            _connection = connection;
-            _tenant = tenant;
+            _session = session;
         }
 
         public string FindById<T>(string id) where T : class
@@ -35,26 +31,16 @@ namespace Marten
 
         private string findJsonById<T>(object id)
         {
-            var storage = _tenant.StorageFor(typeof(T));
-
-            var loader = storage.LoaderCommand(id);
-            loader.AddTenancy(_tenant);
-
-            return _connection.Execute(loader, c => loader.ExecuteScalar() as string);
+            var storage = _session.StorageFor<T>();
+            var handler = new SingleDocumentJsonLoader<T>(storage, id);
+            return _session.ExecuteHandler(handler);
         }
 
         private Task<string> findJsonByIdAsync<T>(object id, CancellationToken token)
         {
-            var storage = _tenant.StorageFor(typeof(T));
-
-            var loader = storage.LoaderCommand(id);
-            loader.AddTenancy(_tenant);
-
-            return _connection.ExecuteAsync(loader, async (conn, executeAsyncToken) =>
-            {
-                var result = await loader.ExecuteScalarAsync(executeAsyncToken).ConfigureAwait(false);
-                return result as string; // Maybe do this as a stream later for big docs?
-            }, token);
+            var storage = _session.StorageFor<T>();
+            var handler = new SingleDocumentJsonLoader<T>(storage, id);
+            return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public string FindById<T>(int id) where T : class

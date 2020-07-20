@@ -11,9 +11,9 @@ using Marten.Testing.Harness;
 
 namespace Marten.Testing.Linq
 {
-	public class SimpleNotEqualsParserTests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+	public class SimpleNotEqualsParserTests : IntegrationContext
 	{
-		class QueryTarget
+		public class QueryTarget
 		{
 			public int IntProp { get; set; }
 			public long LongProp { get; set; }

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal;
+using Marten.Internal.Linq;
 using Marten.Linq;
-using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
@@ -17,14 +18,14 @@ namespace Marten.Events
 
     internal class EventQueryHandler<TIdentity>: IEventQueryHandler
     {
-        private readonly ISelector<IEvent> _selector;
+        private readonly IEventSelector _selector;
         private readonly TIdentity _streamId;
         private readonly DateTime? _timestamp;
         private readonly int _version;
         private readonly TenancyStyle _tenancyStyle;
         private readonly string _tenantId;
 
-        public EventQueryHandler(ISelector<IEvent> selector, TIdentity streamId, int version = 0, DateTime? timestamp = null, TenancyStyle tenancyStyle = TenancyStyle.Single, string tenantId = null)
+        public EventQueryHandler(IEventSelector selector, TIdentity streamId, int version = 0, DateTime? timestamp = null, TenancyStyle tenancyStyle = TenancyStyle.Single, string tenantId = null)
         {
             if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
             {
@@ -46,9 +47,9 @@ namespace Marten.Events
 
         public Type SourceType => typeof(IEvent);
 
-        public void ConfigureCommand(CommandBuilder sql)
+        public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
         {
-            _selector.WriteSelectClause(sql, null);
+            _selector.WriteSelectClause(sql);
 
             var param = sql.AddParameter(_streamId);
             sql.Append(" where stream_id = :");
@@ -78,14 +79,30 @@ namespace Marten.Events
             sql.Append(" order by version");
         }
 
-        public IReadOnlyList<IEvent> Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public IReadOnlyList<IEvent> Handle(DbDataReader reader, IMartenSession session)
         {
-            return _selector.Read(reader, map, stats);
+            var list = new List<IEvent>();
+            while (reader.Read())
+            {
+                var @event = _selector.Resolve(reader);
+                list.Add(@event);
+            }
+
+            return list;
         }
 
-        public Task<IReadOnlyList<IEvent>> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public async Task<IReadOnlyList<IEvent>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            return _selector.ReadAsync(reader, map, stats, token);
+            var list = new List<IEvent>();
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                var @event = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                list.Add(@event);
+            }
+
+            return list;
         }
+
+
     }
 }

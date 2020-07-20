@@ -39,7 +39,7 @@ namespace Marten.Testing.Events.Utils
 
         public void ShouldSucceed()
         {
-            Should.NotThrow(() => PerformAction());
+            Should.NotThrow(PerformAction);
         }
 
         public Task ShouldSucceedAsync()

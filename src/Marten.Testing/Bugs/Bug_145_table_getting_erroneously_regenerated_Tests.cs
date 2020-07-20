@@ -21,7 +21,7 @@ namespace Marten.Testing.Bugs
                 .Duplicate(x => x.Identifier);
             });
 
-            theStore.Tenancy.Default.StorageFor(typeof(Login)).ShouldNotBeNull();
+            theStore.Tenancy.Default.StorageFor<Login>().ShouldNotBeNull();
         }
 
         [Fact]

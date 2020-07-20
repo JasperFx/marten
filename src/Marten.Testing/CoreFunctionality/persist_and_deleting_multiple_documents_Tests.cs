@@ -6,30 +6,15 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class persist_and_deleting_multiple_documents_with_Nullo_Tests : persist_and_deleting_multiple_documents_Tests<NulloIdentityMap>
-    {
-        public persist_and_deleting_multiple_documents_with_Nullo_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-    public class persist_and_deleting_multiple_documents_with_IdentityMap_Tests : persist_and_deleting_multiple_documents_Tests<IdentityMap>
-    {
-        public persist_and_deleting_multiple_documents_with_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-    public class persist_and_deleting_multiple_documents_with_DirtyTracking_Tests : persist_and_deleting_multiple_documents_Tests<DirtyTrackingIdentityMap>
-    {
-        public persist_and_deleting_multiple_documents_with_DirtyTracking_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
 
-    public abstract class persist_and_deleting_multiple_documents_Tests<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
+    public class persist_and_deleting_multiple_documents_Tests : IntegrationContext
     {
-        [Fact]
-        public void multiple_documents()
+        [Theory]
+        [SessionTypes]
+        public void multiple_documents(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             // SAMPLE: mixed-docs-to-store
             var user1 = new User {FirstName = "Jeremy", LastName = "Miller"};
             var issue1 = new Issue {Title = "TV won't turn on"}; // unfortunately true as I write this...
@@ -63,7 +48,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        protected persist_and_deleting_multiple_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public persist_and_deleting_multiple_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }
     }

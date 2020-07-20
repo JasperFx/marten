@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_is_in_generic_enumerable_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_is_in_generic_enumerable_Tests : IntegrationContext
     {
         [Fact]
         public void can_query_against_number_in_iList()

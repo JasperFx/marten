@@ -1,5 +1,4 @@
 using System.Linq;
-using Marten.Services.Includes;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
@@ -72,7 +71,7 @@ namespace Marten.Testing.Bugs
                 User expected = null;
 
                 var issues = query.Query<Issue>()
-                    .Include<User>(x => x.AssigneeId, i => expected = i, JoinType.LeftOuter)
+                    .Include<User>(x => x.AssigneeId, i => expected = i)
                     .Where(x => x.Id == issue.Id)
                     .ToList();
 

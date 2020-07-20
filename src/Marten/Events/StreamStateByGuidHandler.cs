@@ -3,8 +3,9 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Internal;
+using Marten.Internal.Linq;
 using Marten.Linq;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -43,7 +44,7 @@ namespace Marten.Events
             _tenantId = tenantId;
         }
 
-        public void ConfigureCommand(CommandBuilder sql)
+        public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
         {
             WriteSelectClause(sql, null);
 
@@ -61,19 +62,19 @@ namespace Marten.Events
 
         public Type SourceType => typeof(StreamState);
 
-        public StreamState Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public StreamState Handle(DbDataReader reader, IMartenSession session)
         {
-            return reader.Read() ? Resolve(reader, map, stats) : null;
+            return reader.Read() ? Resolve(reader) : null;
         }
 
-        public async Task<StreamState> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public async Task<StreamState> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
             return await reader.ReadAsync(token).ConfigureAwait(false)
-                ? await ResolveAsync(reader, map, stats, token).ConfigureAwait(false)
+                ? await ResolveAsync(reader, token).ConfigureAwait(false)
                 : null;
         }
 
-        public StreamState Resolve(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public StreamState Resolve(DbDataReader reader)
         {
             var id = reader.GetFieldValue<T>(0);
             var version = reader.GetFieldValue<int>(1);
@@ -90,7 +91,7 @@ namespace Marten.Events
             return StreamState.Create(id, version, aggregateType, timestamp.ToUniversalTime(), created);
         }
 
-        public async Task<StreamState> ResolveAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats, CancellationToken token)
+        public async Task<StreamState> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);

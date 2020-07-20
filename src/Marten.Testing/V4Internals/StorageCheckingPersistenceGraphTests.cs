@@ -1,5 +1,6 @@
+using Marten.Internal;
+using Marten.Storage;
 using Marten.Testing.Documents;
-using Marten.V4Internals;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -12,10 +13,10 @@ namespace Marten.Testing.V4Internals
         public void only_calls_ensure_storage_exists_on_first_call()
         {
             var options = new StoreOptions();
-            var inner = new PersistenceGraph(options);
+            var inner = new ProviderGraph(options);
             var storage = Substitute.For<ITenantStorage>();
 
-            var graph = new StorageCheckingPersistenceGraph(storage, inner);
+            var graph = new StorageCheckingProviderGraph(storage, inner);
 
             var userPersistence = graph.StorageFor<User>();
             var userPersistence2 = graph.StorageFor<User>();

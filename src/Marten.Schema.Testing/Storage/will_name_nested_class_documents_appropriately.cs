@@ -14,8 +14,8 @@ namespace Marten.Schema.Testing.Storage
             DocumentTable table2;
 
 
-            theStore.Tenancy.Default.StorageFor(typeof(Foo.Document));
-            theStore.Tenancy.Default.StorageFor(typeof(Bar.Document));
+            theStore.Tenancy.Default.StorageFor<Foo.Document>();
+            theStore.Tenancy.Default.StorageFor<Bar.Document>();
 
             var documentTables = theStore.Tenancy.Default.DbObjects.DocumentTables();
             documentTables.ShouldContain("public.mt_doc_foo_document");
@@ -40,8 +40,8 @@ namespace Marten.Schema.Testing.Storage
 
             StoreOptions(x => x.DatabaseSchemaName = "other");
 
-                theStore.Tenancy.Default.StorageFor(typeof(Foo.Document));
-                theStore.Tenancy.Default.StorageFor(typeof(Bar.Document));
+                theStore.Tenancy.Default.StorageFor<Foo.Document>();
+                theStore.Tenancy.Default.StorageFor<Bar.Document>();
 
                 var documentTables = theStore.Tenancy.Default.DbObjects.DocumentTables();
                 documentTables.ShouldContain("other.mt_doc_foo_document");

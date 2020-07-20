@@ -24,7 +24,9 @@ namespace Marten.Testing.MultiTenancy
             theStore.BulkInsert("Green", new User[] {user1});
             theStore.BulkInsert("Purple", new User[] {user2});
 
-            theStore.Tenancy.Default.MetadataFor(user1)
+            using var session = theStore.QuerySession();
+
+            session.MetadataFor(user1)
                 .TenantId.ShouldBe("Green");
         }
 
@@ -43,7 +45,9 @@ namespace Marten.Testing.MultiTenancy
             theStore.BulkInsert("Green", new User[] { user1 });
             theStore.BulkInsert("Purple", new User[] { user2 });
 
-            var metadata = await theStore.Tenancy.Default.MetadataForAsync(user1);
+            using var session = theStore.QuerySession();
+
+            var metadata = await session.MetadataForAsync(user1);
             metadata.TenantId.ShouldBe("Green");
 
         }

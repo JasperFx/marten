@@ -6,26 +6,16 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class DocumentSessionUpdateExistingDocumentWithNulloWithoutDirtyCheckingTests : document_session_update_existing_document_without_dirty_checking_Tests<NulloIdentityMap>
-    {
-        public DocumentSessionUpdateExistingDocumentWithNulloWithoutDirtyCheckingTests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-    public class DocumentSessionUpdateExistingDocumentWithIdentityMapWithoutDirtyCheckingTests : document_session_update_existing_document_without_dirty_checking_Tests<IdentityMap>
-    {
-        public DocumentSessionUpdateExistingDocumentWithIdentityMapWithoutDirtyCheckingTests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
 
-
-
-    public abstract class document_session_update_existing_document_without_dirty_checking_Tests<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
+    public class document_session_update_existing_document_without_dirty_checking_Tests : IntegrationContext
     {
-        [Fact]
-        public void store_a_document()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        [InlineData(Marten.DocumentTracking.None)]
+        public void store_a_document(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             theSession.Store(user);
@@ -39,9 +29,13 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public void store_and_update_a_document_then_document_should_not_be_updated()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        [InlineData(Marten.DocumentTracking.None)]
+        public void store_and_update_a_document_then_document_should_not_be_updated(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             theSession.Store(user);
@@ -66,9 +60,13 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public void store_and_update_a_document_in_same_session_then_document_should_not_be_updated()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        [InlineData(Marten.DocumentTracking.None)]
+        public void store_and_update_a_document_in_same_session_then_document_should_not_be_updated(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             theSession.Store(user);
@@ -86,9 +84,13 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        [Fact]
-        public void store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        [InlineData(Marten.DocumentTracking.None)]
+        public void store_reload_and_update_a_document_in_same_session_then_document_should_not_be_updated(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = new User { FirstName = "James", LastName = "Worthy" };
 
             theSession.Store(user);
@@ -107,7 +109,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        protected document_session_update_existing_document_without_dirty_checking_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public document_session_update_existing_document_without_dirty_checking_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }
     }

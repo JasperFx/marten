@@ -2,10 +2,31 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Remotion.Linq.Clauses;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq
 {
+    public class AsJsonMatcher: IMethodCallMatcher
+    {
+        public bool TryMatch(MethodCallExpression expression, ExpressionVisitor selectorVisitor,
+            out ResultOperatorBase op)
+        {
+            if (expression.Method.Name == nameof(CompiledQueryExtensions.AsJson))
+            {
+                var argument = expression.Arguments.FirstOrDefault();
+
+                if (!(argument is QuerySourceReferenceExpression)) selectorVisitor.Visit(argument);
+
+                op = AsJsonResultOperator.Flyweight;
+                return true;
+            }
+
+            op = null;
+            return false;
+        }
+    }
+
     public class AsJsonExpressionNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
@@ -18,7 +39,7 @@ namespace Marten.Linq
         protected override ResultOperatorBase CreateResultOperator(
             ClauseGenerationContext clauseGenerationContext)
         {
-            return new AsJsonResultOperator(null);
+            return AsJsonResultOperator.Flyweight;
         }
 
         public override Expression Resolve(
@@ -31,5 +52,7 @@ namespace Marten.Linq
                 expressionToBeResolved,
                 clauseGenerationContext);
         }
+
+
     }
 }

@@ -15,7 +15,7 @@ namespace Marten.Testing.Pagination
         public string Id { get; set; }
     }
 
-    public class pagedlist_queryable_extension_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class pagedlist_queryable_extension_Tests : IntegrationContext
     {
         private void BuildUpTargetData()
         {

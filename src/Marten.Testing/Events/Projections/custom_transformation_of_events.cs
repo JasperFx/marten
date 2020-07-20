@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class project_events_from_multiple_streams_into_view: IntegrationContextWithIdentityMap<IdentityMap>
+    public class project_events_from_multiple_streams_into_view: IntegrationContext
     {
         private static readonly Guid streamId = Guid.NewGuid();
         private static readonly Guid streamId2 = Guid.NewGuid();

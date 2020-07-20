@@ -7,24 +7,16 @@ using Xunit;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_load_not_yet_persisted_document_IdentityMap_Tests : document_session_load_not_yet_persisted_document_Tests<IdentityMap>
-    {
-        public document_session_load_not_yet_persisted_document_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-    public class document_session_load_not_yet_persisted_document_DirtyChecking_Tests : document_session_load_not_yet_persisted_document_Tests<DirtyTrackingIdentityMap>
-    {
-        public document_session_load_not_yet_persisted_document_DirtyChecking_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
 
-    public abstract class document_session_load_not_yet_persisted_document_Tests<T> : IntegrationContextWithIdentityMap<T> where T : IIdentityMap
+    public class document_session_load_not_yet_persisted_document_Tests : IntegrationContext
     {
-        [Fact]
-        public void then_the_document_should_be_returned()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.DirtyTracking)]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        public void then_the_document_should_be_returned(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
             theSession.Store(user1);
@@ -34,9 +26,13 @@ namespace Marten.Testing.TrackingSession
             fromSession.ShouldBeSameAs(user1);
         }
 
-        [Fact]
-        public void given_document_is_already_added_then_document_should_be_returned()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.DirtyTracking)]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        public void given_document_is_already_added_then_document_should_be_returned(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
             theSession.Store(user1);
@@ -47,9 +43,13 @@ namespace Marten.Testing.TrackingSession
             fromSession.ShouldBeSameAs(user1);
         }
 
-        [Fact]
-        public void given_document_with_same_id_is_already_added_then_exception_should_occur()
+        [Theory]
+        [InlineData(Marten.DocumentTracking.DirtyTracking)]
+        [InlineData(Marten.DocumentTracking.IdentityOnly)]
+        public void given_document_with_same_id_is_already_added_then_exception_should_occur(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user1 = new User { FirstName = "Tim", LastName = "Cools" };
             var user2 = new User { FirstName = "Tim2", LastName = "Cools2", Id = user1.Id };
 
@@ -59,7 +59,7 @@ namespace Marten.Testing.TrackingSession
                 .Message.ShouldBe("Document 'Marten.Testing.Documents.User' with same Id already added to the session.");
         }
 
-        protected document_session_load_not_yet_persisted_document_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public document_session_load_not_yet_persisted_document_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }
     }

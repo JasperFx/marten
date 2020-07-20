@@ -7,12 +7,12 @@ using Marten.Schema;
 
 namespace Marten.Events
 {
-    public class EventQueryMapping: DocumentMapping
+    public class EventQueryMapping : DocumentMapping
     {
         public EventQueryMapping(StoreOptions storeOptions) : base(typeof(IEvent), storeOptions)
         {
             Selector = storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid
-                ? (ISelector<IEvent>)new EventSelector(storeOptions.Events, storeOptions.Serializer())
+                ? (IEventSelector)new EventSelector(storeOptions.Events, storeOptions.Serializer())
                 : new StringIdentifiedEventSelector(storeOptions.Events, storeOptions.Serializer());
 
             DatabaseSchemaName = storeOptions.Events.DatabaseSchemaName;
@@ -33,7 +33,7 @@ namespace Marten.Events
             duplicateField(x => x.Timestamp, "timestamp");
         }
 
-        public ISelector<IEvent> Selector { get; }
+        internal IEventSelector Selector { get; }
 
         public override DbObjectName Table { get; }
 

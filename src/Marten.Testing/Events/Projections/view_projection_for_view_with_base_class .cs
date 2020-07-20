@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class view_projection_for_view_with_base_class: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class view_projection_for_view_with_base_class: IntegrationContext
     {
         private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
         private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };

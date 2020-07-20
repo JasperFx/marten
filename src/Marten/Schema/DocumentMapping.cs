@@ -12,7 +12,6 @@ using Marten.Linq.Fields;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.Unique;
-using Marten.Services.Includes;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
@@ -205,16 +204,6 @@ namespace Marten.Schema
             return new WhereFragment($"d.{DeletedColumn} = False");
         }
 
-        IDocumentStorage IDocumentMapping.BuildStorage(StoreOptions options)
-        {
-            var resolverType = IsHierarchy() ? typeof(HierarchicalDocumentStorage<>) : typeof(DocumentStorage<>);
-
-            var closedType = resolverType.MakeGenericType(DocumentType);
-
-            return Activator.CreateInstance(closedType, this)
-                .As<IDocumentStorage>();
-        }
-
         void IDocumentMapping.DeleteAllDocuments(ITenant factory)
         {
             var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
@@ -237,13 +226,6 @@ namespace Marten.Schema
         }
 
         public Type IdType => IdMember?.GetMemberType();
-
-        public IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback)
-        {
-            var tableAlias = members.ToTableAlias();
-
-            return new IncludeJoin<TOther>(other, FieldFor(members), tableAlias, callback, joinType);
-        }
 
         public IIdGeneration IdStrategy { get; set; }
 
@@ -564,6 +546,8 @@ namespace Marten.Schema
                 return property.CanWrite && property.SetMethod != null;
             return false;
         }
+
+
 
         private HiloSettings _hiloSettings;
         private MemberInfo _versionMember;

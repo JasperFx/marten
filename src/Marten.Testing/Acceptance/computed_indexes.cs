@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -258,7 +259,7 @@ namespace Marten.Testing.Acceptance
                     OtherGuid = guid
                 };
                 session.Store(item);
-                var exception = Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges());
+                var exception = Assert.Throws<DocumentAlreadyExistsException>(() => session.SaveChanges());
                 Assert.Contains("duplicate key value violates unique constraint", exception.ToString());
             }
         }
@@ -320,7 +321,9 @@ namespace Marten.Testing.Acceptance
 
                 // Inserting the same original string should throw
                 session.Store(item2);
-                SpecificationExtensions.ShouldContain(Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message, "duplicate");
+
+                Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() => session.SaveChanges());
+
             }
         }
 
@@ -400,7 +403,7 @@ namespace Marten.Testing.Acceptance
                 // Inserting the same string but all uppercase should throw because
                 // the index is stored with lowcased value
                 session.Store(item);
-                SpecificationExtensions.ShouldContain(Assert.Throws<Marten.Exceptions.MartenCommandException>(() => session.SaveChanges()).Message, "duplicate");
+                Exception<DocumentAlreadyExistsException>.ShouldBeThrownBy(() => session.SaveChanges());
             }
         }
 

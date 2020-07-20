@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    public class SampleProjectByEventType: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class SampleProjectByEventType: IntegrationContext
     {
         [Fact]
         public void CanProjectByEventType()

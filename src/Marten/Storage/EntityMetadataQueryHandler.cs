@@ -4,10 +4,9 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Linq;
-using Marten.Linq.QueryHandlers;
+using Marten.Internal;
+using Marten.Internal.Linq;
 using Marten.Schema;
-using Marten.Services;
 using Marten.Util;
 
 namespace Marten.Storage
@@ -17,12 +16,10 @@ namespace Marten.Storage
         private readonly Dictionary<string, int> _fields;
         private readonly object _id;
         private readonly IDocumentMapping _mapping;
-        private readonly IDocumentStorage _storage;
 
-        public EntityMetadataQueryHandler(object entity, IDocumentStorage storage, IDocumentMapping mapping)
+        public EntityMetadataQueryHandler(object id, IDocumentMapping mapping)
         {
-            _id = storage.Identity(entity);
-            _storage = storage;
+            _id = id;
             _mapping = mapping;
 
             var fieldIndex = 0;
@@ -48,7 +45,7 @@ namespace Marten.Storage
             }
         }
 
-        public void ConfigureCommand(CommandBuilder sql)
+        public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
         {
             sql.Append("select ");
 
@@ -68,9 +65,7 @@ namespace Marten.Storage
             sql.AddNamedParameter("id", _id);
         }
 
-        public Type SourceType => _storage.DocumentType;
-
-        public DocumentMetadata Handle(DbDataReader reader, IIdentityMap map, QueryStatistics stats)
+        public DocumentMetadata Handle(DbDataReader reader, IMartenSession session)
         {
             if (!reader.Read())
                 return null;
@@ -91,7 +86,7 @@ namespace Marten.Storage
             return metadata;
         }
 
-        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IIdentityMap map, QueryStatistics stats,
+        public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IMartenSession session,
             CancellationToken token)
         {
             var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
@@ -150,5 +145,7 @@ namespace Marten.Storage
                 return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
             return defaultValue;
         }
+
+        public Type SourceType { get; }
     }
 }

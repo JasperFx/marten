@@ -4,11 +4,14 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.CoreFunctionality
 {
     public class delete_many_documents_by_query_Tests : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         [Fact]
         public void can_delete_by_query()
         {
@@ -93,7 +96,6 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void can_delete_by_query_multiple()
         {
-
             var targets = new[] { new FailureInLife { Id = 1, What = 2 } };
 
             theStore.BulkInsert(targets);
@@ -109,8 +111,9 @@ namespace Marten.Testing.CoreFunctionality
 
         }
 
-        public delete_many_documents_by_query_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public delete_many_documents_by_query_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 }

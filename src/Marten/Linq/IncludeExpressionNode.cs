@@ -9,26 +9,23 @@ namespace Marten.Linq
     public class IncludeExpressionNode: ResultOperatorExpressionNodeBase
     {
         public LambdaExpression IdSource { get; set; }
-        public LambdaExpression Callback { get; set; }
-        public ConstantExpression JoinType { get; set; }
+        public Expression Callback { get; set; }
 
         public static MethodInfo[] SupportedMethods =
-            typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.Include)).ToArray();
+            typeof(IMartenQueryable<>).GetMethods().Where(m => m.Name == "Include").ToArray();
 
         public IncludeExpressionNode(
-            MethodCallExpressionParseInfo parseInfo, LambdaExpression idSource, LambdaExpression callback,
-            ConstantExpression joinType)
+            MethodCallExpressionParseInfo parseInfo, LambdaExpression idSource, Expression callback)
             : base(parseInfo, null, null)
         {
             IdSource = idSource;
             Callback = callback;
-            JoinType = joinType;
         }
 
         protected override ResultOperatorBase CreateResultOperator(
             ClauseGenerationContext clauseGenerationContext)
         {
-            return new IncludeResultOperator(IdSource, Callback, JoinType);
+            return new IncludeResultOperator(IdSource, Callback);
         }
 
         public override Expression Resolve(

@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class ScenarioAggregateAndRepository: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class ScenarioAggregateAndRepository: IntegrationContext
     {
         public ScenarioAggregateAndRepository(DefaultStoreFixture fixture) : base(fixture)
         {

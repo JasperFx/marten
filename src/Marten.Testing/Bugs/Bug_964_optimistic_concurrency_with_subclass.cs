@@ -88,10 +88,12 @@ namespace Marten.Testing.Bugs
 
                 session.Store(minio2, minio2.Version);
 
-                Exception<AggregateException>.ShouldBeThrownBy(() =>
+                // It throws ConcurrencyException because there is only one
+                // exception
+                Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
                 {
                     session.SaveChanges();
-                }).InnerExceptions.Single().ShouldBeOfType<ConcurrencyException>();
+                });
             }
         }
     }

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class query_with_properties_from_document_comparison : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_properties_from_document_comparison : IntegrationContext
     {
         [Fact]
         public void compares_properties_correctly()

@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Fields;
-using Marten.Services.Includes;
+using Marten.Storage;
 using Remotion.Linq;
 
 namespace Marten.Schema
@@ -15,8 +15,6 @@ namespace Marten.Schema
 
         IWhereFragment DefaultWhereFragment();
 
-        IncludeJoin<TOther> JoinToInclude<TOther>(JoinType joinType, IQueryableDocument other, MemberInfo[] members, Action<TOther> callback);
-
         string[] SelectFields();
 
         DbObjectName Table { get; }
@@ -24,6 +22,8 @@ namespace Marten.Schema
         DuplicatedField[] DuplicatedFields { get; }
 
         Type DocumentType { get; }
+
+        TenancyStyle TenancyStyle { get; }
     }
 
 }

@@ -97,29 +97,9 @@ namespace Marten.Linq.Fields
         public string UpdateSqlFragment()
         {
             return $"{ColumnName} = {InnerField.SelectorForDuplication(PgType)}";
-
-            // var rawLocator = InnerField.RawLocator.Replace("d.", "");
-            //
-            // return FieldType == typeof(string) || PgType == "varchar" || PgType == "text"
-            //     ? $"{ColumnName} = {rawLocator}"
-            //     : $"{ColumnName} = CAST({rawLocator} as {PgType})";
         }
 
-        /*
-        public string UpdateSqlFragment()
-        {
-            if ((DbType & NpgsqlDbType.Array) == NpgsqlDbType.Array && PgType != "jsonb")
-            {
-                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, "jsonb");
-                return $"{ColumnName} = CAST(ARRAY(SELECT jsonb_array_elements_text({jsonField.TypedLocator})) as {PgType})";
-            }
-            else
-            {
-                var jsonField = new JsonLocatorField("data", _storeOptions, _enumStorage, Casing.Default, Members, PgType);
-                return $"{ColumnName} = {jsonField.TypedLocator}";
-            }
-        }
-         */
+
 
         public object GetValueForCompiledQueryParameter(Expression valueExpression)
         {

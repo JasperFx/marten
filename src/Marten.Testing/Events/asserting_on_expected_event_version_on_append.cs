@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class asserting_on_expected_event_version_on_append: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class asserting_on_expected_event_version_on_append: IntegrationContext
     {
         [Fact]
         public void should_check_max_event_id_on_append()

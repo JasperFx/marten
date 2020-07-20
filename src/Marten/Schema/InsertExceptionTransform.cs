@@ -1,4 +1,5 @@
 using System;
+using Marten.Exceptions;
 using Marten.Services;
 
 namespace Marten.Schema
@@ -27,18 +28,6 @@ namespace Marten.Schema
                 return true;
             }
             return false;
-        }
-    }
-
-    public sealed class DocumentAlreadyExistsException: Exception
-    {
-        public Type DocType { get; }
-        public object Id { get; }
-
-        public DocumentAlreadyExistsException(Exception inner, Type docType, object id) : base((string)$"Document already exists {docType.FullName}: {id}", inner)
-        {
-            DocType = docType;
-            Id = id;
         }
     }
 }

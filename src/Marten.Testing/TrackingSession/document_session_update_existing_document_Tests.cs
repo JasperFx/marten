@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.TrackingSession
 {
-    public class document_session_update_existing_document_Tests : IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
+    public class document_session_update_existing_document_Tests : IntegrationContext
     {
         [Fact]
         public void store_a_document()
@@ -94,6 +94,7 @@ namespace Marten.Testing.TrackingSession
 
         public document_session_update_existing_document_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.DirtyTracking;
         }
     }
 }

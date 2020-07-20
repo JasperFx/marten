@@ -1,12 +1,17 @@
 using System;
+using Marten.Internal;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
-using Marten.V4Internals;
 using Xunit;
 using Shouldly;
 
 namespace Marten.Testing.V4Internals
 {
+    public class GuidDoc
+    {
+        public Guid Id { get; set; }
+    }
+
     public class VersionTrackerTests
     {
         private StringDoc stringDoc = new StringDoc {Id = "bar"};

@@ -7,7 +7,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_enums_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_enums_Tests : IntegrationContext
     {
         [Fact]
         public void use_enum_values_with_jil_that_are_not_duplicated()

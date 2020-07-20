@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class previewing_the_command_from_a_queryable_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class previewing_the_command_from_a_queryable_Tests : IntegrationContext
     {
         [Fact]
         public void preview_basic_select_command()
@@ -52,7 +52,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
 
-            cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT 1");
+            cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    public class previewing_the_command_from_a_queryable_inb_different_schema_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class previewing_the_command_from_a_queryable_inb_different_schema_Tests : IntegrationContext
     {
         public previewing_the_command_from_a_queryable_inb_different_schema_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
@@ -129,7 +129,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
 
-            cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT 1");
+            cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
         }
     }
 }

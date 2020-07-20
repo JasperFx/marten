@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class explain_query: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class explain_query: IntegrationContext
     {
         [Fact]
         public void retrieves_query_plan()

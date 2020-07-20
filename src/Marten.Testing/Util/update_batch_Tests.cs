@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Services.Deletes;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
@@ -14,7 +13,7 @@ using Xunit;
 
 namespace Marten.Testing.Util
 {
-    public class update_batch_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class update_batch_Tests : IntegrationContext
     {
         private readonly DocumentMapping theMapping;
 

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_through_last_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_through_last_Tests: IntegrationContext
     {
         [Fact]
         public void last_throws_an_exception()

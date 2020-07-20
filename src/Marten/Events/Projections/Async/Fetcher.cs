@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Linq;
 using Marten.Services;
@@ -18,7 +19,6 @@ namespace Marten.Events.Projections.Async
     {
         private readonly IDaemonLogger _logger;
         private readonly IDaemonErrorHandler _errorHandler;
-        private readonly NulloIdentityMap _map;
         private readonly DaemonSettings _settings;
         private readonly AsyncOptions _options;
         private readonly IEventSelector _selector;
@@ -47,14 +47,14 @@ namespace Marten.Events.Projections.Async
                 ? (IEventSelector)new EventSelector(store.Events, store.Advanced.Serializer)
                 : new StringIdentifiedEventSelector(store.Events, store.Advanced.Serializer);
 
-            _map = new NulloIdentityMap(store.Advanced.Serializer);
-
             EventTypeNames = eventTypes.Select(x => store.Events.EventMappingFor(x).Alias).ToArray();
+
+            var fields = _selector.SelectFields().Join(", ");
 
             _sql =
     $@"
 select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
-{_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
+select {fields} from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
 select min(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer;
 select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer
 ".Replace(" as d", "");
@@ -202,7 +202,14 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
                 {
                     await reader.NextResultAsync(_token).ConfigureAwait(false);
 
-                    events = await _selector.ReadAsync(reader, _map, null, _token).ConfigureAwait(false);
+                    var list = new List<IEvent>();
+                    while (await reader.ReadAsync(_token))
+                    {
+                        var @event = await _selector.ResolveAsync(reader, _token).ConfigureAwait(false);
+                        list.Add(@event);
+                    }
+
+                    events = list;
                 }
                 else
                 {

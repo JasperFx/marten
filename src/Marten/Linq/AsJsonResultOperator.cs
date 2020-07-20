@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Linq.Expressions;
+using Marten.Internal;
+using Marten.Internal.Linq;
+using Marten.Transforms;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Clauses.StreamedData;
@@ -7,8 +10,10 @@ using Remotion.Linq.Clauses.StreamedData;
 namespace Marten.Linq
 {
     public class AsJsonResultOperator
-        : SequenceTypePreservingResultOperatorBase
+        : SequenceTypePreservingResultOperatorBase, ISelectableOperator
     {
+        public static readonly AsJsonResultOperator Flyweight = new AsJsonResultOperator(null);
+
         public AsJsonResultOperator(Expression parameter)
         {
             Parameter = parameter;
@@ -30,6 +35,13 @@ namespace Marten.Linq
         public override StreamedSequence ExecuteInMemory<T>(StreamedSequence input)
         {
             return input;
+        }
+
+        public Statement ModifyStatement(Statement statement, IMartenSession session)
+        {
+            statement.ToJsonSelector();
+
+            return statement;
         }
     }
 }

@@ -58,7 +58,7 @@ namespace Marten.Testing.Events.Projections.Async
         /// </summary>
         public class OrderProjection: DocumentsProjection
         {
-            internal class CompanySideReadModel
+            public class CompanySideReadModel
             {
                 public Guid Id { get; set; }
                 public string Name { get; set; }
@@ -293,6 +293,7 @@ namespace Marten.Testing.Events.Projections.Async
 
         public MultidocumentProjectionTests(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 }

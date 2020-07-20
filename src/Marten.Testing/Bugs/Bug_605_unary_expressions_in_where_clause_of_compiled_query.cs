@@ -94,7 +94,7 @@ namespace Marten.Testing.Bugs
 
         public class FlaggedTrueTargets: ICompiledListQuery<Target>
         {
-            public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
+            public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
                 return q => q.SelectMany(x => x.Children)
                     .Where(x => x.Color == Color)
@@ -112,7 +112,7 @@ namespace Marten.Testing.Bugs
 
         public class FlaggedFalseTargets: ICompiledListQuery<Target>
         {
-            public Expression<Func<IQueryable<Target>, IEnumerable<Target>>> QueryIs()
+            public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
                 return q => q.SelectMany(x => x.Children)
                     .Where(x => x.Color == Colors.Green)

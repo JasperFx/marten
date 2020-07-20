@@ -4,7 +4,7 @@ namespace Marten.Services
     /// Marker interface telling Marten not
     /// to advance the results for callbacks
     /// </summary>
-    public interface NoDataReturnedCall: IStorageOperation
+    public interface NoDataReturnedCall
     {
     }
 }

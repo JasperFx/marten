@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_635_operations_order_in_same_session: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class Bug_635_operations_order_in_same_session: IntegrationContext
     {
         [Fact]
         public void deletewhere_and_store()

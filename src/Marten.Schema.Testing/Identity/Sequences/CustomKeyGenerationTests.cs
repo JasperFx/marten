@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Shouldly;
@@ -23,7 +24,9 @@ namespace Marten.Schema.Testing.Identity.Sequences
         public bool RequiresSequences { get; } = false;
         public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
         {
-            throw new NotImplementedException();
+            var document = new Use(mapping.DocumentType);
+            assign.Frames.Code($"_setter({{0}}, \"newId\");", document);
+            assign.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
         }
 
         public class CustomIdGenerator : IIdGenerator<string>

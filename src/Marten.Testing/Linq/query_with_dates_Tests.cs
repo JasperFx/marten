@@ -8,7 +8,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_dates_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_dates_Tests: IntegrationContext
     {
         [Fact]
         public void can_select_DateTimeOffset_and_will_return_localtime()

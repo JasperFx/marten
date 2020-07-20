@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -42,5 +43,9 @@ namespace Marten.Services
         Task RollbackAsync(CancellationToken token);
 
         void BeginSession();
+
+        DbDataReader ExecuteReader(NpgsqlCommand command);
+        Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token);
+
     }
 }

@@ -11,7 +11,7 @@ using Xunit;
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
-    public class query_with_is_one_of_Tests : IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class query_with_is_one_of_Tests : IntegrationContext
     {
         public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithArray =
             new TheoryData<Func<int[], Expression<Func<Target, bool>>>>

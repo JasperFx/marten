@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    public class invoking_queryable_count_async_Tests: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class invoking_queryable_count_async_Tests: IntegrationContext
     {
         [Fact]
         public async Task count_without_any_where()

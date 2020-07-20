@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    public class fetch_a_single_event_with_metadata: IntegrationContextWithIdentityMap<NulloIdentityMap>
+    public class fetch_a_single_event_with_metadata: IntegrationContext
     {
         private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
         private MembersJoined joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };

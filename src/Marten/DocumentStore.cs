@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -99,16 +100,12 @@ namespace Marten
 
             Parser = new MartenExpressionParser(Serializer, options);
 
-            HandlerFactory = new QueryHandlerFactory(this);
-
             options.InitialData.Each(x => x.Populate(this));
         }
 
         public ITenancy Tenancy => Options.Tenancy;
 
         public EventGraph Events => Options.Events;
-
-        internal IQueryHandlerFactory HandlerFactory { get; }
 
         internal MartenExpressionParser Parser { get; }
 
@@ -131,27 +128,27 @@ namespace Marten
 
         public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
         public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
         public void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
         public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options, _writerPool);
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
@@ -192,13 +189,28 @@ namespace Marten
                 throw new DefaultTenantUsageDisabledException();
             }
 
-            var sessionPool = CreateWriterPool();
-            var map = createMap(options.Tracking, sessionPool, options.Listeners);
-
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);
-
-            var session = new DocumentSession(this, connection, _parser, map, tenant, options.ConcurrencyChecks, options.Listeners);
             connection.BeginSession();
+
+            IDocumentSession session;
+            switch (options.Tracking)
+            {
+                case DocumentTracking.None:
+                    session = new LightweightSession(this, options, connection, tenant);
+                    break;
+
+                case DocumentTracking.IdentityOnly:
+                    session = new IdentityMapDocumentSession(this, options, connection, tenant);
+                    break;
+
+                case DocumentTracking.DirtyTracking:
+                    session = new DirtyCheckingDocumentSession(this, options, connection, tenant);
+                    break;
+
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking));
+            }
 
             session.Logger = _logger.StartSession(session);
 
@@ -258,24 +270,6 @@ namespace Marten
             return Options.UseCharBufferPooling ? MemoryPool<char>.Shared : new AllocatingMemoryPool<char>();
         }
 
-        private IIdentityMap createMap(DocumentTracking tracking, MemoryPool<char> sessionPool, IEnumerable<IDocumentSessionListener> localListeners)
-        {
-            switch (tracking)
-            {
-                case DocumentTracking.None:
-                    return new NulloIdentityMap(Serializer, Options.Listeners.Concat(localListeners));
-
-                case DocumentTracking.IdentityOnly:
-                    return new IdentityMap(Serializer, Options.Listeners.Concat(localListeners));
-
-                case DocumentTracking.DirtyTracking:
-                    return new DirtyTrackingIdentityMap(Serializer, Options.Listeners.Concat(localListeners));
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(tracking));
-            }
-        }
-
         public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         {
             return OpenSession(DocumentTracking.DirtyTracking, isolationLevel);
@@ -305,13 +299,8 @@ namespace Marten
                 throw new DefaultTenantUsageDisabledException();
             }
 
-            var parser = new MartenQueryParser();
-
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly, _retryPolicy);
-
-            var session = new QuerySession(this,
-                connection, parser,
-                new NulloIdentityMap(Serializer, Options.Listeners), tenant);
+            var session = new QuerySession(this, options, connection, tenant);
 
             connection.BeginSession();
 
@@ -334,13 +323,10 @@ namespace Marten
                 throw new DefaultTenantUsageDisabledException();
             }
 
-            var parser = new MartenQueryParser();
 
             var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
 
-            var session = new QuerySession(this,
-                connection, parser,
-                new NulloIdentityMap(Serializer, Options.Listeners), tenant);
+            var session = new QuerySession(this, null, connection, tenant);
 
             connection.BeginSession();
 

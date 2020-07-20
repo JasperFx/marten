@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgresql:
-    image: "clkao/postgres-plv8:latest"
+    image: "ionx/postgres-plv8:12.2"
     ports:
      - "5432:5432"
     environment:

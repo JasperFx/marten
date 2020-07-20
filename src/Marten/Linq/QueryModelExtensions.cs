@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Internal.Storage;
 using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
@@ -51,56 +52,18 @@ namespace Marten.Linq
             return query.AllResultOperators().Any(x => x is T);
         }
 
-        internal static IWhereFragment BuildWhereFragment(DocumentStore store, QueryModel query, ITenant tenant)
+        internal static IWhereFragment BuildWhereFragment(this IDocumentStorage storage, QueryModel query, MartenExpressionParser parser)
         {
-            var mapping = tenant.MappingFor(query.SourceType()).ToQueryableDocument();
             var wheres = query.AllBodyClauses().OfType<WhereClause>().ToArray();
             if (wheres.Length == 0)
-                return mapping.DefaultWhereFragment();
+                return storage.DefaultWhereFragment();
 
             var @where = wheres.Length == 1
-                ? store.Parser.ParseWhereFragment(mapping, wheres.Single().Predicate)
-                : new CompoundWhereFragment(store.Parser, mapping, "and", wheres);
+                ? parser.ParseWhereFragment(storage.Fields, wheres.Single().Predicate)
+                : new CompoundWhereFragment(parser, storage.Fields, "and", wheres);
 
-            return mapping.FilterDocuments(query, @where);
+            return storage.FilterDocuments(query, @where);
         }
 
-        public static void ApplyTake(this QueryModel model, int limit, CommandBuilder sql)
-        {
-            if (limit > 0)
-            {
-                sql.Append(" LIMIT ");
-                sql.Append(limit);
-            }
-            else
-            {
-                var take = model.FindOperators<TakeResultOperator>().LastOrDefault();
-                if (take != null)
-                {
-                    var param = sql.AddParameter(take.Count.Value());
-                    sql.Append(" LIMIT :");
-                    sql.Append(param.ParameterName);
-                }
-            }
-        }
-
-        public static void ApplySkip(this QueryModel model, CommandBuilder sql)
-        {
-            var skip = model.FindOperators<SkipResultOperator>().LastOrDefault();
-            if (skip == null)
-            {
-                return;
-            }
-
-            int offset = (int)skip.Count.Value();
-            if (offset == 0)
-            {
-                return;
-            }
-
-            var param = sql.AddParameter(offset);
-            sql.Append(" OFFSET :");
-            sql.Append(param.ParameterName);
-        }
     }
 }

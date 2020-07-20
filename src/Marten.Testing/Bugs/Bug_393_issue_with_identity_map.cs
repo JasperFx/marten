@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_393_issue_with_identity_map: IntegrationContextWithIdentityMap<IdentityMap>
+    public class Bug_393_issue_with_identity_map: IntegrationContext
     {
         [Fact]
         public void load_non_existing_with_a_store_shoudl_return_new_added_document()
@@ -29,10 +29,11 @@ namespace Marten.Testing.Bugs
 
         public Bug_393_issue_with_identity_map(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }
 
-    public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContextWithIdentityMap<DirtyTrackingIdentityMap>
+    public class Bug_393_issue_with_dirty_tracking_identity_map: IntegrationContext
     {
         [Fact]
         public void load_non_existing_with_a_store_shoudl_return_new_added_document()
@@ -55,6 +56,7 @@ namespace Marten.Testing.Bugs
 
         public Bug_393_issue_with_dirty_tracking_identity_map(DefaultStoreFixture fixture) : base(fixture)
         {
+            DocumentTracking = DocumentTracking.DirtyTracking;
         }
     }
 
