@@ -53,8 +53,6 @@ namespace Marten.Services
             return Connection.OpenAsync(token);
         }
 
-        public IMartenSessionLogger Logger { get; set; } = NulloMartenLogger.Flyweight;
-
         public void BeginTransaction()
         {
             if (Transaction != null || _mode == CommandRunnerMode.External)

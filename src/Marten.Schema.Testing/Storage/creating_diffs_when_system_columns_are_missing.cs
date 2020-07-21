@@ -3,6 +3,7 @@ using Baseline;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
@@ -22,10 +23,8 @@ namespace Marten.Schema.Testing.Storage
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
-                conn.Execute(cmd =>
-                {
-                    cmd.Sql(writer.ToString()).ExecuteNonQuery();
-                });
+                var cmd = new NpgsqlCommand(writer.ToString());
+                conn.Execute(cmd);
             }
 
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
@@ -48,10 +47,8 @@ namespace Marten.Schema.Testing.Storage
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
-                conn.Execute(cmd =>
-                {
-                    cmd.Sql(writer.ToString()).ExecuteNonQuery();
-                });
+                var cmd = new NpgsqlCommand(writer.ToString());
+                conn.Execute(cmd);
             }
 
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
@@ -72,12 +69,10 @@ namespace Marten.Schema.Testing.Storage
             var writer = new StringWriter();
             table.Write(theStore.Schema.DdlRules, writer);
 
+            var cmd = new NpgsqlCommand(writer.ToString());
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
-                conn.Execute(cmd =>
-                {
-                    cmd.Sql(writer.ToString()).ExecuteNonQuery();
-                });
+                conn.Execute(cmd);
             }
 
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();

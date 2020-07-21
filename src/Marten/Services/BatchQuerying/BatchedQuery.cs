@@ -13,6 +13,7 @@ using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Util;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Npgsql;
 using Remotion.Linq.Clauses;
 
@@ -97,27 +98,23 @@ namespace Marten.Services.BatchQuerying
                 return;
 
             var command = buildCommand();
-            await _runner.ExecuteAsync(command, async (cmd, tk) =>
+
+            using (var reader = await _runner.ExecuteReaderAsync(command, token))
             {
-                using (var reader = await command.ExecuteReaderAsync(tk).ConfigureAwait(false))
+                await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
+
+                var others = _items.Skip(1).ToArray();
+
+                foreach (var item in others)
                 {
-                    await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
+                    var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
 
-                    var others = _items.Skip(1).ToArray();
+                    if (!hasNext)
+                        throw new InvalidOperationException("There is no next result to read over.");
 
-                    foreach (var item in others)
-                    {
-                        var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
-
-                        if (!hasNext)
-                            throw new InvalidOperationException("There is no next result to read over.");
-
-                        await item.ReadAsync(reader, _parent, token).ConfigureAwait(false);
-                    }
+                    await item.ReadAsync(reader, _parent, token).ConfigureAwait(false);
                 }
-
-                return 0;
-            }, token).ConfigureAwait(false);
+            }
         }
 
         public void ExecuteSynchronously()
@@ -126,23 +123,22 @@ namespace Marten.Services.BatchQuerying
                 return;
 
             var command = buildCommand();
-            _runner.Execute(command, cmd =>
+
+
+            using (var reader = _runner.ExecuteReader(command))
             {
-                using (var reader = command.ExecuteReader())
+                _items[0].Read(reader, _parent);
+
+                foreach (var item in _items.Skip(1))
                 {
-                    _items[0].Read(reader, _parent);
+                    var hasNext = reader.NextResult();
 
-                    foreach (var item in _items.Skip(1))
-                    {
-                        var hasNext = reader.NextResult();
+                    if (!hasNext)
+                        throw new InvalidOperationException("There is no next result to read over.");
 
-                        if (!hasNext)
-                            throw new InvalidOperationException("There is no next result to read over.");
-
-                        item.Read(reader, _parent);
-                    }
+                    item.Read(reader, _parent);
                 }
-            });
+            }
         }
 
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)

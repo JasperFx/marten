@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Events.Projections.Async
 {
@@ -118,26 +119,23 @@ namespace Marten.Events.Projections.Async
         {
             using (var conn = _tenant.OpenConnection())
             {
-                conn.Execute(cmd =>
+                var cmd = new NpgsqlCommand($"select name, last_seq_id from {_store.Events.ProgressionTable}");
+                using (var reader = conn.ExecuteReader(cmd))
                 {
-                    cmd.Sql($"select name, last_seq_id from {_store.Events.ProgressionTable}");
-
-                    using (var reader = cmd.ExecuteReader())
+                    while (reader.Read())
                     {
-                        while (reader.Read())
+                        var name = reader.GetFieldValue<string>(0);
+                        var lastEncountered = reader.GetFieldValue<long>(1);
+
+                        var track = _tracks.Values.FirstOrDefault(x => x.ProgressionName == name);
+
+                        if (track != null)
                         {
-                            var name = reader.GetFieldValue<string>(0);
-                            var lastEncountered = reader.GetFieldValue<long>(1);
-
-                            var track = _tracks.Values.FirstOrDefault(x => x.ProgressionName == name);
-
-                            if (track != null)
-                            {
-                                track.LastEncountered = lastEncountered;
-                            }
+                            track.LastEncountered = lastEncountered;
                         }
                     }
-                });
+                }
+
             }
 
             foreach (var track in _tracks.Values)
@@ -150,21 +148,17 @@ namespace Marten.Events.Projections.Async
         {
             using (var conn = _tenant.OpenConnection())
             {
-                conn.Execute(cmd =>
+                var projectionTrack = _tracks[viewType];
+                var cmd = new NpgsqlCommand($"select last_seq_id from {_store.Events.ProgressionTable} where name = :name").With("name", projectionTrack.ProgressionName);
+
+                using (var reader = conn.ExecuteReader(cmd))
                 {
-                    var projectionTrack = _tracks[viewType];
-
-                    cmd.Sql($"select last_seq_id from {_store.Events.ProgressionTable} where name = :name").With("name", projectionTrack.ProgressionName);
-
-                    using (var reader = cmd.ExecuteReader())
+                    if (reader.Read())
                     {
-                        if (reader.Read())
-                        {
-                            var lastEncountered = reader.GetFieldValue<long>(0);
-                            projectionTrack.LastEncountered = lastEncountered;
-                        }
+                        var lastEncountered = reader.GetFieldValue<long>(0);
+                        projectionTrack.LastEncountered = lastEncountered;
                     }
-                });
+                }
             }
 
             foreach (var track in _tracks.Values)
@@ -268,23 +262,21 @@ namespace Marten.Events.Projections.Async
         {
             using (var conn = _tenant.OpenConnection())
             {
-                return await conn.ExecuteAsync(async (cmd, tkn) =>
+                var cmd = new NpgsqlCommand($"select max(seq_id) from {_store.Events.Table}");
+
+                using (var reader = await conn.ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
                 {
-                    cmd.Sql($"select max(seq_id) from {_store.Events.Table}");
-                    using (var reader = await cmd.ExecuteReaderAsync(tkn).ConfigureAwait(false))
+                    var any = await reader.ReadAsync(token).ConfigureAwait(false);
+                    if (!any)
+                        return 0;
+
+                    if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
                     {
-                        var any = await reader.ReadAsync(tkn).ConfigureAwait(false);
-                        if (!any)
-                            return 0;
-
-                        if (await reader.IsDBNullAsync(0, tkn).ConfigureAwait(false))
-                        {
-                            return 0;
-                        }
-
-                        return await reader.GetFieldValueAsync<long>(0, tkn).ConfigureAwait(false);
+                        return 0;
                     }
-                }, token).ConfigureAwait(false);
+
+                    return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+                }
             }
         }
     }

@@ -15,7 +15,8 @@ namespace Marten.Services
     {
         public static int Execute(this IManagedConnection runner, string sql)
         {
-            return runner.Execute(cmd => cmd.WithText(sql).ExecuteNonQuery());
+            var cmd = new NpgsqlCommand(sql);
+            return runner.Execute(cmd);
         }
 
         public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd, Action<IConfigureExplainExpressions> configureExplain = null)
@@ -26,21 +27,18 @@ namespace Marten.Services
             configureExplain?.Invoke(config);
 
             cmd.CommandText = string.Concat($"explain ({config} format json) ", cmd.CommandText);
-            return runner.Execute(cmd, c =>
+            using (var reader = runner.ExecuteReader(cmd))
             {
-                using (var reader = cmd.ExecuteReader())
+                var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetTextReader(0)) : null;
+                var planToReturn = queryPlans?[0].Plan;
+                if (planToReturn != null)
                 {
-                    var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetTextReader(0)) : null;
-                    var planToReturn = queryPlans?[0].Plan;
-                    if (planToReturn != null)
-                    {
-                        planToReturn.PlanningTime = queryPlans[0].PlanningTime;
-                        planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
-                        planToReturn.Command = cmd;
-                    }
-                    return planToReturn;
+                    planToReturn.PlanningTime = queryPlans[0].PlanningTime;
+                    planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
+                    planToReturn.Command = cmd;
                 }
-            });
+                return planToReturn;
+            }
         }
 
 
@@ -48,41 +46,39 @@ namespace Marten.Services
         {
             var list = new List<string>();
 
-            runner.Execute(cmd =>
+            var cmd = new NpgsqlCommand();
+            cmd.WithText(sql);
+            parameters.Each(x =>
             {
-                cmd.WithText(sql);
-                parameters.Each(x =>
-                {
-                    var param = cmd.AddParameter(x);
-                    cmd.CommandText = cmd.CommandText.UseParameter(param);
-                });
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(reader.GetString(0));
-                    }
-
-                    reader.Close();
-                }
+                var param = cmd.AddParameter(x);
+                cmd.CommandText = cmd.CommandText.UseParameter(param);
             });
+
+            using (var reader = runner.ExecuteReader(cmd))
+            {
+                while (reader.Read())
+                {
+                    list.Add(reader.GetString(0));
+                }
+
+                reader.Close();
+            }
 
             return list;
         }
 
         public static T QueryScalar<T>(this IManagedConnection runner, string sql)
         {
-            return runner.Execute(cmd => cmd.WithText(sql).ExecuteScalar().As<T>());
+            var cmd = new NpgsqlCommand(sql);
+            return runner.QueryScalar<T>(cmd);
         }
 
-        public static Task<T> QueryScalarAsync<T>(this IManagedConnection runner, string sql, CancellationToken token)
+        public static T QueryScalar<T>(this IManagedConnection runner, NpgsqlCommand cmd)
         {
-            return runner.ExecuteAsync(async (cmd, tkn) =>
-            {
-                var result = await cmd.WithText(sql).ExecuteScalarAsync(tkn).ConfigureAwait(false);
-                return (T)result;
-            }, token);
+            using var reader = runner.ExecuteReader(cmd);
+
+            return reader.Read() ? reader.GetFieldValue<T>(0) : default;
         }
+
     }
 }

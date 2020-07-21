@@ -3,11 +3,13 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Transforms;
 using Marten.Util;
+using Npgsql;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -76,13 +78,11 @@ namespace Marten.Testing.Transforms
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
-                conn.Execute(cmd => cmd.Sql(func.GenerateFunction()).ExecuteNonQuery());
+                var cmd = new NpgsqlCommand(func.GenerateFunction());
+                conn.Execute(cmd);
 
-                var actual = conn.Execute(cmd =>
-                {
-                    return cmd.Sql("select mt_transform_get_fullname(:json)")
-                        .WithJsonParameter("json", json).ExecuteScalar().As<string>();
-                });
+                var cmd2 = new NpgsqlCommand("select mt_transform_get_fullname(:json)").WithJsonParameter("json", json);
+                var actual = conn.QueryScalar<string>(cmd2);
 
                 actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
             }

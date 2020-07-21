@@ -43,10 +43,7 @@ namespace Marten.Transforms
 
             using (var conn = _tenant.OpenConnection())
             {
-                conn.Execute(cmd, c =>
-                {
-                    c.ExecuteNonQuery();
-                });
+                conn.Execute(cmd);
             }
         }
 
@@ -149,7 +146,7 @@ namespace Marten.Transforms
 
             using (var conn = _tenant.OpenConnection())
             {
-                conn.Execute(cmd, c => c.ExecuteNonQuery());
+                conn.Execute(cmd);
             }
         }
 
