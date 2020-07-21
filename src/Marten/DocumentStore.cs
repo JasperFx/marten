@@ -90,8 +90,6 @@ namespace Marten
 
             Storage.PostProcessConfiguration();
 
-            _writerPool = options.UseCharBufferPooling ? MemoryPool<char>.Shared : new AllocatingMemoryPool<char>();
-
             Advanced = new AdvancedOptions(this);
 
             Diagnostics = new Diagnostics(this);
@@ -110,7 +108,6 @@ namespace Marten
         internal MartenExpressionParser Parser { get; }
 
         private readonly IMartenLogger _logger;
-        private readonly MemoryPool<char> _writerPool;
         private readonly IRetryPolicy _retryPolicy;
 
         public StorageFeatures Storage => Options.Storage;
@@ -263,11 +260,6 @@ namespace Marten
             {
                 return new ManagedConnection(options, commandRunnerMode, retryPolicy);
             }
-        }
-
-        internal MemoryPool<char> CreateWriterPool()
-        {
-            return Options.UseCharBufferPooling ? MemoryPool<char>.Shared : new AllocatingMemoryPool<char>();
         }
 
         public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)

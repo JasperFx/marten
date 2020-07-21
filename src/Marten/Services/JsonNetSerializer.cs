@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using Baseline;
 using Marten.Services.Json;
@@ -7,8 +8,35 @@ using Newtonsoft.Json.Converters;
 
 namespace Marten.Services
 {
+    internal class JsonArrayPool<T> : IArrayPool<T>
+    {
+        private readonly ArrayPool<T> _inner;
+
+        public JsonArrayPool(ArrayPool<T> inner)
+        {
+            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+        }
+
+        public T[] Rent(int minimumLength)
+        {
+            return _inner.Rent(minimumLength);
+        }
+
+        public void Return(T[] array)
+        {
+            if (array == null) throw new ArgumentNullException(nameof(array));
+
+            _inner.Return(array);
+        }
+    }
+
     public class JsonNetSerializer: ISerializer
     {
+        private readonly ArrayPool<char> _charPool = ArrayPool<char>.Create();
+        private readonly JsonArrayPool<char> _jsonArrayPool;
+
+
+
         private readonly JsonSerializer _clean = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.None,
@@ -29,6 +57,11 @@ namespace Marten.Services
 
         // ENDSAMPLE
 
+        public JsonNetSerializer()
+        {
+            _jsonArrayPool = new JsonArrayPool<char>(_charPool);
+        }
+
         /// <summary>
         /// Customize the inner Newtonsoft formatter.
         /// </summary>
@@ -43,30 +76,58 @@ namespace Marten.Services
 
         public void ToJson(object document, TextWriter writer)
         {
-            _serializer.Serialize(writer, document);
+            using var jsonWriter = new JsonTextWriter(writer)
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseOutput = false,
+                AutoCompleteOnClose = false
+            };
+
+
+            _serializer.Serialize(jsonWriter, document);
+
+            writer.Flush();
         }
 
         public string ToJson(object document)
         {
             var writer = new StringWriter();
-            _serializer.Serialize(writer, document);
+            ToJson(document, writer);
 
             return writer.ToString();
         }
 
         public T FromJson<T>(Stream stream)
         {
-            return _serializer.Deserialize<T>(new JsonTextReader(new StreamReader(stream)));
+            using var jsonReader = new JsonTextReader(new StreamReader(stream))
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
+
+            return _serializer.Deserialize<T>(jsonReader);
         }
 
         public T FromJson<T>(TextReader reader)
         {
-            return _serializer.Deserialize<T>(new JsonTextReader(reader));
+            using var jsonReader = new JsonTextReader(reader)
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
+
+            return _serializer.Deserialize<T>(jsonReader);
         }
 
         public object FromJson(Type type, TextReader reader)
         {
-            return _serializer.Deserialize(new JsonTextReader(reader), type);
+            using var jsonReader = new JsonTextReader(reader)
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
+
+            return _serializer.Deserialize(jsonReader, type);
         }
 
         public string ToCleanJson(object document)
