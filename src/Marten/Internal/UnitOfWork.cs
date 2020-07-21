@@ -55,7 +55,7 @@ namespace Marten.Internal
                 .Select(x => x.DocumentType)
                 .Where(x => x != null)
                 .Distinct()
-                .TopologicalSort(type => GetTypeDependencies(options, type)).ToArray();
+                .TopologicalSort(type => options.Storage.GetTypeDependencies(type)).ToArray();
 
             if (_operations.OfType<IDeletion>().Any())
             {
@@ -69,29 +69,6 @@ namespace Marten.Internal
             return true;
         }
 
-        // TODO -- this needs to be memoized like nobody's business
-        private IEnumerable<Type> GetTypeDependencies(StoreOptions options, Type type)
-        {
-            var mapping = options.Storage.FindMapping(type);
-            var documentMapping = mapping as DocumentMapping ?? (mapping as SubClassMapping)?.Parent;
-            if (documentMapping == null)
-                return Enumerable.Empty<Type>();
-
-            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type && x.ReferenceDocumentType != null)
-                .SelectMany(keyDefinition =>
-                {
-                    var results = new List<Type>();
-                    var referenceMappingType =
-                        options.Storage.FindMapping(keyDefinition.ReferenceDocumentType) as DocumentMapping;
-                    // If the reference type has sub-classes, also need to insert/update them first too
-                    if (referenceMappingType != null && referenceMappingType.SubClasses.Any())
-                    {
-                        results.AddRange(referenceMappingType.SubClasses.Select(s => s.DocumentType));
-                    }
-                    results.Add(keyDefinition.ReferenceDocumentType);
-                    return results;
-                });
-        }
 
 
 

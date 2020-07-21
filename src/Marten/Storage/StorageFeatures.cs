@@ -230,5 +230,44 @@ namespace Marten.Storage
         {
             return _documentMappings.Value.Enumerate().Select(x => x.Value).Any(x => x.IdStrategy.RequiresSequences);
         }
+
+        private ImHashMap<Type, IEnumerable<Type>> _typeDependencies = ImHashMap<Type, IEnumerable<Type>>.Empty;
+
+        internal IEnumerable<Type> GetTypeDependencies(Type type)
+        {
+            if (_typeDependencies.TryFind(type, out var deps))
+            {
+                return deps;
+            }
+
+            deps = determineTypeDependencies(type);
+            _typeDependencies = _typeDependencies.AddOrUpdate(type, deps);
+
+            return deps;
+        }
+
+        private IEnumerable<Type> determineTypeDependencies(Type type)
+        {
+            var mapping = FindMapping(type);
+            var documentMapping = mapping as DocumentMapping ?? (mapping as SubClassMapping)?.Parent;
+            if (documentMapping == null)
+                return Enumerable.Empty<Type>();
+
+            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type && x.ReferenceDocumentType != null)
+                .SelectMany(keyDefinition =>
+                {
+                    var results = new List<Type>();
+                    var referenceMappingType =
+                        FindMapping(keyDefinition.ReferenceDocumentType) as DocumentMapping;
+                    // If the reference type has sub-classes, also need to insert/update them first too
+                    if (referenceMappingType != null && referenceMappingType.SubClasses.Any())
+                    {
+                        results.AddRange(referenceMappingType.SubClasses.Select(s => s.DocumentType));
+                    }
+
+                    results.Add(keyDefinition.ReferenceDocumentType);
+                    return results;
+                });
+        }
     }
 }
