@@ -23,8 +23,6 @@ namespace Marten
     /// </summary>
     public class DocumentStore: IDocumentStore
     {
-        private readonly IQueryParser _parser = new MartenQueryParser();
-
         /// <summary>
         /// Quick way to stand up a DocumentStore to the given database connection
         /// in the "development" mode for auto-creating schema objects as needed
