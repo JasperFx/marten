@@ -106,7 +106,6 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            // TODO -- memoize the parser
             var parser = new MartenExpressionParser(Options.Serializer(), Options);
 
             var model = MartenQueryParser.Flyweight.GetParsedQuery(Query<T>().Where(expression).As<MartenLinqQueryable<T>>().Expression);
@@ -489,7 +488,6 @@ namespace Marten.Internal.Sessions
 
             var storage = StorageFor<T>();
 
-            // TODO -- parser needs to be a singleton in the system
             var @where = storage.BuildWhereFragment(model, new MartenExpressionParser(Serializer, Options));
 
             return new PatchExpression<T>(@where, this);

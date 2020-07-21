@@ -201,8 +201,6 @@ namespace Marten.Internal.Linq
                 CurrentStatement.UseStatistics(statistics);
             }
 
-            // TODO -- expression parser should be a singleton somehow to avoid
-            // the object allocations
             TopStatement.CompileStructure(new MartenExpressionParser(_session.Serializer, _session.Options));
 
             if (includes.Any())
@@ -250,7 +248,6 @@ namespace Marten.Internal.Linq
                     break;
             }
 
-            // Use a flyweight for MartenExpressionParser
             TopStatement.CompileStructure(new MartenExpressionParser(_session.Serializer, _session.Options));
 
             TopStatement.Configure(sql);
