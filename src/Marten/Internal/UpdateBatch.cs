@@ -29,7 +29,7 @@ namespace Marten.Internal
             {
                 if (_operations.Count < session.Options.UpdateBatchSize)
                 {
-                    var command = buildCommand(session, _operations);
+                    var command = session.BuildCommand(_operations);
                     using var reader = session.Database.ExecuteReader(command);
                     applyCallbacks(_operations, reader);
                 }
@@ -44,7 +44,7 @@ namespace Marten.Internal
                             .Take(session.Options.UpdateBatchSize)
                             .ToArray();
 
-                        var command = buildCommand(session, operations);
+                        var command = session.BuildCommand(operations);
                         using var reader = session.Database.ExecuteReader(command);
                         applyCallbacks(operations, reader);
 
@@ -85,7 +85,7 @@ namespace Marten.Internal
         {
             if (_operations.Count < session.Options.UpdateBatchSize)
             {
-                var command = buildCommand(session, _operations);
+                var command = session.BuildCommand(_operations);
                 try
                 {
                     using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
@@ -112,7 +112,7 @@ namespace Marten.Internal
                         .Take(session.Options.UpdateBatchSize)
                         .ToArray();
 
-                    var command = buildCommand(session, operations);
+                    var command = session.BuildCommand(operations);
                     try
                     {
                         using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
@@ -200,30 +200,5 @@ namespace Marten.Internal
                 }
             }
         }
-
-        private NpgsqlCommand buildCommand(IMartenSession session, IEnumerable<IStorageOperation> operations)
-        {
-            var command = new NpgsqlCommand();
-            var builder = new CommandBuilder(command);
-
-            foreach (var operation in operations)
-            {
-                operation.ConfigureCommand(builder, session);
-                builder.Append(';');
-            }
-
-            // Duplication here!
-            command.CommandText = builder.ToString();
-
-            // TODO -- Like this to be temporary
-            if (command.CommandText.Contains(CommandBuilder.TenantIdArg))
-            {
-                command.AddNamedParameter(TenantIdArgument.ArgName, session.Tenant.TenantId);
-            }
-
-            return command;
-        }
-
-
     }
 }

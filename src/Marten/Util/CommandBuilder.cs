@@ -1,12 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
-using Marten.Internal.Linq;
-using Marten.Linq.QueryHandlers;
-using Marten.Schema.Arguments;
-using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -14,7 +8,19 @@ namespace Marten.Util
 {
     public class CommandBuilder: IDisposable
     {
-        public static readonly string TenantIdArg = ":" + TenantIdArgument.ArgName;
+        private readonly NpgsqlCommand _command;
+
+        // TEMP -- will shift this to being pooled later
+        private readonly StringBuilder _sql = new StringBuilder();
+
+        public CommandBuilder(NpgsqlCommand command)
+        {
+            _command = command;
+        }
+
+        public void Dispose()
+        {
+        }
 
         public static string BuildJsonStringLocator(string column, MemberInfo[] members, Casing casing = Casing.Default)
         {
@@ -26,16 +32,14 @@ namespace Marten.Util
                 locator.Append($"'{memberInfo.Name.FormatCase(casing)}'");
                 depth++;
             }
+
             return locator.ToString();
         }
 
         public static string BuildJsonObjectLocator(string column, MemberInfo[] members, Casing casing = Casing.Default)
         {
             var locator = new StringBuilder(column);
-            foreach (var memberInfo in members)
-            {
-                locator.Append($" -> '{memberInfo.Name.FormatCase(casing)}'");
-            }
+            foreach (var memberInfo in members) locator.Append($" -> '{memberInfo.Name.FormatCase(casing)}'");
             return locator.ToString();
         }
 
@@ -50,34 +54,6 @@ namespace Marten.Util
             }
 
             return cmd;
-        }
-
-        public static NpgsqlCommand ToCommand(ITenant tenant, IQueryHandler handler)
-        {
-            var command = new NpgsqlCommand();
-
-            using (var builder = new CommandBuilder(command))
-            {
-                handler.ConfigureCommand(builder, null);
-                command.CommandText = builder._sql.ToString();
-
-                if (command.CommandText.Contains(TenantIdArg))
-                {
-                    command.AddNamedParameter(TenantIdArgument.ArgName, tenant.TenantId);
-                }
-
-                return command;
-            }
-        }
-
-        // TEMP -- will shift this to being pooled later
-        private readonly StringBuilder _sql = new StringBuilder();
-
-        private readonly NpgsqlCommand _command;
-
-        public CommandBuilder(NpgsqlCommand command)
-        {
-            _command = command;
         }
 
         public void Append(string text)
@@ -108,10 +84,6 @@ namespace Marten.Util
         public void Clear()
         {
             _sql.Clear();
-        }
-
-        public void Dispose()
-        {
         }
 
         public void AddParameters(object parameters)
@@ -147,7 +119,7 @@ namespace Marten.Util
             var parameters = new NpgsqlParameter[split.Length - 1];
 
             _sql.Append(split[0]);
-            for (int i = 0; i < parameters.Length; i++)
+            for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = _command.AddParameter(DBNull.Value);
                 parameters[i] = parameter;

@@ -10,6 +10,7 @@ using LamarCompiler;
 using Marten.Internal.Linq;
 using Marten.Internal.Linq.Includes;
 using Marten.Internal.Storage;
+using Marten.Schema.Arguments;
 using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries
@@ -183,6 +184,12 @@ namespace Marten.Internal.CompiledQueries
             foreach (var parameter in _plan.Parameters)
             {
                 parameter.GenerateCode(method, _storeOptions);
+            }
+
+            if (hardcoded.HasTenantId)
+            {
+                method.Frames.Code($"{{0}}.{nameof(CommandBuilder.AddNamedParameter)}({{1}}, session.Tenant.TenantId);",
+                    Use.Type<CommandBuilder>(), TenantIdArgument.ArgName);
             }
 
             if (hardcoded.HasAny())

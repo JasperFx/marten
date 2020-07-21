@@ -257,19 +257,7 @@ namespace Marten.Internal.Linq
         {
             BuildDatabaseStatement(statistics, plans);
 
-            var command = new NpgsqlCommand();
-            var sql = new CommandBuilder(command);
-
-            TopStatement.Configure(sql);
-            command.CommandText = sql.ToString();
-
-            // TODO -- Like this to be temporary
-            if (command.CommandText.Contains(CommandBuilder.TenantIdArg))
-            {
-                command.AddNamedParameter(TenantIdArgument.ArgName, _session.Tenant.TenantId);
-            }
-
-            return command;
+            return _session.BuildCommand(TopStatement);
         }
     }
 }

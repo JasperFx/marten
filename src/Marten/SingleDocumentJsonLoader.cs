@@ -5,6 +5,7 @@ using Marten.Internal;
 using Marten.Internal.Linq;
 using Marten.Internal.Storage;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
 
@@ -33,7 +34,10 @@ namespace Marten
             if (_storage.QueryableDocument.TenancyStyle == TenancyStyle.Conjoined)
             {
                 builder.Append($" and {TenantWhereFragment.Filter}");
+                builder.AddNamedParameter(TenantIdArgument.ArgName, session.Tenant.TenantId);
             }
+
+
         }
 
         public string Handle(DbDataReader reader, IMartenSession session)
