@@ -73,42 +73,18 @@ namespace Marten.Internal.Linq
 
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
-            var cmd = new NpgsqlCommand();
-            var builder = new CommandBuilder(cmd);
-            handler.ConfigureCommand(builder, _session);
+            var cmd = _session.BuildCommand(handler);
 
-            cmd.CommandText = builder.ToString();
-
-            // TODO -- Like this to be temporary
-            if (cmd.CommandText.Contains(CommandBuilder.TenantIdArg))
-            {
-                cmd.AddNamedParameter(TenantIdArgument.ArgName, _session.Tenant.TenantId);
-            }
-
-            using (var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
-            {
-                return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
-            }
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)
         {
-            var cmd = new NpgsqlCommand();
-            var builder = new CommandBuilder(cmd);
-            handler.ConfigureCommand(builder, _session);
+            var cmd = _session.BuildCommand(handler);
 
-            cmd.CommandText = builder.ToString();
-
-            // TODO -- Like this to be temporary
-            if (cmd.CommandText.Contains(CommandBuilder.TenantIdArg))
-            {
-                cmd.AddNamedParameter(TenantIdArgument.ArgName, _session.Tenant.TenantId);
-            }
-
-            using (var reader = _session.Database.ExecuteReader(cmd))
-            {
-                return handler.Handle(reader, _session);
-            }
+            using var reader = _session.Database.ExecuteReader(cmd);
+            return handler.Handle(reader, _session);
         }
 
         public IList<IIncludePlan> Includes { get; } = new List<IIncludePlan>();

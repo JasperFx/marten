@@ -4,9 +4,10 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using Baseline;
+using Marten.Internal;
+using Marten.Internal.Linq;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -14,15 +15,65 @@ namespace Marten.Util
 {
     public static class CommandExtensions
     {
-        public static void AddTenancy(this NpgsqlCommand command, ITenant tenant)
+        public static NpgsqlCommand BuildCommand(this IMartenSession session, Statement statement)
         {
-            if (command.CommandText.Contains(":" + TenantIdArgument.ArgName))
+            var command = new NpgsqlCommand();
+            var builder = new CommandBuilder(command);
+
+            statement.Configure(builder);
+
+            command.CommandText = builder.ToString();
+
+            var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
+
+            if (tenantParameter != null)
             {
-                if (!command.Parameters.Contains(TenantIdArgument.ArgName))
-                {
-                    command.AddNamedParameter(TenantIdArgument.ArgName, tenant.TenantId);
-                }
+                tenantParameter.Value = session.Tenant.TenantId;
             }
+
+            return command;
+        }
+
+        public static NpgsqlCommand BuildCommand(this IMartenSession session, IQueryHandler handler)
+        {
+            var command = new NpgsqlCommand();
+            var builder = new CommandBuilder(command);
+
+            handler.ConfigureCommand(builder, session);
+
+            command.CommandText = builder.ToString();
+
+            var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
+
+            if (tenantParameter != null)
+            {
+                tenantParameter.Value = session.Tenant.TenantId;
+            }
+
+            return command;
+        }
+
+        public static NpgsqlCommand BuildCommand(this IMartenSession session, IEnumerable<IQueryHandler> handlers)
+        {
+            var command = new NpgsqlCommand();
+            var builder = new CommandBuilder(command);
+
+            foreach (var handler in handlers)
+            {
+                handler.ConfigureCommand(builder, session);
+                builder.Append(";");
+            }
+
+            command.CommandText = builder.ToString();
+
+            var tenantParameter = command.Parameters.FirstOrDefault(x => x.ParameterName == TenantIdArgument.ArgName);
+
+            if (tenantParameter != null)
+            {
+                tenantParameter.Value = session.Tenant.TenantId;
+            }
+
+            return command;
         }
 
         public static int RunSql(this NpgsqlConnection conn, params string[] sqls)
@@ -90,6 +141,9 @@ namespace Marten.Util
 
         public static NpgsqlParameter AddNamedParameter(this NpgsqlCommand command, string name, object value)
         {
+            var existing = command.Parameters.FirstOrDefault(x => x.ParameterName == name);
+            if (existing != null) return existing;
+
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
             parameter.Value = value ?? DBNull.Value;
@@ -115,13 +169,6 @@ namespace Marten.Util
             parameter.Value = value ?? DBNull.Value;
             parameter.NpgsqlDbType = dbType;
             command.Parameters.Add(parameter);
-
-            return command;
-        }
-
-        public static NpgsqlCommand AsSproc(this NpgsqlCommand command)
-        {
-            command.CommandType = CommandType.StoredProcedure;
 
             return command;
         }

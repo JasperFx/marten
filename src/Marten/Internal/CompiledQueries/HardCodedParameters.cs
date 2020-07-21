@@ -28,10 +28,19 @@ namespace Marten.Internal.CompiledQueries
         public void Record(int index, NpgsqlParameter parameter)
         {
             // Ignore :tenantid
-            if (parameter.ParameterName == TenantIdArgument.ArgName) return;
+            if (parameter.ParameterName == TenantIdArgument.ArgName)
+            {
+                HasTenantId = true;
+                return;
+            }
 
-            _parameters[index] = parameter;
+            // May need to skip tenantid
+            var i = HasTenantId ? index - 1 : index;
+
+            _parameters[i] = parameter;
         }
+
+        public bool HasTenantId { get; private set; }
 
         public void Apply(NpgsqlParameter[] parameters)
         {

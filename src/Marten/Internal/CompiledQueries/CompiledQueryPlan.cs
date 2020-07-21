@@ -8,6 +8,7 @@ using Marten.Exceptions;
 using Marten.Internal.Linq;
 using Marten.Internal.Linq.Includes;
 using Marten.Linq;
+using Marten.Schema.Arguments;
 using Marten.Util;
 using Npgsql;
 
@@ -80,7 +81,8 @@ namespace Marten.Internal.CompiledQueries
         public string CorrectedCommandText()
         {
             var text = Command.CommandText;
-            for (int i = 0; i < Command.Parameters.Count; i++)
+
+            for (var i = 0; i < Command.Parameters.Count; i++)
             {
                 text = text.Replace(":p" + i, "?");
             }
@@ -179,8 +181,7 @@ namespace Marten.Internal.CompiledQueries
             var missing = Parameters.Where(x => x.ParameterIndex < 0);
             if (missing.Any())
             {
-                // TODO -- use a specific exception type
-                throw new InvalidOperationException($"Unable to match compiled query member(s) {missing.Select(x => x.Member.Name).Join(", ")} with a command parameter");
+                throw new  InvalidCompiledQueryException($"Unable to match compiled query member(s) {missing.Select(x => x.Member.Name).Join(", ")} with a command parameter");
             }
         }
     }

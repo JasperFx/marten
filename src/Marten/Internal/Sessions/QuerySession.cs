@@ -546,46 +546,20 @@ namespace Marten.Internal.Sessions
             return ExecuteHandlerAsync(handler, token);
         }
 
-        // TODO -- there's some duplication in the code below and how it builds up a command
-        // and executes it.
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
-            var cmd = new NpgsqlCommand();
-            var builder = new CommandBuilder(cmd);
-            handler.ConfigureCommand(builder, this);
+            var cmd = this.BuildCommand(handler);
 
-            cmd.CommandText = builder.ToString();
-
-            // TODO -- Like this to be temporary
-            if (cmd.CommandText.Contains(CommandBuilder.TenantIdArg))
-            {
-                cmd.AddNamedParameter(TenantIdArgument.ArgName, Tenant.TenantId);
-            }
-
-            using (var reader = await Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
-            {
-                return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
-            }
+            using var reader = await Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)
         {
-            var cmd = new NpgsqlCommand();
-            var builder = new CommandBuilder(cmd);
-            handler.ConfigureCommand(builder, this);
+            var cmd = this.BuildCommand(handler);
 
-            cmd.CommandText = builder.ToString();
-
-            // TODO -- Like this to be temporary
-            if (cmd.CommandText.Contains(CommandBuilder.TenantIdArg))
-            {
-                cmd.AddNamedParameter(TenantIdArgument.ArgName, Tenant.TenantId);
-            }
-
-            using (var reader = Database.ExecuteReader(cmd))
-            {
-                return handler.Handle(reader, this);
-            }
+            using var reader = Database.ExecuteReader(cmd);
+            return handler.Handle(reader, this);
         }
     }
 }

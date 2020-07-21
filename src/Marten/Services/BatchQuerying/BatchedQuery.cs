@@ -69,35 +69,12 @@ namespace Marten.Services.BatchQuerying
             return new BatchedQueryable<T>(this, _parent.Query<T>());
         }
 
-        private NpgsqlCommand buildCommand()
-        {
-            var command = new NpgsqlCommand();
-            var builder = new CommandBuilder(command);
-
-            foreach (var item in _items)
-            {
-                item.Handler.ConfigureCommand(builder, _parent);
-                builder.Append(";");
-            }
-
-            // TODO --- duplication
-            command.CommandText = builder.ToString();
-
-            // TODO -- this needs to be temporary
-            if (command.CommandText.Contains(TenantIdArgument.ArgName))
-            {
-                command.AddNamedParameter(TenantIdArgument.ArgName, _parent.Tenant.TenantId);
-            }
-
-            return command;
-        }
-
         public async Task Execute(CancellationToken token = default(CancellationToken))
         {
             if (!_items.Any())
                 return;
 
-            var command = buildCommand();
+            var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
             using (var reader = await _runner.ExecuteReaderAsync(command, token))
             {
@@ -122,7 +99,7 @@ namespace Marten.Services.BatchQuerying
             if (!_items.Any())
                 return;
 
-            var command = buildCommand();
+            var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
 
             using (var reader = _runner.ExecuteReader(command))
