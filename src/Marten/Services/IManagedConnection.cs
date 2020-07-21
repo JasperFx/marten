@@ -8,21 +8,12 @@ namespace Marten.Services
 {
     public interface IManagedConnection: IDisposable
     {
-        void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null);
+        int Execute(NpgsqlCommand cmd);
 
-        void Execute(Action<NpgsqlCommand> action);
+        Task<int> ExecuteAsync(NpgsqlCommand cmd, CancellationToken token = default);
 
-        T Execute<T>(Func<NpgsqlCommand, T> func);
-
-        T Execute<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, T> func);
-
-        Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = default(CancellationToken));
-
-        Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = default(CancellationToken));
-
-        Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = default(CancellationToken));
-
-        Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = default(CancellationToken));
+        DbDataReader ExecuteReader(NpgsqlCommand command);
+        Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
 
         void Commit();
 
@@ -44,8 +35,8 @@ namespace Marten.Services
 
         void BeginSession();
 
-        DbDataReader ExecuteReader(NpgsqlCommand command);
-        Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token);
+
 
     }
+
 }

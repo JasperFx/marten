@@ -86,7 +86,7 @@ namespace Marten.Services
 
             buildConnection();
 
-            _retryPolicy.Execute(() => _connection.Commit());
+            _retryPolicy.Execute(_connection.Commit);
 
             _connection.Dispose();
             _connection = null;
@@ -113,7 +113,7 @@ namespace Marten.Services
 
             try
             {
-                _retryPolicy.Execute(() => _connection.Rollback());
+                _retryPolicy.Execute(_connection.Rollback);
             }
             catch (RollbackException e)
             {
@@ -213,41 +213,20 @@ namespace Marten.Services
             }
         }
 
-        public void Execute(NpgsqlCommand cmd, Action<NpgsqlCommand> action = null)
+        public int Execute(NpgsqlCommand cmd)
         {
             buildConnection();
 
             RequestCount++;
-
-            if (action == null)
-            {
-                action = c => c.ExecuteNonQuery();
-            }
 
             _connection.Apply(cmd);
+
             try
             {
-                _retryPolicy.Execute(() => action(cmd));
+                var returnValue = _retryPolicy.Execute(cmd.ExecuteNonQuery);
                 Logger.LogSuccess(cmd);
-            }
-            catch (Exception e)
-            {
-                handleCommandException(cmd, e);
-                throw;
-            }
-        }
 
-        public void Execute(Action<NpgsqlCommand> action)
-        {
-            buildConnection();
-
-            RequestCount++;
-
-            var cmd = _connection.CreateCommand();
-            try
-            {
-                _retryPolicy.Execute(() => action(cmd));
-                Logger.LogSuccess(cmd);
+                return returnValue;
             }
             catch (Exception e)
             {
@@ -260,7 +239,7 @@ namespace Marten.Services
         {
             buildConnection();
 
-            command.Connection = _connection.Connection;
+            _connection.Apply(command);
 
             RequestCount++;
 
@@ -277,11 +256,11 @@ namespace Marten.Services
             }
         }
 
-        public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token)
+        public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
         {
             await buildConnectionAsync(token).ConfigureAwait(false);
 
-            command.Connection = _connection.Connection;
+            _connection.Apply(command);
 
             RequestCount++;
 
@@ -299,125 +278,25 @@ namespace Marten.Services
             }
         }
 
-        public T Execute<T>(Func<NpgsqlCommand, T> func)
-        {
-            buildConnection();
 
-            RequestCount++;
-
-            var cmd = _connection.CreateCommand();
-            try
-            {
-                var returnValue = _retryPolicy.Execute<T>(() => func(cmd));
-                Logger.LogSuccess(cmd);
-                return returnValue;
-            }
-            catch (Exception e)
-            {
-                handleCommandException(cmd, e);
-                throw;
-            }
-        }
-
-        public T Execute<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, T> func)
-        {
-            buildConnection();
-
-            RequestCount++;
-
-            _connection.Apply(cmd);
-
-            try
-            {
-                var returnValue = _retryPolicy.Execute<T>(() => func(cmd));
-                Logger.LogSuccess(cmd);
-                return returnValue;
-            }
-            catch (Exception e)
-            {
-                handleCommandException(cmd, e);
-                throw;
-            }
-        }
-
-        public async Task ExecuteAsync(Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
+        public async Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
         {
             await buildConnectionAsync(token).ConfigureAwait(false);
 
             RequestCount++;
 
-            var cmd = _connection.CreateCommand();
+            _connection.Apply(command);
 
             try
             {
-                await _retryPolicy.ExecuteAsync(async () => await action(cmd, token).ConfigureAwait(false), token);
-                Logger.LogSuccess(cmd);
-            }
-            catch (Exception e)
-            {
-                handleCommandException(cmd, e);
-                throw;
-            }
-        }
+                var returnValue = await _retryPolicy.ExecuteAsync(async () => await command.ExecuteNonQueryAsync(token).ConfigureAwait(false), token);
+                Logger.LogSuccess(command);
 
-        public async Task ExecuteAsync(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task> action, CancellationToken token = new CancellationToken())
-        {
-            await _retryPolicy.ExecuteAsync(async () => await buildConnectionAsync(token).ConfigureAwait(false), token);
-
-            RequestCount++;
-
-            _connection.Apply(cmd);
-
-            try
-            {
-                await action(cmd, token).ConfigureAwait(false);
-                Logger.LogSuccess(cmd);
-            }
-            catch (Exception e)
-            {
-                handleCommandException(cmd, e);
-                throw;
-            }
-        }
-
-        public async Task<T> ExecuteAsync<T>(Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
-        {
-            await buildConnectionAsync(token).ConfigureAwait(false);
-
-            RequestCount++;
-
-            var cmd = _connection.CreateCommand();
-
-            try
-            {
-                var returnValue = await _retryPolicy.ExecuteAsync<T>(async () => await func(cmd, token).ConfigureAwait(false), token);
-                Logger.LogSuccess(cmd);
                 return returnValue;
             }
             catch (Exception e)
             {
-                handleCommandException(cmd, e);
-                throw;
-            }
-        }
-
-        public async Task<T> ExecuteAsync<T>(NpgsqlCommand cmd, Func<NpgsqlCommand, CancellationToken, Task<T>> func, CancellationToken token = new CancellationToken())
-        {
-            await buildConnectionAsync(token).ConfigureAwait(false);
-
-            RequestCount++;
-
-            _connection.Apply(cmd);
-
-            try
-            {
-                var returnValue = await _retryPolicy.ExecuteAsync<T>(async () => await func(cmd, token).ConfigureAwait(false), token);
-                Logger.LogSuccess(cmd);
-                return returnValue;
-            }
-            catch (Exception e)
-            {
-                handleCommandException(cmd, e);
+                handleCommandException(command, e);
                 throw;
             }
         }

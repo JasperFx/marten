@@ -1,5 +1,6 @@
 ﻿using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -11,8 +12,8 @@ namespace Marten.Schema.Testing
         {
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
-                conn.Execute(
-                    cmd => cmd.Sql("drop function if exists public.mt_immutable_timestamptz(text)").ExecuteNonQuery());
+                var cmd = new NpgsqlCommand("drop function if exists public.mt_immutable_timestamptz(text)");
+                conn.Execute(cmd);
             }
 
             theStore.Tenancy.Default.DbObjects.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamtzp"))

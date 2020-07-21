@@ -7,6 +7,7 @@ using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections.Async.ErrorHandling;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Events.Projections.Async
 {
@@ -297,13 +298,9 @@ namespace Marten.Events.Projections.Async
                     var sql =
                         $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 
-                    await conn.ExecuteAsync(async (cmd, tkn) =>
-                    {
-                        await cmd.Sql(sql)
-                            .With("name", _projection.GetEventProgressionName(type))
-                            .ExecuteNonQueryAsync(tkn)
-                            .ConfigureAwait(false);
-                    }, token);
+                    var cmd = new NpgsqlCommand(sql).With("name", _projection.GetEventProgressionName(type));
+
+                    await conn.ExecuteAsync(cmd, token);
                 }
             }
             LastEncountered = 0;

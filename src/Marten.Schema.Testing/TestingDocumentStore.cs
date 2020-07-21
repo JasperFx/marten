@@ -1,6 +1,7 @@
 using System;
 using Baseline;
 using Marten.Testing.Harness;
+using Npgsql;
 using Xunit.Abstractions;
 
 namespace Marten.Schema.Testing
@@ -65,9 +66,10 @@ namespace Marten.Schema.Testing
             if (schemaName != StoreOptions.DefaultDatabaseSchemaName)
             {
                 var sql = $"DROP SCHEMA {schemaName} CASCADE;";
+                var cmd = new NpgsqlCommand(sql);
                 using (var conn = Tenancy.Default.OpenConnection())
                 {
-                    conn.Execute(cmd => cmd.CommandText = sql);
+                    conn.Execute(cmd);
                 }
             }
 
