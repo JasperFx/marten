@@ -2,10 +2,10 @@ using System;
 using Marten.Internal;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
-using Xunit;
 using Shouldly;
+using Xunit;
 
-namespace Marten.Testing.V4Internals
+namespace Marten.Testing.Internals
 {
     public class GuidDoc
     {
