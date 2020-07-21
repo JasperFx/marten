@@ -9,7 +9,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.V4Internals.Compiled
+namespace Marten.Testing.Internals.Compiled
 {
     public class validating_and_making_unique_query_class
     {

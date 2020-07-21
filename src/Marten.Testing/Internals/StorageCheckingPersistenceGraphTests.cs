@@ -5,7 +5,7 @@ using NSubstitute;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.V4Internals
+namespace Marten.Testing.Internals
 {
     public class StorageCheckingPersistenceGraphTests
     {

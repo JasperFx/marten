@@ -7,11 +7,9 @@ using Marten.Internal.CompiledQueries;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Services.Includes;
 using Shouldly;
-using Xunit;
 
-namespace Marten.Testing.V4Internals.Compiled
+namespace Marten.Testing.Internals.Compiled
 {
     public class compiled_query_generation_smoke_tests
     {

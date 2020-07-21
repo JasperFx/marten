@@ -6,7 +6,7 @@ using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.V4Internals
+namespace Marten.Testing.Internals
 {
     public class PersistenceGraphTests
     {
