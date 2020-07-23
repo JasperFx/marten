@@ -139,15 +139,19 @@ namespace Marten.Internal.Linq
             return this.Select(x => x.TransformTo<T, TDoc>(transformName));
         }
 
-        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+       public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
         {
-            var storage = (IDocumentStorage<TInclude>)_session.StorageFor(typeof(TInclude));
+            var include = BuildInclude(idSource, callback);
+            return this.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
+        }
+
+        internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+        {
+            var storage = (IDocumentStorage<TInclude>) _session.StorageFor(typeof(TInclude));
             var identityField = _session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
 
             var include = new IncludePlan<TInclude>(_provider.Includes.Count, storage, identityField, callback);
-            _provider.Includes.Add(include);
-
-            return this;
+            return include;
         }
 
         public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
@@ -155,7 +159,7 @@ namespace Marten.Internal.Linq
             return Include<TInclude>(idSource, list.Add);
         }
 
-        public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
+        internal IIncludePlan BuildInclude<TInclude, TKey>(Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary)
         {
             var storage = (IDocumentStorage<TInclude>)_session.StorageFor(typeof(TInclude));
@@ -170,18 +174,23 @@ namespace Marten.Internal.Linq
                     dictionary[id] = item;
                 }
 
-                var include = new IncludePlan<TInclude>(_provider.Includes.Count, storage, identityField, Callback);
-                _provider.Includes.Add(include);
+                return new IncludePlan<TInclude>(_provider.Includes.Count, storage, identityField, Callback);
             }
             else
             {
                 throw new InvalidOperationException(
                     $"Id/Document type mismatch. The id type for the included document type {typeof(TInclude).FullNameInCode()} is {storage.IdType.FullNameInCode()}");
             }
-
-
-            return this;
         }
+
+        public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
+            IDictionary<TKey, TInclude> dictionary)
+        {
+            var include = BuildInclude(idSource, dictionary);
+            return this.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
+        }
+
+
 
         public IMartenQueryable<T> Stats(out QueryStatistics stats)
         {

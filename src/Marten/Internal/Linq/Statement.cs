@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using ImTools;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Linq.QueryHandlers;
 using Marten.Linq;
@@ -38,6 +39,16 @@ namespace Marten.Internal.Linq
                 _next = value ?? throw new ArgumentNullException(nameof(value));
                 value.Previous = this;
             }
+        }
+
+        public Statement Top()
+        {
+            return Previous == null ? this : Previous.Top();
+        }
+
+        public Statement Current()
+        {
+            return Next == null ? this : Next.Current();
         }
 
         public StatementMode Mode { get; set; } = StatementMode.Select;
@@ -104,6 +115,11 @@ namespace Marten.Internal.Linq
             }
 
 
+        }
+
+        public virtual Statement Clone()
+        {
+            throw new NotSupportedException("This type of Statement does not yet support cloning");
         }
 
         public int Offset { get; set; }

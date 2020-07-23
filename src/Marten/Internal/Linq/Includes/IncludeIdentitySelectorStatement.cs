@@ -12,7 +12,7 @@ namespace Marten.Internal.Linq.Includes
         private readonly IList<IIncludePlan> _includes;
         private string _tableName;
 
-        public IncludeIdentitySelectorStatement(DocumentStatement original, IList<IIncludePlan> includes,
+        public IncludeIdentitySelectorStatement(Statement original, IList<IIncludePlan> includes,
             IMartenSession session) : base(null, null)
         {
             _tableName = session.NextTempTableName();
