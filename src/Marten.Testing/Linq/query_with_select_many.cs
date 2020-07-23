@@ -382,7 +382,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        //[Fact] TODO -- see https://github.com/JasperFx/marten/issues/1526
+        [Fact]
         public void select_many_with_includes()
         {
             var user1 = new User();
@@ -427,7 +427,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        //[Fact] TODO -- see https://github.com/JasperFx/marten/issues/1526
+        [Fact]
         public async Task select_many_with_includes_async()
         {
             var user1 = new User();
