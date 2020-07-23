@@ -27,7 +27,7 @@ namespace Marten.Internal.Linq
             return _storage.FilterDocuments(null, where);
         }
 
-        public DocumentStatement Clone()
+        public override Statement Clone()
         {
             var clone = new DocumentStatement(_storage)
             {

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal.Linq;
+using Marten.Internal.Linq.Includes;
 using Marten.Linq;
 using Npgsql;
 
@@ -278,21 +279,37 @@ namespace Marten
             Expression<Func<T, object>> idSource,
             Action<TInclude> callback)
         {
-            return queryable.As<IMartenQueryable<T>>().Include(idSource, callback);
+            var include = queryable.As<MartenLinqQueryable<T>>().BuildInclude(idSource,callback);
+            return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
         }
 
         public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
             IList<TInclude> list)
         {
-            return queryable.As<IMartenQueryable<T>>().Include(idSource, list);
+            var include = queryable.As<MartenLinqQueryable<T>>().BuildInclude(idSource,(Action<TInclude>) list.Add);
+            return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
         }
 
         public static IMartenQueryable<T> Include<T, TKey, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary)
         {
-            return queryable.As<IMartenQueryable<T>>().Include(idSource, dictionary);
+            var include = queryable.As<MartenLinqQueryable<T>>().BuildInclude(idSource, dictionary);
+            return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
+        }
+
+
+        /// <summary>
+        /// This is only here to sneak an IInclude into a Linq expression
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="include"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        internal static T IncludePlan<T>(this T target, IIncludePlan include)
+        {
+            return target;
         }
     }
 }

@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
+using Baseline.Reflection;
 using LamarCodeGeneration;
+using Marten.Internal.Linq.Includes;
+using Marten.Linq;
 
 namespace Marten.Internal.Linq
 {
@@ -14,6 +18,8 @@ namespace Marten.Internal.Linq
             {
                 _parent = parent;
             }
+
+            public readonly IList<IIncludePlan> Includes = new List<IIncludePlan>();
 
             protected override Expression VisitUnary(UnaryExpression node)
             {
@@ -42,6 +48,17 @@ namespace Marten.Internal.Linq
             protected override Expression VisitMethodCall(MethodCallExpression node)
             {
                 var method = node.Method;
+
+                if (node.Method.Name == nameof(QueryableExtensions.IncludePlan))
+                {
+                    var include = node.Arguments[1].Value() as IIncludePlan;
+                    if (include != null)
+                    {
+                        Includes.Add(include);
+                    }
+
+                    return null;
+                }
 
                 bool matched = false;
                 foreach (var matcher in _methodMatchers)

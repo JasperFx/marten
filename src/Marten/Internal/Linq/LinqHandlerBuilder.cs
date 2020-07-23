@@ -86,10 +86,13 @@ namespace Marten.Internal.Linq
                 }
             }
 
+            IList<IIncludePlan> includes = null;
             if (considerSelectors && !(Model.SelectClause.Selector is QuerySourceReferenceExpression))
             {
                 var visitor = new SelectorVisitor(this);
                 visitor.Visit(Model.SelectClause.Selector);
+
+                includes = visitor.Includes;
             }
 
             foreach (var resultOperator in queryModel.ResultOperators)
@@ -202,11 +205,14 @@ namespace Marten.Internal.Linq
             }
 
             TopStatement.CompileStructure(new MartenExpressionParser(_session.Serializer, _session.Options));
+        }
 
-            if (includes.Any())
-            {
-                TopStatement = new IncludeIdentitySelectorStatement((DocumentStatement) TopStatement, includes, _session);
-            }
+        private void wrapIncludes(IList<IIncludePlan> includes)
+        {
+            // TODO -- not sure if this needs to grab CurrentStatement or higher up
+            var statement = new IncludeIdentitySelectorStatement(CurrentStatement, includes, _session);
+            TopStatement = statement.Top();
+            CurrentStatement = statement.Current();
         }
 
         private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>()

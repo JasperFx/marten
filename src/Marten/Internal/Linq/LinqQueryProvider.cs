@@ -87,6 +87,7 @@ namespace Marten.Internal.Linq
             return handler.Handle(reader, _session);
         }
 
+        [Obsolete("this will be coming from operators instead")]
         public IList<IIncludePlan> Includes { get; } = new List<IIncludePlan>();
 
     }
