@@ -34,7 +34,7 @@ namespace Marten.Testing.Services.Includes
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             using (var query = theStore.QuerySession())
             {
