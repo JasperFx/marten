@@ -129,7 +129,6 @@ namespace Marten.Internal.CompiledQueries
             eliminateStringNulls(query);
 
             var plan = new CompiledQueryPlan(query.GetType(), typeof(TOut));
-            findIncludes(session, query, plan);
             plan.FindMembers();
 
             assertValidityOfQueryType(plan, query.GetType());
@@ -138,11 +137,12 @@ namespace Marten.Internal.CompiledQueries
             var queryTemplate = plan.CreateQueryTemplate(query);
 
             var statistics = plan.GetStatisticsIfAny(query);
-            var builder = BuildDatabaseCommand(session, queryTemplate, statistics, plan, out var command);
+            var builder = BuildDatabaseCommand(session, queryTemplate, statistics, out var command);
+            plan.IncludePlans.AddRange(builder.AllIncludes);
+            var handler = builder.BuildHandler<TOut>(statistics);
+            if (handler is IIncludeQueryHandler<TOut> i) handler = i.Inner;
 
-
-
-            plan.HandlerPrototype = builder.BuildHandler<TOut>(statistics, new List<IIncludePlan>());
+            plan.HandlerPrototype = handler;
 
             plan.ReadCommand(command, storeOptions);
 
@@ -152,7 +152,6 @@ namespace Marten.Internal.CompiledQueries
         public static LinqHandlerBuilder BuildDatabaseCommand<TDoc, TOut>(IMartenSession session,
             ICompiledQuery<TDoc, TOut> queryTemplate,
             QueryStatistics statistics,
-            CompiledQueryPlan plan,
             out NpgsqlCommand command)
         {
             Expression expression = queryTemplate.QueryIs();
@@ -160,7 +159,9 @@ namespace Marten.Internal.CompiledQueries
 
             var builder = new LinqHandlerBuilder(session, invocation, forCompiled: true);
 
-            command = builder.BuildDatabaseCommand(statistics, plan.IncludePlans);
+            command = builder.BuildDatabaseCommand(statistics);
+
+
 
             return builder;
         }
@@ -188,15 +189,6 @@ namespace Marten.Internal.CompiledQueries
             }
         }
 
-
-        private static void findIncludes<TDoc, TOut>(IMartenSession session, ICompiledQuery<TDoc, TOut> query, CompiledQueryPlan plan)
-        {
-            var expression = query.QueryIs();
-            var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
-
-            var includeVisitor = new CompiledQueryExpressionVisitor<TDoc>(session, plan);
-            includeVisitor.Visit(invocation.Expression);
-        }
 
         private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type)
         {

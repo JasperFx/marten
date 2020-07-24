@@ -62,7 +62,7 @@ namespace Marten.Testing.Services.Includes
 
                 (await found).Id.ShouldBe(issue1.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(user1.Id);
 
                 (await toList).Count.ShouldBe(3);
@@ -411,6 +411,8 @@ namespace Marten.Testing.Services.Includes
 
             using (var query = theStore.QuerySession())
             {
+                query.Logger = new TestOutputMartenLogger(_output);
+
                 var list = new List<User>();
 
                 var issues = query.Query<Issue>()
@@ -725,14 +727,16 @@ namespace Marten.Testing.Services.Includes
 
             using (var query = theStore.QuerySession())
             {
-
+                query.Logger = new TestOutputMartenLogger(_output);
                 User assignee2 = null;
                 User reporter2 = null;
 
-                SpecificationExtensions.ShouldNotBeNull(query
+                query
                         .Query<Issue>()
                         .Include<User>(x => x.AssigneeId, x => assignee2 = x)
-                        .Include<User>(x => x.ReporterId, x => reporter2 = x).Single());
+                        .Include<User>(x => x.ReporterId, x => reporter2 = x)
+                        .Single()
+                        .ShouldNotBeNull();
 
                 assignee2.Id.ShouldBe(assignee.Id);
                 reporter2.Id.ShouldBe(reporter.Id);

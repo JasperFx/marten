@@ -12,14 +12,14 @@ namespace Marten.Internal.Linq.Includes
         private readonly IList<IIncludePlan> _includes;
         private string _tableName;
 
-        public IncludeIdentitySelectorStatement(Statement original, IList<IIncludePlan> includes,
+        public IncludeIdentitySelectorStatement(DocumentStatement original, IList<IIncludePlan> includes,
             IMartenSession session) : base(null, null)
         {
             _tableName = session.NextTempTableName();
 
             _includes = includes;
-            Inner = original.Clone();
-            Inner.SelectClause = this;
+            Inner = original.CloneForTempTableCreation(this);
+
 
             // Retrieve data from the original table
             FromObject = original.SelectClause.FromObject;
@@ -37,6 +37,11 @@ namespace Marten.Internal.Linq.Includes
             original.Where = new InTempTableWhereFragment(_tableName, "id");
             original.Limit = 0;
             original.Offset = 0;
+        }
+
+        protected override void compileStructure(MartenExpressionParser parser)
+        {
+            Inner.CompileStructure(parser);
         }
 
         public Type SelectedType => typeof(void);

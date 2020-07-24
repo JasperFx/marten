@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,22 +10,27 @@ namespace Marten.Linq
 {
     public class IncludeExpressionNode: ResultOperatorExpressionNodeBase
     {
-        public IIncludePlan Include { get; }
-
         public static MethodInfo[] SupportedMethods =
-            typeof(QueryableExtensions).GetMethods().Where(m => m.Name == "Include").ToArray();
+            typeof(QueryableExtensions).GetMethods().Where(m => m.Name == "Include")
+                .Concat(typeof(IMartenQueryable<>).GetMethods().Where(m => m.Name == "Include")).ToArray();
+
 
         public IncludeExpressionNode(
-            MethodCallExpressionParseInfo parseInfo, ConstantExpression include)
+            MethodCallExpressionParseInfo parseInfo, Expression connectingField, ConstantExpression include)
             : base(parseInfo, null, null)
         {
-            Include = (IIncludePlan) include.Value;
+            ConnectingField = connectingField;
+            IncludeExpression = include;
         }
+
+        public ConstantExpression IncludeExpression { get; set; }
+
+        public Expression ConnectingField { get; set; }
 
         protected override ResultOperatorBase CreateResultOperator(
             ClauseGenerationContext clauseGenerationContext)
         {
-            return new IncludeResultOperator(Include);
+            return new IncludeResultOperator(ConnectingField, IncludeExpression);
         }
 
         public override Expression Resolve(

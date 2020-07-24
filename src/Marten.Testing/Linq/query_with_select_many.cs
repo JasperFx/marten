@@ -412,6 +412,8 @@ namespace Marten.Testing.Linq
 
             using (var query = theStore.QuerySession())
             {
+                query.Logger = new TestOutputMartenLogger(_output);
+
                 var dict = new Dictionary<Guid, User>();
 
                 var results = query.Query<Target>()
