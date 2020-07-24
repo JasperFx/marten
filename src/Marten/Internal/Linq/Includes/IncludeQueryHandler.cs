@@ -5,20 +5,26 @@ using Marten.Util;
 
 namespace Marten.Internal.Linq.Includes
 {
-    public class IncludeQueryHandler<T>: IQueryHandler<T>
+    public interface IIncludeQueryHandler<T>
     {
-        private readonly IQueryHandler<T> _inner;
+        IQueryHandler<T> Inner { get; }
+    }
+
+    public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
+    {
         private readonly IIncludeReader[] _readers;
 
         public IncludeQueryHandler(IQueryHandler<T> inner, IIncludeReader[] readers)
         {
-            _inner = inner;
+            Inner = inner;
             _readers = readers;
         }
 
+        public IQueryHandler<T> Inner { get; }
+
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
-            _inner.ConfigureCommand(builder, session);
+            Inner.ConfigureCommand(builder, session);
         }
 
         public T Handle(DbDataReader reader, IMartenSession session)
@@ -31,19 +37,16 @@ namespace Marten.Internal.Linq.Includes
                 reader.NextResult();
             }
 
-            return _inner.Handle(reader, session);
+            return Inner.Handle(reader, session);
         }
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            foreach (var includeReader in _readers)
-            {
-                await includeReader.ReadAsync(reader, token).ConfigureAwait(false);
-            }
+            foreach (var includeReader in _readers) await includeReader.ReadAsync(reader, token).ConfigureAwait(false);
 
             // Advance to the last reader for the actual query results
             await reader.NextResultAsync(token).ConfigureAwait(false);
-            return await _inner.HandleAsync(reader, session, token).ConfigureAwait(false);
+            return await Inner.HandleAsync(reader, session, token).ConfigureAwait(false);
         }
     }
 }

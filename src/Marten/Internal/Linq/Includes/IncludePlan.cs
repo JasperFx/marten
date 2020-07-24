@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Marten.Internal.Storage;
 using Marten.Linq.Fields;
 using Marten.Util;
@@ -8,21 +9,30 @@ namespace Marten.Internal.Linq.Includes
     public class IncludePlan<T> : IIncludePlan
     {
         private readonly IDocumentStorage<T> _storage;
+        private readonly IField _connectingField;
         private readonly Action<T> _callback;
         private readonly string _tempTableName;
 
-        public IncludePlan(int index, IDocumentStorage<T> storage, IField connectingField, Action<T> callback)
+        public IncludePlan(IDocumentStorage<T> storage, IField connectingField, Action<T> callback)
         {
             _storage = storage;
+            _connectingField = connectingField;
             _callback = callback;
-
-            IdAlias = "id" + (index + 1);
-
-            TempSelector = $"{connectingField.TypedLocator} as {IdAlias}";
         }
 
-        public string IdAlias { get;}
-        public string TempSelector { get; }
+        public int Index
+        {
+            set
+            {
+                IdAlias = "id" + (value + 1);
+
+                TempSelector = $"{_connectingField.TypedLocator} as {IdAlias}";
+            }
+        }
+
+        public string IdAlias { get; private set; }
+        public string TempSelector { get; private set; }
+
         public Statement BuildStatement(string tempTableName)
         {
             return new IncludedDocumentStatement(_storage, this, tempTableName);

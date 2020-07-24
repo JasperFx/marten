@@ -11,6 +11,7 @@ using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;
 
@@ -18,6 +19,8 @@ namespace Marten.Testing.Services.Includes
 {
     public class end_to_end_query_with_compiled_include_Tests : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         // SAMPLE: compiled_include
         [Fact]
         public void simple_compiled_include_for_a_single_document()
@@ -126,6 +129,8 @@ namespace Marten.Testing.Services.Includes
 
             using (var session = theStore.QuerySession())
             {
+                session.Logger = new TestOutputMartenLogger(_output);
+
                 var query = new IssueWithUsersById();
 
                 var issues = session.Query(query).ToArray();
@@ -138,8 +143,9 @@ namespace Marten.Testing.Services.Includes
             }
         }
         // ENDSAMPLE
-        public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
             DocumentTracking = DocumentTracking.IdentityOnly;
         }
     }

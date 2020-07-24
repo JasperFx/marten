@@ -1,4 +1,7 @@
+using System;
 using System.Linq;
+using Baseline;
+using Marten.Internal.Linq.Includes;
 using Marten.Internal.Storage;
 using Marten.Linq;
 
@@ -27,18 +30,30 @@ namespace Marten.Internal.Linq
             return _storage.FilterDocuments(null, where);
         }
 
-        public override Statement Clone()
+        public Statement CloneForTempTableCreation(IncludeIdentitySelectorStatement includes)
         {
-            var clone = new DocumentStatement(_storage)
+            // This is for a first level query w/ no SelectManys
+            if (Mode == StatementMode.Select)
             {
-                Offset = Offset,
-                Limit = Limit,
-                Where = Where,
-                SelectClause = SelectClause,
-                Orderings = Orderings
-            };
+                var clone = new DocumentStatement(_storage)
+                {
+                    Offset = Offset,
+                    Limit = Limit,
+                    Where = Where,
+                    SelectClause = includes,
+                    Orderings = Orderings,
+                    Next = Next,
+                    Mode = Mode,
+                    ExportName = ExportName
+                };
 
-            return clone;
+                clone.WhereClauses.AddRange(WhereClauses);
+
+                return clone;
+            }
+
+            throw new NotSupportedException("Not yet");
+
         }
     }
 }

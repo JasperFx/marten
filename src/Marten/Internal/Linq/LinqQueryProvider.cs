@@ -42,7 +42,7 @@ namespace Marten.Internal.Linq
         public TResult Execute<TResult>(Expression expression)
         {
             var builder = new LinqHandlerBuilder(_session, expression);
-            var handler = builder.BuildHandler<TResult>(Statistics, Includes);
+            var handler = builder.BuildHandler<TResult>(Statistics);
 
             return ExecuteHandler(handler);
         }
@@ -50,7 +50,7 @@ namespace Marten.Internal.Linq
         public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token)
         {
             var builder = new LinqHandlerBuilder(_session, expression);
-            var handler = builder.BuildHandler<TResult>(Statistics, Includes);
+            var handler = builder.BuildHandler<TResult>(Statistics);
 
             return ExecuteHandlerAsync(handler, token);
         }
@@ -58,7 +58,7 @@ namespace Marten.Internal.Linq
         public TResult Execute<TResult>(Expression expression, ResultOperatorBase op)
         {
             var builder = new LinqHandlerBuilder(_session, expression, op);
-            var handler = builder.BuildHandler<TResult>(Statistics, Includes);
+            var handler = builder.BuildHandler<TResult>(Statistics);
 
             return ExecuteHandler(handler);
         }
@@ -66,7 +66,7 @@ namespace Marten.Internal.Linq
         public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token, ResultOperatorBase op)
         {
             var builder = new LinqHandlerBuilder(_session, expression, op);
-            var handler = builder.BuildHandler<TResult>(Statistics, Includes);
+            var handler = builder.BuildHandler<TResult>(Statistics);
 
             return ExecuteHandlerAsync(handler, token);
         }
@@ -87,8 +87,6 @@ namespace Marten.Internal.Linq
             return handler.Handle(reader, _session);
         }
 
-        [Obsolete("this will be coming from operators instead")]
-        public IList<IIncludePlan> Includes { get; } = new List<IIncludePlan>();
 
     }
 }

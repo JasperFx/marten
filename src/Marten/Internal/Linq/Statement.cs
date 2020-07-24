@@ -36,8 +36,8 @@ namespace Marten.Internal.Linq
             get => _next;
             internal set
             {
-                _next = value ?? throw new ArgumentNullException(nameof(value));
-                value.Previous = this;
+                _next = value;
+                if (value != null) value.Previous = this;
             }
         }
 
@@ -117,11 +117,6 @@ namespace Marten.Internal.Linq
 
         }
 
-        public virtual Statement Clone()
-        {
-            throw new NotSupportedException("This type of Statement does not yet support cloning");
-        }
-
         public int Offset { get; set; }
         public int Limit { get; set; }
 
@@ -161,8 +156,14 @@ namespace Marten.Internal.Linq
 
         public void CompileStructure(MartenExpressionParser parser)
         {
-            Where = buildWhereFragment(parser);
+            compileStructure(parser);
             Next?.CompileStructure(parser);
+        }
+
+        protected virtual void compileStructure(MartenExpressionParser parser)
+        {
+            // Where clauses are pre-built in the case of includes
+            if (Where == null) Where = buildWhereFragment(parser);
         }
 
         public IWhereFragment Where { get; internal set; }

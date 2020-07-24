@@ -29,12 +29,23 @@ namespace Marten.Internal.CompiledQueries
         {
             foreach (var member in findMembers())
             {
-                if (IncludeMembers.Contains(member)) continue;
-
                 var memberType = member.GetRawMemberType();
                 if (memberType == typeof(QueryStatistics))
                 {
                     StatisticsMember = member;
+                }
+
+                else if (memberType.Closes(typeof(IDictionary<,>)))
+                {
+                    IncludeMembers.Add(member);
+                }
+                else if (memberType.Closes(typeof(Action<>)))
+                {
+                    IncludeMembers.Add(member);
+                }
+                else if (memberType.Closes(typeof(IList<>)))
+                {
+                    IncludeMembers.Add(member);
                 }
                 else if (memberType.IsNullable())
                 {

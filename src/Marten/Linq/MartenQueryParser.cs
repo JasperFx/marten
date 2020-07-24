@@ -10,7 +10,7 @@ namespace Marten.Linq
 {
     public class MartenQueryParser: IQueryParser
     {
-        public static readonly MartenQueryParser Flyweight = new MartenQueryParser();
+        public static readonly MartenQueryParser Flyweight = new MartenQueryParser(r => r.Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode)));
 
         public static readonly MartenQueryParser TransformQueryFlyweight = new MartenQueryParser(r =>
         {

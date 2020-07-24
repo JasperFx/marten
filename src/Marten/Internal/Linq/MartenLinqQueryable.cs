@@ -47,7 +47,7 @@ namespace Marten.Internal.Linq
         internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase op = null)
         {
             var builder = new LinqHandlerBuilder(_session, Expression, op);
-            return builder.BuildHandler<TResult>(Statistics, _provider.Includes);
+            return builder.BuildHandler<TResult>(Statistics);
         }
 
         public QueryStatistics Statistics
@@ -150,7 +150,7 @@ namespace Marten.Internal.Linq
             var storage = (IDocumentStorage<TInclude>) _session.StorageFor(typeof(TInclude));
             var identityField = _session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
 
-            var include = new IncludePlan<TInclude>(_provider.Includes.Count, storage, identityField, callback);
+            var include = new IncludePlan<TInclude>(storage, identityField, callback);
             return include;
         }
 
@@ -174,7 +174,7 @@ namespace Marten.Internal.Linq
                     dictionary[id] = item;
                 }
 
-                return new IncludePlan<TInclude>(_provider.Includes.Count, storage, identityField, Callback);
+                return new IncludePlan<TInclude>(storage, identityField, Callback);
             }
             else
             {

@@ -9,6 +9,7 @@ using Marten.Internal.Linq.Includes;
 using Marten.Internal.Linq.QueryHandlers;
 using Marten.Internal.Storage;
 using Marten.Linq;
+using Marten.Linq.Fields;
 using Marten.Schema.Arguments;
 using Marten.Transforms;
 using Marten.Util;
@@ -23,6 +24,7 @@ namespace Marten.Internal.Linq
     public partial class LinqHandlerBuilder
     {
         private readonly IMartenSession _session;
+
 
         private static IList<IMethodCallMatcher> _methodMatchers = new List<IMethodCallMatcher>
         {
@@ -44,22 +46,63 @@ namespace Marten.Internal.Linq
             TopStatement = CurrentStatement = new DocumentStatement(storage);
 
 
-            // TODO -- this probably needs to get fancier later
+            // TODO -- this probably needs to get fancier later when this goes n-deep
             if (Model.MainFromClause.FromExpression is SubQueryExpression sub)
             {
-                processQueryModel(sub.QueryModel, storage, true);
-                processQueryModel(Model, storage, false);
+                readQueryModel(Model, storage, false, storage.Fields);
+                readQueryModel(sub.QueryModel, storage, true, _session.Options.ChildTypeMappingFor(sub.QueryModel.SourceType()));
             }
             else
             {
-                processQueryModel(Model, storage, true);
+                readQueryModel(Model, storage, true, storage.Fields);
             }
 
 
         }
 
-        private void processQueryModel(QueryModel queryModel, IDocumentStorage storage, bool considerSelectors)
+        public IList<IIncludePlan> AllIncludes { get; } = new List<IIncludePlan>();
+
+        private void readQueryModel(QueryModel queryModel, IDocumentStorage storage, bool considerSelectors,
+            IFieldMapping fields)
         {
+            var includes = readBodyClauses(queryModel, storage);
+
+
+            if (considerSelectors && !(Model.SelectClause.Selector is QuerySourceReferenceExpression))
+            {
+                var visitor = new SelectorVisitor(this);
+                visitor.Visit(Model.SelectClause.Selector);
+            }
+
+            foreach (var resultOperator in queryModel.ResultOperators)
+            {
+                if (resultOperator is IncludeResultOperator include)
+                {
+                    includes.Add(include.BuildInclude(_session, fields));
+                }
+                else
+                {
+                    AddResultOperator(resultOperator);
+                }
+            }
+
+            if (includes.Any())
+            {
+                AllIncludes.AddRange(includes);
+                wrapIncludes(includes);
+            }
+
+        }
+
+        private IList<IIncludePlan> readBodyClauses(QueryModel queryModel, IDocumentStorage storage)
+        {
+            var includes = new List<IIncludePlan>();
+            if (!(Model.SelectClause.Selector is QuerySourceReferenceExpression))
+            {
+                var visitor = new IncludeVisitor(includes);
+                visitor.Visit(Model.SelectClause.Selector);
+            }
+
             for (var i = 0; i < queryModel.BodyClauses.Count; i++)
             {
                 var clause = queryModel.BodyClauses[i];
@@ -72,7 +115,7 @@ namespace Marten.Internal.Linq
                         CurrentStatement.Orderings.AddRange(orderBy.Orderings);
                         break;
                     case AdditionalFromClause additional:
-                        var isComplex = queryModel.BodyClauses.Count > i + 1 || queryModel.ResultOperators.Any();
+                        var isComplex = queryModel.BodyClauses.Count > i + 1 || queryModel.ResultOperators.Any() || includes.Any();
                         var elementType = additional.ItemType;
                         var collectionField = storage.Fields.FieldFor(additional.FromExpression);
 
@@ -86,20 +129,9 @@ namespace Marten.Internal.Linq
                 }
             }
 
-            IList<IIncludePlan> includes = null;
-            if (considerSelectors && !(Model.SelectClause.Selector is QuerySourceReferenceExpression))
-            {
-                var visitor = new SelectorVisitor(this);
-                visitor.Visit(Model.SelectClause.Selector);
-
-                includes = visitor.Includes;
-            }
-
-            foreach (var resultOperator in queryModel.ResultOperators)
-            {
-                AddResultOperator(resultOperator);
-            }
+            return includes;
         }
+
 
         public Statement CurrentStatement { get; set; }
 
@@ -186,18 +218,18 @@ namespace Marten.Internal.Linq
             }
         }
 
-        public IQueryHandler<TResult> BuildHandler<TResult>(QueryStatistics statistics, IList<IIncludePlan> includes)
+        public IQueryHandler<TResult> BuildHandler<TResult>(QueryStatistics statistics)
         {
-            BuildDatabaseStatement(statistics, includes);
+            BuildDatabaseStatement(statistics);
 
             var handler = buildHandlerForCurrentStatement<TResult>();
 
-            return includes.Any()
-                ? new IncludeQueryHandler<TResult>(handler, includes.Select(x => x.BuildReader(_session)).ToArray())
+            return AllIncludes.Any()
+                ? new IncludeQueryHandler<TResult>(handler, AllIncludes.Select(x => x.BuildReader(_session)).ToArray())
                 : handler;
         }
 
-        public void BuildDatabaseStatement(QueryStatistics statistics, IList<IIncludePlan> includes)
+        public void BuildDatabaseStatement(QueryStatistics statistics)
         {
             if (statistics != null)
             {
@@ -209,10 +241,24 @@ namespace Marten.Internal.Linq
 
         private void wrapIncludes(IList<IIncludePlan> includes)
         {
-            // TODO -- not sure if this needs to grab CurrentStatement or higher up
-            var statement = new IncludeIdentitySelectorStatement(CurrentStatement, includes, _session);
-            TopStatement = statement.Top();
-            CurrentStatement = statement.Current();
+            // Just need to guarantee that each include has an index
+            for (var i = 0; i < includes.Count; i++)
+            {
+                includes[i].Index = i;
+            }
+
+            if (TopStatement is DocumentStatement d)
+            {
+                var statement = new IncludeIdentitySelectorStatement(d, includes, _session);
+                TopStatement = statement.Top();
+                CurrentStatement = statement.Current();
+            }
+            else
+            {
+                throw new NotSupportedException("This can only work when the top statement is a document session, so far");
+            }
+
+
         }
 
         private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>()
@@ -259,9 +305,9 @@ namespace Marten.Internal.Linq
             TopStatement.Configure(sql);
         }
 
-        public NpgsqlCommand BuildDatabaseCommand(QueryStatistics statistics, IList<IIncludePlan> plans)
+        public NpgsqlCommand BuildDatabaseCommand(QueryStatistics statistics)
         {
-            BuildDatabaseStatement(statistics, plans);
+            BuildDatabaseStatement(statistics);
 
             return _session.BuildCommand(TopStatement);
         }
