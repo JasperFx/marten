@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Internal.Linq;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -177,7 +178,7 @@ namespace Marten.Services.BatchQuerying
 
             var idType = storage.IdType;
 
-            throw new InvalidOperationException($"The id type for {typeof(T).FullNameInCode()} is {idType.NameInCode()}, but was used with id type {typeof(TId).NameInCode()}");
+            throw new DocumentIdTypeMismatchException(storage, typeof(TId));
         }
 
         private Task<TResult> addItem<TDoc, TResult>(IQueryable<TDoc> queryable, ResultOperatorBase op)

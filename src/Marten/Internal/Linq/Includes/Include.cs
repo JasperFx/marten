@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LamarCodeGeneration;
+using Marten.Exceptions;
 using Marten.Internal.Storage;
 
 namespace Marten.Internal.Linq.Includes
@@ -36,7 +37,7 @@ namespace Marten.Internal.Linq.Includes
             }
             else
             {
-                throw new InvalidOperationException($"Document type {typeof(T).FullNameInCode()} has an id type of {storage.IdType.NameInCode()}, but was used with {typeof(TId).NameInCode()}");
+                throw new DocumentIdTypeMismatchException(storage, typeof(TId));
             }
         }
     }

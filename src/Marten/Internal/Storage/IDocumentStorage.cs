@@ -16,6 +16,8 @@ namespace Marten.Internal.Storage
     {
         Type SourceType { get; }
 
+        Type IdType { get; }
+
         IFieldMapping Fields { get; }
 
         IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
@@ -30,7 +32,7 @@ namespace Marten.Internal.Storage
     {
         object IdentityFor(T document);
 
-        Type IdType { get; }
+
         Guid? VersionFor(T document, IMartenSession session);
 
         void Store(IMartenSession session, T document);

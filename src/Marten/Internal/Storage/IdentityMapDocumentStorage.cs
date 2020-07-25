@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
+using Marten.Exceptions;
 using Marten.Internal.Linq;
 using Marten.Schema;
 using Npgsql;
@@ -56,7 +57,7 @@ namespace Marten.Internal.Storage
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Invalid id of type {typeof(TId)} for document type {typeof(T)}");
+                    throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
                 }
             }
             else
@@ -164,7 +165,7 @@ namespace Marten.Internal.Storage
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Invalid id of type {typeof(TId)} for document type {typeof(T)}");
+                    throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
                 }
             }
 
@@ -181,7 +182,7 @@ namespace Marten.Internal.Storage
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Invalid id of type {typeof(TId)} for document type {typeof(T)}");
+                    throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
                 }
             }
 
