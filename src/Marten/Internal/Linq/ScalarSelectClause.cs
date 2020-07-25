@@ -28,6 +28,10 @@ namespace Marten.Internal.Linq
         }
 
         public string FieldName => _locator;
+        public ISelectClause CloneToOtherTable(string tableName)
+        {
+            return new ScalarSelectClause<T>(_locator, tableName);
+        }
 
         public Type SelectedType => typeof(T);
 

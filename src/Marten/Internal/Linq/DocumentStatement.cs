@@ -30,30 +30,27 @@ namespace Marten.Internal.Linq
             return _storage.FilterDocuments(null, where);
         }
 
-        public Statement CloneForTempTableCreation(IncludeIdentitySelectorStatement includes)
+        public override Statement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
         {
-            // This is for a first level query w/ no SelectManys
-            if (Mode == StatementMode.Select)
+            var clone = new DocumentStatement(_storage)
             {
-                var clone = new DocumentStatement(_storage)
-                {
-                    Offset = Offset,
-                    Limit = Limit,
-                    Where = Where,
-                    SelectClause = includes,
-                    Orderings = Orderings,
-                    Next = Next,
-                    Mode = Mode,
-                    ExportName = ExportName
-                };
+                SelectClause = SelectClause,
+                Orderings = Orderings,
+                Mode = StatementMode.Select,
+                ExportName = ExportName,
 
-                clone.WhereClauses.AddRange(WhereClauses);
+            };
 
-                return clone;
-            }
+            // Select the Ids only
+            SelectClause = includeIdentitySelectorStatement;
 
-            throw new NotSupportedException("Not yet");
 
+            clone.Where = new InTempTableWhereFragment(includeIdentitySelectorStatement.ExportName, "id");
+            Limit = Offset = 0;
+
+            return clone;
         }
+
+
     }
 }

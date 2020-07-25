@@ -5,5 +5,7 @@ namespace Marten.Internal.Linq
         void ApplyOperator(string op);
         ISelectClause CloneToDouble();
         string FieldName { get; }
+
+        ISelectClause CloneToOtherTable(string tableName);
     }
 }

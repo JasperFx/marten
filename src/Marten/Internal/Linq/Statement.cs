@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Baseline;
 using ImTools;
 using Marten.Internal.CodeGeneration;
+using Marten.Internal.Linq.Includes;
 using Marten.Internal.Linq.QueryHandlers;
 using Marten.Linq;
 using Marten.Linq.Fields;
@@ -292,5 +293,9 @@ namespace Marten.Internal.Linq
         }
 
 
+        public virtual Statement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

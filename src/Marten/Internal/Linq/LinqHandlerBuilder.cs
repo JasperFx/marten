@@ -247,16 +247,9 @@ namespace Marten.Internal.Linq
                 includes[i].Index = i;
             }
 
-            if (TopStatement is DocumentStatement d)
-            {
-                var statement = new IncludeIdentitySelectorStatement(d, includes, _session);
-                TopStatement = statement.Top();
-                CurrentStatement = statement.Current();
-            }
-            else
-            {
-                throw new NotSupportedException("This can only work when the top statement is a document session, so far");
-            }
+            var statement = new IncludeIdentitySelectorStatement(TopStatement, includes, _session);
+            TopStatement = statement.Top();
+            CurrentStatement = statement.Current();
 
 
         }
