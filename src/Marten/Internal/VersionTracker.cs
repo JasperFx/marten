@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marten.Exceptions;
 
 namespace Marten.Internal
 {
@@ -17,7 +18,7 @@ namespace Marten.Internal
                     return d;
                 }
 
-                throw new InvalidOperationException($"Invalid id of type {typeof(TId)} for document type {typeof(TDoc)}");
+                throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
             }
 
             var dict = new Dictionary<TId, Guid>();
@@ -54,7 +55,7 @@ namespace Marten.Internal
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Invalid id of type {typeof(TId)} for document type {typeof(TDoc)}");
+                    throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
                 }
 
 

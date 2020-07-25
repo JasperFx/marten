@@ -186,7 +186,7 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        Type IDocumentStorage<T>.IdType => _idType;
+        Type IDocumentStorage.IdType => _idType;
 
         Guid? IDocumentStorage<T>.VersionFor(T document, IMartenSession session)
         {

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Exceptions;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.DirtyTracking;
 using Marten.Internal.Linq;
@@ -107,7 +108,8 @@ namespace Marten.Internal.Sessions
             var storage = StorageFor<T>();
             if (storage is IDocumentStorage<T, TId> s) return s;
 
-            throw new InvalidOperationException($"The identity type for {typeof(T).FullName} is {storage.IdType.FullName}, but {typeof(TId).FullName} was used as the Id type");
+
+            throw new DocumentIdTypeMismatchException(storage, typeof(TId));
         }
 
         public IDocumentStorage<T> StorageFor<T>()
@@ -172,7 +174,7 @@ namespace Marten.Internal.Sessions
             }
             else
             {
-                throw new InvalidOperationException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
+                throw new DocumentIdTypeMismatchException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
             }
 
             return document;
@@ -195,7 +197,7 @@ namespace Marten.Internal.Sessions
             }
             else
             {
-                throw new InvalidOperationException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
+                throw new DocumentIdTypeMismatchException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
             }
 
 
@@ -349,7 +351,7 @@ namespace Marten.Internal.Sessions
             }
 
 
-            throw new InvalidOperationException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
+            throw new DocumentIdTypeMismatchException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
         }
 
         public IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids)
@@ -382,7 +384,7 @@ namespace Marten.Internal.Sessions
             }
 
 
-            throw new InvalidOperationException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
+            throw new DocumentIdTypeMismatchException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<int> ids)

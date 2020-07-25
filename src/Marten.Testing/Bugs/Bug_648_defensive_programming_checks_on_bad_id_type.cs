@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -12,7 +13,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void try_to_load_a_guid_identified_type_with_wrong_type()
         {
-            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            Exception<DocumentIdTypeMismatchException>.ShouldBeThrownBy(() =>
             {
                 theSession.Load<Target>(111);
             });
@@ -21,7 +22,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public Task try_to_load_a_guid_identified_type_with_wrong_type_async()
         {
-            return Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
+            return Exception<DocumentIdTypeMismatchException>.ShouldBeThrownByAsync(() =>
             {
                 return theSession.LoadAsync<Target>(111);
             });
@@ -30,7 +31,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void bad_id_to_load_many()
         {
-            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+            Exception<DocumentIdTypeMismatchException>.ShouldBeThrownBy(() =>
             {
                 theSession.LoadMany<Target>(111, 121);
             });
@@ -39,7 +40,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public Task try_to_loadmany_a_guid_identified_type_with_wrong_type_async()
         {
-            return Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
+            return Exception<DocumentIdTypeMismatchException>.ShouldBeThrownByAsync(() =>
             {
                 return theSession.LoadManyAsync<Target>(111, 222);
             });

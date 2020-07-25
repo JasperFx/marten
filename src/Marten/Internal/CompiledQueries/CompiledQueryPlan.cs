@@ -177,7 +177,7 @@ namespace Marten.Internal.CompiledQueries
                 return query;
             }
 
-            throw new InvalidOperationException("Marten is unable to create a compiled query plan for type " + type.FullNameInCode());
+            throw new InvalidCompiledQueryException("Marten is unable to create a compiled query plan for type " + type.FullNameInCode());
         }
 
         public void ReadCommand(NpgsqlCommand command, StoreOptions storeOptions)

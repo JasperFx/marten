@@ -8,6 +8,7 @@ using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Projections.Async;
+using Marten.Exceptions;
 using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -66,7 +67,7 @@ namespace Marten.Internal.Sessions
             }
             else
             {
-                throw new InvalidOperationException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
+                throw new DocumentIdTypeMismatchException(storage, typeof(int));
             }
         }
 

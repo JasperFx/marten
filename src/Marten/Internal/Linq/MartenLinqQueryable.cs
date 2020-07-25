@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Util;
+using Marten.Exceptions;
 using Marten.Internal.Linq.Includes;
 using Marten.Internal.Storage;
 using Marten.Linq;
@@ -178,8 +179,7 @@ namespace Marten.Internal.Linq
             }
             else
             {
-                throw new InvalidOperationException(
-                    $"Id/Document type mismatch. The id type for the included document type {typeof(TInclude).FullNameInCode()} is {storage.IdType.FullNameInCode()}");
+                throw new DocumentIdTypeMismatchException(storage, typeof(TKey));
             }
         }
 
