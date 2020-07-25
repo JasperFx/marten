@@ -21,6 +21,10 @@ namespace Marten.Internal.Linq
         public Type SelectedType => typeof(T);
 
         public string FieldName { get; set; } = "d.data";
+        public ISelectClause CloneToOtherTable(string tableName)
+        {
+            return new DataSelectClause<T>(tableName, FieldName);
+        }
 
         public string FromObject { get; }
         public void WriteSelectClause(CommandBuilder sql)

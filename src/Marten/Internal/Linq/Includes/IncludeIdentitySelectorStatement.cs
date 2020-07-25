@@ -10,34 +10,36 @@ namespace Marten.Internal.Linq.Includes
     public class IncludeIdentitySelectorStatement : Statement, ISelectClause
     {
         private readonly IList<IIncludePlan> _includes;
-        private string _tableName;
+        private Statement _innerEnd;
+        private Statement _clonedEnd;
 
-        public IncludeIdentitySelectorStatement(DocumentStatement original, IList<IIncludePlan> includes,
+        public IncludeIdentitySelectorStatement(Statement original, IList<IIncludePlan> includes,
             IMartenSession session) : base(null, null)
         {
-            _tableName = session.NextTempTableName();
+            ExportName = session.NextTempTableName();
 
             _includes = includes;
-            Inner = original.CloneForTempTableCreation(this);
 
+            _innerEnd = original.Current();
+            FromObject = _innerEnd.SelectClause.FromObject;
 
-            // Retrieve data from the original table
-            FromObject = original.SelectClause.FromObject;
+            _clonedEnd = _innerEnd.UseAsEndOfTempTableAndClone(this);
+            _clonedEnd.SingleValue = _innerEnd.SingleValue;
+
+            Inner = original;
 
             Statement current = this;
             foreach (var include in includes)
             {
-                var includeStatement = include.BuildStatement(_tableName);
+                var includeStatement = include.BuildStatement(ExportName);
                 current.Next = includeStatement;
                 current = includeStatement;
             }
 
-            current.Next = original;
-
-            original.Where = new InTempTableWhereFragment(_tableName, "id");
-            original.Limit = 0;
-            original.Offset = 0;
+            current.Next = _clonedEnd;
         }
+
+
 
         protected override void compileStructure(MartenExpressionParser parser)
         {
@@ -51,16 +53,29 @@ namespace Marten.Internal.Linq.Includes
         protected override void configure(CommandBuilder sql)
         {
             sql.Append("create temp table ");
-            sql.Append(_tableName);
+            sql.Append(ExportName);
             sql.Append(" as (\n");
             Inner.Configure(sql);
             sql.Append("\n);");
         }
 
         public string FromObject { get; }
+        public bool IncludeDataInTempTable { get; set; }
+
         public void WriteSelectClause(CommandBuilder sql)
         {
-            sql.Append("select id, ");
+            if (IncludeDataInTempTable)
+            {
+                // Basically if the data for the Include is coming from a
+                // SelectMany() clause
+                sql.Append("select data, ");
+            }
+            else
+            {
+                sql.Append("select id, ");
+            }
+
+
             sql.Append(_includes.Select(x => x.TempSelector).Join(", "));
             sql.Append(" from ");
             sql.Append(FromObject);
@@ -80,7 +95,8 @@ namespace Marten.Internal.Linq.Includes
         public IQueryHandler<T> BuildHandler<T>(IMartenSession session, Statement topStatement,
             Statement currentStatement)
         {
-            throw new System.NotSupportedException();
+            // It's wrapped in LinqHandlerBuilder
+            return _clonedEnd.SelectClause.BuildHandler<T>(session, topStatement, currentStatement);
         }
 
         public ISelectClause UseStatistics(QueryStatistics statistics)

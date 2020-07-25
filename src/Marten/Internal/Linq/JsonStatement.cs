@@ -1,5 +1,6 @@
 using System;
 using Baseline;
+using Marten.Internal.Linq.Includes;
 using Marten.Linq.Fields;
 
 namespace Marten.Internal.Linq
@@ -17,21 +18,21 @@ namespace Marten.Internal.Linq
         }
 
 
-        public Statement CloneForTempTableCreation()
+        public override Statement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
         {
-            // Watch this!!!
+            includeIdentitySelectorStatement.IncludeDataInTempTable = true;
+
             var clone = new JsonStatement(SelectClause, Fields)
             {
-                Offset = Offset,
-                Limit = Limit,
-                Where = Where,
+                SelectClause = SelectClause.As<IScalarSelectClause>().CloneToOtherTable(includeIdentitySelectorStatement.ExportName),
                 Orderings = Orderings,
-                Next = Next,
-                Mode = Mode,
+                Mode = StatementMode.Select,
                 ExportName = ExportName
             };
 
-            clone.WhereClauses.AddRange(WhereClauses);
+            SelectClause = includeIdentitySelectorStatement;
+
+            Limit = Offset = 0;
 
             return clone;
         }
