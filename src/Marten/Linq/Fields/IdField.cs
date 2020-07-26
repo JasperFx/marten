@@ -25,6 +25,7 @@ namespace Marten.Linq.Fields
 
         public Type FieldType => _idMember.GetMemberType();
         public string JSONBLocator { get; } = null;
+        public string LocatorForIncludedDocumentId => TypedLocator;
 
         public string LocatorFor(string rootTableAlias)
         {

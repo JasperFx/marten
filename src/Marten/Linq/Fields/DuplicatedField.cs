@@ -117,6 +117,7 @@ namespace Marten.Linq.Fields
         }
 
         public string JSONBLocator { get; set; }
+        public string LocatorForIncludedDocumentId => TypedLocator;
 
         public string LocatorFor(string rootTableAlias)
         {

@@ -9,16 +9,17 @@ namespace Marten.Internal.Linq.Includes
     public class IncludePlan<T> : IIncludePlan
     {
         private readonly IDocumentStorage<T> _storage;
-        private readonly IField _connectingField;
         private readonly Action<T> _callback;
         private readonly string _tempTableName;
 
         public IncludePlan(IDocumentStorage<T> storage, IField connectingField, Action<T> callback)
         {
             _storage = storage;
-            _connectingField = connectingField;
+            ConnectingField = connectingField;
             _callback = callback;
         }
+
+        public IField ConnectingField { get; }
 
         public int Index
         {
@@ -26,7 +27,7 @@ namespace Marten.Internal.Linq.Includes
             {
                 IdAlias = "id" + (value + 1);
 
-                TempSelector = $"{_connectingField.TypedLocator} as {IdAlias}";
+                TempSelector = $"{ConnectingField.LocatorForIncludedDocumentId} as {IdAlias}";
             }
         }
 

@@ -36,6 +36,8 @@ namespace Marten.Linq.Fields
         /// </summary>
         string JSONBLocator { get; }
 
+        string LocatorForIncludedDocumentId { get; }
+
         string LocatorFor(string rootTableAlias);
         bool ShouldUseContainmentOperator();
 
