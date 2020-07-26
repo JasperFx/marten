@@ -104,7 +104,7 @@ namespace Marten.Internal.Storage
 
         string ISelectClause.FromObject => TableName.QualifiedName;
 
-        public Type IdType => typeof(T);
+        public Type IdType => typeof(TId);
 
         public Guid? VersionFor(T document, IMartenSession session)
         {

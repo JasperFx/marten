@@ -43,6 +43,7 @@ namespace Marten.Linq.Fields
 
         public abstract string SelectorForDuplication(string pgType);
 
+        public virtual string LocatorForIncludedDocumentId => TypedLocator;
 
         /// <summary>
         /// Locate the data for this field as JSONB

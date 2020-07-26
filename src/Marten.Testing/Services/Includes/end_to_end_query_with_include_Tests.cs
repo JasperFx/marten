@@ -9,6 +9,7 @@ using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten.Testing.Linq;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -744,6 +745,61 @@ namespace Marten.Testing.Services.Includes
             }
         }
         // ENDSAMPLE
+
+        public class Group
+        {
+            public string Name { get; set; }
+            public Guid Id { get; set; }
+            public Guid[] Users { get; set; }
+        }
+
+        [Fact]
+        public void include_many_to_list()
+        {
+            var user1 = new User { };
+            var user2 = new User { };
+            var user3 = new User { };
+            var user4 = new User { };
+            var user5 = new User { };
+            var user6 = new User { };
+            var user7 = new User { };
+
+            theStore.BulkInsert(new User[]{user1, user2, user3, user4, user5, user6, user7});
+
+            var group1 = new Group
+            {
+                Name = "Odds",
+                Users = new []{user1.Id, user3.Id, user5.Id, user7.Id}
+            };
+
+            var group2 = new Group {Name = "Evens", Users = new[] {user2.Id, user4.Id, user6.Id}};
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(group1, group2);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Logger = new TestOutputMartenLogger(_output);
+
+                var list = new List<User>();
+
+                query.Query<Group>()
+                    .Include(x => x.Users, list)
+                    .Where(x => x.Name == "Odds")
+                    .ToList()
+                    .Single()
+                    .Name.ShouldBe("Odds");
+
+                list.Count.ShouldBe(4);
+                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user3.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user5.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user7.Id).ShouldBeTrue();
+            }
+        }
 
         public end_to_end_query_with_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
