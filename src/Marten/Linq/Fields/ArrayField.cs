@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using LamarCodeGeneration.Util;
 using Marten.Util;
 
 namespace Marten.Linq.Fields
@@ -22,7 +23,7 @@ namespace Marten.Linq.Fields
             TypedLocator = $"CAST({rawLocator} as {PgType})";
 
             var collectionType = members.Last().GetMemberType();
-            var elementType = collectionType.GetElementType();
+            var elementType = collectionType.DetermineElementType();
             var innerPgType = TypeMappings.GetPgType(elementType, EnumStorage.AsInteger);
 
             LocatorForIncludedDocumentId =
