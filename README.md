@@ -6,6 +6,7 @@
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/va5br63j7sbx74cm/branch/master?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten/branch/master)
 [![Linux Build status](https://dev.azure.com/jasperfx-marten/marten/_apis/build/status/marten?branchName=master)](https://dev.azure.com/jasperfx-marten/marten/_build/latest?definitionId=1&branchName=master)
 [![Nuget Package](https://badgen.net/nuget/v/marten)](https://www.nuget.org/packages/Marten/)
+[![Nuget](https://img.shields.io/nuget/dt/marten)](https://www.nuget.org/packages/Marten/)
 
 ![marten logo](http://jasperfx.github.io/marten/content/images/banner.png)
 
