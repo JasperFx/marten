@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Schema.Identity;

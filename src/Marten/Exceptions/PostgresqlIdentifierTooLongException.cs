@@ -1,6 +1,7 @@
 using System;
+using System.Runtime.Serialization;
 
-namespace Marten
+namespace Marten.Exceptions
 {
     public class PostgresqlIdentifierTooLongException: Exception
     {
@@ -12,6 +13,10 @@ namespace Marten
         {
             Length = length;
             Name = name;
+        }
+
+        protected PostgresqlIdentifierTooLongException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

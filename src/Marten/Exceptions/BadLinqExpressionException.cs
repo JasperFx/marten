@@ -1,6 +1,6 @@
 using System;
 
-namespace Marten.Linq
+namespace Marten.Exceptions
 {
 #if SERIALIZE
     [Serializable]

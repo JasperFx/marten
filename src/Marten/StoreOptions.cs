@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq;

@@ -1,4 +1,5 @@
 using System;
+using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Linq.Fields;
 using Marten.Schema;
 

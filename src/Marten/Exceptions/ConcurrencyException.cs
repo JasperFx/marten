@@ -1,6 +1,7 @@
 using System;
+using System.Runtime.Serialization;
 
-namespace Marten.Services
+namespace Marten.Exceptions
 {
     public class ConcurrencyException: Exception
     {
@@ -11,6 +12,17 @@ namespace Marten.Services
         {
             DocType = docType.FullName;
             Id = id;
+        }
+
+        public ConcurrencyException(string message, Type docType, object id) : base(message)
+        {
+            DocType = docType?.FullName;
+            Id = id;
+        }
+
+
+        protected ConcurrencyException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.Threading;
+using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;

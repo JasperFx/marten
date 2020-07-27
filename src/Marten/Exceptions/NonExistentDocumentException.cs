@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Serialization;
 
 namespace Marten.Exceptions
 {
@@ -11,6 +12,10 @@ namespace Marten.Exceptions
         {
             DocType = docType;
             Id = id;
+        }
+
+        protected NonExistentDocumentException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

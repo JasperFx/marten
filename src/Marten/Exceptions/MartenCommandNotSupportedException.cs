@@ -47,6 +47,8 @@ namespace Marten.Exceptions
         {
             Reason = reason;
         }
+
+
     }
 
     internal sealed class KnownNotSupportedExceptionCause
@@ -59,6 +61,8 @@ namespace Marten.Exceptions
             Reason = reason;
             this.match = match;
         }
+
+
 
         internal static readonly KnownNotSupportedExceptionCause ToTsvectorOnJsonb = new KnownNotSupportedExceptionCause("Full Text Search needs at least Postgres version 10.",
             NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10,

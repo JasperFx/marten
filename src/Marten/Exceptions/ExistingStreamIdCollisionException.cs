@@ -1,6 +1,7 @@
 using System;
+using System.Runtime.Serialization;
 
-namespace Marten.Events
+namespace Marten.Exceptions
 {
     public class ExistingStreamIdCollisionException: Exception
     {
@@ -12,6 +13,10 @@ namespace Marten.Events
         {
             Id = id;
             AggregateType = aggregateType;
+        }
+
+        protected ExistingStreamIdCollisionException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
     }
 }

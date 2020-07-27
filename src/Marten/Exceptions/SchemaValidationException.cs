@@ -1,6 +1,6 @@
 using System;
 
-namespace Marten.Schema
+namespace Marten.Exceptions
 {
     public class SchemaValidationException: Exception
     {

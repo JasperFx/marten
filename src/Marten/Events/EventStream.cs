@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Schema.Identity;
 using Marten.Services;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Serialization;
 using LamarCodeGeneration;
 using Marten.Internal.Storage;
 
@@ -17,6 +18,10 @@ namespace Marten.Exceptions
         }
 
         public DocumentIdTypeMismatchException(string message) : base(message)
+        {
+        }
+
+        protected DocumentIdTypeMismatchException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

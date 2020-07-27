@@ -1,4 +1,5 @@
 using System.Linq;
+using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Harness;

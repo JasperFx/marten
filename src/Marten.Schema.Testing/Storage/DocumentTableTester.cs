@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Marten.Testing.Harness;
