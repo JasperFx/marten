@@ -208,7 +208,7 @@ namespace Marten.Internal.Linq
                     elementType);
 
                 Mode = StatementMode.CommonTableExpression;
-                ExportName = elementType.Name.Sanitize() + "CTE";
+                ExportName = session.NextTempTableName() + "CTE";
 
                 Next = elementType == typeof(string)
                     ? new ScalarSelectManyStringStatement(this)
@@ -226,7 +226,7 @@ namespace Marten.Internal.Linq
                     elementType);
 
                 Mode = StatementMode.CommonTableExpression;
-                ExportName = elementType.Name + "CTE";
+                ExportName = session.NextTempTableName() + "CTE";
 
                 var statement = new JsonStatement(elementType, childFields, this)
                 {
