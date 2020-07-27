@@ -3,3 +3,4 @@ identity
 appending
 streams
 projections
+versioning
