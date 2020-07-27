@@ -10,6 +10,84 @@ using Xunit;
 
 namespace Marten.Testing.Events.SchemaChange
 {
+    // SAMPLE: old_event_namespace
+    namespace OldEventNamespace
+    {
+        public class OrderStatusChanged
+        {
+            public Guid OrderId { get; }
+            public int Status { get; }
+
+            public OrderStatusChanged(Guid orderId, int status)
+            {
+                OrderId = orderId;
+                Status = status;
+            }
+        }
+    }
+    // ENDSAMPLE
+
+    // SAMPLE: new_event_namespace
+    namespace NewEventNamespace
+    {
+        public class OrderStatusChanged
+        {
+            public Guid OrderId { get; }
+            public int Status { get; }
+
+            public OrderStatusChanged(Guid orderId, int status)
+            {
+                OrderId = orderId;
+                Status = status;
+            }
+        }
+    }
+    // ENDSAMPLE
+
+
+    // SAMPLE: new_event_type_name
+    namespace OldEventNamespace
+    {
+        public class ConfirmedOrderStatusChanged
+        {
+            public Guid OrderId { get; }
+            public int Status { get; }
+
+            public ConfirmedOrderStatusChanged(Guid orderId, int status)
+            {
+                OrderId = orderId;
+                Status = status;
+            }
+        }
+    }
+    // ENDSAMPLE
+
+    public static class SampleEventsSchemaMigration
+    {
+        public static void SampleAddEventsRegistration()
+        {
+            // SAMPLE: event_namespace_migration_options
+            var options = new StoreOptions();
+
+            options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
+
+            var store = new DocumentStore(options);
+            // ENDSAMPLE
+        }
+
+        public static void SampleEventMappingRegistration()
+        {
+            // SAMPLE: event_type_name_migration_options
+            var options = new StoreOptions();
+
+            var orderStatusChangedMapping = options.Events.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
+            orderStatusChangedMapping.EventTypeName = "order_status_changed";
+
+            var store = new DocumentStore(options);
+            // ENDSAMPLE
+        }
+    }
+
     // Different namespace - event will be stored with "Old"
     namespace New
     {
