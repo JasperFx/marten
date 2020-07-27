@@ -573,6 +573,78 @@ namespace Marten.Testing.Linq
             }
         }
 
+        [Fact]
+        public void try_n_deep_smoke_test()
+        {
+            using var query = theStore.QuerySession();
+
+            var command = query.Query<Target>()
+                .Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children)
+                .Where(x => x.Color == Colors.Red)
+                .SelectMany(x => x.Children)
+                .OrderBy(x => x.Number)
+                .ToCommand();
+
+            command.ShouldNotBeNull();
+
+            _output.WriteLine(command.CommandText);
+
+            query.Query<Target>()
+                .Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children)
+                .Where(x => x.Color == Colors.Red)
+                .SelectMany(x => x.Children)
+                .OrderBy(x => x.Number)
+                .ToList().ShouldNotBeNull();
+        }
+
+        public class TargetGroup
+        {
+            public Guid Id { get; set; }
+            public Target[] Targets { get; set; }
+        }
+
+        [Fact]
+        public void select_many_2_deep()
+        {
+            var group1 = new TargetGroup
+            {
+                Targets = Target.GenerateRandomData(25).ToArray()
+            };
+
+            var group2 = new TargetGroup
+            {
+                Targets = Target.GenerateRandomData(25).ToArray()
+            };
+
+            var group3 = new TargetGroup
+            {
+                Targets = Target.GenerateRandomData(25).ToArray()
+            };
+
+            var groups = new[] {group1, group2, group3};
+
+            using (var session = theStore.LightweightSession())
+            {
+                session.Store(groups);
+                session.SaveChanges();
+            }
+
+            using var query = theStore.QuerySession();
+
+            var loaded = query.Query<TargetGroup>()
+                .SelectMany(x => x.Targets).Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children).OrderBy(x => x.Number).ToArray().Select(x => x.Id).ToArray();
+
+            var expected = groups.SelectMany(x => x.Targets).Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children).OrderBy(x => x.Number).ToArray().Select(x => x.Id).ToArray();
+
+            loaded.ShouldBe(expected);
+        }
+
+
+
         public query_with_select_many(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;
