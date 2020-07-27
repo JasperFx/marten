@@ -34,7 +34,7 @@ namespace Marten.Internal.CodeGeneration
             }
         }
 
-        public GeneratedType DirtyCheckingSelector { get; set; }
+
 
         public GeneratedType Upsert { get; set; }
         public GeneratedType Insert { get; set; }
@@ -46,6 +46,8 @@ namespace Marten.Internal.CodeGeneration
         public GeneratedType QueryOnlySelector { get; set; }
         public GeneratedType LightweightSelector { get; set; }
         public GeneratedType IdentityMapSelector { get; set; }
+
+        public GeneratedType DirtyCheckingSelector { get; set; }
 
     }
 }

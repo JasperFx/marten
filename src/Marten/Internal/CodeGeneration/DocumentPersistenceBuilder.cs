@@ -57,13 +57,20 @@ namespace Marten.Internal.CodeGeneration
                 QueryOnly = (IDocumentStorage<T>)Activator.CreateInstance(queryOnly.CompiledType, _mapping),
                 Lightweight = (IDocumentStorage<T>)Activator.CreateInstance(lightweight.CompiledType, _mapping),
                 IdentityMap = (IDocumentStorage<T>)Activator.CreateInstance(identityMap.CompiledType, _mapping),
-                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking.CompiledType, _mapping)
+                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking.CompiledType, _mapping),
 
+                Operations = operations,
+                QueryOnlyType = queryOnly,
+                LightweightType = lightweight,
+                IdentityMapType = identityMap,
+                DirtyTrackingType = dirtyTracking
             };
 
             slot.BulkLoader = _mapping.IsHierarchy()
                 ? (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType.CompiledType, slot.QueryOnly, _mapping)
                 : (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType.CompiledType, slot.QueryOnly);
+
+            slot.BulkLoaderType = bulkWriterType;
 
             return slot;
         }

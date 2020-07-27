@@ -21,12 +21,14 @@ namespace Marten.Internal
 
         public DocumentProvider<T> StorageFor<T>()
         {
-            if (_storage.TryFind(typeof(T), out var stored))
+            var documentType = typeof(T);
+
+            if (_storage.TryFind(documentType, out var stored))
             {
                 return stored.As<DocumentProvider<T>>();
             }
 
-            if (typeof(T) == typeof(IEvent))
+            if (documentType == typeof(IEvent))
             {
                 var storage = new EventDocumentStorage(_options.Events, new EventQueryMapping(_options), _options.Serializer());
                 var slot = new DocumentProvider<IEvent>
@@ -37,19 +39,19 @@ namespace Marten.Internal
                     QueryOnly = storage
                 };
 
-                _storage = _storage.AddOrUpdate(typeof(T), slot);
+                _storage = _storage.AddOrUpdate(documentType, slot);
 
                 return slot.As<DocumentProvider<T>>();
             }
 
-            var mapping = _options.Storage.FindMapping(typeof(T));
+            var mapping = _options.Storage.FindMapping(documentType);
 
             if (mapping is DocumentMapping m)
             {
                 var builder = new DocumentPersistenceBuilder(m, _options);
                 var slot = builder.Generate<T>();
 
-                _storage = _storage.AddOrUpdate(typeof(T), slot);
+                _storage = _storage.AddOrUpdate(documentType, slot);
 
                 return slot;
             }
@@ -57,11 +59,11 @@ namespace Marten.Internal
             if (mapping is SubClassMapping s)
             {
                 var loader =
-                    typeof(SubClassLoader<,,>).CloseAndBuildAs<ISubClassLoader<T>>(mapping.Root.DocumentType, typeof(T),
+                    typeof(SubClassLoader<,,>).CloseAndBuildAs<ISubClassLoader<T>>(mapping.Root.DocumentType, documentType,
                         mapping.IdType);
 
                 var slot = loader.BuildPersistence(this, s);
-                _storage = _storage.AddOrUpdate(typeof(T), slot);
+                _storage = _storage.AddOrUpdate(documentType, slot);
 
                 return slot;
             }
@@ -70,7 +72,7 @@ namespace Marten.Internal
             {
                 var storage = (IDocumentStorage<T>) em;
                 var slot = new DocumentProvider<T> {Lightweight = storage, IdentityMap = storage, DirtyTracking = storage, QueryOnly = storage};
-                _storage = _storage.AddOrUpdate(typeof(T), slot);
+                _storage = _storage.AddOrUpdate(documentType, slot);
 
                 return slot;
             }
