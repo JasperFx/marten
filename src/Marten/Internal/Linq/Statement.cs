@@ -14,12 +14,6 @@ using Remotion.Linq.Clauses;
 
 namespace Marten.Internal.Linq
 {
-    public enum StatementMode
-    {
-        Select,
-        CommonTableExpression
-    }
-
     public abstract class Statement
     {
         private Statement _next;
@@ -171,6 +165,7 @@ namespace Marten.Internal.Linq
         public bool SingleValue { get; set; }
         public bool ReturnDefaultWhenEmpty { get; set; }
         public bool CanBeMultiples { get; set; }
+        public bool IsDistinct { get; set; }
 
         public void ToAny()
         {
@@ -297,5 +292,13 @@ namespace Marten.Internal.Linq
         {
             throw new NotImplementedException();
         }
+
+        public void ConvertToCommonTableExpression(IMartenSession session)
+        {
+            ExportName = session.NextTempTableName() + "CTE";
+            Mode = StatementMode.CommonTableExpression;
+        }
     }
+
+
 }

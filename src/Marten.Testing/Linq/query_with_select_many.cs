@@ -45,6 +45,61 @@ namespace Marten.Testing.Linq
         // ENDSAMPLE
 
         [Fact]
+        public void distinct_and_count()
+        {
+            var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };
+            var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
+            var product3 = new ProductWithList { Tags = new List<string> { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Logger = new TestOutputMartenLogger(_output);
+
+                query
+                    .Query<ProductWithList>()
+                    .SelectMany(x => x.Tags)
+                    .Distinct()
+                    .Count()
+                    .ShouldBe(6);
+
+            }
+        }
+
+        [Fact]
+        public void distinct_and_count_long()
+        {
+            var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };
+            var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
+            var product3 = new ProductWithList { Tags = new List<string> { "d", "e", "f" } };
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(product1, product2, product3);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Logger = new TestOutputMartenLogger(_output);
+
+                query
+                    .Query<ProductWithList>()
+                    .SelectMany(x => x.Tags)
+                    .Distinct()
+                    .LongCount()
+                    .ShouldBe(6L);
+
+            }
+        }
+
+
+        [Fact]
         public void can_do_simple_select_many_against_generic_list()
         {
             var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };

@@ -161,11 +161,27 @@ namespace Marten.Internal.Linq
                     break;
 
                 case CountResultOperator _:
-                    CurrentStatement.ToCount<int>();
+                    if (CurrentStatement.IsDistinct)
+                    {
+                        CurrentStatement.ConvertToCommonTableExpression(_session);
+                        CurrentStatement = new CountStatement<int>(CurrentStatement);
+                    }
+                    else
+                    {
+                        CurrentStatement.ToCount<int>();
+                    }
                     break;
 
                 case LongCountResultOperator _:
-                    CurrentStatement.ToCount<long>();
+                    if (CurrentStatement.IsDistinct)
+                    {
+                        CurrentStatement.ConvertToCommonTableExpression(_session);
+                        CurrentStatement = new CountStatement<long>(CurrentStatement);
+                    }
+                    else
+                    {
+                        CurrentStatement.ToCount<long>();
+                    }
                     break;
 
                 case FirstResultOperator first:
@@ -183,6 +199,7 @@ namespace Marten.Internal.Linq
                     break;
 
                 case DistinctResultOperator _:
+                    CurrentStatement.IsDistinct = true;
                     CurrentStatement.ApplySqlOperator("distinct");
                     break;
 
