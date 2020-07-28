@@ -37,7 +37,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.2.0" />
-        <PackageReference Include="Npgsql.NodaTime" Version="[4.1.1,4.2.0)" />
+        <PackageReference Include="Npgsql.NodaTime" Version="[4.1.4,4.2.0)" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
