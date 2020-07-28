@@ -430,11 +430,16 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
+            var documentsGroupedByType = documents
+                .Where(x => x != null)
+                .GroupBy(x => x.GetType());
+
+            foreach (var group in documentsGroupedByType)
             {
+                // Build the right handler for the group type
                 var handler = typeof(Handler<>).CloseAndBuildAs<IHandler>(group.Key);
                 handler.Store(this, group);
-            });
+            }
         }
 
         internal interface IHandler
@@ -446,6 +451,7 @@ namespace Marten.Internal.Sessions
         {
             public void Store(IDocumentSession session, IEnumerable<object> objects)
             {
+                // Delegate to the Store<T>() method
                 session.Store(objects.OfType<T>().ToArray());
             }
         }
