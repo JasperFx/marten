@@ -103,6 +103,11 @@ namespace Marten.Testing.Acceptance
                             // index
                             x.IsUnique = true;
 
+                            // Toggle whether index value will be constrained unique in scope of whole document table (Global)
+                            // or in a scope of a single tenant (PerTenant)
+                            // Default is Global
+                            x.TenancyScope = Schema.Indexing.Unique.TenancyScope.PerTenant;
+
                             // Partial index by supplying a condition
                             x.Where = "(data ->> 'Number')::int > 10";
                         });
