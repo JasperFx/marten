@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="generator" content="Bootply" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Marten - Events Versioning</title>
+    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
+
+    <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/bootstrap/img/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
+
+    <!-- CSS code from Bootply.com editor -->
+    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+</head>
+
+<!-- HTML code from Bootply.com editor -->
+
+<body>
+    <a href="https://github.com/jasperfx/marten"><img style="z-index: 5000; position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png"></a>
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="banner">
+        <div class="container">
+            <div class="navbar-header">
+                <a href="/marten" class="navbar-brand">Marten 3.12.3</a>
+            </div>
+            <nav class="collapse navbar-collapse" role="navigation">
+                <ul class="nav navbar-nav pull-right">
+                    <li>
+                        <a href="/marten/getting_started">Getting Started</a>
+                    </li>
+                    <li>
+                        <a href="/marten/documentation">Documentation</a>
+                    </li>
+                    <li>
+                        <a href="/marten/migration_guide">Migration Guide</a>
+                    </li>
+                    <li>
+                        <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
+                    </li>
+                    <li>
+                        <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
+                        <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </li>
+                    <li><a href="/marten/documentation/events/projections" title="Projections">Previous</a></li>
+                <li><a href="/marten/documentation/troubleshoot" title="FAQ & Troubleshooting">Next</a></li>
+                </ul>
+                <div class="navbar-form navbar-left" role="search">
+                    <div class="form-group">
+                        <input id="search" type="search" class="form-control" placeholder="Search">
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </nav>
+    <div class="container">
+        <nav class="navbar-inverse">
+            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/events">Marten as Event Store</a></li><li class="active">Events Versioning</li></ol>
+        </nav>
+    </div>
+    <!--main-->
+    <div class="container">
+        <div class="row">
+            <!--left-->
+
+            <div class="col-md-3" id="leftCol">
+
+                <img src="/content/images/emblem.png" width="80%" align="middle" />
+                <br />
+                <ul class="nav nav-stacked affix" id="sidebar"></ul>
+                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/troubleshoot">FAQ & Troubleshooting</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/events/projections">Projections</a></p>
+                </ul>
+            </div><!--/left-->
+            <!--right-->
+            <div class="col-md-9">
+                <h1>Events Versioning <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/events/versioning/index.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+
+                <hr />
+                <div id="main-pane">
+                    <!--Title:Events Versioning-->
+<!--Url:versioning-->
+<p>Events by their nature represent facts that happened in the past. They should be immutable even if they had wrong values (as we can only roughly guess what should be the missing property value).</p>
+<p>However, in practice, it's unavoidable in the living system to not have the event schema migrations. They might come from:</p>
+<ul>
+<li>bug - eg. typo in the property name, missing event data,</li>
+<li>new business requirements - eg. besides storing the user email we'd like to be also storing its full name,</li>
+<li>refactorings - eg. renaming event class, moving to different namespace or assembly,</li>
+<li>etc.</li>
+</ul>
+<p>Depending on the concrete business case we may use a different technique for handling such event migrations.</p>
+<h2 id="namespace-migration">Namespace migration</h2>
+<p>Marten by default tries to find the event class based on the fully qualified assembly name (it's stored in <code>mt_dotnet_type</code> column of <code>mt_events</code> table, read more in <a href="/marten/documentation/events/schema">events schema documentation</a>).
+When it is not able to find event type with the same assembly, namespace and type name then it tries to make a lookup for mapping on the event type name (stored in <code>type</code> column of <code>mt_events</code> table).</p>
+<p>Such mapping needs to be defined manually:</p>
+<ul>
+<li>either by registering events with store options <code>Events.AddEventTypes</code> method,</li>
+<li>or by defining custom mapping with <code>Events.EventMappingFor</code> method.</li>
+</ul>
+<p>For the case of namespace migration, it's enough to use <code>AddEventTypes</code> method as it's generating mapping based on the event type. As an example, change <code>OrderStatusChanged</code> event from:</p>
+<pre><code class="language-csharp">&#xD;&#xA;namespace OldEventNamespace&#xD;&#xA;{&#xD;&#xA;    public class OrderStatusChanged&#xD;&#xA;    {&#xD;&#xA;        public Guid OrderId { get; }&#xD;&#xA;        public int Status { get; }&#xD;&#xA;&#xD;&#xA;        public OrderStatusChanged(Guid orderId, int status)&#xD;&#xA;        {&#xD;&#xA;            OrderId = orderId;&#xD;&#xA;            Status = status;&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre> 
+<p>to:</p>
+<pre><code class="language-csharp">&#xD;&#xA;namespace NewEventNamespace&#xD;&#xA;{&#xD;&#xA;    public class OrderStatusChanged&#xD;&#xA;    {&#xD;&#xA;        public Guid OrderId { get; }&#xD;&#xA;        public int Status { get; }&#xD;&#xA;&#xD;&#xA;        public OrderStatusChanged(Guid orderId, int status)&#xD;&#xA;        {&#xD;&#xA;            OrderId = orderId;&#xD;&#xA;            Status = status;&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre> 
+<p>It's enough to register new event type as follows:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var options = new StoreOptions();&#xD;&#xA;&#xD;&#xA;options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});&#xD;&#xA;&#xD;&#xA;var store = new DocumentStore(options);&#xD;&#xA;</code></pre>
+<p>After that Marten will automatically perform a matching based on the type name (that didn't change) - <code>order_status_changed</code>.</p>
+<h2 id="event-type-name-migration">Event type name migration</h2>
+<p>When the event class type name has changed, Marten does not perform automatic mapping but allows to define a custom one.</p>
+<p>To do that you need to use <code>Events.EventMappingFor</code> method to define the type name for the new event.</p>
+<p>Eg. for migrating <code>OrderStatusChanged</code> event into <code>ConfirmedOrderStatusChanged</code></p>
+<pre><code class="language-csharp">&#xD;&#xA;namespace OldEventNamespace&#xD;&#xA;{&#xD;&#xA;    public class ConfirmedOrderStatusChanged&#xD;&#xA;    {&#xD;&#xA;        public Guid OrderId { get; }&#xD;&#xA;        public int Status { get; }&#xD;&#xA;&#xD;&#xA;        public ConfirmedOrderStatusChanged(Guid orderId, int status)&#xD;&#xA;        {&#xD;&#xA;            OrderId = orderId;&#xD;&#xA;            Status = status;&#xD;&#xA;        }&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
+<p>it's needed to register mapping using old event type name (<code>order_status_changed</code>) as follows:</p>
+<pre><code class="language-csharp">&#xD;&#xA;var options = new StoreOptions();&#xD;&#xA;&#xD;&#xA;var orderStatusChangedMapping = options.Events.EventMappingFor&lt;OldEventNamespace.ConfirmedOrderStatusChanged&gt;();&#xD;&#xA;orderStatusChangedMapping.EventTypeName = &quot;order_status_changed&quot;;&#xD;&#xA;&#xD;&#xA;var store = new DocumentStore(options);&#xD;&#xA;</code></pre>
+<br />
+<div class="alert alert-warning">
+<b><u>Warning:</u></b>
+<br />
+In this case, both old `OrderStatusChanged` and new `ConfirmedOrderStatusChanged` event type names will get published with the same `order_status_changed` event type.
+</div>
+
+                </div>
+                <hr />
+                <nav class="related-links">
+                    <span>
+                        <strong>Previous: </strong><a href="/marten/documentation/events/projections">Projections</a>
+                    </span>
+                    <span class="pull-right">
+                        <strong>Next: </strong><a href="/marten/documentation/troubleshoot">FAQ & Troubleshooting</a>
+                    </span>
+                </nav>
+            </div><!--/right-->
+        </div><!--/row-->
+    </div><!--/container-->
+    <footer>
+        <ul>
+            <li>
+                <a href="https://dotnetfoundation.org">
+                    <img class="dot-net-foundation-logo" src="https://raw.githubusercontent.com/dotnet/swag/master/logo/dotnetfoundation_v4.png" alt="Supported by the .NET Foundation" />
+                </a>
+                Supported by the <a href="https://dotnetfoundation.org">.NET Foundation</a>
+            </li>
+        </ul>
+    </footer>
+</body>
+
+<foot>
+    <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/marten/content/prism.js"></script>
+    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
+    <script type="text/javascript" src="/marten/content/affix.js"></script>
+
+    <script>
+        $('#search').keyup(function (e) {
+            if (e.keyCode == 13) {
+                var search = $('#search').val();
+
+                var url = 'https://www.google.com/#q=site:jasperfx.github.io ' + search;
+                url = encodeURI(url);
+
+                //alert(url);
+
+                window.location.href = url;
+
+                e.stopPropagation();
+                if (e.cancelBubble != null) e.cancelBubble = true;
+                return false;
+            }
+
+        });
+    </script>
+</foot>
+</html>
