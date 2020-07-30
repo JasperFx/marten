@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -21,19 +22,7 @@ namespace Marten.Services
         private readonly IRetryPolicy _retryPolicy;
         private readonly NpgsqlConnection _externalConnection;
 
-        // keeping this for binary compatibility (but not used)
-        [Obsolete("Use the method which includes IRetryPolicy instead")]
-        public ManagedConnection(IConnectionFactory factory) : this(factory, new NulloRetryPolicy())
-        {
-        }
-
         public ManagedConnection(IConnectionFactory factory, IRetryPolicy retryPolicy) : this(factory, CommandRunnerMode.AutoCommit, retryPolicy)
-        {
-        }
-
-        // keeping this for binary compatibility (but not used)
-        [Obsolete("Use the method which includes IRetryPolicy instead")]
-        public ManagedConnection(SessionOptions options, CommandRunnerMode mode) : this(options, mode, new NulloRetryPolicy())
         {
         }
 
@@ -48,14 +37,6 @@ namespace Marten.Services
 
             _connection = new TransactionState(_mode, _isolationLevel, _commandTimeout, _externalConnection, _ownsConnection, options.Transaction);
             _retryPolicy = retryPolicy;
-        }
-
-        // keeping this for binary compatibility (but not used)
-        [Obsolete("Use the method which includes IRetryPolicy instead")]
-        public ManagedConnection(IConnectionFactory factory, CommandRunnerMode mode,
-            IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, int commandTimeout = 30) : this(factory, mode,
-            new NulloRetryPolicy(), isolationLevel, commandTimeout)
-        {
         }
 
         // 30 is NpgsqlCommand.DefaultTimeout - ok to burn it to the call site?
@@ -213,6 +194,8 @@ namespace Marten.Services
                 return _connection.Connection;
             }
         }
+
+
 
         private void handleCommandException(NpgsqlCommand cmd, Exception e)
         {
