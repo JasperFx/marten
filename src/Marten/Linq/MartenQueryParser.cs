@@ -33,6 +33,8 @@ namespace Marten.Linq
             var nodeTypeRegistry = MethodInfoBasedNodeTypeRegistry.CreateFromRelinqAssembly();
             registerNodeTypes?.Invoke(nodeTypeRegistry);
 
+            nodeTypeRegistry.Register(OrderByComparerExpressionNode.SupportedMethods, typeof(OrderByComparerExpressionNode));
+
             var expressionTreeParser =
                 new ExpressionTreeParser(nodeTypeRegistry, processor);
             _parser = new QueryParser(expressionTreeParser);

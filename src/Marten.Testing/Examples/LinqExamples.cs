@@ -91,6 +91,12 @@ namespace Marten.Testing.Examples
 
             // You can use multiple order by's
             session.Query<Target>().OrderBy(x => x.Date).ThenBy(x => x.Number);
+
+            // Sort case-insensitively, Postgres is case-sensitive by default
+            session.Query<Target>().OrderBy(x => x.String, StringComparer.OrdinalIgnoreCase);
+
+            // If you want to sort by multiple fields case-insensitive, you need to supply StringComparer for each sort
+            session.Query<Target>().OrderBy(x => x.String, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.AnotherString, StringComparer.Ordinal);
         }
 
         // ENDSAMPLE

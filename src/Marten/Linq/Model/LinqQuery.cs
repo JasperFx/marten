@@ -193,23 +193,45 @@ namespace Marten.Linq.Model
 
         private void writeOrderClause(CommandBuilder sql)
         {
-            var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
+            var orders = bodyClauses()
+                .SelectMany<IBodyClause, (Ordering Clause, bool CaseSensitive)>(x =>
+                {
+                    switch (x)
+                    {
+                        case OrderByClause orderByClause:
+                            return orderByClause.Orderings.Select(o => (o, true));
+                        case OrderByComparerClause orderByComparerClause:
+                            return orderByComparerClause.Orderings.Select(o => (o, orderByComparerClause.CaseSensitive));
+                        default:
+                            return Enumerable.Empty<(Ordering, bool)>();
+                    }
+                })
+                .ToArray();
+
             if (!orders.Any())
                 return;
 
             sql.Append(" order by ");
-            writeOrderByFragment(sql, orders[0]);
+            writeOrderByFragment(sql, orders[0].Clause, orders[0].CaseSensitive);
             for (int i = 1; i < orders.Length; i++)
             {
                 sql.Append(", ");
-                writeOrderByFragment(sql, orders[i]);
+                writeOrderByFragment(sql, orders[i].Clause, orders[i].CaseSensitive);
             }
         }
 
-        private void writeOrderByFragment(CommandBuilder sql, Ordering clause)
+        private void writeOrderByFragment(CommandBuilder sql, Ordering clause, bool caseSensitive)
         {
             var locator = _mapping.JsonLocator(clause.Expression);
+            if (!caseSensitive)
+            {
+                sql.Append("lower(");
+            }
             sql.Append(locator);
+            if (!caseSensitive)
+            {
+                sql.Append(")");
+            }
 
             if (clause.OrderingDirection == OrderingDirection.Desc)
             {
