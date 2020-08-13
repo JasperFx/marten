@@ -62,7 +62,7 @@ If you want to name the sequence yourself you can create the sequence first like
 
 Look at the Postgres Sequence docs for more info.
 
-https://www.postgresql.org/docs/9.5/static/sql-createsequence.html
+https://www.postgresql.org/docs/current/sql-createsequence.html
 
 ### boolean
 
