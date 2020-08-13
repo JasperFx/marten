@@ -193,20 +193,7 @@ namespace Marten.Linq.Model
 
         private void writeOrderClause(CommandBuilder sql)
         {
-            var orders = bodyClauses()
-                .SelectMany<IBodyClause, (Ordering Clause, bool CaseSensitive)>(x =>
-                {
-                    switch (x)
-                    {
-                        case OrderByClause orderByClause:
-                            return orderByClause.Orderings.Select(o => (o, true));
-                        case OrderByComparerClause orderByComparerClause:
-                            return orderByComparerClause.Orderings.Select(o => (o, orderByComparerClause.CaseSensitive));
-                        default:
-                            return Enumerable.Empty<(Ordering, bool)>();
-                    }
-                })
-                .ToArray();
+            var orders = bodyClauses().GetStringOrderingClauses();
 
             if (!orders.Any())
                 return;
