@@ -125,16 +125,22 @@ namespace Marten
 
         void IRetryPolicy.Execute(Action operation)
         {
-            Try(() =>
+            using (Util.NoSynchronizationContextScope.Enter())
             {
-                operation();
-                return Task.CompletedTask;
-            }, CancellationToken.None).GetAwaiter().GetResult();
+                Try(() =>
+                {
+                    operation();
+                    return Task.CompletedTask;
+                }, CancellationToken.None).GetAwaiter().GetResult();
+            }
         }
 
         TResult IRetryPolicy.Execute<TResult>(Func<TResult> operation)
         {
-            return Try(() => Task.FromResult(operation()), CancellationToken.None).GetAwaiter().GetResult();
+            using (Util.NoSynchronizationContextScope.Enter())
+            {
+                return Try(() => Task.FromResult(operation()), CancellationToken.None).GetAwaiter().GetResult();
+            }
         }
 
         Task IRetryPolicy.ExecuteAsync(Func<Task> operation, CancellationToken cancellationToken)
