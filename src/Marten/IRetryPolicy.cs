@@ -43,7 +43,7 @@ namespace Marten
     }
 
     /// <summary>
-    /// Default implementation of IRetryPolicy
+    /// No-op implementation of IRetryPolicy
     /// </summary>
     public class NulloRetryPolicy: IRetryPolicy
     {
