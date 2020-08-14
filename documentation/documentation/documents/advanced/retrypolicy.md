@@ -10,6 +10,10 @@ The policy is then plugged into the `StoreOptions` via the `RetryPolicy` method:
 
 <[sample:retrypolicy-samplepolicy-pluggingin]>
 
-Lastly, the filter is configured to retry failing operations twice, given they throw a `NpgsqlException` that is non-transient (for the sake of demonstrability).
+Lastly, the filter is configured to retry failing operations twice, given they throw a `NpgsqlException` that is transient and thus might succeed later.
+
+There's also a built-in `DefaultRetryPolicy` that has sane defaults for transient error handling. Like any custom policy, you can plug it into into the `StoreOptions` via the `RetryPolicy` method:
+
+<[sample:retrypolicy-samplepolicy-default]>
 
 Also you could use the fantastic [Polly](https://www.nuget.org/packages/polly) library to easily build more resilient and expressive retry policies by implementing `IRetryPolicy`.
