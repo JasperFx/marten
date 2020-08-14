@@ -76,51 +76,52 @@ namespace Marten
     /// </remarks>
     public sealed class DefaultRetryPolicy: IRetryPolicy
     {
-        private readonly int _maxTries;
+        private readonly int _maxRetryCount;
         private readonly Func<Exception, bool> _filter;
         private readonly Func<int, TimeSpan> _sleep;
 
         private static readonly Func<Exception, bool> DefaultFilter = x => x is NpgsqlException npgsqlException && npgsqlException.IsTransient;
         private static readonly Func<int, TimeSpan> DefaultSleep = x => TimeSpan.FromSeconds(x);
 
-        private DefaultRetryPolicy(int maxTries, Func<Exception, bool> filter, Func<int, TimeSpan> sleep)
+        private DefaultRetryPolicy(int maxRetryCount, Func<Exception, bool> filter, Func<int, TimeSpan> sleep)
         {
-            _maxTries = maxTries;
+            _maxRetryCount = maxRetryCount;
             _filter = filter ?? DefaultFilter;
             _sleep = sleep ?? DefaultSleep;
         }
 
         /// <summary>
-        /// Initializes a retry policy that will retry once after failure.
+        /// Initializes a retry policy that will retry once after failure that matches the filter.
         /// </summary>
         /// <param name="filter">Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient"/></param>
         /// <param name="sleep">Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry number seconds</param>
         /// <returns>The configured retry policy.</returns>
         public static IRetryPolicy Once(Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
         {
-            return new DefaultRetryPolicy(2, filter, sleep);
+            return new DefaultRetryPolicy(1, filter, sleep);
         }
 
         /// <summary>
-        /// Initializes a retry policy that will retry twice after failure.
+        /// Initializes a retry policy that will retry twice after failure that matches the filter.
         /// </summary>
         /// <param name="filter">Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient"/></param>
         /// <param name="sleep">Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry number seconds</param>
         /// <returns>The configured retry policy.</returns>
         public static IRetryPolicy Twice(Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
         {
-            return new DefaultRetryPolicy(3, filter, sleep);
+            return new DefaultRetryPolicy(2, filter, sleep);
         }
 
         /// <summary>
         /// Initializes a retry policy that will retry given amount of times after failure.
         /// </summary>
+        /// <param name="maxRetryCount">How many times the operation will be retried on failure that matches the filter.</param>
         /// <param name="filter">Optional filter when to apply, default to checking for <see cref="NpgsqlException.IsTransient"/></param>
         /// <param name="sleep">Optional sleep after exception, gets retry number 1-N as parameter, defaults to sleeping retry number seconds</param>
         /// <returns>The configured retry policy.</returns>
-        public static IRetryPolicy Times(int times, Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
+        public static IRetryPolicy Times(int maxRetryCount, Func<Exception, bool> filter = null, Func<int, TimeSpan> sleep = null)
         {
-            return new DefaultRetryPolicy(times + 1, filter, sleep);
+            return new DefaultRetryPolicy(maxRetryCount, filter, sleep);
         }
 
         void IRetryPolicy.Execute(Action operation)
@@ -162,7 +163,7 @@ namespace Marten
                     await operation().ConfigureAwait(false);
                     return;
                 }
-                catch (Exception e) when (++tries < _maxTries && _filter(e))
+                catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
                 {
                     await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
                 }
@@ -177,7 +178,7 @@ namespace Marten
                 {
                     return await operation().ConfigureAwait(false);
                 }
-                catch (Exception e) when (++tries < _maxTries && _filter(e))
+                catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
                 {
                     await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
                 }
