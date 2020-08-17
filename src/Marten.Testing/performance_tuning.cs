@@ -9,6 +9,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 
+
 #if NET461
 using HtmlTags;
 using Jil;
@@ -33,29 +34,14 @@ namespace Marten.Testing
             return JSON.Serialize(document, _options);
         }
 
-        public T FromJson<T>(string json)
-        {
-            return JSON.Deserialize<T>(json, _options);
-        }
-
-        public T FromJson<T>(Stream stream)
-        {
-            return JSON.Deserialize<T>(new StreamReader(stream), _options);
-        }
-
-        public object FromJson(Type type, string json)
-        {
-            return JSON.Deserialize(json, type, _options);
-        }
-
         public T FromJson<T>(TextReader reader)
         {
-            return JSON.Deserialize<T>(reader);
+            return JSON.Deserialize<T>(reader, _options);
         }
 
         public object FromJson(Type type, TextReader reader)
         {
-            return JSON.Deserialize(reader, type);
+            return JSON.Deserialize(reader, type, _options);
         }
 
         public string ToCleanJson(object document)
@@ -65,10 +51,11 @@ namespace Marten.Testing
 
         public EnumStorage EnumStorage => EnumStorage.AsString;
         public Casing Casing => Casing.Default;
+        public CollectionStorage CollectionStorage => CollectionStorage.Default;
+        public NonPublicMembersStorage NonPublicMembersStorage => NonPublicMembersStorage.Default;
     }
     // ENDSAMPLE
 #endif
-
     public class TestsSerializer : JsonNetSerializer
     {
 
