@@ -171,16 +171,22 @@ namespace Marten.Linq.Model
 
         private string determineOrderClause(ChildDocument document)
         {
-            var orders = bodyClauses().OfType<OrderByClause>().SelectMany(x => x.Orderings).ToArray();
+            var orders = bodyClauses().GetStringOrderingClauses();
+
             if (!orders.Any())
                 return string.Empty;
 
-            return " order by " + orders.Select(x => toOrderClause(document, x)).Join(", ");
+            return " order by "
+                   + orders.Select(x => toOrderClause(document, x.Clause, x.CaseSensitive)).Join(", ");
         }
 
-        private string toOrderClause(ChildDocument document, Ordering clause)
+        private static string toOrderClause(ChildDocument document, Ordering clause, bool caseSensitive)
         {
             var locator = document.JsonLocator(clause.Expression);
+            if (!caseSensitive)
+            {
+                locator = "lower(" + locator + ")";
+            }
             return clause.OrderingDirection == OrderingDirection.Asc
                 ? locator
                 : locator + " desc";
