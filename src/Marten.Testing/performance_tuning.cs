@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Jil;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
@@ -12,12 +13,10 @@ using Marten.Testing.Documents;
 
 #if NET461
 using HtmlTags;
-using Jil;
 #endif
 
 namespace Marten.Testing
 {
-#if NET461
     // SAMPLE: JilSerializer
     public class JilSerializer : ISerializer
     {
@@ -55,7 +54,7 @@ namespace Marten.Testing
         public NonPublicMembersStorage NonPublicMembersStorage => NonPublicMembersStorage.Default;
     }
     // ENDSAMPLE
-#endif
+
     public class TestsSerializer : JsonNetSerializer
     {
 
