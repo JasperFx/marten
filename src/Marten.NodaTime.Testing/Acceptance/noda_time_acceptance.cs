@@ -185,12 +185,13 @@ namespace Marten.NodaTime.Testing.Acceptance
 
                 var result = query.Query<TargetWithDates>()
                     .Where(c => c.Id == testDoc.Id)
-                    .Select(c => new { c.Id, c.InstantUTC })
+                    .Select(c => new { c.Id, c.InstantUTC, c.NullableInstantUTC })
                     .Single();
 
                 result.ShouldNotBeNull();
                 result.Id.ShouldBe(testDoc.Id);
                 ShouldBeEqualWithDbPrecision(result.InstantUTC, instantUTC);
+                ShouldBeEqualWithDbPrecision(result.NullableInstantUTC.GetValueOrDefault(), instantUTC);
             }
         }
 

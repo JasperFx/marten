@@ -15,7 +15,7 @@ namespace Marten.NodaTime
     /// </summary>
     internal class InstantJsonConverter: JsonConverter
     {
-        public static InstantJsonConverter Instance = new InstantJsonConverter();
+        public static readonly InstantJsonConverter Instance = new InstantJsonConverter();
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
@@ -39,7 +39,7 @@ namespace Marten.NodaTime
 
         public override bool CanConvert(Type objectType)
         {
-            return typeof(Instant) == objectType;
+            return typeof(Instant) == objectType || typeof(Instant?) == objectType;
         }
     }
 }
