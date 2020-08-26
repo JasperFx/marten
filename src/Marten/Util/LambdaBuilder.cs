@@ -95,8 +95,8 @@ namespace Marten.Util
 
             return ExpressionCompiler.Compile<Func<TTarget, TValue>>(lambda);
         }
-
-        private static readonly MethodInfo _getEnumStringValue = typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public);
+        
+        private static readonly MethodInfo _getEnumStringValue = typeof(Enum).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(x=> x.Name == nameof(Enum.GetName) && !x.IsGenericMethod);
         private static readonly MethodInfo _getEnumIntValue = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(mi => mi.Name == nameof(Convert.ToInt32) && mi.GetParameters().Count() == 1 && mi.GetParameters().Single().ParameterType == typeof(object));
         private static readonly Expression _trueConstant = Expression.Constant(true);
 
