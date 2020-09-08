@@ -65,7 +65,7 @@ namespace Marten.NodaTime.Testing.Acceptance
             }
         }
 
-        [Fact]
+        //[Fact]
         public void can_query_document_with_noda_time_types()
         {
             StoreOptions(_ =>
