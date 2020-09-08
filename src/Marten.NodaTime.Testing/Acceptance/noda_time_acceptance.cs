@@ -132,7 +132,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000))
                 };
 
-                results.ShouldAllBe(x => x.Equals(testDoc));
+                results.ToArray().ShouldAllBe(x => x.Equals(testDoc));
             }
         }
 
