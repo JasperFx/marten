@@ -55,25 +55,6 @@ namespace Marten.Testing.Linq
             cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
         }
 
-        [Fact]
-        public void preview_collection_any_containment_command()
-        {
-            var tags = new[] { "ONE", "TWO" };
-            var cmd = theSession.Query<Target>().Where(x => x.TagsArray.Any(t => tags.Contains(t))).ToCommand(FetchType.FetchMany);
-
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data ->> 'TagsArray' as jsonb) ?| :p0");
-            cmd.Parameters["p0"].Value.ShouldBe(tags);
-        }
-
-        [Fact]
-        public void preview_deep_collection_any_containment_command()
-        {
-            var tags = new[] { "ONE", "TWO" };
-            var cmd = theSession.Query<Target>().Where(x => x.Inner.TagsArray.Any(t => tags.Contains(t))).ToCommand(FetchType.FetchMany);
-
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where CAST(d.data -> 'Inner' ->> 'TagsArray' as jsonb) ?| :p0");
-            cmd.Parameters["p0"].Value.ShouldBe(tags);
-        }
 
         public previewing_the_command_from_a_queryable_Tests(DefaultStoreFixture fixture) : base(fixture)
         {

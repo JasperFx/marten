@@ -4,9 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Internal;
-using Marten.Internal.Linq;
 using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Util;
 

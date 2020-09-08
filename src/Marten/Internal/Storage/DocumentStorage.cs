@@ -5,14 +5,20 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 using Remotion.Linq;
 using LambdaBuilder = Baseline.Expressions.LambdaBuilder;
 
@@ -20,7 +26,7 @@ namespace Marten.Internal.Storage
 {
     public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>
     {
-        private readonly IWhereFragment _defaultWhere;
+        private readonly ISqlFragment _defaultWhere;
         private readonly IQueryableDocument _document;
         private readonly string _selectClause;
 
@@ -28,6 +34,7 @@ namespace Marten.Internal.Storage
         protected readonly string _loaderSql;
         protected Action<T, TId> _setter;
         protected readonly DocumentMapping _mapping;
+        private NpgsqlDbType _idType;
 
         public DocumentStorage(DocumentMapping document)
         {
@@ -38,6 +45,8 @@ namespace Marten.Internal.Storage
             TableName = document.Table;
 
             _defaultWhere = document.DefaultWhereFragment();
+
+            _idType = TypeMappings.ToDbType(typeof(TId));
 
             _selectClause = $"select {_document.SelectFields().Select(x => $"d.{x}").Join(", ")} from {document.Table.QualifiedName} as d";
 
@@ -59,6 +68,15 @@ namespace Marten.Internal.Storage
 
 
             _setter = LambdaBuilder.Setter<T, TId>(document.IdMember);
+
+            DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
+                ? (IOperationFragment) new HardDelete(this)
+                : new SoftDelete(this);
+        }
+
+        public ISqlFragment ByIdFilter(TId id)
+        {
+            return new ByIdFilter<TId>(id, _idType);
         }
 
         public void EjectById(IMartenSession session, object id)
@@ -120,22 +138,39 @@ namespace Marten.Internal.Storage
         public abstract IStorageOperation Upsert(T document, IMartenSession session, ITenant tenant);
 
         public abstract IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant);
-        public abstract IStorageOperation DeleteForDocument(T document);
-        public abstract IStorageOperation DeleteForWhere(IWhereFragment where);
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public IDeletion DeleteForDocument(T document)
+        {
+            var id = Identity(document);
+
+            var deletion = DeleteForId(id);
+            deletion.Document = document;
+
+            return deletion;
+        }
+
+        public IOperationFragment DeleteFragment { get; }
+
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             return _document.FilterDocuments(model, query);
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             return _defaultWhere;
         }
 
         public IFieldMapping Fields { get; }
 
-        public abstract IStorageOperation DeleteForId(TId id);
+        public IDeletion DeleteForId(TId id)
+        {
+            return new Deletion(this)
+            {
+                Where = ByIdFilter(id),
+                Id = id
+            };
+        }
 
         public abstract T Load(TId id, IMartenSession session);
         public abstract Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);

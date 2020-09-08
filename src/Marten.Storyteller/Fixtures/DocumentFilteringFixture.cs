@@ -2,6 +2,7 @@ using System.Linq;
 using Baseline;
 using Marten.Linq;
 using Marten.Linq.SoftDeletes;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing;

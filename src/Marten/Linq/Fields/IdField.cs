@@ -1,6 +1,9 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Util;
 
 namespace Marten.Linq.Fields
@@ -40,6 +43,21 @@ namespace Marten.Linq.Fields
         string IField.SelectorForDuplication(string pgType)
         {
             throw new NotSupportedException();
+        }
+
+        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        {
+            return new ComparisonFilter(this, new CommandParameter(value), op);
+        }
+
+        void ISqlFragment.Apply(CommandBuilder builder)
+        {
+            builder.Append(TypedLocator);
+        }
+
+        bool ISqlFragment.Contains(string sqlText)
+        {
+            return TypedLocator.Contains(sqlText);
         }
     }
 }

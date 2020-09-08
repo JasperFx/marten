@@ -3,20 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
     public class query_against_child_collections_integrated_Tests : IntegrationContext
     {
-        public query_against_child_collections_integrated_Tests(DefaultStoreFixture fixture) : base(fixture)
+        private readonly ITestOutputHelper _output;
+
+        public query_against_child_collections_integrated_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
             StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
         }
 
@@ -129,8 +134,8 @@ namespace Marten.Testing.Linq
             StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
             buildUpTargetData();
 
-            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Inner.Color == Colors.Blue))
-                .Count()
+            theSession.Query<Target>()
+                .Count(x => x.Children.Any<Target>(_ => _.Inner.Color == Colors.Blue))
                 .ShouldBeGreaterThanOrEqualTo(1);
         }
 
@@ -381,7 +386,7 @@ namespace Marten.Testing.Linq
         {
             buildAuthorData();
 
-            Exception<NotSupportedException>.ShouldBeThrownBy(() =>
+            Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
             {
                 var res = theSession.Query<Article>()
                     .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] { Guid.NewGuid() }).Any()))

@@ -5,11 +5,13 @@ using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
     public class query_against_event_documents_Tests: DestructiveIntegrationContext
     {
+        private readonly ITestOutputHelper _output;
         private MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         private MembersDeparted departed1 = new MembersDeparted { Members = new[] { "Thom" } };
 
@@ -238,8 +240,9 @@ namespace Marten.Testing.Events
          * MORE!!!
          * Async everything
          */
-        public query_against_event_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public query_against_event_documents_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
             theStore.Advanced.Clean.DeleteAllEventData();
         }
     }

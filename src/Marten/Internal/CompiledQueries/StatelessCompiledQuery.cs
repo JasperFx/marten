@@ -1,7 +1,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Internal.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries

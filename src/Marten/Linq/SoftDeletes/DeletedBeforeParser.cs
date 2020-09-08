@@ -4,7 +4,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 
 namespace Marten.Linq.SoftDeletes
@@ -19,7 +21,7 @@ namespace Marten.Linq.SoftDeletes
             return Equals(expression.Method, _method);
         }
 
-        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             if (mapping.DeleteStyle != DeleteStyle.SoftDelete)
                 throw new NotSupportedException($"Document DeleteStyle must be {DeleteStyle.SoftDelete}");

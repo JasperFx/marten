@@ -24,27 +24,9 @@ namespace Marten.Testing.Bugs
                 var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
 
                 cmd1.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where d.flag = :p0");
-                cmd2.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where (d.flag IS NULL or d.flag != :p0)");
+                cmd2.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where (d.flag is null or d.flag = False)");
             }
         }
-
-        [Fact]
-        public void booleans_in_generated_sql_without_being_searchable()
-        {
-            StoreOptions(_ =>
-            {
-                _.Schema.For<Target>().GinIndexJsonData();
-                //_.Schema.For<Target>().Duplicate(x => x.Flag);
-            });
-
-            using (var session = theStore.OpenSession())
-            {
-                var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
-
-                cmd1.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where d.data @> :p0");
-            }
-        }
-
 
     }
 }

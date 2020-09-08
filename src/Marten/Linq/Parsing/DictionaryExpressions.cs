@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -29,7 +31,7 @@ namespace Marten.Linq.Parsing
                 || IsDictionaryContainsKey(expression.Method);
         }
 
-        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var fieldlocator = mapping.FieldFor(expression).TypedLocator;
 
@@ -45,14 +47,14 @@ namespace Marten.Linq.Parsing
                 throw new InvalidOperationException("Could not understand the format of the dictionary access");
         }
 
-        private static IWhereFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)
+        private static ISqlFragment QueryFromDictionaryContainsKey(MethodCallExpression expression, string fieldLocator)
         {
             var key = (string)expression.Arguments[0].Value();
             // have to use different token here because we actually want the `?` character as the operator!
-            return new CustomizableWhereFragment($"{fieldLocator} ? @1", "@1", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(key, NpgsqlTypes.NpgsqlDbType.Text));
+            return new CustomizableWhereFragment($"{fieldLocator} ? @1", "@1", new CommandParameter(key, NpgsqlTypes.NpgsqlDbType.Text));
         }
 
-        private static IWhereFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
+        private static ISqlFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
         {
             var constant = expression.Arguments[0] as ConstantExpression;
             var kvp = constant.Value; // is kvp<string, unknown>
@@ -63,7 +65,7 @@ namespace Marten.Linq.Parsing
             var dict = dictType.GetConstructors()[0].Invoke(null);
             dictType.GetMethod("Add").Invoke(dict, new[] { key, value });
             var json = serializer.ToJson(dict);
-            return new CustomizableWhereFragment($"{fieldPath} @> ?", "?", Tuple.Create<object, NpgsqlTypes.NpgsqlDbType?>(json, NpgsqlTypes.NpgsqlDbType.Jsonb));
+            return new CustomizableWhereFragment($"{fieldPath} @> ?", "?", new CommandParameter(json, NpgsqlTypes.NpgsqlDbType.Jsonb));
         }
     }
 }

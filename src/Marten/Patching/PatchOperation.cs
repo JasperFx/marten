@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -19,12 +20,12 @@ namespace Marten.Patching
     public class PatchOperation: IStorageOperation, NoDataReturnedCall
     {
         private readonly IQueryableDocument _document;
-        private readonly IWhereFragment _fragment;
+        private readonly ISqlFragment _fragment;
         private readonly IDictionary<string, object> _patch;
         private readonly ISerializer _serializer;
         private readonly TransformFunction _transform;
 
-        public PatchOperation(TransformFunction transform, IQueryableDocument document, IWhereFragment fragment,
+        public PatchOperation(TransformFunction transform, IQueryableDocument document, ISqlFragment fragment,
             IDictionary<string, object> patch, ISerializer serializer)
         {
             _transform = transform;
@@ -102,7 +103,7 @@ namespace Marten.Patching
 
         public Type DocumentType => _document.DocumentType;
 
-        private void applyUpdates(CommandBuilder builder, IWhereFragment where)
+        private void applyUpdates(CommandBuilder builder, ISqlFragment where)
         {
             var fields = _document.DuplicatedFields;
             if (!fields.Any())

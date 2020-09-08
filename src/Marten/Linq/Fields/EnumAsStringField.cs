@@ -2,6 +2,11 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Exceptions;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
+using NpgsqlTypes;
 
 namespace Marten.Linq.Fields
 {
@@ -27,6 +32,12 @@ namespace Marten.Linq.Fields
         {
             // TODO -- eliminate the replace
             return RawLocator.Replace("d.", "");
+        }
+
+        public override ISqlFragment CreateComparison(string op, ConstantExpression value)
+        {
+            var stringValue = Enum.GetName(FieldType, value.Value) ;
+            return new ComparisonFilter(this, new CommandParameter(stringValue, NpgsqlDbType.Varchar), op);
         }
     }
 }

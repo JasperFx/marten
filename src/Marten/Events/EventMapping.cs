@@ -8,11 +8,15 @@ using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Internal;
-using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -81,12 +85,12 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             return new WhereFragment($"d.type = '{EventTypeName}'");
         }
@@ -122,6 +126,7 @@ namespace Marten.Events
         }
 
         public bool UseOptimisticConcurrency { get; } = false;
+        public IOperationFragment DeleteFragment => throw new NotSupportedException();
 
         string ISelectClause.FromObject => _tableName;
 
@@ -228,12 +233,7 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.DeleteForDocument(T document)
-        {
-            throw new NotSupportedException();
-        }
-
-        IStorageOperation IDocumentStorage<T>.DeleteForWhere(IWhereFragment @where)
+        IDeletion IDocumentStorage<T>.DeleteForDocument(T document)
         {
             throw new NotSupportedException();
         }

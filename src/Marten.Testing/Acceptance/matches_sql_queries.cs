@@ -1,5 +1,6 @@
 using System.Linq;
 using Marten.Linq;
+using Marten.Linq.Filters;
 using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

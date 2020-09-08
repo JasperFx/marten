@@ -6,6 +6,9 @@ using System.Reflection;
 using Baseline;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
@@ -98,7 +101,7 @@ namespace Marten.Schema
             throw new NotSupportedException();
         }
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             var extras = extraFilters(query).ToArray();
 
@@ -106,7 +109,7 @@ namespace Marten.Schema
             return new CompoundWhereFragment("and", query, extraCoumpound);
         }
 
-        private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
+        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
         {
             yield return toBasicWhere();
 
@@ -121,7 +124,7 @@ namespace Marten.Schema
             }
         }
 
-        private IEnumerable<IWhereFragment> defaultFilters()
+        private IEnumerable<ISqlFragment> defaultFilters()
         {
             yield return toBasicWhere();
 
@@ -136,7 +139,7 @@ namespace Marten.Schema
             }
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             var defaults = defaultFilters().ToArray();
             switch (defaults.Length)

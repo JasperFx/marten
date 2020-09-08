@@ -57,10 +57,6 @@ namespace Marten.Internal.CodeGeneration
 
         string IDocumentSourceCode.InsertOperationCode => Operations.Insert.SourceCode;
 
-        string IDocumentSourceCode.DeleteByIdOperationCode => Operations.DeleteById.SourceCode;
-
-        string IDocumentSourceCode.DeleteByWhereOperationCode => Operations.DeleteByWhere.SourceCode;
-
         string IDocumentSourceCode.QueryOnlySelectorCode => Operations.QueryOnlySelector.SourceCode;
 
         string IDocumentSourceCode.LightweightSelectorCode => Operations.LightweightSelector.SourceCode;

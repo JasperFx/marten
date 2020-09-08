@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 namespace Marten.Linq
 {
-    // TODO -- change the signature of this in 2.0 so that all the First/Single
-    // methods are on IMartenQueryable<T>
     public interface IMartenQueryable
     {
         QueryStatistics Statistics { get; }

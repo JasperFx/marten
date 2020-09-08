@@ -129,8 +129,6 @@ namespace Marten.Testing.Services.Includes
 
             using (var session = theStore.QuerySession())
             {
-                session.Logger = new TestOutputMartenLogger(_output);
-
                 var query = new IssueWithUsersById();
 
                 var issues = session.Query(query).ToArray();

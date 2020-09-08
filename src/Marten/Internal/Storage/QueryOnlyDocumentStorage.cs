@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Internal.Linq;
+using Marten.Linq.Selectors;
 using Marten.Schema;
 
 namespace Marten.Internal.Storage

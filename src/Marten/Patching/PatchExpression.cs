@@ -5,21 +5,28 @@ using System.Linq.Expressions;
 using Baseline;
 using Marten.Internal.Sessions;
 using Marten.Linq;
-using Marten.Services;
-using Marten.Storage;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Util;
 
 namespace Marten.Patching
 {
     public class PatchExpression<T>: IPatchExpression<T>
     {
-        private readonly IWhereFragment _fragment;
+        private readonly ISqlFragment _filter;
+        private readonly Expression<Func<T, bool>> _filterExpression;
         private readonly DocumentSessionBase _session;
         public readonly IDictionary<string, object> Patch = new Dictionary<string, object>();
 
-        public PatchExpression(IWhereFragment fragment, DocumentSessionBase session)
+        public PatchExpression(ISqlFragment filter, DocumentSessionBase session)
         {
-            _fragment = fragment;
+            _filter = filter;
+            _session = session;
+        }
+
+        public PatchExpression(Expression<Func<T, bool>> filterExpression, DocumentSessionBase session)
+        {
+            _filterExpression = filterExpression;
             _session = session;
         }
 
@@ -38,16 +45,8 @@ namespace Marten.Patching
             set(toPath(expression), value);
         }
 
-        private void set<TValue>(string path, TValue value)
-        {
-            Patch.Add("type", "set");
-            Patch.Add("value", value);
-            Patch.Add("path", path);
-
-            apply();
-        }
-
-        public void Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations)
+        public void Duplicate<TElement>(Expression<Func<T, TElement>> expression,
+            params Expression<Func<T, TElement>>[] destinations)
         {
             if (destinations.Length == 0)
                 throw new ArgumentException("At least one destination must be given");
@@ -179,6 +178,15 @@ namespace Marten.Patching
             delete(toPath(expression));
         }
 
+        private void set<TValue>(string path, TValue value)
+        {
+            Patch.Add("type", "set");
+            Patch.Add("value", value);
+            Patch.Add("path", path);
+
+            apply();
+        }
+
         private void delete(string path)
         {
             Patch.Add("type", "delete");
@@ -201,7 +209,18 @@ namespace Marten.Patching
             var transform = _session.Tenant.TransformFor(StoreOptions.PatchDoc);
             var storage = _session.StorageFor(typeof(T));
 
-            var where = storage.FilterDocuments(null, _fragment);
+            ISqlFragment where;
+            if (_filter == null)
+            {
+                var statement = new StatementOperation(storage, null);
+                statement.ApplyFiltering(_session, _filterExpression);
+
+                where = statement.Where;
+            }
+            else
+            {
+                where = storage.FilterDocuments(null, _filter);
+            }
 
             var operation = new PatchOperation(transform, storage.QueryableDocument, where, Patch, _session.Serializer);
 

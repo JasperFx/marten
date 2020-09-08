@@ -9,10 +9,11 @@ using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using Marten.Exceptions;
-using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
+using Marten.Linq.Filters;
+using Marten.Linq.SqlGeneration;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
@@ -40,10 +41,12 @@ namespace Marten.Internal.Sessions
         public void Delete<T>(T entity)
         {
             assertNotDisposed();
-            var deletion = StorageFor<T>().DeleteForDocument(entity);
+            var documentStorage = StorageFor<T>();
+
+            var deletion = documentStorage.DeleteForDocument(entity);
             _unitOfWork.Add(deletion);
 
-            StorageFor<T>().Eject(this, entity);
+            documentStorage.Eject(this, entity);
         }
 
         public void Delete<T>(int id)
@@ -97,6 +100,7 @@ namespace Marten.Internal.Sessions
         public void Delete<T>(string id)
         {
             assertNotDisposed();
+
             var deletion = storageFor<T, string>().DeleteForId(id);
             _unitOfWork.Add(deletion);
 
@@ -107,37 +111,9 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var parser = new MartenExpressionParser(Options.Serializer(), Options);
+            var deletion = new Deletion(StorageFor<T>());
+            deletion.ApplyFiltering(this, expression);
 
-            var model = MartenQueryParser.Flyweight.GetParsedQuery(Query<T>().Where(expression).As<MartenLinqQueryable<T>>().Expression);
-
-            var storage = StorageFor<T>();
-
-            var whereClauses = model.BodyClauses.OfType<WhereClause>().ToArray();
-
-            // This is duplicated logic
-            IWhereFragment where = null;
-
-            switch (whereClauses.Length)
-            {
-                case 0:
-                    where = storage.DefaultWhereFragment();
-                    break;
-
-                case 1:
-                    where = parser.ParseWhereFragment(storage.Fields, whereClauses.Single().Predicate);
-                    break;
-
-                default:
-                    where = new CompoundWhereFragment(parser, storage.Fields, "and", whereClauses);
-                    break;
-
-
-            }
-
-            where = storage.FilterDocuments(null, where);
-
-            var deletion = storage.DeleteForWhere(@where);
             _unitOfWork.Add(deletion);
         }
 
@@ -490,17 +466,10 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var queryable = Query<T>().Where(filter);
-            var model = MartenQueryParser.Flyweight.GetParsedQuery(queryable.Expression);
-
-            var storage = StorageFor<T>();
-
-            var @where = storage.BuildWhereFragment(model, new MartenExpressionParser(Serializer, Options));
-
-            return new PatchExpression<T>(@where, this);
+            return new PatchExpression<T>(filter, this);
         }
 
-        public IPatchExpression<T> Patch<T>(IWhereFragment fragment)
+        public IPatchExpression<T> Patch<T>(ISqlFragment fragment)
         {
             assertNotDisposed();
 

@@ -10,6 +10,9 @@ using Baseline.Reflection;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.Unique;
@@ -145,7 +148,7 @@ namespace Marten.Schema
             }
         }
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             var extras = extraFilters(query).ToList();
 
@@ -158,7 +161,7 @@ namespace Marten.Schema
             return query;
         }
 
-        private IEnumerable<IWhereFragment> extraFilters(IWhereFragment query)
+        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
         {
             if (DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(DeletedColumn))
             {
@@ -171,7 +174,7 @@ namespace Marten.Schema
             }
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             var defaults = defaultFilters().ToArray();
             switch (defaults.Length)
@@ -187,7 +190,7 @@ namespace Marten.Schema
             }
         }
 
-        private IEnumerable<IWhereFragment> defaultFilters()
+        private IEnumerable<ISqlFragment> defaultFilters()
         {
             if (DeleteStyle == DeleteStyle.SoftDelete)
             {
@@ -200,7 +203,7 @@ namespace Marten.Schema
             }
         }
 
-        public static IWhereFragment ExcludeSoftDeletedDocuments()
+        public static ISqlFragment ExcludeSoftDeletedDocuments()
         {
             return new WhereFragment($"d.{DeletedColumn} = False");
         }

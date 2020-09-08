@@ -6,12 +6,15 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
     [ControlledQueryStoryteller]
     public class query_with_nested_boolean_logic_Tests : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         [Fact]
         public void TestModalOrQuery()
         {
@@ -31,8 +34,9 @@ namespace Marten.Testing.Linq
 
         }
 
-        public query_with_nested_boolean_logic_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public query_with_nested_boolean_logic_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 }

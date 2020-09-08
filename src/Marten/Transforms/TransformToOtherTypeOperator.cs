@@ -1,7 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using Marten.Internal;
-using Marten.Internal.Linq;
+using Marten.Linq.SqlGeneration;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Clauses.StreamedData;
@@ -33,7 +33,7 @@ namespace Marten.Transforms
         }
 
 
-        public Statement ModifyStatement(Statement statement, IMartenSession session)
+        public SelectorStatement ModifyStatement(SelectorStatement statement, IMartenSession session)
         {
             var transform = session.Tenant.TransformFor(_transformName);
 

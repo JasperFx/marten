@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline.Reflection;
 using Marten.Linq;
+using Marten.Linq.Parsing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;

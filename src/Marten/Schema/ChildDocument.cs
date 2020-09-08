@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Remotion.Linq;
 
@@ -17,12 +18,12 @@ namespace Marten.Schema
         public Type DocumentType { get; set; }
         public TenancyStyle TenancyStyle => TenancyStyle.Single;
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             return query;
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             return null;
         }

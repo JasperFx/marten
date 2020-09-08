@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Linq;
+using Marten.Linq.SqlGeneration;
 using Marten.Patching;
 using Marten.Services;
 
@@ -221,7 +222,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="fragment"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(IWhereFragment fragment);
+        IPatchExpression<T> Patch<T>(ISqlFragment fragment);
 
         /// <summary>
         /// Catch all mechanism to add additional database calls to the batched

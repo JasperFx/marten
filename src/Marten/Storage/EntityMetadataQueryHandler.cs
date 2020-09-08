@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
-using Marten.Internal.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Util;
 

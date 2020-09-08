@@ -7,7 +7,9 @@ using Baseline;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -89,7 +91,7 @@ namespace Marten.Testing.Linq
             return expression.Method.Name == nameof(CustomExtensions.IsBlue);
         }
 
-        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
+        public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression)
         {
             var locator = mapping.FieldFor(new MemberInfo[] {_property}).TypedLocator;
 

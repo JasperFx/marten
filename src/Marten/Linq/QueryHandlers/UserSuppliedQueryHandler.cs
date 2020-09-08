@@ -6,7 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal;
-using Marten.Internal.Linq;
+using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers

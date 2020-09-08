@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Marten.Internal.Operations;
+using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -52,7 +53,7 @@ namespace Marten.Testing.CoreFunctionality
             logger.LastCommit.Updated.ShouldHaveTheSameElementsAs(target1, target2, target3);
             logger.LastCommit.Inserted.ShouldHaveTheSameElementsAs(newDoc1, newDoc2);
 
-            logger.LastCommit.Deleted.OfType<DeleteOne<Target, Guid>>().Select(x => x.Id).ShouldHaveTheSameElementsAs(id1, id2);
+            logger.LastCommit.Deleted.OfType<Deletion>().Select(x => (Guid)x.Id).ShouldHaveTheSameElementsAs(id1, id2);
 
             theSession.Store(new Target());
             theSession.SaveChanges();

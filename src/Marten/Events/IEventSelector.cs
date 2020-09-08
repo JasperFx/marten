@@ -1,4 +1,4 @@
-using Marten.Internal.Linq;
+using Marten.Linq.Selectors;
 using Marten.Util;
 
 namespace Marten.Events

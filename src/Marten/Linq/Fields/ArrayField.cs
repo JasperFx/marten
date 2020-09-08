@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -9,26 +10,50 @@ namespace Marten.Linq.Fields
 {
     public class ArrayField : FieldBase
     {
-        public ArrayField(string dataLocator, string pgType, Casing casing, MemberInfo[] members) : base(dataLocator, pgType, casing, members)
+        public ArrayField(string dataLocator, string pgType, ISerializer serializer, MemberInfo[] members) : base(dataLocator, pgType, serializer.Casing, members)
         {
             var rawLocator = RawLocator;
 
             RawLocator = $"CAST({rawLocator} as jsonb)";
+
+            var collectionType = members.Last().GetMemberType();
+            ElementType = collectionType.DetermineElementType();
+            var innerPgType = TypeMappings.GetPgType(ElementType, EnumStorage.AsInteger);
+
+
+            if (TypeMappings.HasTypeMapping(ElementType))
+            {
+                PgType = innerPgType + "[]";
+            }
 
             if (PgType == "jsonb[]")
             {
                 PgType = "jsonb";
             }
 
+
+
             TypedLocator = $"CAST({rawLocator} as {PgType})";
 
-            var collectionType = members.Last().GetMemberType();
-            var elementType = collectionType.DetermineElementType();
-            var innerPgType = TypeMappings.GetPgType(elementType, EnumStorage.AsInteger);
+
 
             LocatorForIncludedDocumentId =
                 $"unnest(CAST(ARRAY(SELECT jsonb_array_elements_text(CAST({rawLocator} as jsonb))) as {innerPgType}[]))";
+
+            if (PgType.EqualsIgnoreCase("JSONB"))
+            {
+                LocatorForFlattenedElements = $"unnest(CAST(ARRAY(SELECT jsonb_array_elements(CAST({rawLocator} as jsonb))) as jsonb[]))";
+            }
+            else
+            {
+                LocatorForFlattenedElements = LocatorForIncludedDocumentId;
+            }
+
+
         }
+
+        public Type ElementType { get; }
+
 
         public override string SelectorForDuplication(string pgType)
         {
@@ -45,5 +70,7 @@ namespace Marten.Linq.Fields
         {
             get;
         }
+
+        public string LocatorForFlattenedElements { get; }
     }
 }

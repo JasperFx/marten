@@ -5,9 +5,8 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Internal.Linq;
-using Marten.Internal.Linq.Includes;
 using Marten.Linq;
+using Marten.Linq.Includes;
 using Npgsql;
 
 namespace Marten

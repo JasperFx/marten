@@ -1,30 +1,35 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
-using Baseline.Reflection;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
-using Npgsql.PostgresTypes;
 using NpgsqlTypes;
 
 namespace Marten.Linq.Fields
 {
-    public class DuplicatedField : Marten.Linq.Fields.Field, Marten.Linq.Fields.IField
+    public class DuplicatedField: IField
     {
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
         private string _columnName;
 
         public DuplicatedField(EnumStorage enumStorage, IField innerField,
-            bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false) : base(enumStorage, innerField.Members)
+            bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
         {
             InnerField = innerField;
+            MemberName = InnerField.Members.Select(x => x.Name).Join("");
             NotNull = notNull;
             ColumnName = MemberName.ToTableAlias();
             this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+
+            PgType = TypeMappings.GetPgType(FieldType, enumStorage);
 
             if (FieldType.IsEnum)
             {
@@ -47,8 +52,12 @@ namespace Marten.Linq.Fields
             }
             else if (FieldType.IsDateTime())
             {
-                PgType = this.useTimestampWithoutTimeZoneForDateTime ? "timestamp without time zone" : "timestamp with time zone";
-                DbType = this.useTimestampWithoutTimeZoneForDateTime ? NpgsqlDbType.Timestamp : NpgsqlDbType.TimestampTz;
+                PgType = this.useTimestampWithoutTimeZoneForDateTime
+                    ? "timestamp without time zone"
+                    : "timestamp with time zone";
+                DbType = this.useTimestampWithoutTimeZoneForDateTime
+                    ? NpgsqlDbType.Timestamp
+                    : NpgsqlDbType.TimestampTz;
             }
             else if (FieldType == typeof(DateTimeOffset) || FieldType == typeof(DateTimeOffset?))
             {
@@ -64,8 +73,8 @@ namespace Marten.Linq.Fields
         public bool NotNull { get; }
 
         /// <summary>
-        /// Used to override the assigned DbType used by Npgsql when a parameter
-        /// is used in a query against this column
+        ///     Used to override the assigned DbType used by Npgsql when a parameter
+        ///     is used in a query against this column
         /// </summary>
         public NpgsqlDbType DbType { get; set; }
 
@@ -79,11 +88,9 @@ namespace Marten.Linq.Fields
             DbType = DbType
         };
 
-        public string RawLocator => TypedLocator;
-
         public string ColumnName
         {
-            get { return _columnName; }
+            get => _columnName;
             set
             {
                 _columnName = value;
@@ -91,14 +98,9 @@ namespace Marten.Linq.Fields
             }
         }
 
-        internal IField InnerField { get;  }
+        internal IField InnerField { get; }
 
-        // TODO -- have this take in CommandBuilder
-        public string UpdateSqlFragment()
-        {
-            return $"{ColumnName} = {InnerField.SelectorForDuplication(PgType)}";
-        }
-
+        public string RawLocator => TypedLocator;
 
 
         public object GetValueForCompiledQueryParameter(Expression valueExpression)
@@ -116,6 +118,11 @@ namespace Marten.Linq.Fields
             throw new NotSupportedException();
         }
 
+        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        {
+            return new ComparisonFilter(this, new CommandParameter(_parseObject(value), DbType), op);
+        }
+
         public string JSONBLocator { get; set; }
         public string LocatorForIncludedDocumentId => TypedLocator;
 
@@ -126,15 +133,20 @@ namespace Marten.Linq.Fields
 
         public string TypedLocator { get; set; }
 
-        public static DuplicatedField For<T>(StoreOptions options, Expression<Func<T, object>> expression, bool useTimestampWithoutTimeZoneForDateTime = true)
+        // TODO -- have this take in CommandBuilder
+        public string UpdateSqlFragment()
+        {
+            return $"{ColumnName} = {InnerField.SelectorForDuplication(PgType)}";
+        }
+
+        public static DuplicatedField For<T>(StoreOptions options, Expression<Func<T, object>> expression,
+            bool useTimestampWithoutTimeZoneForDateTime = true)
         {
             var inner = new DocumentMapping<T>(options).FieldFor(expression);
 
             // Hokey, but it's just for testing for now.
             if (inner.Members.Length > 1)
-            {
                 throw new NotSupportedException("Not yet supporting deep properties yet. Soon.");
-            }
 
             return new DuplicatedField(options.EnumStorage, inner, useTimestampWithoutTimeZoneForDateTime);
         }
@@ -144,5 +156,22 @@ namespace Marten.Linq.Fields
         {
             return new TableColumn(ColumnName, PgType);
         }
+
+        void ISqlFragment.Apply(CommandBuilder builder)
+        {
+            builder.Append(TypedLocator);
+        }
+
+        bool ISqlFragment.Contains(string sqlText)
+        {
+            return TypedLocator.Contains(sqlText);
+        }
+
+        public Type FieldType => InnerField.FieldType;
+
+        public MemberInfo[] Members => InnerField.Members;
+        public string MemberName { get; }
+
+        public string PgType { get; set; } // settable so it can be overidden by users
     }
 }

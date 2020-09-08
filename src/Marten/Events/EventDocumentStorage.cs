@@ -1,11 +1,15 @@
 using System;
 using Marten.Internal;
-using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Parsing;
+using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
@@ -78,18 +82,19 @@ namespace Marten.Events
 
         public Type SourceType => typeof(IEvent);
         public IFieldMapping Fields { get; }
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             return _mapping.FilterDocuments(model, query);
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             return _mapping.DefaultWhereFragment();
         }
 
         public IQueryableDocument QueryableDocument => _mapping;
         public bool UseOptimisticConcurrency { get; } = false;
+        public IOperationFragment DeleteFragment => throw new NotSupportedException();
 
         public object IdentityFor(IEvent document)
         {
@@ -137,14 +142,10 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public IStorageOperation DeleteForDocument(IEvent document)
+        public IDeletion DeleteForDocument(IEvent document)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation DeleteForWhere(IWhereFragment @where)
-        {
-            throw new NotSupportedException();
-        }
     }
 }

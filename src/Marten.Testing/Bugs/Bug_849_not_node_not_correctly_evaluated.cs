@@ -2,12 +2,16 @@ using System;
 using System.Linq;
 using Marten.Services;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
     public class Bug_849_not_node_not_correctly_evaluated: IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         public class TestClass
         {
             public TestClass()
@@ -34,13 +38,14 @@ namespace Marten.Testing.Bugs
             {
                 var items = s.Query<TestClass>().Where(x => !x.Flag == false).ToList();
 
-                Assert.Single(items);
-                Assert.Equal(flagTrue.Id, items[0].Id);
+                items.Single().Id.ShouldBe(flagTrue.Id);
+
             }
         }
 
-        public Bug_849_not_node_not_correctly_evaluated(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_849_not_node_not_correctly_evaluated(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 }

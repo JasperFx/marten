@@ -1,10 +1,12 @@
 ﻿﻿using System;
-using System.Collections.Concurrent;
+ using System.Collections;
+ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+ using Marten.Linq.Parsing;
  using Marten.Schema;
  using Marten.Util;
 
@@ -89,6 +91,11 @@ namespace Marten.Linq.Fields
 
         protected IField resolveField(MemberInfo[] members)
         {
+            if (!members.Any())
+            {
+                throw new ArgumentOutOfRangeException(nameof(members),"No members found!");
+            }
+
             foreach (var source in _options.FieldSources)
             {
                 if (source.TryResolve(_dataLocator, _options, _serializer, _documentType, members, out var field))
@@ -97,13 +104,26 @@ namespace Marten.Linq.Fields
                 }
             }
 
-            var fieldType = members.Last().GetMemberType();
+            var fieldType = members.Last().GetRawMemberType();
 
+            if (fieldType.IsNullable())
+            {
+                var innerFieldType = fieldType.GetGenericArguments()[0];
+                var innerField = createFieldByFieldType(members, innerFieldType);
+
+                return new NullableTypeField(innerField);
+            }
+
+
+            return createFieldByFieldType(members, fieldType);
+        }
+
+        private IField createFieldByFieldType(MemberInfo[] members, Type fieldType)
+        {
             if (fieldType == typeof(string))
             {
                 return new StringField(_dataLocator, _serializer.Casing, members);
             }
-
 
 
             if (fieldType.IsEnum)
@@ -113,34 +133,42 @@ namespace Marten.Linq.Fields
                     : new EnumAsStringField(_dataLocator, _serializer.Casing, members);
             }
 
-            if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+            if (fieldType == typeof(DateTime))
             {
                 return new DateTimeField(_dataLocator, _options.DatabaseSchemaName, _serializer.Casing, members);
             }
 
-            if (fieldType == typeof(DateTimeOffset) || fieldType == typeof(DateTimeOffset?))
+            if (fieldType == typeof(DateTimeOffset))
             {
                 return new DateTimeOffsetField(_dataLocator, _options.DatabaseSchemaName, _serializer.Casing, members);
             }
 
 
-
             var pgType = TypeMappings.GetPgType(fieldType, _serializer.EnumStorage);
 
 
+            if (fieldType.Closes(typeof(IDictionary<,>)))
+            {
+                return new SimpleCastField(_dataLocator, "JSONB", _serializer.Casing, members);
+            }
+
+            if (isEnumerable(fieldType))
+            {
+                return new ArrayField(_dataLocator, pgType, _serializer, members);
+            }
+
             if (pgType.IsNotEmpty())
             {
-                if (fieldType.IsArray || fieldType.Closes(typeof(IList<>)))
-                {
-                    return new ArrayField(_dataLocator, pgType, _serializer.Casing, members);
-                }
-
                 return new SimpleCastField(_dataLocator, pgType, _serializer.Casing, members);
             }
 
-            throw new NotSupportedException($"Marten does not support Linq expressions for this member. Was {_documentType.FullName}.{members.Select(x => x.Name).Join(".")}");
+            throw new NotSupportedException(
+                $"Marten does not support Linq expressions for this member. Was {_documentType.FullName}.{members.Select(x => x.Name).Join(".")}");
+        }
 
-
+        private static bool isEnumerable(Type fieldType)
+        {
+            return fieldType.IsArray || fieldType.Closes(typeof(IEnumerable<>));
         }
 
         public IField FieldFor(string memberName)

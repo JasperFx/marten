@@ -9,8 +9,6 @@ namespace Marten.Internal.CodeGeneration
     {
         public DocumentOperations(GeneratedAssembly assembly, DocumentMapping mapping, StoreOptions options)
         {
-            DeleteById = new DeleteByIdBuilder(mapping).Build(assembly);
-            DeleteByWhere = new DeleteWhereBuilder(mapping).Build(assembly);
             Upsert = new DocumentFunctionOperationBuilder(mapping, new UpsertFunction(mapping), OperationRole.Upsert, options)
                     .BuildType(assembly);
             Insert = new DocumentFunctionOperationBuilder(mapping, new InsertFunction(mapping), OperationRole.Insert, options)
@@ -41,8 +39,6 @@ namespace Marten.Internal.CodeGeneration
         public GeneratedType Update { get; set; }
         public GeneratedType Overwrite { get; set; }
 
-        public GeneratedType DeleteById { get; set; }
-        public GeneratedType DeleteByWhere { get; set; }
         public GeneratedType QueryOnlySelector { get; set; }
         public GeneratedType LightweightSelector { get; set; }
         public GeneratedType IdentityMapSelector { get; set; }

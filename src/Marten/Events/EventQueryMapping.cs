@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Parsing;
 using Marten.Schema;
 
 namespace Marten.Events

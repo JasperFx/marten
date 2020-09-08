@@ -57,16 +57,6 @@ namespace Marten
         string InsertOperationCode { get; }
 
         /// <summary>
-        /// Code that deletes a single document by id
-        /// </summary>
-        string DeleteByIdOperationCode { get; }
-
-        /// <summary>
-        /// Code that deletes documents based on a filter
-        /// </summary>
-        string DeleteByWhereOperationCode { get; }
-
-        /// <summary>
         /// Code for loading the document type within QuerySession
         /// </summary>
         string QueryOnlySelectorCode { get; }

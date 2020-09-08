@@ -1,4 +1,7 @@
-using Marten.Internal.Linq;
+using System;
+using Marten.Linq.Operators;
+using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.ResultOperators;
 
@@ -10,7 +13,7 @@ namespace Marten.Linq.QueryHandlers
         internal static readonly string IdListTableName = "mt_temp_id_list";
 
         internal static readonly ISelector<string> StringValueSelector =
-            new ScalarStringSelectClause(string.Empty, string.Empty);
+            new ScalarStringSelectClause(String.Empty, String.Empty);
 
         internal static readonly ResultOperatorBase AnyOperator = new AnyResultOperator();
         internal static readonly ResultOperatorBase CountOperator = new CountResultOperator();
@@ -27,5 +30,6 @@ namespace Marten.Linq.QueryHandlers
         internal static readonly ResultOperatorBase SingleOrDefaultOperator = new SingleResultOperator(true);
 
 
+        public static readonly string CONTAINS = nameof(string.Contains);
     }
 }

@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -21,7 +22,7 @@ namespace Marten.Testing.Linq
 
         public IEnumerable<string> IEnumerableFromArray { get; set; }
 
-        public IEnumerable<string> IEnumerbaleFromList { get; set; }
+        public IEnumerable<string> IEnumerableFromList { get; set; }
 
         public ICollection<string> ICollection { get; set; }
 
@@ -54,7 +55,7 @@ namespace Marten.Testing.Linq
                 IList = stringArray.ToList(),
                 Enumerable = stringArray.AsEnumerable(),
                 IEnumerableFromArray = stringArray,
-                IEnumerbaleFromList = stringArray.ToList(),
+                IEnumerableFromList = stringArray.ToList(),
                 ICollection = stringArray.ToList(),
                 IReadonlyCollection = stringArray.ToList(),
                 ArrayWithInt = array,
@@ -76,7 +77,7 @@ namespace Marten.Testing.Linq
                             IList = stringArray.ToList(),
                             Enumerable = stringArray.AsEnumerable(),
                             IEnumerableFromArray = stringArray,
-                            IEnumerbaleFromList = stringArray.ToList(),
+                            IEnumerableFromList = stringArray.ToList(),
                             ICollection = stringArray.ToList(),
                             IReadonlyCollection = stringArray.ToList(),
                             ArrayWithInt = array,
@@ -111,7 +112,7 @@ namespace Marten.Testing.Linq
             x => x.Array.Contains(SearchPhrase),
             x => x.Enumerable.Contains(SearchPhrase),
             x => x.IEnumerableFromArray.Contains(SearchPhrase),
-            x => x.IEnumerbaleFromList.Contains(SearchPhrase),
+            x => x.IEnumerableFromList.Contains(SearchPhrase),
             x => x.List.Contains(SearchPhrase),
             x => x.IList.Contains(SearchPhrase),
             x => x.ICollection.Contains(SearchPhrase),
@@ -162,6 +163,9 @@ namespace Marten.Testing.Linq
 
         public query_with_inner_query_with_global_CollectionStorage_WithArray(DefaultStoreFixture fixture) : base(fixture)
         {
+            var jsonNetSerializer = new JsonNetSerializer();
+            jsonNetSerializer.CollectionStorage = CollectionStorage.AsArray;
+            StoreOptions(x => x.Serializer(jsonNetSerializer));
         }
     }
 }

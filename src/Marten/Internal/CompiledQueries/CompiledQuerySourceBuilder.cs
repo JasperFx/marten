@@ -7,9 +7,9 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
-using Marten.Internal.Linq;
-using Marten.Internal.Linq.Includes;
 using Marten.Internal.Storage;
+using Marten.Linq.Includes;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Util;
 

@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Marten.Linq;
+using Marten.Linq.Parsing;
 using Shouldly;
 using Xunit;
 

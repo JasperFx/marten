@@ -3,11 +3,14 @@ using System.Linq;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
     public class BoolNotVisitorTests : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         public class TestClass
         {
             public TestClass()
@@ -62,8 +65,9 @@ namespace Marten.Testing.Linq
             }
         }
 
-        public BoolNotVisitorTests(DefaultStoreFixture fixture) : base(fixture)
+        public BoolNotVisitorTests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 }

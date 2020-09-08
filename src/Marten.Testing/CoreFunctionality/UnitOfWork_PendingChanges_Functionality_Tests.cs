@@ -2,6 +2,7 @@
 using System.Linq;
 using Baseline;
 using Marten.Internal.Operations;
+using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -200,11 +201,11 @@ namespace Marten.Testing.CoreFunctionality
 
 
 
-                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<DeleteOne<Target, Guid>>().Single().Id.ShouldBe(target1.Id);
+                session.PendingChanges.DeletionsFor(typeof(Target)).OfType<Deletion>().Single().Id.ShouldBe(target1.Id);
 
                 session.PendingChanges.DeletionsFor<User>().Count().ShouldBe(2);
-                session.PendingChanges.DeletionsFor<User>().OfType<DeleteOne<User, Guid>>().Any(x => x.Id == user1.Id).ShouldBeTrue();
-                session.PendingChanges.DeletionsFor<User>().OfType<DeleteOne<User, Guid>>().Any(x => x.Id == user2.Id).ShouldBeTrue();
+                session.PendingChanges.DeletionsFor<User>().OfType<Deletion>().Any(x => x.Id.Equals(user1.Id)).ShouldBeTrue();
+                session.PendingChanges.DeletionsFor<User>().OfType<Deletion>().Any(x => x.Id.Equals(user2.Id)).ShouldBeTrue();
             }
         }
 

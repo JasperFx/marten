@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Exceptions;
-using Marten.Internal.Linq;
+using Marten.Linq.Selectors;
 using Marten.Schema;
 using Npgsql;
 

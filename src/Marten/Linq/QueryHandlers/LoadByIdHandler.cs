@@ -2,8 +2,9 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
-using Marten.Internal.Linq;
 using Marten.Internal.Storage;
+using Marten.Linq.Filters;
+using Marten.Linq.Selectors;
 using Marten.Storage;
 using Marten.Util;
 

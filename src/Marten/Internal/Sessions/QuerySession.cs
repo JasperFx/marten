@@ -8,7 +8,6 @@ using LamarCodeGeneration;
 using Marten.Exceptions;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.DirtyTracking;
-using Marten.Internal.Linq;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;

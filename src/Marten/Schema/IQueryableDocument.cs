@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Remotion.Linq;
 
@@ -11,9 +12,9 @@ namespace Marten.Schema
 {
     public interface IQueryableDocument : IFieldMapping
     {
-        IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
+        ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query);
 
-        IWhereFragment DefaultWhereFragment();
+        ISqlFragment DefaultWhereFragment();
 
         string[] SelectFields();
 

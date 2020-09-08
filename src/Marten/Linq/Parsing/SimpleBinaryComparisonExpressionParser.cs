@@ -5,6 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 
 namespace Marten.Linq.Parsing
@@ -35,7 +37,7 @@ namespace Marten.Linq.Parsing
             return expression.Type == typeof(bool) && _operators.ContainsKey(expression.NodeType);
         }
 
-        public IWhereFragment Parse(IFieldMapping mapping, ISerializer serializer, BinaryExpression expression)
+        public ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, BinaryExpression expression)
         {
             var areBothMemberExpressions = !expression.Left.IsValueExpression() && !expression.Right.IsValueExpression();
             var isValueExpressionOnRight = areBothMemberExpressions || expression.Right.IsValueExpression();

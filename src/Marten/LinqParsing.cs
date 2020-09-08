@@ -8,14 +8,16 @@ using Marten.Linq.Fields;
 using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
 using Marten.Linq.Parsing;
+using Marten.Linq.Parsing.Methods;
 using Marten.Linq.SoftDeletes;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Util;
 
 
 namespace Marten
 {
-    public delegate IWhereFragment MethodCallParseDelegate(MethodCallExpression expression, IQueryableDocument mapping);
+    public delegate ISqlFragment MethodCallParseDelegate(MethodCallExpression expression, IQueryableDocument mapping);
 
     public class LinqParsing
     {
@@ -72,7 +74,7 @@ namespace Marten
 
 
 
-        internal IWhereFragment BuildWhereFragment(IFieldMapping mapping, MethodCallExpression expression, ISerializer serializer)
+        internal ISqlFragment BuildWhereFragment(IFieldMapping mapping, MethodCallExpression expression, ISerializer serializer)
         {
             var parser = FindMethodParser(expression);
 
@@ -96,7 +98,7 @@ namespace Marten
                 }
             }
 
-            byName = byName ?? ImHashMap<string, IMethodCallParser>.Empty;
+            byName ??= ImHashMap<string, IMethodCallParser>.Empty;
             var parser = determineMethodParser(expression);
             byName = byName.AddOrUpdate(expression.Method.Name, parser);
             _methodParsing = _methodParsing.AddOrUpdate(expression.Method.DeclaringType, byName);

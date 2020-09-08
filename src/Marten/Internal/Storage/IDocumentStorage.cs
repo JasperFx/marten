@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Remotion.Linq;
 
@@ -20,12 +21,13 @@ namespace Marten.Internal.Storage
 
         IFieldMapping Fields { get; }
 
-        IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query);
+        ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query);
 
-        IWhereFragment DefaultWhereFragment();
+        ISqlFragment DefaultWhereFragment();
 
         IQueryableDocument QueryableDocument { get; }
         bool UseOptimisticConcurrency { get; }
+        IOperationFragment DeleteFragment { get; }
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage
@@ -47,17 +49,16 @@ namespace Marten.Internal.Storage
         IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant);
 
 
-        IStorageOperation DeleteForDocument(T document);
+        IDeletion DeleteForDocument(T document);
 
 
-        IStorageOperation DeleteForWhere(IWhereFragment where);
         void EjectById(IMartenSession session, object id);
         void RemoveDirtyTracker(IMartenSession session, object id);
     }
 
     public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
     {
-        IStorageOperation DeleteForId(TId id);
+        IDeletion DeleteForId(TId id);
 
         T Load(TId id, IMartenSession session);
         Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);
@@ -68,5 +69,7 @@ namespace Marten.Internal.Storage
 
         TId AssignIdentity(T document, ITenant tenant);
         TId Identity(T document);
+        ISqlFragment ByIdFilter(TId id);
     }
+
 }

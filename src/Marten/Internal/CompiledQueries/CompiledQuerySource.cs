@@ -1,5 +1,5 @@
 using System;
-using Marten.Internal.Linq;
+using Marten.Linq.QueryHandlers;
 
 namespace Marten.Internal.CompiledQueries
 {

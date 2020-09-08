@@ -1,5 +1,6 @@
 using System;
 using Marten.Internal.Sessions;
+using Marten.Linq.Filters;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
@@ -32,7 +33,7 @@ namespace Marten.Testing.Patching
 
             Disposables.Add(session);
 
-            _expression = new PatchExpression<Target>(null, (DocumentSessionBase) session);
+            _expression = new PatchExpression<Target>(new ByGuidFilter(Guid.NewGuid()), (DocumentSessionBase)session);
         }
 
         [Fact]
@@ -417,11 +418,11 @@ namespace Marten.Testing.Patching
 
             using var session = theStore.LightweightSession();
 
-            var expressionWithSimpleProperty = new PatchExpression<Target>(null, (DocumentSessionBase) session);
+            var expressionWithSimpleProperty = new PatchExpression<Target>(new ByGuidFilter(Guid.NewGuid()), (DocumentSessionBase) session);
             expressionWithSimpleProperty.Set(x => x.Color, Colors.Blue);
             expressionWithSimpleProperty.Patch["path"].ShouldBe("color");
 
-            var expressionWithNestedProperty = new PatchExpression<Target>(null, (DocumentSessionBase) session);
+            var expressionWithNestedProperty = new PatchExpression<Target>(new ByGuidFilter(Guid.NewGuid()), (DocumentSessionBase) session);
             expressionWithNestedProperty.Delete(x => x.Inner.AnotherString);
             expressionWithNestedProperty.Patch["path"].ShouldBe("inner.anotherString");
         }

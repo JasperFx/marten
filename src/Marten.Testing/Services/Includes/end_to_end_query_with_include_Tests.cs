@@ -412,8 +412,6 @@ namespace Marten.Testing.Services.Includes
 
             using (var query = theStore.QuerySession())
             {
-                query.Logger = new TestOutputMartenLogger(_output);
-
                 var list = new List<User>();
 
                 var issues = query.Query<Issue>()
@@ -728,7 +726,6 @@ namespace Marten.Testing.Services.Includes
 
             using (var query = theStore.QuerySession())
             {
-                query.Logger = new TestOutputMartenLogger(_output);
                 User assignee2 = null;
                 User reporter2 = null;
 
@@ -782,8 +779,6 @@ namespace Marten.Testing.Services.Includes
 
             using (var query = theStore.QuerySession())
             {
-                query.Logger = new TestOutputMartenLogger(_output);
-
                 var list = new List<User>();
 
                 query.Query<Group>()

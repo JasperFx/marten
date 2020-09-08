@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Internal.Linq;
 using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Parsing;
+using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
@@ -19,7 +23,7 @@ namespace Marten.Internal.Storage
     {
         private readonly IDocumentStorage<TRoot, TId> _parent;
         private readonly SubClassMapping _mapping;
-        private readonly IWhereFragment _defaultWhere;
+        private readonly ISqlFragment _defaultWhere;
 
         public SubClassDocumentStorage(IDocumentStorage<TRoot, TId> parent, SubClassMapping mapping)
         {
@@ -71,18 +75,19 @@ namespace Marten.Internal.Storage
         public Type SourceType => typeof(TRoot);
         public IFieldMapping Fields => _mapping;
 
-        public IWhereFragment FilterDocuments(QueryModel model, IWhereFragment query)
+        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
             return _mapping.FilterDocuments(model, query);
         }
 
-        public IWhereFragment DefaultWhereFragment()
+        public ISqlFragment DefaultWhereFragment()
         {
             return _defaultWhere;
         }
 
         public IQueryableDocument QueryableDocument => _mapping;
         public bool UseOptimisticConcurrency => _parent.UseOptimisticConcurrency;
+        public IOperationFragment DeleteFragment => _parent.DeleteFragment;
 
         public Type IdType => typeof(TId);
         public Guid? VersionFor(T document, IMartenSession session)
@@ -125,17 +130,12 @@ namespace Marten.Internal.Storage
             return _parent.Overwrite(document, session, tenant);
         }
 
-        public IStorageOperation DeleteForDocument(T document)
+        public IDeletion DeleteForDocument(T document)
         {
             return _parent.DeleteForDocument(document);
         }
 
-        public IStorageOperation DeleteForWhere(IWhereFragment @where)
-        {
-            return _parent.DeleteForWhere(@where);
-        }
-
-        public IStorageOperation DeleteForId(TId id)
+        public IDeletion DeleteForId(TId id)
         {
             return _parent.DeleteForId(id);
         }
@@ -176,6 +176,11 @@ namespace Marten.Internal.Storage
         public TId Identity(T document)
         {
             return _parent.Identity(document);
+        }
+
+        public ISqlFragment ByIdFilter(TId id)
+        {
+            return _parent.ByIdFilter(id);
         }
 
         public void EjectById(IMartenSession session, object id)

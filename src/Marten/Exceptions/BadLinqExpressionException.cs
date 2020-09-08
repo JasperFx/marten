@@ -12,6 +12,10 @@ namespace Marten.Exceptions
         {
         }
 
+        public BadLinqExpressionException(string message) : base(message)
+        {
+        }
+
 #if SERIALIZE
         protected BadLinqExpressionException(SerializationInfo info, StreamingContext context) : base(info, context)
         {

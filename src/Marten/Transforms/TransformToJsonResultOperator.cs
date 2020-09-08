@@ -2,8 +2,8 @@ using System;
 using System.Linq.Expressions;
 using Baseline;
 using Marten.Internal;
-using Marten.Internal.Linq;
 using Marten.Linq;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Storage;
 using Remotion.Linq.Clauses;
@@ -36,7 +36,7 @@ namespace Marten.Transforms
             return input;
         }
 
-        public Statement ModifyStatement(Statement statement, IMartenSession session)
+        public SelectorStatement ModifyStatement(SelectorStatement statement, IMartenSession session)
         {
             var transform = session.Tenant.TransformFor(_transformName);
 

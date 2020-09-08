@@ -95,16 +95,12 @@ namespace Marten
 
             Transform = new DocumentTransforms(this, Tenancy.Default);
 
-            Parser = new MartenExpressionParser(Serializer, options);
-
             options.InitialData.Each(x => x.Populate(this));
         }
 
         public ITenancy Tenancy => Options.Tenancy;
 
         public EventGraph Events => Options.Events;
-
-        internal MartenExpressionParser Parser { get; }
 
         private readonly IMartenLogger _logger;
         private readonly IRetryPolicy _retryPolicy;

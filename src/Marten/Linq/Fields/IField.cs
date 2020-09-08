@@ -1,10 +1,11 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Linq.SqlGeneration;
 
 namespace Marten.Linq.Fields
 {
-    public interface IField
+    public interface IField : IComparableFragment, ISqlFragment
     {
         MemberInfo[] Members { get; }
 
@@ -42,5 +43,6 @@ namespace Marten.Linq.Fields
         bool ShouldUseContainmentOperator();
 
         string SelectorForDuplication(string pgType);
+
     }
 }

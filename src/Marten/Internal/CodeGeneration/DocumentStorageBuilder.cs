@@ -3,9 +3,9 @@ using System.Linq;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
-using Marten.Internal.Linq;
 using Marten.Internal.Storage;
 using Marten.Linq;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -151,17 +151,7 @@ namespace Marten.Internal.CodeGeneration
                 type.MethodFor("Overwrite").Frames.ThrowNotSupportedException();
             }
 
-            type.MethodFor("DeleteForDocument").Frames.Code($@"
-return new Marten.Generated.{operations.DeleteById.TypeName}(Identity({{0}}));
-", new Use(_mapping.DocumentType));
 
-            type.MethodFor("DeleteForId").Frames.Code($@"
-return new Marten.Generated.{operations.DeleteById.TypeName}({{0}});
-", new Use(_mapping.IdType));
-
-            type.MethodFor("DeleteForWhere").Frames.Code($@"
-return new Marten.Generated.{operations.DeleteByWhere.TypeName}({{0}});
-", Use.Type<IWhereFragment>());
         }
 
         private void buildConditionalOperationBasedOnConcurrencyChecks(GeneratedType type,

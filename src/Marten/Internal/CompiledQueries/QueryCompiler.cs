@@ -6,9 +6,9 @@ using Baseline;
 using Baseline.Dates;
 using LamarCodeGeneration;
 using Marten.Exceptions;
-using Marten.Internal.Linq;
-using Marten.Internal.Linq.Includes;
 using Marten.Linq;
+using Marten.Linq.Includes;
+using Marten.Linq.Parsing;
 using Marten.Util;
 using Npgsql;
 

@@ -1,6 +1,6 @@
 using System;
 using LamarCodeGeneration;
-using Marten.Internal.Linq;
+using Marten.Linq.Selectors;
 using Marten.Schema;
 
 namespace Marten.Internal.CodeGeneration

@@ -19,6 +19,8 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.Number <= 3);
             @where(x => x.Number >= 3);
             @where(x => x.Number != 3);
+            @where(x => x.Number.Equals(3));
+            @where(x => !x.Number.Equals(3));
 
             @where(x => x.Long == 1);
             @where(x => x.Long > 3);
@@ -26,6 +28,8 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.Long <= 3);
             @where(x => x.Long >= 3);
             @where(x => x.Long != 3);
+            @where(x => x.Long.Equals(3));
+            @where(x => !x.Long.Equals(3));
 
             @where(x => x.String == "A");
             @where(x => x.String.Equals("a", StringComparison.OrdinalIgnoreCase));
@@ -34,6 +38,9 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => string.Equals(x.String, null, StringComparison.OrdinalIgnoreCase));
             @where(x => x.String.Equals("A", StringComparison.Ordinal));
             @where(x => x.String != "A");
+
+            @where(x => x.String.Equals("A"));
+            @where(x => !x.String.Equals("A"));
 
             @where(x => x.String == "A" && x.Number == 1);
             @where(x => x.String == "A" || x.Number == 1);
@@ -48,6 +55,10 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.String == null);
 
             @where(x => x.Flag);
+            @where(x => x.Flag.Equals(true));
+            @where(x => !x.Flag.Equals(true));
+            @where(x => x.Flag.Equals(false));
+            @where(x => !x.Flag.Equals(false));
             @where(x => x.Flag == true);
             @where(x => !x.Flag);
             @where(x => x.Flag == false);
@@ -63,6 +74,8 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.Double < 10);
             @where(x => x.Double <= 10);
             @where(x => x.Double >= 10);
+            @where(x => x.Double.Equals(10));
+            @where(x => !x.Double.Equals(10));
 
             @where(x => x.Decimal == 10);
             @where(x => x.Decimal != 10);
@@ -70,6 +83,8 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.Decimal < 10);
             @where(x => x.Decimal <= 10);
             @where(x => x.Decimal >= 10);
+            @where(x => x.Decimal.Equals(10));
+            @where(x => !x.Decimal.Equals(10));
 
             var today = DateTime.Today.ToUniversalTime();
 
@@ -79,6 +94,8 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.Date < today);
             @where(x => x.Date >= today);
             @where(x => x.Date <= today);
+            @where(x => x.Date.Equals(today));
+            @where(x => !x.Date.Equals(today));
 
             @where(x => !(x.Number == 1));
             @where(x => !(x.Number > 3));
@@ -86,6 +103,9 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => !(x.Number <= 3));
             @where(x => !(x.Number >= 3));
             @where(x => !(x.Number != 3));
+
+
+
         }
 
         [Theory]

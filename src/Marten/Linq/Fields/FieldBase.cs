@@ -2,6 +2,9 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Marten.Linq.Filters;
+using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using Marten.Util;
 
 namespace Marten.Linq.Fields
@@ -33,6 +36,17 @@ namespace Marten.Linq.Fields
             PgType = pgType;
 
             JSONBLocator = $"CAST({RawLocator} as jsonb)";
+        }
+
+        public virtual ISqlFragment CreateComparison(string op, ConstantExpression value)
+        {
+            if (value.Value == null)
+            {
+                return op == "=" ? (ISqlFragment) new IsNullFilter(this) : new IsNotNullFilter(this);
+            }
+
+            var def = new CommandParameter(value);
+            return new ComparisonFilter(this, def, op);
         }
 
         [Obsolete("Try to eliminate this")]
@@ -75,6 +89,16 @@ namespace Marten.Linq.Fields
         {
             // Super hokey.
             return TypedLocator.Replace("d.", rootTableAlias + ".");
+        }
+
+        void ISqlFragment.Apply(CommandBuilder builder)
+        {
+            builder.Append(TypedLocator);
+        }
+
+        bool ISqlFragment.Contains(string sqlText)
+        {
+            return TypedLocator.Contains(sqlText);
         }
     }
 }
