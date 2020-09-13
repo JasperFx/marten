@@ -692,6 +692,26 @@ namespace Marten.Testing.Linq
             loaded.ShouldBe(expected);
         }
 
+        [Fact]
+        public async Task can_query_with_where_clause_and_count_after_the_select_many()
+        {
+            var targets = Target.GenerateRandomData(1000).ToArray();
+            theStore.BulkInsert(targets);
+
+            using var query = theStore.QuerySession();
+
+            var actual = await query.Query<Target>()
+                .Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children)
+                .CountAsync(x => x.Color == Colors.Red);
+
+            var expected = targets.Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children)
+                .Count(x => x.Color == Colors.Red);
+
+            actual.ShouldBe(expected);
+        }
+
 
 
         public query_with_select_many(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
