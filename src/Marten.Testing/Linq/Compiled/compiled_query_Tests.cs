@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -192,6 +193,15 @@ namespace Marten.Testing.Linq.Compiled
             user.ShouldNotBeNull();
             user.Username.ShouldBe("shadetreedev");
         }
+
+        [Fact]
+        public async Task bug_1090_Any_with_compiled_queries()
+        {
+            // Really just a smoke test now
+
+            (await theSession.QueryAsync(new CompiledQuery1())).ShouldNotBeNull();
+            (await theSession.QueryAsync(new CompiledQuery2())).ShouldNotBeNull();
+        }
     }
 
     // SAMPLE: FindUserByAllTheThings
@@ -353,4 +363,26 @@ namespace Marten.Testing.Linq.Compiled
     }
 
     // ENDSAMPLE
+
+    public class CompiledQuery1 : ICompiledQuery<Target, bool>
+    {
+        public string StringValue { get; set; }
+
+        public Expression<Func<IMartenQueryable<Target>, bool>> QueryIs()
+        {
+            return q => q.Any(x => x.String.EqualsIgnoreCase(StringValue));
+        }
+    }
+
+    public class CompiledQuery2 : ICompiledQuery<Target, bool>
+    {
+        public Guid IdValue { get; set; }
+
+        public Expression<Func<IMartenQueryable<Target>, bool>> QueryIs()
+        {
+            return q => q.Any(x => x.Id == IdValue);
+        }
+    }
+
+
 }
