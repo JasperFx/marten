@@ -7,10 +7,12 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
  using Marten.Linq.Parsing;
+ using Marten.Linq.QueryHandlers;
  using Marten.Schema;
  using Marten.Util;
+ using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
 
-namespace Marten.Linq.Fields
+ namespace Marten.Linq.Fields
 {
     public interface IFieldMapping
     {
@@ -93,7 +95,7 @@ namespace Marten.Linq.Fields
         {
             if (!members.Any())
             {
-                throw new ArgumentOutOfRangeException(nameof(members),"No members found!");
+                throw new ArgumentOutOfRangeException(nameof(members),"No members found in this Expression");
             }
 
             foreach (var source in _options.FieldSources)
@@ -102,6 +104,23 @@ namespace Marten.Linq.Fields
                 {
                     return field;
                 }
+            }
+
+            // List.Count
+            if (members.Length > 1 && members.Last().Name == "Count")
+            {
+                if (ReflectionExtensions.IsEnumerable(members[members.Length - 2].GetMemberType()))
+                {
+                    var inner = (ArrayField)FieldFor(members.Take(members.Length - 1).ToArray());
+                    return new CollectionLengthField(inner, members);
+                }
+            }
+
+            // Array.Length
+            if (members.Last().Equals(LinqConstants.ArrayLength))
+            {
+                var inner = (ArrayField)FieldFor(members.Take(members.Length - 1).ToArray());
+                return new CollectionLengthField(inner, members);
             }
 
             var fieldType = members.Last().GetRawMemberType();

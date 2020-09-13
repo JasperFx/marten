@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq.Fields;
 using Marten.Services;
@@ -107,6 +108,32 @@ namespace Marten.Testing.Linq.Fields
             fieldFor<Target>(x => x.Number).ShouldBeOfType<SimpleCastField>();
             fieldFor<Target>(x => x.Double).ShouldBeOfType<SimpleCastField>();
             fieldFor<Target>(x => x.Float).ShouldBeOfType<SimpleCastField>();
+        }
+
+        [Fact]
+        public void field_for_array_length()
+        {
+
+            fieldFor<FieldHolder>(x => x.Array.Length).ShouldBeOfType<CollectionLengthField>();
+        }
+
+        [Fact]
+        public void field_for_collection_count_extension_method()
+        {
+            fieldFor<FieldHolder>(x => x.List.Count()).ShouldBeOfType<CollectionLengthField>();
+            fieldFor<FieldHolder>(x => x.IList.Count()).ShouldBeOfType<CollectionLengthField>();
+            fieldFor<FieldHolder>(x => x.IReadOnlyList.Count()).ShouldBeOfType<CollectionLengthField>();
+            fieldFor<FieldHolder>(x => x.ICollection.Count()).ShouldBeOfType<CollectionLengthField>();
+            fieldFor<FieldHolder>(x => x.IEnumerable.Count()).ShouldBeOfType<CollectionLengthField>();
+        }
+
+        [Fact]
+        public void field_for_list_count()
+        {
+            fieldFor<FieldHolder>(x => x.List.Count).ShouldBeOfType<CollectionLengthField>();
+            fieldFor<FieldHolder>(x => x.IList.Count).ShouldBeOfType<CollectionLengthField>();
+            fieldFor<FieldHolder>(x => x.IReadOnlyList.Count).ShouldBeOfType<CollectionLengthField>();
+
         }
     }
 }

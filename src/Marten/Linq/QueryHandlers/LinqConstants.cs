@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Marten.Linq.Operators;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
@@ -30,6 +31,7 @@ namespace Marten.Linq.QueryHandlers
         internal static readonly ResultOperatorBase SingleOrDefaultOperator = new SingleResultOperator(true);
 
 
-        public static readonly string CONTAINS = nameof(string.Contains);
+        internal static readonly string CONTAINS = nameof(string.Contains);
+        internal static readonly PropertyInfo ArrayLength = typeof(Array).GetProperty(nameof(Array.Length));
     }
 }
