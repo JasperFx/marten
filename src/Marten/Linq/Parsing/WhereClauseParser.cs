@@ -336,9 +336,17 @@ namespace Marten.Linq.Parsing
 
                 var field = findArrayField();
                 var flattened = new FlattenerStatement(field, _parent._session, _parent._statement);
+
                 var elementFields =
                     _parent._session.Options.ChildTypeMappingFor(field.ElementType);
-                return new CountComparisonStatement(_parent._session, field.ElementType, elementFields, flattened);
+                var statement = new CountComparisonStatement(_parent._session, field.ElementType, elementFields, flattened);
+                if (_wheres.Any())
+                {
+                    statement.WhereClauses.AddRange(_wheres);
+                    statement.CompileLocal(_parent._session);
+                }
+
+                return statement;
             }
 
         }

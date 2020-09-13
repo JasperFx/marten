@@ -42,6 +42,7 @@ namespace Marten.Linq.SqlGeneration
 
             sql.Append("select id, count(*) as data from ");
             sql.Append(_tableName);
+            sql.Append(" as d");
             writeWhereClause(sql);
             sql.Append(" group by id having count(*) ");
             sql.Append(Operator);

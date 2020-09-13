@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq.ChildCollections
 {
-    public class count_for_child_collections : DocumentSessionFixture<NulloIdentityMap>
+    public class count_for_child_collections : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         [Fact]
         public void GivenTwoLevelsOfChildCollections_WhenCountCalled_ThenReturnsProperCount()
         {
             StoreOptions(op => op.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray));
 
             SetupTestData();
+
+            theSession.Logger = new TestOutputMartenLogger(_output);
 
             var result = theSession
                 .Query<Root>()
@@ -100,6 +106,11 @@ namespace Marten.Testing.Linq.ChildCollections
             theSession.Store(product1);
             theSession.Store(product2);
             theSession.SaveChanges();
+        }
+
+        public count_for_child_collections(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        {
+            _output = output;
         }
     }
 }
