@@ -95,6 +95,11 @@ using Baseline;
         {
             if (!members.Any())
             {
+                if (_documentType.IsSimple())
+                {
+                    return new SimpleDataField(_documentType);
+                }
+
                 throw new ArgumentOutOfRangeException(nameof(members),"No members found in this Expression");
             }
 
