@@ -11,6 +11,12 @@ namespace Marten.Linq.SqlGeneration
             parent.InsertAfter(this);
 
             ConvertToCommonTableExpression(session);
+
+            // Important when doing n-deep sub-collection querying
+            // And you need to remember the original FromObject
+            // of the original parent rather than looking at Previous.ExportName
+            // in the configure() method
+            FromObject = parent.ExportName;
         }
 
         protected override bool IsSubQuery => true;
@@ -18,8 +24,8 @@ namespace Marten.Linq.SqlGeneration
         protected override void configure(CommandBuilder sql)
         {
             startCommonTableExpression(sql);
-            sql.Append("select id from ");
-            sql.Append(Previous.ExportName);
+            sql.Append("select id, data from ");
+            sql.Append(FromObject);
             sql.Append(" as d");
             writeWhereClause(sql);
             endCommonTableExpression(sql);
