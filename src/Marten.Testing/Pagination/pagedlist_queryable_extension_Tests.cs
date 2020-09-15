@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using Xunit;
 using Shouldly;
 using Marten.Services;
 using Marten.Pagination;
 using System.Threading.Tasks;
+using Marten.Exceptions;
+using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
@@ -294,6 +297,32 @@ namespace Marten.Testing.Pagination
             var pageSize = 10;
 
             var pagedList = theSession.Query<Target>().Where(x=>x.Flag).ToPagedList(pageNumber, pageSize);
+        }
+
+        [Fact]
+        public void try_to_use_in_compiled_query()
+        {
+            Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
+            {
+                var data = theSession.Query(new TargetPage(1, 10));
+            });
+        }
+
+        public class TargetPage: ICompiledQuery<Target, IPagedList<Target>>
+        {
+            public int Page { get; }
+            public int PageSize { get; }
+
+            public TargetPage(int page, int pageSize)
+            {
+                Page = page;
+                PageSize = pageSize;
+            }
+
+            public Expression<Func<IMartenQueryable<Target>, IPagedList<Target>>> QueryIs()
+            {
+                return q => q.OrderBy(x => x.Number).ToPagedList(Page, PageSize);
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Linq.Expressions;
+using Marten.Exceptions;
 using Marten.Linq.Operators;
+using Marten.Pagination;
 using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
@@ -42,7 +44,18 @@ namespace Marten.Linq.Parsing
 
         public QueryModel GetParsedQuery(Expression expressionTreeRoot)
         {
-            return _parser.GetParsedQuery(expressionTreeRoot);
+            try
+            {
+                return _parser.GetParsedQuery(expressionTreeRoot);
+            }
+            catch (NotSupportedException e)
+            {
+                if (e.Message.Contains("PagedList"))
+                {
+                    throw new BadLinqExpressionException($"The {nameof(PagedListQueryableExtensions.ToPagedList)}() operators cannot be used in compiled queries. Use {nameof(QueryStatistics)} instead.");
+                }
+                throw;
+            }
         }
     }
 }
