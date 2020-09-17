@@ -64,6 +64,15 @@ namespace Marten
         /// Specify whether non public members should be used during deserialization
         /// </summary>
         NonPublicMembersStorage NonPublicMembersStorage { get; }
+
+        /// <summary>
+        /// Write the JSON for a document with embedded
+        /// type information. This is used inside the patching API
+        /// to handle polymorphic collections
+        /// </summary>
+        /// <param name="document"></param>
+        /// <returns></returns>
+        string ToJsonWithTypes(object document);
     }
 
     // ENDSAMPLE

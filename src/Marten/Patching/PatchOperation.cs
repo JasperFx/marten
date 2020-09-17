@@ -38,6 +38,8 @@ namespace Marten.Patching
         // TODO -- come back and do this with a single command!
         private const string VALUE_LOOKUP = "___VALUE___";
 
+        internal bool PossiblyPolymorhpic { get; set; } = false;
+
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // Nothing
@@ -58,7 +60,7 @@ namespace Marten.Patching
             var patchParam = builder.AddJsonParameter(_serializer.ToCleanJson(_patch));
             if (_patch.ContainsKey("value"))
             {
-                var value = _serializer.ToJson(_patch["value"]);
+                var value = PossiblyPolymorhpic ? _serializer.ToJsonWithTypes(_patch["value"]) : _serializer.ToJson(_patch["value"]);
                 var copy = new Dictionary<string, object>();
                 foreach (var item in _patch)
                 {
@@ -66,7 +68,7 @@ namespace Marten.Patching
                 }
                 copy["value"] = VALUE_LOOKUP;
 
-                var patchJson = _serializer.ToCleanJson(copy);
+                var patchJson = _serializer.ToJson(copy);
                 var replacedValue = patchJson.Replace($"\"{VALUE_LOOKUP}\"", value);
 
                 patchParam = builder.AddJsonParameter(replacedValue);

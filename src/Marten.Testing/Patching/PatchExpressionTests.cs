@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Marten.Internal.Sessions;
 using Marten.Linq.Filters;
 using Marten.Patching;
@@ -425,6 +426,104 @@ namespace Marten.Testing.Patching
             var expressionWithNestedProperty = new PatchExpression<Target>(new ByGuidFilter(Guid.NewGuid()), (DocumentSessionBase) session);
             expressionWithNestedProperty.Delete(x => x.Inner.AnotherString);
             expressionWithNestedProperty.Patch["path"].ShouldBe("inner.anotherString");
+        }
+
+        public class Item
+        {
+            public string Name { get; set; }
+        }
+
+        public class ColoredItem: Item
+        {
+            public string Color { get; set; }
+        }
+
+        public class NumberedItem: Item
+        {
+            public int Number { get; set; }
+        }
+
+        public class ItemGroup
+        {
+            public Guid Id { get; set; }
+            public List<Item> Items = new List<Item>();
+        }
+
+        [Fact]
+        public void can_append_with_sub_types_in_collection()
+        {
+            var group = new ItemGroup();
+            theSession.Store(group);
+            theSession.SaveChanges();
+
+            using (var session = theStore.LightweightSession())
+            {
+                session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new Item{Name = "One"});
+                session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
+                session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new NumberedItem(){Name = "Three", Number = 3});
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var group2 = query.Load<ItemGroup>(group.Id);
+
+                group2.Items.Count.ShouldBe(3);
+                group2.Items[0].ShouldBeOfType<Item>();
+                group2.Items[1].ShouldBeOfType<ColoredItem>();
+                group2.Items[2].ShouldBeOfType<NumberedItem>();
+            }
+        }
+
+        [Fact]
+        public void can_append_if_not_exists_with_sub_types_in_collection()
+        {
+            var group = new ItemGroup();
+            theSession.Store(group);
+            theSession.SaveChanges();
+
+            using (var session = theStore.LightweightSession())
+            {
+                session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new Item{Name = "One"});
+                session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
+                session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new NumberedItem(){Name = "Three", Number = 3});
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var group2 = query.Load<ItemGroup>(group.Id);
+
+                group2.Items.Count.ShouldBe(3);
+                group2.Items[0].ShouldBeOfType<Item>();
+                group2.Items[1].ShouldBeOfType<ColoredItem>();
+                group2.Items[2].ShouldBeOfType<NumberedItem>();
+            }
+        }
+
+        [Fact]
+        public void can_insert_if_not_exists_with_sub_types_in_collection()
+        {
+            var group = new ItemGroup
+            {
+                Items = new List<Item>{new Item{Name = "regular"}}
+            };
+            theSession.Store(group);
+            theSession.SaveChanges();
+
+            using (var session = theStore.LightweightSession())
+            {
+                session.Patch<ItemGroup>(group.Id).Insert(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var group2 = query.Load<ItemGroup>(group.Id);
+
+                group2.Items.Count.ShouldBe(2);
+                group2.Items[0].ShouldBeOfType<ColoredItem>();
+            }
         }
     }
 }

@@ -52,6 +52,10 @@ namespace Marten.Testing
         public Casing Casing => Casing.Default;
         public CollectionStorage CollectionStorage => CollectionStorage.Default;
         public NonPublicMembersStorage NonPublicMembersStorage => NonPublicMembersStorage.Default;
+        public string ToJsonWithTypes(object document)
+        {
+            throw new NotSupportedException();
+        }
     }
     // ENDSAMPLE
 

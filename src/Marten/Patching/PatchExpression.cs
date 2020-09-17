@@ -100,6 +100,8 @@ namespace Marten.Patching
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
 
+            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+
             apply();
         }
 
@@ -108,6 +110,8 @@ namespace Marten.Patching
             Patch.Add("type", "append_if_not_exists");
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
+
+            PossiblyPolymorphic = element.GetType() != typeof(TElement);
 
             apply();
         }
@@ -120,6 +124,8 @@ namespace Marten.Patching
             Patch.Add("path", toPath(expression));
             Patch.Add("index", index);
 
+            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+
             apply();
         }
 
@@ -131,6 +137,8 @@ namespace Marten.Patching
             Patch.Add("path", toPath(expression));
             Patch.Add("index", index);
 
+            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+
             apply();
         }
 
@@ -141,6 +149,8 @@ namespace Marten.Patching
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
             Patch.Add("action", (int)action);
+
+            PossiblyPolymorphic = element.GetType() != typeof(TElement);
 
             apply();
         }
@@ -204,6 +214,8 @@ namespace Marten.Patching
             return visitor.Members.Select(x => x.Name.FormatCase(_session.Serializer.Casing)).Join(".");
         }
 
+        internal bool PossiblyPolymorphic { get; set; } = false;
+
         private void apply()
         {
             var transform = _session.Tenant.TransformFor(StoreOptions.PatchDoc);
@@ -222,7 +234,10 @@ namespace Marten.Patching
                 where = storage.FilterDocuments(null, _filter);
             }
 
-            var operation = new PatchOperation(transform, storage.QueryableDocument, where, Patch, _session.Serializer);
+            var operation = new PatchOperation(transform, storage.QueryableDocument, where, Patch, _session.Serializer)
+            {
+                PossiblyPolymorhpic = PossiblyPolymorphic
+            };
 
             _session.QueueOperation(operation);
         }

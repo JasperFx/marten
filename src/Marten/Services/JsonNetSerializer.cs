@@ -8,28 +8,6 @@ using Newtonsoft.Json.Converters;
 
 namespace Marten.Services
 {
-    internal class JsonArrayPool<T> : IArrayPool<T>
-    {
-        private readonly ArrayPool<T> _inner;
-
-        public JsonArrayPool(ArrayPool<T> inner)
-        {
-            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
-        }
-
-        public T[] Rent(int minimumLength)
-        {
-            return _inner.Rent(minimumLength);
-        }
-
-        public void Return(T[] array)
-        {
-            if (array == null) throw new ArgumentNullException(nameof(array));
-
-            _inner.Return(array);
-        }
-    }
-
     public class JsonNetSerializer: ISerializer
     {
         private readonly ArrayPool<char> _charPool = ArrayPool<char>.Create();
@@ -40,6 +18,13 @@ namespace Marten.Services
         private readonly JsonSerializer _clean = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.None,
+            DateFormatHandling = DateFormatHandling.IsoDateFormat,
+            ContractResolver = new JsonNetContractResolver()
+        };
+
+        private readonly JsonSerializer _withTypes = new JsonSerializer
+        {
+            TypeNameHandling = TypeNameHandling.Objects,
             DateFormatHandling = DateFormatHandling.IsoDateFormat,
             ContractResolver = new JsonNetContractResolver()
         };
@@ -70,8 +55,10 @@ namespace Marten.Services
         {
             configure(_clean);
             configure(_serializer);
+            configure(_withTypes);
 
             _clean.TypeNameHandling = TypeNameHandling.None;
+            _withTypes.TypeNameHandling = TypeNameHandling.Objects;
         }
 
         public void ToJson(object document, TextWriter writer)
@@ -135,6 +122,15 @@ namespace Marten.Services
             var writer = new StringWriter();
 
             _clean.Serialize(writer, document);
+
+            return writer.ToString();
+        }
+
+        public string ToJsonWithTypes(object document)
+        {
+            var writer = new StringWriter();
+
+            _withTypes.Serialize(writer, document);
 
             return writer.ToString();
         }
