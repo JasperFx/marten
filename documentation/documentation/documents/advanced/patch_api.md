@@ -4,6 +4,7 @@
 Using the Patching API in Marten requires the usage of Postgresql's <a href="https://github.com/plv8/plv8">PLV8 extension</a>.
 </div>
 
+
 Marten's Patching API is a mechanism to update persisted documents without having to first load the document into memory.
 "Patching" can be much more efficient at runtime in some scenarios because you avoid the "deserialize from JSON, edit, serialize
 back to JSON" workflow.
@@ -65,6 +66,10 @@ By default, the `Patch.Increment()` operation will add 1 to the existing value. 
 <[sample:increment_for_int_with_explicit_increment]>
 
 ## Append an Element to a Child Collection
+
+<[warning]>
+Because the Patching API depends on comparisons to the underlying serialized JSON in the database, the `DateTime` or `DateTimeOffset` types will frequently miss on comparisons for timestamps because of insufficient precision. 
+<[/warning]>
 
 The `Patch.Append()` operation adds a new item to the end of a child collection:
 
