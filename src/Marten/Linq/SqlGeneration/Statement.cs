@@ -91,7 +91,8 @@ namespace Marten.Linq.SqlGeneration
 
         protected void writeOrderByFragment(CommandBuilder sql, Ordering clause)
         {
-            var locator = Fields.FieldFor(clause.Expression).TypedLocator;
+            var field = Fields.FieldFor(clause.Expression);
+            var locator = field.ToOrderExpression(clause.Expression);
             sql.Append(locator);
 
             if (clause.OrderingDirection == OrderingDirection.Desc) sql.Append(" desc");

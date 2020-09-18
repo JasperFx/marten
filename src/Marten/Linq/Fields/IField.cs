@@ -44,5 +44,6 @@ namespace Marten.Linq.Fields
 
         string SelectorForDuplication(string pgType);
 
+        string ToOrderExpression(Expression expression);
     }
 }

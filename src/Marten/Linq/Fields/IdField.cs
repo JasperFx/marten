@@ -59,5 +59,10 @@ namespace Marten.Linq.Fields
         {
             return TypedLocator.Contains(sqlText);
         }
+
+        public string ToOrderExpression(Expression expression)
+        {
+            return TypedLocator;
+        }
     }
 }

@@ -173,5 +173,10 @@ namespace Marten.Linq.Fields
         public string MemberName { get; }
 
         public string PgType { get; set; } // settable so it can be overidden by users
+
+        public string ToOrderExpression(Expression expression)
+        {
+            return TypedLocator;
+        }
     }
 }

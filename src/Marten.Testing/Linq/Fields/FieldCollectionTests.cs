@@ -135,5 +135,18 @@ namespace Marten.Testing.Linq.Fields
             fieldFor<FieldHolder>(x => x.IReadOnlyList.Count).ShouldBeOfType<CollectionLengthField>();
 
         }
+
+        public class DocWithAttributes
+        {
+            public Guid Id { get; set; }
+            public Dictionary<string, string> Attributes { get; set; }
+        }
+
+        [Fact]
+        public void field_for_dictionary()
+        {
+            fieldFor<DocWithAttributes>(x => x.Attributes)
+                .ShouldBeOfType<DictionaryField>();
+        }
     }
 }

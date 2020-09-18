@@ -130,6 +130,8 @@ using Baseline;
 
             var fieldType = members.Last().GetRawMemberType();
 
+
+
             if (fieldType.IsNullable())
             {
                 var innerFieldType = fieldType.GetGenericArguments()[0];
@@ -137,6 +139,8 @@ using Baseline;
 
                 return new NullableTypeField(innerField);
             }
+
+
 
 
             return createFieldByFieldType(members, fieldType);
@@ -149,6 +153,10 @@ using Baseline;
                 return new StringField(_dataLocator, _serializer.Casing, members);
             }
 
+            if (fieldType.Closes(typeof(IDictionary<,>)))
+            {
+                return new DictionaryField(_dataLocator, _serializer.Casing, _serializer.EnumStorage, members);
+            }
 
             if (fieldType.IsEnum)
             {

@@ -56,6 +56,10 @@ namespace Marten.Linq.Fields
         }
 
         public abstract string SelectorForDuplication(string pgType);
+        public virtual string ToOrderExpression(Expression expression)
+        {
+            return TypedLocator;
+        }
 
         public virtual string LocatorForIncludedDocumentId => TypedLocator;
 
