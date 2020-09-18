@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Fields;
@@ -239,13 +240,25 @@ namespace Marten.Linq.Parsing
 
         public IQueryHandler<TResult> BuildHandler<TResult>(QueryStatistics statistics)
         {
-            BuildDatabaseStatement(statistics);
+            try
+            {
+                BuildDatabaseStatement(statistics);
 
-            var handler = buildHandlerForCurrentStatement<TResult>();
+                var handler = buildHandlerForCurrentStatement<TResult>();
 
-            return AllIncludes.Any()
-                ? new IncludeQueryHandler<TResult>(handler, AllIncludes.Select(x => x.BuildReader(_session)).ToArray())
-                : handler;
+                return AllIncludes.Any()
+                    ? new IncludeQueryHandler<TResult>(handler, AllIncludes.Select(x => x.BuildReader(_session)).ToArray())
+                    : handler;
+            }
+            catch (NotSupportedException e)
+            {
+                if (e.Message.StartsWith("Can't infer NpgsqlDbType for type"))
+                {
+                    throw new BadLinqExpressionException("Marten cannot support custom value types in Linq expression. Please query on either simple properties of the value type, or register a custom IFieldSource for this value type.", e);
+                }
+
+                throw;
+            }
         }
 
         public void BuildDatabaseStatement(QueryStatistics statistics)
