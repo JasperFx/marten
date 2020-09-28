@@ -15,7 +15,7 @@ namespace Marten.Testing.Acceptance
         public SoftDeletedFixture() : base("softdelete")
         {
             Options.Schema.For<User>().SoftDeletedWithIndex();
-            Options.Schema.For<File>().SoftDeleted();
+            Options.Schema.For<File>().SoftDeleted().MapIsSoftDeletedTo(x => x.Deleted).MapSoftDeletedAtTo(x => x.DeletedAt);
 
             Options.Schema.For<User>()
                 .SoftDeleted()
@@ -410,5 +410,8 @@ namespace Marten.Testing.Acceptance
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid UserId { get; set; }
         public string Path { get; set; }
+        public bool Deleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
     }
+
 }

@@ -50,8 +50,12 @@ namespace Marten.Schema
         private HiloSettings _hiloSettings;
         private MemberInfo _idMember;
         private MemberInfo _versionMember;
-
-        private readonly Lazy<DocumentTable> _table;
+        private MemberInfo _lastModifiedMember;
+        private MemberInfo _tenantIdMember;
+        private MemberInfo _softDeletedMember;
+        private MemberInfo _softDeletedAtMember;
+        private MemberInfo _documentTypeMember;
+        private MemberInfo _dotNetTypeMember;
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions): base("d.data", documentType, storeOptions)
         {
@@ -90,6 +94,95 @@ namespace Marten.Schema
         }
 
         public bool UseOptimisticConcurrency { get; set; }
+        public MemberInfo LastModifiedMember
+        {
+            get => _lastModifiedMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(DateTime))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(LastModifiedMember)} has to be of type DateTime");
+                _lastModifiedMember = value;
+            }
+        }
+
+        public MemberInfo TenantIdMember
+        {
+            get => _tenantIdMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(string))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(TenantIdMember)} has to be of type string");
+                _tenantIdMember = value;
+            }
+        }
+
+        public MemberInfo IsSoftDeletedMember
+        {
+            get => _softDeletedMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(bool))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(IsSoftDeletedMember)} has to be of type boolean");
+                _softDeletedMember = value;
+            }
+        }
+
+        public MemberInfo SoftDeletedAtMember
+        {
+            get => _softDeletedAtMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(DateTime))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(SoftDeletedAtMember)} has to be of type DateTime");
+                _softDeletedAtMember = value;
+            }
+        }
+
+        public MemberInfo DocumentTypeMember
+        {
+            get => _documentTypeMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(string))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(DocumentTypeMember)} has to be of type string");
+                _documentTypeMember = value;
+            }
+        }
+
+        public MemberInfo DotNetTypeMember
+        {
+            get => _dotNetTypeMember;
+            set
+            {
+                if (value.GetMemberType() != typeof(string))
+                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(DotNetTypeMember)} has to be of type string");
+                _dotNetTypeMember = value;
+            }
+        }
+
+        private void applyAnyMartenAttributes(Type documentType)
+        {
+            documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
+
+            documentType.GetProperties()
+                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.PropertyType))
+                .Each(prop => { prop.ForAttribute<MartenAttribute>(att => att.Modify(this, prop)); });
+
+            documentType.GetFields()
+                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.FieldType))
+                .Each(fieldInfo => { fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo)); });
+
+            // DuplicateFieldAttribute does not require TypeMappings check
+            documentType.GetProperties()
+                .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
+                .Each(prop => { prop.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, prop)); });
+
+            documentType.GetFields()
+                .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
+                .Each(fieldInfo => { fieldInfo.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, fieldInfo)); });
+        }
+
+        public bool UseOptimisticConcurrency { get; set; } = false;
 
         public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
 
@@ -104,8 +197,23 @@ namespace Marten.Schema
 
         public string DatabaseSchemaName
         {
-            get => _databaseSchemaName ?? _storeOptions.DatabaseSchemaName;
-            set => _databaseSchemaName = value;
+            get { return _databaseSchemaName ?? _storeOptions.DatabaseSchemaName; }
+            set { _databaseSchemaName = value; }
+        }
+
+        public EnumStorage EnumStorage
+        {
+            get { return _storeOptions.EnumStorage; }
+        }
+
+        public Casing Casing
+        {
+            get { return _storeOptions.Serializer().Casing; }
+        }
+
+        public EnumStorage DuplicatedFieldEnumStorage
+        {
+            get { return _storeOptions.DuplicatedFieldEnumStorage; }
         }
 
         public EnumStorage EnumStorage => _storeOptions.EnumStorage;
@@ -561,6 +669,28 @@ namespace Marten.Schema
             return false;
         }
 
+
+
+        private HiloSettings _hiloSettings;
+
+        public HiloSettings HiloSettings
+        {
+            get { return _hiloSettings; }
+            set
+            {
+                if (IdStrategy is HiloIdGeneration)
+                {
+                    IdStrategy = new HiloIdGeneration(DocumentType, value);
+                    _hiloSettings = value;
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
+                }
+            }
+        }
+
         public bool IsHierarchy()
         {
             return _subClasses.Any() || DocumentType.GetTypeInfo().IsAbstract || DocumentType.GetTypeInfo().IsInterface;
@@ -619,6 +749,21 @@ namespace Marten.Schema
             if (IdMember == null)
                 throw new InvalidDocumentException(
                     $"Could not determine an 'id/Id' field or property for requested document type {DocumentType.FullName}");
+
+            if (TenantIdMember != null && TenancyStyle != TenancyStyle.Conjoined)
+            {
+                throw new InvalidDocumentException($"Tenancy style must be set to {nameof(TenancyStyle.Conjoined)} to map tenant id metadata for {DocumentType.FullName}.");
+            }
+
+            if (DocumentTypeMember != null && !IsHierarchy())
+            {
+                throw new InvalidDocumentException($"{DocumentType.FullName} must be part of a document hierarchy to map document type metadata.");
+            }
+
+            if ((IsSoftDeletedMember != null || SoftDeletedAtMember != null) && DeleteStyle != DeleteStyle.SoftDelete)
+            {
+                throw new InvalidDocumentException($"{DocumentType.FullName} must be configured for soft deletion to map soft deleted metadata.");
+            }
 
             var idField = new IdField(IdMember);
             setField(IdMember.Name, idField);

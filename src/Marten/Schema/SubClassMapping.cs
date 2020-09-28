@@ -78,7 +78,19 @@ namespace Marten.Schema
 
         public string[] SelectFields()
         {
-            return new[] { "data", "id", DocumentMapping.DocumentTypeColumn, DocumentMapping.VersionColumn };
+            var fields = new List<string> { "data", "id", DocumentMapping.DocumentTypeColumn, DocumentMapping.VersionColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn };
+
+            if (DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                fields.AddRange(new[] { DocumentMapping.DeletedColumn, DocumentMapping.DeletedAtColumn });
+            }
+
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                fields.Add(TenantIdColumn.Name);
+            }
+
+            return fields.ToArray();
         }
 
         public IField FieldFor(IEnumerable<MemberInfo> members)

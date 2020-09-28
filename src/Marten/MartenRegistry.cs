@@ -479,9 +479,115 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Copy the document version metadata to the selected member
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> VersionedWith(Expression<Func<T, Guid>> memberExpression)
             {
-                alter = m => m.VersionMember = FindMembers.Determine(memberExpression).Single();
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(VersionedWith)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.VersionMember = members.First();
+                return this;
+            }
+
+            /// <summary>
+            /// Copy the last modification date metadata to the selected member 
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MapLastModifiedTo(Expression<Func<T, DateTime>> memberExpression)
+            {
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(MapLastModifiedTo)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.LastModifiedMember = members.First();
+                return this;
+            }
+
+            /// <summary>
+            /// Copy the tenant id metadata to the selected member
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MapTenantIdTo(Expression<Func<T, string>> memberExpression)
+            {
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(MapTenantIdTo)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.TenantIdMember = members.First();
+                return this;
+            }
+
+            /// <summary>
+            /// Copy the is soft deleted metadata to the selected member
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MapIsSoftDeletedTo(Expression<Func<T, bool>> memberExpression)
+            {
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(MapIsSoftDeletedTo)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.IsSoftDeletedMember = members.First();
+                return this;
+            }
+
+            /// <summary>
+            /// Copy the soft deleted timestamp to the selected member
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MapSoftDeletedAtTo(Expression<Func<T, DateTime?>> memberExpression)
+            {
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(MapSoftDeletedAtTo)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.SoftDeletedAtMember = members.First();
+                return this;
+            }
+
+            /// <summary>
+            /// Copy the hierarchical document type to the selected member
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MapDocumentTypeTo(Expression<Func<T, string>> memberExpression)
+            {
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(MapDocumentTypeTo)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.DocumentTypeMember = members.First();
+                return this;
+            }
+
+            /// <summary>
+            /// Copy the document's qualified class name to the selected member
+            /// </summary>
+            /// <param name="memberExpression"></param>
+            /// <returns></returns>
+            public DocumentMappingExpression<T> MapDotNetTypeTo(Expression<Func<T, string>> memberExpression)
+            {
+                var members = FindMembers.Determine(memberExpression);
+                if (members.Length > 1)
+                {
+                    throw new ArgumentException($"The {nameof(MapDocumentTypeTo)} member cannot be a nested property.", nameof(memberExpression));
+                }
+                alter = m => m.DotNetTypeMember = members.First();
                 return this;
             }
         }

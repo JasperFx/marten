@@ -28,5 +28,21 @@ namespace Marten.Testing.Bugs
             }
         }
 
+        [Fact]
+        public void booleans_in_generated_sql_without_being_searchable()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Target>().GinIndexJsonData();
+                //_.Schema.For<Target>().Duplicate(x => x.Flag);
+            });
+
+            using (var session = theStore.OpenSession())
+            {
+                var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
+
+                cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version, d.mt_last_modified, d.mt_dotnet_type from public.mt_doc_target as d where d.data @> :arg0");
+            }
+        }
     }
 }
