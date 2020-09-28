@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
 
@@ -9,7 +10,7 @@ namespace Marten.Internal.Storage
 {
     public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>
     {
-        public QueryOnlyDocumentStorage(DocumentMapping document) : base(document)
+        public QueryOnlyDocumentStorage(DocumentMapping document) : base(StorageStyle.QueryOnly, document)
         {
         }
 

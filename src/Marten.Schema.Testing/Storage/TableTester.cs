@@ -170,7 +170,7 @@ namespace Marten.Schema.Testing.Storage
             writeTable();
 
             var existing = theTable.FetchExisting(_conn);
-            existing._columns.First(c => c.Name == "rownum").Type.ShouldBe("integer");
+            existing.Columns.First(c => c.Name == "rownum").Type.ShouldBe("integer");
 
             var diff = theTable.FetchDelta(_conn);
             diff.Matches.ShouldBeTrue();

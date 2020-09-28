@@ -4,23 +4,19 @@ namespace Marten.Storage
 {
     public class DocumentMetadata
     {
-        public DocumentMetadata(DateTime lastModified, Guid currentVersion, string dotNetType, string documentType,
-            bool deleted, DateTime? deletedAt)
+        public DocumentMetadata(object id)
         {
-            LastModified = lastModified;
-            CurrentVersion = currentVersion;
-            DotNetType = dotNetType;
-            DocumentType = documentType;
-            Deleted = deleted;
-            DeletedAt = deletedAt;
+            Id = id;
         }
 
-        public DateTime LastModified { get; }
-        public Guid CurrentVersion { get; }
-        public string DotNetType { get; }
-        public string DocumentType { get; }
-        public bool Deleted { get; }
-        public DateTime? DeletedAt { get; }
+        public object Id { get;}
+
+        public DateTime LastModified { get; internal set;}
+        public Guid CurrentVersion { get; internal set;}
+        public string DotNetType { get; internal set;}
+        public string DocumentType { get; internal set;}
+        public bool Deleted { get; internal set;}
+        public DateTime? DeletedAt { get; internal set; }
         public string TenantId { get; internal set; }
     }
 }

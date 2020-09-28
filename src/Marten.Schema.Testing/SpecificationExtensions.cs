@@ -95,7 +95,7 @@ namespace Marten.Schema.Testing
 
             try
             {
-                actual.Count.ShouldBe(expected.Count);
+                actual.Count.ShouldBe(expected.Count, () => $"Actual was " + actual.OfType<object>().Select(x => x.ToString()).Join(", "));
 
                 for (var i = 0; i < actual.Count; i++)
                 {

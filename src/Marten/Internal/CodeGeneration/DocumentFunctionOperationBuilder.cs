@@ -24,7 +24,7 @@ namespace Marten.Internal.CodeGeneration
         }
     }
 
-    public class DocumentFunctionOperationBuilder
+    internal class DocumentFunctionOperationBuilder
     {
         private readonly UpsertFunction _function;
         private readonly DocumentMapping _mapping;

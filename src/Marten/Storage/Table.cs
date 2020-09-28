@@ -16,7 +16,7 @@ namespace Marten.Storage
     /// </summary>
     public class Table: ISchemaObject, IEnumerable<TableColumn>
     {
-        public readonly List<TableColumn> _columns = new List<TableColumn>();
+        public readonly List<TableColumn> Columns = new List<TableColumn>();
 
         public DbObjectName Identifier { get; }
 
@@ -47,20 +47,20 @@ namespace Marten.Storage
         {
             PrimaryKey = column;
             column.Directive = $"CONSTRAINT pk_{Identifier.Name} PRIMARY KEY";
-            _columns.Add(column);
+            Columns.Add(column);
         }
 
         public void AddPrimaryKeys(List<TableColumn> columns)
         {
             PrimaryKeys.AddRange(columns);
-            _columns.AddRange(columns);
+            Columns.AddRange(columns);
         }
 
         public TableColumn PrimaryKey { get; private set; }
 
         public void AddColumn<T>() where T : TableColumn, new()
         {
-            _columns.Add(new T());
+            Columns.Add(new T());
         }
 
         public TableColumn AddColumn(string name, string type, string directive = null)
@@ -77,26 +77,26 @@ namespace Marten.Storage
 
         public void AddColumn(TableColumn column)
         {
-            _columns.Add(column);
+            Columns.Add(column);
         }
 
         public TableColumn Column(string name)
         {
-            return _columns.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+            return Columns.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
         }
 
         public void ReplaceOrAddColumn(string name, string type, string directive = null)
         {
             var column = new TableColumn(name, type) { Directive = directive };
-            var columnIndex = _columns.FindIndex(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            var columnIndex = Columns.FindIndex(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
             if (columnIndex >= 0)
             {
-                _columns[columnIndex] = column;
+                Columns[columnIndex] = column;
             }
             else
             {
-                _columns.Add(column);
+                Columns.Add(column);
             }
         }
 
@@ -107,7 +107,7 @@ namespace Marten.Storage
 
         public IEnumerator<TableColumn> GetEnumerator()
         {
-            return _columns.GetEnumerator();
+            return Columns.GetEnumerator();
         }
 
         public readonly IList<string> Constraints = new List<string>();
@@ -124,9 +124,9 @@ namespace Marten.Storage
                 writer.WriteLine("CREATE TABLE IF NOT EXISTS {0} (", Identifier);
             }
 
-            var length = _columns.Select(x => x.Name.Length).Max() + 4;
+            var length = Columns.Select(x => x.Name.Length).Max() + 4;
 
-            var lines = _columns.Select(x => x.ToDeclaration(length)).Concat(Constraints).ToArray();
+            var lines = Columns.Select(x => x.ToDeclaration(length)).Concat(Constraints).ToArray();
 
             for (int i = 0; i < lines.Length - 1; i++)
             {
@@ -416,28 +416,28 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
 
         public void SetPrimaryKey(string columnName)
         {
-            var column = _columns.FirstOrDefault(x => x.Name == columnName);
+            var column = Columns.FirstOrDefault(x => x.Name == columnName);
             PrimaryKey = column;
         }
 
         public bool HasColumn(string columnName)
         {
-            return _columns.Any(x => x.Name == columnName);
+            return Columns.Any(x => x.Name == columnName);
         }
 
         public TableColumn ColumnFor(string columnName)
         {
-            return _columns.FirstOrDefault(x => x.Name == columnName);
+            return Columns.FirstOrDefault(x => x.Name == columnName);
         }
 
         public void RemoveColumn(string columnName)
         {
-            _columns.RemoveAll(x => x.Name == columnName);
+            Columns.RemoveAll(x => x.Name == columnName);
         }
 
         protected bool Equals(Table other)
         {
-            return _columns.OrderBy(x => x.Name).SequenceEqual(other.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && Identifier.Equals(other.Identifier);
+            return Columns.OrderBy(x => x.Name).SequenceEqual(other.OrderBy(x => x.Name)) && Equals(PrimaryKey, other.PrimaryKey) && Identifier.Equals(other.Identifier);
         }
 
         public override bool Equals(object obj)
@@ -455,7 +455,7 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
         {
             unchecked
             {
-                var hashCode = (_columns != null ? _columns.GetHashCode() : 0);
+                var hashCode = (Columns != null ? Columns.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (PrimaryKey != null ? PrimaryKey.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Identifier != null ? Identifier.GetHashCode() : 0);
                 return hashCode;

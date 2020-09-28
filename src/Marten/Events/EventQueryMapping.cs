@@ -46,9 +46,5 @@ namespace Marten.Events
             return DuplicateField(finder.Members.ToArray(), columnName: columnName);
         }
 
-        public override string[] SelectFields()
-        {
-            return Selector.SelectFields();
-        }
     }
 }

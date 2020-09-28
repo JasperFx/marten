@@ -36,14 +36,14 @@ namespace Marten.Internal.CodeGeneration
                 case StorageStyle.Lightweight:
                     return typeof(LightweightDocumentStorage<,>);
 
-
-
                 case StorageStyle.QueryOnly:
                     return typeof(QueryOnlyDocumentStorage<,>);
 
                 case StorageStyle.IdentityMap:
-                case StorageStyle.DirtyTracking:
                     return typeof(IdentityMapDocumentStorage<,>);
+
+                case StorageStyle.DirtyTracking:
+                    return typeof(DirtyCheckedDocumentStorage<,>);
             }
 
             throw new NotSupportedException();

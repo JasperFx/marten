@@ -11,7 +11,7 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    public class BulkInsertion: IDisposable
+    internal class BulkInsertion: IDisposable
     {
         private readonly ITenant _tenant;
 

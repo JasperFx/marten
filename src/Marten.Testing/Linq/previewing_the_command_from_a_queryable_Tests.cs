@@ -15,7 +15,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d");
+            cmd.CommandText.ShouldBe("select d.id, d.data, d.mt_version from public.mt_doc_target as d");
             cmd.Parameters.Any().ShouldBeFalse();
         }
 
@@ -24,7 +24,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
+            cmd.CommandText.ShouldBe("select d.id, d.data, d.mt_version from public.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
 
             cmd.Parameters.Count.ShouldBe(2);
             cmd.Parameters["p0"].Value.ShouldBe(3);
@@ -52,7 +52,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
 
-            cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from public.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
+            cmd.CommandText.Trim().ShouldBe("select d.id, d.data, d.mt_version from public.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
         }
 
 
@@ -73,7 +73,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d");
+            cmd.CommandText.ShouldBe("select d.id, d.data, d.mt_version from other.mt_doc_target as d");
             cmd.Parameters.Any().ShouldBeFalse();
         }
 
@@ -82,7 +82,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
+            cmd.CommandText.ShouldBe("select d.id, d.data, d.mt_version from other.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
 
             cmd.Parameters.Count.ShouldBe(2);
             cmd.Parameters["p0"].Value.ShouldBe(3);
@@ -110,7 +110,7 @@ namespace Marten.Testing.Linq
         {
             var cmd = theSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
 
-            cmd.CommandText.Trim().ShouldBe("select d.data, d.id, d.mt_version from other.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
+            cmd.CommandText.Trim().ShouldBe("select d.id, d.data, d.mt_version from other.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Exceptions;
+using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
 using Npgsql;
@@ -12,7 +13,11 @@ namespace Marten.Internal.Storage
 {
     public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId>
     {
-        public IdentityMapDocumentStorage(DocumentMapping document) : base(document)
+        public IdentityMapDocumentStorage(DocumentMapping document) : this(StorageStyle.IdentityMap, document)
+        {
+        }
+
+        protected IdentityMapDocumentStorage(StorageStyle storageStyle, DocumentMapping document) : base(storageStyle, document)
         {
         }
 

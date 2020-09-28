@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class UpsertFunction: Function
+    internal class UpsertFunction: Function
     {
         private readonly bool _disableConcurrency;
         protected readonly string _primaryKeyConstraintName;

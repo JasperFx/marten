@@ -27,7 +27,7 @@ namespace Marten.Services
         /// <returns></returns>
         public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
         {
-            using var session = _store.QuerySession();
+            using var session = _store.LightweightSession();
             var source = _store.Options.GetCompiledQuerySourceFor(query, (IMartenSession) session);
             var handler = source.Build(query, (IMartenSession) session);
 

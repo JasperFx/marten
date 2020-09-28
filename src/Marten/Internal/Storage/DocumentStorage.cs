@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Internal.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Linq.Fields;
@@ -35,8 +36,9 @@ namespace Marten.Internal.Storage
         protected Action<T, TId> _setter;
         protected readonly DocumentMapping _mapping;
         private NpgsqlDbType _idType;
+        private readonly string[] _selectFields;
 
-        public DocumentStorage(DocumentMapping document)
+        public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
         {
             _mapping = document;
 
@@ -48,13 +50,16 @@ namespace Marten.Internal.Storage
 
             _idType = TypeMappings.ToDbType(typeof(TId));
 
-            _selectClause = $"select {_document.SelectFields().Select(x => $"d.{x}").Join(", ")} from {document.Table.QualifiedName} as d";
+            var table = new DocumentTable(_mapping);
+            _selectFields = table.SelectColumns(storageStyle).Select(x => $"d.{x.Name}").ToArray();
+            var fieldSelector = _selectFields.Join(", ");
+            _selectClause = $"select {fieldSelector} from {document.Table.QualifiedName} as d";
 
             _loaderSql =
-                $"select {document.SelectFields().Join(", ")} from {document.Table.QualifiedName} as d where id = :id";
+                $"select {fieldSelector} from {document.Table.QualifiedName} as d where id = :id";
 
             _loadArraySql =
-                $"select {document.SelectFields().Join(", ")} from {document.Table.QualifiedName} as d where id = ANY(:ids)";
+                $"select {fieldSelector} from {document.Table.QualifiedName} as d where id = ANY(:ids)";
 
             if (document.TenancyStyle == TenancyStyle.Conjoined)
             {
@@ -214,7 +219,7 @@ namespace Marten.Internal.Storage
 
         public string[] SelectFields()
         {
-            return _document.SelectFields();
+            return _selectFields;
         }
 
         public abstract ISelector BuildSelector(IMartenSession session);

@@ -510,33 +510,9 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<Organization>();
 
             mapping.FieldFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
-            SpecificationExtensions.ShouldNotBeOfType<DuplicatedField>(mapping.FieldFor(nameof(Organization.OtherProp)));
+            mapping.FieldFor(nameof(Organization.OtherProp)).ShouldNotBeOfType<DuplicatedField>();
         }
 
-        [Fact]
-        public void select_fields_for_non_hierarchy_mapping()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn);
-        }
-
-        [Fact]
-        public void select_fields_with_subclasses()
-        {
-            var mapping = DocumentMapping.For<Squad>();
-            mapping.AddSubClass(typeof(BaseballTeam));
-
-            mapping.SelectFields()
-                .ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.DocumentTypeColumn,
-                    DocumentMapping.VersionColumn);
-        }
-
-        [Fact]
-        public void select_fields_without_subclasses()
-        {
-            var mapping = DocumentMapping.For<User>();
-            mapping.SelectFields().ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.VersionColumn);
-        }
 
         [Fact]
         public void table_name_for_document()

@@ -16,8 +16,6 @@ namespace Marten.Schema
 
         ISqlFragment DefaultWhereFragment();
 
-        string[] SelectFields();
-
         DbObjectName Table { get; }
 
         DuplicatedField[] DuplicatedFields { get; }

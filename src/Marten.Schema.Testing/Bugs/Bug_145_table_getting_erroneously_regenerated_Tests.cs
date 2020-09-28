@@ -1,15 +1,12 @@
 using System;
 using System.IO;
 using Baseline;
-using Marten.Schema;
-using Marten.Services;
 using Marten.Storage;
-using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace Marten.Schema.Testing.Bugs
 {
-    public class Bug_145_table_getting_erroneously_regenerated_Tests: BugIntegrationContext
+    public class Bug_145_table_getting_erroneously_regenerated_Tests: IntegrationContext
     {
         public Bug_145_table_getting_erroneously_regenerated_Tests()
         {

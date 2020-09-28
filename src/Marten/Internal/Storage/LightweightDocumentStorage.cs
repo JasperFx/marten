@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
 
@@ -9,7 +10,7 @@ namespace Marten.Internal.Storage
 {
     public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId>
     {
-        public LightweightDocumentStorage(DocumentMapping document) : base(document)
+        public LightweightDocumentStorage(DocumentMapping document) : base(StorageStyle.Lightweight, document)
         {
         }
 

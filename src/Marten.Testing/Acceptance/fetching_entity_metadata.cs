@@ -62,10 +62,10 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 session.Store(shop);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 session.Delete(shop);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using var query = theStore.QuerySession();

@@ -3,7 +3,7 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    public class UpdateFunction: UpsertFunction
+    internal class UpdateFunction: UpsertFunction
     {
         public UpdateFunction(DocumentMapping mapping) : base(mapping, mapping.UpdateFunction)
         {

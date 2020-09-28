@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using LamarCodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Internal.CodeGeneration
 {
@@ -30,79 +32,16 @@ namespace Marten.Internal.CodeGeneration
             var sync = type.MethodFor("Resolve");
             var async = type.MethodFor("ResolveAsync");
 
-            var versionPosition = _mapping.IsHierarchy() ? 3 : 2;
+            var table = new DocumentTable(_mapping);
+            var columns = table.SelectColumns(_style);
 
-            switch (_style)
+            for (var i = 0; i < columns.Length; i++)
             {
-                case StorageStyle.QueryOnly:
-                    sync.Frames.Deserialize(_mapping);
-                    async.Frames.DeserializeAsync(_mapping);
-                    break;
-
-                case StorageStyle.IdentityMap:
-                    sync.Frames.GetId(_mapping);
-                    async.Frames.GetIdAsync(_mapping);
-
-                    sync.Frames.CheckExistingFirst();
-                    async.Frames.CheckExistingFirst();
-
-                    sync.Frames.Deserialize(_mapping);
-                    async.Frames.DeserializeAsync(_mapping);
-
-                    sync.Frames.MarkAsLoaded();
-                    async.Frames.MarkAsLoaded();
-
-                    sync.Frames.StoreVersion(false, _mapping, versionPosition);
-                    async.Frames.StoreVersion(true, _mapping, versionPosition);
-
-                    sync.Frames.StoreInIdentityMap(_mapping);
-                    async.Frames.StoreInIdentityMap(_mapping);
-
-                    break;
-
-                case StorageStyle.DirtyTracking:
-                    sync.Frames.GetId(_mapping);
-                    async.Frames.GetIdAsync(_mapping);
-
-                    sync.Frames.CheckExistingFirst();
-                    async.Frames.CheckExistingFirst();
-
-                    sync.Frames.Deserialize(_mapping);
-                    async.Frames.DeserializeAsync(_mapping);
-
-                    sync.Frames.MarkAsLoaded();
-                    async.Frames.MarkAsLoaded();
-
-                    sync.Frames.StoreVersion(false, _mapping, versionPosition);
-                    async.Frames.StoreVersion(true, _mapping, versionPosition);
-
-                    sync.Frames.StoreInIdentityMap(_mapping);
-                    async.Frames.StoreInIdentityMap(_mapping);
-
-                    sync.Frames.StoreTracker();
-                    async.Frames.StoreTracker();
-
-                    break;
-
-                case StorageStyle.Lightweight:
-                    sync.Frames.GetId(_mapping);
-                    async.Frames.GetIdAsync(_mapping);
-
-                    sync.Frames.Deserialize(_mapping);
-                    async.Frames.DeserializeAsync(_mapping);
-
-                    sync.Frames.MarkAsLoaded();
-                    async.Frames.MarkAsLoaded();
-
-
-                    sync.Frames.StoreVersion(false, _mapping, versionPosition);
-                    async.Frames.StoreVersion(true, _mapping, versionPosition);
-
-                    break;
-                default:
-                    throw new InvalidOperationException();
+                // TODO -- use the memo-ized table
+                columns[i].GenerateCode(_style, async, sync, i, _mapping);
             }
 
+            generateIdentityMapAndTrackingCode(sync, async, _style);
 
             sync.Frames.Return(_mapping.DocumentType);
             if (_style == StorageStyle.QueryOnly && !_mapping.IsHierarchy())
@@ -115,6 +54,25 @@ namespace Marten.Internal.CodeGeneration
             }
 
             return type;
+        }
+
+        private void generateIdentityMapAndTrackingCode(GeneratedMethod sync, GeneratedMethod @async, StorageStyle storageStyle)
+        {
+            if (storageStyle == StorageStyle.QueryOnly) return;
+
+            sync.Frames.MarkAsLoaded();
+            async.Frames.MarkAsLoaded();
+
+            if (storageStyle == StorageStyle.Lightweight) return;
+
+            sync.Frames.StoreInIdentityMap(_mapping);
+            async.Frames.StoreInIdentityMap(_mapping);
+
+            if (storageStyle == StorageStyle.DirtyTracking)
+            {
+                sync.Frames.StoreTracker();
+                async.Frames.StoreTracker();
+            }
         }
 
         private Type determineBaseType()

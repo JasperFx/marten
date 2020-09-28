@@ -6,19 +6,9 @@ using Marten.Schema;
 
 namespace Marten.Internal.CodeGeneration
 {
-    public static class FrameCollectionExtensions
+    internal static class FrameCollectionExtensions
     {
         public const string DocumentVariableName = "document";
-
-        public static void GetId(this FramesCollection frames, DocumentMapping mapping)
-        {
-            frames.Code($"var id = reader.GetFieldValue<{mapping.IdType.FullNameInCode()}>(1);");
-        }
-
-        public static void GetIdAsync(this FramesCollection frames, DocumentMapping mapping)
-        {
-            frames.CodeAsync($"var id = await reader.GetFieldValueAsync<{mapping.IdType.FullNameInCode()}>(1, token);");
-        }
 
         public static void StoreInIdentityMap(this FramesCollection frames, DocumentMapping mapping)
         {
@@ -30,12 +20,7 @@ namespace Marten.Internal.CodeGeneration
             frames.Code("StoreTracker({0}, document);", Use.Type<IMartenSession>());
         }
 
-        public static void CheckExistingFirst(this FramesCollection frames)
-        {
-            frames.Code("if (_identityMap.TryGetValue(id, out var existing)) return existing;");
-        }
-
-        public static void Deserialize(this FramesCollection frames, IDocumentMapping mapping)
+        public static void Deserialize(this FramesCollection frames, IDocumentMapping mapping, int index)
         {
             var documentType = mapping.DocumentType;
             var document = new Variable(documentType, DocumentVariableName);
@@ -45,7 +30,7 @@ namespace Marten.Internal.CodeGeneration
                 {
                     frames.Code($@"
 {documentType.FullNameInCode()} document;
-BLOCK:using (var json = reader.GetTextReader(0))
+BLOCK:using (var json = reader.GetTextReader({index}))
     document = _serializer.FromJson<{documentType.FullNameInCode()}>(json);
 END
 ").Creates(document);
@@ -55,8 +40,8 @@ END
                     // Hierarchy path is different
                     frames.Code($@"
 {documentType.FullNameInCode()} document;
-var typeAlias = reader.GetFieldValue<string>(2);
-BLOCK:using (var json = reader.GetTextReader(0))
+var typeAlias = reader.GetFieldValue<string>({index + 1});
+BLOCK:using (var json = reader.GetTextReader({index}))
     document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), json);
 END
 ").Creates(document);
@@ -69,7 +54,7 @@ END
             frames.Code($"{{0}}.{nameof(IMartenSession.MarkAsDocumentLoaded)}(id, document);", Use.Type<IMartenSession>());
         }
 
-        public static void DeserializeAsync(this FramesCollection frames, IDocumentMapping mapping)
+        public static void DeserializeAsync(this FramesCollection frames, IDocumentMapping mapping, int index)
         {
             var documentType = mapping.DocumentType;
             var document = new Variable(documentType, DocumentVariableName);
@@ -79,7 +64,7 @@ END
                 {
                     frames.Code($@"
 {documentType.FullNameInCode()} document;
-BLOCK:using (var json = reader.GetTextReader(0))
+BLOCK:using (var json = reader.GetTextReader({index}))
     document = _serializer.FromJson<{documentType.FullNameInCode()}>(json);
 END
 ").Creates(document);
@@ -88,8 +73,8 @@ END
                 {
                     frames.CodeAsync($@"
 {documentType.FullNameInCode()} document;
-var typeAlias = await reader.GetFieldValueAsync<string>(2, {{0}}).ConfigureAwait(false);
-BLOCK:using (var json = reader.GetTextReader(0))
+var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}}).ConfigureAwait(false);
+BLOCK:using (var json = reader.GetTextReader({index}))
     document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), json);
 END
 ", Use.Type<CancellationToken>()).Creates(document);
@@ -101,27 +86,6 @@ END
         }
 
 
-        public static void StoreVersion(this FramesCollection frames, bool isAsync, DocumentMapping mapping,
-            int position)
-        {
-            // Get the version
-            if (isAsync)
-            {
-                frames.CodeAsync($"var version = await reader.GetFieldValueAsync<System.Guid>({position}, token);");
-            }
-            else
-            {
-                frames.Code($"var version = reader.GetFieldValue<System.Guid>({position});");
-            }
 
-            // Store it
-            frames.Code("_versions[id] = version;");
-
-            // Set on document
-            if (mapping.VersionMember != null)
-            {
-                frames.Code($"document.{mapping.VersionMember.Name} = version;");
-            }
-        }
     }
 }

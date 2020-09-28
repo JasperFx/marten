@@ -23,8 +23,8 @@ namespace Marten.Testing.Bugs
 
                 var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
 
-                cmd1.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where d.flag = :p0");
-                cmd2.CommandText.ShouldBe($"select d.data, d.id, d.mt_version from {SchemaName}.mt_doc_target as d where (d.flag is null or d.flag = False)");
+                cmd1.CommandText.ShouldBe($"select d.id, d.data, d.mt_version from {SchemaName}.mt_doc_target as d where d.flag = :p0");
+                cmd2.CommandText.ShouldBe($"select d.id, d.data, d.mt_version from {SchemaName}.mt_doc_target as d where (d.flag is null or d.flag = False)");
             }
         }
 

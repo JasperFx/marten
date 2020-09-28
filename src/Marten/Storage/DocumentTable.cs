@@ -2,30 +2,27 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
-using Marten.Linq.Fields;
+using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class DocumentTable: Table
+    internal class DocumentTable: Table
     {
-        public DocumentTable(DocumentMapping mapping) : base(mapping.Table)
+        private readonly DocumentMapping _mapping;
+
+        public DocumentTable(DocumentMapping mapping): base(mapping.Table)
         {
             // validate to ensure document has an Identity field or property
             mapping.Validate();
 
-            var pgIdType = TypeMappings.GetPgType(mapping.IdMember.GetMemberType(), mapping.EnumStorage);
-            var pgTextType = TypeMappings.GetPgType(string.Empty.GetType(), mapping.EnumStorage);
+            _mapping = mapping;
 
-            var idColumn = new TableColumn("id", pgIdType);
+            var idColumn = new IdColumn(mapping);
+
             if (mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
-                AddPrimaryKeys(new List<TableColumn>
-                {
-                    idColumn,
-                    new TenantIdColumn()
-                });
+                AddPrimaryKeys(new List<TableColumn> {idColumn, new TenantIdColumn()});
 
                 Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
             }
@@ -34,21 +31,15 @@ namespace Marten.Storage
                 AddPrimaryKey(idColumn);
             }
 
-            AddColumn("data", "jsonb", "NOT NULL");
+            AddColumn<DataColumn>();
 
             AddColumn<LastModifiedColumn>();
             AddColumn<VersionColumn>();
             AddColumn<DotNetTypeColumn>();
 
-            foreach (var field in mapping.DuplicatedFields)
-            {
-                AddColumn(new DuplicatedFieldColumn(field));
-            }
+            foreach (var field in mapping.DuplicatedFields) AddColumn(new DuplicatedFieldColumn(field));
 
-            if (mapping.IsHierarchy())
-            {
-                AddColumn(new DocumentTypeColumn(mapping));
-            }
+            if (mapping.IsHierarchy()) AddColumn(new DocumentTypeColumn(mapping));
 
             if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
             {
@@ -66,9 +57,10 @@ namespace Marten.Storage
             return template
                 .Replace(DdlRules.SCHEMA, Identifier.Schema)
                 .Replace(DdlRules.TABLENAME, Identifier.Name)
-                .Replace(DdlRules.COLUMNS, _columns.Select(x => x.Name).Join(", "))
-                .Replace(DdlRules.NON_ID_COLUMNS, _columns.Where(x => !x.Name.EqualsIgnoreCase("id")).Select(x => x.Name).Join(", "))
-                .Replace(DdlRules.METADATA_COLUMNS, _columns.OfType<SystemColumn>().Select(x => x.Name).Join(", "));
+                .Replace(DdlRules.COLUMNS, Columns.Select(x => x.Name).Join(", "))
+                .Replace(DdlRules.NON_ID_COLUMNS,
+                    Columns.Where(x => !x.Name.EqualsIgnoreCase("id")).Select(x => x.Name).Join(", "))
+                .Replace(DdlRules.METADATA_COLUMNS, Columns.OfType<MetadataColumn>().Select(x => x.Name).Join(", "));
         }
 
         public void WriteTemplate(DdlTemplate template, StringWriter writer)
@@ -83,7 +75,7 @@ namespace Marten.Storage
 
         protected bool Equals(DocumentTable other)
         {
-            return base.Equals((Table)other);
+            return base.Equals(other);
         }
 
         public override bool Equals(object obj)
@@ -92,7 +84,7 @@ namespace Marten.Storage
                 return false;
             if (ReferenceEquals(this, obj))
                 return true;
-            if (obj.GetType() != this.GetType())
+            if (obj.GetType() != GetType())
                 return false;
             return Equals((DocumentTable)obj);
         }
@@ -101,96 +93,46 @@ namespace Marten.Storage
         {
             return Identifier.QualifiedName.GetHashCode();
         }
-    }
 
-    public abstract class SystemColumn: TableColumn
-    {
-        protected SystemColumn(string name, string type) : base(name, type)
+        internal ISelectableColumn[] SelectColumns(StorageStyle style)
         {
-        }
-    }
+            // There's some hokey stuff going here, but older code assumes that the
+            // order of the selection is data, id, everything else
+            var columns = Columns.OfType<ISelectableColumn>().Where(x => x.ShouldSelect(_mapping, style)).ToList();
 
-    public class TenantIdColumn: SystemColumn
-    {
-        public new static readonly string Name = "tenant_id";
+            var id = columns.OfType<IdColumn>().SingleOrDefault();
+            var data = columns.OfType<DataColumn>().Single();
+            var type = columns.OfType<DocumentTypeColumn>().SingleOrDefault();
+            var version = columns.OfType<VersionColumn>().SingleOrDefault();
 
-        public TenantIdColumn() : base(Name, "varchar")
-        {
-            CanAdd = true;
-            Directive = $"DEFAULT '{Tenancy.DefaultTenantId}'";
-        }
-    }
+            var answer = new List<ISelectableColumn>();
 
-    public class DeletedColumn: SystemColumn
-    {
-        public DeletedColumn() : base(DocumentMapping.DeletedColumn, "boolean")
-        {
-            Directive = "DEFAULT FALSE";
-            CanAdd = true;
-        }
-    }
+            if (id != null)
+            {
+                columns.Remove(id);
+                answer.Add(id);
+            }
 
-    public class DeletedAtColumn: SystemColumn
-    {
-        public DeletedAtColumn() : base(DocumentMapping.DeletedAtColumn, "timestamp with time zone")
-        {
-            CanAdd = true;
-            Directive = "NULL";
-        }
-    }
+            columns.Remove(data);
+            answer.Add(data);
 
-    public class DocumentTypeColumn: SystemColumn
-    {
-        public DocumentTypeColumn(DocumentMapping mapping) : base(DocumentMapping.DocumentTypeColumn, "varchar")
-        {
-            CanAdd = true;
-            Directive = $"DEFAULT '{mapping.AliasFor(mapping.DocumentType)}'";
-            mapping.AddIndex(DocumentMapping.DocumentTypeColumn);
-        }
-    }
+            if (type != null)
+            {
+                columns.Remove(type);
 
-    public class LastModifiedColumn: SystemColumn
-    {
-        public LastModifiedColumn() : base(DocumentMapping.LastModifiedColumn, "timestamp with time zone")
-        {
-            Directive = "DEFAULT transaction_timestamp()";
-            CanAdd = true;
-        }
-    }
+                // Old code might depend on this exact ordering
+                answer.Add(type);
+            }
 
-    public class VersionColumn: SystemColumn
-    {
-        public VersionColumn() : base(DocumentMapping.VersionColumn, "uuid")
-        {
-            Directive = "NOT NULL default(md5(random()::text || clock_timestamp()::text)::uuid)";
-            CanAdd = true;
-        }
-    }
+            if (version != null)
+            {
+                columns.Remove(version);
+                answer.Add(version);
+            }
 
-    public class DotNetTypeColumn: SystemColumn
-    {
-        public DotNetTypeColumn() : base(DocumentMapping.DotNetTypeColumn, "varchar")
-        {
-            CanAdd = true;
-        }
-    }
+            answer.AddRange(columns);
 
-    public class DuplicatedFieldColumn: TableColumn
-    {
-        private readonly DuplicatedField _field;
-        private const string NullConstraint = "NULL";
-        private const string NotNullConstraint = "NOT NULL";
-
-
-        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType, field.NotNull ? NotNullConstraint : NullConstraint)
-        {
-            CanAdd = true;
-            _field = field;
-        }
-
-        public override string AddColumnSql(Table table)
-        {
-            return $"{base.AddColumnSql(table)}update {table.Identifier} set {_field.UpdateSqlFragment()};";
+            return answer.ToArray();
         }
     }
 }

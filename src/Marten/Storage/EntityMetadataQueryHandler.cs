@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
@@ -11,52 +12,39 @@ using Marten.Util;
 
 namespace Marten.Storage
 {
-    public class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
+    internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
     {
-        private readonly Dictionary<string, int> _fields;
         private readonly object _id;
         private readonly IDocumentMapping _mapping;
+        private readonly MetadataColumn[] _columns;
 
         public EntityMetadataQueryHandler(object id, IDocumentMapping mapping)
         {
             _id = id;
             _mapping = mapping;
 
-            var fieldIndex = 0;
-            _fields = new Dictionary<string, int>
-            {
-                {DocumentMapping.VersionColumn, fieldIndex++},
-                {DocumentMapping.LastModifiedColumn, fieldIndex++},
-                {DocumentMapping.DotNetTypeColumn, fieldIndex++}
-            };
+            SourceType = mapping.DocumentType;
 
-            var queryableDocument = _mapping.ToQueryableDocument();
-            if (queryableDocument.SelectFields().Contains(DocumentMapping.DocumentTypeColumn))
-                _fields.Add(DocumentMapping.DocumentTypeColumn, fieldIndex++);
-            if (queryableDocument.DeleteStyle == DeleteStyle.SoftDelete)
+            // TODO -- use memoized table on DocumentMapping
+            if (mapping is DocumentMapping m)
             {
-                _fields.Add(DocumentMapping.DeletedColumn, fieldIndex++);
-                _fields.Add(DocumentMapping.DeletedAtColumn, fieldIndex++);
+                _columns = new DocumentTable(m).OfType<MetadataColumn>().ToArray();
+            }
+            else if (mapping is SubClassMapping s)
+            {
+                _columns = new DocumentTable(s.Parent).OfType<MetadataColumn>().ToArray();
             }
 
-            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                _fields.Add(TenantIdColumn.Name, fieldIndex);
-            }
+
         }
 
         public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
         {
-            sql.Append("select ");
+            sql.Append("select id, ");
 
-            var fields = _fields.OrderBy(kv => kv.Value).Select(kv => kv.Key).ToArray();
+            var fields = _columns.Select(x => x.Name).Join(", ");
 
-            sql.Append(fields[0]);
-            for (var i = 1; i < fields.Length; i++)
-            {
-                sql.Append(", ");
-                sql.Append(fields[i]);
-            }
+            sql.Append(fields);
 
             sql.Append(" from ");
             sql.Append((string)_mapping.Table.QualifiedName);
@@ -70,18 +58,13 @@ namespace Marten.Storage
             if (!reader.Read())
                 return null;
 
-            var version = reader.GetFieldValue<Guid>(0);
-            var timestamp = reader.GetValue(1).MapToDateTime();
-            var dotNetType = reader.GetFieldValue<string>(2);
-            var docType = GetOptionalFieldValue<string>(reader, DocumentMapping.DocumentTypeColumn);
-            var deleted = GetOptionalFieldValue<bool>(reader, DocumentMapping.DeletedColumn);
-            var deletedAt = GetOptionalFieldValue<object>(reader, DocumentMapping.DeletedAtColumn);
-            var tenantId = GetOptionalFieldValue<string>(reader, TenantIdColumn.Name);
+            var id = reader.GetFieldValue<object>(0);
+            var metadata = new DocumentMetadata(id);
 
-            var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt?.MapToDateTime())
+            for (var i = 0; i < _columns.Length; i++)
             {
-                TenantId = tenantId ?? Tenancy.DefaultTenantId
-            };
+                _columns[i].Apply(metadata, i + 1, reader);
+            }
 
             return metadata;
         }
@@ -93,57 +76,15 @@ namespace Marten.Storage
             if (!hasAny)
                 return null;
 
-            var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
-            var timestamp = await reader.GetFieldValueAsync<object>(1, token).ConfigureAwait(false);
-            var dotNetType = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
-            var docType = await GetOptionalFieldValueAsync<string>(reader, DocumentMapping.DocumentTypeColumn, token)
-                .ConfigureAwait(false);
-            var deleted = await GetOptionalFieldValueAsync<bool>(reader, DocumentMapping.DeletedColumn, token)
-                .ConfigureAwait(false);
-            var deletedAt =
-                await GetOptionalFieldValueAsync<object>(reader, DocumentMapping.DeletedAtColumn, token)
-                    .ConfigureAwait(false);
+            var id = await reader.GetFieldValueAsync<object>(0, token);
+            var metadata = new DocumentMetadata(id);
 
-            var metadata = new DocumentMetadata(timestamp.MapToDateTime(), version, dotNetType, docType, deleted, deletedAt?.MapToDateTime());
-            if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+            for (var i = 0; i < _columns.Length; i++)
             {
-                metadata.TenantId = await GetOptionalFieldValueAsync<string>(reader, TenantIdColumn.Name, token)
-                    .ConfigureAwait(false);
+                await _columns[i].ApplyAsync(metadata, i + 1, reader, token);
             }
 
             return metadata;
-        }
-
-        private T GetOptionalFieldValue<T>(DbDataReader reader, string fieldName)
-        {
-            if (_fields.TryGetValue(fieldName, out int ordinal) && !reader.IsDBNull(ordinal))
-                return reader.GetFieldValue<T>(ordinal);
-            return default;
-        }
-
-        private T? GetOptionalFieldValue<T>(DbDataReader reader, string fieldName, T? defaultValue) where T : struct
-        {
-            if (_fields.TryGetValue(fieldName, out int ordinal) && !reader.IsDBNull(ordinal))
-                return reader.GetFieldValue<T>(ordinal);
-            return defaultValue;
-        }
-
-        private async Task<T> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName,
-            CancellationToken token)
-        {
-            if (_fields.TryGetValue(fieldName, out int ordinal) &&
-                !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
-                return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
-            return default;
-        }
-
-        private async Task<T?> GetOptionalFieldValueAsync<T>(DbDataReader reader, string fieldName, T? defaultValue,
-            CancellationToken token) where T : struct
-        {
-            if (_fields.TryGetValue(fieldName, out int ordinal) &&
-                !await reader.IsDBNullAsync(ordinal, token).ConfigureAwait(false))
-                return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
-            return defaultValue;
         }
 
         public Type SourceType { get; }

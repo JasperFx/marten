@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Exceptions;
+using Marten.Internal.CodeGeneration;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -39,7 +40,7 @@ namespace Marten.Schema.Testing.Storage
         private readonly Lazy<DocumentTable> _table;
         private readonly DocumentMapping<User> theMapping;
 
-        protected DocumentTable theTable => _table.Value;
+        internal DocumentTable theTable => _table.Value;
 
         private void writeTable(Table table = null)
         {
@@ -339,8 +340,8 @@ namespace Marten.Schema.Testing.Storage
 
             var ddl = table.ToDDL(rules);
 
-            SpecificationExtensions.ShouldNotContain(ddl, "DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
-            SpecificationExtensions.ShouldContain(ddl, "CREATE TABLE IF NOT EXISTS public.mt_doc_user");
+            ddl.ShouldNotContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
+            ddl.ShouldContain("CREATE TABLE IF NOT EXISTS public.mt_doc_user");
         }
 
         [Fact]
@@ -355,8 +356,8 @@ namespace Marten.Schema.Testing.Storage
 
             var ddl = table.ToDDL(rules);
 
-            SpecificationExtensions.ShouldContain(ddl, "DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
-            SpecificationExtensions.ShouldContain(ddl, "CREATE TABLE public.mt_doc_user");
+            ddl.ShouldContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
+            ddl.ShouldContain("CREATE TABLE public.mt_doc_user");
         }
 
         [Fact]
@@ -367,7 +368,35 @@ namespace Marten.Schema.Testing.Storage
             var ex =
                 Exception<InvalidDocumentException>.ShouldBeThrownBy(
                     () => new DocumentTable(docs));
-            SpecificationExtensions.ShouldContain(ex.Message, $"Could not determine an 'id/Id' field or property for requested document type {typeof(InvalidDocument).FullName}");
+            ex.Message.ShouldContain($"Could not determine an 'id/Id' field or property for requested document type {typeof(InvalidDocument).FullName}");
         }
+
+        [Theory]
+        [InlineData(StorageStyle.QueryOnly, new string[]{"data"})]
+        [InlineData(StorageStyle.Lightweight, new string[]{"id", "data", "mt_version"})]
+        [InlineData(StorageStyle.IdentityMap, new string[]{"id", "data", "mt_version"})]
+        [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data", "mt_version"})]
+        public void basic_select_columns(StorageStyle style, string[] expected)
+        {
+            theTable.SelectColumns(style)
+                .Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs(expected);
+        }
+
+        [Theory]
+        [InlineData(StorageStyle.QueryOnly, new string[]{"data", "mt_doc_type"})]
+        [InlineData(StorageStyle.Lightweight, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
+        [InlineData(StorageStyle.IdentityMap, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
+        [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
+        public void select_columns_with_hierarchy(StorageStyle style, string[] expected)
+        {
+            theMapping.AddSubClassHierarchy();
+
+            theTable.SelectColumns(style)
+                .Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs(expected);
+        }
+
+
     }
 }
