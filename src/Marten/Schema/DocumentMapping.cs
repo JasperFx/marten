@@ -55,7 +55,6 @@ namespace Marten.Schema
         private MemberInfo _softDeletedMember;
         private MemberInfo _softDeletedAtMember;
         private MemberInfo _documentTypeMember;
-        private MemberInfo _dotNetTypeMember;
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions): base("d.data", documentType, storeOptions)
         {
@@ -69,8 +68,6 @@ namespace Marten.Schema
             _storeOptions.applyPolicies(this);
 
             applyAnyMartenAttributes(documentType);
-
-            _table = new Lazy<DocumentTable>(() => new DocumentTable(this));
         }
 
         public MemberInfo VersionMember
@@ -149,17 +146,6 @@ namespace Marten.Schema
             }
         }
 
-        public MemberInfo DotNetTypeMember
-        {
-            get => _dotNetTypeMember;
-            set
-            {
-                if (value.GetMemberType() != typeof(string))
-                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(DotNetTypeMember)} has to be of type string");
-                _dotNetTypeMember = value;
-            }
-        }
-
         private void applyAnyMartenAttributes(Type documentType)
         {
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
@@ -181,8 +167,6 @@ namespace Marten.Schema
                 .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
                 .Each(fieldInfo => { fieldInfo.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, fieldInfo)); });
         }
-
-        public bool UseOptimisticConcurrency { get; set; } = false;
 
         public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
 
@@ -215,8 +199,6 @@ namespace Marten.Schema
         {
             get { return _storeOptions.DuplicatedFieldEnumStorage; }
         }
-
-        public EnumStorage EnumStorage => _storeOptions.EnumStorage;
 
         public string Alias
         {
@@ -370,31 +352,6 @@ namespace Marten.Schema
                 default:
                     return new CompoundWhereFragment("and", defaults);
             }
-        }
-
-        private void applyAnyMartenAttributes(Type documentType)
-        {
-            documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
-
-            documentType.GetProperties()
-                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.PropertyType))
-                .Each(prop => { prop.ForAttribute<MartenAttribute>(att => att.Modify(this, prop)); });
-
-            documentType.GetFields()
-                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.FieldType))
-                .Each(fieldInfo => { fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo)); });
-
-            // DuplicateFieldAttribute does not require TypeMappings check
-            documentType.GetProperties()
-                .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
-                .Each(prop => { prop.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, prop)); });
-
-            documentType.GetFields()
-                .Where(x => x.HasAttribute<DuplicateFieldAttribute>())
-                .Each(fieldInfo =>
-                {
-                    fieldInfo.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, fieldInfo));
-                });
         }
 
         private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
@@ -669,27 +626,6 @@ namespace Marten.Schema
             return false;
         }
 
-
-
-        private HiloSettings _hiloSettings;
-
-        public HiloSettings HiloSettings
-        {
-            get { return _hiloSettings; }
-            set
-            {
-                if (IdStrategy is HiloIdGeneration)
-                {
-                    IdStrategy = new HiloIdGeneration(DocumentType, value);
-                    _hiloSettings = value;
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"DocumentMapping for {DocumentType.FullName} is using {IdStrategy.GetType().FullName} as its Id strategy so cannot override Hilo sequence configuration");
-                }
-            }
-        }
 
         public bool IsHierarchy()
         {

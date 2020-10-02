@@ -496,7 +496,7 @@ namespace Marten
             }
 
             /// <summary>
-            /// Copy the last modification date metadata to the selected member 
+            /// Copy the last modification date metadata to the selected member
             /// </summary>
             /// <param name="memberExpression"></param>
             /// <returns></returns>
@@ -575,21 +575,6 @@ namespace Marten
                 return this;
             }
 
-            /// <summary>
-            /// Copy the document's qualified class name to the selected member
-            /// </summary>
-            /// <param name="memberExpression"></param>
-            /// <returns></returns>
-            public DocumentMappingExpression<T> MapDotNetTypeTo(Expression<Func<T, string>> memberExpression)
-            {
-                var members = FindMembers.Determine(memberExpression);
-                if (members.Length > 1)
-                {
-                    throw new ArgumentException($"The {nameof(MapDocumentTypeTo)} member cannot be a nested property.", nameof(memberExpression));
-                }
-                alter = m => m.DotNetTypeMember = members.First();
-                return this;
-            }
         }
     }
 

@@ -23,7 +23,7 @@ namespace Marten.Internal.Operations
         private readonly T _document;
         protected readonly TId _id;
         private readonly Dictionary<TId, Guid> _versions;
-        protected Guid _version;
+        protected Guid _version = CombGuidIdGeneration.NewGuid();
 
         public StorageOperation(T document, TId id, Dictionary<TId, Guid> versions, DocumentMapping mapping)
         {
@@ -68,7 +68,6 @@ namespace Marten.Internal.Operations
 
         protected void setVersionParameter(NpgsqlParameter parameter)
         {
-            _version = CombGuidIdGeneration.NewGuid();
             parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
             parameter.Value = _version;
         }

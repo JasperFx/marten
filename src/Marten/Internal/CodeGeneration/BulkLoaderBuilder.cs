@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using LamarCodeGeneration;
@@ -24,7 +25,8 @@ namespace Marten.Internal.CodeGeneration
             var upsertFunction = new UpsertFunction(_mapping);
 
 
-            var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToArray();
+            var arguments = orderArgumentsForBulkWriting(upsertFunction);
+
             var columns = arguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
 
             var type = assembly.AddType($"{_mapping.DocumentType.Name.Sanitize()}BulkLoader",
@@ -52,12 +54,23 @@ namespace Marten.Internal.CodeGeneration
 
             var load = type.MethodFor("LoadRow");
 
-            for (int i = 0; i < arguments.Length; i++)
+            foreach (var argument in arguments)
             {
-                arguments[i].GenerateBulkWriterCode(type, load, _mapping);
+                argument.GenerateBulkWriterCode(type, load, _mapping);
             }
 
             return type;
+        }
+
+        private static List<UpsertArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
+        {
+            var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToList();
+            // You need the document body to go last so that any metadata pushed into the document
+            // is serialized into the JSON data
+            var body = arguments.OfType<DocJsonBodyArgument>().Single();
+            arguments.Remove(body);
+            arguments.Add(body);
+            return arguments;
         }
 
         public string CopyNewDocumentsFromTempTable()

@@ -10,7 +10,8 @@ namespace Marten.Storage
         {
         }
 
-        public void GenerateCode(StorageStyle storageStyle, GeneratedMethod async, GeneratedMethod sync, int index,
+        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
+            GeneratedMethod sync, int index,
             DocumentMapping mapping)
         {
             sync.Frames.Deserialize(mapping, index);

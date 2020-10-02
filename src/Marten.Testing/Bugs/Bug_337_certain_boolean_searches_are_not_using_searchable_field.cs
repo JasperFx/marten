@@ -41,7 +41,7 @@ namespace Marten.Testing.Bugs
             {
                 var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
 
-                cmd1.CommandText.ShouldBe("select d.data, d.id, d.mt_version, d.mt_last_modified, d.mt_dotnet_type from public.mt_doc_target as d where d.data @> :arg0");
+                cmd1.CommandText.ShouldBe("select d.id, d.data, d.mt_version from bugs.mt_doc_target as d where CAST(d.data ->> 'Flag' as boolean) = :p0");
             }
         }
     }

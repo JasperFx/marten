@@ -9,10 +9,10 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    [Collection("projecting-metadata")]
-    public class projecting_metadata_to_documents_schema_tests : OneOffConfigurationsContext
+    [Collection("metadata")]
+    public class document_metadata_specs : OneOffConfigurationsContext
     {
-        public projecting_metadata_to_documents_schema_tests() : base("projecting-metadata")
+        public document_metadata_specs() : base("metadata")
         {
         }
 
@@ -25,7 +25,6 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<DocWithMeta>().MapLastModifiedTo(x => x.LastModified);
                 _.Schema.For<DocWithMeta>().MapIsSoftDeletedTo(x => x.Deleted);
                 _.Schema.For<DocWithMeta>().MapSoftDeletedAtTo(x => x.DeletedAt);
-                _.Schema.For<DocWithMeta>().MapDotNetTypeTo(x => x.DotNetType);
                 _.Schema.For<DocWithMeta>().SoftDeleted();
             });
 
@@ -41,9 +40,6 @@ namespace Marten.Testing.Acceptance
             theStore.Storage.MappingFor(typeof(DocWithMeta))
                 .SoftDeletedAtMember.Name.ShouldBe(nameof(DocWithMeta.DeletedAt));
 
-            theStore.Storage.MappingFor(typeof(DocWithMeta))
-                .DotNetTypeMember.Name.ShouldBe(nameof(DocWithMeta.DotNetType));
-
         }
 
         [Fact]
@@ -55,21 +51,14 @@ namespace Marten.Testing.Acceptance
             theStore.Storage.MappingFor(typeof(DocWithAttributeMeta))
                 .LastModifiedMember.Name.ShouldBe(nameof(DocWithAttributeMeta.LastModified));
 
-            theStore.Storage.MappingFor(typeof(DocWithAttributeMeta))
-                .DotNetTypeMember.Name.ShouldBe(nameof(DocWithAttributeMeta.DotNetType));
-
         }
-    }
 
-    public class projecting_metadata_end_to_end_tests: IntegrationContext
-    {
         [Fact]
         public void doc_has_projected_data_after_storage()
         {
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .MapDotNetTypeTo(x => x.DotNetType)
                 .MapLastModifiedTo(x => x.LastModified);
             });
 
@@ -86,7 +75,6 @@ namespace Marten.Testing.Acceptance
             {
                 var loaded = session.Load<DocWithMeta>(doc.Id);
                 loaded.LastModified.ShouldNotBe(DateTime.MinValue);
-                loaded.DotNetType.ShouldBe(typeof(DocWithMeta).FullName);
             }
         }
 
@@ -97,7 +85,6 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                doc.DotNetType = "my dotnet type";
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 doc.Version = Guid.Empty;
                 session.Store(doc);
@@ -108,7 +95,6 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 var loaded = session.Load<DocWithAttributeMeta>(doc.Id);
-                loaded.DotNetType.ShouldBe(typeof(DocWithAttributeMeta).FullName);
                 loaded.DocType.ShouldBeNull();
                 loaded.TenantId.ShouldBeNull();
                 (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
@@ -118,26 +104,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void doc_metadata_is_read_only_on_update()
-        {
-            var doc = new DocWithAttributeMeta();
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                var loaded = session.Load<DocWithAttributeMeta>(doc.Id);
-                loaded.DotNetType = "my type, not yours";
-                session.Store(loaded);
-                Should.Throw<InvalidOperationException>(() => session.SaveChanges());
-            }
-        }
 
         [Fact]
         public void doc_metadata_is_mapped_for_query_includes()
@@ -145,7 +111,6 @@ namespace Marten.Testing.Acceptance
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .MapDotNetTypeTo(x => x.DotNetType)
                 .MapLastModifiedTo(x => x.LastModified);
             });
 
@@ -168,10 +133,8 @@ namespace Marten.Testing.Acceptance
                 var loaded = session.Query<DocWithMeta>().Include<IncludedDocWithMeta>(d => d.IncludedDocId, i => loadedInclude = i).Single(d => d.Id == doc.Id);
 
                 loaded.ShouldNotBeNull();
-                loaded.DotNetType.ShouldBe(typeof(DocWithMeta).FullName);
 
                 loadedInclude.ShouldNotBeNull();
-                loadedInclude.DotNetType.ShouldBe(typeof(IncludedDocWithMeta).FullName);
                 loadedInclude.Version.ShouldNotBe(Guid.Empty);
             }
         }
@@ -182,7 +145,6 @@ namespace Marten.Testing.Acceptance
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .MapDotNetTypeTo(x => x.DotNetType)
                 .MapLastModifiedTo(x => x.LastModified);
             });
 
@@ -200,7 +162,7 @@ namespace Marten.Testing.Acceptance
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
                 userQuery.Description = "updated via a user SQL query";
-                userQuery.LastModified.ShouldBeGreaterThanOrEqualTo(lastMod);
+                userQuery.LastModified.ShouldNotBe(DateTime.MinValue);
                 lastMod = userQuery.LastModified;
                 session.Store(userQuery);
                 session.SaveChanges();
@@ -221,7 +183,6 @@ namespace Marten.Testing.Acceptance
                 c.Schema.For<DocWithMeta>()
                 .MultiTenanted()
                 .MapTenantIdTo(x => x.TenantId)
-                .MapDotNetTypeTo(x => x.DotNetType)
                 .MapLastModifiedTo(x => x.LastModified);
             });
 
@@ -230,21 +191,19 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession(tenant))
             {
-                doc.DotNetType = "my dotnet type";
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.OpenSession(tenant))
             {
-                session.Query<DocWithMeta>().Where(d => d.TenantId == tenant).Count().ShouldBe(1);
+                session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
                 var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
-                loaded.DotNetType.ShouldBe(typeof(DocWithMeta).FullName);
                 loaded.TenantId.ShouldBe(tenant);
-                (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
+                loaded.LastModified.ShouldNotBe(DateTime.MinValue); // it's pretty well impossible to compare timestamps
             }
         }
 
@@ -256,7 +215,6 @@ namespace Marten.Testing.Acceptance
                 c.Schema.For<DocWithMeta>()
                 .MultiTenanted()
                 .MapTenantIdTo(x => x.TenantId)
-                .MapDotNetTypeTo(x => x.DotNetType)
                 .MapLastModifiedTo(x => x.LastModified);
             });
 
@@ -267,81 +225,15 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession(tenant))
             {
-                session.Query<DocWithMeta>().Where(d => d.TenantId == tenant).Count().ShouldBe(1);
+                session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
                 var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
-                loaded.DotNetType.ShouldBe(typeof(DocWithMeta).FullName);
                 loaded.TenantId.ShouldBe(tenant);
                 (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
             }
         }
 
-        [Fact]
-        public void doc_metadata_is_mapped_for_structural_typed_docs()
-        {
-            StoreOptions(c =>
-            {
-                c.Schema.For<DocWithMeta>()
-                .MapDotNetTypeTo(x => x.DotNetType)
-                .MapLastModifiedTo(x => x.LastModified);
-            });
 
-            var bigDoc = new DocWithMeta();
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(bigDoc);
-                session.SaveChanges();
-
-                var slimDoc = session.Load<StructuralTypes.DocWithMeta>(bigDoc.Id);
-                slimDoc.DotNetType.ShouldBe(bigDoc.DotNetType);
-                slimDoc.LastModified.ShouldNotBe(default(DateTime));
-                slimDoc.LastModified.ShouldBe(bigDoc.LastModified);
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<DocWithMeta>().Where(d => d.DotNetType == typeof(DocWithMeta).FullName).Count().ShouldBe(1);
-
-                var slimDoc = session.Load<StructuralTypes.DocWithMeta>(bigDoc.Id);
-                slimDoc.DotNetType.ShouldBe(bigDoc.DotNetType);
-                slimDoc.LastModified.ShouldNotBe(default(DateTime));
-                slimDoc.LastModified.ShouldBe(bigDoc.LastModified);
-            }
-        }
-
-        [Fact]
-        public void doc_metadata_is_mapped_for_bulk_inserted_structural_typed_docs()
-        {
-            StoreOptions(c =>
-            {
-                c.Schema.For<DocWithMeta>()
-                .MapDotNetTypeTo(x => x.DotNetType)
-                .MapLastModifiedTo(x => x.LastModified);
-            });
-
-            var bigDoc = new DocWithMeta();
-
-            theStore.BulkInsert(new DocWithMeta[] { bigDoc });
-
-            using (var session = theStore.OpenSession())
-            {
-                var slimDoc = session.Load<StructuralTypes.DocWithMeta>(bigDoc.Id);
-                slimDoc.DotNetType.ShouldBe(bigDoc.DotNetType);
-                slimDoc.LastModified.ShouldNotBe(default(DateTime));
-                slimDoc.LastModified.ShouldBe(bigDoc.LastModified);
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<DocWithMeta>().Where(d => d.DotNetType == typeof(DocWithMeta).FullName).Count().ShouldBe(1);
-
-                var slimDoc = session.Load<StructuralTypes.DocWithMeta>(bigDoc.Id);
-                slimDoc.DotNetType.ShouldBe(bigDoc.DotNetType);
-                slimDoc.LastModified.ShouldNotBe(default(DateTime));
-                slimDoc.LastModified.ShouldBe(bigDoc.LastModified);
-            }
-        }
 
         [Fact]
         public void doc_metadata_is_mapped_for_doc_hierarchies()
@@ -349,12 +241,12 @@ namespace Marten.Testing.Acceptance
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .AddSubClassHierarchy(typeof(RedDocWithMeta), typeof(BlueDocWithMeta), typeof(GreenDocWithMeta), typeof(EmeraldGreenDocWithMeta))
-                .SoftDeleted()
-                .MapIsSoftDeletedTo(x => x.Deleted)
-                .MapSoftDeletedAtTo(x => x.DeletedAt)
-                .MapDocumentTypeTo(x => x.DocType)
-                .MapDotNetTypeTo(x => x.DotNetType);
+                    .AddSubClassHierarchy(typeof(RedDocWithMeta), typeof(BlueDocWithMeta), typeof(GreenDocWithMeta),
+                        typeof(EmeraldGreenDocWithMeta))
+                    .SoftDeleted()
+                    .MapIsSoftDeletedTo(x => x.Deleted)
+                    .MapSoftDeletedAtTo(x => x.DeletedAt)
+                    .MapDocumentTypeTo(x => x.DocType);
             });
 
             using (var session = theStore.OpenSession())
@@ -377,104 +269,65 @@ namespace Marten.Testing.Acceptance
                 session.Query<DocWithMeta>().Count(d => d.DocType == "green_doc_with_meta").ShouldBe(1);
                 session.Query<DocWithMeta>().Count(d => d.DocType == "emerald_green_doc_with_meta").ShouldBe(1);
 
-                var docs = session.Query<DocWithMeta>().ToList();
-                docs.Count.ShouldBe(5);
-                docs.Count(d => d.DotNetType == typeof(BlueDocWithMeta).FullName).ShouldBe(1);
-                docs.Count(d => d.DotNetType == typeof(GreenDocWithMeta).FullName).ShouldBe(1);
-                docs.Count(d => d.DotNetType == typeof(EmeraldGreenDocWithMeta).FullName).ShouldBe(1);
 
                 var redDocs = session.Query<RedDocWithMeta>().ToList();
                 redDocs.Count.ShouldBe(1);
                 redDocs.First().DocType.ShouldBe("red_doc_with_meta");
                 session.Delete(redDocs.First());
 
-                var baseName = typeof(DocWithMeta).FullName;
-                var baseDoc = session.Query<DocWithMeta>().Where(d => d.DotNetType == baseName).Single();
-                session.Delete(baseDoc);
                 session.SaveChanges();
+            }
+
+        }
+
+
+        [Fact]
+        public void versions_are_assigned_during_bulk_inserts_as_field()
+        {
+            var docs = new AttVersionedDoc[100];
+            for (var i = 0; i < docs.Length; i++)
+            {
+                docs[i] = new AttVersionedDoc();
+            }
+
+            theStore.BulkInsert(docs);
+
+            foreach (var doc in docs)
+            {
+                doc.Version.ShouldNotBe(Guid.Empty);
             }
 
             using (var session = theStore.OpenSession())
             {
-                session.Query<DocWithMeta>().Count(d => d.Deleted && d.MaybeDeleted()).ShouldBe(2);
-                session.Query<RedDocWithMeta>().Count(d => d.Deleted && d.MaybeDeleted()).ShouldBe(1);
-
-                var allDocs = session.Query<DocWithMeta>().Where(x => x.MaybeDeleted()).ToList();
-                allDocs.Count.ShouldBe(5);
-                allDocs.Count(d => d.Deleted).ShouldBe(2);
-                var deletedDocs = session.Query<DocWithMeta>().Where(x => x.IsDeleted()).ToList();
-                deletedDocs.ShouldAllBe(d => d.Deleted);
-                deletedDocs.ShouldAllBe(d => d.DeletedAt != null);
+                session.Query<AttVersionedDoc>().Count(d => d.Version != Guid.Empty).ShouldBe(100);
             }
         }
 
         [Fact]
-        public void doc_metadata_is_mapped_for_bulk_inserted_doc_hierarchies()
+        public void versions_are_assigned_during_bulk_inserts_as_prop()
         {
-            StoreOptions(c =>
+            var docs = new PropVersionedDoc[100];
+            for (int i = 0; i < docs.Length; i++)
             {
-                c.Schema.For<DocWithMeta>()
-                .AddSubClassHierarchy(typeof(RedDocWithMeta), typeof(BlueDocWithMeta), typeof(GreenDocWithMeta), typeof(EmeraldGreenDocWithMeta))
-                .SoftDeleted()
-                .MapIsSoftDeletedTo(x => x.Deleted)
-                .MapSoftDeletedAtTo(x => x.DeletedAt)
-                .MapDocumentTypeTo(x => x.DocType)
-                .MapDotNetTypeTo(x => x.DotNetType);
-            });
+                docs[i] = new PropVersionedDoc();
+            }
 
-            var doc = new DocWithMeta { Description = "transparent" };
-            var red = new RedDocWithMeta { Description = "red doc" };
-            var green = new GreenDocWithMeta { Description = "green doc" };
-            var blue = new BlueDocWithMeta { Description = "blue doc" };
-            var emerald = new EmeraldGreenDocWithMeta { Description = "emerald doc" };
+            theStore.BulkInsert(docs);
 
-            theStore.BulkInsert(new[] { doc, red, green, blue, emerald });
-
-            using (var session = theStore.OpenSession())
+            foreach (var doc in docs)
             {
-                session.Query<DocWithMeta>().Count(d => d.DocType == "BASE").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "blue_doc_with_meta").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "red_doc_with_meta").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "green_doc_with_meta").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "emerald_green_doc_with_meta").ShouldBe(1);
-
-                var docs = session.Query<DocWithMeta>().ToList();
-                docs.Count.ShouldBe(5);
-                docs.Count(d => d.DotNetType == typeof(BlueDocWithMeta).FullName).ShouldBe(1);
-                docs.Count(d => d.DotNetType == typeof(GreenDocWithMeta).FullName).ShouldBe(1);
-                docs.Count(d => d.DotNetType == typeof(EmeraldGreenDocWithMeta).FullName).ShouldBe(1);
-
-                var redDocs = session.Query<RedDocWithMeta>().ToList();
-                redDocs.Count.ShouldBe(1);
-                redDocs.First().DocType.ShouldBe("red_doc_with_meta");
-                session.Delete(redDocs.First());
-
-                var baseName = typeof(DocWithMeta).FullName;
-                var baseDoc = session.Query<DocWithMeta>().Where(d => d.DotNetType == baseName).Single();
-                session.Delete(baseDoc);
-                session.SaveChanges();
+                doc.Version.ShouldNotBe(Guid.Empty);
             }
 
             using (var session = theStore.OpenSession())
             {
-                session.Query<DocWithMeta>().Count(d => d.Deleted && d.MaybeDeleted()).ShouldBe(2);
-                session.Query<RedDocWithMeta>().Count(d => d.Deleted && d.MaybeDeleted()).ShouldBe(1);
-
-                var allDocs = session.Query<DocWithMeta>().Where(x => x.MaybeDeleted()).ToList();
-                allDocs.Count.ShouldBe(5);
-                allDocs.Count(d => d.Deleted).ShouldBe(2);
-                var deletedDocs = session.Query<DocWithMeta>().Where(x => x.IsDeleted()).ToList();
-                deletedDocs.ShouldAllBe(d => d.Deleted);
-                deletedDocs.ShouldAllBe(d => d.DeletedAt != null);
+                session.Query<PropVersionedDoc>().Count(d => d.Version != Guid.Empty).ShouldBe(100);
             }
         }
 
-        public projecting_metadata_end_to_end_tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
-    internal class DocWithMeta
+    public class DocWithMeta
     {
         public Guid Id { get; set; }
         public string Description { get; set; }
@@ -484,7 +337,6 @@ namespace Marten.Testing.Acceptance
         public bool Deleted { get; private set; }
         public DateTime? DeletedAt { get; private set; }
         public string DocType { get; private set; }
-        public string DotNetType { get; set; }
         public Guid IncludedDocId { get; set; }
     }
 
@@ -508,17 +360,16 @@ namespace Marten.Testing.Acceptance
         public string Label { get; set; }
     }
 
-    internal class IncludedDocWithMeta
+    public class IncludedDocWithMeta
     {
         public Guid Id { get; set; }
         [Version]
         public Guid Version { get; private set; }
         public DateTime LastModified { get; private set; }
-        [DotNetTypeMetadata]
-        public string DotNetType { get; private set; }
+
     }
 
-    internal class DocWithAttributeMeta
+    public class DocWithAttributeMeta
     {
         public Guid Id { get; set; }
         public string TenantId { get; private set; }
@@ -529,19 +380,17 @@ namespace Marten.Testing.Acceptance
         public Guid Version { get; set; }
         [LastModifiedMetadata]
         public DateTime LastModified { get; set; }
-        [DotNetTypeMetadata]
-        public string DotNetType { get; set; }
+
     }
 }
 
 namespace Marten.Testing.Acceptance.StructuralTypes
 {
     [StructuralTyped]
-    internal class DocWithMeta
+    public class DocWithMeta
     {
         public Guid Id { get; set; }
         public DateTime LastModified { get; set; }
         public string DocType { get; private set; }
-        public string DotNetType { get; set; }
     }
 }

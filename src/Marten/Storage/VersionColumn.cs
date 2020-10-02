@@ -16,10 +16,19 @@ namespace Marten.Storage
             CanAdd = true;
         }
 
-        public void GenerateCode(StorageStyle storageStyle, GeneratedMethod async, GeneratedMethod sync, int index,
+        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
+            GeneratedMethod sync, int index,
             DocumentMapping mapping)
         {
-            if (storageStyle == StorageStyle.QueryOnly) return;
+            if (storageStyle == StorageStyle.QueryOnly)
+            {
+                if (mapping.VersionMember != null)
+                {
+
+                }
+
+                return;
+            }
 
             var versionPosition = mapping.IsHierarchy() ? 3 : 2;
 
@@ -35,8 +44,8 @@ namespace Marten.Storage
             // Set on document
             if (mapping.VersionMember != null)
             {
-                sync.Frames.Code($"document.{mapping.VersionMember.Name} = version;");
-                async.Frames.Code($"document.{mapping.VersionMember.Name} = version;");
+                sync.Frames.SetMemberValue(mapping.VersionMember, "version", mapping.DocumentType, generatedType);
+                async.Frames.SetMemberValue(mapping.VersionMember, "version", mapping.DocumentType, generatedType);
             }
         }
 

@@ -63,9 +63,6 @@ namespace Marten.Schema
             CreateSetter<string>(DocumentMapping.DocumentTypeColumn, mapping.DocumentTypeMember);
             CreateGetter<string>(DocumentMapping.DocumentTypeColumn, mapping.DocumentTypeMember);
 
-            CreateSetter<string>(DocumentMapping.DotNetTypeColumn, mapping.DotNetTypeMember);
-            CreateGetter<string>(DocumentMapping.DotNetTypeColumn, mapping.DotNetTypeMember);
-
             CreateSetter<bool>(DocumentMapping.DeletedColumn, mapping.IsSoftDeletedMember);
             CreateGetter<bool>(DocumentMapping.DeletedColumn, mapping.IsSoftDeletedMember);
 

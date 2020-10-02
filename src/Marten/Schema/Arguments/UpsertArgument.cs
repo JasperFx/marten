@@ -79,7 +79,14 @@ namespace Marten.Schema.Arguments
             return $"{Arg} {PostgresType}";
         }
 
-        public virtual void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
+        public virtual void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i,
+            Argument parameters,
+            DocumentMapping mapping, StoreOptions options)
+        {
+            // Nothing
+        }
+
+        public virtual void GenerateCodeToSetOperationArgument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
             var memberPath = _members.Select(x => x.Name).Join("?.");

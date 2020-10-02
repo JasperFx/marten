@@ -63,16 +63,4 @@ namespace Marten.Schema
         }
     }
 
-    /// <summary>
-    /// Direct Marten to copy the qualified class name metadata to this member
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class DotNetTypeMetadataAttribute: MartenAttribute
-    {
-        public override void Modify(DocumentMapping mapping, MemberInfo member)
-        {
-            mapping.DotNetTypeMember = member;
-        }
-    }
-
 }

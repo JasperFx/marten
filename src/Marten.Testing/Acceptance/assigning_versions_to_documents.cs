@@ -253,50 +253,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void versions_are_assigned_during_bulk_inserts_as_field()
-        {
-            var docs = new AttVersionedDoc[100];
-            for (int i = 0; i < docs.Length; i++)
-            {
-                docs[i] = new AttVersionedDoc();
-            }
-
-            theStore.BulkInsert(docs);
-
-            foreach (var doc in docs)
-            {
-                doc.Version.ShouldNotBe(Guid.Empty);
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<AttVersionedDoc>().Where(d => d.Version != Guid.Empty).Count().ShouldBe(100);
-            }
-        }
-
-        [Fact]
-        public void versions_are_assigned_during_bulk_inserts_as_prop()
-        {
-            var docs = new PropVersionedDoc[100];
-            for (int i = 0; i < docs.Length; i++)
-            {
-                docs[i] = new PropVersionedDoc();
-            }
-
-            theStore.BulkInsert(docs);
-
-            foreach (var doc in docs)
-            {
-                doc.Version.ShouldNotBe(Guid.Empty);
-            }
-
-            using (var session = theStore.OpenSession())
-            {
-                session.Query<PropVersionedDoc>().Where(d => d.Version != Guid.Empty).Count().ShouldBe(100);
-            }
-        }
-
         public end_to_end_versioned_docs(DefaultStoreFixture fixture) : base(fixture)
         {
         }

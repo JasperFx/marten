@@ -79,9 +79,8 @@ namespace Marten.Internal.CodeGeneration
             {
                 if (_mapping.VersionMember != null)
                 {
-                    var code = $"_document.{_mapping.VersionMember.Name} = _version;";
-                    sync.Frames.Code(code);
-                    async.Frames.Code(code);
+                    sync.Frames.SetMemberValue(_mapping.VersionMember, "_version", _mapping.DocumentType, type);
+                    async.Frames.SetMemberValue(_mapping.VersionMember, "_version", _mapping.DocumentType, type);
                 }
             }
 
@@ -130,10 +129,17 @@ namespace Marten.Internal.CodeGeneration
             var parameters = method.Arguments[0];
 
             var arguments = _function.OrderedArguments();
+
             for (var i = 0; i < arguments.Length; i++)
             {
                 var argument = arguments[i];
-                argument.GenerateCode(method, type, i, parameters, _mapping, _options);
+                argument.GenerateCodeToModifyDocument(method, type, i, parameters, _mapping, _options);
+            }
+
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                var argument = arguments[i];
+                argument.GenerateCodeToSetOperationArgument(method, type, i, parameters, _mapping, _options);
             }
         }
     }

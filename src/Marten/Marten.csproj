@@ -36,7 +36,7 @@
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="LamarCodeGeneration" Version="2.3.0" />
+        <PackageReference Include="LamarCodeGeneration" Version="2.4.0" />
         <PackageReference Include="LamarCompiler" Version="2.3.0" />
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
         <PackageReference Include="Npgsql" Version="[4.1.4,4.2.0)" />

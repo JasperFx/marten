@@ -4,6 +4,7 @@ using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
+using Marten.Internal.CodeGeneration;
 using Marten.Schema.Identity;
 using NpgsqlTypes;
 
@@ -25,8 +26,18 @@ namespace Marten.Schema.Arguments
             PostgresType = "uuid";
         }
 
+        public override void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
+            DocumentMapping mapping, StoreOptions options)
+        {
+            if (mapping.VersionMember != null)
+            {
+                // "_version" would be a field in the StorageOperation base class
+                method.Frames.SetMemberValue(mapping.VersionMember, "_version", mapping.DocumentType, type);
+            }
+        }
 
-        public override void GenerateCode(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
+
+        public override void GenerateCodeToSetOperationArgument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
             method.Frames.Code("setVersionParameter({0}[{1}]);", parameters, i);
@@ -42,9 +53,10 @@ namespace Marten.Schema.Arguments
             {
                 load.Frames.Code($@"
 var version = {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid();
-document.{mapping.VersionMember.Name} = version;
 writer.Write(version, {{0}});
 ", NpgsqlDbType.Uuid);
+
+                load.Frames.SetMemberValue(mapping.VersionMember, "version", mapping.DocumentType, type);
             }
 
 

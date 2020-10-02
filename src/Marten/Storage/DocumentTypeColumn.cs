@@ -16,10 +16,21 @@ namespace Marten.Storage
             mapping.AddIndex(DocumentMapping.DocumentTypeColumn);
         }
 
-        public void GenerateCode(StorageStyle storageStyle, GeneratedMethod async, GeneratedMethod sync, int index,
+        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
+            GeneratedMethod sync, int index,
             DocumentMapping mapping)
         {
-            // Nothing
+            var member = mapping.DocumentTypeMember;
+            var variableName = "docType";
+            var memberType = typeof(string);
+
+            if (member == null) return;
+
+            sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
+            async.Frames.CodeAsync($"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
+
+            sync.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
+            async.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
         }
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)

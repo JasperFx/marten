@@ -1,8 +1,13 @@
+using System;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Internal.CodeGeneration
 {
@@ -83,8 +88,103 @@ END
             }
 
 
+
+
         }
 
+        /// <summary>
+        /// Generates the necessary setter code to set a value of a document.
+        /// Handles internal/private setters
+        /// </summary>
+        /// <param name="frames"></param>
+        /// <param name="member"></param>
+        /// <param name="variableName"></param>
+        /// <param name="documentType"></param>
+        /// <param name="generatedType"></param>
+        public static void SetMemberValue(this FramesCollection frames, MemberInfo member, string variableName, Type documentType, GeneratedType generatedType)
+        {
+            if (member is PropertyInfo property)
+            {
+                if (property.CanWrite)
+                {
+                    if (property.SetMethod.IsPublic)
+                    {
+                        frames.SetPublicMemberValue(member, variableName, documentType);
+                    }
+                    else
+                    {
+                        var setterFieldName = generatedType.InitializeLambdaSetterProperty(member, documentType);
+                        frames.Code($"{setterFieldName}({{0}}, {variableName});", new Use(documentType));
+                    }
+
+                    return;
+                }
+            }
+            else if (member is FieldInfo field)
+            {
+                if (field.IsPublic)
+                {
+                    frames.SetPublicMemberValue(member, variableName, documentType);
+                }
+                else
+                {
+                    var setterFieldName = generatedType.InitializeLambdaSetterProperty(member, documentType);
+                    frames.Code($"{setterFieldName}({{0}}, {variableName});", new Use(documentType));
+                }
+
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(member), $"MemberInfo {member} is not valid in this usage. ");
+        }
+
+        public static string InitializeLambdaSetterProperty(this GeneratedType generatedType, MemberInfo member, Type documentType)
+        {
+            var setterFieldName = $"{member.Name}Writer";
+
+            if (generatedType.Setters.All(x => x.PropName != setterFieldName))
+            {
+                var memberType = member.GetRawMemberType();
+                var actionType = typeof(Action<,>).MakeGenericType(documentType, memberType);
+                var expression = $"{typeof(LambdaBuilder).GetFullName()}.{nameof(LambdaBuilder.Setter)}<{documentType.FullNameInCode()},{memberType.FullNameInCode()}>(typeof({documentType.FullNameInCode()}).GetProperty(\"{member.Name}\"))";
+
+                var constant = new Variable(actionType, expression);
+
+                var setter = Setter.StaticReadOnly(setterFieldName, constant);
+
+                generatedType.Setters.Add(setter);
+
+            }
+
+            return setterFieldName;
+        }
+
+        private static void SetPublicMemberValue(this FramesCollection frames, MemberInfo member, string variableName,
+            Type documentType)
+        {
+            frames.Code($"{{0}}.{member.Name} = {variableName};", new Use(documentType));
+        }
+
+        private interface ISetterBuilder
+        {
+            void Add(GeneratedType generatedType, MemberInfo member, string setterFieldName);
+        }
+
+        private class SetterBuilder<TTarget, TMember>: ISetterBuilder
+        {
+            public void Add(GeneratedType generatedType, MemberInfo member, string setterFieldName)
+            {
+                var writer = LambdaBuilder.Setter<TTarget, TMember>(member);
+                var setter =
+                    new Setter(typeof(Action<TTarget, TMember>), setterFieldName)
+                    {
+                        InitialValue = writer, Type = SetterType.ReadWrite
+                    };
+
+                generatedType.Setters.Add(setter);
+
+            }
+        }
 
 
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,22 +8,11 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    internal class DotNetTypeColumn: MetadataColumn, ISelectableColumn
+    internal class DotNetTypeColumn: MetadataColumn
     {
         public DotNetTypeColumn() : base(DocumentMapping.DotNetTypeColumn, "varchar")
         {
             CanAdd = true;
-        }
-
-        public void GenerateCode(StorageStyle storageStyle, GeneratedMethod async, GeneratedMethod sync, int index,
-            DocumentMapping mapping)
-        {
-            // Nothing
-        }
-
-        public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
-        {
-            return false;
         }
 
         public override async Task ApplyAsync(DocumentMetadata metadata, int index, DbDataReader reader, CancellationToken token)

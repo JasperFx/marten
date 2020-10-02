@@ -38,19 +38,19 @@ namespace Marten.Internal.CodeGeneration
             for (var i = 0; i < columns.Length; i++)
             {
                 // TODO -- use the memo-ized table
-                columns[i].GenerateCode(_style, async, sync, i, _mapping);
+                columns[i].GenerateCode(_style, type, async, sync, i, _mapping);
             }
 
             generateIdentityMapAndTrackingCode(sync, async, _style);
 
             sync.Frames.Return(_mapping.DocumentType);
-            if (_style == StorageStyle.QueryOnly && !_mapping.IsHierarchy())
+            if (async.Frames.Any(x => x.IsAsync))
             {
-                async.Frames.Code("return Task.FromResult(document);");
+                async.Frames.Return(_mapping.DocumentType);
             }
             else
             {
-                async.Frames.Return(_mapping.DocumentType);
+                async.Frames.Code("return Task.FromResult(document);");
             }
 
             return type;
