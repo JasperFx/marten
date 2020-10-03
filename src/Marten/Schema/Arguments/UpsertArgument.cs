@@ -86,7 +86,7 @@ namespace Marten.Schema.Arguments
             // Nothing
         }
 
-        public virtual void GenerateCodeToSetOperationArgument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
+        public virtual void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
             var memberPath = _members.Select(x => x.Name).Join("?.");

@@ -139,7 +139,7 @@ namespace Marten.Internal.CodeGeneration
             for (var i = 0; i < arguments.Length; i++)
             {
                 var argument = arguments[i];
-                argument.GenerateCodeToSetOperationArgument(method, type, i, parameters, _mapping, _options);
+                argument.GenerateCodeToSetDbParameterValue(method, type, i, parameters, _mapping, _options);
             }
         }
     }

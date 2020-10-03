@@ -24,7 +24,7 @@ namespace Marten.Schema.Arguments
         }
 
 
-        public override void GenerateCodeToSetOperationArgument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
+        public override void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
             var version = type.AllInjectedFields[0];
