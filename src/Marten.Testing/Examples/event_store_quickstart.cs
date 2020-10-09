@@ -50,7 +50,6 @@ namespace Marten.Testing.Examples
 
                 // Start a brand new stream and commit the new events as
                 // part of a transaction
-                // no stream type will be stored in database
                 session.Events.StartStream(typeof(Quest), questId, started, joined1);
             }
 
