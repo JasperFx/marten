@@ -11,7 +11,7 @@ namespace Marten.Storage
     {
         private readonly DocumentMapping _mapping;
 
-        public DocumentTable(DocumentMapping mapping): base(mapping.Table)
+        public DocumentTable(DocumentMapping mapping): base(mapping.TableName)
         {
             // validate to ensure document has an Identity field or property
             mapping.Validate();
@@ -22,7 +22,7 @@ namespace Marten.Storage
 
             if (mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
-                AddPrimaryKeys(new List<TableColumn> {idColumn, new TenantIdColumn()});
+                AddPrimaryKeys(new List<TableColumn> {idColumn, mapping.Metadata.TenantId});
 
                 Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
             }
@@ -33,19 +33,25 @@ namespace Marten.Storage
 
             AddColumn<DataColumn>();
 
-            AddColumn<LastModifiedColumn>();
-            AddColumn<VersionColumn>();
-            AddColumn<DotNetTypeColumn>();
+            // TODO -- this is temporary!!!
+            AddColumn(_mapping.Metadata.LastModified);
+            AddColumn(_mapping.Metadata.Version);
+            AddColumn(_mapping.Metadata.DotNetType);
 
             foreach (var field in mapping.DuplicatedFields) AddColumn(new DuplicatedFieldColumn(field));
 
-            if (mapping.IsHierarchy()) AddColumn(new DocumentTypeColumn(mapping));
+            if (mapping.IsHierarchy())
+            {
+                Indexes.Add(new IndexDefinition(_mapping, SchemaConstants.DocumentTypeColumn));
+                AddColumn(_mapping.Metadata.DocumentType);
+            }
 
             if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
             {
-                AddColumn<DeletedColumn>();
-                Indexes.Add(new IndexDefinition(mapping, DocumentMapping.DeletedColumn));
-                AddColumn<DeletedAtColumn>();
+                AddColumn(_mapping.Metadata.IsSoftDeleted);
+                Indexes.Add(new IndexDefinition(mapping, SchemaConstants.DeletedColumn));
+
+                AddColumn(_mapping.Metadata.SoftDeletedAt);
             }
 
             Indexes.AddRange(mapping.Indexes);

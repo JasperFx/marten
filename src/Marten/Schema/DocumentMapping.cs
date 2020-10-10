@@ -22,39 +22,20 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping: FieldMapping, IDocumentMapping, IQueryableDocument, IFeatureSchema
+    public class DocumentMapping: FieldMapping, IDocumentMapping
     {
-        public const string BaseAlias = "BASE";
-        public const string TablePrefix = "mt_doc_";
-        public const string UpsertPrefix = "mt_upsert_";
-        public const string InsertPrefix = "mt_insert_";
-        public const string UpdatePrefix = "mt_update_";
-        public const string OverwritePrefix = "mt_overwrite_";
-        public const string DocumentTypeColumn = "mt_doc_type";
-        public const string MartenPrefix = "mt_";
-        public const string LastModifiedColumn = "mt_last_modified";
-        public const string DotNetTypeColumn = "mt_dotnet_type";
-        public const string VersionColumn = "mt_version";
-        public const string DeletedColumn = "mt_deleted";
-        public const string DeletedAtColumn = "mt_deleted_at";
-
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
 
         private readonly StoreOptions _storeOptions;
 
-        private readonly IList<SubClassMapping> _subClasses = new List<SubClassMapping>();
+
         private string _alias;
         private string _databaseSchemaName;
 
 
         private HiloSettings _hiloSettings;
         private MemberInfo _idMember;
-        private MemberInfo _versionMember;
-        private MemberInfo _lastModifiedMember;
-        private MemberInfo _tenantIdMember;
-        private MemberInfo _softDeletedMember;
-        private MemberInfo _softDeletedAtMember;
-        private MemberInfo _documentTypeMember;
+        private readonly Lazy<DocumentSchema> _schema;
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions): base("d.data", documentType, storeOptions)
         {
@@ -65,86 +46,23 @@ namespace Marten.Schema
 
             IdMember = FindIdMember(documentType);
 
+            Metadata = new DocumentMetadataCollection(this);
+
+            SubClasses = new SubClasses(this, storeOptions);
+
             _storeOptions.applyPolicies(this);
 
             applyAnyMartenAttributes(documentType);
+
+            _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
         }
 
-        public MemberInfo VersionMember
-        {
-            get => _versionMember;
-            set
-            {
-                if (value == null)
-                {
-                    UseOptimisticConcurrency = false;
-                }
-                else
-                {
-                    if (value.GetMemberType() != typeof(Guid))
-                        throw new ArgumentOutOfRangeException(nameof(value),
-                            "The Version member has to be of type Guid");
-                    UseOptimisticConcurrency = true;
-                    _versionMember = value;
-                }
-            }
-        }
+        internal DocumentSchema Schema => _schema.Value;
+
+        public DocumentMetadataCollection Metadata { get; }
+
 
         public bool UseOptimisticConcurrency { get; set; }
-        public MemberInfo LastModifiedMember
-        {
-            get => _lastModifiedMember;
-            set
-            {
-                if (value.GetMemberType() != typeof(DateTime))
-                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(LastModifiedMember)} has to be of type DateTime");
-                _lastModifiedMember = value;
-            }
-        }
-
-        public MemberInfo TenantIdMember
-        {
-            get => _tenantIdMember;
-            set
-            {
-                if (value.GetMemberType() != typeof(string))
-                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(TenantIdMember)} has to be of type string");
-                _tenantIdMember = value;
-            }
-        }
-
-        public MemberInfo IsSoftDeletedMember
-        {
-            get => _softDeletedMember;
-            set
-            {
-                if (value.GetMemberType() != typeof(bool))
-                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(IsSoftDeletedMember)} has to be of type boolean");
-                _softDeletedMember = value;
-            }
-        }
-
-        public MemberInfo SoftDeletedAtMember
-        {
-            get => _softDeletedAtMember;
-            set
-            {
-                if (value.GetMemberType() != typeof(DateTime))
-                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(SoftDeletedAtMember)} has to be of type DateTime");
-                _softDeletedAtMember = value;
-            }
-        }
-
-        public MemberInfo DocumentTypeMember
-        {
-            get => _documentTypeMember;
-            set
-            {
-                if (value.GetMemberType() != typeof(string))
-                    throw new ArgumentOutOfRangeException(nameof(value), $"The {nameof(DocumentTypeMember)} has to be of type string");
-                _documentTypeMember = value;
-            }
-        }
 
         private void applyAnyMartenAttributes(Type documentType)
         {
@@ -172,12 +90,12 @@ namespace Marten.Schema
 
         public IList<ForeignKeyDefinition> ForeignKeys { get; } = new List<ForeignKeyDefinition>();
 
-        public IEnumerable<SubClassMapping> SubClasses => _subClasses;
+        public SubClasses SubClasses { get; }
 
-        public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{UpsertPrefix}{_alias}");
-        public DbObjectName InsertFunction => new DbObjectName(DatabaseSchemaName, $"{InsertPrefix}{_alias}");
-        public DbObjectName UpdateFunction => new DbObjectName(DatabaseSchemaName, $"{UpdatePrefix}{_alias}");
-        public DbObjectName OverwriteFunction => new DbObjectName(DatabaseSchemaName, $"{OverwritePrefix}{_alias}");
+        public DbObjectName UpsertFunction => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.UpsertPrefix}{_alias}");
+        public DbObjectName InsertFunction => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.InsertPrefix}{_alias}");
+        public DbObjectName UpdateFunction => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.UpdatePrefix}{_alias}");
+        public DbObjectName OverwriteFunction => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.OverwritePrefix}{_alias}");
 
         public string DatabaseSchemaName
         {
@@ -193,11 +111,6 @@ namespace Marten.Schema
         public Casing Casing
         {
             get { return _storeOptions.Serializer().Casing; }
-        }
-
-        public EnumStorage DuplicatedFieldEnumStorage
-        {
-            get { return _storeOptions.DuplicatedFieldEnumStorage; }
         }
 
         public string Alias
@@ -263,11 +176,12 @@ namespace Marten.Schema
 
         void IDocumentMapping.DeleteAllDocuments(ITenant factory)
         {
-            var sql = "truncate {0} cascade".ToFormat(Table.QualifiedName);
+            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
             factory.RunSql(sql);
         }
 
         // TODO -- see if you can eliminate the tenant argument here
+        [Obsolete("Will be removed in v4 after ViewProjection is rewritten")]
         public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             var idType = IdMember.GetMemberType();
@@ -277,103 +191,15 @@ namespace Marten.Schema
             return (IdAssignment<T>)Activator.CreateInstance(assignerType, IdMember, IdStrategy);
         }
 
-        public IQueryableDocument ToQueryableDocument()
-        {
-            return this;
-        }
-
         public Type IdType => IdMember?.GetMemberType();
 
         public IDocumentMapping Root => this;
         public Type DocumentType { get; }
 
-        public virtual DbObjectName Table => new DbObjectName(DatabaseSchemaName, $"{TablePrefix}{_alias}");
-
-        IEnumerable<Type> IFeatureSchema.DependentTypes()
-        {
-            yield return typeof(SystemFunctions);
-
-            foreach (var foreignKey in ForeignKeys)
-            {
-                // ExternalForeignKeyDefinition's will have a null ReferenceDocumentType, so we can skip it
-                if (foreignKey.ReferenceDocumentType == null)
-                    continue;
-
-                yield return foreignKey.ReferenceDocumentType;
-            }
-        }
-
-        bool IFeatureSchema.IsActive(StoreOptions options)
-        {
-            return true;
-        }
-
-        ISchemaObject[] IFeatureSchema.Objects => toSchemaObjects().ToArray();
-
-        Type IFeatureSchema.StorageType => DocumentType;
-        public string Identifier => Alias.ToLowerInvariant();
-
-        public void WritePermissions(DdlRules rules, StringWriter writer)
-        {
-            var template = DdlTemplate.IsNotEmpty()
-                ? rules.Templates[DdlTemplate.ToLower()]
-                : rules.Templates["default"];
-
-            new DocumentTable(this).WriteTemplate(template, writer);
-            new UpsertFunction(this).WriteTemplate(rules, template, writer);
-        }
+        // TODO -- this needs to be memoized!!!
+        public virtual DbObjectName TableName => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
-
-        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
-        {
-            var extras = extraFilters(query).ToList();
-
-            if (extras.Count > 0)
-            {
-                extras.Add(query);
-                return new CompoundWhereFragment("and", extras.ToArray());
-            }
-
-            return query;
-        }
-
-        public ISqlFragment DefaultWhereFragment()
-        {
-            var defaults = defaultFilters().ToArray();
-            switch (defaults.Length)
-            {
-                case 0:
-                    return null;
-
-                case 1:
-                    return defaults[0];
-
-                default:
-                    return new CompoundWhereFragment("and", defaults);
-            }
-        }
-
-        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
-        {
-            if (DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(DeletedColumn))
-                yield return ExcludeSoftDeletedDocuments();
-
-            if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
-                yield return new TenantWhereFragment();
-        }
-
-        private IEnumerable<ISqlFragment> defaultFilters()
-        {
-            if (DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedDocuments();
-
-            if (TenancyStyle == TenancyStyle.Conjoined) yield return new TenantWhereFragment();
-        }
-
-        public static ISqlFragment ExcludeSoftDeletedDocuments()
-        {
-            return new WhereFragment($"d.{DeletedColumn} = False");
-        }
 
         public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
             Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
@@ -411,54 +237,6 @@ namespace Marten.Schema
                     .OrderByDescending(x => x.DeclaringType == type).ToArray();
         }
 
-        public void AddSubClass(Type subclassType, IEnumerable<MappedType> otherSubclassTypes, string alias)
-        {
-            VerifyIsSubclass(subclassType);
-
-            var subclass = new SubClassMapping(subclassType, this, _storeOptions, otherSubclassTypes, alias);
-            _subClasses.Add(subclass);
-        }
-
-        public void AddSubClass(Type subclassType, string alias = null)
-        {
-            VerifyIsSubclass(subclassType);
-
-            var subclass = new SubClassMapping(subclassType, this, _storeOptions, alias);
-            _subClasses.Add(subclass);
-        }
-
-        private void VerifyIsSubclass(Type subclassType)
-        {
-            if (!subclassType.CanBeCastTo(DocumentType))
-                throw new ArgumentOutOfRangeException(nameof(subclassType),
-                    $"Type '{subclassType.GetFullName()}' cannot be cast to '{DocumentType.GetFullName()}'");
-        }
-
-        public string AliasFor(Type subclassType)
-        {
-            if (subclassType == DocumentType)
-                return BaseAlias;
-
-            var type = _subClasses.FirstOrDefault(x => x.DocumentType == subclassType);
-            if (type == null)
-                throw new ArgumentOutOfRangeException(
-                    $"Unknown subclass type '{subclassType.FullName}' for Document Hierarchy {DocumentType.FullName}");
-
-            return type.Alias;
-        }
-
-        public Type TypeFor(string alias)
-        {
-            if (alias == BaseAlias)
-                return DocumentType;
-
-            var subClassMapping = _subClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
-            if (subClassMapping == null)
-                throw new ArgumentOutOfRangeException(nameof(alias),
-                    $"No subclass in the hierarchy '{DocumentType.FullName}' matches the alias '{alias}'");
-
-            return subClassMapping.DocumentType;
-        }
 
         public IndexDefinition AddGinIndexToData()
         {
@@ -473,7 +251,7 @@ namespace Marten.Schema
 
         public IndexDefinition AddLastModifiedIndex(Action<IndexDefinition> configure = null)
         {
-            var index = new IndexDefinition(this, LastModifiedColumn);
+            var index = new IndexDefinition(this, SchemaConstants.LastModifiedColumn);
             configure?.Invoke(index);
             Indexes.Add(index);
 
@@ -486,7 +264,7 @@ namespace Marten.Schema
                 throw new InvalidOperationException(
                     $"DocumentMapping for {DocumentType.FullName} is not configured to use Soft Delete");
 
-            var index = new IndexDefinition(this, DeletedAtColumn) {Modifier = $"WHERE {DeletedColumn}"};
+            var index = new IndexDefinition(this, SchemaConstants.DeletedAtColumn) {Modifier = $"WHERE {SchemaConstants.DeletedColumn}"};
             configure?.Invoke(index);
             Indexes.Add(index);
 
@@ -629,7 +407,7 @@ namespace Marten.Schema
 
         public bool IsHierarchy()
         {
-            return _subClasses.Any() || DocumentType.GetTypeInfo().IsAbstract || DocumentType.GetTypeInfo().IsInterface;
+            return SubClasses.Any() || DocumentType.GetTypeInfo().IsAbstract || DocumentType.GetTypeInfo().IsInterface;
         }
 
         private static string defaultDocumentAliasName(Type documentType)
@@ -686,39 +464,67 @@ namespace Marten.Schema
                 throw new InvalidDocumentException(
                     $"Could not determine an 'id/Id' field or property for requested document type {DocumentType.FullName}");
 
-            if (TenantIdMember != null && TenancyStyle != TenancyStyle.Conjoined)
+            if (Metadata.TenantId.Member != null && TenancyStyle != TenancyStyle.Conjoined)
             {
                 throw new InvalidDocumentException($"Tenancy style must be set to {nameof(TenancyStyle.Conjoined)} to map tenant id metadata for {DocumentType.FullName}.");
             }
 
-            if (DocumentTypeMember != null && !IsHierarchy())
+            if (Metadata.DocumentType.Member != null && !IsHierarchy())
             {
                 throw new InvalidDocumentException($"{DocumentType.FullName} must be part of a document hierarchy to map document type metadata.");
             }
 
-            if ((IsSoftDeletedMember != null || SoftDeletedAtMember != null) && DeleteStyle != DeleteStyle.SoftDelete)
+            if ((Metadata.IsSoftDeleted.Member != null || Metadata.SoftDeletedAt.Member != null) && DeleteStyle != DeleteStyle.SoftDelete)
             {
                 throw new InvalidDocumentException($"{DocumentType.FullName} must be configured for soft deletion to map soft deleted metadata.");
             }
+
+            // TODO -- validate optimistic versioning is on if Version member is non-null
 
             var idField = new IdField(IdMember);
             setField(IdMember.Name, idField);
         }
 
+
+
+
+        public string AliasFor(Type subclassType)
+        {
+            if (subclassType == DocumentType)
+                return SchemaConstants.BaseAlias;
+
+            var type = SubClasses.FirstOrDefault(x => x.DocumentType == subclassType);
+            if (type == null)
+                throw new ArgumentOutOfRangeException(
+                    $"Unknown subclass type '{subclassType.FullName}' for Document Hierarchy {DocumentType.FullName}");
+
+            return type.Alias;
+        }
+
+        // This method is used in generated code, so please don't delete this!!!!
+        public Type TypeFor(string alias)
+        {
+            if (alias == SchemaConstants.BaseAlias)
+                return DocumentType;
+
+            var subClassMapping = SubClasses.FirstOrDefault(x => x.Alias.EqualsIgnoreCase(alias));
+            if (subClassMapping == null)
+                throw new ArgumentOutOfRangeException(nameof(alias),
+                    $"No subclass in the hierarchy '{DocumentType.FullName}' matches the alias '{alias}'");
+
+            return subClassMapping.DocumentType;
+        }
+
+
+
         public override string ToString()
         {
-            return $"Storage for {DocumentType}, Table: {Table}";
+            return $"Storage for {DocumentType}, Table: {TableName}";
         }
 
-        private IEnumerable<ISchemaObject> toSchemaObjects()
-        {
-            yield return new DocumentTable(this);
-            yield return new UpsertFunction(this);
-            yield return new InsertFunction(this);
-            yield return new UpdateFunction(this);
 
-            if (UseOptimisticConcurrency) yield return new OverwriteFunction(this);
-        }
+
+
     }
 
     public class DocumentMapping<T>: DocumentMapping
@@ -765,47 +571,6 @@ namespace Marten.Schema
             configure?.Invoke(indexDefinition);
         }
 
-        /// <summary>
-        ///     Programmatically directs Marten to map all the subclasses of <cref name="T" /> to a hierarchy of types
-        /// </summary>
-        /// <param name="allSubclassTypes">
-        ///     All the subclass types of <cref name="T" /> that you wish to map.
-        ///     You can use either params of <see cref="Type" /> or <see cref="MappedType" /> or a mix, since Type can implicitly
-        ///     convert to MappedType (without an alias)
-        /// </param>
-        /// <returns></returns>
-        public void AddSubClassHierarchy(params MappedType[] allSubclassTypes)
-        {
-            allSubclassTypes.Each(subclassType =>
-                AddSubClass(
-                    subclassType.Type,
-                    allSubclassTypes.Except(new[] {subclassType}),
-                    subclassType.Alias
-                )
-            );
-        }
-
-        /// <summary>
-        ///     Programmatically directs Marten to map all the subclasses of <cref name="T" /> to a hierarchy of types.
-        ///     <c>Unadvised in projects with many types.</c>
-        /// </summary>
-        /// <returns></returns>
-        public void AddSubClassHierarchy()
-        {
-            var baseType = typeof(T);
-            var allSubclassTypes = baseType.GetTypeInfo().Assembly.GetTypes()
-                .Where(t => t.GetTypeInfo().IsSubclassOf(baseType) ||
-                            (baseType.GetTypeInfo().IsInterface && t.GetInterfaces().Contains(baseType)))
-                .Select(t => (MappedType)t).ToList();
-
-            allSubclassTypes.Each(subclassType =>
-                AddSubClass(
-                    subclassType.Type,
-                    allSubclassTypes.Except(new[] {subclassType}),
-                    null
-                )
-            );
-        }
 
         /// <summary>
         ///     Adds a computed index
@@ -826,31 +591,11 @@ namespace Marten.Schema
             Action<ComputedIndex> configure = null)
         {
             var members = expressions
-                .Select(e =>
-                {
-                    var visitor = new FindMembers();
-                    visitor.Visit(e);
-                    return visitor.Members.ToArray();
-                }).ToArray();
+                .Select(FindMembers.Determine).ToArray();
 
             var index = new ComputedIndex(this, members);
             configure?.Invoke(index);
             Indexes.Add(index);
-        }
-
-        public void UniqueIndex(params Expression<Func<T, object>>[] expressions)
-        {
-            UniqueIndex(UniqueIndexType.Computed, null, expressions);
-        }
-
-        public void UniqueIndex(string indexName, params Expression<Func<T, object>>[] expressions)
-        {
-            UniqueIndex(UniqueIndexType.Computed, indexName, expressions);
-        }
-
-        public void UniqueIndex(UniqueIndexType indexType, params Expression<Func<T, object>>[] expressions)
-        {
-            UniqueIndex(indexType, null, expressions);
         }
 
         public void UniqueIndex(UniqueIndexType indexType, string indexName,
@@ -864,44 +609,12 @@ namespace Marten.Schema
         {
             AddUniqueIndex(
                 expressions
-                    .Select(e =>
-                    {
-                        var visitor = new FindMembers();
-                        visitor.Visit(e);
-                        return visitor.Members.ToArray();
-                    })
+                    .Select(FindMembers.Determine)
                     .ToArray(),
                 indexType,
                 indexName,
                 IndexMethod.btree,
                 tenancyScope);
-        }
-
-        /// <summary>
-        ///     Adds a full text index with default region config set to 'english'
-        /// </summary>
-        /// <param name="expressions">Document fields that should be use by full text index</param>
-        /// <remarks>
-        ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
-        /// </remarks>
-        public FullTextIndex FullTextIndex(params Expression<Func<T, object>>[] expressions)
-        {
-            return FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
-        }
-
-        /// <summary>
-        ///     Adds a full text index with default region config set to 'english'
-        /// </summary>
-        /// <param name="expressions">Document fields that should be use by full text index</param>
-        /// <remarks>
-        ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
-        /// </remarks>
-        public FullTextIndex FullTextIndex(Action<FullTextIndex> configure,
-            params Expression<Func<T, object>>[] expressions)
-        {
-            var index = FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
-            configure(index);
-            return index;
         }
 
         /// <summary>
@@ -916,67 +629,13 @@ namespace Marten.Schema
         {
             return AddFullTextIndex(
                 expressions
-                    .Select(e =>
-                    {
-                        var visitor = new FindMembers();
-                        visitor.Visit(e);
-                        return visitor.Members.ToArray();
-                    })
+                    .Select(FindMembers.Determine)
                     .ToArray(),
                 regConfig);
         }
 
-        /// <summary>
-        ///     Adds foreign key index to other marten document
-        /// </summary>
-        /// <typeparam name="TReference">Document type</typeparam>
-        /// <param name="expression">Field selector</param>
-        /// <param name="foreignKeyConfiguration">customize foreign key configuration</param>
-        /// <param name="indexConfiguration">customize index configuration</param>
-        public void ForeignKey<TReference>(
-            Expression<Func<T, object>> expression,
-            Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
-            Action<IndexDefinition> indexConfiguration = null)
-        {
-            var visitor = new FindMembers();
-            visitor.Visit(expression);
 
-            var foreignKeyDefinition = AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
-            foreignKeyConfiguration?.Invoke(foreignKeyDefinition);
 
-            var indexDefinition = AddIndex(foreignKeyDefinition.ColumnName);
-            indexConfiguration?.Invoke(indexDefinition);
-        }
 
-        /// <summary>
-        ///     Adds foreign key index to non-marten table
-        /// </summary>
-        /// <param name="expression">Field selector</param>
-        /// <param name="tableName">external table name</param>
-        /// <param name="columnName">referenced column to external table</param>
-        /// <param name="schemaName">
-        ///     external table schema name, if not provided then DatabaseSchemaName from store options will be
-        ///     used
-        /// </param>
-        /// <param name="foreignKeyConfiguration">customize foreign key configuration</param>
-        public void ForeignKey(
-            Expression<Func<T, object>> expression,
-            string tableName,
-            string columnName,
-            string schemaName = null,
-            Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
-        {
-            schemaName = schemaName ?? DatabaseSchemaName;
-
-            var visitor = new FindMembers();
-            visitor.Visit(expression);
-
-            var duplicateField = DuplicateField(visitor.Members.ToArray());
-
-            var foreignKey =
-                new ExternalForeignKeyDefinition(duplicateField.ColumnName, this, schemaName, tableName, columnName);
-            foreignKeyConfiguration?.Invoke(foreignKey);
-            ForeignKeys.Add(foreignKey);
-        }
     }
 }

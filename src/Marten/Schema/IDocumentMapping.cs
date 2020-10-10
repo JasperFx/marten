@@ -1,6 +1,4 @@
 using System;
-using System.Linq.Expressions;
-using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Storage;
 
@@ -12,16 +10,13 @@ namespace Marten.Schema
 
         Type DocumentType { get; }
 
-        DbObjectName Table { get; }
+        DbObjectName TableName { get; }
 
         void DeleteAllDocuments(ITenant factory);
 
         IdAssignment<T> ToIdAssignment<T>(ITenant tenant);
 
-        IQueryableDocument ToQueryableDocument();
-
         Type IdType { get; }
-        TenancyStyle TenancyStyle { get; }
     }
 
 }

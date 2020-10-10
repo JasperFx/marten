@@ -73,7 +73,7 @@ namespace Marten.Schema.Testing.Storage
 
         private void removeColumn(string name)
         {
-            var sql = $"alter table {theMapping.Table} alter {name} DROP DEFAULT;";
+            var sql = $"alter table {theMapping.TableName} alter {name} DROP DEFAULT;";
             _conn.CreateCommand(sql).ExecuteNonQuery();
         }
 
@@ -87,9 +87,9 @@ namespace Marten.Schema.Testing.Storage
         }
 
         [Theory]
-        [InlineData(DocumentMapping.DotNetTypeColumn)]
-        [InlineData(DocumentMapping.LastModifiedColumn)]
-        [InlineData(DocumentMapping.VersionColumn)]
+        [InlineData(SchemaConstants.DotNetTypeColumn)]
+        [InlineData(SchemaConstants.LastModifiedColumn)]
+        [InlineData(SchemaConstants.VersionColumn)]
         public void can_migrate_missing_metadata_column(string columnName)
         {
             writeTable();
@@ -109,9 +109,9 @@ namespace Marten.Schema.Testing.Storage
                 .ShouldHaveTheSameElementsAs(
                     "id",
                     "data",
-                    DocumentMapping.LastModifiedColumn,
-                    DocumentMapping.VersionColumn,
-                    DocumentMapping.DotNetTypeColumn);
+                    SchemaConstants.LastModifiedColumn,
+                    SchemaConstants.VersionColumn,
+                    SchemaConstants.DotNetTypeColumn);
         }
 
         [Fact]
@@ -162,14 +162,14 @@ namespace Marten.Schema.Testing.Storage
         public void can_migrate_missing_hierarchical_columns()
         {
             writeTable();
-            theMapping.AddSubClass(typeof(SuperUser));
+            theMapping.SubClasses.Add(typeof(SuperUser));
             var newTable = new DocumentTable(theMapping);
 
             writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
 
             var theActual = theTable.FetchExisting(_conn);
 
-            theActual.HasColumn(DocumentMapping.DocumentTypeColumn);
+            theActual.HasColumn(SchemaConstants.DocumentTypeColumn);
         }
 
         [Fact]
@@ -183,8 +183,8 @@ namespace Marten.Schema.Testing.Storage
 
             var theActual = theTable.FetchExisting(_conn);
 
-            theActual.HasColumn(DocumentMapping.DeletedColumn);
-            theActual.HasColumn(DocumentMapping.DeletedAtColumn);
+            theActual.HasColumn(SchemaConstants.DeletedColumn);
+            theActual.HasColumn(SchemaConstants.DeletedAtColumn);
         }
 
         [Fact]
@@ -299,9 +299,9 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void hierarchical()
         {
-            theMapping.AddSubClass(typeof(SuperUser));
+            theMapping.SubClasses.Add(typeof(SuperUser));
 
-            theTable.HasColumn(DocumentMapping.DocumentTypeColumn);
+            theTable.HasColumn(SchemaConstants.DocumentTypeColumn);
         }
 
         [Fact]
@@ -323,9 +323,9 @@ namespace Marten.Schema.Testing.Storage
         {
             theMapping.DeleteStyle = DeleteStyle.SoftDelete;
 
-            theTable.HasColumn(DocumentMapping.DeletedColumn);
-            Assert.Contains(theTable.Indexes, x => x.IndexName == $"mt_doc_user_idx_{DocumentMapping.DeletedColumn}");
-            theTable.HasColumn(DocumentMapping.DeletedAtColumn);
+            theTable.HasColumn(SchemaConstants.DeletedColumn);
+            Assert.Contains(theTable.Indexes, x => x.IndexName == $"mt_doc_user_idx_{SchemaConstants.DeletedColumn}");
+            theTable.HasColumn(SchemaConstants.DeletedAtColumn);
         }
 
         [Fact]
@@ -390,7 +390,7 @@ namespace Marten.Schema.Testing.Storage
         [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
         public void select_columns_with_hierarchy(StorageStyle style, string[] expected)
         {
-            theMapping.AddSubClassHierarchy();
+            theMapping.SubClasses.AddHierarchy();
 
             theTable.SelectColumns(style)
                 .Select(x => x.Name)

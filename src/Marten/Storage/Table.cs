@@ -40,12 +40,12 @@ namespace Marten.Storage
 
         public Table(DbObjectName name)
         {
-            Identifier = name;
+            Identifier = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         public void AddPrimaryKey(TableColumn column)
         {
-            PrimaryKey = column;
+            PrimaryKey = column ?? throw new ArgumentNullException(nameof(column));
             column.Directive = $"CONSTRAINT pk_{Identifier.Name} PRIMARY KEY";
             Columns.Add(column);
         }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Util;
@@ -15,27 +16,24 @@ namespace Marten.Storage
     internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
     {
         private readonly object _id;
-        private readonly IDocumentMapping _mapping;
+        private readonly IDocumentStorage _storage;
         private readonly MetadataColumn[] _columns;
 
-        public EntityMetadataQueryHandler(object id, IDocumentMapping mapping)
+        public EntityMetadataQueryHandler(object id, IDocumentStorage storage)
         {
             _id = id;
-            _mapping = mapping;
+            _storage = storage;
 
-            SourceType = mapping.DocumentType;
+            SourceType = storage.DocumentType;
 
-            // TODO -- use memoized table on DocumentMapping
-            if (mapping is DocumentMapping m)
+            if (storage.Fields is DocumentMapping m)
             {
-                _columns = new DocumentTable(m).OfType<MetadataColumn>().ToArray();
+                _columns = m.Schema.Table.OfType<MetadataColumn>().ToArray();
             }
-            else if (mapping is SubClassMapping s)
+            else
             {
-                _columns = new DocumentTable(s.Parent).OfType<MetadataColumn>().ToArray();
+                throw new ArgumentOutOfRangeException(nameof(storage));
             }
-
-
         }
 
         public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
@@ -47,7 +45,7 @@ namespace Marten.Storage
             sql.Append(fields);
 
             sql.Append(" from ");
-            sql.Append((string)_mapping.Table.QualifiedName);
+            sql.Append(_storage.TableName.QualifiedName);
             sql.Append(" where id = :id");
 
             sql.AddNamedParameter("id", _id);

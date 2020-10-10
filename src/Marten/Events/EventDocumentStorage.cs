@@ -17,6 +17,7 @@ using Remotion.Linq;
 namespace Marten.Events
 {
 
+
     public class EventDocumentStorage : IDocumentStorage<IEvent>
     {
         private readonly EventGraph _graph;
@@ -28,7 +29,7 @@ namespace Marten.Events
             _graph = graph;
             _mapping = mapping;
 
-            FromObject = _mapping.Table.QualifiedName;
+            FromObject = _mapping.TableName.QualifiedName;
             Fields = mapping;
 
             if (graph.StreamIdentity == StreamIdentity.AsGuid)
@@ -42,6 +43,8 @@ namespace Marten.Events
                 _selector = new StringIdentifiedEventSelector(graph, serializer);
             }
         }
+
+        public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
 
         public void EjectById(IMartenSession session, object id)
         {
@@ -84,17 +87,19 @@ namespace Marten.Events
         public IFieldMapping Fields { get; }
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
-            return _mapping.FilterDocuments(model, query);
+            return query;
         }
 
         public ISqlFragment DefaultWhereFragment()
         {
-            return _mapping.DefaultWhereFragment();
+            return null;
         }
 
-        public IQueryableDocument QueryableDocument => _mapping;
         public bool UseOptimisticConcurrency { get; } = false;
         public IOperationFragment DeleteFragment => throw new NotSupportedException();
+        public DuplicatedField[] DuplicatedFields { get; } = new DuplicatedField[0];
+        public DbObjectName TableName => _mapping.TableName;
+        public Type DocumentType => typeof(IEvent);
 
         public object IdentityFor(IEvent document)
         {

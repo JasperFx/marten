@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
@@ -19,17 +20,17 @@ namespace Marten.Patching
 {
     public class PatchOperation: IStorageOperation, NoDataReturnedCall
     {
-        private readonly IQueryableDocument _document;
+        private readonly IDocumentStorage _storage;
         private readonly ISqlFragment _fragment;
         private readonly IDictionary<string, object> _patch;
         private readonly ISerializer _serializer;
         private readonly TransformFunction _transform;
 
-        public PatchOperation(TransformFunction transform, IQueryableDocument document, ISqlFragment fragment,
+        public PatchOperation(TransformFunction transform, IDocumentStorage storage, ISqlFragment fragment,
             IDictionary<string, object> patch, ISerializer serializer)
         {
             _transform = transform;
-            _document = document;
+            _storage = storage;
             _fragment = fragment;
             _patch = patch;
             _serializer = serializer;
@@ -77,15 +78,15 @@ namespace Marten.Patching
             var versionParam = builder.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
 
             builder.Append("update ");
-            builder.Append(_document.Table.QualifiedName);
+            builder.Append(_storage.TableName.QualifiedName);
             builder.Append(" as d set data = ");
             builder.Append(_transform.Identifier.QualifiedName);
             builder.Append("(data, :");
             builder.Append(patchParam.ParameterName);
             builder.Append("), ");
-            builder.Append(DocumentMapping.LastModifiedColumn);
+            builder.Append(SchemaConstants.LastModifiedColumn);
             builder.Append(" = (now() at time zone 'utc'), ");
-            builder.Append(DocumentMapping.VersionColumn);
+            builder.Append(SchemaConstants.VersionColumn);
             builder.Append(" = :");
             builder.Append(versionParam.ParameterName);
 
@@ -103,16 +104,16 @@ namespace Marten.Patching
             applyUpdates(builder, _fragment);
         }
 
-        public Type DocumentType => _document.DocumentType;
+        public Type DocumentType => _storage.DocumentType;
 
         private void applyUpdates(CommandBuilder builder, ISqlFragment where)
         {
-            var fields = _document.DuplicatedFields;
+            var fields = _storage.DuplicatedFields;
             if (!fields.Any())
                 return;
 
             builder.Append(";update ");
-            builder.Append(_document.Table.QualifiedName);
+            builder.Append(_storage.TableName.QualifiedName);
             builder.Append(" as d set ");
 
             builder.Append(fields[0].UpdateSqlFragment());

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
-using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
@@ -25,9 +24,13 @@ namespace Marten.Internal.Storage
 
         ISqlFragment DefaultWhereFragment();
 
-        IQueryableDocument QueryableDocument { get; }
         bool UseOptimisticConcurrency { get; }
         IOperationFragment DeleteFragment { get; }
+        DuplicatedField[] DuplicatedFields { get; }
+        DbObjectName TableName { get; }
+        Type DocumentType { get; }
+
+        TenancyStyle TenancyStyle { get; }
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage

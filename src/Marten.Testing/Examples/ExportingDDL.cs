@@ -12,9 +12,6 @@ namespace Marten.Testing.Examples
             {
                 _.Connection("some connection string");
 
-                // include any MartenRegistry's you are using
-                _.Schema.Include<MyMartenRegistry>();
-
                 // If you are depending upon attributes for customization,
                 // you have to help DocumentStore "know" what the document types
                 // are

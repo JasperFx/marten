@@ -28,7 +28,7 @@ using Remotion.Linq;
 
 namespace Marten.Events
 {
-    public abstract class EventMapping: IDocumentMapping, IQueryableDocument
+    public abstract class EventMapping: IDocumentMapping
     {
         protected readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
@@ -54,7 +54,7 @@ namespace Marten.Events
 
         Type IDocumentMapping.IdType => typeof(Guid);
 
-        public DbObjectName Table => new DbObjectName(_parent.DatabaseSchemaName, "mt_events");
+        public DbObjectName TableName => new DbObjectName(_parent.DatabaseSchemaName, "mt_events");
         public DuplicatedField[] DuplicatedFields { get; }
         public DeleteStyle DeleteStyle { get; }
 
@@ -105,10 +105,6 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        public IQueryableDocument ToQueryableDocument()
-        {
-            return this;
-        }
 
     }
 
@@ -182,16 +178,13 @@ namespace Marten.Events
 
         Type IDocumentStorage.SourceType => typeof(IEvent);
 
-        IFieldMapping IDocumentStorage.Fields => this;
-
-        IQueryableDocument IDocumentStorage.QueryableDocument => this;
-
         object IDocumentStorage<T>.IdentityFor(T document)
         {
             throw new NotSupportedException();
         }
 
         Type IDocumentStorage.IdType => _idType;
+        public IFieldMapping Fields => _inner;
 
         Guid? IDocumentStorage<T>.VersionFor(T document, IMartenSession session)
         {

@@ -8,7 +8,7 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class ChildDocument: FieldMapping, IQueryableDocument
+    public class ChildDocument: FieldMapping
     {
         public ChildDocument(string locator, Type documentType, StoreOptions options) : base(locator, documentType, options)
         {
@@ -28,13 +28,7 @@ namespace Marten.Schema
             return null;
         }
 
-        public string[] SelectFields()
-        {
-            return new[] { "x" };
-        }
-
-
-        public DbObjectName Table
+        public DbObjectName TableName
         {
             get { throw new NotSupportedException(); }
         }

@@ -22,13 +22,13 @@ namespace Marten.Transforms
             var version = CombGuidIdGeneration.NewGuid();
 
             sql.Append("update ");
-            sql.Append(_mapping.Table.QualifiedName);
+            sql.Append(_mapping.TableName.QualifiedName);
             sql.Append(" as d set data = ");
             sql.Append(_function.Identifier.QualifiedName);
             sql.Append("(data), ");
-            sql.Append(DocumentMapping.LastModifiedColumn);
+            sql.Append(SchemaConstants.LastModifiedColumn);
             sql.Append(" = (now() at time zone 'utc'), ");
-            sql.Append(DocumentMapping.VersionColumn);
+            sql.Append(SchemaConstants.VersionColumn);
             sql.Append(" = '");
             sql.Append(version);
             sql.Append("'");

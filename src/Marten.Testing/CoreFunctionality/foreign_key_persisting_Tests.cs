@@ -116,24 +116,16 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void throws_exception_on_cyclic_dependency()
         {
-            StoreOptions(_ =>
+            Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {
-                _.Schema.For<Node1>().ForeignKey<Node3>(x => x.Link);
-                _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Link);
-                _.Schema.For<Node3>().ForeignKey<Node2>(x => x.Link);
-            });
-
-            Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
-            {
-                using (var session = theStore.OpenSession())
+                StoreOptions(_ =>
                 {
-                    session.Store(new Node1());
-                    session.Store(new Node2());
-                    session.Store(new Node3());
+                    _.Schema.For<Node1>().ForeignKey<Node3>(x => x.Link);
+                    _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Link);
+                    _.Schema.For<Node3>().ForeignKey<Node2>(x => x.Link);
+                });
+            }).Message.ShouldContain("Cyclic");
 
-                    session.SaveChanges();
-                }
-            });
         }
 
         public class Node1

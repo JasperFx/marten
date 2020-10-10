@@ -12,7 +12,8 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.VersionMember = member;
+            mapping.UseOptimisticConcurrency = true;
+            mapping.Metadata.Version.Member = member;
         }
     }
 }

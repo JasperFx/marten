@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -13,15 +12,48 @@ using NpgsqlTypes;
 
 namespace Marten
 {
+
+    internal interface IDocumentMappingBuilder
+    {
+        DocumentMapping Build(StoreOptions options);
+    }
+
+    internal class DocumentMappingBuilder<T> : IDocumentMappingBuilder
+    {
+        private readonly IList<Action<DocumentMapping<T>>> _alterations
+            = new List<Action<DocumentMapping<T>>>();
+
+        internal Action<DocumentMapping<T>> Alter
+        {
+            set
+            {
+                _alterations.Add(value);
+            }
+        }
+
+        public DocumentMapping Build(StoreOptions options)
+        {
+            // TODO -- this is going to get fancier
+            var mapping = new DocumentMapping<T>(options);
+            foreach (var alteration in _alterations)
+            {
+                alteration(mapping);
+            }
+
+            return mapping;
+        }
+    }
+
     /// <summary>
     /// Used to customize or optimize the storage and retrieval of document types
     /// </summary>
     public class MartenRegistry
     {
-        private readonly IList<Action<StoreOptions>> _alterations = new List<Action<StoreOptions>>();
+        private readonly StoreOptions _storeOptions;
 
-        public MartenRegistry()
+        public MartenRegistry(StoreOptions storeOptions)
         {
+            _storeOptions = storeOptions;
         }
 
         /// <summary>
@@ -31,64 +63,16 @@ namespace Marten
         /// <returns></returns>
         public DocumentMappingExpression<T> For<T>()
         {
-            return new DocumentMappingExpression<T>(this);
-        }
-
-        private Action<StoreOptions> alter
-        {
-            set
-            {
-                _alterations.Add(value);
-            }
-        }
-
-        internal void Apply(StoreOptions options)
-        {
-            foreach (var alteration in _alterations)
-            {
-                alteration(options);
-            }
-        }
-
-        /// <summary>
-        /// Include the declarations from another MartenRegistry type
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        public void Include<T>() where T : MartenRegistry, new()
-        {
-            alter = x =>
-            {
-                var registry = new T();
-                registry.Apply(x);
-            };
-        }
-
-        /// <summary>
-        /// Include the declarations from another MartenRegistry object
-        /// </summary>
-        /// <param name="registry"></param>
-        public void Include(MartenRegistry registry)
-        {
-            alter = registry.Apply;
-        }
-
-        /// <summary>
-        /// Overrides the strategy used to generate the ids.
-        /// </summary>
-        public void DefaultIdStrategy(Func<IDocumentMapping, StoreOptions, IIdGeneration> strategy)
-        {
-            alter = x => x.DefaultIdStrategy = strategy;
+            return new DocumentMappingExpression<T>(_storeOptions.Storage.BuilderFor<T>());
         }
 
         public class DocumentMappingExpression<T>
         {
-            private readonly MartenRegistry _parent;
+            private DocumentMappingBuilder<T> _builder;
 
-            public DocumentMappingExpression(MartenRegistry parent)
+            internal DocumentMappingExpression(DocumentMappingBuilder<T> builder)
             {
-                _parent = parent;
-
-                _parent.alter = options => options.Storage.MappingFor(typeof(T));
+                _builder = builder;
             }
 
             /// <summary>
@@ -99,7 +83,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> PropertySearching(PropertySearching searching)
             {
-                alter = m => m.PropertySearching = searching;
+                _builder.Alter = m => m.PropertySearching = searching;
                 return this;
             }
 
@@ -112,7 +96,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> DocumentAlias(string alias)
             {
-                alter = m => m.Alias = alias;
+                _builder.Alter = m => m.Alias = alias;
                 return this;
             }
 
@@ -141,7 +125,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null, bool notNull = false)
             {
-                alter = mapping =>
+                _builder.Alter = mapping =>
                 {
                     mapping.Duplicate(expression, pgType, dbType, configure, notNull);
                 };
@@ -156,7 +140,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
             {
-                alter = m => m.Index(expression, configure);
+                _builder.Alter = m => m.Index(expression, configure);
 
                 return this;
             }
@@ -169,7 +153,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> Index(IReadOnlyCollection<Expression<Func<T, object>>> expressions, Action<ComputedIndex> configure = null)
             {
-                alter = m => m.Index(expressions, configure);
+                _builder.Alter = m => m.Index(expressions, configure);
 
                 return this;
             }
@@ -181,7 +165,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UniqueIndex(params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.UniqueIndex(expressions);
+                _builder.Alter = m => m.UniqueIndex(UniqueIndexType.Computed, null, expressions);
 
                 return this;
             }
@@ -194,7 +178,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UniqueIndex(string indexName, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.UniqueIndex(indexName, expressions);
+                _builder.Alter = m => m.UniqueIndex(UniqueIndexType.Computed, indexName, expressions);
 
                 return this;
             }
@@ -207,7 +191,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.UniqueIndex(indexType, expressions);
+                _builder.Alter = m => m.UniqueIndex(indexType, null, expressions);
 
                 return this;
             }
@@ -221,7 +205,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.UniqueIndex(indexType, indexName, expressions);
+                _builder.Alter = m => m.UniqueIndex(indexType, indexName, expressions);
 
                 return this;
             }
@@ -237,7 +221,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UniqueIndex(UniqueIndexType indexType, string indexName, TenancyScope tenancyScope = TenancyScope.Global, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.UniqueIndex(indexType, indexName, tenancyScope, expressions);
+                _builder.Alter = m => m.UniqueIndex(indexType, indexName, tenancyScope, expressions);
 
                 return this;
             }
@@ -249,20 +233,20 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> IndexLastModified(Action<IndexDefinition> configure = null)
             {
-                alter = m => m.AddLastModifiedIndex(configure);
+                _builder.Alter = m => m.AddLastModifiedIndex(configure);
 
                 return this;
             }
 
             public DocumentMappingExpression<T> FullTextIndex(string regConfig = Schema.FullTextIndex.DefaultRegConfig, Action<FullTextIndex> configure = null)
             {
-                alter = m => m.AddFullTextIndex(regConfig, configure);
+                _builder.Alter = m => m.AddFullTextIndex(regConfig, configure);
                 return this;
             }
 
             public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure)
             {
-                alter = m => m.AddFullTextIndex(Schema.FullTextIndex.DefaultRegConfig, configure);
+                _builder.Alter = m => m.AddFullTextIndex(Schema.FullTextIndex.DefaultRegConfig, configure);
                 return this;
             }
 
@@ -274,22 +258,45 @@ namespace Marten
 
             public DocumentMappingExpression<T> FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.FullTextIndex(regConfig, expressions);
+                _builder.Alter = m => m.FullTextIndex(regConfig, expressions);
                 return this;
             }
 
             public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure, params Expression<Func<T, object>>[] expressions)
             {
-                alter = m => m.FullTextIndex(configure, expressions);
+                _builder.Alter = m =>
+                {
+                    var index = m.FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
+                    configure(index);
+                    FullTextIndex temp = index;
+                };
                 return this;
             }
 
+            /// <summary>
+            /// Add a foreign key reference to another document type
+            /// </summary>
+            /// <param name="expression"></param>
+            /// <param name="foreignKeyConfiguration"></param>
+            /// <param name="indexConfiguration"></param>
+            /// <typeparam name="TReference"></typeparam>
+            /// <returns></returns>
             public DocumentMappingExpression<T> ForeignKey<TReference>(
                 Expression<Func<T, object>> expression,
                 Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
                 Action<IndexDefinition> indexConfiguration = null)
             {
-                alter = m => m.ForeignKey<TReference>(expression, foreignKeyConfiguration, indexConfiguration);
+                _builder.Alter = m =>
+                {
+                    var visitor = new FindMembers();
+                    visitor.Visit(expression);
+
+                    var foreignKeyDefinition = m.AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
+                    foreignKeyConfiguration?.Invoke(foreignKeyDefinition);
+
+                    var indexDefinition = m.AddIndex(foreignKeyDefinition.ColumnName);
+                    indexConfiguration?.Invoke(indexDefinition);
+                };
 
                 return this;
             }
@@ -297,7 +304,21 @@ namespace Marten
             public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName, string tableName, string columnName,
                                                            Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
             {
-                alter = m => m.ForeignKey(expression, tableName, columnName, schemaName, foreignKeyConfiguration);
+                _builder.Alter = m =>
+                {
+                    var schemaName1 = schemaName;
+                    schemaName1 ??= m.DatabaseSchemaName;
+
+                    var visitor = new FindMembers();
+                    visitor.Visit(expression);
+
+                    var duplicateField = m.DuplicateField(visitor.Members.ToArray());
+
+                    var foreignKey =
+                        new ExternalForeignKeyDefinition(duplicateField.ColumnName, m, schemaName1, tableName, columnName);
+                    foreignKeyConfiguration?.Invoke(foreignKey);
+                    m.ForeignKeys.Add(foreignKey);
+                };
 
                 return this;
             }
@@ -310,7 +331,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> HiloSettings(HiloSettings settings)
             {
-                alter = mapping => mapping.HiloSettings = settings;
+                _builder.Alter = mapping => mapping.HiloSettings = settings;
                 return this;
             }
 
@@ -319,7 +340,7 @@ namespace Marten
             /// </summary>
             public DocumentMappingExpression<T> DatabaseSchemaName(string databaseSchemaName)
             {
-                alter = mapping => mapping.DatabaseSchemaName = databaseSchemaName;
+                _builder.Alter = mapping => mapping.DatabaseSchemaName = databaseSchemaName;
                 return this;
             }
 
@@ -328,13 +349,13 @@ namespace Marten
             /// </summary>
             public DocumentMappingExpression<T> IdStrategy(IIdGeneration idStrategy)
             {
-                alter = mapping => mapping.IdStrategy = idStrategy;
+                _builder.Alter = mapping => mapping.IdStrategy = idStrategy;
                 return this;
             }
 
             public DocumentMappingExpression<T> Identity(Expression<Func<T, object>> member)
             {
-                alter = mapping =>
+                _builder.Alter = mapping =>
                 {
                     var members = FindMembers.Determine(member);
                     if (members.Length != 1)
@@ -348,19 +369,6 @@ namespace Marten
                 return this;
             }
 
-            private Action<DocumentMapping<T>> alter
-            {
-                set
-                {
-                    Action<StoreOptions> alteration = o =>
-                    {
-                        value((DocumentMapping<T>)o.Storage.MappingFor(typeof(T)));
-                    };
-
-                    _parent.alter = alteration;
-                }
-            }
-
             /// <summary>
             /// Adds a Postgresql Gin index to the JSONB data column for this document type. Leads to faster
             /// querying, but does add overhead to storage and database writes
@@ -369,7 +377,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> GinIndexJsonData(Action<IndexDefinition> configureIndex = null)
             {
-                alter = mapping =>
+                _builder.Alter = mapping =>
                 {
                     var index = mapping.AddGinIndexToData();
 
@@ -387,7 +395,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClass(Type subclassType, string alias = null)
             {
-                alter = mapping => mapping.AddSubClass(subclassType, alias);
+                _builder.Alter = mapping => mapping.SubClasses.Add(subclassType, alias);
                 return this;
             }
 
@@ -399,7 +407,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClassHierarchy(params MappedType[] allSubclassTypes)
             {
-                alter = m => m.AddSubClassHierarchy(allSubclassTypes);
+                _builder.Alter = m => m.SubClasses.AddHierarchy(allSubclassTypes);
                 return this;
             }
 
@@ -409,7 +417,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClassHierarchy()
             {
-                alter = m => m.AddSubClassHierarchy();
+                _builder.Alter = m => m.SubClasses.AddHierarchy();
 
                 return this;
             }
@@ -426,7 +434,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UseOptimisticConcurrency(bool enabled)
             {
-                alter = m => m.UseOptimisticConcurrency = enabled;
+                _builder.Alter = m => m.UseOptimisticConcurrency = enabled;
                 return this;
             }
 
@@ -436,14 +444,14 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> SoftDeleted()
             {
-                alter = m => m.DeleteStyle = DeleteStyle.SoftDelete;
+                _builder.Alter = m => m.DeleteStyle = DeleteStyle.SoftDelete;
                 return this;
             }
 
             public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<IndexDefinition> configure = null)
             {
                 SoftDeleted();
-                alter = m => m.AddDeletedAtIndex(configure);
+                _builder.Alter = m => m.AddDeletedAtIndex(configure);
 
                 return this;
             }
@@ -455,7 +463,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> DdlTemplate(string templateName)
             {
-                alter = m => m.DdlTemplate = templateName;
+                _builder.Alter = m => m.DdlTemplate = templateName;
                 return this;
             }
 
@@ -465,7 +473,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> MultiTenanted()
             {
-                alter = m => m.TenancyStyle = TenancyStyle.Conjoined;
+                _builder.Alter = m => m.TenancyStyle = TenancyStyle.Conjoined;
                 return this;
             }
 
@@ -475,7 +483,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UseIdentityKey()
             {
-                alter = m => m.IdStrategy = new IdentityKeyGeneration(m, m.HiloSettings);
+                _builder.Alter = m => m.IdStrategy = new IdentityKeyGeneration(m, m.HiloSettings);
                 return this;
             }
 
@@ -491,7 +499,12 @@ namespace Marten
                 {
                     throw new ArgumentException($"The {nameof(VersionedWith)} member cannot be a nested property.", nameof(memberExpression));
                 }
-                alter = m => m.VersionMember = members.First();
+
+                _builder.Alter = m =>
+                {
+                    m.UseOptimisticConcurrency = true;
+                    m.Metadata.Version.Member = members.First();
+                };
                 return this;
             }
 
@@ -500,14 +513,14 @@ namespace Marten
             /// </summary>
             /// <param name="memberExpression"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> MapLastModifiedTo(Expression<Func<T, DateTime>> memberExpression)
+            public DocumentMappingExpression<T> MapLastModifiedTo(Expression<Func<T, DateTimeOffset>> memberExpression)
             {
                 var members = FindMembers.Determine(memberExpression);
                 if (members.Length > 1)
                 {
                     throw new ArgumentException($"The {nameof(MapLastModifiedTo)} member cannot be a nested property.", nameof(memberExpression));
                 }
-                alter = m => m.LastModifiedMember = members.First();
+                _builder.Alter = m => m.Metadata.LastModified.Member = members.First();
                 return this;
             }
 
@@ -523,7 +536,7 @@ namespace Marten
                 {
                     throw new ArgumentException($"The {nameof(MapTenantIdTo)} member cannot be a nested property.", nameof(memberExpression));
                 }
-                alter = m => m.TenantIdMember = members.First();
+                _builder.Alter = m => m.Metadata.TenantId.Member = members.First();
                 return this;
             }
 
@@ -539,7 +552,7 @@ namespace Marten
                 {
                     throw new ArgumentException($"The {nameof(MapIsSoftDeletedTo)} member cannot be a nested property.", nameof(memberExpression));
                 }
-                alter = m => m.IsSoftDeletedMember = members.First();
+                _builder.Alter = m => m.Metadata.IsSoftDeleted.Member = members.First();
                 return this;
             }
 
@@ -548,14 +561,14 @@ namespace Marten
             /// </summary>
             /// <param name="memberExpression"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> MapSoftDeletedAtTo(Expression<Func<T, DateTime?>> memberExpression)
+            public DocumentMappingExpression<T> MapSoftDeletedAtTo(Expression<Func<T, DateTimeOffset?>> memberExpression)
             {
                 var members = FindMembers.Determine(memberExpression);
                 if (members.Length > 1)
                 {
                     throw new ArgumentException($"The {nameof(MapSoftDeletedAtTo)} member cannot be a nested property.", nameof(memberExpression));
                 }
-                alter = m => m.SoftDeletedAtMember = members.First();
+                _builder.Alter = m => m.Metadata.SoftDeletedAt.Member = members.First();
                 return this;
             }
 
@@ -571,7 +584,7 @@ namespace Marten
                 {
                     throw new ArgumentException($"The {nameof(MapDocumentTypeTo)} member cannot be a nested property.", nameof(memberExpression));
                 }
-                alter = m => m.DocumentTypeMember = members.First();
+                _builder.Alter = m => m.Metadata.DocumentType.Member = members.First();
                 return this;
             }
 

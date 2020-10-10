@@ -28,7 +28,7 @@ namespace Marten.Linq.SoftDeletes
 
             var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 
-            return new WhereFragment($"d.{DocumentMapping.DeletedColumn} and d.{DocumentMapping.DeletedAtColumn} < ?", time);
+            return new WhereFragment($"d.{SchemaConstants.DeletedColumn} and d.{SchemaConstants.DeletedAtColumn} < ?", time);
         }
     }
 }

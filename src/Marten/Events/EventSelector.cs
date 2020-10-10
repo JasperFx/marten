@@ -111,12 +111,12 @@ namespace Marten.Events
 
         public string[] SelectFields()
         {
-            return new[] { "id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, DocumentMapping.DotNetTypeColumn };
+            return new[] { "id", "type", "version", "data", "seq_id", "stream_id", "timestamp", TenantIdColumn.Name, SchemaConstants.DotNetTypeColumn };
         }
 
         public void WriteSelectClause(CommandBuilder sql)
         {
-            sql.Append($"select id, type, version, data, seq_id, stream_id, timestamp, tenant_id, {DocumentMapping.DotNetTypeColumn} from ");
+            sql.Append($"select id, type, version, data, seq_id, stream_id, timestamp, tenant_id, {SchemaConstants.DotNetTypeColumn} from ");
             sql.Append(Events.DatabaseSchemaName);
             sql.Append(".mt_events as d");
         }

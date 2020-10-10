@@ -15,13 +15,12 @@ namespace Marten.Testing.Bugs
             var docMap = new DocumentMapping(typeof(BugTestClass), new StoreOptions());
             docMap.ForeignKeys.Add(new ExternalForeignKeyDefinition("test_column", docMap, "test_schema", "test_table", "test_column_2"));
 
-            var featureSchema = (IFeatureSchema)docMap;
-
-            featureSchema.DependentTypes().Any(t => t == null).ShouldBeFalse();
+            docMap.Schema.DependentTypes().Any(t => t == null).ShouldBeFalse();
         }
 
         public class BugTestClass
         {
+            public Guid Id;
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Marten.Linq.SoftDeletes
         private static readonly MethodInfo _method =
             typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.IsDeleted));
 
-        private static readonly WhereFragment _whereFragment = new WhereFragment($"d.{DocumentMapping.DeletedColumn} = True");
+        private static readonly WhereFragment _whereFragment = new WhereFragment($"d.{SchemaConstants.DeletedColumn} = True");
 
         public bool Matches(MethodCallExpression expression)
         {

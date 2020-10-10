@@ -19,25 +19,6 @@ namespace Marten.Schema.Identity
             _setter = LambdaBuilder.Setter<TDoc, TId>(member);
         }
 
-        public object Assign(ITenant tenant, TDoc document, out bool assigned)
-        {
-            var original = _getter != null ? _getter(document) : default;
-
-            var id = Generator.Assign(tenant, original, out assigned);
-
-            if (assigned)
-            {
-                if (_setter == null)
-                {
-                    throw new InvalidOperationException($"The identity of {typeof(TDoc)} cannot be assigned");
-                }
-
-                _setter(document, id);
-            }
-
-            return id;
-        }
-
         public void Assign(ITenant tenant, TDoc document, object id)
         {
             _setter?.Invoke(document, (TId)id);

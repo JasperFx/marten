@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Baseline;
@@ -80,7 +79,7 @@ namespace Marten
         public StoreOptions()
         {
             Events = new EventGraph(this);
-            Schema = new MartenRegistry();
+            Schema = new MartenRegistry(this);
             Transforms = new Transforms.Transforms(this);
             Storage = new StorageFeatures(this);
 
@@ -300,8 +299,7 @@ namespace Marten
         /// <param name="documentType"></param>
         public void RegisterDocumentType(Type documentType)
         {
-            if (Storage.MappingFor(documentType) == null)
-                throw new Exception("Unable to create document mapping for " + documentType);
+            Storage.RegisterDocumentType(documentType);
         }
 
         /// <summary>
@@ -326,7 +324,7 @@ namespace Marten
 
         internal void ApplyConfiguration()
         {
-            Schema.Apply(this);
+            Storage.BuildAllMappings();
 
             foreach (var mapping in Storage.AllDocumentMappings)
             {

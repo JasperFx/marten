@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Schema;
@@ -29,6 +30,62 @@ namespace Marten.Storage
             SystemFunctions = new SystemFunctions(options);
 
             Transforms = options.Transforms.As<Transforms.Transforms>();
+        }
+
+        private readonly IDictionary<Type, IDocumentMappingBuilder> _builders
+            = new Dictionary<Type, IDocumentMappingBuilder>();
+
+        private readonly IList<Type> _buildingList = new List<Type>();
+
+        internal DocumentMapping Build(Type type, StoreOptions options)
+        {
+            if (_buildingList.Contains(type))
+            {
+                throw new InvalidOperationException($"Cyclic dependency between documents detected. The types are: {_buildingList.Select(x => x.FullNameInCode()).Join(", ")}");
+            }
+
+            _buildingList.Add(type);
+
+            if (_builders.TryGetValue(type, out var builder))
+            {
+                var mapping = builder.Build(options);
+                _buildingList.Remove(type);
+                return mapping;
+            }
+
+            _buildingList.Remove(type);
+            return new DocumentMapping(type, options);
+        }
+
+        internal void RegisterDocumentType(Type documentType)
+        {
+            if (!_builders.ContainsKey(documentType))
+            {
+                _builders[documentType] =
+                    typeof(DocumentMappingBuilder<>).CloseAndBuildAs<IDocumentMappingBuilder>(documentType);
+            }
+        }
+
+        internal DocumentMappingBuilder<T> BuilderFor<T>()
+        {
+            if (_builders.TryGetValue(typeof(T), out var builder))
+            {
+                return (DocumentMappingBuilder<T>) builder;
+            }
+
+            builder = new DocumentMappingBuilder<T>();
+            _builders[typeof(T)] = builder;
+
+            return (DocumentMappingBuilder<T>) builder;
+        }
+
+        internal void BuildAllMappings()
+        {
+            foreach (var pair in _builders.ToArray())
+            {
+                // Just forcing them all to be built
+                var mapping = MappingFor(pair.Key);
+            }
         }
 
         public Transforms.Transforms Transforms { get; }
@@ -70,21 +127,20 @@ namespace Marten.Storage
 
         public SystemFunctions SystemFunctions { get; }
 
-        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Value.Enumerate().Select(x => x.Value);
+        internal IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Value.Enumerate().Select(x => x.Value);
 
-        public IEnumerable<IDocumentMapping> AllMappings => _documentMappings.Value.Enumerate().Select(x => x.Value).Union(_mappings.Value.Enumerate().Select(x => x.Value));
-
-        public DocumentMapping MappingFor(Type documentType)
+        internal DocumentMapping MappingFor(Type documentType)
         {
             if (!_documentMappings.Value.TryFind(documentType, out var value))
             {
-                value = typeof(DocumentMapping<>).CloseAndBuildAs<DocumentMapping>(_options, documentType);
+                value = Build(documentType, _options);
                 _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
             }
 
             return value;
         }
 
+        [Obsolete("Can we eliminate this in v4?")]
         internal IDocumentMapping FindMapping(Type documentType)
         {
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
@@ -103,6 +159,7 @@ namespace Marten.Storage
             return value;
         }
 
+        [Obsolete("Might be able to eliminate this")]
         internal void AddMapping(IDocumentMapping mapping)
         {
             _mappings.Swap(d => d.AddOrUpdate(mapping.DocumentType, mapping));
@@ -140,7 +197,7 @@ namespace Marten.Storage
                 return _options.Events;
             }
 
-            return MappingFor(featureType);
+            return MappingFor(featureType).Schema;
         }
 
         internal void PostProcessConfiguration()
@@ -164,7 +221,7 @@ namespace Marten.Storage
                 foreach (var subClass in mapping.SubClasses)
                 {
                     _mappings.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass));
-                    _features[subClass.DocumentType] = subClass.Parent;
+                    _features[subClass.DocumentType] = subClass.Parent.Schema;
                 }
             }
         }
@@ -199,7 +256,7 @@ namespace Marten.Storage
 
             foreach (var mapping in mappings)
             {
-                yield return mapping;
+                yield return mapping.Schema;
             }
 
             if (SequenceIsRequired())
@@ -269,5 +326,8 @@ namespace Marten.Storage
                     return results;
                 });
         }
+
+
+
     }
 }

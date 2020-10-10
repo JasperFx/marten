@@ -178,7 +178,7 @@ namespace Marten.Storage
             {
                 conn.Open();
 
-                patch.Apply(conn, AutoCreate.CreateOrUpdate, mapping.As<IFeatureSchema>().Objects);
+                patch.Apply(conn, AutoCreate.CreateOrUpdate, mapping.Schema.Objects);
             }
 
             return patch;

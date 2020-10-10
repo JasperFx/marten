@@ -56,18 +56,6 @@ namespace Marten.Storage
         public string TenantId { get; }
         public IDbObjects DbObjects => new DbObjects(this, _features);
 
-        public void RemoveSchemaItems(Type featureType, StorageFeatures features)
-        {
-            var feature = features.FindFeature(featureType);
-            var writer = new StringWriter();
-
-            foreach (var schemaObject in feature.Objects)
-            {
-                schemaObject.WriteDropStatement(_options.DdlRules, writer);
-            }
-
-            _factory.RunSql(writer.ToString());
-        }
 
         public void ResetSchemaExistenceChecks()
         {

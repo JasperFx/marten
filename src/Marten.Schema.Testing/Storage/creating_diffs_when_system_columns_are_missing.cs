@@ -16,7 +16,7 @@ namespace Marten.Schema.Testing.Storage
         {
             var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
-            table.RemoveColumn(DocumentMapping.VersionColumn);
+            table.RemoveColumn(SchemaConstants.VersionColumn);
 
             var writer = new StringWriter();
             table.Write(theStore.Schema.DdlRules, writer);
@@ -32,7 +32,7 @@ namespace Marten.Schema.Testing.Storage
 
             var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
-            actual.HasColumn(DocumentMapping.VersionColumn).ShouldBeTrue();
+            actual.HasColumn(SchemaConstants.VersionColumn).ShouldBeTrue();
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace Marten.Schema.Testing.Storage
         {
             var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
-            table.RemoveColumn(DocumentMapping.DotNetTypeColumn);
+            table.RemoveColumn(SchemaConstants.DotNetTypeColumn);
 
             var writer = new StringWriter();
             table.Write(theStore.Schema.DdlRules, writer);
@@ -56,7 +56,7 @@ namespace Marten.Schema.Testing.Storage
 
             var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
-            actual.HasColumn(DocumentMapping.DotNetTypeColumn).ShouldBeTrue();
+            actual.HasColumn(SchemaConstants.DotNetTypeColumn).ShouldBeTrue();
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace Marten.Schema.Testing.Storage
         {
             var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
-            table.RemoveColumn(DocumentMapping.LastModifiedColumn);
+            table.RemoveColumn(SchemaConstants.LastModifiedColumn);
 
             var writer = new StringWriter();
             table.Write(theStore.Schema.DdlRules, writer);
@@ -80,7 +80,7 @@ namespace Marten.Schema.Testing.Storage
 
             var actual = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
-            actual.HasColumn(DocumentMapping.LastModifiedColumn).ShouldBeTrue();
+            actual.HasColumn(SchemaConstants.LastModifiedColumn).ShouldBeTrue();
         }
 
     }

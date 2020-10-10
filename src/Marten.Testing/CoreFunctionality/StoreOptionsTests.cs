@@ -34,12 +34,17 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void add_document_types()
         {
-            var options = new StoreOptions();
-            options.RegisterDocumentType<User>();
-            options.RegisterDocumentType(typeof(Company));
-            options.RegisterDocumentTypes(new Type[] { typeof(Target), typeof(Issue) });
+            using var store = DocumentStore.For(options =>
+            {
+                options.Connection(ConnectionSource.ConnectionString);
+                options.RegisterDocumentType<User>();
+                options.RegisterDocumentType(typeof(Company));
+                options.RegisterDocumentTypes(new Type[] {typeof(Target), typeof(Issue)});
 
-            options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name).Select(x => x.DocumentType.Name)
+            });
+
+            store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
+                .Select(x => x.DocumentType.Name)
                 .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
         }
 

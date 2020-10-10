@@ -17,12 +17,12 @@ namespace Marten.Internal.CodeGeneration
         public BulkLoaderBuilder(DocumentMapping mapping)
         {
             _mapping = mapping;
-            _tempTable = _mapping.Table.Name + "_temp" ;
+            _tempTable = _mapping.TableName.Name + "_temp" ;
         }
 
         public GeneratedType BuildType(GeneratedAssembly assembly)
         {
-            var upsertFunction = new UpsertFunction(_mapping);
+            var upsertFunction = _mapping.Schema.Upsert;
 
 
             var arguments = orderArgumentsForBulkWriting(upsertFunction);
@@ -38,7 +38,7 @@ namespace Marten.Internal.CodeGeneration
             }
 
             type.MethodFor("MainLoaderSql").Frames
-                .Return($"COPY {_mapping.Table.QualifiedName}({columns}) FROM STDIN BINARY");
+                .Return($"COPY {_mapping.TableName.QualifiedName}({columns}) FROM STDIN BINARY");
 
             type.MethodFor("TempLoaderSql").Frames
                 .Return($"COPY {_tempTable}({columns}) FROM STDIN BINARY");
@@ -75,29 +75,29 @@ namespace Marten.Internal.CodeGeneration
 
         public string CopyNewDocumentsFromTempTable()
         {
-            var table = new DocumentTable(_mapping);
+            var table = _mapping.Schema.Table;
 
             var storageTable = table.Identifier.QualifiedName;
-            var columns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"\\\"{x.Name}\\\"").Join(", ");
-            var selectColumns = table.Where(x => x.Name != DocumentMapping.LastModifiedColumn).Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
+            var columns = table.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"\\\"{x.Name}\\\"").Join(", ");
+            var selectColumns = table.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
-            return $"insert into {storageTable} ({columns}, {DocumentMapping.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
+            return $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
         }
 
         public string OverwriteDuplicatesFromTempTable()
         {
-            var table = new DocumentTable(_mapping);
+            var table = _mapping.Schema.Table;
             var storageTable = table.Identifier.QualifiedName;
 
-            var updates = table.Where(x => x.Name != "id" && x.Name != DocumentMapping.LastModifiedColumn)
+            var updates = table.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-            return $@"update {storageTable} target SET {updates}, {DocumentMapping.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE source.id = target.id";
+            return $@"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE source.id = target.id";
         }
 
         public string CreateTempTableForCopying()
         {
-            return $"create temporary table {_tempTable} as select * from {_mapping.Table.QualifiedName};truncate table {_tempTable}";
+            return $"create temporary table {_tempTable} as select * from {_mapping.TableName.QualifiedName};truncate table {_tempTable}";
         }
 
 

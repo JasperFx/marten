@@ -234,7 +234,7 @@ namespace Marten.Patching
                 where = storage.FilterDocuments(null, _filter);
             }
 
-            var operation = new PatchOperation(transform, storage.QueryableDocument, where, Patch, _session.Serializer)
+            var operation = new PatchOperation(transform, storage, where, Patch, _session.Serializer)
             {
                 PossiblyPolymorhpic = PossiblyPolymorphic
             };

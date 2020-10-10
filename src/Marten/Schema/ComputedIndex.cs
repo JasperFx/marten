@@ -43,7 +43,7 @@ namespace Marten.Schema
             {
                 if (_indexName.IsNotEmpty())
                 {
-                    return DocumentMapping.MartenPrefix + _indexName.ToLowerInvariant();
+                    return SchemaConstants.MartenPrefix + _indexName.ToLowerInvariant();
                 }
 
                 return GenerateIndexName();
@@ -85,7 +85,7 @@ namespace Marten.Schema
                 index += " CONCURRENTLY";
             }
 
-            index += $" {IndexName} ON {_mapping.Table.QualifiedName}";
+            index += $" {IndexName} ON {_mapping.TableName.QualifiedName}";
 
             if (Method != IndexMethod.btree)
             {
@@ -144,7 +144,7 @@ namespace Marten.Schema
 
         private string GenerateIndexName()
         {
-            var name = _mapping.Table.Name;
+            var name = _mapping.TableName.Name;
 
             name += IsUnique ? "_uidx_" : "_idx_";
 

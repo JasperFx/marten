@@ -8,28 +8,18 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    internal class DeletedAtColumn: MetadataColumn, ISelectableColumn
+    internal class DeletedAtColumn: MetadataColumn<DateTimeOffset?> , ISelectableColumn
     {
-        public DeletedAtColumn() : base(DocumentMapping.DeletedAtColumn, "timestamp with time zone")
+        public DeletedAtColumn(): base(SchemaConstants.DeletedAtColumn, x => x.DeletedAt)
         {
             CanAdd = true;
             Directive = "NULL";
         }
 
-        public override async Task ApplyAsync(DocumentMetadata metadata, int index, DbDataReader reader, CancellationToken token)
-        {
-            metadata.DeletedAt = await reader.GetFieldValueAsync<DateTime>(index, token);
-        }
-
-        public override void Apply(DocumentMetadata metadata, int index, DbDataReader reader)
-        {
-            metadata.DeletedAt = reader.GetFieldValue<DateTime>(index);
-        }
-
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
             int index, DocumentMapping mapping)
         {
-            var member = mapping.SoftDeletedAtMember;
+            var member = Member;
             var variableName = "deletedAt";
             var memberType = typeof(DateTime);
 
@@ -53,7 +43,7 @@ namespace Marten.Storage
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
         {
-            return mapping.SoftDeletedAtMember != null;
+            return Member != null;
         }
     }
 }

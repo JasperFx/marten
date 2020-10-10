@@ -29,7 +29,7 @@ namespace Marten.Schema.Testing
 
                 cmd.CommandText = "SELECT description from pg_description " +
                                   "join pg_class on pg_description.objoid = pg_class.oid where relname = :name";
-                cmd.AddNamedParameter("name", mapping.Table.Name);
+                cmd.AddNamedParameter("name", mapping.TableName.Name);
 
                 var result = (string)cmd.ExecuteScalar();
                 Assert.NotNull(result);

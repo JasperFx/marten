@@ -24,7 +24,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void has_a_column_for_the_deleted_mark()
         {
-            var column = theTable.Column(DocumentMapping.DeletedColumn);
+            var column = theTable.Column(SchemaConstants.DeletedColumn);
             column.Directive.ShouldBe("DEFAULT FALSE");
             column.Type.ShouldBe("boolean");
         }
@@ -32,7 +32,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void has_a_column_for_the_deleted_at_mark()
         {
-            var column = theTable.Column(DocumentMapping.DeletedAtColumn);
+            var column = theTable.Column(SchemaConstants.DeletedAtColumn);
             column.Directive.ShouldBe("NULL");
             column.Type.ShouldBe("timestamp with time zone");
         }
@@ -61,8 +61,8 @@ namespace Marten.Schema.Testing.Storage
 
                 var table = store2.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
-                table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
-                table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
+                table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
+                table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();
             }
         }
 
@@ -93,8 +93,8 @@ namespace Marten.Schema.Testing.Storage
 
                 var table = store2.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
 
-                table.HasColumn(DocumentMapping.DeletedColumn).ShouldBeTrue();
-                table.HasColumn(DocumentMapping.DeletedAtColumn).ShouldBeTrue();
+                table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
+                table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();
             }
         }
     }

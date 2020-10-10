@@ -25,7 +25,7 @@ namespace Marten.Linq.LastModified
         {
             var time = expression.Arguments.Last().Value().As<DateTimeOffset>();
 
-            return new WhereFragment($"d.{DocumentMapping.LastModifiedColumn} < ?", time);
+            return new WhereFragment($"d.{SchemaConstants.LastModifiedColumn} < ?", time);
         }
     }
 }

@@ -66,7 +66,7 @@ BEGIN
 		body = bodies[index];
 
 		insert into {databaseSchema}.mt_events
-			(seq_id, id, stream_id, version, data, type, tenant_id, {DocumentMapping.DotNetTypeColumn})
+			(seq_id, id, stream_id, version, data, type, tenant_id, {SchemaConstants.DotNetTypeColumn})
 		values
 			(seq, event_id, stream, event_version, body, event_type, tenantid, dotnet_types[index]);
 

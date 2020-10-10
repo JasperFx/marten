@@ -40,7 +40,7 @@ namespace Marten.Schema.Testing.Storage
             var diff = new TableDelta(expected, actual);
 
             diff.Matched.OrderBy(x => x.Name).Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("data", "id", DocumentMapping.DotNetTypeColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn);
+                .ShouldHaveTheSameElementsAs("data", "id", SchemaConstants.DotNetTypeColumn, SchemaConstants.LastModifiedColumn, SchemaConstants.VersionColumn);
         }
 
         [Theory]

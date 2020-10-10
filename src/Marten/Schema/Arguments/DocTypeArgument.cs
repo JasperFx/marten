@@ -19,7 +19,7 @@ namespace Marten.Schema.Arguments
         public DocTypeArgument()
         {
             Arg = "docType";
-            Column = DocumentMapping.DocumentTypeColumn;
+            Column = SchemaConstants.DocumentTypeColumn;
             DbType = NpgsqlDbType.Varchar;
             PostgresType = "varchar";
         }
@@ -29,9 +29,9 @@ namespace Marten.Schema.Arguments
         {
             method.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");
 
-            if (mapping.DocumentTypeMember != null)
+            if (mapping.Metadata.DocumentType.Member != null)
             {
-                method.Frames.SetMemberValue(mapping.DocumentTypeMember, "docType", mapping.DocumentType, type);
+                method.Frames.SetMemberValue(mapping.Metadata.DocumentType.Member, "docType", mapping.DocumentType, type);
             }
         }
 
@@ -47,9 +47,9 @@ namespace Marten.Schema.Arguments
             load.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");
 
             load.Frames.Code($"writer.Write(docType, {{0}});", DbType);
-            if (mapping.DocumentTypeMember != null)
+            if (mapping.Metadata.DocumentType.Member != null)
             {
-                load.Frames.SetMemberValue(mapping.DocumentTypeMember, "docType", mapping.DocumentType, type);
+                load.Frames.SetMemberValue(mapping.Metadata.DocumentType.Member, "docType", mapping.DocumentType, type);
             }
         }
     }

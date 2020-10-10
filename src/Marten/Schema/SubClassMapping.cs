@@ -1,34 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
-using Marten.Linq;
-using Marten.Linq.Fields;
-using Marten.Linq.Filters;
-using Marten.Linq.Parsing;
-using Marten.Linq.SqlGeneration;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
-using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class SubClassMapping: IDocumentMapping, IQueryableDocument
+    public class SubClassMapping: IDocumentMapping
     {
-        private readonly StoreOptions _storeOptions;
-        private readonly DocumentMapping _inner;
-
-        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions, string alias = null)
+        public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
+            string alias = null)
         {
-            _storeOptions = storeOptions;
             DocumentType = documentType;
-            _inner = new DocumentMapping(documentType, storeOptions);
+            Inner = new DocumentMapping(documentType, storeOptions);
             Parent = parent;
             Alias = alias ?? GetTypeMartenAlias(documentType);
-            Aliases = new[] { Alias };
+            Aliases = new[] {Alias};
         }
 
         public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
@@ -44,157 +34,35 @@ namespace Marten.Schema
                 .Select(GetTypeMartenAlias).Concat(Aliases).ToArray();
         }
 
+        public DocumentMapping Inner { get; }
+
         public DocumentMapping Parent { get; }
 
         public string[] Aliases { get; }
         public string Alias { get; set; }
 
-        public DbObjectName UpsertName => Parent.UpsertFunction;
 
-        public string DatabaseSchemaName
-        {
-            get { return Parent.DatabaseSchemaName; }
-            set
-            {
-                throw new NotSupportedException(
-                    "The DatabaseSchemaName of a sub class mapping can't be set. The DatabaseSchemaName of the parent will be used.");
-            }
-        }
-
-        public IEnumerable<DuplicatedField> DuplicatedFields => Parent.DuplicatedFields;
         public DeleteStyle DeleteStyle => Parent.DeleteStyle;
 
         public IDocumentMapping Root => Parent;
         public Type DocumentType { get; }
 
-        public DbObjectName Table => Parent.Table;
-
-        DuplicatedField[] IQueryableDocument.DuplicatedFields
-        {
-            get { throw new NotSupportedException(); }
-        }
-
-        public PropertySearching PropertySearching => Parent.PropertySearching;
-
-        public string[] SelectFields()
-        {
-            var fields = new List<string> { "data", "id", DocumentMapping.DocumentTypeColumn, DocumentMapping.VersionColumn, DocumentMapping.LastModifiedColumn, DocumentMapping.DotNetTypeColumn };
-
-            if (DeleteStyle == DeleteStyle.SoftDelete)
-            {
-                fields.AddRange(new[] { DocumentMapping.DeletedColumn, DocumentMapping.DeletedAtColumn });
-            }
-
-            if (TenancyStyle == TenancyStyle.Conjoined)
-            {
-                fields.Add(TenantIdColumn.Name);
-            }
-
-            return fields.ToArray();
-        }
-
-        public IField FieldFor(IEnumerable<MemberInfo> members)
-        {
-            return Parent.FieldFor(members) ?? _inner.FieldFor(members);
-        }
-
-        public IField FieldFor(MemberInfo member)
-        {
-            return Parent.FieldFor(member);
-        }
-
-        public IField FieldFor(Expression expression)
-        {
-            return FieldFor(FindMembers.Determine(expression));
-        }
-
-        public IField FieldFor(string memberName)
-        {
-            throw new NotSupportedException();
-        }
-
-        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
-        {
-            var extras = extraFilters(query).ToArray();
-
-            var extraCoumpound = new CompoundWhereFragment("and", extras);
-            return new CompoundWhereFragment("and", query, extraCoumpound);
-        }
-
-        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
-        {
-            yield return toBasicWhere();
-
-            if (DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(DocumentMapping.DeletedColumn))
-            {
-                yield return DocumentMapping.ExcludeSoftDeletedDocuments();
-            }
-
-            if (Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
-            {
-                yield return new TenantWhereFragment();
-            }
-        }
-
-        private IEnumerable<ISqlFragment> defaultFilters()
-        {
-            yield return toBasicWhere();
-
-            if (Parent.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                yield return new TenantWhereFragment();
-            }
-
-            if (DeleteStyle == DeleteStyle.SoftDelete)
-            {
-                yield return DocumentMapping.ExcludeSoftDeletedDocuments();
-            }
-        }
-
-        public ISqlFragment DefaultWhereFragment()
-        {
-            var defaults = defaultFilters().ToArray();
-            switch (defaults.Length)
-            {
-                case 0:
-                    return null;
-
-                case 1:
-                    return defaults[0];
-
-                default:
-                    return new CompoundWhereFragment("and", defaults);
-            }
-        }
-
-        private WhereFragment toBasicWhere()
-        {
-            var aliasValues = Aliases.Select(a => $"d.{DocumentMapping.DocumentTypeColumn} = '{a}'").ToArray().Join(" or ");
-
-            var sql = Alias.Length > 1 ? $"({aliasValues})" : aliasValues;
-            return new WhereFragment(sql);
-        }
+        public DbObjectName TableName => Parent.TableName;
 
         public void DeleteAllDocuments(ITenant factory)
         {
             factory.RunSql(
-                $"delete from {Parent.Table.QualifiedName} where {DocumentMapping.DocumentTypeColumn} = '{Alias}'");
+                $"delete from {Parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{Alias}'");
         }
 
+        [Obsolete("Goes away in v4 eventually")]
         public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
         {
             return Parent.ToIdAssignment<T>(tenant);
         }
 
-        public IQueryableDocument ToQueryableDocument()
-        {
-            return this;
-        }
+        public Type IdType => Parent.IdType;
 
-        public Type TypeFor(string alias)
-        {
-            return Parent.TypeFor(alias);
-        }
 
         private static string GetTypeMartenAlias(Type documentType)
         {
@@ -210,8 +78,5 @@ namespace Marten.Schema
                        .Replace(" ", "_")
                        .ToLowerInvariant();
         }
-
-        public Type IdType => Parent.IdType;
-        public TenancyStyle TenancyStyle => Parent.TenancyStyle;
     }
 }

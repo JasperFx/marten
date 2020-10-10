@@ -23,7 +23,7 @@ namespace Marten.Testing.Internals
         public void build_a_persistence_storage_solution_for_subclass()
         {
             var options = new StoreOptions();
-            options.Storage.MappingFor(typeof(User)).AddSubClass(typeof(AdminUser));
+            options.Storage.MappingFor(typeof(User)).SubClasses.Add(typeof(AdminUser));
 
             var graph = new ProviderGraph(options);
 

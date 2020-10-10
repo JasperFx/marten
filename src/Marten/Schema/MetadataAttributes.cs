@@ -11,7 +11,7 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.LastModifiedMember = member;
+            mapping.Metadata.LastModified.Member = member;
         }
     }
 
@@ -23,7 +23,7 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.TenantIdMember = member;
+            mapping.Metadata.TenantId.Member = member;
         }
     }
 
@@ -35,7 +35,7 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.IsSoftDeletedMember = member;
+            mapping.Metadata.IsSoftDeleted.Member = member;
         }
     }
 
@@ -47,7 +47,7 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.SoftDeletedAtMember = member;
+            mapping.Metadata.SoftDeletedAt.Member = member;
         }
     }
 
@@ -59,7 +59,7 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            mapping.DocumentTypeMember = member;
+            mapping.Metadata.DocumentType.Member = member;
         }
     }
 

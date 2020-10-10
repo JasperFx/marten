@@ -789,7 +789,7 @@ namespace Marten.Testing.Acceptance
 
             using (var command = theSession.Connection.CreateCommand())
             {
-                command.CommandText = $"select count(*) from {mapping.Table.QualifiedName} " +
+                command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                                       $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
                 var count = (long)(command.ExecuteScalar() ?? 0);
                 count.ShouldBe(1);
@@ -814,7 +814,7 @@ namespace Marten.Testing.Acceptance
 
             using (var command = theSession.Connection.CreateCommand())
             {
-                command.CommandText = $"select count(*) from {mapping.Table.QualifiedName} " +
+                command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                                       $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
                 var count = (long)(command.ExecuteScalar() ?? 0);
                 count.ShouldBe(1);

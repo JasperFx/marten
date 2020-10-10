@@ -37,7 +37,7 @@ namespace Marten.Schema.Testing
         public void can_configure_index_via_attribute()
         {
             DocumentMapping.For<IndexedSoftDeletedDoc>()
-                .IndexesFor(DocumentMapping.DeletedAtColumn)
+                .IndexesFor(SchemaConstants.DeletedAtColumn)
                 .Count()
                 .ShouldBe(1);
         }

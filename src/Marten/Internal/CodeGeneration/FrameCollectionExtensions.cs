@@ -25,7 +25,7 @@ namespace Marten.Internal.CodeGeneration
             frames.Code("StoreTracker({0}, document);", Use.Type<IMartenSession>());
         }
 
-        public static void Deserialize(this FramesCollection frames, IDocumentMapping mapping, int index)
+        public static void Deserialize(this FramesCollection frames, DocumentMapping mapping, int index)
         {
             var documentType = mapping.DocumentType;
             var document = new Variable(documentType, DocumentVariableName);
@@ -59,34 +59,30 @@ END
             frames.Code($"{{0}}.{nameof(IMartenSession.MarkAsDocumentLoaded)}(id, document);", Use.Type<IMartenSession>());
         }
 
-        public static void DeserializeAsync(this FramesCollection frames, IDocumentMapping mapping, int index)
+        public static void DeserializeAsync(this FramesCollection frames, DocumentMapping mapping, int index)
         {
             var documentType = mapping.DocumentType;
             var document = new Variable(documentType, DocumentVariableName);
-            if (mapping is DocumentMapping d)
+
+            if (!mapping.IsHierarchy())
             {
-                if (!d.IsHierarchy())
-                {
-                    frames.Code($@"
+                frames.Code($@"
 {documentType.FullNameInCode()} document;
 BLOCK:using (var json = reader.GetTextReader({index}))
-    document = _serializer.FromJson<{documentType.FullNameInCode()}>(json);
+document = _serializer.FromJson<{documentType.FullNameInCode()}>(json);
 END
 ").Creates(document);
-                }
-                else
-                {
-                    frames.CodeAsync($@"
+            }
+            else
+            {
+                frames.CodeAsync($@"
 {documentType.FullNameInCode()} document;
 var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}}).ConfigureAwait(false);
 BLOCK:using (var json = reader.GetTextReader({index}))
-    document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), json);
+document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), json);
 END
 ", Use.Type<CancellationToken>()).Creates(document);
-                }
-
             }
-
 
 
 

@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
@@ -7,43 +8,32 @@ using Marten.Schema;
 
 namespace Marten.Storage
 {
-    internal class DeletedColumn: MetadataColumn, ISelectableColumn
+    internal class SoftDeletedColumn: MetadataColumn<bool>, ISelectableColumn
     {
-        public DeletedColumn() : base(DocumentMapping.DeletedColumn, "boolean")
+        public SoftDeletedColumn() : base(SchemaConstants.DeletedColumn, x => x.Deleted)
         {
             Directive = "DEFAULT FALSE";
             CanAdd = true;
         }
 
-        public override async Task ApplyAsync(DocumentMetadata metadata, int index, DbDataReader reader, CancellationToken token)
-        {
-            metadata.Deleted = await reader.GetFieldValueAsync<bool>(index, token);
-        }
-
-        public override void Apply(DocumentMetadata metadata, int index, DbDataReader reader)
-        {
-            metadata.Deleted = reader.GetFieldValue<bool>(index);
-        }
-
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
             int index, DocumentMapping mapping)
         {
-            var member = mapping.IsSoftDeletedMember;
             var variableName = "isDeleted";
             var memberType = typeof(bool);
 
-            if (member == null) return;
+            if (Member == null) return;
 
             sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
             async.Frames.CodeAsync($"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
 
-            sync.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
-            async.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
+            sync.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
+            async.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
         }
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
         {
-            return mapping.IsSoftDeletedMember != null;
+            return Member != null;
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Marten.Internal.Operations
             _document = document;
             _id = id;
             _versions = versions;
-            _tableName = mapping.Table.Name;
+            _tableName = mapping.TableName.Name;
         }
 
         public object Document => _document;

@@ -77,10 +77,10 @@ namespace Marten.Internal.CodeGeneration
 
             void applyVersionToDocument()
             {
-                if (_mapping.VersionMember != null)
+                if (_mapping.Metadata.Version.Member != null)
                 {
-                    sync.Frames.SetMemberValue(_mapping.VersionMember, "_version", _mapping.DocumentType, type);
-                    async.Frames.SetMemberValue(_mapping.VersionMember, "_version", _mapping.DocumentType, type);
+                    sync.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType, type);
+                    async.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType, type);
                 }
             }
 

@@ -294,7 +294,7 @@ namespace Marten.Events.Projections.Async
             {
                 foreach (var type in types)
                 {
-                    var tableName = _tenant.MappingFor(type).Table;
+                    var tableName = _tenant.MappingFor(type).TableName;
                     var sql =
                         $"delete from {_store.Events.DatabaseSchemaName}.mt_event_progression where name = :name;truncate {tableName} cascade";
 

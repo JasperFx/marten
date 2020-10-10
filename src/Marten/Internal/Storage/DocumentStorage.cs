@@ -25,10 +25,10 @@ using LambdaBuilder = Baseline.Expressions.LambdaBuilder;
 
 namespace Marten.Internal.Storage
 {
+
     public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>
     {
-        private readonly ISqlFragment _defaultWhere;
-        private readonly IQueryableDocument _document;
+        private ISqlFragment _defaultWhere;
         private readonly string _selectClause;
 
         protected readonly string _loadArraySql;
@@ -42,32 +42,30 @@ namespace Marten.Internal.Storage
         {
             _mapping = document;
 
-            _document = document;
             Fields = document;
-            TableName = document.Table;
+            TableName = document.TableName;
 
-            _defaultWhere = document.DefaultWhereFragment();
+            determineDefaultWhereFragment();
 
             _idType = TypeMappings.ToDbType(typeof(TId));
 
-            var table = new DocumentTable(_mapping);
+            var table = _mapping.Schema.Table;
+
             _selectFields = table.SelectColumns(storageStyle).Select(x => $"d.{x.Name}").ToArray();
             var fieldSelector = _selectFields.Join(", ");
-            _selectClause = $"select {fieldSelector} from {document.Table.QualifiedName} as d";
+            _selectClause = $"select {fieldSelector} from {document.TableName.QualifiedName} as d";
 
             _loaderSql =
-                $"select {fieldSelector} from {document.Table.QualifiedName} as d where id = :id";
+                $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = :id";
 
             _loadArraySql =
-                $"select {fieldSelector} from {document.Table.QualifiedName} as d where id = ANY(:ids)";
+                $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = ANY(:ids)";
 
             if (document.TenancyStyle == TenancyStyle.Conjoined)
             {
                 _loaderSql += $" and {TenantWhereFragment.Filter}";
                 _loadArraySql += $" and {TenantWhereFragment.Filter}";
             }
-
-            QueryableDocument = document;
 
             UseOptimisticConcurrency = document.UseOptimisticConcurrency;
 
@@ -77,7 +75,55 @@ namespace Marten.Internal.Storage
             DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
                 ? (IOperationFragment) new HardDelete(this)
                 : new SoftDelete(this);
+
+            DuplicatedFields = _mapping.DuplicatedFields;
         }
+
+        private void determineDefaultWhereFragment()
+        {
+            var defaults = defaultFilters().ToArray();
+            switch (defaults.Length)
+            {
+                case 0:
+                    _defaultWhere = null;
+                    break;
+
+                case 1:
+                    _defaultWhere = defaults[0];
+                    break;
+
+                default:
+                    _defaultWhere = new CompoundWhereFragment("and", defaults);
+                    break;
+            }
+        }
+
+        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
+        {
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(SchemaConstants.DeletedColumn))
+            {
+                yield return ExcludeSoftDeletedFilter.Instance;
+            }
+
+            if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
+            {
+                yield return new TenantWhereFragment();
+            }
+        }
+
+        private IEnumerable<ISqlFragment> defaultFilters()
+        {
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedFilter.Instance;
+
+            if (TenancyStyle == TenancyStyle.Conjoined) yield return new TenantWhereFragment();
+        }
+
+
+        public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
+
+        public Type DocumentType => _mapping.DocumentType;
+
+        public DuplicatedField[] DuplicatedFields { get; }
 
         public ISqlFragment ByIdFilter(TId id)
         {
@@ -115,8 +161,6 @@ namespace Marten.Internal.Storage
         }
 
         public Type SelectedType => typeof(T);
-
-        public IQueryableDocument QueryableDocument { get; }
 
         public Type SourceType => typeof(T);
 
@@ -158,7 +202,15 @@ namespace Marten.Internal.Storage
 
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
-            return _document.FilterDocuments(model, query);
+            var extras = extraFilters(query).ToList();
+
+            if (extras.Count > 0)
+            {
+                extras.Add(query);
+                return new CompoundWhereFragment("and", extras.ToArray());
+            }
+
+            return query;
         }
 
         public ISqlFragment DefaultWhereFragment()

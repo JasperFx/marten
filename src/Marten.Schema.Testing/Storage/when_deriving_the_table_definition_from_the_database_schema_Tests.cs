@@ -32,7 +32,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void it_maps_the_table_name()
         {
-            theDerivedTable.Identifier.ShouldBe(theMapping.Table);
+            theDerivedTable.Identifier.ShouldBe(theMapping.TableName);
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void it_has_all_the_columns()
         {
-            theDerivedTable.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn, DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "user_name");
+            theDerivedTable.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn, SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "user_name");
         }
 
         [Fact]

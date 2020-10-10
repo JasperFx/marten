@@ -18,7 +18,19 @@ namespace Marten.Testing.CoreFunctionality
 
         public MartenRegistryTests() : base("registry")
         {
-            var store = SeparateStore(_ => _.Schema.Include<TestRegistry>());
+            var store = SeparateStore(_ =>
+            {
+                _.Schema.For<Organization>()
+                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure: x =>
+                    {
+                        x.IndexName = "mt_special";
+                    })
+                    .GinIndexJsonData(x => x.IndexName = "my_gin_index")
+                    .IndexLastModified(x => x.IsConcurrent = true)
+                    .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
+
+                _.Schema.For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
+            });
 
             theStorage = store.Storage;
         }
@@ -89,7 +101,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
-            var index = mapping.IndexesFor(DocumentMapping.LastModifiedColumn).Single();
+            var index = mapping.IndexesFor(SchemaConstants.LastModifiedColumn).Single();
 
             index.IsConcurrent.ShouldBe(true);
         }
@@ -99,28 +111,12 @@ namespace Marten.Testing.CoreFunctionality
         {
             var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
-            var index = mapping.IndexesFor(DocumentMapping.DeletedAtColumn).Single();
+            var index = mapping.IndexesFor(SchemaConstants.DeletedAtColumn).Single();
 
             index.Modifier.ShouldBe("WHERE mt_deleted");
             index.Method.ShouldBe(IndexMethod.brin);
         }
 
-        public class TestRegistry : MartenRegistry
-        {
-            public TestRegistry()
-            {
-                For<Organization>()
-                    .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure: x =>
-                    {
-                        x.IndexName = "mt_special";
-                    })
-                    .GinIndexJsonData(x => x.IndexName = "my_gin_index")
-                    .IndexLastModified(x => x.IsConcurrent = true)
-                    .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
-
-                For<User>().PropertySearching(PropertySearching.JSON_Locator_Only);
-            }
-        }
 
         public class Organization
         {

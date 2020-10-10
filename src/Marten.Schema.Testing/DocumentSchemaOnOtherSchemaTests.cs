@@ -178,8 +178,13 @@ namespace Marten.Schema.Testing
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
+                store.Options.Storage.MappingFor(typeof(User))
+                    .DatabaseSchemaName.ShouldBe("other");
+
                 store.Schema.WriteDDLByType(_binAllsql);
             }
+
+
 
             var filename = _binAllsql.AppendPath("all.sql");
 

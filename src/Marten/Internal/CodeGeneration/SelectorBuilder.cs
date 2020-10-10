@@ -32,7 +32,7 @@ namespace Marten.Internal.CodeGeneration
             var sync = type.MethodFor("Resolve");
             var async = type.MethodFor("ResolveAsync");
 
-            var table = new DocumentTable(_mapping);
+            var table = _mapping.Schema.Table;
             var columns = table.SelectColumns(_style);
 
             for (var i = 0; i < columns.Length; i++)

@@ -25,16 +25,17 @@ namespace Marten.Storage
             if (mapping == null)
                 throw new ArgumentNullException(nameof(mapping));
 
-            _tableName = mapping.Table;
+            _tableName = mapping.TableName;
 
+            // TODO -- it'd be nice to not need this here.
             var table = new DocumentTable(mapping);
             if (table.PrimaryKeys.Count > 1)
             {
-                _primaryKeyConstraintName = mapping.Table.Name + "_pkey";
+                _primaryKeyConstraintName = mapping.TableName.Name + "_pkey";
             }
             else
             {
-                _primaryKeyConstraintName = "pk_" + mapping.Table.Name;
+                _primaryKeyConstraintName = "pk_" + mapping.TableName.Name;
             }
 
             var idType = mapping.IdMember.GetMemberType();
@@ -80,18 +81,18 @@ namespace Marten.Storage
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
-            var systemUpdates = new string[] { $"{DocumentMapping.LastModifiedColumn} = transaction_timestamp()" };
+            var systemUpdates = new string[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" };
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
-            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new[] { DocumentMapping.LastModifiedColumn }).Join(", ");
+            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new[] { SchemaConstants.LastModifiedColumn }).Join(", ");
             var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new[] { "transaction_timestamp()" }).Join(", ");
 
             var whereClauses = new List<string>();
 
             if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
             {
-                whereClauses.Add($"{_tableName.QualifiedName}.{DocumentMapping.VersionColumn} = current_version");
+                whereClauses.Add($"{_tableName.QualifiedName}.{SchemaConstants.VersionColumn} = current_version");
             }
 
             if (Arguments.Any(x => x is TenantIdArgument))

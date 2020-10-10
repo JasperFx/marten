@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
@@ -24,16 +26,20 @@ namespace Marten.Internal.Storage
         private readonly IDocumentStorage<TRoot, TId> _parent;
         private readonly SubClassMapping _mapping;
         private readonly ISqlFragment _defaultWhere;
+        private readonly string[] _fields;
 
         public SubClassDocumentStorage(IDocumentStorage<TRoot, TId> parent, SubClassMapping mapping)
         {
             _parent = parent;
             _mapping = mapping;
 
-            FromObject = _mapping.Table.QualifiedName;
+            FromObject = _mapping.TableName.QualifiedName;
 
-            _defaultWhere = _mapping.DefaultWhereFragment();
+            _defaultWhere = determineWhereFragment();
+            _fields = _parent.SelectFields();
         }
+
+        public TenancyStyle TenancyStyle => _parent.TenancyStyle;
 
         object IDocumentStorage<T>.IdentityFor(T document)
         {
@@ -50,7 +56,7 @@ namespace Marten.Internal.Storage
 
         public string[] SelectFields()
         {
-            return _mapping.SelectFields();
+            return _fields;
         }
 
         public ISelector BuildSelector(IMartenSession session)
@@ -73,11 +79,36 @@ namespace Marten.Internal.Storage
         }
 
         public Type SourceType => typeof(TRoot);
-        public IFieldMapping Fields => _mapping;
+        public IFieldMapping Fields => _mapping.Parent;
 
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
-            return _mapping.FilterDocuments(model, query);
+            var extras = extraFilters(query).ToArray();
+
+            var extraCompound = new CompoundWhereFragment("and", extras);
+            return new CompoundWhereFragment("and", query, extraCompound);
+        }
+
+        // TODO -- there's duplication here w/ DocumentStorage
+        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
+        {
+            yield return toBasicWhere();
+
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.Contains(SchemaConstants.DeletedColumn))
+                yield return ExcludeSoftDeletedFilter.Instance;
+
+            if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
+                yield return new TenantWhereFragment();
+        }
+
+        // TODO -- there's duplication here w/ DocumentStorage
+        private IEnumerable<ISqlFragment> defaultFilters()
+        {
+            yield return toBasicWhere();
+
+            if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined) yield return new TenantWhereFragment();
+
+            if (_mapping.DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedFilter.Instance;
         }
 
         public ISqlFragment DefaultWhereFragment()
@@ -85,9 +116,37 @@ namespace Marten.Internal.Storage
             return _defaultWhere;
         }
 
-        public IQueryableDocument QueryableDocument => _mapping;
+        public ISqlFragment determineWhereFragment()
+        {
+            var defaults = defaultFilters().ToArray();
+            switch (defaults.Length)
+            {
+                case 0:
+                    return null;
+
+                case 1:
+                    return defaults[0];
+
+                default:
+                    return new CompoundWhereFragment("and", defaults);
+            }
+        }
+
+        private WhereFragment toBasicWhere()
+        {
+            var aliasValues = _mapping.Aliases.Select(a => $"d.{SchemaConstants.DocumentTypeColumn} = '{a}'").ToArray()
+                .Join(" or ");
+
+            var sql = _mapping.Alias.Length > 1 ? $"({aliasValues})" : aliasValues;
+            return new WhereFragment(sql);
+        }
+
+
         public bool UseOptimisticConcurrency => _parent.UseOptimisticConcurrency;
         public IOperationFragment DeleteFragment => _parent.DeleteFragment;
+        public DuplicatedField[] DuplicatedFields => _parent.DuplicatedFields;
+        public DbObjectName TableName => _parent.TableName;
+        public Type DocumentType => typeof(T);
 
         public Type IdType => typeof(TId);
         public Guid? VersionFor(T document, IMartenSession session)

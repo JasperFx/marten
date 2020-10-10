@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Patching;
 using Marten.Schema;
@@ -22,13 +23,8 @@ namespace Marten.Testing.Patching
 
         public PatchExpressionTests(DefaultStoreFixture fixture) : base(fixture)
         {
-            var queryable = Substitute.For<IQueryableDocument>();
-            queryable.DocumentType.Returns(typeof(Target));
-
-            var mapping = Substitute.For<IDocumentMapping>();
-            mapping.ToQueryableDocument().Returns(queryable);
-
-            _schema.MappingFor(typeof(Target)).Returns(mapping);
+            var storage = Substitute.For<IDocumentStorage>();
+            storage.DocumentType.Returns(typeof(Target));
 
             var session = theStore.LightweightSession();
 

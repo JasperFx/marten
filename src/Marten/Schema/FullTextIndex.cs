@@ -18,7 +18,7 @@ namespace Marten.Schema
 
         public FullTextIndex(DocumentMapping mapping, string regConfig = null, string dataConfig = null, string indexName = null)
         {
-            _table = mapping.Table;
+            _table = mapping.TableName;
             RegConfig = regConfig;
             DataConfig = dataConfig;
             IndexName = indexName;
@@ -34,10 +34,10 @@ namespace Marten.Schema
             get
             {
                 var lowerValue = _indexName?.ToLowerInvariant();
-                if (lowerValue?.StartsWith(DocumentMapping.MartenPrefix) == true)
+                if (lowerValue?.StartsWith(SchemaConstants.MartenPrefix) == true)
                     return lowerValue.ToLowerInvariant();
                 else if (lowerValue?.IsNotEmpty() == true)
-                    return DocumentMapping.MartenPrefix + lowerValue.ToLowerInvariant();
+                    return SchemaConstants.MartenPrefix + lowerValue.ToLowerInvariant();
                 else if (_regConfig != DefaultRegConfig)
                     return $"{_table.Name}_{_regConfig}_idx_fts";
                 else

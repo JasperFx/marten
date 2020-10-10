@@ -11,7 +11,6 @@ namespace Marten.Testing.Examples
             var store = DocumentStore.For(_ =>
             {
                 _.Connection("your connection string");
-                _.Schema.Include<MyMartenRegistry>();
             });
             // ENDSAMPLE
 
@@ -23,23 +22,6 @@ namespace Marten.Testing.Examples
             // ENDSAMPLE
         }
     }
-
-    // SAMPLE: MyMartenRegistry
-    public class MyMartenRegistry: MartenRegistry
-    {
-        public MyMartenRegistry()
-        {
-            // I'm going to search for user by UserName
-            // pretty frequently, so I want that to be
-            // a duplicated, searchable field
-            For<User>().Duplicate(x => x.UserName);
-
-            // Add a gin index to Company's json data storage
-            For<Company>().GinIndexJsonData();
-        }
-    }
-
-    // ENDSAMPLE
 
     // SAMPLE: using_attributes_on_document
     [PropertySearching(PropertySearching.ContainmentOperator)]
@@ -60,45 +42,51 @@ namespace Marten.Testing.Examples
 
     // ENDSAMPLE
 
-    // SAMPLE: IndexExamples
-    public class IndexExamples: MartenRegistry
+
+    public static class IndexExamples
     {
-        public IndexExamples()
+        public static void Configure()
         {
-            // Add a gin index to the User document type
-            For<User>().GinIndexJsonData();
-
-            // Adds a basic btree index to the duplicated
-            // field for this property that also overrides
-            // the Postgresql database type for the column
-            For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50)");
-
-            // Defining a duplicate column with not null constraint
-            For<User>().Duplicate(x => x.Department, pgType: "varchar(50)", notNull: true);
-
-            // Customize the index on the duplicated field
-            // for FirstName
-            For<User>().Duplicate(x => x.FirstName, configure: idx =>
+            // SAMPLE: IndexExamples
+            var store = DocumentStore.For(options =>
             {
-                idx.IndexName = "idx_special";
-                idx.Method = IndexMethod.hash;
-            });
+                // Add a gin index to the User document type
+                options.Schema.For<User>().GinIndexJsonData();
 
-            // Customize the index on the duplicated field
-            // for UserName to be unique
-            For<User>().Duplicate(x => x.UserName, configure: idx =>
-            {
-                idx.IsUnique = true;
-            });
+                // Adds a basic btree index to the duplicated
+                // field for this property that also overrides
+                // the Postgresql database type for the column
+                options.Schema.For<User>().Duplicate(x => x.FirstName, pgType: "varchar(50)");
 
-            // Customize the index on the duplicated field
-            // for LastName to be in descending order
-            For<User>().Duplicate(x => x.LastName, configure: idx =>
-            {
-                idx.SortOrder = SortOrder.Desc;
+                // Defining a duplicate column with not null constraint
+                options.Schema.For<User>().Duplicate(x => x.Department, pgType: "varchar(50)", notNull: true);
+
+                // Customize the index on the duplicated field
+                // for FirstName
+                options.Schema.For<User>().Duplicate(x => x.FirstName, configure: idx =>
+                {
+                    idx.IndexName = "idx_special";
+                    idx.Method = IndexMethod.hash;
+                });
+
+                // Customize the index on the duplicated field
+                // for UserName to be unique
+                options.Schema.For<User>().Duplicate(x => x.UserName, configure: idx =>
+                {
+                    idx.IsUnique = true;
+                });
+
+                // Customize the index on the duplicated field
+                // for LastName to be in descending order
+                options.Schema.For<User>().Duplicate(x => x.LastName, configure: idx =>
+                {
+                    idx.SortOrder = SortOrder.Desc;
+                });
             });
+            // ENDSAMPLE
         }
     }
 
-    // ENDSAMPLE
+
+
 }

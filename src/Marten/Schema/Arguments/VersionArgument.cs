@@ -21,7 +21,7 @@ namespace Marten.Schema.Arguments
         public VersionArgument()
         {
             Arg = ArgName;
-            Column = DocumentMapping.VersionColumn;
+            Column = SchemaConstants.VersionColumn;
             DbType = NpgsqlDbType.Uuid;
             PostgresType = "uuid";
         }
@@ -29,10 +29,10 @@ namespace Marten.Schema.Arguments
         public override void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
-            if (mapping.VersionMember != null)
+            if (mapping.Metadata.Version.Member != null)
             {
                 // "_version" would be a field in the StorageOperation base class
-                method.Frames.SetMemberValue(mapping.VersionMember, "_version", mapping.DocumentType, type);
+                method.Frames.SetMemberValue(mapping.Metadata.Version.Member, "_version", mapping.DocumentType, type);
             }
         }
 
@@ -45,7 +45,7 @@ namespace Marten.Schema.Arguments
 
         public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {
-            if (mapping.VersionMember == null)
+            if (mapping.Metadata.Version.Member == null)
             {
                 load.Frames.Code($"writer.Write({typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid(), {{0}});", NpgsqlDbType.Uuid);
             }
@@ -56,7 +56,7 @@ var version = {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid();
 writer.Write(version, {{0}});
 ", NpgsqlDbType.Uuid);
 
-                load.Frames.SetMemberValue(mapping.VersionMember, "version", mapping.DocumentType, type);
+                load.Frames.SetMemberValue(mapping.Metadata.Version.Member, "version", mapping.DocumentType, type);
             }
 
 

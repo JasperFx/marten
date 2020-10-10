@@ -21,7 +21,7 @@ namespace Marten.Schema
 
         public DbObjectName[] DocumentTables()
         {
-            return SchemaTables().Where(x => x.Name.StartsWith(DocumentMapping.TablePrefix)).ToArray();
+            return SchemaTables().Where(x => x.Name.StartsWith(SchemaConstants.TablePrefix)).ToArray();
         }
 
         public DbObjectName[] Functions()
@@ -32,7 +32,7 @@ namespace Marten.Schema
                 "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
 
             return
-                _tenant.Fetch(sql, transform, DocumentMapping.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
+                _tenant.Fetch(sql, transform, SchemaConstants.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
         }
 
         public DbObjectName[] SchemaTables()
@@ -44,7 +44,7 @@ namespace Marten.Schema
 
             var schemaNames = _features.AllSchemaNames();
 
-            var tablePattern = DocumentMapping.MartenPrefix + "%";
+            var tablePattern = SchemaConstants.MartenPrefix + "%";
             var tables = _tenant.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
 
             return tables;
@@ -165,7 +165,7 @@ AND    n.nspname = :schema;
         public Table ExistingTableFor(Type type)
         {
             var mapping = _features.MappingFor(type).As<DocumentMapping>();
-            var expected = new DocumentTable(mapping);
+            var expected = mapping.Schema.Table;
 
             using (var conn = _tenant.CreateConnection())
             {
@@ -175,30 +175,5 @@ AND    n.nspname = :schema;
             }
         }
 
-        private IEnumerable<TableColumn> findTableColumns(IDocumentMapping documentMapping)
-        {
-            Func<DbDataReader, TableColumn> transform = r => new TableColumn(r.GetString(0), r.GetString(1));
-
-            var sql =
-                "select column_name, data_type from information_schema.columns where table_schema = ? and table_name = ? order by ordinal_position";
-
-            return _tenant.Fetch(sql, transform, documentMapping.Table.Schema, documentMapping.Table.Name);
-        }
-
-        private string[] primaryKeysFor(IDocumentMapping documentMapping)
-        {
-            var sql = @"
-select a.attname, format_type(a.atttypid, a.atttypmod) as data_type
-from pg_index i
-join   pg_attribute a on a.attrelid = i.indrelid and a.attnum = ANY(i.indkey)
-where attrelid = (select pg_class.oid
-                  from pg_class
-                  join pg_catalog.pg_namespace n ON n.oid = pg_class.relnamespace
-                  where n.nspname = ? and relname = ?)
-and i.indisprimary;
-";
-
-            return _tenant.GetStringList(sql, documentMapping.Table.Schema, documentMapping.Table.Name).ToArray();
-        }
     }
 }

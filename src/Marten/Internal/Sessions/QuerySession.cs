@@ -530,7 +530,7 @@ namespace Marten.Internal.Sessions
 
             var storage = StorageFor<T>();
             var id = storage.IdentityFor(entity);
-            var handler = new EntityMetadataQueryHandler(id, (IDocumentMapping) storage.Fields);
+            var handler = new EntityMetadataQueryHandler(id, storage);
 
             return ExecuteHandler(handler);
         }
@@ -542,7 +542,7 @@ namespace Marten.Internal.Sessions
 
             var storage = StorageFor<T>();
             var id = storage.IdentityFor(entity);
-            var handler = new EntityMetadataQueryHandler(id, (IDocumentMapping) storage.Fields);
+            var handler = new EntityMetadataQueryHandler(id, storage);
 
             return ExecuteHandlerAsync(handler, token);
         }

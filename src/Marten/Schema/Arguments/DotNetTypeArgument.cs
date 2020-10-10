@@ -18,7 +18,7 @@ namespace Marten.Schema.Arguments
         public DotNetTypeArgument()
         {
             Arg = "docDotNetType";
-            Column = DocumentMapping.DotNetTypeColumn;
+            Column = SchemaConstants.DotNetTypeColumn;
             DbType = NpgsqlDbType.Varchar;
             PostgresType = "varchar";
         }

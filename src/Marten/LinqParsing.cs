@@ -17,8 +17,6 @@ using Marten.Util;
 
 namespace Marten
 {
-    public delegate ISqlFragment MethodCallParseDelegate(MethodCallExpression expression, IQueryableDocument mapping);
-
     public class LinqParsing
     {
         // The out of the box method call parsers

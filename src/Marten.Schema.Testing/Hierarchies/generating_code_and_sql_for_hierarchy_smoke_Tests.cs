@@ -13,9 +13,9 @@ namespace Marten.Schema.Testing.Hierarchies
         public generating_code_and_sql_for_hierarchy_smoke_Tests()
         {
             theHierarchy = DocumentMapping.For<Squad>();
-            theHierarchy.AddSubClass(typeof(BasketballTeam));
-            theHierarchy.AddSubClass(typeof(BaseballTeam));
-            theHierarchy.AddSubClass(typeof(FootballTeam));
+            theHierarchy.SubClasses.Add(typeof(BasketballTeam));
+            theHierarchy.SubClasses.Add(typeof(BaseballTeam));
+            theHierarchy.SubClasses.Add(typeof(FootballTeam));
         }
 
         [Fact]
@@ -91,16 +91,16 @@ namespace Marten.Schema.Testing.Hierarchies
         public generating_code_and_sql_for_hierarchy_smoke_Tests_on_other_database_schema()
         {
             theHierarchy = DocumentMapping.For<Squad>("other");
-            theHierarchy.AddSubClass(typeof(BasketballTeam));
-            theHierarchy.AddSubClass(typeof(BaseballTeam));
-            theHierarchy.AddSubClass(typeof(FootballTeam));
+            theHierarchy.SubClasses.Add(typeof(BasketballTeam));
+            theHierarchy.SubClasses.Add(typeof(BaseballTeam));
+            theHierarchy.SubClasses.Add(typeof(FootballTeam));
         }
 
         [Fact]
         public void contains_index_for_documenttype_column()
         {
             var table = new DocumentTable(theHierarchy);
-            table.Indexes.Any(x => x.IndexName == $"mt_doc_squad_idx_{DocumentMapping.DocumentTypeColumn}").ShouldBeTrue();
+            table.Indexes.Any(x => x.IndexName == $"mt_doc_squad_idx_{SchemaConstants.DocumentTypeColumn}").ShouldBeTrue();
         }
 
         [Fact]

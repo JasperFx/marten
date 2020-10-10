@@ -32,7 +32,8 @@ namespace Marten
             var parameter = builder.AddParameter(_id);
             builder.Append(parameter.ParameterName);
 
-            if (_storage.QueryableDocument.TenancyStyle == TenancyStyle.Conjoined)
+            // TODO -- there's some duplication here that should be handled consistently
+            if (_storage.TenancyStyle == TenancyStyle.Conjoined)
             {
                 builder.Append($" and {TenantWhereFragment.Filter}");
                 builder.AddNamedParameter(TenantIdArgument.ArgName, session.Tenant.TenantId);

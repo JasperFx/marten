@@ -9,11 +9,11 @@ namespace Marten.Internal.CodeGeneration
     {
         public DocumentOperations(GeneratedAssembly assembly, DocumentMapping mapping, StoreOptions options)
         {
-            Upsert = new DocumentFunctionOperationBuilder(mapping, new UpsertFunction(mapping), OperationRole.Upsert, options)
+            Upsert = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Upsert, OperationRole.Upsert, options)
                     .BuildType(assembly);
-            Insert = new DocumentFunctionOperationBuilder(mapping, new InsertFunction(mapping), OperationRole.Insert, options)
+            Insert = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Insert, OperationRole.Insert, options)
                     .BuildType(assembly);
-            Update = new DocumentFunctionOperationBuilder(mapping, new UpdateFunction(mapping), OperationRole.Update, options)
+            Update = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Update, OperationRole.Update, options)
                     .BuildType(assembly);
 
 
@@ -27,7 +27,7 @@ namespace Marten.Internal.CodeGeneration
 
             if (mapping.UseOptimisticConcurrency)
             {
-                Overwrite = new DocumentFunctionOperationBuilder(mapping, new OverwriteFunction(mapping), OperationRole.Update, options)
+                Overwrite = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Overwrite, OperationRole.Update, options)
                         .BuildType(assembly);
             }
         }

@@ -16,7 +16,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void no_version_member_by_default()
         {
-            SpecificationExtensions.ShouldBeNull(DocumentMapping.For<User>().VersionMember);
+            SpecificationExtensions.ShouldBeNull(DocumentMapping.For<User>().Metadata.Version.Member);
         }
 
         [Fact]
@@ -30,7 +30,8 @@ namespace Marten.Testing.Acceptance
         public void version_member_set_by_attribute()
         {
             DocumentMapping.For<AttVersionedDoc>()
-                .VersionMember.Name.ShouldBe("Version");
+                .Metadata
+                .Version.Member.Name.ShouldBe("Version");
         }
 
         [Fact]
@@ -51,7 +52,7 @@ namespace Marten.Testing.Acceptance
             }))
             {
                 store.Storage.MappingFor(typeof(DocThatCouldBeVersioned))
-                    .VersionMember.Name.ShouldBe(nameof(DocThatCouldBeVersioned.Revision));
+                    .Metadata.Version.Member.Name.ShouldBe(nameof(DocThatCouldBeVersioned.Revision));
             }
         }
 

@@ -10,7 +10,7 @@ namespace Marten.Linq.SqlGeneration
 
         public HardDelete(IDocumentStorage storage)
         {
-            _sql = $"delete from {storage.QueryableDocument.Table} as d";
+            _sql = $"delete from {storage.TableName} as d";
         }
 
         public void Apply(CommandBuilder builder)

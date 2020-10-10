@@ -21,7 +21,7 @@ namespace Marten.Schema
         ) : this(
             columnName,
             parent,
-            fkd => reference.Table.QualifiedName,
+            fkd => reference.TableName.QualifiedName,
             fkd => $"(id{(parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined ? ", tenant_id" : "")})",
             GenerateOnDeleteClause
         )
@@ -46,7 +46,7 @@ namespace Marten.Schema
 
         public string KeyName
         {
-            get => _keyName ?? $"{_parent.Table.Name}_{ColumnName}{(_parent.TenancyStyle == TenancyStyle.Conjoined && _reference?.TenancyStyle == TenancyStyle.Conjoined ? "_tenant_id" : "")}_fkey";
+            get => _keyName ?? $"{_parent.TableName.Name}_{ColumnName}{(_parent.TenancyStyle == TenancyStyle.Conjoined && _reference?.TenancyStyle == TenancyStyle.Conjoined ? "_tenant_id" : "")}_fkey";
             set => _keyName = value;
         }
 
@@ -60,7 +60,7 @@ namespace Marten.Schema
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"ALTER TABLE {_parent.Table.QualifiedName}");
+            sb.AppendLine($"ALTER TABLE {_parent.TableName.QualifiedName}");
             sb.AppendLine($"ADD CONSTRAINT {KeyName} FOREIGN KEY ({ColumnName}{(_parent.TenancyStyle == TenancyStyle.Conjoined && _reference?.TenancyStyle == TenancyStyle.Conjoined ? ", tenant_id" : "")})");
             sb.Append($"REFERENCES {_fkeyTableRefFunc.Invoke(this)} {_fkeyColumnRefFunc.Invoke(this)}");
 

@@ -30,10 +30,10 @@ namespace Marten.Schema.Testing
 
             var indices = store2.Tenancy.Default.DbObjects.AllIndexes();
 
-            indices.Any(x => Equals(x.Table, store1.Storage.MappingFor(typeof(User)).ToQueryableDocument().Table))
+            indices.Any(x => Equals(x.Table, store1.Storage.MappingFor(typeof(User)).TableName))
                 .ShouldBeFalse();
 
-            indices.Any(x => Equals(x.Table, store2.Storage.MappingFor(typeof(User)).ToQueryableDocument().Table))
+            indices.Any(x => Equals(x.Table, store2.Storage.MappingFor(typeof(User)).TableName))
                 .ShouldBeTrue();
         }
 

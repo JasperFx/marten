@@ -154,7 +154,7 @@ namespace Marten.Schema.Testing
         public void concrete_type_with_subclasses_is_hierarchy()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.AddSubClass(typeof(SuperUser));
+            mapping.SubClasses.Add(typeof(SuperUser));
 
             mapping.IsHierarchy().ShouldBeTrue();
         }
@@ -177,21 +177,21 @@ namespace Marten.Schema.Testing
         public void default_table_name()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.Table.Name.ShouldBe("mt_doc_user");
+            mapping.TableName.Name.ShouldBe("mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_2()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.Table.QualifiedName.ShouldBe("public.mt_doc_user");
+            mapping.TableName.QualifiedName.ShouldBe("public.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_on_other_schema()
         {
             var mapping = DocumentMapping.For<User>("other");
-            mapping.Table.QualifiedName.ShouldBe("other.mt_doc_user");
+            mapping.TableName.QualifiedName.ShouldBe("other.mt_doc_user");
         }
 
         [Fact]
@@ -199,21 +199,21 @@ namespace Marten.Schema.Testing
         {
             var mapping = DocumentMapping.For<User>("other");
             mapping.DatabaseSchemaName = "overriden";
-            mapping.Table.QualifiedName.ShouldBe("overriden.mt_doc_user");
+            mapping.TableName.QualifiedName.ShouldBe("overriden.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_with_different_shema()
         {
             var mapping = DocumentMapping.For<User>("other");
-            mapping.Table.QualifiedName.ShouldBe("other.mt_doc_user");
+            mapping.TableName.QualifiedName.ShouldBe("other.mt_doc_user");
         }
 
         [Fact]
         public void default_table_name_with_schema()
         {
             var mapping = DocumentMapping.For<User>();
-            mapping.Table.QualifiedName.ShouldBe("public.mt_doc_user");
+            mapping.TableName.QualifiedName.ShouldBe("public.mt_doc_user");
         }
 
         [Fact]
@@ -342,7 +342,7 @@ namespace Marten.Schema.Testing
 
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain(mapping.Table.QualifiedName);
+                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain(mapping.TableName.QualifiedName);
             }
         }
 
@@ -389,7 +389,7 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "users";
 
-            mapping.Table.Name.ShouldBe("mt_doc_users");
+            mapping.TableName.Name.ShouldBe("mt_doc_users");
             mapping.UpsertFunction.Name.ShouldBe("mt_upsert_users");
         }
 
@@ -408,7 +408,7 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
-            mapping.Table.Name.ShouldBe("mt_doc_users");
+            mapping.TableName.Name.ShouldBe("mt_doc_users");
         }
 
         [Fact]
@@ -417,7 +417,7 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<User>("OTHER");
             mapping.Alias = "Users";
 
-            mapping.Table.QualifiedName.ShouldBe("other.mt_doc_users");
+            mapping.TableName.QualifiedName.ShouldBe("other.mt_doc_users");
         }
 
         [Fact]
@@ -426,7 +426,7 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.Alias = "Users";
 
-            mapping.Table.QualifiedName.ShouldBe("public.mt_doc_users");
+            mapping.TableName.QualifiedName.ShouldBe("public.mt_doc_users");
         }
 
         [Fact]
@@ -516,21 +516,21 @@ namespace Marten.Schema.Testing
         [Fact]
         public void table_name_for_document()
         {
-            DocumentMapping.For<MySpecialDocument>().Table.Name
+            DocumentMapping.For<MySpecialDocument>().TableName.Name
                 .ShouldBe("mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_with_schema_for_document()
         {
-            DocumentMapping.For<MySpecialDocument>().Table.QualifiedName
+            DocumentMapping.For<MySpecialDocument>().TableName.QualifiedName
                 .ShouldBe("public.mt_doc_documentmappingtests_myspecialdocument");
         }
 
         [Fact]
         public void table_name_with_schema_for_document_on_other_schema()
         {
-            DocumentMapping.For<MySpecialDocument>("other").Table.QualifiedName
+            DocumentMapping.For<MySpecialDocument>("other").TableName.QualifiedName
                 .ShouldBe("other.mt_doc_documentmappingtests_myspecialdocument");
         }
 
@@ -540,7 +540,7 @@ namespace Marten.Schema.Testing
             var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
             documentMapping.DatabaseSchemaName = "overriden";
 
-            documentMapping.Table.QualifiedName
+            documentMapping.TableName.QualifiedName
                 .ShouldBe("overriden.mt_doc_documentmappingtests_myspecialdocument");
         }
 
@@ -553,20 +553,20 @@ namespace Marten.Schema.Testing
             var table = new DocumentTable(mapping);
 
             table.Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn,
-                    DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn, "first_name");
+                .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
+                    SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "first_name");
         }
 
         [Fact]
         public void to_table_columns_with_subclasses()
         {
             var mapping = DocumentMapping.For<Squad>();
-            mapping.AddSubClass(typeof(BaseballTeam));
+            mapping.SubClasses.Add(typeof(BaseballTeam));
 
             var table = new DocumentTable(mapping);
 
             var typeColumn = table.Last();
-            typeColumn.Name.ShouldBe(DocumentMapping.DocumentTypeColumn);
+            typeColumn.Name.ShouldBe(SchemaConstants.DocumentTypeColumn);
             typeColumn.Type.ShouldBe("varchar");
         }
 
@@ -576,8 +576,8 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<IntDoc>();
             var table = new DocumentTable(mapping);
             table.Select(x => x.Name)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.LastModifiedColumn,
-                    DocumentMapping.VersionColumn, DocumentMapping.DotNetTypeColumn);
+                .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
+                    SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn);
         }
 
         [Fact]
@@ -587,8 +587,8 @@ namespace Marten.Schema.Testing
             var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn,
-                    DocumentMapping.DotNetTypeColumn);
+                .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.VersionColumn,
+                    SchemaConstants.DotNetTypeColumn);
         }
 
         [Fact]
@@ -609,13 +609,13 @@ namespace Marten.Schema.Testing
         public void to_upsert_with_subclasses()
         {
             var mapping = DocumentMapping.For<Squad>();
-            mapping.AddSubClass(typeof(BaseballTeam));
+            mapping.SubClasses.Add(typeof(BaseballTeam));
 
             var function = new UpsertFunction(mapping);
 
             function.Arguments.Select(x => x.Column)
-                .ShouldHaveTheSameElementsAs("id", "data", DocumentMapping.VersionColumn,
-                    DocumentMapping.DotNetTypeColumn, DocumentMapping.DocumentTypeColumn);
+                .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.VersionColumn,
+                    SchemaConstants.DotNetTypeColumn, SchemaConstants.DocumentTypeColumn);
         }
 
         [Fact]
@@ -751,10 +751,10 @@ namespace Marten.Schema.Testing
         public void no_overwrite_function_if_no_optimistic_concurrency()
         {
             var mapping = DocumentMapping.For<User>();
-            var objects = mapping.As<IFeatureSchema>().Objects;
+            var objects = mapping.Schema.Objects;
 
             objects.Length.ShouldBe(4);
-            objects.Where(x => x.GetType() == typeof(UpsertFunction)).Single().Identifier.ShouldBe(mapping.UpsertFunction);
+            objects.Single(x => x.GetType() == typeof(UpsertFunction)).Identifier.ShouldBe(mapping.UpsertFunction);
         }
 
         [Fact]
@@ -763,7 +763,7 @@ namespace Marten.Schema.Testing
             var mapping = DocumentMapping.For<User>();
             mapping.UseOptimisticConcurrency = true;
 
-            var objects = mapping.As<IFeatureSchema>().Objects;
+            var objects = mapping.Schema.Objects;
 
             objects.Length.ShouldBe(5);
             objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();

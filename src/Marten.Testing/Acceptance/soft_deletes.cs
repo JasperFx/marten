@@ -411,7 +411,7 @@ namespace Marten.Testing.Acceptance
         public Guid UserId { get; set; }
         public string Path { get; set; }
         public bool Deleted { get; set; }
-        public DateTime? DeletedAt { get; set; }
+        public DateTimeOffset? DeletedAt { get; set; }
     }
 
 }

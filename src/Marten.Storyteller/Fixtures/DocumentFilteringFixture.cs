@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Baseline;
 using Marten.Linq;
@@ -29,11 +30,12 @@ namespace Marten.Storyteller.Fixtures
         {
             var store = buildStore(softDeleted, tenancy);
 
-            user = store.Storage.MappingFor(typeof(User)).DefaultWhereFragment().ToSql();
+            //user = store.Storage.MappingFor(typeof(User)).DefaultWhereFragment().ToSql();
 
-            subclass = store
-                .Tenancy.Default.MappingFor(typeof(AdminUser)).As<IQueryableDocument>()
-                .DefaultWhereFragment().ToSql();
+            throw new NotImplementedException();
+            // subclass = store
+            //     .Tenancy.Default.MappingFor(typeof(AdminUser)).As<IQueryableDocument>()
+            //     .DefaultWhereFragment().ToSql();
         }
 
         private static DocumentStore buildStore(bool softDeleted, TenancyStyle tenancy)

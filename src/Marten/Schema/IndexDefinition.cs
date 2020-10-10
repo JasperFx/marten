@@ -35,11 +35,11 @@ namespace Marten.Schema
             {
                 if (_indexName.IsNotEmpty())
                 {
-                    return _indexName.StartsWith(DocumentMapping.MartenPrefix)
+                    return _indexName.StartsWith(SchemaConstants.MartenPrefix)
                         ? _indexName.ToLowerInvariant()
-                        : DocumentMapping.MartenPrefix + _indexName.ToLowerInvariant();
+                        : SchemaConstants.MartenPrefix + _indexName.ToLowerInvariant();
                 }
-                return $"{_parent.Table.Name}_idx_{_columns.Join("_")}";
+                return $"{_parent.TableName.Name}_idx_{_columns.Join("_")}";
             }
             set { _indexName = value; }
         }
@@ -58,7 +58,7 @@ namespace Marten.Schema
                 index += " CONCURRENTLY";
             }
 
-            index += $" {IndexName} ON {_parent.Table.QualifiedName}";
+            index += $" {IndexName} ON {_parent.TableName.QualifiedName}";
 
             if (Method != IndexMethod.btree)
             {
@@ -133,9 +133,9 @@ namespace Marten.Schema
                 actual = Regex.Replace(actual, columnsMatchPattern, replacement);
             }
 
-            if (!actual.Contains(_parent.Table.QualifiedName))
+            if (!actual.Contains(_parent.TableName.QualifiedName))
             {
-                actual = actual.Replace("ON " + _parent.Table.Name, "ON " + _parent.Table.QualifiedName);
+                actual = actual.Replace("ON " + _parent.TableName.Name, "ON " + _parent.TableName.QualifiedName);
             }
 
             actual = actual.Replace("  ", " ") + ";";

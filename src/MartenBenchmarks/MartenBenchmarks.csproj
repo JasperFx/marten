@@ -16,4 +16,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Benchmarks" />
+  </ItemGroup>
 </Project>

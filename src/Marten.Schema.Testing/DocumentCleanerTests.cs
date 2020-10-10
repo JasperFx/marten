@@ -67,7 +67,7 @@ namespace Marten.Schema.Testing
             theSession.SaveChanges();
             theSession.Dispose();
 
-            var tableName = theStore.Tenancy.Default.MappingFor(typeof(Target)).ToQueryableDocument().Table;
+            var tableName = theStore.Tenancy.Default.MappingFor(typeof(Target)).TableName;
 
             theStore.Tenancy.Default.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();

@@ -43,7 +43,8 @@ namespace Marten.Linq.QueryHandlers
             sql.Append(parameter.ParameterName);
             sql.Append(")");
 
-            if (storage.QueryableDocument.TenancyStyle == TenancyStyle.Conjoined)
+            // TODO -- there's some duplication here that should be handled consistently
+            if (storage.TenancyStyle == TenancyStyle.Conjoined)
             {
                 sql.Append($" and {TenantWhereFragment.Filter}");
             }

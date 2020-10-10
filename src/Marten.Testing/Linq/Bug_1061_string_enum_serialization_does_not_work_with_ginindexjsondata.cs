@@ -16,17 +16,6 @@ namespace Marten.Testing.Linq
         One
     }
 
-    public class Bug_1061_Registry: MartenRegistry
-    {
-        public Bug_1061_Registry()
-        {
-            For<Bug_1061_Class>().GinIndexJsonData(_ =>
-            {
-                _.Expression = "to_tsvector('english', data::TEXT)";
-            });
-        }
-    }
-
     public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: IntegrationContext
     {
         [Fact]
@@ -37,7 +26,11 @@ namespace Marten.Testing.Linq
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
-                _.Schema.Include(new Bug_1061_Registry());
+
+                _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
+                {
+                    _.Expression = "to_tsvector('english', data::TEXT)";
+                });
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -50,7 +43,10 @@ namespace Marten.Testing.Linq
                     Casing = Casing.Default
                 });
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Schema.Include(new Bug_1061_Registry());
+                _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
+                {
+                    _.Expression = "to_tsvector('english', data::TEXT)";
+                });
             }))
             {
                 using (var session = store.OpenSession())

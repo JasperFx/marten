@@ -24,9 +24,9 @@ namespace Marten.Schema.Arguments
         {
             method.Frames.Code($"var tenantId = {{0}}.{nameof(ITenant.TenantId)};", Use.Type<ITenant>());
 
-            if (mapping.TenantIdMember != null)
+            if (mapping.Metadata.TenantId.Member != null)
             {
-                method.Frames.SetMemberValue(mapping.TenantIdMember, "tenantId", mapping.DocumentType, type);
+                method.Frames.SetMemberValue(mapping.Metadata.TenantId.Member, "tenantId", mapping.DocumentType, type);
             }
         }
 
@@ -44,9 +44,9 @@ namespace Marten.Schema.Arguments
         public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {
             load.Frames.Code($"writer.Write(tenant.TenantId, {{0}});", DbType);
-            if (mapping.TenantIdMember != null)
+            if (mapping.Metadata.TenantId.Member != null)
             {
-                load.Frames.SetMemberValue(mapping.TenantIdMember, "tenant.TenantId", mapping.DocumentType, type);
+                load.Frames.SetMemberValue(mapping.Metadata.TenantId.Member, "tenant.TenantId", mapping.DocumentType, type);
             }
         }
     }

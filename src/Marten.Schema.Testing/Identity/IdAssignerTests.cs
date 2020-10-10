@@ -28,33 +28,7 @@ namespace Marten.Schema.Testing.Identity
             user.Id.ShouldBe(id);
         }
 
-        [Fact]
-        public void no_need_to_assign()
-        {
-            bool assigned = true;
 
-            var originalId = Guid.NewGuid();
-            var user = new User {Id = originalId};
-
-            theAssigner.Assign(null, user, out assigned);
-
-            user.Id.ShouldBe(originalId);
-            assigned.ShouldBeFalse();
-        }
-
-
-        [Fact]
-        public void needs_to_assign_new_value()
-        {
-            bool assigned = false;
-
-            var user = new User {Id = Guid.Empty};
-
-            theAssigner.Assign(null, user, out assigned);
-
-            assigned.ShouldBeTrue();
-            user.Id.ShouldNotBe(Guid.Empty);
-        }
     }
 
     public class IdAssignerTestsPrivateFields

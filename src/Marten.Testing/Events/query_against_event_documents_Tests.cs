@@ -93,8 +93,8 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
 
-            theStore.Tenancy.Default.MappingFor(typeof(MembersDeparted)).ToQueryableDocument()
-                .Table.Schema.ShouldBe("events");
+            theStore.Tenancy.Default.MappingFor(typeof(MembersDeparted))
+                .TableName.Schema.ShouldBe("events");
 
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);
@@ -123,8 +123,8 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
 
-            theStore.Tenancy.Default.MappingFor(typeof(MembersDeparted)).ToQueryableDocument()
-                .Table.Schema.ShouldBe("events");
+            theStore.Tenancy.Default.MappingFor(typeof(MembersDeparted))
+                .TableName.Schema.ShouldBe("events");
 
             theSession.Events.StartStream<Quest>(joined1, departed1);
             theSession.Events.StartStream<Quest>(joined2, departed2);

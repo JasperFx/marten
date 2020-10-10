@@ -18,7 +18,7 @@ namespace Marten.Events
 
             DatabaseSchemaName = storeOptions.Events.DatabaseSchemaName;
 
-            Table = new DbObjectName(DatabaseSchemaName, "mt_events");
+            TableName = new DbObjectName(DatabaseSchemaName, "mt_events");
 
             duplicateField(x => x.Sequence, "seq_id");
             if (storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid)
@@ -36,7 +36,7 @@ namespace Marten.Events
 
         internal IEventSelector Selector { get; }
 
-        public override DbObjectName Table { get; }
+        public override DbObjectName TableName { get; }
 
         private DuplicatedField duplicateField(Expression<Func<IEvent, object>> property, string columnName)
         {

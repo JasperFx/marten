@@ -12,7 +12,7 @@ namespace Marten.Linq.SqlGeneration
         public SoftDelete(IDocumentStorage storage)
         {
             _sql =
-                $"update {storage.QueryableDocument.Table.QualifiedName} as d set {DocumentMapping.DeletedColumn} = True, {DocumentMapping.DeletedAtColumn} = now()";
+                $"update {storage.TableName.QualifiedName} as d set {SchemaConstants.DeletedColumn} = True, {SchemaConstants.DeletedAtColumn} = now()";
         }
 
         public void Apply(CommandBuilder builder)

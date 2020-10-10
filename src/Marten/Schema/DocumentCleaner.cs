@@ -80,7 +80,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
             {
                 conn.Open();
 
-                mapping.RemoveAllObjects(_options.DdlRules, conn);
+                mapping.Schema.RemoveAllObjects(_options.DdlRules, conn);
             }
         }
 

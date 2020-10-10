@@ -10,7 +10,7 @@ namespace Marten.Schema.Testing
         public void creates_btree_index_for_mt_last_modified()
         {
             var mapping = DocumentMapping.For<Customer>();
-            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == DocumentMapping.LastModifiedColumn);
+            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == SchemaConstants.LastModifiedColumn);
 
             indexDefinition.Method.ShouldBe(IndexMethod.btree);
         }

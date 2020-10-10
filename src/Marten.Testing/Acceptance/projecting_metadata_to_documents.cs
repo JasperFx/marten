@@ -29,16 +29,16 @@ namespace Marten.Testing.Acceptance
             });
 
             theStore.Storage.MappingFor(typeof(DocWithMeta))
-                .VersionMember.Name.ShouldBe(nameof(DocWithMeta.Version));
+                .Metadata.Version.Member.Name.ShouldBe(nameof(DocWithMeta.Version));
 
             theStore.Storage.MappingFor(typeof(DocWithMeta))
-                .LastModifiedMember.Name.ShouldBe(nameof(DocWithMeta.LastModified));
+                .Metadata.LastModified.Member.Name.ShouldBe(nameof(DocWithMeta.LastModified));
 
             theStore.Storage.MappingFor(typeof(DocWithMeta))
-                .IsSoftDeletedMember.Name.ShouldBe(nameof(DocWithMeta.Deleted));
+                .Metadata.IsSoftDeleted.Member.Name.ShouldBe(nameof(DocWithMeta.Deleted));
 
             theStore.Storage.MappingFor(typeof(DocWithMeta))
-                .SoftDeletedAtMember.Name.ShouldBe(nameof(DocWithMeta.DeletedAt));
+                .Metadata.SoftDeletedAt.Member.Name.ShouldBe(nameof(DocWithMeta.DeletedAt));
 
         }
 
@@ -46,10 +46,10 @@ namespace Marten.Testing.Acceptance
         public void set_the_metadata_projections_via_attributes()
         {
             theStore.Storage.MappingFor(typeof(DocWithAttributeMeta))
-                .VersionMember.Name.ShouldBe(nameof(DocWithAttributeMeta.Version));
+                .Metadata.Version.Member.Name.ShouldBe(nameof(DocWithAttributeMeta.Version));
 
             theStore.Storage.MappingFor(typeof(DocWithAttributeMeta))
-                .LastModifiedMember.Name.ShouldBe(nameof(DocWithAttributeMeta.LastModified));
+                .Metadata.LastModified.Member.Name.ShouldBe(nameof(DocWithAttributeMeta.LastModified));
 
         }
 
@@ -149,7 +149,7 @@ namespace Marten.Testing.Acceptance
             });
 
             var doc = new DocWithMeta();
-            var lastMod = DateTime.UtcNow;
+            DateTimeOffset lastMod = DateTime.UtcNow;
 
             using (var session = theStore.OpenSession())
             {
@@ -332,10 +332,10 @@ namespace Marten.Testing.Acceptance
         public Guid Id { get; set; }
         public string Description { get; set; }
         public Guid Version { get; set; }
-        public DateTime LastModified { get; set; }
+        public DateTimeOffset LastModified { get; set; }
         public string TenantId { get; private set; }
         public bool Deleted { get; private set; }
-        public DateTime? DeletedAt { get; private set; }
+        public DateTimeOffset? DeletedAt { get; private set; }
         public string DocType { get; private set; }
         public Guid IncludedDocId { get; set; }
     }
@@ -365,7 +365,7 @@ namespace Marten.Testing.Acceptance
         public Guid Id { get; set; }
         [Version]
         public Guid Version { get; private set; }
-        public DateTime LastModified { get; private set; }
+        public DateTimeOffset LastModified { get; private set; }
 
     }
 
@@ -379,7 +379,7 @@ namespace Marten.Testing.Acceptance
         [Version]
         public Guid Version { get; set; }
         [LastModifiedMetadata]
-        public DateTime LastModified { get; set; }
+        public DateTimeOffset LastModified { get; set; }
 
     }
 }

@@ -47,7 +47,7 @@ namespace Marten.Events
 
         public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
         {
-            WriteSelectClause(sql, null);
+            WriteSelectClause(sql);
 
             var param = sql.AddParameter(_streamKey);
             sql.Append(" where id = :");
@@ -109,12 +109,7 @@ namespace Marten.Events
             return StreamState.Create(id, version, aggregateType, timestamp.MapToDateTime().ToUniversalTime(), created.MapToDateTime());
         }
 
-        public string[] SelectFields()
-        {
-            return new string[] { "id", "version", "type", "timestamp", "created" };
-        }
-
-        public void WriteSelectClause(CommandBuilder sql, IQueryableDocument mapping)
+        public void WriteSelectClause(CommandBuilder sql)
         {
             sql.Append("select id, version, type, timestamp, created as timestamp from ");
             sql.Append(_events.DatabaseSchemaName);
