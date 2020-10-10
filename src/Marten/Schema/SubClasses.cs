@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using BaselineTypeDiscovery;
 
 namespace Marten.Schema
 {
@@ -61,18 +62,19 @@ namespace Marten.Schema
         public void AddHierarchy()
         {
             var baseType = _parent.DocumentType;
-            var allSubclassTypes = baseType.GetTypeInfo().Assembly.GetTypes()
-                .Where(t => t.GetTypeInfo().IsSubclassOf(baseType) ||
-                            (baseType.GetTypeInfo().IsInterface && t.GetInterfaces().Contains(baseType)))
-                .Select(t => (MappedType)t).ToList();
 
-            allSubclassTypes.Each(subclassType =>
-                Add(
-                    subclassType.Type,
-                    allSubclassTypes.Except(new[] {subclassType}),
-                    null
-                )
-            );
+
+            var assembly = baseType.GetTypeInfo().Assembly;
+
+            var types = TypeRepository.ForAssembly(assembly).GetAwaiter().GetResult();
+            var allSubclassTypes = types.ClosedTypes.Concretes
+                .Where(x => x.CanBeCastTo(baseType));
+
+            foreach (var subclassType in allSubclassTypes)
+            {
+                Add(subclassType, null);
+            }
+
         }
 
 
