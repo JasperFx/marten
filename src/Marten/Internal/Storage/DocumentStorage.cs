@@ -222,6 +222,15 @@ namespace Marten.Internal.Storage
 
         public IDeletion DeleteForId(TId id)
         {
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                return new Deletion(this)
+                {
+                    Where = new CompoundWhereFragment("and", TenantWhereFragment.Instance, ByIdFilter(id)),
+                    Id = id
+                };
+            }
+
             return new Deletion(this)
             {
                 Where = ByIdFilter(id),

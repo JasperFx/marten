@@ -9,6 +9,8 @@ namespace Marten.Linq.Filters
     {
         public static readonly string Filter = $"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
 
+        public static readonly TenantWhereFragment Instance = new TenantWhereFragment();
+
         public void Apply(CommandBuilder builder)
         {
             builder.Append(Filter);
