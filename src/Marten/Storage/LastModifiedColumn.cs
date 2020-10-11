@@ -15,6 +15,7 @@ namespace Marten.Storage
         {
             Directive = "DEFAULT transaction_timestamp()";
             CanAdd = true;
+            Type = "timestamp with time zone";
         }
 
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
