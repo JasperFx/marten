@@ -21,11 +21,14 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.Schema.For<DocWithMeta>().VersionedWith(x => x.Version);
-                _.Schema.For<DocWithMeta>().MapLastModifiedTo(x => x.LastModified);
-                _.Schema.For<DocWithMeta>().MapIsSoftDeletedTo(x => x.Deleted);
-                _.Schema.For<DocWithMeta>().MapSoftDeletedAtTo(x => x.DeletedAt);
-                _.Schema.For<DocWithMeta>().SoftDeleted();
+                _.Schema.For<DocWithMeta>().Metadata(m =>
+                {
+                    m.Version.MapTo(x => x.Version);
+                    m.LastModified.MapTo(x => x.LastModified);
+                    m.IsSoftDeleted.MapTo(x => x.Deleted);
+                    m.SoftDeletedAt.MapTo(x => x.DeletedAt);
+                })
+                    .SoftDeleted();
             });
 
             theStore.Storage.MappingFor(typeof(DocWithMeta))
@@ -59,7 +62,7 @@ namespace Marten.Testing.Acceptance
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .MapLastModifiedTo(x => x.LastModified);
+                    .Metadata(m => m.LastModified.MapTo(x => x.LastModified));
             });
 
             var doc = new DocWithMeta();
@@ -110,8 +113,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(c =>
             {
-                c.Schema.For<DocWithMeta>()
-                .MapLastModifiedTo(x => x.LastModified);
+                c.Schema.For<DocWithMeta>().Metadata(m => m.LastModified.MapTo(x => x.LastModified));
             });
 
             var include = new IncludedDocWithMeta();
@@ -144,8 +146,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(c =>
             {
-                c.Schema.For<DocWithMeta>()
-                .MapLastModifiedTo(x => x.LastModified);
+                c.Schema.For<DocWithMeta>().Metadata(m => m.LastModified.MapTo(x => x.LastModified));
             });
 
             var doc = new DocWithMeta();
@@ -182,8 +183,11 @@ namespace Marten.Testing.Acceptance
             {
                 c.Schema.For<DocWithMeta>()
                 .MultiTenanted()
-                .MapTenantIdTo(x => x.TenantId)
-                .MapLastModifiedTo(x => x.LastModified);
+                .Metadata(m =>
+                {
+                    m.TenantId.MapTo(x => x.TenantId);
+                    m.LastModified.MapTo(x => x.LastModified);
+                });
             });
 
             var doc = new DocWithMeta();
@@ -213,9 +217,12 @@ namespace Marten.Testing.Acceptance
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .MultiTenanted()
-                .MapTenantIdTo(x => x.TenantId)
-                .MapLastModifiedTo(x => x.LastModified);
+                    .MultiTenanted()
+                    .Metadata(m =>
+                    {
+                        m.TenantId.MapTo(x => x.TenantId);
+                        m.LastModified.MapTo(x => x.LastModified);
+                    });
             });
 
             var doc = new DocWithMeta();
@@ -244,9 +251,12 @@ namespace Marten.Testing.Acceptance
                     .AddSubClassHierarchy(typeof(RedDocWithMeta), typeof(BlueDocWithMeta), typeof(GreenDocWithMeta),
                         typeof(EmeraldGreenDocWithMeta))
                     .SoftDeleted()
-                    .MapIsSoftDeletedTo(x => x.Deleted)
-                    .MapSoftDeletedAtTo(x => x.DeletedAt)
-                    .MapDocumentTypeTo(x => x.DocType);
+                    .Metadata(m =>
+                    {
+                        m.IsSoftDeleted.MapTo(x => x.Deleted);
+                        m.SoftDeletedAt.MapTo(x => x.DeletedAt);
+                        m.DocumentType.MapTo(x => x.DocType);
+                    });
             });
 
             using (var session = theStore.OpenSession())

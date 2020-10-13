@@ -48,7 +48,10 @@ namespace Marten.Testing.Acceptance
         {
             using (var store = SeparateStore(_ =>
             {
-                _.Schema.For<DocThatCouldBeVersioned>().VersionedWith(x => x.Revision);
+                _.Schema.For<DocThatCouldBeVersioned>().Metadata(m =>
+                {
+                    m.Version.MapTo(x => x.Revision);
+                });
             }))
             {
                 store.Storage.MappingFor(typeof(DocThatCouldBeVersioned))

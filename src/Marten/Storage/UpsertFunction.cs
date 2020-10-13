@@ -53,9 +53,9 @@ namespace Marten.Storage
 
             Arguments.AddRange(mapping.DuplicatedFields.Select(x => x.UpsertArgument));
 
-            Arguments.Add(new VersionArgument());
+            if (mapping.Metadata.Version.Enabled) Arguments.Add(new VersionArgument());
 
-            Arguments.Add(new DotNetTypeArgument());
+            if (mapping.Metadata.DotNetType.Enabled) Arguments.Add(new DotNetTypeArgument());
 
             if (mapping.IsHierarchy())
             {

@@ -19,7 +19,7 @@ namespace Marten.Testing.Bugs
                     .AddSubClass<CloudStorageMinio>()
                     .GinIndexJsonData()
                     .UseOptimisticConcurrency(true)
-                    .VersionedWith(p => p.Version);
+                    .Metadata(m => m.Version.MapTo(x => x.Version));
             });
         }
 

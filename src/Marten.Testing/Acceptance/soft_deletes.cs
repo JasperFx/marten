@@ -15,7 +15,9 @@ namespace Marten.Testing.Acceptance
         public SoftDeletedFixture() : base("softdelete")
         {
             Options.Schema.For<User>().SoftDeletedWithIndex();
-            Options.Schema.For<File>().SoftDeleted().MapIsSoftDeletedTo(x => x.Deleted).MapSoftDeletedAtTo(x => x.DeletedAt);
+            Options.Schema.For<File>().SoftDeleted()
+                .Metadata(m => m.IsSoftDeleted.MapTo(x => x.Deleted));
+
 
             Options.Schema.For<User>()
                 .SoftDeleted()
