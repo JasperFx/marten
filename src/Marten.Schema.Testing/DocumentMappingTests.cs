@@ -769,6 +769,13 @@ namespace Marten.Schema.Testing
             objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();
         }
 
-
+        [Fact]
+        public void default_metadata_columns()
+        {
+            var mapping = DocumentMapping.For<User>();
+            mapping.Metadata.LastModified.Enabled.ShouldBeTrue();
+            mapping.Metadata.Version.Enabled.ShouldBeTrue();
+            mapping.Metadata.DotNetType.Enabled.ShouldBeTrue();
+        }
     }
 }

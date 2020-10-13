@@ -33,10 +33,9 @@ namespace Marten.Storage
 
             AddColumn<DataColumn>();
 
-            // TODO -- this is temporary!!!
-            AddColumn(_mapping.Metadata.LastModified);
-            AddColumn(_mapping.Metadata.Version);
-            AddColumn(_mapping.Metadata.DotNetType);
+            AddIfActive(_mapping.Metadata.LastModified);
+            AddIfActive(_mapping.Metadata.Version);
+            AddIfActive(_mapping.Metadata.DotNetType);
 
             foreach (var field in mapping.DuplicatedFields) AddColumn(new DuplicatedFieldColumn(field));
 
@@ -56,6 +55,14 @@ namespace Marten.Storage
 
             Indexes.AddRange(mapping.Indexes);
             ForeignKeys.AddRange(mapping.ForeignKeys);
+        }
+
+        public void AddIfActive(MetadataColumn column)
+        {
+            if (column.Enabled)
+            {
+                AddColumn(column);
+            }
         }
 
         public string BuildTemplate(string template)

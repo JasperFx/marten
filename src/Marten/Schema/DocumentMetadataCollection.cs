@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Marten.Storage;
 
 namespace Marten.Schema
