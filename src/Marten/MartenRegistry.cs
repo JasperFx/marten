@@ -583,6 +583,18 @@ namespace Marten
                         };
                     }
                 }
+
+                /// <summary>
+                /// Turn off the informational metadata columns
+                /// in storage like the last modified, version, and
+                /// dot net type for leaner storage
+                /// </summary>
+                public void DisableInformationalFields()
+                {
+                    LastModified.Enabled = false;
+                    DotNetType.Enabled = false;
+                    Version.Enabled = false;
+                }
             }
         }
     }

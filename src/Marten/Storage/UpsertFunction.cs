@@ -11,6 +11,7 @@ namespace Marten.Storage
 {
     internal class UpsertFunction: Function
     {
+        protected readonly DocumentMapping _mapping;
         private readonly bool _disableConcurrency;
         protected readonly string _primaryKeyConstraintName;
         protected readonly DbObjectName _tableName;
@@ -21,6 +22,7 @@ namespace Marten.Storage
 
         public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false) : base(identifier ?? mapping.UpsertFunction)
         {
+            _mapping = mapping;
             _disableConcurrency = disableConcurrency;
             if (mapping == null)
                 throw new ArgumentNullException(nameof(mapping));
@@ -81,12 +83,27 @@ namespace Marten.Storage
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
 
-            var systemUpdates = new string[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" };
+
+            var systemUpdates = _mapping.Metadata.LastModified.Enabled ? new string[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" } : new string[0];
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
                 .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
-            var inserts = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").Concat(new[] { SchemaConstants.LastModifiedColumn }).Join(", ");
-            var valueList = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).Concat(new[] { "transaction_timestamp()" }).Join(", ");
+            var insertColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => $"\"{x.Column}\"").ToList();
+
+            if (_mapping.Metadata.LastModified.Enabled)
+            {
+                insertColumns.Add(SchemaConstants.LastModifiedColumn );
+            }
+
+            var inserts = insertColumns.Join(", ");
+
+            var valueListColumns = ordered.Where(x => x.Column.IsNotEmpty()).Select(x => x.Arg).ToList();
+            if (_mapping.Metadata.LastModified.Enabled)
+            {
+                valueListColumns.Add("transaction_timestamp()");
+            }
+
+            var valueList = valueListColumns.Join(", ");
 
             var whereClauses = new List<string>();
 
@@ -115,10 +132,12 @@ namespace Marten.Storage
         protected virtual void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
             string valueList, string updates)
         {
-            writer.WriteLine($@"
+            if (_mapping.Metadata.Version.Enabled)
+            {
+                writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
-                    securityDeclaration
-                } AS $function$
+                        securityDeclaration
+                    } AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -131,6 +150,28 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
 END;
 $function$;
 ");
+            }
+            else
+            {
+                writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+                        securityDeclaration
+                    } AS $function$
+DECLARE
+  final_version uuid;
+BEGIN
+INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
+  ON CONFLICT ON CONSTRAINT {_primaryKeyConstraintName}
+  DO UPDATE SET {updates};
+
+  RETURN '{Guid.Empty}';
+END;
+$function$;
+");
+            }
+
+
+
         }
 
         public UpsertArgument[] OrderedArguments()

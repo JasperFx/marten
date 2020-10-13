@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Marten.Schema;
 
@@ -16,10 +17,12 @@ namespace Marten.Storage
                 ? $"UPDATE {_tableName} SET {updates} and id = docId;"
                 : $"UPDATE {_tableName} SET {updates} where id = docId;";
 
-            writer.WriteLine($@"
+            if (_mapping.Metadata.Version.Enabled)
+            {
+                writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
-                    securityDeclaration
-                } AS $function$
+                        securityDeclaration
+                    } AS $function$
 DECLARE
   final_version uuid;
 BEGIN
@@ -30,6 +33,23 @@ BEGIN
 END;
 $function$;
 ");
+            }
+            else
+            {
+                writer.WriteLine($@"
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS UUID LANGUAGE plpgsql {
+                        securityDeclaration
+                    } AS $function$
+DECLARE
+  final_version uuid;
+BEGIN
+  {statement}
+
+  RETURN '{Guid.Empty}';
+END;
+$function$;
+");
+            }
         }
     }
 }

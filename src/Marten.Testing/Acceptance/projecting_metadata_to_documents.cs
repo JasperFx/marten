@@ -242,7 +242,6 @@ namespace Marten.Testing.Acceptance
 
 
 
-        [Fact]
         public void doc_metadata_is_mapped_for_doc_hierarchies()
         {
             StoreOptions(c =>
