@@ -1,12 +1,8 @@
-using System.Data.Common;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage.Metadata
 {
     internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn
     {

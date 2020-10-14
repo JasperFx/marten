@@ -1,27 +1,22 @@
-using System.Data.Common;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage.Metadata
 {
-    internal class DocumentTypeColumn: MetadataColumn<string>, ISelectableColumn
+    internal class SoftDeletedColumn: MetadataColumn<bool>, ISelectableColumn
     {
-        public DocumentTypeColumn(DocumentMapping mapping) : base(SchemaConstants.DocumentTypeColumn, x => x.DocumentType)
+        public SoftDeletedColumn() : base(SchemaConstants.DeletedColumn, x => x.Deleted)
         {
+            Directive = "DEFAULT FALSE";
             CanAdd = true;
-            Directive = $"DEFAULT '{mapping.AliasFor(mapping.DocumentType)}'";
         }
 
-        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
-            GeneratedMethod sync, int index,
-            DocumentMapping mapping)
+        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
+            int index, DocumentMapping mapping)
         {
-            var variableName = "docType";
-            var memberType = typeof(string);
+            var variableName = "isDeleted";
+            var memberType = typeof(bool);
 
             if (Member == null) return;
 
@@ -34,8 +29,7 @@ namespace Marten.Storage
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
         {
-            return true;
+            return Member != null;
         }
-
     }
 }

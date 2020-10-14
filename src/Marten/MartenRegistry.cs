@@ -8,6 +8,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using NpgsqlTypes;
 
 namespace Marten
@@ -542,6 +543,9 @@ namespace Marten
 
                 public Column<string> DotNetType => new Column<string>(_parent, m => m.DotNetType);
 
+                public Column<string> CorrelationId => new Column<string>(_parent, m => m.CorrelationId);
+                public Column<string> CausationId => new Column<string>(_parent, m => m.CausationId);
+                public Column<string> LastModifiedBy => new Column<string>(_parent, m => m.LastModifiedBy);
 
                 public class Column<TProperty>
                 {

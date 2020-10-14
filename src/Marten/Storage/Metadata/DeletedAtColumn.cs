@@ -1,12 +1,10 @@
 using System;
-using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Reflection;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage.Metadata
 {
     internal class DeletedAtColumn: MetadataColumn<DateTimeOffset?> , ISelectableColumn
     {
@@ -25,20 +23,11 @@ namespace Marten.Storage
 
             if (member == null) return;
 
-            sync.Frames.Code($"if (!reader.IsDBNull({index}))");
-            sync.Frames.Code("{{");
+            generateIfValueIsNotNull(async, sync, index);
 
-            async.Frames.CodeAsync($"if (!(await reader.IsDBNullAsync({index}, token)))");
-            async.Frames.Code("{{");
+            generateCodeToSetValuesOnDocumentFromReader(generatedType, async, sync, index, mapping, variableName, memberType, member);
 
-            sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
-            async.Frames.CodeAsync($"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
-
-            sync.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
-            async.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
-
-            sync.Frames.Code("}}");
-            async.Frames.Code("}}");
+            generateCloseScope(async, sync);
         }
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)

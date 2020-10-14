@@ -6,6 +6,7 @@ using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;

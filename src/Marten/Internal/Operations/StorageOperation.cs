@@ -176,6 +176,19 @@ namespace Marten.Internal.Operations
 
             return false;
         }
+
+        protected void setStringParameter(NpgsqlParameter parameter, string value)
+        {
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+            if (value == null)
+            {
+                parameter.Value = DBNull.Value;
+            }
+            else
+            {
+                parameter.Value = value;
+            }
+        }
     }
 
 

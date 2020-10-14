@@ -1,6 +1,7 @@
 using Marten.Linq.SqlGeneration;
 using Marten.Schema.Arguments;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Util;
 
 namespace Marten.Linq.Filters

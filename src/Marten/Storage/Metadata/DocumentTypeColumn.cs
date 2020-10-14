@@ -1,28 +1,23 @@
-using System;
-using System.Data.Common;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage.Metadata
 {
-    internal class LastModifiedColumn: MetadataColumn<DateTimeOffset>, ISelectableColumn
+    internal class DocumentTypeColumn: MetadataColumn<string>, ISelectableColumn
     {
-        public LastModifiedColumn() : base(SchemaConstants.LastModifiedColumn, x => x.LastModified)
+        public DocumentTypeColumn(DocumentMapping mapping) : base(SchemaConstants.DocumentTypeColumn, x => x.DocumentType)
         {
-            Directive = "DEFAULT transaction_timestamp()";
             CanAdd = true;
-            Type = "timestamp with time zone";
+            Directive = $"DEFAULT '{mapping.AliasFor(mapping.DocumentType)}'";
         }
 
-        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
-            int index, DocumentMapping mapping)
+        public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
+            GeneratedMethod sync, int index,
+            DocumentMapping mapping)
         {
-            var variableName = "lastModified";
-            var memberType = typeof(DateTime);
+            var variableName = "docType";
+            var memberType = typeof(string);
 
             if (Member == null) return;
 
@@ -35,7 +30,8 @@ namespace Marten.Storage
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
         {
-            return Member != null;
+            return true;
         }
+
     }
 }

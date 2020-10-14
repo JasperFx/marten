@@ -10,6 +10,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Testing.Documents;
 using Marten.Schema.Testing.Hierarchies;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
 using Shouldly;

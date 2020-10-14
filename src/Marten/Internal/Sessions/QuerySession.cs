@@ -16,6 +16,7 @@ using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Util;
 using Npgsql;
 
@@ -122,6 +123,10 @@ namespace Marten.Internal.Sessions
         {
             return LinqConstants.IdListTableName + ++_tableNumber;
         }
+
+        public string CausationId { get; set; }
+        public string CorrelationId { get; set; }
+        public string LastModifiedBy { get; set; }
 
 
         public void Dispose()

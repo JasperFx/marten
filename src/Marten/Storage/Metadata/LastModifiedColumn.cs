@@ -1,26 +1,24 @@
-using System.Data.Common;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
+using System;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage.Metadata
 {
-    internal class SoftDeletedColumn: MetadataColumn<bool>, ISelectableColumn
+    internal class LastModifiedColumn: MetadataColumn<DateTimeOffset>, ISelectableColumn
     {
-        public SoftDeletedColumn() : base(SchemaConstants.DeletedColumn, x => x.Deleted)
+        public LastModifiedColumn() : base(SchemaConstants.LastModifiedColumn, x => x.LastModified)
         {
-            Directive = "DEFAULT FALSE";
+            Directive = "DEFAULT transaction_timestamp()";
             CanAdd = true;
+            Type = "timestamp with time zone";
         }
 
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
             int index, DocumentMapping mapping)
         {
-            var variableName = "isDeleted";
-            var memberType = typeof(bool);
+            var variableName = "lastModified";
+            var memberType = typeof(DateTime);
 
             if (Member == null) return;
 

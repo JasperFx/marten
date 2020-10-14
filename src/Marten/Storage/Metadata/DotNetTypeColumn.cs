@@ -1,6 +1,6 @@
 using Marten.Schema;
 
-namespace Marten.Storage
+namespace Marten.Storage.Metadata
 {
     internal class DotNetTypeColumn: MetadataColumn<string>
     {

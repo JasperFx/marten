@@ -1,6 +1,7 @@
 using Marten.Storage;
 using Marten.Util;
 using System;
+using Marten.Storage.Metadata;
 
 namespace Marten.Services
 {

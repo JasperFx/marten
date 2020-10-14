@@ -8,6 +8,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Util;
 using Npgsql;
 

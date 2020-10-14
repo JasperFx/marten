@@ -5,6 +5,7 @@ using System.Linq;
 using Baseline;
 using Marten.Schema;
 using Marten.Schema.Arguments;
+using Marten.Storage.Metadata;
 using Marten.Util;
 
 namespace Marten.Storage
@@ -55,9 +56,15 @@ namespace Marten.Storage
 
             Arguments.AddRange(mapping.DuplicatedFields.Select(x => x.UpsertArgument));
 
+            // TODO -- see the columns below
             if (mapping.Metadata.Version.Enabled) Arguments.Add(new VersionArgument());
 
             if (mapping.Metadata.DotNetType.Enabled) Arguments.Add(new DotNetTypeArgument());
+
+            AddIfActive(mapping.Metadata.CorrelationId);
+            AddIfActive(mapping.Metadata.CausationId);
+            AddIfActive(mapping.Metadata.LastModifiedBy);
+
 
             if (mapping.IsHierarchy())
             {
@@ -74,6 +81,14 @@ namespace Marten.Storage
                 Arguments.Add(new TenantIdArgument());
                 _tenantWhereClause = $"{_tableName.QualifiedName}.{TenantIdColumn.Name} = {TenantIdArgument.ArgName}";
                 _andTenantWhereClause = $" and {_tenantWhereClause}";
+            }
+        }
+
+        public void AddIfActive(MetadataColumn column)
+        {
+            if (column.Enabled)
+            {
+                Arguments.Add(column.ToArgument());
             }
         }
 

@@ -1,5 +1,6 @@
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Util;
 using NpgsqlTypes;
 

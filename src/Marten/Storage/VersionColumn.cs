@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 
 namespace Marten.Storage
 {

@@ -4,6 +4,7 @@ using System.Linq;
 using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 
 namespace Marten.Storage
 {
@@ -36,6 +37,10 @@ namespace Marten.Storage
             AddIfActive(_mapping.Metadata.LastModified);
             AddIfActive(_mapping.Metadata.Version);
             AddIfActive(_mapping.Metadata.DotNetType);
+
+            AddIfActive(_mapping.Metadata.CorrelationId);
+            AddIfActive(_mapping.Metadata.CausationId);
+            AddIfActive(_mapping.Metadata.LastModifiedBy);
 
             foreach (var field in mapping.DuplicatedFields) AddColumn(new DuplicatedFieldColumn(field));
 

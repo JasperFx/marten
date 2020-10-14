@@ -6,6 +6,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Npgsql;
 
 namespace Marten

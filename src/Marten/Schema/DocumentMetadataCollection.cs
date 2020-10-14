@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 
 namespace Marten.Schema
 {
@@ -18,6 +19,10 @@ namespace Marten.Schema
         public MetadataColumn DocumentType { get; }
 
         public MetadataColumn DotNetType { get; } = new DotNetTypeColumn();
+
+        public MetadataColumn CausationId { get; } = new CausationIdColumn();
+        public MetadataColumn CorrelationId { get; } = new CorrelationIdColumn();
+        public MetadataColumn LastModifiedBy { get; } = new LastModifiedByColumn();
 
     }
 }

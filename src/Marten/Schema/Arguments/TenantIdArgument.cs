@@ -3,6 +3,7 @@ using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments

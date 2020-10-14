@@ -34,5 +34,23 @@ namespace Marten.Internal
         ConcurrencyChecks Concurrency { get; }
 
         string NextTempTableName();
+
+        /// <summary>
+        /// Optional metadata describing the causation id for this
+        /// unit of work
+        /// </summary>
+        string CausationId { get; set; }
+
+        /// <summary>
+        /// Optional metadata describing the correlation id for this
+        /// unit of work
+        /// </summary>
+        string CorrelationId { get; set; }
+
+        /// <summary>
+        /// Optional metadata describing the user name or
+        /// process name for this unit of work
+        /// </summary>
+        string LastModifiedBy { get; set; }
     }
 }

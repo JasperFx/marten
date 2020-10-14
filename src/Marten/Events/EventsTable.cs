@@ -1,5 +1,6 @@
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 
 namespace Marten.Events
 {
