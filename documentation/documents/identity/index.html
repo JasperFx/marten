@@ -79,7 +79,7 @@
             </div><!--/left-->
             <!--right-->
             <div class="col-md-9">
-                <h1>Document Identity <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/identity/index.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+                <h1>Document Identity <a href="https://github.com/jasperfx/marten/blob/3.13/documentation/documentation/documents/identity/index.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
                 <hr />
                 <div id="main-pane">
@@ -91,7 +91,7 @@
 be responsible for supplying the identifier.</li>
 <li><code>Guid</code>. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
 <em>And for the record, it's pronounced &quot;gwid&quot;</em>.</li>
-<li><code>CombGuid</code> is a <a href="https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs">sequential Guid algorithm</a>. It can improve performance over the default Guid as it reduces fragmentation of the PK index.</li>
+<li><code>CombGuid</code> is a <a href="https://github.com/JasperFx/marten/blob/3.13/src/Marten/Schema/Identity/CombGuidIdGeneration.cs">sequential Guid algorithm</a>. It can improve performance over the default Guid as it reduces fragmentation of the PK index.</li>
 <li><code>Int</code> or <code>Long</code>. As of right now, Marten uses a <a href="http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm">HiLo generator</a> approach to assigning numeric identifiers by document type.
 Marten may support Postgresql sequences or star-based algorithms as later alternatives.</li>
 <li>When the ID member of a document is not settable or not-public a <code>NoOpIdGeneration</code> strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.</li>

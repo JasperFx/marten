@@ -79,7 +79,7 @@
             </div><!--/left-->
             <!--right-->
             <div class="col-md-9">
-                <h1>Document Hierarchies <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/advanced/hierarchies.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+                <h1>Document Hierarchies <a href="https://github.com/jasperfx/marten/blob/3.13/documentation/documentation/documents/advanced/hierarchies.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
                 <hr />
                 <div id="main-pane">
@@ -94,7 +94,7 @@ called <code>SuperUser</code> and <code>AdminUser</code>. To use the document hi
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(&quot;connection to your database&quot;);&#xD;&#xA;&#xD;&#xA;    _.Schema.For&lt;User&gt;()&#xD;&#xA;        // generic version&#xD;&#xA;        .AddSubClass&lt;AdminUser&gt;()&#xD;&#xA;&#xD;&#xA;        // By document type object&#xD;&#xA;        .AddSubClass(typeof (SuperUser));&#xD;&#xA;});&#xD;&#xA;&#xD;&#xA;using (var session = store.QuerySession())&#xD;&#xA;{&#xD;&#xA;    // query for all types of User and User itself&#xD;&#xA;    session.Query&lt;User&gt;().ToList();&#xD;&#xA;&#xD;&#xA;    // query for only SuperUser&#xD;&#xA;    session.Query&lt;SuperUser&gt;().ToList();&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>With the configuration above, you can now query by <code>User</code> and get <code>AdminUser</code> and <code>SuperUser</code> documents as part of the results,
 or query directly for any of the subclasses to limit the query.</p>
-<p>The best description of what is possible with hierarchical storage is to read the <a href="https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs">acceptance tests for this feature</a>.</p>
+<p>The best description of what is possible with hierarchical storage is to read the <a href="https://github.com/JasperFx/marten/blob/3.13/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs">acceptance tests for this feature</a>.</p>
 <p>There's a couple things to be aware of with type hierarchies:</p>
 <ul>
 <li>A document type that is either abstract or an interface is automatically assumed to be a hierarchy</li>

@@ -79,7 +79,7 @@
             </div><!--/left-->
             <!--right-->
             <div class="col-md-9">
-                <h1>Querying with Postgresql SQL <a href="https://github.com/jasperfx/marten/blob/master/documentation/documentation/documents/querying/sql.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
+                <h1>Querying with Postgresql SQL <a href="https://github.com/jasperfx/marten/blob/3.13/documentation/documentation/documents/querying/sql.md" class="text-muted small pull-right fa fa-github" style="margin-top: 10px"> Edit on GitHub</a></h1>
 
                 <hr />
                 <div id="main-pane">
@@ -95,7 +95,7 @@
 <pre><code class="language-csharp">&#xD;&#xA;var user =&#xD;&#xA;    session.Query&lt;User&gt;(&quot;where data -&gt;&gt; &#x27;FirstName&#x27; = ? and data -&gt;&gt; &#x27;LastName&#x27; = ?&quot;, &quot;Jeremy&quot;,&#xD;&#xA;               &quot;Miller&quot;)&#xD;&#xA;           .Single();&#xD;&#xA;</code></pre>
 <p>If you want to combine other Linq operations with your sql, you can use the <code>MatchesSql(sql)</code> method inside of your Linq query like so:</p>
 <pre><code class="language-csharp">&#xD;&#xA;[Fact]&#xD;&#xA;public void query_with_matches_sql()&#xD;&#xA;{&#xD;&#xA;    using (var session = theStore.OpenSession())&#xD;&#xA;    {&#xD;&#xA;        var u = new User { FirstName = &quot;Eric&quot;, LastName = &quot;Smith&quot; };&#xD;&#xA;        session.Store(u);&#xD;&#xA;        session.SaveChanges();&#xD;&#xA;&#xD;&#xA;        var user = session.Query&lt;User&gt;().Where(x =&gt; x.MatchesSql(&quot;data-&gt;&gt; &#x27;FirstName&#x27; = ?&quot;, &quot;Eric&quot;)).Single();&#xD;&#xA;        user.LastName.ShouldBe(&quot;Smith&quot;);&#xD;&#xA;        user.Id.ShouldBe(u.Id);&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;</code></pre>
-<p>The best resource for this topic might just be <a href="https://github.com/JasperFx/Marten/blob/master/src/Marten.Testing/query_by_sql_where_clause_Tests.cs">the unit tests</a>.</p>
+<p>The best resource for this topic might just be <a href="https://github.com/JasperFx/Marten/blob/3.13/src/Marten.Testing/query_by_sql_where_clause_Tests.cs">the unit tests</a>.</p>
 <h2 id="asynchronous-queries">Asynchronous Queries</h2>
 <p>You can also query asynchronously with user supplied SQL:</p>
 <pre><code class="language-csharp">&#xD;&#xA;var users =&#xD;&#xA;    await&#xD;&#xA;        session.QueryAsync&lt;User&gt;(&#xD;&#xA;                   &quot;select data from mt_doc_user where data -&gt;&gt; &#x27;FirstName&#x27; = &#x27;Jeremy&#x27;&quot;)&#xD;&#xA;               .ConfigureAwait(false);&#xD;&#xA;var user = users.Single();&#xD;&#xA;</code></pre>
