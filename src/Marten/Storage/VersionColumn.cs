@@ -22,7 +22,7 @@ namespace Marten.Storage
             DocumentMapping mapping)
         {
 
-            var versionPosition = mapping.IsHierarchy() ? 3 : 2;
+            var versionPosition = index;//mapping.IsHierarchy() ? 3 : 2;
 
 
             async.Frames.CodeAsync($"var version = await reader.GetFieldValueAsync<System.Guid>({versionPosition}, token);");

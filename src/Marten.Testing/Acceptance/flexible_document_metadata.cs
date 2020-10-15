@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Shouldly;
 using Xunit;
 
@@ -17,7 +18,10 @@ namespace Marten.Testing.Acceptance
         public string CorrelationId { get; set; }
         public string LastModifiedBy { get; set; }
 
+        public Guid Version { get; set; }
+
         public Dictionary<string, object> Headers { get; set; }
+        public DateTimeOffset LastModified { get; set; }
     }
 
     [Collection("metadata")]
@@ -49,6 +53,54 @@ namespace Marten.Testing.Acceptance
 
             doc2.Headers["name"].ShouldBe("Jeremy");
             doc2.Headers["hour"].ShouldBe(5);
+        }
+    }
+
+    [Collection("metadata")]
+    public class when_mapping_to_the_version_and_others: FlexibleDocumentMetadataContext
+    {
+        public when_mapping_to_the_version_and_others() : base("metadata")
+        {
+
+        }
+
+        protected override void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata)
+        {
+            metadata.Version.MapTo(x => x.Version);
+            metadata.LastModified.MapTo(x => x.LastModified);
+        }
+
+        [Fact]
+        public async Task version_is_available_on_query_only()
+        {
+            var doc = new MetadataTarget();
+            theSession.Store(doc);
+            await theSession.SaveChangesAsync();
+
+            using var query = theStore.QuerySession();
+
+            var doc2 = await query.LoadAsync<MetadataTarget>(doc.Id);
+            doc2.Version.ShouldNotBe(Guid.Empty);
+        }
+
+        [Fact]
+        public async Task version_is_updated_on_the_document_when_it_is_saved()
+        {
+            var original = Guid.NewGuid();
+            var doc = new MetadataTarget {Version = original};
+            theSession.Store(doc);
+            await theSession.SaveChangesAsync();
+
+            doc.Version.ShouldNotBe(original);
+        }
+
+        [Fact]
+        public async Task last_modified_is_updated_on_the_document_when_it_is_saved()
+        {
+            var original = Guid.NewGuid();
+            var doc = new MetadataTarget {Version = original};
+            theSession.Store(doc);
+            await theSession.SaveChangesAsync();
         }
     }
 
