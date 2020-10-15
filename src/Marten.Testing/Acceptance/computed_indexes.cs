@@ -31,9 +31,9 @@ namespace Marten.Testing.Acceptance
             {
                 // Postgresql will be able to use the computed
                 // index generated from above
-                var somebody = session.Query<User>()
-                    .Where(x => x.UserName == "somebody")
-                    .FirstOrDefault();
+                var somebody = session
+                    .Query<User>()
+                    .FirstOrDefault(x => x.UserName == "somebody");
             }
             // ENDSAMPLE
 

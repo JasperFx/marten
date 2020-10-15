@@ -60,7 +60,7 @@ namespace Marten.Storage.Metadata
 
             for (var i = 0; i < _columns.Length; i++)
             {
-                _columns[i].Apply(metadata, i + 1, reader);
+                _columns[i].Apply(session, metadata, i + 1, reader);
             }
 
             return metadata;
@@ -78,7 +78,7 @@ namespace Marten.Storage.Metadata
 
             for (var i = 0; i < _columns.Length; i++)
             {
-                await _columns[i].ApplyAsync(metadata, i + 1, reader, token);
+                await _columns[i].ApplyAsync(session, metadata, i + 1, reader, token);
             }
 
             return metadata;

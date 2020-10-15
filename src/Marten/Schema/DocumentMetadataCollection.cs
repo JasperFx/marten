@@ -24,5 +24,6 @@ namespace Marten.Schema
         public MetadataColumn CorrelationId { get; } = new CorrelationIdColumn();
         public MetadataColumn LastModifiedBy { get; } = new LastModifiedByColumn();
 
+        public MetadataColumn Headers { get; } = new HeadersColumn();
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Marten.Storage.Metadata
 {
@@ -36,5 +37,10 @@ namespace Marten.Storage.Metadata
         /// process name for this unit of work
         /// </summary>
         public string LastModifiedBy { get; set; }
+
+        /// <summary>
+        /// Optional, user defined headers
+        /// </summary>
+        public Dictionary<string, object> Headers { get; set; } = new Dictionary<string, object>();
     }
 }

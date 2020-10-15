@@ -17,11 +17,11 @@ namespace Marten.Testing.Internals.Sessions
         public void set_and_get_metadata()
         {
             var session = (DocumentSessionBase)theSession;
-            session.Metadata.ShouldBeNull();
+            session.Headers.ShouldBeNull();
 
-            session.SetMetadata("a", 1);
-            session.Metadata.ShouldNotBeNull();
-            session.GetMetadata("a").ShouldBe(1);
+            session.SetHeader("a", 1);
+            session.Headers.ShouldNotBeNull();
+            session.GetHeader("a").ShouldBe(1);
 
         }
     }

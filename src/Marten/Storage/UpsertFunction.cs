@@ -64,6 +64,7 @@ namespace Marten.Storage
             AddIfActive(mapping.Metadata.CorrelationId);
             AddIfActive(mapping.Metadata.CausationId);
             AddIfActive(mapping.Metadata.LastModifiedBy);
+            AddIfActive(mapping.Metadata.Headers);
 
 
             if (mapping.IsHierarchy())

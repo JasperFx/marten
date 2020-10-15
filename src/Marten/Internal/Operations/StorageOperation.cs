@@ -189,6 +189,19 @@ namespace Marten.Internal.Operations
                 parameter.Value = value;
             }
         }
+
+        protected void setHeaderParameter(NpgsqlParameter parameter, IMartenSession session)
+        {
+            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            if (session.Headers == null)
+            {
+                parameter.Value = DBNull.Value;
+            }
+            else
+            {
+                parameter.Value = session.Serializer.ToJson(session.Headers);
+            }
+        }
     }
 
 

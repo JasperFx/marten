@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
+using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
@@ -25,8 +26,10 @@ namespace Marten.Storage.Metadata
             DotNetType = dotNetType;
         }
 
-        public abstract Task ApplyAsync(DocumentMetadata metadata, int index, DbDataReader reader, CancellationToken token);
-        public abstract void Apply(DocumentMetadata metadata, int index, DbDataReader reader);
+        public abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+            DbDataReader reader, CancellationToken token);
+        public abstract void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+            DbDataReader reader);
 
         public abstract MemberInfo Member { get; set; }
         public bool Enabled { get; set; } = true;
@@ -89,7 +92,8 @@ namespace Marten.Storage.Metadata
             _setter = LambdaBuilder.Setter<DocumentMetadata, T>(member);
         }
 
-        public override async Task ApplyAsync(DocumentMetadata metadata, int index, DbDataReader reader, CancellationToken token)
+        public override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+            DbDataReader reader, CancellationToken token)
         {
             if (await reader.IsDBNullAsync(index, token)) return;
 
@@ -97,7 +101,8 @@ namespace Marten.Storage.Metadata
             _setter(metadata, value);
         }
 
-        public override void Apply(DocumentMetadata metadata, int index, DbDataReader reader)
+        public override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+            DbDataReader reader)
         {
             if (reader.IsDBNull(index)) return;
 

@@ -1,3 +1,5 @@
+using System;
+using System.Linq.Expressions;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;

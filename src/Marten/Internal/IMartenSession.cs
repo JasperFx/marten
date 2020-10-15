@@ -56,6 +56,6 @@ namespace Marten.Internal
         /// <summary>
         /// Optional metadata values. This may be null.
         /// </summary>
-        Dictionary<string, object> Metadata { get; }
+        Dictionary<string, object> Headers { get; }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -15,6 +16,40 @@ namespace Marten.Testing.Acceptance
         public string CausationId { get; set; }
         public string CorrelationId { get; set; }
         public string LastModifiedBy { get; set; }
+
+        public Dictionary<string, object> Headers { get; set; }
+    }
+
+    [Collection("metadata")]
+    public class when_using_the_user_defined_header_metadata: FlexibleDocumentMetadataContext
+    {
+        public when_using_the_user_defined_header_metadata() : base("metadata")
+        {
+        }
+
+        protected override void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata)
+        {
+            metadata.Headers.MapTo(x => x.Headers);
+        }
+
+        [Fact]
+        public async Task save_and_load_and_see_header_values()
+        {
+            theSession.SetHeader("name", "Jeremy");
+            theSession.SetHeader("hour", 5);
+
+            var doc = new MetadataTarget();
+
+            theSession.Store(doc);
+            await theSession.SaveChangesAsync();
+
+            using var session = theStore.QuerySession();
+
+            var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
+
+            doc2.Headers["name"].ShouldBe("Jeremy");
+            doc2.Headers["hour"].ShouldBe(5);
+        }
     }
 
     [Collection("metadata")]

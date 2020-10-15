@@ -131,7 +131,7 @@ namespace Marten.Internal.Sessions
         /// <summary>
         /// This is meant to be lazy created, and can be null
         /// </summary>
-        public Dictionary<string, object> Metadata { get; protected set; }
+        public Dictionary<string, object> Headers { get; protected set; }
 
 
         public void Dispose()

@@ -393,16 +393,16 @@ namespace Marten.Internal.Sessions
             ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
         }
 
-        public void SetMetadata(string key, object value)
+        public void SetHeader(string key, object value)
         {
-            Metadata ??= new Dictionary<string, object>();
+            Headers ??= new Dictionary<string, object>();
 
-            Metadata[key] = value;
+            Headers[key] = value;
         }
 
-        public object GetMetadata(string key)
+        public object GetHeader(string key)
         {
-            return Metadata?[key];
+            return Headers?[key];
         }
 
         protected abstract void ejectById<T>(long id);

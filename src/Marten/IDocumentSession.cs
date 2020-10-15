@@ -268,14 +268,14 @@ namespace Marten
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        void SetMetadata(string key, object value);
+        void SetHeader(string key, object value);
 
         /// <summary>
         /// Get an optional user defined metadata value by key
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        object GetMetadata(string key);
+        object GetHeader(string key);
     }
 
     public interface ILoadByKeys<TDoc>

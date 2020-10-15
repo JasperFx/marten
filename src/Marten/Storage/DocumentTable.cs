@@ -41,6 +41,7 @@ namespace Marten.Storage
             AddIfActive(_mapping.Metadata.CorrelationId);
             AddIfActive(_mapping.Metadata.CausationId);
             AddIfActive(_mapping.Metadata.LastModifiedBy);
+            AddIfActive(_mapping.Metadata.Headers);
 
             foreach (var field in mapping.DuplicatedFields) AddColumn(new DuplicatedFieldColumn(field));
 

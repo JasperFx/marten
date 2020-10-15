@@ -547,6 +547,8 @@ namespace Marten
                 public Column<string> CausationId => new Column<string>(_parent, m => m.CausationId);
                 public Column<string> LastModifiedBy => new Column<string>(_parent, m => m.LastModifiedBy);
 
+                public Column<Dictionary<string, object>> Headers => new Column<Dictionary<string, object>>(_parent, m => m.Headers);
+
                 public class Column<TProperty>
                 {
                     private readonly DocumentMappingExpression<T> _parent;
@@ -573,7 +575,8 @@ namespace Marten
 
                     /// <summary>
                     ///     Map this metadata information to the designated Field or Property
-                    ///     on the document type
+                    ///     on the document type. This will also enable the tracking column
+                    /// in the underlying database table
                     /// </summary>
                     /// <param name="memberExpression"></param>
                     public void MapTo(Expression<Func<T, TProperty>> memberExpression)
