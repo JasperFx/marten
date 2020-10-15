@@ -13,9 +13,9 @@ called `SuperUser` and `AdminUser`. To use the document hierarchy storage, we ne
 <[sample:configure-hierarchy-of-types]>
 
 With the configuration above, you can now query by `User` and get `AdminUser` and `SuperUser` documents as part of the results,
-or query directly for any of the subclasses to limit the query. 
+or query directly for any of the subclasses to limit the query.
 
-The best description of what is possible with hierarchical storage is to read the [acceptance tests for this feature](https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs).
+The best description of what is possible with hierarchical storage is to read the [acceptance tests for this feature](https://github.com/JasperFx/marten/blob/3.13/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs).
 
 There's a couple things to be aware of with type hierarchies:
 
@@ -31,7 +31,7 @@ There's a couple things to be aware of with type hierarchies:
 ## Multi Level Hierarchies
 
 Say you have a document type named `ISmurf` that is implemented by `Smurf`. Now, say the latter has a pair of specialized
-subclasses called `PapaSmurf` and `PapySmurf` and that both implement `IPapaSmurf` and that `PapaSmurf` has the subclass 
+subclasses called `PapaSmurf` and `PapySmurf` and that both implement `IPapaSmurf` and that `PapaSmurf` has the subclass
 `BrainySmurf` like so:
 
 <[sample:smurfs-hierarchy]>
@@ -41,7 +41,7 @@ first you will need to map the hierarchy like so:
 
 <[sample:add-subclass-hierarchy]>
 
-Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map 
+Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map
 and its alias. Since `Type` implicitly converts to `MappedType` and the methods takes in `params MappedType[]`, you could
 use a mix of both like so:
 

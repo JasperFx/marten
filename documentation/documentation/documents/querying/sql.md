@@ -21,7 +21,7 @@ If you want to combine other Linq operations with your sql, you can use the `Mat
 
 <[sample:query_with_matches_sql]>
 
-The best resource for this topic might just be [the unit tests](https://github.com/JasperFx/Marten/blob/master/src/Marten.Testing/query_by_sql_where_clause_Tests.cs).
+The best resource for this topic might just be [the unit tests](https://github.com/JasperFx/Marten/blob/3.13/src/Marten.Testing/query_by_sql_where_clause_Tests.cs).
 
 ## Asynchronous Queries
 
@@ -37,7 +37,7 @@ The SQL queries described above can also be performed through the non-generic IQ
 
 ## Named Parameter Queries
 
-Some of the Postgresql operators include the "?" character that Marten normally uses to denote an input parameter in user supplied queries. 
+Some of the Postgresql operators include the "?" character that Marten normally uses to denote an input parameter in user supplied queries.
 To solve that conflict, Marten 1.2 introduces support for named parameters in the user supplied queries:
 
 <[sample:query_by_two_named_parameters]>

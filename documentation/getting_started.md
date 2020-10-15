@@ -19,16 +19,15 @@ Or, using .Net CLI
 dotnet add package Marten
 </pre>
 
-The next step is to get access to a PostgreSQL **9.5+** database schema. If you want to let Marten build database schema objects on the fly at development time, 
-make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements. 
+The next step is to get access to a PostgreSQL **9.5+** database schema. If you want to let Marten build database schema objects on the fly at development time,
+make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements.
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
-
 
 ## Adding Marten to a .Net Core Application
 
 <[info]>
-There's a very small [sample project in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten) that shows the mechanics for wiring
+There's a very small [sample project in the Marten codebase](https://github.com/JasperFx/marten/tree/3.13/src/AspNetCoreWithMarten) that shows the mechanics for wiring
 Marten into a .Net Core application.
 <[/info]>
 
@@ -40,10 +39,9 @@ In the `Startup.ConfigureServices()` method of your .Net Core application (or yo
 
 See <[linkto:documentation/integration]> for more information and options about this integration.
 
-
 ## Bootstrapping a Document Store
 
-To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with 
+To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with
 all the default behavior and a connection string:
 
 <[sample:start_a_store]>
@@ -58,11 +56,10 @@ And now that we've got a PostgreSQL schema and an `IDocumentStore`, let's start 
 
 <[sample:opening_sessions]>
 
-
 ## Integrating Marten with IoC Containers
 
 <[info]>
-Lamar supports the .Net Core abstractions for IoC service registrations, so you *could* happily
+Lamar supports the .Net Core abstractions for IoC service registrations, so you _could_ happily
 use the `AddMarten()` method directly with Lamar.
 <[/info]>
 
@@ -76,10 +73,9 @@ Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we rec
 There are really only two key points here:
 
 1. There should only be one `IDocumentStore` object instance created in your application, so I scoped it as a "Singleton" in the StructureMap container
-1. The `IDocumentSession` service that you use to read and write documents should be scoped as "one per transaction." In typical usage, this 
+1. The `IDocumentSession` service that you use to read and write documents should be scoped as "one per transaction." In typical usage, this
    ends up meaning that an `IDocumentSession` should be scoped to a single HTTP request in web applications or a single message being handled in service
    bus applications.
-
 
 There's a lot more capabilities than what we're showing here, so head on over to <[linkto:documentation]> to see what else Marten offers.
 
