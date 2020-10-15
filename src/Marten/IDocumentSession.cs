@@ -262,6 +262,20 @@ namespace Marten
         /// process name for this unit of work
         /// </summary>
         string LastModifiedBy { get; set; }
+
+        /// <summary>
+        /// Set an optional user defined metadata value by key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        void SetMetadata(string key, object value);
+
+        /// <summary>
+        /// Get an optional user defined metadata value by key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        object GetMetadata(string key);
     }
 
     public interface ILoadByKeys<TDoc>

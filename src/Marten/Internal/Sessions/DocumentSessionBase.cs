@@ -5,30 +5,27 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Projections.Async;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
-using Marten.Linq;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
-using Remotion.Linq.Clauses;
 
 namespace Marten.Internal.Sessions
 {
     public abstract class DocumentSessionBase: QuerySession, IDocumentSession
     {
         // The current unit of work can be replaced
-        protected UnitOfWork _unitOfWork ;
+        protected UnitOfWork _unitOfWork;
 
 
         protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
-            ITenant tenant) : base(store, sessionOptions, database, tenant)
+            ITenant tenant): base(store, sessionOptions, database, tenant)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
             _unitOfWork = new UnitOfWork(this);
@@ -73,11 +70,6 @@ namespace Marten.Internal.Sessions
                 throw new DocumentIdTypeMismatchException(storage, typeof(int));
             }
         }
-
-        protected abstract void ejectById<T>(long id);
-        protected abstract void ejectById<T>(int id);
-        protected abstract void ejectById<T>(Guid id);
-        protected abstract void ejectById<T>(string id);
 
         public void Delete<T>(long id)
         {
@@ -131,10 +123,7 @@ namespace Marten.Internal.Sessions
             _unitOfWork.Sort(Options);
 
 
-            foreach (var listener in Listeners)
-            {
-                listener.BeforeSaveChanges(this);
-            }
+            foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
             var batch = new UpdateBatch(_unitOfWork.AllOperations);
             try
@@ -153,23 +142,10 @@ namespace Marten.Internal.Sessions
             EjectPatchedTypes(_unitOfWork);
             Logger.RecordSavedChanges(this, _unitOfWork);
 
-            foreach (var listener in Listeners)
-            {
-                listener.AfterCommit(this, _unitOfWork);
-            }
+            foreach (var listener in Listeners) listener.AfterCommit(this, _unitOfWork);
 
             // Need to clear the unit of work here
             _unitOfWork = new UnitOfWork(this);
-        }
-
-        protected virtual void processChangeTrackers()
-        {
-            // Nothing
-        }
-
-        protected virtual void resetDirtyChecking(UnitOfWork unitOfWork)
-        {
-            // Nothing
         }
 
         public async Task SaveChangesAsync(CancellationToken token = default)
@@ -186,9 +162,7 @@ namespace Marten.Internal.Sessions
             _unitOfWork.Sort(Options);
 
             foreach (var listener in Listeners)
-            {
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
-            }
 
             var batch = new UpdateBatch(_unitOfWork.AllOperations);
             try
@@ -208,9 +182,7 @@ namespace Marten.Internal.Sessions
             Logger.RecordSavedChanges(this, _unitOfWork);
 
             foreach (var listener in Listeners)
-            {
                 await listener.AfterCommitAsync(this, _unitOfWork, token).ConfigureAwait(false);
-            }
 
             // Need to clear the unit of work here
             _unitOfWork = new UnitOfWork(this);
@@ -227,51 +199,10 @@ namespace Marten.Internal.Sessions
                 throw new ArgumentNullException(nameof(entities));
 
             if (typeof(T).IsGenericEnumerable())
-                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. Either cast entities to an array instead or use the IEnumerable<T> Store() overload instead.");
+                throw new ArgumentOutOfRangeException(typeof(T).Name,
+                    "Do not use IEnumerable<T> here as the document type. Either cast entities to an array instead or use the IEnumerable<T> Store() overload instead.");
 
             store(entities);
-        }
-
-
-        private void store<T>(IEnumerable<T> entities)
-        {
-            assertNotDisposed();
-
-            if (typeof(T) == typeof(object))
-            {
-                StoreObjects(entities.OfType<object>());
-            }
-            else
-            {
-                var storage = StorageFor<T>();
-
-                if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
-                {
-                    foreach (var entity in entities)
-                    {
-                        // Put it in the identity map -- if necessary
-                        storage.Store(this, entity);
-
-                        var overwrite = storage.Overwrite(entity, this, Tenant);
-
-                        _unitOfWork.Add(overwrite);
-                    }
-                }
-                else
-                {
-                    foreach (var entity in entities)
-                    {
-                        // Put it in the identity map -- if necessary
-                        storage.Store(this, entity);
-
-                        var upsert = storage.Upsert(entity, this, Tenant);
-
-                        _unitOfWork.Add(upsert);
-                    }
-                }
-
-
-            }
         }
 
 
@@ -284,15 +215,11 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            if (entities == null)
-            {
-                throw new ArgumentNullException(nameof(entities));
-            }
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
 
             if (typeof(T).IsGenericEnumerable())
-            {
-                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. Cast entities to an array or use the IEnumerable<T> Store() overload instead.");
-            }
+                throw new ArgumentOutOfRangeException(typeof(T).Name,
+                    "Do not use IEnumerable<T> here as the document type. Cast entities to an array or use the IEnumerable<T> Store() overload instead.");
 
             var tenant = DocumentStore.Tenancy[tenantId];
 
@@ -326,15 +253,11 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            if (entities == null)
-            {
-                throw new ArgumentNullException(nameof(entities));
-            }
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
 
             if (typeof(T).IsGenericEnumerable())
-            {
-                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
-            }
+                throw new ArgumentOutOfRangeException(typeof(T).Name,
+                    "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
 
             if (typeof(T) == typeof(object))
             {
@@ -362,15 +285,11 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            if (entities == null)
-            {
-                throw new ArgumentNullException(nameof(entities));
-            }
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
 
             if (typeof(T).IsGenericEnumerable())
-            {
-                throw new ArgumentOutOfRangeException(typeof(T).Name, "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
-            }
+                throw new ArgumentOutOfRangeException(typeof(T).Name,
+                    "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
 
             if (typeof(T) == typeof(object))
             {
@@ -418,28 +337,6 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        internal interface IHandler
-        {
-            void Store(IDocumentSession session, IEnumerable<object> objects);
-        }
-
-        internal class Handler<T>: IHandler
-        {
-            public void Store(IDocumentSession session, IEnumerable<object> objects)
-            {
-                // Delegate to the Store<T>() method
-                session.Store(objects.OfType<T>().ToArray());
-            }
-        }
-
-        internal class InsertHandler<T>: IHandler
-        {
-            public void Store(IDocumentSession session, IEnumerable<object> objects)
-            {
-                session.Insert(objects.OfType<T>().ToArray());
-            }
-        }
-
         public IEventStore Events { get; }
 
         public IPatchExpression<T> Patch<T>(int id)
@@ -476,14 +373,6 @@ namespace Marten.Internal.Sessions
             return new PatchExpression<T>(fragment, this);
         }
 
-        private IPatchExpression<T> patchById<T>(object id)
-        {
-            assertNotDisposed();
-
-            var @where = new WhereFragment("d.id = ?", id);
-            return new PatchExpression<T>(@where, this);
-        }
-
 
         public void QueueOperation(IStorageOperation storageOperation)
         {
@@ -504,13 +393,81 @@ namespace Marten.Internal.Sessions
             ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
         }
 
+        public void SetMetadata(string key, object value)
+        {
+            Metadata ??= new Dictionary<string, object>();
+
+            Metadata[key] = value;
+        }
+
+        public object GetMetadata(string key)
+        {
+            return Metadata?[key];
+        }
+
+        protected abstract void ejectById<T>(long id);
+        protected abstract void ejectById<T>(int id);
+        protected abstract void ejectById<T>(Guid id);
+        protected abstract void ejectById<T>(string id);
+
+        protected virtual void processChangeTrackers()
+        {
+            // Nothing
+        }
+
+        protected virtual void resetDirtyChecking(UnitOfWork unitOfWork)
+        {
+            // Nothing
+        }
+
+
+        private void store<T>(IEnumerable<T> entities)
+        {
+            assertNotDisposed();
+
+            if (typeof(T) == typeof(object))
+            {
+                StoreObjects(entities.OfType<object>());
+            }
+            else
+            {
+                var storage = StorageFor<T>();
+
+                if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
+                    foreach (var entity in entities)
+                    {
+                        // Put it in the identity map -- if necessary
+                        storage.Store(this, entity);
+
+                        var overwrite = storage.Overwrite(entity, this, Tenant);
+
+                        _unitOfWork.Add(overwrite);
+                    }
+                else
+                    foreach (var entity in entities)
+                    {
+                        // Put it in the identity map -- if necessary
+                        storage.Store(this, entity);
+
+                        var upsert = storage.Upsert(entity, this, Tenant);
+
+                        _unitOfWork.Add(upsert);
+                    }
+            }
+        }
+
+        private IPatchExpression<T> patchById<T>(object id)
+        {
+            assertNotDisposed();
+
+            var where = new WhereFragment("d.id = ?", id);
+            return new PatchExpression<T>(where, this);
+        }
+
         public void EjectPatchedTypes(IUnitOfWork changes)
         {
             var patchedTypes = changes.Patches().Select(x => x.DocumentType).Distinct().ToArray();
-            foreach (var type in patchedTypes)
-            {
-                EjectAllOfType(type);
-            }
+            foreach (var type in patchedTypes) EjectAllOfType(type);
         }
 
         private void applyProjections()
@@ -520,10 +477,7 @@ namespace Marten.Internal.Sessions
             if (streams.Length > 0)
             {
                 var eventPage = new EventPage(streams);
-                foreach (var projection in DocumentStore.Events.InlineProjections)
-                {
-                    projection.Apply(this, eventPage);
-                }
+                foreach (var projection in DocumentStore.Events.InlineProjections) projection.Apply(this, eventPage);
             }
         }
 
@@ -535,9 +489,29 @@ namespace Marten.Internal.Sessions
             {
                 var eventPage = new EventPage(streams);
                 foreach (var projection in DocumentStore.Events.InlineProjections)
-                {
                     await projection.ApplyAsync(this, eventPage, token).ConfigureAwait(false);
-                }
+            }
+        }
+
+        internal interface IHandler
+        {
+            void Store(IDocumentSession session, IEnumerable<object> objects);
+        }
+
+        internal class Handler<T>: IHandler
+        {
+            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            {
+                // Delegate to the Store<T>() method
+                session.Store(objects.OfType<T>().ToArray());
+            }
+        }
+
+        internal class InsertHandler<T>: IHandler
+        {
+            public void Store(IDocumentSession session, IEnumerable<object> objects)
+            {
+                session.Insert(objects.OfType<T>().ToArray());
             }
         }
     }

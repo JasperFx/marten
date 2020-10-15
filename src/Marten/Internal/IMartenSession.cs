@@ -52,5 +52,10 @@ namespace Marten.Internal
         /// process name for this unit of work
         /// </summary>
         string LastModifiedBy { get; set; }
+
+        /// <summary>
+        /// Optional metadata values. This may be null.
+        /// </summary>
+        Dictionary<string, object> Metadata { get; }
     }
 }

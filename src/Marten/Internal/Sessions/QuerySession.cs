@@ -128,6 +128,11 @@ namespace Marten.Internal.Sessions
         public string CorrelationId { get; set; }
         public string LastModifiedBy { get; set; }
 
+        /// <summary>
+        /// This is meant to be lazy created, and can be null
+        /// </summary>
+        public Dictionary<string, object> Metadata { get; protected set; }
+
 
         public void Dispose()
         {
