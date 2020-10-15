@@ -95,6 +95,8 @@ namespace Marten.Storage
 
         public override void Write(DdlRules rules, StringWriter writer)
         {
+            // TODO -- this code could be a lot cleaner! The metadata made it go bad
+
             var ordered = OrderedArguments();
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");

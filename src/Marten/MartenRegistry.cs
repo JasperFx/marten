@@ -527,26 +527,65 @@ namespace Marten
                     _parent = parent;
                 }
 
+                /// <summary>
+                /// The current version of this document in the database
+                /// </summary>
                 public Column<Guid> Version => new Column<Guid>(_parent, m => m.Version);
 
+                /// <summary>
+                /// Timestamp of the last time this document was modified
+                /// </summary>
                 public Column<DateTimeOffset> LastModified =>
                     new Column<DateTimeOffset>(_parent, m => m.LastModified);
 
+                /// <summary>
+                /// The stored tenant id of this document
+                /// </summary>
                 public Column<string> TenantId => new Column<string>(_parent, m => m.TenantId);
 
+                /// <summary>
+                /// If soft-deleted, whether or not the document is marked as deleted
+                /// </summary>
                 public Column<bool> IsSoftDeleted => new Column<bool>(_parent, m => m.IsSoftDeleted);
 
+                /// <summary>
+                /// If soft-deleted, the time at which the document was marked as deleted
+                /// </summary>
                 public Column<DateTimeOffset?> SoftDeletedAt =>
                     new Column<DateTimeOffset?>(_parent, m => m.SoftDeletedAt);
 
+                /// <summary>
+                /// If the document is part of a type hierarchy, this designates
+                /// Marten's internal name for the sub type
+                /// </summary>
                 public Column<string> DocumentType => new Column<string>(_parent, m => m.DocumentType);
 
+                /// <summary>
+                /// The full name of the .Net type that was persisted
+                /// </summary>
                 public Column<string> DotNetType => new Column<string>(_parent, m => m.DotNetType);
 
+                /// <summary>
+                /// Optional metadata describing the correlation id for a
+                /// unit of work
+                /// </summary>
                 public Column<string> CorrelationId => new Column<string>(_parent, m => m.CorrelationId);
+
+                /// <summary>
+                /// Optional metadata describing the correlation id for a
+                /// unit of work
+                /// </summary>
                 public Column<string> CausationId => new Column<string>(_parent, m => m.CausationId);
+
+                /// <summary>
+                /// Optional metadata describing the user name or
+                /// process name for this unit of work
+                /// </summary>
                 public Column<string> LastModifiedBy => new Column<string>(_parent, m => m.LastModifiedBy);
 
+                /// <summary>
+                /// Optional, user defined headers
+                /// </summary>
                 public Column<Dictionary<string, object>> Headers => new Column<Dictionary<string, object>>(_parent, m => m.Headers);
 
                 public class Column<TProperty>

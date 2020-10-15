@@ -19,6 +19,8 @@ namespace Marten.Storage.Metadata
 
     public abstract class MetadataColumn : TableColumn
     {
+        // TODO -- there's a lot of duplication in the codegen across these columns
+
         public Type DotNetType { get; }
 
         protected MetadataColumn(string name, string type, Type dotNetType) : base(name, type)
