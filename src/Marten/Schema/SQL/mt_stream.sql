@@ -1,26 +1,13 @@
 DROP TABLE IF EXISTS {databaseSchema}.mt_streams CASCADE;
 CREATE TABLE {databaseSchema}.mt_streams
 (
-    id
-    uuid
-    CONSTRAINT
-    pk_mt_streams
-    PRIMARY
-    KEY,
-    type
-    varchar
-(
-    100
-) NULL,
+    id uuid CONSTRAINT pk_mt_streams PRIMARY KEY,
+    type varchar (100) NULL,
     version integer NOT NULL,
-    timestamp timestamptz default
-(
-    now
-(
-)) NOT NULL,
+    timestamp timestamptz default (now()) NOT NULL,
     snapshot jsonb,
     snapshot_version integer
-    );
+);
 
 DROP SEQUENCE IF EXISTS {databaseSchema}.mt_events_sequence;
 CREATE SEQUENCE {databaseSchema}.mt_events_sequence;
@@ -28,53 +15,16 @@ CREATE SEQUENCE {databaseSchema}.mt_events_sequence;
 DROP TABLE IF EXISTS {databaseSchema}.mt_events;
 CREATE TABLE {databaseSchema}.mt_events
 (
-    seq_id
-    bigint
-    CONSTRAINT
-    pk_mt_events
-    PRIMARY
-    KEY,
-    id
-    uuid
-    NOT
-    NULL,
-    stream_id
-    uuid
-    REFERENCES {
-    databaseSchema}
-    .
-    mt_streams
-    ON
-    DELETE
-    CASCADE,
-    version
-    integer
-    NOT
-    NULL,
-    data
-    jsonb
-    NOT
-    NULL,
-    type
-    varchar
-(
-    100
-) NOT NULL,
-    timestamp timestamptz default
-(
-    now
-(
-)) NOT NULL,
-    CONSTRAINT pk_mt_events_stream_and_version UNIQUE
-(
-    stream_id,
-    version
-),
-    CONSTRAINT pk_mt_events_id_unique UNIQUE
-(
-    id
-)
-    );
+    seq_id bigint CONSTRAINT pk_mt_events PRIMARY KEY,
+    id uuid NOT NULL,
+    stream_id uuid REFERENCES {databaseSchema}.mt_streams ON DELETE CASCADE,
+    version integer NOT NULL,
+    data jsonb NOT NULL,
+    type varchar (100) NOT NULL,
+    timestamp timestamptz default (now()) NOT NULL,
+    CONSTRAINT pk_mt_events_stream_and_version UNIQUE (stream_id, version),
+    CONSTRAINT pk_mt_events_id_unique UNIQUE (id)
+);
 
 ALTER SEQUENCE {databaseSchema}.mt_events_sequence OWNED BY {databaseSchema}.mt_events.seq_id;
 
@@ -129,15 +79,8 @@ $$ LANGUAGE plpgsql;
 DROP TABLE IF EXISTS {databaseSchema}.mt_event_progression CASCADE;
 CREATE TABLE {databaseSchema}.mt_event_progression
 (
-    name
-    varchar
-    CONSTRAINT
-    pk_mt_event_progression
-    PRIMARY
-    KEY,
-    last_seq_id
-    bigint
-    NULL
+    name varchar CONSTRAINT pk_mt_event_progression PRIMARY KEY,
+    last_seq_id bigint NULL
 );
 
 
