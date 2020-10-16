@@ -1,0 +1,32 @@
+name: Marten NuGet Manual Publish
+
+on: [workflow_dispatch]
+
+env:
+  config: Release
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  dotnet_core_version: 3.1.x
+
+jobs:
+  publish_job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.dotnet_core_version }}
+
+      - name: Run Pack
+        run: ./build.sh --no-color pack
+        shell: bash
+
+      - name: Publish to NuGet
+        run: |
+          find . -name '*.nupkg' -exec dotnet nuget push "{}" -s https://api.nuget.org/v3/index.json -k ${NUGET_DEPLOY_KEY} \;
+          find . -name '*.snupkg' -exec dotnet nuget push "{}" -s https://api.nuget.org/v3/index.json -k ${NUGET_DEPLOY_KEY} \;
+        shell: bash
