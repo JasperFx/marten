@@ -1,16 +1,15 @@
 using Marten.Linq.SqlGeneration;
 using Marten.Schema.Arguments;
-using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 
 namespace Marten.Linq.Filters
 {
-    public class TenantWhereFragment: ISqlFragment
+    public class CurrentTenantFilter: ISqlFragment
     {
         public static readonly string Filter = $"d.{TenantIdColumn.Name} = :{TenantIdArgument.ArgName}";
 
-        public static readonly TenantWhereFragment Instance = new TenantWhereFragment();
+        public static readonly CurrentTenantFilter Instance = new CurrentTenantFilter();
 
         public void Apply(CommandBuilder builder)
         {

@@ -46,6 +46,11 @@ namespace Marten.Events
 
         public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
 
+        public IDeletion DeleteForDocument(IEvent document, ITenant tenant)
+        {
+            throw new NotSupportedException();
+        }
+
         public void EjectById(IMartenSession session, object id)
         {
             // Nothing

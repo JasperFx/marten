@@ -59,6 +59,49 @@ namespace Marten
         /// <param name="expression"></param>
         void DeleteWhere<T>(Expression<Func<T, bool>> expression);
 
+
+        /// <summary>
+        /// Delete a supplied document in the named tenant id
+        /// </summary>
+        /// <param name="tenantId"></param>
+        /// <param name="document"></param>
+        /// <typeparam name="T"></typeparam>
+        void DeleteInTenant<T>(string tenantId, T document);
+
+        /// <summary>
+        /// Delete a supplied document id and type in the named tenant id
+        /// </summary>
+        /// <param name="tenantId">The tenant id name</param>
+        /// <param name="id">The document id</param>
+        /// <typeparam name="T">The document type</typeparam>
+        void DeleteByIdInTenant<T>(string tenantId, Guid id);
+
+        /// <summary>
+        /// Delete a supplied document id and type in the named tenant id
+        /// </summary>
+        /// <param name="tenantId">The tenant id name</param>
+        /// <param name="id">The document id</param>
+        /// <typeparam name="T">The document type</typeparam>
+        void DeleteByIdInTenant<T>(string tenantId, int id);
+
+        /// <summary>
+        /// Delete a supplied document id and type in the named tenant id
+        /// </summary>
+        /// <param name="tenantId">The tenant id name</param>
+        /// <param name="id">The document id</param>
+        /// <typeparam name="T">The document type</typeparam>
+        void DeleteByIdInTenant<T>(string tenantId, string id);
+
+        /// <summary>
+        /// Delete a supplied document id and type in the named tenant id
+        /// </summary>
+        /// <param name="tenantId">The tenant id name</param>
+        /// <param name="id">The document id</param>
+        /// <typeparam name="T">The document type</typeparam>
+        void DeleteByIdInTenant<T>(string tenantId, long id);
+
+
+
         /// <summary>
         /// Saves all the pending changes and deletions to the server in a single Postgresql transaction.
         /// </summary>
@@ -276,6 +319,9 @@ namespace Marten
         /// <param name="key"></param>
         /// <returns></returns>
         object GetHeader(string key);
+
+
+
     }
 
     public interface ILoadByKeys<TDoc>

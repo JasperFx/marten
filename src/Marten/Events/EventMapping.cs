@@ -231,6 +231,11 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
+        public IDeletion DeleteForDocument(T document, ITenant tenant)
+        {
+            throw new NotSupportedException();
+        }
+
         void IDocumentStorage<T>.EjectById(IMartenSession session, object id)
         {
             // Nothing

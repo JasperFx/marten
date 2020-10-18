@@ -54,6 +54,8 @@ namespace Marten.Internal.Storage
 
         IDeletion DeleteForDocument(T document);
 
+        IDeletion DeleteForDocument(T document, ITenant tenant);
+
 
         void EjectById(IMartenSession session, object id);
         void RemoveDirtyTracker(IMartenSession session, object id);
@@ -62,6 +64,7 @@ namespace Marten.Internal.Storage
     public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
     {
         IDeletion DeleteForId(TId id);
+        IDeletion DeleteForId(TId id, ITenant tenant);
 
         T Load(TId id, IMartenSession session);
         Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);

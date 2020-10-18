@@ -99,6 +99,86 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
+        public void DeleteInTenant<T>(string tenantId, T document)
+        {
+            assertNotDisposed();
+            var tenant = DocumentStore.Tenancy[tenantId];
+            var documentStorage = selectStorage(tenant.Providers.StorageFor<T>());
+
+
+            var deletion = documentStorage.DeleteForDocument(document, tenant);
+            _unitOfWork.Add(deletion);
+
+            documentStorage.Eject(this, document);
+        }
+
+        public void DeleteByIdInTenant<T>(string tenantId, Guid id)
+        {
+            assertNotDisposed();
+
+            var tenant = DocumentStore.Tenancy[tenantId];
+            var storage = (IDocumentStorage<T, Guid>)selectStorage(tenant.Providers.StorageFor<T>());
+
+            var deletion = storage.DeleteForId(id, tenant);
+            _unitOfWork.Add(deletion);
+
+            ejectById<T>(id);
+        }
+
+        public void DeleteByIdInTenant<T>(string tenantId, int id)
+        {
+            assertNotDisposed();
+
+            var tenant = DocumentStore.Tenancy[tenantId];
+            var storage = selectStorage(tenant.Providers.StorageFor<T>());
+
+            IStorageOperation deletion = null;
+            if (storage is IDocumentStorage<T, int> i)
+            {
+                _unitOfWork.Add(i.DeleteForId(id, tenant));
+
+                ejectById<T>(id);
+            }
+            else if (storage is IDocumentStorage<T, long> l)
+            {
+                _unitOfWork.Add(l.DeleteForId(id, tenant));
+
+                ejectById<T>((long)id);
+            }
+            else
+            {
+                throw new DocumentIdTypeMismatchException(storage, typeof(int));
+            }
+        }
+
+        public void DeleteByIdInTenant<T>(string tenantId, string id)
+        {
+            assertNotDisposed();
+
+            var tenant = DocumentStore.Tenancy[tenantId];
+            var storage = (IDocumentStorage<T, string>)selectStorage(tenant.Providers.StorageFor<T>());
+
+
+            var deletion = storage.DeleteForId(id, tenant);
+            _unitOfWork.Add(deletion);
+
+            ejectById<T>(id);
+        }
+
+        public void DeleteByIdInTenant<T>(string tenantId, long id)
+        {
+            assertNotDisposed();
+
+            var tenant = DocumentStore.Tenancy[tenantId];
+            var storage = (IDocumentStorage<T, long>)selectStorage(tenant.Providers.StorageFor<T>());
+
+
+            var deletion = storage.DeleteForId(id, tenant);
+            _unitOfWork.Add(deletion);
+
+            ejectById<T>(id);
+        }
+
         public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
         {
             assertNotDisposed();

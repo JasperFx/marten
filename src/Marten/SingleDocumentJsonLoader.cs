@@ -35,7 +35,7 @@ namespace Marten
             // TODO -- there's some duplication here that should be handled consistently
             if (_storage.TenancyStyle == TenancyStyle.Conjoined)
             {
-                builder.Append($" and {TenantWhereFragment.Filter}");
+                builder.Append($" and {CurrentTenantFilter.Filter}");
                 builder.AddNamedParameter(TenantIdArgument.ArgName, session.Tenant.TenantId);
             }
 

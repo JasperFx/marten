@@ -98,7 +98,7 @@ namespace Marten.Internal.Storage
                 yield return ExcludeSoftDeletedFilter.Instance;
 
             if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
-                yield return new TenantWhereFragment();
+                yield return new CurrentTenantFilter();
         }
 
         // TODO -- there's duplication here w/ DocumentStorage
@@ -106,7 +106,7 @@ namespace Marten.Internal.Storage
         {
             yield return toBasicWhere();
 
-            if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined) yield return new TenantWhereFragment();
+            if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined) yield return new CurrentTenantFilter();
 
             if (_mapping.DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedFilter.Instance;
         }
@@ -194,9 +194,19 @@ namespace Marten.Internal.Storage
             return _parent.DeleteForDocument(document);
         }
 
+        public IDeletion DeleteForDocument(T document, ITenant tenant)
+        {
+            return _parent.DeleteForDocument(document, tenant);
+        }
+
         public IDeletion DeleteForId(TId id)
         {
             return _parent.DeleteForId(id);
+        }
+
+        public IDeletion DeleteForId(TId id, ITenant tenant)
+        {
+            return _parent.DeleteForId(id, tenant);
         }
 
         public T Load(TId id, IMartenSession session)

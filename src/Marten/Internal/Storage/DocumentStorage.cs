@@ -63,8 +63,8 @@ namespace Marten.Internal.Storage
 
             if (document.TenancyStyle == TenancyStyle.Conjoined)
             {
-                _loaderSql += $" and {TenantWhereFragment.Filter}";
-                _loadArraySql += $" and {TenantWhereFragment.Filter}";
+                _loaderSql += $" and {CurrentTenantFilter.Filter}";
+                _loadArraySql += $" and {CurrentTenantFilter.Filter}";
             }
 
             UseOptimisticConcurrency = document.UseOptimisticConcurrency;
@@ -107,7 +107,7 @@ namespace Marten.Internal.Storage
 
             if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
             {
-                yield return new TenantWhereFragment();
+                yield return new CurrentTenantFilter();
             }
         }
 
@@ -115,7 +115,7 @@ namespace Marten.Internal.Storage
         {
             if (_mapping.DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedFilter.Instance;
 
-            if (TenancyStyle == TenancyStyle.Conjoined) yield return new TenantWhereFragment();
+            if (TenancyStyle == TenancyStyle.Conjoined) yield return new CurrentTenantFilter();
         }
 
 
@@ -198,6 +198,53 @@ namespace Marten.Internal.Storage
             return deletion;
         }
 
+        public IDeletion DeleteForDocument(T document, ITenant tenant)
+        {
+            var id = Identity(document);
+
+            var deletion = DeleteForId(id, tenant);
+            deletion.Document = document;
+
+            return deletion;
+        }
+
+        public IDeletion DeleteForId(TId id)
+        {
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                return new Deletion(this)
+                {
+                    Where = new CompoundWhereFragment("and", CurrentTenantFilter.Instance, ByIdFilter(id)),
+                    Id = id
+                };
+            }
+
+            return new Deletion(this)
+            {
+                Where = ByIdFilter(id),
+                Id = id
+            };
+        }
+
+
+        public IDeletion DeleteForId(TId id, ITenant tenant)
+        {
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                return new Deletion(this)
+                {
+                    Where = new CompoundWhereFragment("and", new SpecificTenantFilter(tenant), ByIdFilter(id)),
+                    Id = id
+                };
+            }
+
+            return new Deletion(this)
+            {
+                Where = ByIdFilter(id),
+                Id = id
+            };
+        }
+
         public IOperationFragment DeleteFragment { get; }
 
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
@@ -220,23 +267,6 @@ namespace Marten.Internal.Storage
 
         public IFieldMapping Fields { get; }
 
-        public IDeletion DeleteForId(TId id)
-        {
-            if (TenancyStyle == TenancyStyle.Conjoined)
-            {
-                return new Deletion(this)
-                {
-                    Where = new CompoundWhereFragment("and", TenantWhereFragment.Instance, ByIdFilter(id)),
-                    Id = id
-                };
-            }
-
-            return new Deletion(this)
-            {
-                Where = ByIdFilter(id),
-                Id = id
-            };
-        }
 
         public abstract T Load(TId id, IMartenSession session);
         public abstract Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);
