@@ -1,3 +1,4 @@
+using System;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -69,14 +70,14 @@ namespace Marten.Testing.Bugs
     {
         public static readonly Company[] Companies =
         {
-            new Company { Name = "Netram Ltd." },
-            new Company { Name = "Acme Inc." }
+            new Company { Id = Guid.Parse("2219b6f7-7883-4629-95d5-1a8a6c74b244"), Name = "Netram Ltd." },
+            new Company { Id = Guid.Parse("642a3e95-5875-498e-8ca0-93639ddfebcd"), Name = "Acme Inc." }
         };
 
         public static readonly User[] Users =
         {
-            new User { FirstName = "Danger" , LastName = "Mouse" },
-            new User { FirstName = "Speedy" , LastName = "Gonzales" }
+            new User { Id = Guid.Parse("331c15b4-b7bd-44d6-a804-b6879f99a65f"),FirstName = "Danger" , LastName = "Mouse" },
+            new User { Id = Guid.Parse("9d8ef25a-de9a-41e5-b72b-13f24b735883"), FirstName = "Speedy" , LastName = "Gonzales" }
         };
     }
 
