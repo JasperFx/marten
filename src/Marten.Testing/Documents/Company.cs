@@ -6,7 +6,7 @@ namespace Marten.Testing.Documents
     {
         public Company()
         {
-            Id = Guid.NewGuid();
+           
         }
 
         public Guid Id { get; set; }
