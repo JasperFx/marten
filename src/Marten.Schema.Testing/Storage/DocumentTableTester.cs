@@ -373,11 +373,40 @@ namespace Marten.Schema.Testing.Storage
 
         [Theory]
         [InlineData(StorageStyle.QueryOnly, new string[]{"data"})]
+        [InlineData(StorageStyle.Lightweight, new string[]{"id", "data"})]
+        [InlineData(StorageStyle.IdentityMap, new string[]{"id", "data"})]
+        [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data"})]
+        public void basic_select_columns(StorageStyle style, string[] expected)
+        {
+            theTable.SelectColumns(style)
+                .Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs(expected);
+        }
+
+        [Theory]
+        [InlineData(StorageStyle.QueryOnly, new string[]{"data"})]
         [InlineData(StorageStyle.Lightweight, new string[]{"id", "data", "mt_version"})]
         [InlineData(StorageStyle.IdentityMap, new string[]{"id", "data", "mt_version"})]
         [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data", "mt_version"})]
-        public void basic_select_columns(StorageStyle style, string[] expected)
+        public void basic_select_columns_with_optimistic_versioning(StorageStyle style, string[] expected)
         {
+            theMapping.UseOptimisticConcurrency = true;
+
+            theTable.SelectColumns(style)
+                .Select(x => x.Name)
+                .ShouldHaveTheSameElementsAs(expected);
+        }
+
+
+        [Theory]
+        [InlineData(StorageStyle.QueryOnly, new string[]{"data", "mt_doc_type"})]
+        [InlineData(StorageStyle.Lightweight, new string[]{"id", "data", "mt_doc_type"})]
+        [InlineData(StorageStyle.IdentityMap, new string[]{"id", "data", "mt_doc_type"})]
+        [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data", "mt_doc_type"})]
+        public void select_columns_with_hierarchy(StorageStyle style, string[] expected)
+        {
+            theMapping.SubClasses.AddHierarchy();
+
             theTable.SelectColumns(style)
                 .Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs(expected);
@@ -388,14 +417,16 @@ namespace Marten.Schema.Testing.Storage
         [InlineData(StorageStyle.Lightweight, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
         [InlineData(StorageStyle.IdentityMap, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
         [InlineData(StorageStyle.DirtyTracking, new string[]{"id", "data", "mt_doc_type", "mt_version"})]
-        public void select_columns_with_hierarchy(StorageStyle style, string[] expected)
+        public void select_columns_with_hierarchy_with_optimistic_versioning(StorageStyle style, string[] expected)
         {
             theMapping.SubClasses.AddHierarchy();
+            theMapping.UseOptimisticConcurrency = true;
 
             theTable.SelectColumns(style)
                 .Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs(expected);
         }
+
 
 
     }

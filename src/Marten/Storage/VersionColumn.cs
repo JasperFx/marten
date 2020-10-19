@@ -47,7 +47,7 @@ namespace Marten.Storage
         {
             if (Member != null) return true;
 
-            return storageStyle != StorageStyle.QueryOnly;
+            return storageStyle != StorageStyle.QueryOnly && mapping.UseOptimisticConcurrency;
         }
     }
 }

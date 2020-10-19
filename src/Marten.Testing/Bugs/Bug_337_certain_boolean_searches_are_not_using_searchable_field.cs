@@ -23,8 +23,8 @@ namespace Marten.Testing.Bugs
 
                 var cmd2 = session.Query<Target>().Where(x => !x.Flag).ToCommand();
 
-                cmd1.CommandText.ShouldBe($"select d.id, d.data, d.mt_version from {SchemaName}.mt_doc_target as d where d.flag = :p0");
-                cmd2.CommandText.ShouldBe($"select d.id, d.data, d.mt_version from {SchemaName}.mt_doc_target as d where (d.flag is null or d.flag = False)");
+                cmd1.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d where d.flag = :p0");
+                cmd2.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d where (d.flag is null or d.flag = False)");
             }
         }
 
@@ -41,7 +41,7 @@ namespace Marten.Testing.Bugs
             {
                 var cmd1 = session.Query<Target>().Where(x => x.Flag == false).ToCommand();
 
-                cmd1.CommandText.ShouldBe("select d.id, d.data, d.mt_version from bugs.mt_doc_target as d where CAST(d.data ->> 'Flag' as boolean) = :p0");
+                cmd1.CommandText.ShouldBe("select d.id, d.data from bugs.mt_doc_target as d where CAST(d.data ->> 'Flag' as boolean) = :p0");
             }
         }
     }
