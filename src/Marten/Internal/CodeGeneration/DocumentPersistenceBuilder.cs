@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using LamarCodeGeneration;
 using LamarCompiler;
 using Marten.Internal.Storage;
@@ -50,7 +51,19 @@ namespace Marten.Internal.CodeGeneration
             compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
             compiler.ReferenceAssembly(typeof(T).Assembly);
 
-            compiler.Compile(assembly);
+            try
+            {
+                compiler.Compile(assembly);
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Contains("is inaccessible due to its protection level"))
+                {
+                    throw new InvalidOperationException($"Requested document type '{_mapping.DocumentType.FullNameInCode()}' must be either scoped as 'public' or the assembly holding it must use the {nameof(InternalsVisibleToAttribute)} pointing to 'Marten.Generated'", e);
+                }
+
+                throw;
+            }
 
             var slot = new DocumentProvider<T>
             {
