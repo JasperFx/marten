@@ -108,8 +108,8 @@ namespace Marten.Testing.Linq
         {
             buildUpTargetData();
 
-            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Inner.Number == -2))
-                .Single()
+            theSession.Query<Target>()
+                .Single(x => Enumerable.Any<Target>(x.Children, _ => _.Inner.Number == -2))
                 .Id.ShouldBe(targets[10].Id);
         }
 
@@ -121,8 +121,8 @@ namespace Marten.Testing.Linq
             StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
             buildUpTargetData();
 
-            theSession.Query<Target>().Where(x => x.Children.Any(_ => _.Color == Colors.Green))
-                .Count()
+            theSession.Query<Target>()
+                .Count(x => Enumerable.Any<Target>(x.Children, _ => _.Color == Colors.Green))
                 .ShouldBeGreaterThanOrEqualTo(1);
         }
 

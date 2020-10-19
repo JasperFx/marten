@@ -170,10 +170,10 @@ namespace Marten.Testing.Services.Includes
             using (var query = theStore.QuerySession())
             {
                 User included = null;
-                var issue2 = query.Query<Issue>()
+                var issue2 = query
+                    .Query<Issue>()
                     .Include<User>(x => x.AssigneeId, x => included = x)
-                    .Where(x => x.Tags.Any(t=>t=="DIY"))
-                    .Single();
+                    .Single(x => x.Tags.Any<string>(t=>t=="DIY"));
 
                 SpecificationExtensions.ShouldNotBeNull(included);
                 included.Id.ShouldBe(user.Id);

@@ -683,11 +683,20 @@ namespace Marten.Testing.Linq
             using var query = theStore.QuerySession();
 
             var loaded = query.Query<TargetGroup>()
-                .SelectMany(x => x.Targets).Where(x => x.Color == Colors.Blue)
-                .SelectMany(x => x.Children).OrderBy(x => x.Number).ToArray().Select(x => x.Id).ToArray();
+                .SelectMany(x => x.Targets)
+                .Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children)
+                .OrderBy(x => x.Number)
+                .ToArray()
+                .Select(x => x.Id).ToArray();
 
-            var expected = groups.SelectMany(x => x.Targets).Where(x => x.Color == Colors.Blue)
-                .SelectMany(x => x.Children).OrderBy(x => x.Number).ToArray().Select(x => x.Id).ToArray();
+            var expected = groups
+                .SelectMany(x => x.Targets)
+                .Where(x => x.Color == Colors.Blue)
+                .SelectMany(x => x.Children)
+                .OrderBy(x => x.Number)
+                .ToArray()
+                .Select(x => x.Id).ToArray();
 
             loaded.ShouldBe(expected);
         }

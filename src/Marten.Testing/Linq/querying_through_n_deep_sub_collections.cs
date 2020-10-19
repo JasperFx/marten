@@ -92,7 +92,11 @@ namespace Marten.Testing.Linq
         {
 
 
-            var results = theSession.Query<Top>().Where(x => x.Middles.Any(b => b.Bottoms.Any())).ToList();
+            var results = theSession.Query<Top>()
+                // This is trying to filter on a child collection of a child collection
+                .Where(x => x.Middles.Any(b => b.Bottoms.Any()))
+                .ToList();
+
             results.Any(x => x.Equals(blueBill)).ShouldBeTrue();
             results.Any(x => x.Equals(topNoBottoms)).ShouldBeFalse();
 

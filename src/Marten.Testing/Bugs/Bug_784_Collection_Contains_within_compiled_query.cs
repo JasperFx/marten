@@ -58,7 +58,8 @@ namespace Marten.Testing.Bugs
         {
             public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
-                return q => q.Where(x => x.Flag && x.NumberArray.Contains(Number));
+                return q => q
+                    .Where(x => x.Flag && x.NumberArray.Contains(Number));
             }
 
             public int Number { get; set; }
