@@ -1,4 +1,4 @@
-name: Marten CI build
+name: CI build pg9.6
 
 on:
   push:
@@ -22,23 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    strategy:
-      fail-fast: false
-      matrix:
-        pg: [9.6, 10, 11, 12]
-        include:
-          - pg: 9.6
-            docker-image: mysticmind/postgres-plv8:9.6-1.4
-          - pg: 10
-            docker-image: ionx/postgres-plv8:10.6
-          - pg: 11
-            docker-image: ionx/postgres-plv8:11.5
-          - pg: 12
-            docker-image: oskardudycz/postgres-plv8:12-2
-
     services:
       postgres:
-        image: ${{ matrix.docker-image }}
+        image: mysticmind/postgres-plv8:9.6-1.4
         ports:
           - 5432:5432
         env:
@@ -68,6 +54,13 @@ jobs:
           PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
           docker exec $PG_CONTAINER_NAME psql -U ${{ env.pg_user }} -d ${{ env.pg_db }} -c "CREATE EXTENSION IF NOT EXISTS plv8;"
           docker exec $PG_CONTAINER_NAME psql -U ${{env.pg_user}} -d ${{ env.pg_db }} -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
+        shell: bash
+
+      - name: Optimize database for running tests faster
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker container restart $PG_CONTAINER_NAME
         shell: bash
 
       - name: Build
