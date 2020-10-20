@@ -39,7 +39,6 @@ namespace Marten.Testing.Harness
 
         public void Dispose()
         {
-
             _store?.Dispose();
         }
     }

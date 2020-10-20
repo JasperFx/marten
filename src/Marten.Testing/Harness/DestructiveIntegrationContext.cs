@@ -16,8 +16,9 @@ namespace Marten.Testing.Harness
 
         public override void Dispose()
         {
-            base.Dispose();
             theStore.Advanced.Clean.CompletelyRemoveAll();
+            base.Dispose();
+
         }
     }
 }

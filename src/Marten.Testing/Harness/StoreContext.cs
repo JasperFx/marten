@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Marten.Testing.Harness
@@ -27,7 +28,10 @@ namespace Marten.Testing.Harness
             Thread.CurrentThread.CurrentUICulture = _originalCulture;
 #endif
 
-            _session?.Dispose();
+            foreach (var disposable in Disposables)
+            {
+                disposable.Dispose();
+            }
         }
 
         /// <summary>
@@ -41,6 +45,7 @@ namespace Marten.Testing.Harness
         protected T Fixture { get; }
 
         protected IDocumentSession _session;
+        protected readonly IList<IDisposable> Disposables = new List<IDisposable>();
 
         protected IDocumentSession theSession
         {
@@ -49,6 +54,7 @@ namespace Marten.Testing.Harness
                 if (_session == null)
                 {
                     _session = theStore.OpenSession(DocumentTracking);
+                    Disposables.Add(_session);
                 }
 
                 return _session;

@@ -42,8 +42,6 @@ namespace Marten.Testing.Harness
     {
         private DocumentStore _store;
 
-        protected readonly IList<IDisposable> Disposables = new List<IDisposable>();
-
         public IntegrationContext(DefaultStoreFixture fixture) : base(fixture)
         {
 
@@ -60,8 +58,13 @@ namespace Marten.Testing.Harness
         {
             _overrodeStore = true;
 
-            _session?.Dispose();
-            _session = null;
+            if (_session != null)
+            {
+                _session.Dispose();
+                Disposables.Remove(_session);
+                _session = null;
+            }
+
 
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
@@ -74,6 +77,7 @@ namespace Marten.Testing.Harness
             configure(options);
 
             _store = new DocumentStore(options);
+            Disposables.Add(_store);
 
             _store.Advanced.Clean.CompletelyRemoveAll();
 
@@ -104,18 +108,11 @@ namespace Marten.Testing.Harness
 
         public override void Dispose()
         {
-            foreach (var disposable in Disposables)
-            {
-                disposable.Dispose();
-            }
-
             if (_overrodeStore)
             {
                 Fixture.Store.Advanced.Clean.CompletelyRemoveAll();
             }
 
-            _session?.Dispose();
-            _store?.Dispose();
             base.Dispose();
         }
     }

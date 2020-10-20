@@ -16,7 +16,7 @@ namespace Marten.Testing.Harness
         private readonly string _schemaName;
         private DocumentStore _store;
         private IDocumentSession _session;
-        private readonly IList<IDisposable> _stores = new List<IDisposable>();
+        private readonly IList<IDisposable> _disposables = new List<IDisposable>();
 
         public string SchemaName => _schemaName;
 
@@ -52,7 +52,7 @@ namespace Marten.Testing.Harness
 
             var store = new DocumentStore(options);
 
-            _stores.Add(store);
+            _disposables.Add(store);
 
             return store;
         }
@@ -75,6 +75,8 @@ namespace Marten.Testing.Harness
             {
                 _store.Advanced.Clean.CompletelyRemoveAll();
             }
+
+            _disposables.Add(_store);
 
             return _store;
         }
@@ -99,6 +101,7 @@ namespace Marten.Testing.Harness
                 if (_session == null)
                 {
                     _session = theStore.LightweightSession();
+                    _disposables.Add(_session);
                 }
 
                 return _session;
@@ -107,12 +110,10 @@ namespace Marten.Testing.Harness
 
         public void Dispose()
         {
-            foreach (var disposable in _stores)
+            foreach (var disposable in _disposables)
             {
                 disposable.Dispose();
             }
-            _session?.Dispose();
-            _store?.Dispose();
         }
 
 

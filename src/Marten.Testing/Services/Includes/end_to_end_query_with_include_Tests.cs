@@ -695,20 +695,17 @@ namespace Marten.Testing.Services.Includes
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3);
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
-            using (var query = theStore.QuerySession())
-            {
-                var dict = new Dictionary<Guid, User>();
+            using var query = theStore.QuerySession();
 
-                await query.Query<Issue>().Include(x => x.AssigneeId, dict).ToListAsync().ConfigureAwait(false);
+            var dict = new Dictionary<Guid, User>();
 
-                dict.Count.ShouldBe(2);
-                dict.ContainsKey(user1.Id).ShouldBeTrue();
-                dict.ContainsKey(user2.Id).ShouldBeTrue();
-            }
+            await query.Query<Issue>().Include(x => x.AssigneeId, dict).ToListAsync().ConfigureAwait(false);
 
-
+            dict.Count.ShouldBe(2);
+            dict.ContainsKey(user1.Id).ShouldBeTrue();
+            dict.ContainsKey(user2.Id).ShouldBeTrue();
         }
 
         // SAMPLE: multiple_include
