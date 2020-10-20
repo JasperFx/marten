@@ -11,7 +11,7 @@ namespace Marten.Testing.Harness
     /// Use this if the tests in a fixture are going to use
     /// all custom StoreOptions configuration
     /// </summary>
-    public abstract class OneOffConfigurationsContext
+    public abstract class OneOffConfigurationsContext : IDisposable
     {
         private readonly string _schemaName;
         private DocumentStore _store;
