@@ -2,8 +2,9 @@ trigger:
   batch: true
   branches:
     include:
-      - master
-      - refs/tags/*
+#       - master
+#       - refs/tags/*
+        - branch_not_found
 
 resources:
   containers:
