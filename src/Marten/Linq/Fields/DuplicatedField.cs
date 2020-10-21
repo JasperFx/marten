@@ -41,6 +41,10 @@ namespace Marten.Linq.Fields
                     _parseObject = expression =>
                     {
                         var raw = expression.Value();
+                        if (raw == null)
+                        {
+                            return null;
+                        }
                         return Enum.GetName(FieldType, raw);
                     };
                 }
