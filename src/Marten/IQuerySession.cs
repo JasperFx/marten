@@ -55,6 +55,25 @@ namespace Marten
         T Load<T>(Guid id);
 
         /// <summary>
+        /// Load or find a single document of type T with an id of type TId
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        T Load<T, TId>(TId id);
+
+        /// <summary>
+        /// Asynchronously load or find a single document of type T with an id of type TId
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<T> LoadAsync<T, TId>(TId id, CancellationToken token = default(CancellationToken));
+
+        /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -218,6 +237,22 @@ namespace Marten
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <returns></returns>
+        IReadOnlyList<T> LoadMany<T, TId>(params TId[] ids);
+
+        /// <summary>
+        /// Load or find multiple documents by id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <returns></returns>
+        IReadOnlyList<T> LoadMany<T, TId>(IEnumerable<TId> ids);
+
+        /// <summary>
+        /// Load or find multiple documents by id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids);
 
@@ -274,6 +309,22 @@ namespace Marten
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <returns></returns>
+        Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(params TId[] ids);
+
+        /// <summary>
+        /// Load or find multiple documents by id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <returns></returns>
+        Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(IEnumerable<TId> ids);
+
+        /// <summary>
+        /// Load or find multiple documents by id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids);
 
@@ -325,6 +376,22 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<long> ids);
+
+        /// <summary>
+        /// Load or find multiple documents by id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <returns></returns>
+        Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(CancellationToken token, params TId[] ids);
+
+        /// <summary>
+        /// Load or find multiple documents by id
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TId"></typeparam>
+        /// <returns></returns>
+        Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(CancellationToken token, IEnumerable<TId> ids);
 
         /// <summary>
         /// Directly load the persisted JSON data for documents by Id

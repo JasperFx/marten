@@ -14,6 +14,7 @@ using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Marten.Schema.Identity.StronglyTyped;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Util;
@@ -133,14 +134,19 @@ namespace Marten.Schema
             set
             {
                 _idMember = value;
-
-                if (_idMember != null && !_idMember.GetMemberType()
-                    .IsOneOf(typeof(int), typeof(Guid), typeof(long), typeof(string)))
-                    throw new ArgumentOutOfRangeException(nameof(IdMember),
-                        "Id members must be an int, long, Guid, or string");
-
+                
                 if (_idMember != null)
                 {
+                    var idMemberType = _idMember.GetMemberType();
+                    if (!idMemberType.IsOneOf(PrimitiveIdTypes.Supported))
+                    {
+                        if (!TypeMappings.HasTypeMapping(idMemberType))
+                        {
+                            throw new ArgumentOutOfRangeException(nameof(IdMember),
+                                    "Strongly Typed Id members must be registered before use through store.UseStronglyTypedId"); 
+                        }
+                    }
+
                     removeIdField();
 
                     var idField = new IdField(_idMember);

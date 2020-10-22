@@ -189,6 +189,22 @@ namespace Marten.Internal.Sessions
             return document;
         }
 
+        public T Load<T, TId>(TId id)
+        {
+            assertNotDisposed();
+
+            var document = storageFor<T, TId>().Load(id, this);
+            return document;
+        }
+
+        public async Task<T> LoadAsync<T, TId>(TId id, CancellationToken token = default(CancellationToken))
+        {
+            assertNotDisposed();
+
+            var document = await storageFor<T, TId>().LoadAsync(id, this, token).ConfigureAwait(false);
+            return document;
+        }
+
         public async Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken))
         {
             assertNotDisposed();
@@ -318,6 +334,12 @@ namespace Marten.Internal.Sessions
 
         }
 
+        public IReadOnlyList<T> LoadMany<T, TId>(IEnumerable<TId> ids)
+        {
+            assertNotDisposed();
+            return storageFor<T, TId>().LoadMany(ids.ToArray(), this);
+        }
+
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids)
         {
             assertNotDisposed();
@@ -329,6 +351,12 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
             return storageFor<T, string>().LoadManyAsync(ids.ToArray(), this, default(CancellationToken));
+        }
+
+        public Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(IEnumerable<TId> ids)
+        {
+            assertNotDisposed();
+            return storageFor<T, TId>().LoadManyAsync(ids.ToArray(), this, default(CancellationToken));
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids)
@@ -417,6 +445,12 @@ namespace Marten.Internal.Sessions
 
         }
 
+        public IReadOnlyList<T> LoadMany<T, TId>(params TId[] ids)
+        {
+            assertNotDisposed();
+            return storageFor<T, TId>().LoadMany(ids, this);
+        }
+
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params long[] ids)
         {
             assertNotDisposed();
@@ -428,6 +462,12 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
             return storageFor<T, long>().LoadManyAsync(ids.ToArray(), this, default(CancellationToken));
+        }
+
+        public Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(params TId[] ids)
+        {
+            assertNotDisposed();
+            return storageFor<T, TId>().LoadManyAsync(ids, this, default(CancellationToken));
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids)
@@ -442,7 +482,17 @@ namespace Marten.Internal.Sessions
             return storageFor<T, long>().LoadManyAsync(ids.ToArray(), this, token);
         }
 
+        public Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(CancellationToken token, params TId[] ids)
+        {
+            assertNotDisposed();
+            return storageFor<T, TId>().LoadManyAsync(ids, this, token);
+        }
 
+        public Task<IReadOnlyList<T>> LoadManyAsync<T, TId>(CancellationToken token, IEnumerable<TId> ids)
+        {
+            assertNotDisposed();
+            return storageFor<T, TId>().LoadManyAsync(ids.ToArray(), this, token);
+        }
 
 
         public IReadOnlyList<T> LoadMany<T>(params Guid[] ids)
