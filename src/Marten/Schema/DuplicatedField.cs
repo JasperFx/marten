@@ -41,6 +41,12 @@ namespace Marten.Schema
                     _parseObject = expression =>
                     {
                         var raw = expression.Value();
+
+                        if (raw == null)
+                        {
+                            return null;
+                        }
+
                         return Enum.GetName(MemberType, raw);
                     };
                 }
