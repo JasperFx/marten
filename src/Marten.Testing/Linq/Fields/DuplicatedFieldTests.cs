@@ -62,6 +62,25 @@ namespace Marten.Testing.Linq.Fields
             field.GetValueForCompiledQueryParameter(constant).ShouldBe(Colors.Blue.ToString());
         }
 
+
+        [Fact]
+        public void enum_field_allows_null()
+        {
+            var options = new StoreOptions();
+            options.Serializer(new JsonNetSerializer
+            {
+                EnumStorage = EnumStorage.AsString
+            });
+
+            var field = DuplicatedField.For<Target>(options, x => x.Color);
+            field.UpsertArgument.DbType.ShouldBe(NpgsqlDbType.Varchar);
+            field.UpsertArgument.PostgresType.ShouldBe("varchar");
+
+            var constant = Expression.Constant(null);
+
+            field.GetValueForCompiledQueryParameter(constant).ShouldBe(null);
+        }
+
         [Theory]
         [InlineData(EnumStorage.AsInteger, "color = CAST(data ->> 'Color' as integer)")]
         [InlineData(EnumStorage.AsString, "color = data ->> 'Color'")]
