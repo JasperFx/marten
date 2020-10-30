@@ -83,7 +83,7 @@ namespace Marten.Linq
                 switch (node.NodeType)
                 {
                     case ExpressionType.Not:
-                        if (node.Operand is SubQueryExpression)
+                        if (node.Operand is SubQueryExpression || node.Operand is BinaryExpression)
                         {
                             var nested = new WhereClauseVisitor(_parent, _mapping);
                             nested.Visit(node.Operand);
