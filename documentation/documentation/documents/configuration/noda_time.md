@@ -26,7 +26,3 @@ By default it also sets up the `JsonNetSerializer` options (see more details in 
 If you're using custom Json serializer or you'd like to maintain fully its configuration then you can set disable default configuration by setting `shouldConfigureJsonNetSerializer` parameter to `false`. By changing this setting you need to configure NodaTime Json serialization by yourself.
 
 <[sample:noda_time_setup_without_json_net_serializer_configuration]>
-
-<div class="alert alert-warning">
-By using NodaTime plugin - you're opting out of DateTime type handling. Using DateTime in your Document will end up getting NotSupportedException exception.
-</div>

@@ -66,7 +66,7 @@ namespace Marten.NodaTime.Testing.Acceptance
         }
 
         [Fact]
-        public void can_query_document_with_noda_time_types()
+        public void can_query_document_with_noda_time_types_and_bcl_types()
         {
             StoreOptions(_ =>
             {
@@ -75,6 +75,7 @@ namespace Marten.NodaTime.Testing.Acceptance
             });
 
             var dateTime = DateTime.UtcNow;
+            var dateTimeOffset = new DateTimeOffset(dateTime);
             var localDateTime = LocalDateTime.FromDateTime(dateTime);
             var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
             var testDoc = TargetWithDates.Generate(dateTime);
@@ -129,7 +130,35 @@ namespace Marten.NodaTime.Testing.Acceptance
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000)),
-                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000))
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000)),
+
+                    // BCL DateTime
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime == dateTime),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime < dateTime.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime <= dateTime.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime > dateTime.AddTicks(-1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTime >= dateTime.AddTicks(-1000)),
+
+                    // BCL Nullable DateTime
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTime == dateTime),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTime < dateTime.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTime <= dateTime.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTime > dateTime.AddTicks(-1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTime >= dateTime.AddTicks(-1000)),
+
+                    // BCL DateTimeOffset
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTimeOffset == dateTimeOffset),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTimeOffset < dateTimeOffset.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTimeOffset <= dateTimeOffset.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTimeOffset > dateTimeOffset.AddTicks(-1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.DateTimeOffset >= dateTimeOffset.AddTicks(-1000)),
+
+                    // BCL Nullable DateTimeOffset
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTimeOffset == dateTimeOffset),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTimeOffset < dateTimeOffset.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTimeOffset <= dateTimeOffset.AddTicks(1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTimeOffset > dateTimeOffset.AddTicks(-1000)),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableDateTimeOffset >= dateTimeOffset.AddTicks(-1000)),
                 };
 
                 results.ShouldAllBe(x => x.Equals(testDoc));
