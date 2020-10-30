@@ -8,7 +8,7 @@ namespace Marten.Testing.Linq
 {
     public class query_negating_predicate_with_binary_operator_tests : IntegrationContext
     {
-        private class Player
+        public class Player
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
