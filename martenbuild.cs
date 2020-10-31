@@ -46,7 +46,7 @@ namespace martenbuild
                     $"build src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration}");
 
                 Run("dotnet",
-                    $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --configuration {configuration}");
+                    $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {framework} --configuration {configuration}");
             });
 
             Target("compile-noda-time", DependsOn("clean"), () =>
