@@ -27,7 +27,9 @@ Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL fro
 
 ## .NET Version Compatibility
 
-Marten 4.xx targets `netstandard2.0` & `net5.0` and is compatible with `.NET Core 2.x`, `.NET Core 3.x` and `.NET 5+`.
+Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform compatibility.
+
+4.xx targets `netstandard2.0` & `net5.0` and is compatible with `.NET Core 2.x`, `.NET Core 3.x` and `.NET 5+`.
 
 <[info]>
 .NET Framework support was dropped as part of the v4 release, if you require .NET Framework support, please use the latest Marten 3.xx release.
