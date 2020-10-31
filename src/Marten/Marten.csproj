@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
-        <VersionPrefix>3.13.1</VersionPrefix>
+        <VersionPrefix>3.13.2</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
         <AssemblyName>Marten</AssemblyName>
