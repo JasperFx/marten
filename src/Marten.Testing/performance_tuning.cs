@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,11 +9,6 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
-
-
-#if NET461
-using HtmlTags;
-#endif
 
 namespace Marten.Testing
 {

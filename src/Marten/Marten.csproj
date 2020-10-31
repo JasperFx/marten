@@ -3,7 +3,7 @@
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
         <VersionPrefix>4.0.0-alpha</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFrameworks>netstandard2.0;net5.0</TargetFrameworks>
         <AssemblyName>Marten</AssemblyName>
         <PackageId>Marten</PackageId>
         <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
@@ -17,10 +17,6 @@
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <LangVersion>8</LangVersion>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net462'">
-        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.2/1.0.1/lib/net462/</FrameworkPathOverride>
-        <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
@@ -44,34 +40,11 @@
         <PackageReference Include="Npgsql.Json.NET" Version="[4.1.5,4.2.0)" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
         <PackageReference Include="Baseline" Version="2.1.0" />
-        <PackageReference Include="System.Memory" Version="4.5.3" />
-        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.10.0" />
+        <PackageReference Include="System.Memory" Version="4.5.4" />
+        <PackageReference Include="System.Threading.Tasks.Dataflow" Version="4.11.1" />
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.1.0, 6.0.0]" />
     </ItemGroup>
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-        <Reference Include="System.Data" />
-        <Reference Include="System.Threading.Tasks" />
-        <Reference Include="System" />
-        <Reference Include="System.Runtime" />
-        <Reference Include="Microsoft.CSharp" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
-        <Reference Include="System.Transactions" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net462'">
-        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
-    </ItemGroup>
-
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.0.0, 3.0.0)" />
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.0.0, 6.0.0)" />
-    </ItemGroup>
-
-
 
     <PropertyGroup>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

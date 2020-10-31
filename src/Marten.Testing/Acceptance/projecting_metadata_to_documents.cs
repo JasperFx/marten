@@ -77,7 +77,7 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 var loaded = session.Load<DocWithMeta>(doc.Id);
-                loaded.LastModified.ShouldNotBe(DateTime.MinValue);
+                loaded.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
             }
         }
 
@@ -163,7 +163,7 @@ namespace Marten.Testing.Acceptance
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
                 userQuery.Description = "updated via a user SQL query";
-                userQuery.LastModified.ShouldNotBe(DateTime.MinValue);
+                userQuery.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
                 lastMod = userQuery.LastModified;
                 session.Store(userQuery);
                 session.SaveChanges();
@@ -207,7 +207,7 @@ namespace Marten.Testing.Acceptance
 
                 var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
                 loaded.TenantId.ShouldBe(tenant);
-                loaded.LastModified.ShouldNotBe(DateTime.MinValue); // it's pretty well impossible to compare timestamps
+                loaded.LastModified.ShouldNotBe(DateTimeOffset.MinValue); // it's pretty well impossible to compare timestamps
             }
         }
 

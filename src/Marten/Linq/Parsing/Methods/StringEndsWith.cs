@@ -11,10 +11,7 @@ namespace Marten.Linq.Parsing.Methods
         public StringEndsWith() : base(
             ReflectionHelper.GetMethod<string>(s => s.EndsWith(null)),
             ReflectionHelper.GetMethod<string>(s => s.EndsWith(null, StringComparison.CurrentCulture))
-#if NET461
-            , ReflectionHelper.GetMethod<string>(s => s.EndsWith(null, true, null))
-#endif
-            )
+        )
         {
         }
 
@@ -23,35 +20,18 @@ namespace Marten.Linq.Parsing.Methods
             return "%" + value;
         }
 
-#if NET461
-
-        protected override bool IsCaseInsensitiveComparison(MethodCallExpression expression)
-        {
-            if (AreMethodsEqual(expression.Method, ReflectionHelper.GetMethod<string>(s => s.StartsWith(null, true, null))))
-            {
-                var constant = expression.Arguments[1] as ConstantExpression;
-                if (constant != null && constant.Value is bool)
-                    return (bool)constant.Value;
-            }
-            return base.IsCaseInsensitiveComparison(expression);
-        }
-
-#else
         private static readonly StringComparison[] CaseInsensitiveComparisons = {StringComparison.OrdinalIgnoreCase, StringComparison.CurrentCultureIgnoreCase};
 
         protected override bool IsCaseInsensitiveComparison(MethodCallExpression expression)
         {
             if (AreMethodsEqual(expression.Method, ReflectionHelper.GetMethod<string>(s => s.StartsWith(null, StringComparison.OrdinalIgnoreCase))))
             {
-                var constant = expression.Arguments[1] as ConstantExpression;
-                if (constant != null && constant.Value is StringComparison)
+                if (expression.Arguments[1] is ConstantExpression constant && constant.Value is StringComparison comparison)
                 {
-                    var comparison = (StringComparison) constant.Value;
                     return CaseInsensitiveComparisons.Any(x => x == comparison);
                 }
             }
             return base.IsCaseInsensitiveComparison(expression);
         }
-#endif
     }
 }
