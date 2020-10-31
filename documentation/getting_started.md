@@ -19,11 +19,17 @@ Or, using .Net CLI
 dotnet add package Marten
 </pre>
 
-The next step is to get access to a PostgreSQL **9.5+** database schema. If you want to let Marten build database schema objects on the fly at development time, 
+The next step is to get access to a PostgreSQL **9.6+** database schema. If you want to let Marten build database schema objects on the fly at development time, 
 make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements. 
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
 
+
+## .NET Version Compatibility
+
+Marten 4.xx targets `netstandard2.0 & net5.0` and is tested to be compatible with `.NET Core 2.1`, `.NET Core 3.1` and `.NET 5+`.
+
+.NET Framework support was dropped as part of the v4 release, if you require .NET Framework support, use the latest Marten 3.xx release.
 
 ## Adding Marten to a .Net Core Application
 
