@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Marten.Exceptions;
 using Marten.Schema;
@@ -51,6 +52,26 @@ namespace Marten.Testing.Acceptance
                 query.Query<User>().Count().ShouldBe(4);
             }
         }
+#if NET
+        [Fact(Skip="Maybe one day :)")]
+        public void can_insert_records()
+        {
+            var docs = new RecordDocument(Guid.NewGuid(), Guid.NewGuid().ToString());
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(docs);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Query<RecordDocument>().Count().ShouldBe(3);
+            }
+        }
+
+        public record RecordDocument(Guid Id, string Name);
+#endif
 
         [Fact]
         public void insert_sad_path()
