@@ -20,7 +20,7 @@ Before getting started you will need the following in your environment:
 
 **1. .NET Core SDK 5.0+ and the .NET Core 3.1 Runtime**
 
-Available [here](https://dotnet.microsoft.com/download)
+Available [here](https://dotnet.microsoft.com/download) 
 
 **2. PostgreSQL 9.6 or above database with PLV8**
 
