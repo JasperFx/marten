@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
     <AssemblyName>MartenBenchmarks</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>MartenBenchmarks</PackageId>
