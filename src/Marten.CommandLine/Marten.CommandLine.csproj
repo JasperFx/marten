@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Command line tooling for Marten</Description>
-        <VersionPrefix>4.0.0-alpha</VersionPrefix>
+        <VersionPrefix>4.0.0-alpha.2</VersionPrefix>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFramework>netstandard2.1</TargetFramework>
         <AssemblyName>Marten.CommandLine</AssemblyName>
@@ -19,7 +19,7 @@
         <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <Compile Include="..\CommonAssemblyInfo.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
     </ItemGroup>
