@@ -23,7 +23,7 @@ resources:
       image: ionx/postgres-plv8:10.6
       ports:
         - 5432:5432
-    - container: pg9.6
+    - container: pg9_6
       image: mysticmind/postgres-plv8:9.6-1.4
       ports:
         - 5432:5432
@@ -44,8 +44,8 @@ jobs:
       vmImage: 'ubuntu-latest'
     strategy:
       matrix:
-        pg9.6:
-          postgresService: pg9.6
+        pg9_6:
+          postgresService: pg9_6
         pg10:
           postgresService: pg10
         pg11:
