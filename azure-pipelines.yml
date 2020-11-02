@@ -2,9 +2,10 @@ trigger:
   batch: true
   branches:
     include:
-#       - master
-#       - refs/tags/*
-        - branch_not_found
+      - master
+
+pr:
+  - master
 
 resources:
   containers:
@@ -31,13 +32,13 @@ variables:
   config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  dotnet_core_version: 3.1.x
+  dotnet_core_version: 5.0.x
   node_version: 10.x
   pg_db: marten_testing
   marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
 
 jobs:
-  - job: Build
+  - job: Build .NET 5.0
     # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'
@@ -58,7 +59,7 @@ jobs:
         displayName: Install .Net Core
         inputs:
           version: $(dotnet_core_version)
-          performMultiLevelLookup: true
+          includePreviewVersions: true
       - task: NodeTool@0
         displayName: Install Node.js
         inputs:
@@ -71,30 +72,3 @@ jobs:
         displayName: Create db and add plv8 extension
       - script: ./build.sh --no-color ci
         displayName: Build
-  # Publish job will be enabled later
-  # - job: Publish
-  #   dependsOn: Build
-  #   # run publish only if all build jobs succeed and a GitHub tag is created
-  #   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-  #   pool:
-  #     vmImage: 'ubuntu-latest'
-  #   steps:
-  #     - task: DotNetCoreInstaller@0
-  #       displayName: Install .Net Core
-  #       inputs:
-  #         version: $(dotnet_core_version)
-  #     - script: ./build.sh --no-color pack
-  #       displayName: Create NuGet Packages
-  #     - task: NuGetCommand@2
-  #       displayName: Publish packages to NuGet
-  #       inputs:
-  #         command: 'push'
-  #         nuGetFeedType: 'external'
-  #         packagesToPush: '$(Build.Repository.LocalPath)/artifacts/*.nupkg'
-  #         publishFeedCredentials: 'NuGetServiceConnection'
-  #     - task: NuGetCommand@2
-  #       displayName: Publish symbol packages to NuGet
-  #       inputs:
-  #         command: 'push'
-  #         packagesToPush: '$(Build.Repository.LocalPath)/artifacts/*.snupkg'
-  #         publishFeedCredentials: 'NuGetServiceConnection'
