@@ -65,6 +65,7 @@ jobs:
         inputs:
           version: '5.0.x'
           packageType: runtime
+          includePreviewVersions: true
       - task: NodeTool@0
         displayName: Install Node.js
         inputs:
