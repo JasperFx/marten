@@ -17,9 +17,11 @@ namespace martenbuild
         private const string DockerConnectionString =
             "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
+        private const string DefaultTargetFramework = "netcoreapp3.1";
+
         private static void Main(string[] args)
         {
-            var framework = GetFramework();
+            var framework = Environment.GetEnvironmentVariable("target_framework") ?? DefaultTargetFramework;
 
             var configuration = Environment.GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
@@ -170,12 +172,6 @@ namespace martenbuild
                     DeleteDirectory(dir);
                 }
             }
-        }
-
-        private static string GetFramework()
-        {
-            var frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
-            return frameworkName.Replace(",Version=v", "").Replace(".NET", "NET").ToLower();
         }
 
         private static void DeleteDirectory(DirectoryInfo baseDir)
