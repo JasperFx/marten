@@ -18,15 +18,11 @@ Marten also provides .NET developers with an ACID-compliant event store with use
 
 Before getting started you will need the following in your environment:
 
-**1. .NET Core SDK 3.1 (or higher)**
+**1. .NET Core SDK 5.0+ and the .NET Core 3.1 Runtime**
 
-Available [here](https://www.microsoft.com/net/download/core)
+Available [here](https://dotnet.microsoft.com/download) 
 
-**2. .NET Framework 4.6.1 Developer Pack**
-
-Available [here](https://dotnet.microsoft.com/download/thank-you/net461-developer-pack)
-
-**3. PostgreSQL 9.5 or above database with PLV8**
+**2. PostgreSQL 9.6 or above database with PLV8**
 
 The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have
 Docker running on your local box, type `dotnet run -- init-db` at the command line to spin up a Postgresql database with

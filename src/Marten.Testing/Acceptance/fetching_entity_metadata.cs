@@ -37,7 +37,7 @@ namespace Marten.Testing.Acceptance
 
                 metadata.ShouldNotBeNull();
                 metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
-                metadata.LastModified.ShouldNotBe(default(DateTime));
+                metadata.LastModified.ShouldNotBe(default);
                 metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
                 metadata.DocumentType.ShouldBeNull();
                 metadata.Deleted.ShouldBeFalse();
@@ -73,7 +73,7 @@ namespace Marten.Testing.Acceptance
 
             metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
-            metadata.LastModified.ShouldNotBe(default(DateTime));
+            metadata.LastModified.ShouldNotBe(default);
             metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
             metadata.DocumentType.ShouldBe("coffee_shop");
             metadata.Deleted.ShouldBeTrue();

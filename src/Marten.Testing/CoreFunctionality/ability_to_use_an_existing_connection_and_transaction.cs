@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Marten.Services;
@@ -21,7 +21,7 @@ namespace Marten.Testing.CoreFunctionality
             theStore.BulkInsertDocuments(targets);
         }
 
-#if NET461
+
 
         // SAMPLE: passing-in-existing-connections-and-transactions
         public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
@@ -62,7 +62,7 @@ namespace Marten.Testing.CoreFunctionality
         }
 
         // ENDSAMPLE
-#endif
+
 
         [Fact]
         public void enlist_in_transaction_scope()

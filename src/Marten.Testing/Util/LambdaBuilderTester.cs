@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -150,7 +150,7 @@ namespace Marten.Testing.Util
         [Fact]
         public void can_get_the_Enum_GetName_method()
         {
-            SpecificationExtensions.ShouldNotBeNull(typeof(Enum).GetMethod(nameof(Enum.GetName), BindingFlags.Static | BindingFlags.Public));
+            SpecificationExtensions.ShouldNotBeNull(typeof(Enum).GetMethods(BindingFlags.Static | BindingFlags.Public).Single(mi => mi.Name == nameof(Enum.GetName) && !mi.IsGenericMethod));
         }
 
         [Fact]

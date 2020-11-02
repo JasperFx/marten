@@ -11,10 +11,7 @@ namespace Marten.Linq.Parsing
         public StringStartsWith() : base(
             ReflectionHelper.GetMethod<string>(s => s.StartsWith(null)),
             ReflectionHelper.GetMethod<string>(s => s.StartsWith(null, StringComparison.CurrentCulture))
-#if NET461
-            , ReflectionHelper.GetMethod<string>(s => s.StartsWith(null, true, null))
-#endif
-            )
+        )
         {
         }
 
@@ -22,20 +19,5 @@ namespace Marten.Linq.Parsing
         {
             return value + "%";
         }
-
-#if NET461
-
-        protected override bool IsCaseInsensitiveComparison(MethodCallExpression expression)
-        {
-            if (AreMethodsEqual(expression.Method, ReflectionHelper.GetMethod<string>(s => s.StartsWith(null, true, null))))
-            {
-                var constant = expression.Arguments[1] as ConstantExpression;
-                if (constant != null && constant.Value is bool)
-                    return (bool)constant.Value;
-            }
-            return base.IsCaseInsensitiveComparison(expression);
-        }
-
-#endif
     }
 }

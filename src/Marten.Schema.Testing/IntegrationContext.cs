@@ -19,22 +19,12 @@ namespace Marten.Schema.Testing
 
         private IDocumentSession _session;
 
-#if NET461
-        private CultureInfo _originalCulture;
-#endif
-
         protected IntegrationContext(ITestOutputHelper output = null)
         {
             _output = output;
 
             UseDefaultSchema();
             _store.Advanced.Clean.CompletelyRemoveAll();
-
-#if NET461
-            _originalCulture = Thread.CurrentThread.CurrentCulture;
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
-#endif
         }
 
         protected bool EnableCommandLogging { get; set; }
@@ -132,10 +122,6 @@ namespace Marten.Schema.Testing
         public virtual void Dispose()
         {
             _store?.Dispose();
-#if NET461
-            Thread.CurrentThread.CurrentCulture = _originalCulture;
-            Thread.CurrentThread.CurrentUICulture = _originalCulture;
-#endif
         }
     }
 

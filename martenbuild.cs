@@ -24,7 +24,7 @@ namespace martenbuild
             var configuration = Environment.GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
 
-            Target("ci", DependsOn("connection", "default", "pack"));
+            Target("ci", DependsOn("connection", "default"));
 
             Target("default", DependsOn("mocha", "test", "storyteller"));
 
