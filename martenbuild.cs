@@ -21,9 +21,9 @@ namespace martenbuild
 
         private static void Main(string[] args)
         {
-            var framework = Environment.GetEnvironmentVariable("target_framework") ?? DefaultTargetFramework;
+            var framework = GetEnvironmentVariable("target_framework") ?? DefaultTargetFramework;
 
-            var configuration = Environment.GetEnvironmentVariable("config");
+            var configuration = GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
 
             Target("ci", DependsOn("connection", "default"));
@@ -34,7 +34,7 @@ namespace martenbuild
                 EnsureDirectoriesDeleted("results", "artifacts"));
 
             Target("connection", () =>
-                File.WriteAllText("src/Marten.Testing/connection.txt", Environment.GetEnvironmentVariable("connection")));
+                File.WriteAllText("src/Marten.Testing/connection.txt", GetEnvironmentVariable("connection")));
 
             Target("install", () =>
                 RunNpm("install"));
@@ -91,7 +91,7 @@ namespace martenbuild
 
             Target("recordbenchmarks", () =>
             {
-                var profile = Environment.GetEnvironmentVariable("profile");
+                var profile = GetEnvironmentVariable("profile");
 
                 if (!string.IsNullOrEmpty(profile))
                 {
@@ -188,5 +188,20 @@ namespace martenbuild
 
         private static void RunNpm(string args) =>
             Run("npm", args, windowsName: "cmd.exe", windowsArgs: $"/c npm {args}");
+
+        private static void GetEnvironmentVariable(variableName)
+        {
+            var val = Environment.GetEnvironmentVariable(variableName);
+
+            // Azure devops converts environment variable to upper case and dot to underscore
+            // https://docs.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=yaml%2Cbatch
+            // Attempt to fetch variable by updating it
+            if (string.IsNullOrEmpty(variableName))
+            {
+                val = Environment.GetEnvironmentVariable(variableName.ToUpper().Replace(".", "_"));
+            }
+
+            return val;
+        }
     }
 }
