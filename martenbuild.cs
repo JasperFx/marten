@@ -21,7 +21,8 @@ namespace martenbuild
 
         private static void Main(string[] args)
         {
-            var framework = GetEnvironmentVariable("target_framework") ?? DefaultTargetFramework;
+            var framework = GetEnvironmentVariable("target_framework");
+            framework = string.IsNullOrEmpty(framework) ? DefaultTargetFramework: framework;
 
             var configuration = GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
@@ -189,17 +190,19 @@ namespace martenbuild
         private static void RunNpm(string args) =>
             Run("npm", args, windowsName: "cmd.exe", windowsArgs: $"/c npm {args}");
 
-        private static void GetEnvironmentVariable(variableName)
+        private static string GetEnvironmentVariable(string variableName)
         {
             var val = Environment.GetEnvironmentVariable(variableName);
 
             // Azure devops converts environment variable to upper case and dot to underscore
             // https://docs.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=yaml%2Cbatch
             // Attempt to fetch variable by updating it
-            if (string.IsNullOrEmpty(variableName))
+            if (string.IsNullOrEmpty(val))
             {
                 val = Environment.GetEnvironmentVariable(variableName.ToUpper().Replace(".", "_"));
             }
+
+            Console.WriteLine(val);
 
             return val;
         }
