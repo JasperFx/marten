@@ -1,4 +1,4 @@
-name: CI build pg9.6
+name: build_net3.1 pg9.6
 
 on:
   push:

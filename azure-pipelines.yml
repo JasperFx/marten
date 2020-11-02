@@ -57,10 +57,6 @@ jobs:
       postgres: $[ variables['postgresService'] ]
     steps:
       - task: UseDotNet@2
-        displayName: Install .Net Core 3.1.x
-        inputs:
-          version: 3.1.x
-      - task: UseDotNet@2
         displayName: Install .Net Core 5.0.x
         inputs:
           version: $(dotnet_core_version)

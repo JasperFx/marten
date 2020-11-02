@@ -1,4 +1,4 @@
-name: CI build pg12
+name: build_net3.1 pg12
 
 on:
   push:
