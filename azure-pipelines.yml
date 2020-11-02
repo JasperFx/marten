@@ -38,7 +38,7 @@ variables:
   marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
 
 jobs:
-  - job: build-net5
+  - job: build_net5
     # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'
