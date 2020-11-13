@@ -98,7 +98,7 @@ namespace Marten.Schema.BulkLoading
         {
             var tempTable = StorageTable.Name + "_temp";
 
-            return $"create temporary table {tempTable} as select * from {StorageTable.QualifiedName};truncate table {_tempTableName}";
+            return $"create temporary table {tempTable} as select * from {StorageTable.QualifiedName} limit 0";
         }
 
         public DbObjectName StorageTable => _mapping.Table;
