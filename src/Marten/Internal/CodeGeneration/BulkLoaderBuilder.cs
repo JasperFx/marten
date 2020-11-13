@@ -97,7 +97,7 @@ namespace Marten.Internal.CodeGeneration
 
         public string CreateTempTableForCopying()
         {
-            return $"create temporary table {_tempTable} as select * from {_mapping.TableName.QualifiedName};truncate table {_tempTable}";
+            return $"create temporary table {_tempTable} as select * from {_mapping.TableName.QualifiedName} limit 0";
         }
 
 
