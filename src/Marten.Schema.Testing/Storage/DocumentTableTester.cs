@@ -87,7 +87,7 @@ namespace Marten.Schema.Testing.Storage
 
             if (!string.IsNullOrEmpty(updateDDL))
             {
-                _conn.CreateCommand().ExecuteNonQuery();
+                _conn.CreateCommand(updateDDL).ExecuteNonQuery();
             }
         }
 
