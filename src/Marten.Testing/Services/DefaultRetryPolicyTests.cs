@@ -23,7 +23,7 @@ namespace Marten.Testing.Services
                 }
             });
             using var connection = new ManagedConnection(new ConnectionSource(), retryPolicyDecorator);
-            var cmd = new NpgsqlCommand();
+            var cmd = new NpgsqlCommand("select 1");
 
             await connection.ExecuteAsync(cmd);
 

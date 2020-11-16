@@ -107,7 +107,7 @@ namespace Marten.Testing.Services
             using (var connection =
                 new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
-                var cmd = new NpgsqlCommand();
+                var cmd = new NpgsqlCommand("select 1");
                 connection.Execute(cmd);
 
                 logger.LastCommand.ShouldBeSameAs(cmd);
