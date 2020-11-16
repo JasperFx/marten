@@ -118,7 +118,7 @@ namespace Marten.Services
 
         public void Rollback()
         {
-            if (Transaction != null && !Transaction.IsCompleted && _mode != CommandRunnerMode.External)
+            if (Transaction != null && _mode != CommandRunnerMode.External)
             {
                 try
                 {
@@ -126,20 +126,27 @@ namespace Marten.Services
                     Transaction.Dispose();
                     Transaction = null;
                 }
+                catch (Exception e) when (e is ObjectDisposedException || e is InvalidOperationException)
+                {
+                    // Transaction already disposed or completed
+                }
                 catch (Exception e)
                 {
                     throw new RollbackException(e);
                 }
                 finally
                 {
-                    Connection.Close();
+                    if (_ownsConnection)
+                    {
+                        Connection.Close();
+                    }
                 }
             }
         }
 
         public async Task RollbackAsync(CancellationToken token)
         {
-            if (Transaction != null && !Transaction.IsCompleted && _mode != CommandRunnerMode.External)
+            if (Transaction != null && _mode != CommandRunnerMode.External)
             {
                 try
                 {
@@ -147,13 +154,20 @@ namespace Marten.Services
                     await Transaction.DisposeAsync().ConfigureAwait(false);
                     Transaction = null;
                 }
+                catch (Exception e) when (e is ObjectDisposedException || e is InvalidOperationException)
+                {
+                    // Transaction already disposed or completed
+                }
                 catch (Exception e)
                 {
                     throw new RollbackException(e);
                 }
                 finally
                 {
-                    await Connection.CloseAsync().ConfigureAwait(false);
+                    if (_ownsConnection)
+                    {
+                        await Connection.CloseAsync().ConfigureAwait(false);
+                    }
                 }
             }
         }
