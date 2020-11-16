@@ -83,7 +83,12 @@ namespace Marten.Schema.Testing.Storage
 
             patch.Apply(_conn, autoCreate, new ISchemaObject[] {table});
 
-            _conn.CreateCommand(patch.UpdateDDL).ExecuteNonQuery();
+            var updateDDL = patch.UpdateDDL;
+
+            if (!string.IsNullOrEmpty(updateDDL))
+            {
+                _conn.CreateCommand().ExecuteNonQuery();
+            }
         }
 
         [Theory]
