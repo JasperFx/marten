@@ -20,17 +20,16 @@ namespace Marten.Testing.Services
                 connection.Execute(new NpgsqlCommand("select 1"));
                 connection.RequestCount.ShouldBe(1);
 
-                connection.Execute(new NpgsqlCommand());
+                connection.Execute(new NpgsqlCommand("select 2"));
                 connection.RequestCount.ShouldBe(2);
 
-                connection.Execute(new NpgsqlCommand());
+                connection.Execute(new NpgsqlCommand("select 3"));
                 connection.RequestCount.ShouldBe(3);
 
-                connection.Execute(new NpgsqlCommand());
+                connection.Execute(new NpgsqlCommand("select 4"));
                 connection.RequestCount.ShouldBe(4);
 
-
-                await connection.ExecuteAsync(new NpgsqlCommand());
+                await connection.ExecuteAsync(new NpgsqlCommand("select 5"));
                 connection.RequestCount.ShouldBe(5);
 
             }
@@ -108,7 +107,7 @@ namespace Marten.Testing.Services
             using (var connection =
                 new ManagedConnection(new ConnectionSource(), new NulloRetryPolicy()) {Logger = logger})
             {
-                var cmd = new NpgsqlCommand();
+                var cmd = new NpgsqlCommand("select 1");
                 connection.Execute(cmd);
 
                 logger.LastCommand.ShouldBeSameAs(cmd);
