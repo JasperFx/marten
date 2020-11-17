@@ -18,6 +18,7 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <LangVersion>8</LangVersion>
+        <nullable>enable</nullable>
     </PropertyGroup>
 
     <!--SourceLink specific settings-->
@@ -36,7 +37,7 @@
         <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735</NoWarn>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="2.3.0" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Npgsql.NodaTime" Version="5.0.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
