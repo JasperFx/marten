@@ -64,7 +64,7 @@ namespace Marten.Events
 
             if (_timestamp.HasValue)
             {
-                var timestampParam = sql.AddParameter(_timestamp.Value.MapFromDateTime());
+                var timestampParam = sql.AddParameter(_timestamp.Value);
                 sql.Append(" and timestamp <= :");
                 sql.Append(timestampParam.ParameterName);
             }
