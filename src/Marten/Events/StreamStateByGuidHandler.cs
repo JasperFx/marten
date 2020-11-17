@@ -78,8 +78,8 @@ namespace Marten.Events
             var id = reader.GetFieldValue<T>(0);
             var version = reader.GetFieldValue<int>(1);
             var typeName = reader.IsDBNull(2) ? null : reader.GetFieldValue<string>(2);
-            var timestamp = reader.GetValue(3).MapToDateTime();
-            var created = reader.GetValue(4).MapToDateTime();
+            var timestamp = reader.GetFieldValue<DateTime>(3);
+            var created = reader.GetFieldValue<DateTime>(4);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -95,8 +95,8 @@ namespace Marten.Events
             var id = await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
             var version = await reader.GetFieldValueAsync<int>(1, token).ConfigureAwait(false);
             var typeName = await reader.IsDBNullAsync(2, token).ConfigureAwait(false) ? null : await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
-            var timestamp = await reader.GetFieldValueAsync<object>(3, token).ConfigureAwait(false);
-            var created = await reader.GetFieldValueAsync<object>(4, token).ConfigureAwait(false);
+            var timestamp = await reader.GetFieldValueAsync<DateTime>(3, token).ConfigureAwait(false);
+            var created = await reader.GetFieldValueAsync<DateTime>(4, token).ConfigureAwait(false);
 
             Type aggregateType = null;
             if (typeName.IsNotEmpty())
@@ -104,7 +104,7 @@ namespace Marten.Events
                 aggregateType = _events.AggregateTypeFor(typeName);
             }
 
-            return StreamState.Create(id, version, aggregateType, timestamp.MapToDateTime().ToUniversalTime(), created.MapToDateTime());
+            return StreamState.Create(id, version, aggregateType, timestamp.ToUniversalTime(), created);
         }
 
         public string[] SelectFields()
