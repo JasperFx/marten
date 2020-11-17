@@ -80,7 +80,7 @@ namespace Marten.Storage
             var dotNetType = reader.GetFieldValue<string>(2);
             var docType = GetOptionalFieldValue<string>(reader, DocumentMapping.DocumentTypeColumn);
             var deleted = GetOptionalFieldValue<bool>(reader, DocumentMapping.DeletedColumn);
-            var deletedAt = GetOptionalFieldValue<DateTime>(reader, DocumentMapping.DeletedAtColumn);
+            var deletedAt = GetOptionalFieldValue<DateTime?>(reader, DocumentMapping.DeletedAtColumn);
             var tenantId = GetOptionalFieldValue<string>(reader, TenantIdColumn.Name);
 
             var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt)
@@ -106,7 +106,7 @@ namespace Marten.Storage
             var deleted = await GetOptionalFieldValueAsync<bool>(reader, DocumentMapping.DeletedColumn, token)
                 .ConfigureAwait(false);
             var deletedAt =
-                await GetOptionalFieldValueAsync<DateTime>(reader, DocumentMapping.DeletedAtColumn, token)
+                await GetOptionalFieldValueAsync<DateTime?>(reader, DocumentMapping.DeletedAtColumn, token)
                     .ConfigureAwait(false);
 
             var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
