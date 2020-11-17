@@ -76,14 +76,14 @@ namespace Marten.Storage
                 return null;
 
             var version = reader.GetFieldValue<Guid>(0);
-            var timestamp = reader.GetValue(1).MapToDateTime();
+            var timestamp = reader.GetFieldValue<DateTime>(1);
             var dotNetType = reader.GetFieldValue<string>(2);
             var docType = GetOptionalFieldValue<string>(reader, DocumentMapping.DocumentTypeColumn);
             var deleted = GetOptionalFieldValue<bool>(reader, DocumentMapping.DeletedColumn);
-            var deletedAt = GetOptionalFieldValue<object>(reader, DocumentMapping.DeletedAtColumn);
+            var deletedAt = GetOptionalFieldValue<DateTime?>(reader, DocumentMapping.DeletedAtColumn);
             var tenantId = GetOptionalFieldValue<string>(reader, TenantIdColumn.Name);
 
-            var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt?.MapToDateTime())
+            var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt)
             {
                 TenantId = tenantId ?? Tenancy.DefaultTenantId
             };
@@ -99,17 +99,17 @@ namespace Marten.Storage
                 return null;
 
             var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
-            var timestamp = await reader.GetFieldValueAsync<object>(1, token).ConfigureAwait(false);
+            var timestamp = await reader.GetFieldValueAsync<DateTime>(1, token).ConfigureAwait(false);
             var dotNetType = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             var docType = await GetOptionalFieldValueAsync<string>(reader, DocumentMapping.DocumentTypeColumn, token)
                 .ConfigureAwait(false);
             var deleted = await GetOptionalFieldValueAsync<bool>(reader, DocumentMapping.DeletedColumn, token)
                 .ConfigureAwait(false);
             var deletedAt =
-                await GetOptionalFieldValueAsync<object>(reader, DocumentMapping.DeletedAtColumn, token)
+                await GetOptionalFieldValueAsync<DateTime?>(reader, DocumentMapping.DeletedAtColumn, token)
                     .ConfigureAwait(false);
 
-            var metadata = new DocumentMetadata(timestamp.MapToDateTime(), version, dotNetType, docType, deleted, deletedAt?.MapToDateTime());
+            var metadata = new DocumentMetadata(timestamp, version, dotNetType, docType, deleted, deletedAt);
             if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 metadata.TenantId = await GetOptionalFieldValueAsync<string>(reader, TenantIdColumn.Name, token)

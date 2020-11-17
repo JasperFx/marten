@@ -16,11 +16,6 @@ namespace Marten.Util
         private static readonly Ref<ImHashMap<Type, NpgsqlDbType?>> NpgsqlDbTypeMemo;
         private static readonly Ref<ImHashMap<NpgsqlDbType, Type[]>> TypeMemo;
 
-        public static Func<object, DateTime> CustomMappingToDateTime = null;
-        public static Func<object, DateTimeOffset> CustomMappingToDateTimeOffset = null;
-        public static Func<DateTime, object> CustomMappingFromDateTime = null;
-        public static Func<DateTimeOffset, object> CustomMappingFromDateTimeOffset = null;
-
         public static List<Type> ContainmentOperatorTypes { get; } = new List<Type>();
         public static List<Type> TimespanTypes { get; } = new List<Type>();
         public static List<Type> TimespanZTypes { get; } = new List<Type>();
@@ -339,56 +334,6 @@ namespace Marten.Util
             timespanTypesList.AddRange(typesWithNullables);
 
             ContainmentOperatorTypes.AddRange(typesWithNullables);
-        }
-
-        internal static DateTime MapToDateTime(this object value)
-        {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            if (CustomMappingToDateTime != null)
-                return CustomMappingToDateTime(value);
-
-            if (value is DateTimeOffset offset)
-                return offset.DateTime;
-
-            if (value is DateTime dateTime)
-                return dateTime;
-
-            throw new ArgumentException($"Cannot convert type {value.GetType()} to DateTime", nameof(value));
-        }
-
-        internal static DateTimeOffset MapToDateTimeOffset(this object value)
-        {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            if (CustomMappingToDateTimeOffset != null)
-                return CustomMappingToDateTimeOffset(value);
-
-            if (value is DateTimeOffset offset)
-                return offset;
-
-            if (value is DateTime dateTime)
-                return dateTime;
-
-            throw new ArgumentException($"Cannot convert type {value.GetType()} to DateTimeOffset", nameof(value));
-        }
-
-        internal static object MapFromDateTime(this DateTime value)
-        {
-            if (CustomMappingFromDateTime != null)
-                return CustomMappingFromDateTime(value);
-
-            return value;
-        }
-
-        internal static object MapFromDateTimeOffset(this DateTimeOffset value)
-        {
-            if (CustomMappingFromDateTimeOffset != null)
-                return CustomMappingFromDateTimeOffset(value);
-
-            return value;
         }
     }
 }
