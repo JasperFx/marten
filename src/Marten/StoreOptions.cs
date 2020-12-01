@@ -8,6 +8,7 @@ using Marten.Internal;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Metadata;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -334,7 +335,10 @@ namespace Marten
 
         public ITenancy Tenancy { get; set; }
 
-        private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>();
+        private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
+        {
+            new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy()
+        };
 
         internal void applyPolicies(DocumentMapping mapping)
         {
