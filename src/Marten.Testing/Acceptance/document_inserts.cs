@@ -52,13 +52,13 @@ namespace Marten.Testing.Acceptance
                 query.Query<User>().Count().ShouldBe(4);
             }
         }
-#if NET
-        [Fact(Skip="Maybe one day :)")]
+#if NET5_0
+        [Fact]
         public void can_insert_records()
         {
             var docs = new RecordDocument(Guid.NewGuid(), Guid.NewGuid().ToString());
 
-            using (var session = theStore.OpenSession())
+            using (var session = theStore.LightweightSession())
             {
                 session.Store(docs);
                 session.SaveChanges();
@@ -66,7 +66,7 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                query.Query<RecordDocument>().Count().ShouldBe(3);
+                query.Query<RecordDocument>().ToList().Count().ShouldBe(1);
             }
         }
 
