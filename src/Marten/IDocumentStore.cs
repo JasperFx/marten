@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
@@ -48,6 +50,30 @@ namespace Marten
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
         void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000);
+
+        /// <summary>
+        ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
+        ///     a large number of documents of type "T" to the database. This operation is transactional.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="documents"></param>
+        /// <param name="mode"></param>
+        /// <param name="batchSize"></param>
+        Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+
+        /// <summary>
+        ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
+        ///     a large number of documents of type "T" to the database. This operation is transactional.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="tenantId"></param>
+        /// <param name="documents"></param>
+        /// <param name="mode"></param>
+        /// <param name="batchSize"></param>
+        Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+
+
+
 
         /// <summary>
         ///     Open a new IDocumentSession with the supplied DocumentTracking.
@@ -142,6 +168,25 @@ namespace Marten
         /// <param name="batchSize"></param>
         void BulkInsertDocuments(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000);
+
+        /// <summary>
+        ///     Bulk insert a potentially mixed enumerable of document types
+        /// </summary>
+        /// <param name="documents"></param>
+        /// <param name="mode"></param>
+        /// <param name="batchSize"></param>
+        Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+
+        /// <summary>
+        ///     Bulk insert a potentially mixed enumerable of document types
+        /// </summary>
+        /// <param name="documents"></param>
+        /// <param name="mode"></param>
+        /// <param name="batchSize"></param>
+        Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+
 
         /// <summary>
         /// Use Javascript transformations to alter existing documents

@@ -2,6 +2,8 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -142,6 +144,35 @@ namespace Marten
         {
             var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
+        }
+
+        public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken))
+        {
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
+            return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
+        }
+
+        public Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
+            BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
+            CancellationToken cancellation = default(CancellationToken))
+        {
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
+            return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
+        }
+
+        public Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken))
+        {
+            var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
+            return bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation);
+        }
+
+        public Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken))
+        {
+            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
+            return bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation);
         }
 
         public IDiagnostics Diagnostics { get; }

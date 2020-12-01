@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using Baseline;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Services;
 using Marten.Util;
@@ -193,6 +195,39 @@ END
                 load.Frames.Code($"writer.Write(document.{_members.Last().Name}, {dbTypeString});");
             }
 
+        }
+
+        public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            var rawMemberType = _members.Last().GetRawMemberType();
+
+
+            var dbTypeString = rawMemberType.IsArray
+                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(TypeMappings.ToDbType(rawMemberType.GetElementType())).Usage}"
+                : Constant.ForEnum(DbType).Usage;
+
+
+
+            if (DotNetType.IsEnum)
+            {
+                if (mapping.EnumStorage == EnumStorage.AsInteger)
+                {
+                    load.Frames.CodeAsync($"await writer.WriteAsync((int)document.{_members.Last().Name}, {{0}}, {{1}});", NpgsqlDbType.Integer, Use.Type<CancellationToken>());
+                }
+                else if (DotNetType.IsNullable())
+                {
+
+                    load.Frames.CodeAsync($"await writer.WriteAsync(document.{_members.Last().Name}?.ToString(), {{0}}, {{1}});", NpgsqlDbType.Varchar, Use.Type<CancellationToken>());
+                }
+                else
+                {
+                    load.Frames.CodeAsync($"await writer.WriteAsync(document.{_members.Last().Name}.ToString(), {{0}}, {{1}});", NpgsqlDbType.Varchar, Use.Type<CancellationToken>());
+                }
+            }
+            else
+            {
+                load.Frames.CodeAsync($"await writer.WriteAsync(document.{_members.Last().Name}, {dbTypeString}, {{0}});", Use.Type<CancellationToken>());
+            }
         }
     }
 }

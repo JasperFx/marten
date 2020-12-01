@@ -10,7 +10,6 @@ using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Newtonsoft.Json;
 using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
@@ -85,6 +84,11 @@ namespace Marten.Storage.Metadata
         public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {
             load.Frames.Code($"writer.Write({typeof(DBNull).FullNameInCode()}.Value, {{0}});", DbType);
+        }
+
+        public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            load.Frames.CodeAsync($"await writer.WriteAsync({typeof(DBNull).FullNameInCode()}.Value, {{0}}, {{1}});", DbType, Use.Type<CancellationToken>());
         }
     }
 }

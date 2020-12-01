@@ -1,8 +1,10 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using Baseline.Reflection;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using NpgsqlTypes;
 
@@ -37,6 +39,11 @@ namespace Marten.Schema.Arguments
         public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {
             load.Frames.Code($"writer.Write(document.GetType().FullName, {{0}});", DbType);
+        }
+
+        public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            load.Frames.Code($"await writer.WriteAsync(document.GetType().FullName, {{0}}, {{1}});", DbType, Use.Type<CancellationToken>());
         }
     }
 }

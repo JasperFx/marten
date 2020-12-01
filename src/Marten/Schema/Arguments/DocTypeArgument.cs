@@ -1,6 +1,8 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Threading;
 using Baseline.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -47,6 +49,17 @@ namespace Marten.Schema.Arguments
             load.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");
 
             load.Frames.Code($"writer.Write(docType, {{0}});", DbType);
+            if (mapping.Metadata.DocumentType.Member != null)
+            {
+                load.Frames.SetMemberValue(mapping.Metadata.DocumentType.Member, "docType", mapping.DocumentType, type);
+            }
+        }
+
+        public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            load.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");
+
+            load.Frames.CodeAsync($"await writer.WriteAsync(docType, {{0}}, {{1}});", DbType, Use.Type<CancellationToken>());
             if (mapping.Metadata.DocumentType.Member != null)
             {
                 load.Frames.SetMemberValue(mapping.Metadata.DocumentType.Member, "docType", mapping.DocumentType, type);

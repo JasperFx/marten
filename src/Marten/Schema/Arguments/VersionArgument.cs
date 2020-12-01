@@ -1,8 +1,10 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using Baseline;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema.Identity;
@@ -48,6 +50,25 @@ namespace Marten.Schema.Arguments
             if (mapping.Metadata.Version.Member == null)
             {
                 load.Frames.Code($"writer.Write({typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid(), {{0}});", NpgsqlDbType.Uuid);
+            }
+            else
+            {
+                load.Frames.Code($@"
+var version = {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid();
+writer.Write(version, {{0}});
+", NpgsqlDbType.Uuid);
+
+                load.Frames.SetMemberValue(mapping.Metadata.Version.Member, "version", mapping.DocumentType, type);
+            }
+
+
+        }
+
+        public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
+        {
+            if (mapping.Metadata.Version.Member == null)
+            {
+                load.Frames.CodeAsync($"await writer.WriteAsync({typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid(), {{0}}, {{1}});", NpgsqlDbType.Uuid, Use.Type<CancellationToken>());
             }
             else
             {

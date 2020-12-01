@@ -231,6 +231,22 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
+        public async Task can_bulk_insert_async()
+        {
+            var docs = new MetadataTarget[]
+            {
+                new MetadataTarget(),
+                new MetadataTarget(),
+                new MetadataTarget(),
+                new MetadataTarget(),
+                new MetadataTarget(),
+                new MetadataTarget()
+            };
+
+            await theStore.BulkInsertAsync(docs);
+        }
+
+        [Fact]
         public async Task can_save_and_load()
         {
             var doc = new MetadataTarget();

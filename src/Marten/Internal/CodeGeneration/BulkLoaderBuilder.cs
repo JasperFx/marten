@@ -59,6 +59,13 @@ namespace Marten.Internal.CodeGeneration
                 argument.GenerateBulkWriterCode(type, load, _mapping);
             }
 
+            var loadAsync = type.MethodFor("LoadRowAsync");
+
+            foreach (var argument in arguments)
+            {
+                argument.GenerateBulkWriterCodeAsync(type, loadAsync, _mapping);
+            }
+
             return type;
         }
 
