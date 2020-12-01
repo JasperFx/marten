@@ -22,6 +22,7 @@ namespace Marten.Services
         NpgsqlConnection Connection { get; }
 
         int RequestCount { get; }
+        IMartenSessionLogger Logger { get; set; }
 
         void BeginTransaction();
 

@@ -278,11 +278,11 @@ namespace Marten.Internal.Sessions
         {
             get
             {
-                return Database.As<ManagedConnection>().Logger;
+                return Database.Logger;
             }
             set
             {
-                Database.As<ManagedConnection>().Logger = value;
+                Database.Logger = value;
             }
         }
 
