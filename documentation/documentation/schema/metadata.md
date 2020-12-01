@@ -1,4 +1,8 @@
-<!--Title:Working with Marten's Metadata Columns-->
+<!--Title:Document and Event Metadata-->
+
+<[info]>
+Marten's metadata tracking abilities were greatly expanded in the v4.0 release.
+<[/info]>
 
 When Marten generates a table for document storage it now adds several _metadata_ columns
 that further describe the document:
@@ -13,8 +17,44 @@ that further describe the document:
 
 ## Finding the Metadata for a Document
 
+<[warning]>
+This method moved from `IDocumentStore.Advanced` to `IDocumentSession` in Marten v4.0.
+<[/warning]>
+
 You can find the metadata values for a given document object with the following mechanism
-on `IDocumentStore.Advanced`:
+on `IDocumentSession`:
 
 <[sample:resolving_metadata]>
+
+
+## Correlation, Causation, and Last Modified By Tracking
+
+- show ITracked
+- show how to use IDocumentSession 
+
+
+## Opting out of all Metadata Tracking
+
+- show doing this on a single document type
+- show doing this globally
+
+## Tracking "Soft-Deleted" Information
+
+TODO
+
+## Tracking Version Information
+
+TODO
+
+## Custom Metadata
+
+TODO
+
+## Querying by Metadata
+
+TODO
+
+
+
+
 

@@ -410,7 +410,7 @@ namespace Marten
 
             public PoliciesExpression OnDocuments(IDocumentPolicy policy)
             {
-                _parent._policies.Add(policy);
+                _parent._policies.Insert(0, policy);
                 return this;
             }
 
