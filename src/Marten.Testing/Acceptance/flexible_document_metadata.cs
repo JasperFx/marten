@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Shouldly;
@@ -319,5 +320,50 @@ namespace Marten.Testing.Acceptance
             var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
             doc2.Name.ShouldBe("different");
         }
+    }
+
+    [Collection("metadata")]
+    public class when_disabling_informational_schema_everywhere: OneOffConfigurationsContext
+    {
+        public when_disabling_informational_schema_everywhere() : base("metadata")
+        {
+            StoreOptions(opts =>
+            {
+                opts.Policies.DisableInformationalFields();
+                opts.Schema.For<Target>().UseOptimisticConcurrency(true);
+            });
+        }
+
+        [Fact]
+        public void typical_documents_do_not_have_metadata()
+        {
+            var users = theStore.Options.Storage.MappingFor(typeof(User));
+
+            users.Metadata.Version.Enabled.ShouldBeFalse();
+            users.Metadata.DotNetType.Enabled.ShouldBeFalse();
+            users.Metadata.LastModified.Enabled.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void explicit_rules_on_specific_documents_win()
+        {
+            var targets = theStore.Options.Storage.MappingFor(typeof(Target));
+
+            targets.Metadata.Version.Enabled.ShouldBeTrue();
+            targets.Metadata.DotNetType.Enabled.ShouldBeFalse();
+            targets.Metadata.LastModified.Enabled.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void marker_interfaces_win()
+        {
+            var mapping = theStore.Options.Storage.MappingFor(typeof(MyVersionedDoc));
+
+            mapping.Metadata.Version.Enabled.ShouldBeTrue();
+            mapping.Metadata.DotNetType.Enabled.ShouldBeFalse();
+            mapping.Metadata.LastModified.Enabled.ShouldBeFalse();
+        }
+
+
     }
 }

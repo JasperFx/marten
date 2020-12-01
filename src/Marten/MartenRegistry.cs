@@ -451,7 +451,14 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> UseOptimisticConcurrency(bool enabled)
             {
-                _builder.Alter = m => m.UseOptimisticConcurrency = enabled;
+                _builder.Alter = m =>
+                {
+                    m.UseOptimisticConcurrency = enabled;
+                    if (enabled)
+                    {
+                        m.Metadata.Version.Enabled = true;
+                    }
+                };
                 return this;
             }
 

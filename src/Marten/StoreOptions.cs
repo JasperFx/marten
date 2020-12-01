@@ -403,25 +403,61 @@ namespace Marten
                 _parent = parent;
             }
 
+            /// <summary>
+            /// Add a pre-built Marten document policy
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <returns></returns>
             public PoliciesExpression OnDocuments<T>() where T : IDocumentPolicy, new()
             {
                 return OnDocuments(new T());
             }
 
+            /// <summary>
+            /// Add a pre-built Marten document policy
+            /// </summary>
+            /// <param name="policy"></param>
+            /// <returns></returns>
             public PoliciesExpression OnDocuments(IDocumentPolicy policy)
             {
                 _parent._policies.Insert(0, policy);
                 return this;
             }
 
+            /// <summary>
+            /// Apply configuration to the persistence of all Marten document
+            /// types
+            /// </summary>
+            /// <param name="configure"></param>
+            /// <returns></returns>
             public PoliciesExpression ForAllDocuments(Action<DocumentMapping> configure)
             {
                 return OnDocuments(new LambdaDocumentPolicy(configure));
             }
 
+            /// <summary>
+            /// Unless explicitly marked otherwise, all documents should
+            /// use conjoined multi-tenancy
+            /// </summary>
+            /// <returns></returns>
             public PoliciesExpression AllDocumentsAreMultiTenanted()
             {
                 return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+            }
+
+            /// <summary>
+            /// Turn off the informational metadata columns
+            /// in storage like the last modified, version, and
+            /// dot net type for leaner storage
+            /// </summary>
+            public PoliciesExpression DisableInformationalFields()
+            {
+                return ForAllDocuments(x =>
+                {
+                    x.Metadata.LastModified.Enabled = false;
+                    x.Metadata.DotNetType.Enabled = false;
+                    x.Metadata.Version.Enabled = false;
+                });
             }
         }
 
