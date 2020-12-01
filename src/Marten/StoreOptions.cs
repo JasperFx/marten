@@ -337,7 +337,7 @@ namespace Marten
 
         private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
         {
-            new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy()
+            new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy()
         };
 
         internal void applyPolicies(DocumentMapping mapping)

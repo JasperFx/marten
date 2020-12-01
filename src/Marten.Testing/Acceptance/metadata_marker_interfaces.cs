@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Marten.Metadata;
 using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -12,6 +13,15 @@ namespace Marten.Testing.Acceptance
     {
         public metadata_marker_interfaces(DefaultStoreFixture fixture) : base(fixture)
         {
+        }
+
+        [Fact]
+        public void implementing_ITenanted_makes_a_document_conjoined_tenanted()
+        {
+            var mapping = theStore.Options.Storage.MappingFor(typeof(MyTenantedDoc));
+            mapping.TenancyStyle.ShouldBe(TenancyStyle.Conjoined);
+            mapping.Metadata.TenantId.Enabled.ShouldBeTrue();
+            mapping.Metadata.TenantId.Member.Name.ShouldBe(nameof(ITenanted.TenantId));
         }
 
         [Fact]
@@ -108,5 +118,11 @@ namespace Marten.Testing.Acceptance
         public string CorrelationId { get; set; }
         public string CausationId { get; set; }
         public string LastModifiedBy { get; set; }
+    }
+
+    public class MyTenantedDoc: ITenanted
+    {
+        public Guid Id { get; set; }
+        public string TenantId { get; set; }
     }
 }
