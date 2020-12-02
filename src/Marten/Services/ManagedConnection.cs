@@ -100,7 +100,7 @@ namespace Marten.Services
             await buildConnectionAsync(token).ConfigureAwait(false);
             await _retryPolicy.ExecuteAsync(async () => await _connection.CommitAsync(token).ConfigureAwait(false), token);
 
-            _connection.Dispose();
+            await _connection.DisposeAsync().ConfigureAwait(false);
             _connection = null;
         }
 
@@ -153,7 +153,7 @@ namespace Marten.Services
             }
             finally
             {
-                _connection.Dispose();
+                await _connection.DisposeAsync().ConfigureAwait(false);
                 _connection = null;
             }
         }
@@ -306,6 +306,12 @@ namespace Marten.Services
             _connection?.Dispose();
         }
 
-
+        public async ValueTask DisposeAsync()
+        {
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
+        }
     }
 }

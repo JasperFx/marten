@@ -11,7 +11,7 @@ using Npgsql;
 
 namespace Marten
 {
-    public interface IQuerySession: IDisposable
+    public interface IQuerySession: IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// Find or load a single document of type T by a string id
