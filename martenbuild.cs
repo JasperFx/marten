@@ -17,12 +17,9 @@ namespace martenbuild
         private const string DockerConnectionString =
             "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
-        private const string DefaultTargetFramework = "netcoreapp3.1";
-
         private static void Main(string[] args)
         {
-            var framework = GetEnvironmentVariable("target_framework");
-            framework = string.IsNullOrEmpty(framework) ? DefaultTargetFramework: framework;
+            var framework = GetFramework();
 
             var configuration = GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
@@ -205,6 +202,14 @@ namespace martenbuild
             Console.WriteLine(val);
 
             return val;
+        }
+
+        private static string GetFramework()
+        {
+            var frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
+            var version = float.Parse(frameworkName.Split('=')[1].Replace("v",""), System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+
+            return version < 5.0 ? $"netcoreapp{version.ToString("N1")}" : $"net{version.ToString("N1")}";
         }
     }
 }
