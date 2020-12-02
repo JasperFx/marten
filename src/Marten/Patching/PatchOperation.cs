@@ -59,9 +59,9 @@ namespace Marten.Patching
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
             var patchParam = builder.AddJsonParameter(_serializer.ToCleanJson(_patch));
-            if (_patch.ContainsKey("value"))
+            if (_patch.TryGetValue("value", out var document))
             {
-                var value = PossiblyPolymorhpic ? _serializer.ToJsonWithTypes(_patch["value"]) : _serializer.ToJson(_patch["value"]);
+                var value = PossiblyPolymorhpic ? _serializer.ToJsonWithTypes(document) : _serializer.ToJson(document);
                 var copy = new Dictionary<string, object>();
                 foreach (var item in _patch)
                 {

@@ -47,9 +47,9 @@ namespace Marten.Internal.Storage
             {
                 if (items is Dictionary<TId, T> d)
                 {
-                    if (d.ContainsKey(id))
+                    if (d.TryGetValue(id, out var existing))
                     {
-                        if (!ReferenceEquals(d[id], document))
+                        if (!ReferenceEquals(existing, document))
                         {
                             throw new InvalidOperationException(
                                 $"Document '{typeof(T).FullNameInCode()}' with same Id already added to the session.");

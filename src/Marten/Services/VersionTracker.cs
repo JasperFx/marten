@@ -36,12 +36,11 @@ namespace Marten.Services
 
         public Guid? Version<T>(object id)
         {
-            if (!_versions.ContainsKey(typeof(T)))
+            if (!_versions.TryGetValue(typeof(T), out var dict))
                 return null;
 
-            var dict = _versions[typeof(T)];
-
-            return dict.ContainsKey(id) ? dict[id] : (Guid?)null;
+            dict.TryGetValue(id, out var guid);
+            return guid;
         }
 
         public void ClearAll()

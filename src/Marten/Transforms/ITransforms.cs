@@ -94,12 +94,12 @@ namespace Marten.Transforms
 
         public TransformFunction For(string name)
         {
-            if (!_functions.ContainsKey(name))
+            if (!_functions.TryGetValue(name, out var function))
             {
                 throw new ArgumentOutOfRangeException(nameof(name), "Unknown Transform Name");
             }
 
-            return _functions[name];
+            return function;
         }
 
         public IEnumerable<TransformFunction> AllFunctions()
