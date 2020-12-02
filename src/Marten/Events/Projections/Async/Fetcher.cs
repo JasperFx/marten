@@ -142,7 +142,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
 
         private async Task<EventPage> fetchNextPage(long lastEncountered)
         {
-            using (var conn = _tenant.CreateConnection())
+            await using (var conn = _tenant.CreateConnection())
             {
                 try
                 {
@@ -190,7 +190,7 @@ select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where se
             long nextKnown;
             long lastKnown;
 
-            using (var reader = await cmd.ExecuteReaderAsync(_token).ConfigureAwait(false))
+            await using (var reader = await cmd.ExecuteReaderAsync(_token).ConfigureAwait(false))
             {
                 while (await reader.ReadAsync(_token).ConfigureAwait(false))
                 {

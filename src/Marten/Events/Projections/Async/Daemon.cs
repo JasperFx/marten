@@ -260,7 +260,7 @@ namespace Marten.Events.Projections.Async
 
         private async Task<long> currentEventNumber(CancellationToken token)
         {
-            using (var conn = _tenant.OpenConnection())
+            await using (var conn = _tenant.OpenConnection())
             {
                 var cmd = new NpgsqlCommand($"select max(seq_id) from {_store.Events.Table}");
 

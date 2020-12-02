@@ -207,7 +207,7 @@ namespace Marten.Events.Projections.Async
         private async Task executePage(EventPage page, CancellationToken cancellation)
         {
             // TODO -- have to pass in the tenant here
-            using (var session = _store.OpenSession())
+            await using (var session = _store.OpenSession())
             {
                 await _projection.ApplyAsync(session, page, cancellation).ConfigureAwait(false);
 
@@ -286,7 +286,7 @@ namespace Marten.Events.Projections.Async
             _logger.ClearingExistingState(this);
             var types = _projection.ProjectedTypes();
 
-            using (var conn = _tenant.OpenConnection())
+            await using (var conn = _tenant.OpenConnection())
             {
                 foreach (var type in types)
                 {

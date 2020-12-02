@@ -7,7 +7,7 @@ using Marten.Storage;
 
 namespace Marten.Internal
 {
-    public interface IMartenSession: IDisposable
+    public interface IMartenSession: IDisposable, IAsyncDisposable
     {
         ISerializer Serializer { get; }
         Dictionary<Type, object> ItemMap { get; }

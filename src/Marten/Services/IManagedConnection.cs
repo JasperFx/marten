@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace Marten.Services
 {
-    public interface IManagedConnection: IDisposable
+    public interface IManagedConnection: IDisposable, IAsyncDisposable
     {
         int Execute(NpgsqlCommand cmd);
 

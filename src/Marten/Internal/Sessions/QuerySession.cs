@@ -144,6 +144,19 @@ namespace Marten.Internal.Sessions
             GC.SuppressFinalize(this);
         }
 
+        public async ValueTask DisposeAsync()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            if (Database != null)
+            {
+                await Database.DisposeAsync().ConfigureAwait(false);
+            }
+            GC.SuppressFinalize(this);
+        }
+
         protected void assertNotDisposed()
         {
             if (_disposed)

@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace Marten.Services
 {
-    public class TransactionState: IDisposable
+    public class TransactionState: IDisposable, IAsyncDisposable
     {
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;
@@ -184,6 +184,24 @@ namespace Marten.Services
             {
                 Connection.Close();
                 Connection.Dispose();
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_mode != CommandRunnerMode.External)
+            {
+                if (Transaction != null)
+                {
+                    await Transaction.DisposeAsync().ConfigureAwait(false);;
+                    Transaction = null;
+                }
+            }
+
+            if (_ownsConnection)
+            {
+                await Connection.CloseAsync().ConfigureAwait(false);;
+                await Connection.DisposeAsync().ConfigureAwait(false);;
             }
         }
 
