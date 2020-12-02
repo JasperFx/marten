@@ -61,14 +61,7 @@ namespace Marten.Events.Projections
 
         public Aggregator<T> Add<TEvent>(IAggregation<T, TEvent> aggregation)
         {
-            if (_aggregations.ContainsKey(typeof(TEvent)))
-            {
-                _aggregations[typeof(TEvent)] = aggregation;
-            }
-            else
-            {
-                _aggregations.Add(typeof(TEvent), aggregation);
-            }
+            _aggregations[typeof(TEvent)] = aggregation;
 
             return this;
         }
@@ -80,9 +73,11 @@ namespace Marten.Events.Projections
 
         public IAggregation<T, TEvent> AggregatorFor<TEvent>()
         {
-            return _aggregations.ContainsKey(typeof(TEvent))
-                ? _aggregations[typeof(TEvent)].As<IAggregation<T, TEvent>>()
-                : null;
+            if(_aggregations.TryGetValue(typeof(TEvent), out var aggregation))
+            {
+                return aggregation.As<IAggregation<T, TEvent>>();
+            }
+            return null;
         }
 
         public bool AppliesTo(EventStream stream)

@@ -47,9 +47,8 @@ namespace Marten.Storage
 
             foreach (var index in expected.Indexes)
             {
-                if (actual.ActualIndices.ContainsKey(index.IndexName))
+                if (actual.ActualIndices.TryGetValue(index.IndexName, out var actualIndex))
                 {
-                    var actualIndex = actual.ActualIndices[index.IndexName];
                     if (!index.Matches(actualIndex))
                     {
                         IndexChanges.Add($"drop index {schemaName}.{index.IndexName};{Environment.NewLine}{index.ToDDL()};");
