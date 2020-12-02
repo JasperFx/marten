@@ -35,7 +35,7 @@ before_build:
 
 build_script:
 - cmd: >-
-    dotnet run -p martenbuild.csproj -- ci
+    build.cmd ci
 test: off
 
 artifacts:
