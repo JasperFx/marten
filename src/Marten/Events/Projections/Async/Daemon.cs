@@ -59,12 +59,12 @@ namespace Marten.Events.Projections.Async
 
         public Task Stop(Type viewType)
         {
-            if (!_tracks.ContainsKey(viewType))
+            if (!_tracks.TryGetValue(viewType, out var track))
             {
                 return Task.CompletedTask;
             }
 
-            return _tracks[viewType].Stop();
+            return track.Stop();
         }
 
         public void Start<T>(DaemonLifecycle lifecycle)
@@ -74,14 +74,14 @@ namespace Marten.Events.Projections.Async
 
         public void Start(Type viewType, DaemonLifecycle lifecycle)
         {
-            if (!_tracks.ContainsKey(viewType))
+            if (!_tracks.TryGetValue(viewType, out var track))
             {
                 throw new ArgumentOutOfRangeException(nameof(viewType));
             }
 
             findCurrentEventLogPosition(viewType);
 
-            _tracks[viewType].Start(lifecycle);
+            track.Start(lifecycle);
         }
 
         public void Dispose()
@@ -192,9 +192,9 @@ namespace Marten.Events.Projections.Async
 
         private void assertStarted(Type viewType)
         {
-            if (_tracks.ContainsKey(viewType))
+            if (_tracks.TryGetValue(viewType, out var track))
             {
-                if (!_tracks[viewType].IsRunning)
+                if (!track.IsRunning)
                 {
                     throw new InvalidOperationException($"The projection track for view {viewType.FullName} has not been started");
                 }
@@ -210,14 +210,14 @@ namespace Marten.Events.Projections.Async
         {
             assertStarted(viewType);
 
-            if (!_tracks.ContainsKey(viewType))
+            if (!_tracks.TryGetValue(viewType, out var track))
             {
                 throw new ArgumentOutOfRangeException(nameof(viewType));
             }
 
             var current = await currentEventNumber(token).ConfigureAwait(false);
 
-            await _tracks[viewType].WaitUntilEventIsProcessed(current).ConfigureAwait(false);
+            await track.WaitUntilEventIsProcessed(current).ConfigureAwait(false);
         }
 
         public IEnumerable<IProjectionTrack> AllActivity => _tracks.Values;
@@ -229,7 +229,11 @@ namespace Marten.Events.Projections.Async
 
         public IProjectionTrack TrackFor(Type viewType)
         {
-            return _tracks.ContainsKey(viewType) ? _tracks[viewType] : null;
+            if (_tracks.TryGetValue(viewType, out var track))
+            {
+                return track;
+            }
+            return null;
         }
 
         public Task RebuildAll(CancellationToken token = new CancellationToken())
@@ -250,12 +254,12 @@ namespace Marten.Events.Projections.Async
 
         public Task Rebuild(Type viewType, CancellationToken token = new CancellationToken())
         {
-            if (!_tracks.ContainsKey(viewType))
+            if (!_tracks.TryGetValue(viewType, out var track))
             {
                 throw new ArgumentOutOfRangeException(nameof(viewType));
             }
 
-            return _tracks[viewType].Rebuild(token);
+            return track.Rebuild(token);
         }
 
         private async Task<long> currentEventNumber(CancellationToken token)
