@@ -29,7 +29,6 @@ resources:
         - 5432:5432
 
 variables:
-  target_framework: net5.0
   config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
@@ -57,14 +56,9 @@ jobs:
       postgres: $[ variables['postgresService'] ]
     steps:
       - task: UseDotNet@2
-        displayName: Install .Net Core 3.1.x
-        inputs:
-          version: 3.1.x
-      - task: UseDotNet@2
         displayName: Install .Net Core 5.0.x
         inputs:
           version: $(dotnet_core_version)
-          includePreviewVersions: true
       - task: NodeTool@0
         displayName: Install Node.js
         inputs:
