@@ -104,7 +104,7 @@ namespace Marten.Testing.Events.Projections
 
     public class QuestMonstersWithBaseClassAndIdOverloaded: Root, IMonstersView
     {
-        public Guid Id { get; set; }
+        public new Guid Id { get; set; }
 
         private readonly IList<string> _monsters = new List<string>();
 

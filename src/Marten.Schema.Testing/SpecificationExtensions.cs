@@ -62,7 +62,7 @@ namespace Marten.Schema.Testing
             var actual = JToken.Parse(json);
             var expected = JToken.Parse(expectedJson);
 
-            JToken.DeepEquals(expected, actual).ShouldBeTrue(() => $"Expected:\n{expectedJson}\nGot:\n{json}");
+            JToken.DeepEquals(expected, actual).ShouldBeTrue($"Expected:\n{expectedJson}\nGot:\n{json}");
         }
 
 
@@ -95,7 +95,7 @@ namespace Marten.Schema.Testing
 
             try
             {
-                actual.Count.ShouldBe(expected.Count, () => $"Actual was " + actual.OfType<object>().Select(x => x.ToString()).Join(", "));
+                actual.Count.ShouldBe(expected.Count, $"Actual was " + actual.OfType<object>().Select(x => x.ToString()).Join(", "));
 
                 for (var i = 0; i < actual.Count; i++)
                 {

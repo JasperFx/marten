@@ -6,6 +6,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten.Testing.Internals;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
@@ -63,7 +64,7 @@ namespace Marten.Testing.Util
 
             using (var session = theStore.LightweightSession())
             {
-                session.DeleteWhere<Target>(t => t.Id != null);
+                session.DeleteWhere<Target>(t => t.Id != Guid.Empty);
 
 
                 targets.Each(x => session.Store(x));
@@ -81,7 +82,7 @@ namespace Marten.Testing.Util
 
             using (var session = theStore.LightweightSession())
             {
-                session.DeleteWhere<Target>(x => x.Id != null);
+                session.DeleteWhere<Target>(x => x.Id != Guid.Empty);
                 targets.Each(x => session.Store(x));
 
                 await session.SaveChangesAsync().ConfigureAwait(false);

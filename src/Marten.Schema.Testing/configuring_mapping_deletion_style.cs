@@ -50,6 +50,7 @@ namespace Marten.Schema.Testing
         }
         // ENDSAMPLE
 
+        [Fact(Skip = "sample usage code")]
         public void example_of_using_fi_to_configure()
         {
             // SAMPLE: soft-delete-configuration-via-fi

@@ -8,7 +8,7 @@ namespace Marten.Schema.Testing
 {
     public class auto_create_mode_Tests : IntegrationContext
     {
-
+        [Fact(Skip = "sample usage code")]
         public void using_auto_create_field()
         {
             // SAMPLE: AutoCreateSchemaObjects

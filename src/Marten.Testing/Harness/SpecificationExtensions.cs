@@ -63,7 +63,7 @@ namespace Marten.Testing.Harness
             var actual = JToken.Parse(json);
             var expected = JToken.Parse(expectedJson);
 
-            JToken.DeepEquals(expected, actual).ShouldBeTrue(() => $"Expected:\n{expectedJson}\nGot:\n{json}");
+            JToken.DeepEquals(expected, actual).ShouldBeTrue($"Expected:\n{expectedJson}\nGot:\n{json}");
         }
 
 

@@ -11,7 +11,7 @@ namespace Marten.Schema.Testing.Hierarchies
 {
     public class delete_by_where_for_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests
     {
-        private readonly ITestOutputHelper _output;
+        private new readonly ITestOutputHelper _output;
 
         public delete_by_where_for_hierarchy_Tests(ITestOutputHelper output)
         {
@@ -343,7 +343,7 @@ namespace Marten.Schema.Testing.Hierarchies
 
     public class Bug_1247_end_to_end_query_with_include_and_document_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests
     {
-        private readonly ITestOutputHelper _output;
+        private new readonly ITestOutputHelper _output;
 
         public Bug_1247_end_to_end_query_with_include_and_document_hierarchy_Tests(ITestOutputHelper output)
         {

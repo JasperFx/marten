@@ -40,7 +40,7 @@ namespace Marten.Schema.Testing
             store.Dispose();
         }
 
-        //[Fact] //-- flakey on ci
+        [Fact(Skip = "flakey on ci")]
         public void can_create_patch_for_a_single_document_type()
         {
             StoreOptions(_ =>
@@ -65,7 +65,7 @@ namespace Marten.Schema.Testing
             SpecificationExtensions.ShouldContain(text, "$tran$;");
         }
 
-        //[Fact] //-- flakey on ci
+        [Fact(Skip = "flakey on ci")]
         public void can_do_schema_validation_negative_case_with_detected_changes()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -85,7 +85,7 @@ namespace Marten.Schema.Testing
             }
         }
 
-        //[Fact] //-- flakey on ci
+        [Fact(Skip = "flakey on ci")]
         public void can_do_schema_validation_with_no_detected_changes()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
@@ -142,7 +142,7 @@ namespace Marten.Schema.Testing
             }
         }
 
-        //[Fact] // -- flakey on ci
+        [Fact(Skip = "flakey on ci")]
         public void writes_both_the_update_and_rollback_files()
         {
             StoreOptions(_ =>
@@ -172,7 +172,7 @@ namespace Marten.Schema.Testing
             fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));
         }
 
-        //[Fact] // -- flakey on ci
+        [Fact(Skip = "flakey on ci")]
         public void writepatch_writes_patch_schema_when_autocreate_none()
         {
             StoreOptions(_ =>

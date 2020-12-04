@@ -266,7 +266,7 @@ namespace Marten.Testing.Acceptance
             await theSession.SaveChangesAsync();
 
             using var session = theStore.LightweightSession();
-            var doc2 = session.LoadAsync<MetadataTarget>(doc.Id);
+            var doc2 = await session.LoadAsync<MetadataTarget>(doc.Id);
             doc2.ShouldNotBeNull();
         }
 
