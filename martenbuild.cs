@@ -24,6 +24,8 @@ namespace martenbuild
             var configuration = GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
 
+            var disableTestParallelization = GetEnvironmentVariable("disable_test_parallelization");
+
             Target("ci", DependsOn("connection", "default"));
 
             Target("default", DependsOn("mocha", "test", "storyteller"));
@@ -65,7 +67,7 @@ namespace martenbuild
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
-            Target("test", DependsOn("test-marten", "test-noda-time", "test-commands", "test-schema"));
+            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema"));
 
             Target("storyteller", DependsOn("compile"), () =>
                 Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
@@ -106,6 +108,26 @@ namespace martenbuild
 
                 WaitForDatabaseToBeReady();
 
+            });
+
+            Target("setup-test-parallelization", () => {
+                if (string.IsNullOrEmpty(disableTestParallelization))
+                {
+                    Console.WriteLine("disable_test_parallelization env var not set, this step is ignored.");
+                    return;
+                }
+
+                var test_projects = new string[] {
+                  "src/Marten.Testing",
+                  "src/Marten.Schema.Testing",
+                  "src/Marten.NodaTime.Testing"
+                };
+
+                foreach (var item in test_projects)
+                {
+                    var assemblyInfoFile = Path.Join(item, "AssemblyInfo.cs");
+                    File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {disableTestParallelization})]");
+                }
             });
 
             RunTargetsAndExit(args);
