@@ -22,7 +22,6 @@ namespace Marten.Services.BatchQuerying
 {
     public class BatchedQuery: IBatchedQuery, IBatchEvents
     {
-        private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
         private readonly QuerySession _parent;
         private readonly IManagedConnection _runner;

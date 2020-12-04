@@ -23,8 +23,6 @@ namespace Marten.Services.Events
             return Value?.GetHashCode() ?? 0;
         }
 
-        public static readonly EventContracts UnexpectedMaxEventIdForStream = new EventContracts("Unexpected MAX(id) for event stream");
-
         public static implicit operator string(EventContracts item)
         {
             return item.Value;

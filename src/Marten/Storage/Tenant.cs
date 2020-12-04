@@ -190,8 +190,6 @@ namespace Marten.Storage
             return _features.Transforms.For(name);
         }
 
-        private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new ConcurrentDictionary<Type, object>();
-
         public void MarkAllFeaturesAsChecked()
         {
             foreach (var feature in _features.AllActiveFeatures(this))
