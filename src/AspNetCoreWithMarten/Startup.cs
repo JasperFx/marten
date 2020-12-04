@@ -46,9 +46,9 @@ namespace AspNetCoreWithMarten
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
+                endpoints.MapGet("/", context =>
                 {
-                    await context.Response.WriteAsync("Hello World!");
+                    return context.Response.WriteAsync("Hello World!");
                 });
             });
         }

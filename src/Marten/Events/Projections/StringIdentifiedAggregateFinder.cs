@@ -48,9 +48,9 @@ namespace Marten.Events.Projections
             return returnValue;
         }
 
-        public async Task FetchAllAggregates(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        public Task FetchAllAggregates(IDocumentSession session, EventStream[] streams, CancellationToken token)
         {
-            await session.LoadManyAsync<T>(token, streams.Select(x => x.Key).ToArray()).ConfigureAwait(false);
+            return session.LoadManyAsync<T>(token, streams.Select(x => x.Key).ToArray());
         }
     }
 }

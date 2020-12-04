@@ -71,7 +71,7 @@ namespace Marten.Services
                     new TransactionState(_mode, _isolationLevel, _commandTimeout, _externalConnection, _ownsConnection) :
                     new TransactionState(_factory, _mode, _isolationLevel, _commandTimeout, _ownsConnection);
 
-                await _retryPolicy.ExecuteAsync(async () => await _connection.OpenAsync(token), token);
+                await _retryPolicy.ExecuteAsync(() => _connection.OpenAsync(token), token);
             }
         }
 
@@ -98,7 +98,7 @@ namespace Marten.Services
                 return;
 
             await buildConnectionAsync(token).ConfigureAwait(false);
-            await _retryPolicy.ExecuteAsync(async () => await _connection.CommitAsync(token).ConfigureAwait(false), token);
+            await _retryPolicy.ExecuteAsync(() => _connection.CommitAsync(token), token);
 
             await _connection.DisposeAsync().ConfigureAwait(false);
             _connection = null;
@@ -140,7 +140,7 @@ namespace Marten.Services
 
             try
             {
-                await _retryPolicy.ExecuteAsync(async () => await _connection.RollbackAsync(token).ConfigureAwait(false), token);
+                await _retryPolicy.ExecuteAsync(() => _connection.RollbackAsync(token), token);
             }
             catch (RollbackException e)
             {
@@ -266,7 +266,7 @@ namespace Marten.Services
 
             try
             {
-                var reader = await _retryPolicy.ExecuteAsync(async () => await command.ExecuteReaderAsync(token).ConfigureAwait(false), token);
+                var reader = await _retryPolicy.ExecuteAsync(() => command.ExecuteReaderAsync(token), token);
                 Logger.LogSuccess(command);
 
                 return reader;
@@ -289,7 +289,7 @@ namespace Marten.Services
 
             try
             {
-                var returnValue = await _retryPolicy.ExecuteAsync(async () => await command.ExecuteNonQueryAsync(token).ConfigureAwait(false), token);
+                var returnValue = await _retryPolicy.ExecuteAsync(() => command.ExecuteNonQueryAsync(token), token);
                 Logger.LogSuccess(command);
 
                 return returnValue;

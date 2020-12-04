@@ -736,7 +736,7 @@ namespace Marten.Events.Projections
             }
         }
 
-        async Task IProjection.ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+        Task IProjection.ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
         {
             var projections = getEventProjections(session, page);
 
@@ -746,8 +746,10 @@ namespace Marten.Events.Projections
             {
                 var views = _sessionLoadMany(session, viewIds);
 
-                await applyProjectionsAsync(session, projections, views);
+                return applyProjectionsAsync(session, projections, views);
             }
+
+            return Task.CompletedTask;
         }
 
         private void applyProjections(IDocumentSession session, ICollection<EventProjection> projections, IEnumerable<TView> views)

@@ -177,13 +177,16 @@ namespace Marten.Internal.Storage
             return load(id, session);
         }
 
-        public sealed override async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+        public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
         {
             if (session.ItemMap.TryGetValue(typeof(T), out var items))
             {
                 if (items is Dictionary<TId, T> d)
                 {
-                    if (d.TryGetValue(id, out var item)) return item;
+                    if (d.TryGetValue(id, out var item))
+                    {
+                        return Task.FromResult(item);
+                    }
                 }
                 else
                 {
@@ -191,7 +194,7 @@ namespace Marten.Internal.Storage
                 }
             }
 
-            return await loadAsync(id, session, token);
+            return loadAsync(id, session, token);
         }
     }
 }
