@@ -210,7 +210,9 @@ namespace Marten.Linq.Parsing
         {
             private readonly WhereClauseParser _parent;
             private readonly SubQueryExpression _expression;
+#pragma warning disable 414
             private bool _isDistinct;
+#pragma warning restore 414
             private readonly WhereClause[] _wheres;
             private readonly Expression _contains;
 

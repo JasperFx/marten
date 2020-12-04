@@ -52,7 +52,6 @@ namespace Marten.Internal.Sessions
 
             var storage = StorageFor<T>();
 
-            IStorageOperation deletion = null;
             if (storage is IDocumentStorage<T, int> i)
             {
                 _unitOfWork.Add(i.DeleteForId(id));
@@ -132,7 +131,6 @@ namespace Marten.Internal.Sessions
             var tenant = DocumentStore.Tenancy[tenantId];
             var storage = selectStorage(tenant.Providers.StorageFor<T>());
 
-            IStorageOperation deletion = null;
             if (storage is IDocumentStorage<T, int> i)
             {
                 _unitOfWork.Add(i.DeleteForId(id, tenant));

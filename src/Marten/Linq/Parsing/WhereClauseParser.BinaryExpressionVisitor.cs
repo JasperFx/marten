@@ -70,8 +70,6 @@ namespace Marten.Linq.Parsing
                         }
 
                         throw new BadLinqExpressionException($"Invalid Linq Where() clause with expression: " + ne);
-
-                        break;
                     case BinaryExpression binary:
                         throw new BadLinqExpressionException($"Unsupported nested operator '{binary.NodeType}' as an operand in a binary expression");
                     case UnaryExpression u when u.NodeType == ExpressionType.Not:

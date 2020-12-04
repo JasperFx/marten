@@ -12,7 +12,6 @@ namespace Marten.Linq.Includes
     {
         private readonly IDocumentStorage<T> _storage;
         private readonly Action<T> _callback;
-        private readonly string _tempTableName;
 
         public IncludePlan(IDocumentStorage<T> storage, IField connectingField, Action<T> callback)
         {

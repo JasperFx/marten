@@ -27,7 +27,9 @@ namespace Marten.Transforms
             // no-op;
         }
 
+#pragma warning disable 693
         public override StreamedSequence ExecuteInMemory<T>(StreamedSequence input)
+#pragma warning restore 693
         {
             return input;
         }
