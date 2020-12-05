@@ -249,21 +249,6 @@ namespace Marten
 
         #endregion Single/SingleOrDefault
 
-        #region Shared
-
-        private static IMartenQueryable<T> CastToMartenQueryable<T>(IQueryable<T> queryable)
-        {
-            var martenQueryable = queryable as IMartenQueryable<T>;
-            if (martenQueryable == null)
-            {
-                throw new InvalidOperationException($"{typeof(T)} is not IMartenQueryable<>");
-            }
-
-            return martenQueryable;
-        }
-
-        #endregion Shared
-
         public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
         {
             if (queryable is MartenLinqQueryable<T> q1)

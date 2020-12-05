@@ -45,8 +45,6 @@ namespace Marten.Events
             _tenantId = tenantId;
         }
 
-        public Type SourceType => typeof(IEvent);
-
         public void ConfigureCommand(CommandBuilder sql, IMartenSession session)
         {
             _selector.WriteSelectClause(sql);

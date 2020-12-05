@@ -93,10 +93,5 @@ namespace Marten.Schema
 
             return $"({dataConfig})";
         }
-
-        private void RefreshIndexName()
-        {
-            IndexName = _indexName;
-        }
     }
 }

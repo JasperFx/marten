@@ -61,8 +61,6 @@ namespace Marten.Events
             }
         }
 
-        public Type SourceType => typeof(StreamState);
-
         public StreamState Handle(DbDataReader reader, IMartenSession session)
         {
             return reader.Read() ? Resolve(reader) : null;

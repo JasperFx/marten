@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Marten.Events.Projections.Async
 {
+    [Obsolete("No longer used. Will be removed in version 4.")]
     public enum EventPageType
     {
         Empty,

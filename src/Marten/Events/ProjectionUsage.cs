@@ -1,5 +1,8 @@
+using System;
+
 namespace Marten.Events
 {
+    [Obsolete("No longer used. Will be removed in version 4.")]
     public class ProjectionUsage
     {
         public ProjectionTiming timing { get; set; }

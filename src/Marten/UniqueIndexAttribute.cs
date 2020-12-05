@@ -30,11 +30,6 @@ namespace Marten.Schema
         }
 
         /// <summary>
-        /// Specifies the index should be created in the background and not block/lock
-        /// </summary>
-        public bool IsConcurrent { get; set; }
-
-        /// <summary>
         /// Specifies the type of index to create
         /// </summary>
         public IndexMethod IndexMethod { get; set; } = IndexMethod.btree;

@@ -8,6 +8,7 @@ using Marten.Linq.Fields;
 
 namespace Marten.Linq.Parsing
 {
+    [Obsolete("No longer used. Will be removed in version 4.")]
     public class TargetObject
     {
         public Type Type { get; }

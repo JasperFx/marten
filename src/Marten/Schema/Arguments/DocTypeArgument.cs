@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Threading;
-using Baseline.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -15,9 +14,6 @@ namespace Marten.Schema.Arguments
 {
     public class DocTypeArgument: UpsertArgument
     {
-        private readonly static MethodInfo _getAlias = ReflectionHelper.GetMethod<DocumentMapping>(x => x.AliasFor(null));
-        private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");
-
         public DocTypeArgument()
         {
             Arg = "docType";

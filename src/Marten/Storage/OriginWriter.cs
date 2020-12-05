@@ -8,10 +8,5 @@ namespace Marten.Storage
         {
             return $"COMMENT ON {objectType} {objectName} IS 'origin:{MartenFqn}';";
         }
-
-        public static string OriginStatement(this Table definition)
-        {
-            return OriginStatement("TABLE", definition.Identifier.QualifiedName);
-        }
     }
 }

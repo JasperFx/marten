@@ -38,13 +38,6 @@ namespace Marten.Linq
             _provider = Provider.As<LinqQueryProvider>();
         }
 
-        public MartenLinqQueryable(IMartenSession session, Expression expression): base(new LinqQueryProvider(session),
-            expression)
-        {
-            _session = session;
-            _provider = Provider.As<LinqQueryProvider>();
-        }
-
         internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase op = null)
         {
             var builder = new LinqHandlerBuilder(_session, Expression, op);

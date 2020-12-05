@@ -51,12 +51,6 @@ namespace Marten.Internal.Sessions
             }
         }
 
-
-        private void removeTrackerFor<T>(T document)
-        {
-            ChangeTrackers.RemoveAll(x => ReferenceEquals(x.Document, document));
-        }
-
         // NEED TO REMOVE TRACKER TOO!
 
         protected override void ejectById<T>(long id)

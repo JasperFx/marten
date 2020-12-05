@@ -324,6 +324,7 @@ namespace Marten
 
     }
 
+    [Obsolete("No longer used. Will be removed in version 4.")]
     public interface ILoadByKeys<TDoc>
     {
         /// <summary>

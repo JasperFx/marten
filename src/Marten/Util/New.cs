@@ -30,6 +30,7 @@ namespace Marten.Util
         }
     }
 
+    [Obsolete("No longer used. Use Newtonsoft.Json.ConstructorHandling. Will be removed in version 4.")]
     public enum ConstructorHandling
     {
         DefaultPublic = 1,

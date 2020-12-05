@@ -3,26 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Util
 {
     public static class ReflectionExtensions
     {
-        internal static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>
-        {
-            {typeof(int), "int"},
-            {typeof(void), "void"},
-            {typeof(string), "string"},
-            {typeof(long), "long"},
-            {typeof(double), "double"},
-            {typeof(bool), "bool"},
-            {typeof(Task), "Task"},
-            {typeof(object), "object"},
-            {typeof(object[]), "object[]"}
-        };
-
         public static string ToTableAlias(this MemberInfo[] members)
         {
             return members.Select(x => x.ToTableAlias()).Join("_");

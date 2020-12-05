@@ -16,10 +16,6 @@ namespace Marten.Schema.Arguments
     {
         public const string ArgName = "docVersion";
 
-        private readonly static MethodInfo _newGuid =
-            typeof(Guid).GetMethod(nameof(Guid.NewGuid),
-                BindingFlags.Static | BindingFlags.Public);
-
         public VersionArgument()
         {
             Arg = ArgName;
