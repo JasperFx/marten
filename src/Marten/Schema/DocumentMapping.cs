@@ -55,6 +55,7 @@ namespace Marten.Schema
             applyAnyMartenAttributes(documentType);
 
             _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
+            SetTableName();
         }
 
         internal DocumentSchema Schema => _schema.Value;
@@ -100,7 +101,11 @@ namespace Marten.Schema
         public string DatabaseSchemaName
         {
             get { return _databaseSchemaName ?? _storeOptions.DatabaseSchemaName; }
-            set { _databaseSchemaName = value; }
+            set
+            {
+                _databaseSchemaName = value;
+                SetTableName();
+            }
         }
 
         public EnumStorage EnumStorage
@@ -122,6 +127,8 @@ namespace Marten.Schema
                     throw new ArgumentNullException(nameof(value));
 
                 _alias = value.ToLower();
+
+                SetTableName();
             }
         }
 
@@ -196,8 +203,13 @@ namespace Marten.Schema
         public IDocumentMapping Root => this;
         public Type DocumentType { get; }
 
-        // TODO -- this needs to be memoized!!!
-        public virtual DbObjectName TableName => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
+
+        public virtual DbObjectName TableName { get; private set; }
+
+        private void SetTableName()
+        {
+            TableName = new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
+        }
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
