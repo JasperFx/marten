@@ -56,7 +56,7 @@ namespace Marten.Linq.Parsing
 
         private static ISqlFragment QueryFromICollectionContains(MethodCallExpression expression, string fieldPath, ISerializer serializer)
         {
-            var constant = expression.Arguments[0] as ConstantExpression;
+            var constant = (ConstantExpression)expression.Arguments[0];
             var kvp = constant.Value; // is kvp<string, unknown>
             var kvpType = kvp.GetType();
             var key = kvpType.GetProperty("Key").GetValue(kvp);
