@@ -7,6 +7,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
+using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
@@ -88,10 +89,12 @@ namespace Marten.Internal.CompiledQueries
 
         private void compileAssembly(GeneratedAssembly assembly)
         {
-            var compiler = new AssemblyGenerator();
-            compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
-            compiler.ReferenceAssembly(_plan.QueryType.Assembly);
-            compiler.ReferenceAssembly(_plan.OutputType.Assembly);
+            var compiler = AssemblyGeneratorBuilder
+                .Create()
+                .ReferencingMartenAssembly()
+                .ReferencingAssemblyWith(_plan.QueryType)
+                .ReferencingAssemblyWith(_plan.OutputType)
+                .Build();
 
             compiler.Compile(assembly);
         }

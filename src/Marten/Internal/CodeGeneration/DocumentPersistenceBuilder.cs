@@ -47,9 +47,11 @@ namespace Marten.Internal.CodeGeneration
 
             var bulkWriterType = new BulkLoaderBuilder(_mapping).BuildType(assembly);
 
-            var compiler = new AssemblyGenerator();
-            compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
-            compiler.ReferenceAssembly(typeof(T).Assembly);
+            var compiler = AssemblyGeneratorBuilder
+                .Create()
+                .ReferencingMartenAssembly()
+                .ReferencingAssemblyWith<T>()
+                .Build();
 
             try
             {
