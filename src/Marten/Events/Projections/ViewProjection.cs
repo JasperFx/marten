@@ -681,12 +681,12 @@ namespace Marten.Events.Projections
         {
             if (viewIdSelector == null && viewIdsSelector == null)
                 throw new ArgumentException($"{nameof(viewIdSelector)} or {nameof(viewIdsSelector)} must be provided.");
-            if (handler == null && type == ProjectionEventType.CreateAndUpdate)
-                throw new ArgumentNullException(nameof(handler));
 
             EventHandler eventHandler;
             if (type == ProjectionEventType.CreateAndUpdate || type == ProjectionEventType.UpdateOnly)
             {
+                if (handler == null)
+                   throw new ArgumentNullException(nameof(handler));
                 eventHandler = new EventHandler(
                     viewIdSelector,
                     viewIdsSelector,
