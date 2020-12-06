@@ -69,7 +69,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.Number == 2).FirstOrDefault().Flag
+            theSession.Query<Target>().Where(x => x.Number == 2).First().Flag
                 .ShouldBeTrue();
         }
 
