@@ -38,9 +38,9 @@ namespace Marten.Events
                 throw new ArgumentException("Stream identifier needs to be string or Guid type", nameof(identifier));
             }
 
-            if (identifier is string)
+            if (identifier is string stringValue)
             {
-                return new StreamState((string)identifier, version, aggregateType, lastTimestamp, created);
+                return new StreamState(stringValue, version, aggregateType, lastTimestamp, created);
             }
             else
             {

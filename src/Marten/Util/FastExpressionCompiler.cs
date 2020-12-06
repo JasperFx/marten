@@ -934,13 +934,13 @@ namespace Marten.Util
                 {
                     il.Emit((bool)constant ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 }
-                else if (constant is string)
+                else if (constant is string stringConstant)
                 {
-                    il.Emit(OpCodes.Ldstr, (string)constant);
+                    il.Emit(OpCodes.Ldstr, stringConstant);
                 }
-                else if (constant is Type)
+                else if (constant is Type typeConstant)
                 {
-                    il.Emit(OpCodes.Ldtoken, (Type)constant);
+                    il.Emit(OpCodes.Ldtoken, typeConstant);
                     var getTypeFromHandle = typeof(Type).GetTypeInfo()
                                                         .DeclaredMethods.First(m => m.Name == "GetTypeFromHandle");
                     il.Emit(OpCodes.Call, getTypeFromHandle);

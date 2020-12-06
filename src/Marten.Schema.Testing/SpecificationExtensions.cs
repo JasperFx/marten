@@ -74,16 +74,16 @@ namespace Marten.Schema.Testing
 
         public static void ShouldHaveTheSameElementsAs<T>(this IEnumerable<T> actual, IEnumerable<T> expected)
         {
-            var actualList = (actual is IList) ? (IList)actual : actual.ToList();
-            var expectedList = (expected is IList) ? (IList)expected : expected.ToList();
+            var actualList = (actual is IList tempActual) ? tempActual : actual.ToList();
+            var expectedList = (expected is IList tempExpected) ? tempExpected : expected.ToList();
 
             ShouldHaveTheSameElementsAs(actualList, expectedList);
         }
 
         public static void ShouldHaveTheSameElementsAs<T>(this IEnumerable<T> actual, params T[] expected)
         {
-            var actualList = (actual is IList) ? (IList)actual : actual.ToList();
-            var expectedList = (expected is IList) ? (IList)expected : expected.ToList();
+            var actualList = (actual is IList tempActual) ? tempActual : actual.ToList();
+            var expectedList = (expected is IList tempExpected) ? tempExpected : expected.ToList();
 
             ShouldHaveTheSameElementsAs(actualList, expectedList);
         }

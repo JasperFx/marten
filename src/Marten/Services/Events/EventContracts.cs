@@ -15,7 +15,7 @@ namespace Marten.Services.Events
                 return false;
             if (ReferenceEquals(this, obj))
                 return true;
-            return obj is EventContracts && Equals((EventContracts)obj);
+            return obj is EventContracts contracts && Equals(contracts);
         }
 
         public override int GetHashCode()
