@@ -114,8 +114,7 @@ namespace Marten.Linq.Parsing
 
         private static object moduloByValue(BinaryExpression binary)
         {
-            var moduloValueExpression = binary?.Right as ConstantExpression;
-            return moduloValueExpression != null ? moduloValueExpression.Value : 1;
+            return binary?.Right is ConstantExpression moduloValueExpression ? moduloValueExpression.Value : 1;
         }
     }
 }

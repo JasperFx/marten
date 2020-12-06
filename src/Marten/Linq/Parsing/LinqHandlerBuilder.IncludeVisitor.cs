@@ -37,8 +37,7 @@ namespace Marten.Linq.Parsing
 
             private Expression VisitIncludePlan(MethodCallExpression node)
             {
-                var include = node.Arguments[1].Value() as IIncludePlan;
-                if (include != null)
+                if (node.Arguments[1].Value() is IIncludePlan include)
                 {
                     Includes.Add(include);
                 }

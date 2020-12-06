@@ -671,12 +671,10 @@ namespace Marten.Util
                            && TryCollectBoundConstants(ref closure, conditionalExpr.IfFalse, paramExprs);
 
                 default:
-                    var unaryExpr = expr as UnaryExpression;
-                    if (unaryExpr != null)
+                    if (expr is UnaryExpression unaryExpr)
                         return TryCollectBoundConstants(ref closure, unaryExpr.Operand, paramExprs);
 
-                    var binaryExpr = expr as BinaryExpression;
-                    if (binaryExpr != null)
+                    if (expr is BinaryExpression binaryExpr)
                         return TryCollectBoundConstants(ref closure, binaryExpr.Left, paramExprs)
                                && TryCollectBoundConstants(ref closure, binaryExpr.Right, paramExprs);
                     break;
