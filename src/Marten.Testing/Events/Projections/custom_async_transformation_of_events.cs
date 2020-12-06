@@ -529,12 +529,13 @@ namespace Marten.Testing.Events.Projections
             ProjectEventAsync<BankAccountCreated>(e => e.BankAccountId, PersistAsync);
 
             // one customer might have more than one account
-            Func<IDocumentSession, CustomerFullNameUpdated, List<Guid>> selectCustomerBankAccountIds =
-                (ds, @event) => ds.Query<BankAccountView>()
-                                  .Where(a => a.Customer.Id == @event.CustomerId)
-                                  .Select(a => a.Id).ToList();
+            static List<Guid> SelectCustomerBankAccountIds(IDocumentSession ds, CustomerFullNameUpdated @event) =>
+                ds.Query<BankAccountView>()
+                    .Where(a => a.Customer.Id == @event.CustomerId)
+                    .Select(a => a.Id)
+                    .ToList();
 
-            ProjectEvent<CustomerFullNameUpdated>(selectCustomerBankAccountIds, Persist);
+            ProjectEvent<CustomerFullNameUpdated>(SelectCustomerBankAccountIds, Persist);
         }
 
         private async Task PersistAsync

@@ -24,28 +24,29 @@ namespace Marten.Schema
             return SchemaTables().Where(x => x.Name.StartsWith(SchemaConstants.TablePrefix)).ToArray();
         }
 
+        private static DbObjectName Transform(DbDataReader r)
+        {
+            return new DbObjectName(r.GetString(0), r.GetString(1));
+        }
+
         public DbObjectName[] Functions()
         {
-            Func<DbDataReader, DbObjectName> transform = r => new DbObjectName(r.GetString(0), r.GetString(1));
-
             var sql =
                 "SELECT specific_schema, routine_name FROM information_schema.routines WHERE type_udt_name != 'trigger' and routine_name like ? and specific_schema = ANY(?);";
 
             return
-                _tenant.Fetch(sql, transform, SchemaConstants.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
+                _tenant.Fetch(sql, Transform, SchemaConstants.MartenPrefix + "%", _features.AllSchemaNames()).ToArray();
         }
 
         public DbObjectName[] SchemaTables()
         {
-            Func<DbDataReader, DbObjectName> transform = r => new DbObjectName(r.GetString(0), r.GetString(1));
-
             var sql =
                 "SELECT schemaname, relname FROM pg_stat_user_tables WHERE relname LIKE ? AND schemaname = ANY(?);";
 
             var schemaNames = _features.AllSchemaNames();
 
             var tablePattern = SchemaConstants.MartenPrefix + "%";
-            var tables = _tenant.Fetch(sql, transform, tablePattern, schemaNames).ToArray();
+            var tables = _tenant.Fetch(sql, Transform, tablePattern, schemaNames).ToArray();
 
             return tables;
         }
@@ -89,12 +90,11 @@ ns.nspname = ANY(?) AND
 NOT nspname LIKE 'pg%' AND i.relname like 'mt_%'; -- Excluding system table
 ";
 
-            Func<DbDataReader, ActualIndex> transform =
-                r => new ActualIndex(DbObjectName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
+            static ActualIndex Transform(DbDataReader r) => new ActualIndex(DbObjectName.Parse(r.GetString(2)), r.GetString(3), r.GetString(4));
 
             var schemaNames = _features.AllSchemaNames();
 
-            return _tenant.Fetch(sql, transform, (object)schemaNames);
+            return _tenant.Fetch(sql, Transform, (object)schemaNames);
         }
 
         public IEnumerable<ActualIndex> IndexesFor(DbObjectName table)
