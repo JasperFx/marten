@@ -108,7 +108,7 @@ namespace Marten.Util
             // Enum conversion to string             target => Enum.GetName(type, target.EnumProperty)
             // Nested property/field null checks     target => target.Inner != null ? target.Inner.Property : default()
 
-            Expression NullCheck(Expression accessor)
+            static Expression NullCheck(Expression accessor)
             {
                 return accessor.Type.IsValueType && !accessor.Type.IsNullableOfT()
                     ? _trueConstant
@@ -132,7 +132,7 @@ namespace Marten.Util
                         Expression.Convert(accessor, typeof(object)));
             }
 
-            Expression PropertyOrField(Expression expr, string propertyOrFieldName)
+            static Expression PropertyOrField(Expression expr, string propertyOrFieldName)
             {
                 if (!expr.Type.IsInterface)
                 {

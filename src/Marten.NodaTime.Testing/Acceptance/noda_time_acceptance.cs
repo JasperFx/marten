@@ -237,7 +237,7 @@ namespace Marten.NodaTime.Testing.Acceptance
 
         private static void ShouldBeEqualWithDbPrecision(Instant actual, Instant expected)
         {
-            Instant toDbPrecision(Instant date) => Instant.FromUnixTimeMilliseconds(date.ToUnixTimeMilliseconds() / 100 * 100);
+            static Instant toDbPrecision(Instant date) => Instant.FromUnixTimeMilliseconds(date.ToUnixTimeMilliseconds() / 100 * 100);
 
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
