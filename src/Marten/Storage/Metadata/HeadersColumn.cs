@@ -27,7 +27,7 @@ namespace Marten.Storage.Metadata
         public override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(index))
+            if (await reader.IsDBNullAsync(index, token))
             {
                 return;
             }
