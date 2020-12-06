@@ -26,7 +26,7 @@ namespace Marten.Testing.Bugs
             {
                 foreach (var initialAggregate in InitialWithQueryDatasets.Aggregates)
                 {
-                    var aggregate = session.Query<Aggregate1495>().FirstOrDefault(x => x.Name == initialAggregate.Name);
+                    var aggregate = session.Query<Aggregate1495>().First(x => x.Name == initialAggregate.Name);
                     aggregate.Name.ShouldBe(initialAggregate.Name);
                 }
             }

@@ -36,9 +36,9 @@ namespace Marten.Testing.Linq
 
 			using (var s = theStore.QuerySession())
 			{
-				var notNull = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested != null);
-				var notNullAlso = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested.Nested.Nested == null);
-				var shouldBeNull = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested == null);
+				var notNull = s.Query<UserNested>().First(x => x.Nested.Nested.Nested != null);
+				var notNullAlso = s.Query<UserNested>().First(x => x.Nested.Nested.Nested.Nested.Nested == null);
+				var shouldBeNull = s.Query<UserNested>().First(x => x.Nested.Nested.Nested == null);
 
 				Assert.Equal(user.Id, notNull.Id);
 				Assert.Equal(user.Id, notNullAlso.Id);

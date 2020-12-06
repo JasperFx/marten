@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -156,7 +156,7 @@ namespace Marten.Testing.Linq
             using (var session2 = theStore.OpenSession())
             {
                 // This works
-                var o1 = session2.Query<Outer>().FirstOrDefault(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
+                var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
                 SpecificationExtensions.ShouldNotBeNull(o1);
 
                 var o2 = session2.Query(new FindOuterByInner("T1", "V12"));

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -21,8 +21,8 @@ namespace Marten.Testing.CoreFunctionality
 			using (var session = theStore.OpenSession())
 			{
                 // SAMPLE: sample-query-type-parameter-overload
-                dynamic userFromDb = session.Query(user.GetType(), "where id = ?", user.Id).FirstOrDefault();
-                dynamic companyFromDb = (await session.QueryAsync(typeof(Company), "where id = ?", CancellationToken.None, company.Id)).FirstOrDefault();
+                dynamic userFromDb = session.Query(user.GetType(), "where id = ?", user.Id).First();
+                dynamic companyFromDb = (await session.QueryAsync(typeof(Company), "where id = ?", CancellationToken.None, company.Id)).First();
                 // ENDSAMPLE
 
 				Assert.Equal(user.Id, userFromDb.Id);
