@@ -2,6 +2,7 @@ using System;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
+using Marten.Events.V4Concept.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Schema;
@@ -30,7 +31,7 @@ namespace Marten.Internal
 
             if (documentType == typeof(IEvent))
             {
-                var storage = new EventDocumentStorage(_options.Events, new EventQueryMapping(_options), _options.Serializer());
+                var storage = EventDocumentStorageGenerator.GenerateStorage(_options);
                 var slot = new DocumentProvider<IEvent>
                 {
                     DirtyTracking = storage,

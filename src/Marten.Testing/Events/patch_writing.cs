@@ -41,7 +41,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(EventStream));
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
             var patch = theStore.Schema.ToPatch();
 

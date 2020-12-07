@@ -32,7 +32,7 @@ namespace Marten.Events.Projections
             });
         }
 
-        private void update(T state, EventStream stream)
+        private void update(T state, StreamAction stream)
         {
             stream.Events.Each(x => x.Apply(state, _aggregator));
         }
@@ -54,7 +54,7 @@ namespace Marten.Events.Projections
 
         public Type[] Consumes => _aggregator.EventTypes;
 
-        public EventStream[] MatchingStreams(EventPage streams)
+        public StreamAction[] MatchingStreams(EventPage streams)
         {
             return streams.Streams.Where(_aggregator.AppliesTo).ToArray();
         }

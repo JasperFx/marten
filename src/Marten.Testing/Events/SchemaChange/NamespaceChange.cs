@@ -171,7 +171,7 @@ namespace Marten.Testing.Events.SchemaChange
             using (var session = theStore.OpenSession())
             {
                 // ensure events tables already exists
-                session.Tenant.EnsureStorageExists(typeof(EventStream));
+                session.Tenant.EnsureStorageExists(typeof(StreamAction));
 
                 // we need to insert data manually, as if we keep old type in assembly then Marten would use it.
                 // Marten at first tries to find concrete type based on the `mt_dotnet_type` column value.

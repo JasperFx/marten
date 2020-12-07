@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.DirtyTracking;
@@ -32,6 +33,7 @@ namespace Marten.Internal.Sessions
         public Dictionary<Type, object> ItemMap { get; } = new Dictionary<Type, object>();
         public ITenant Tenant { get; }
         public StoreOptions Options { get; }
+
 
         public void MarkAsAddedForStorage(object id, object document)
         {
@@ -115,6 +117,11 @@ namespace Marten.Internal.Sessions
         public IDocumentStorage<T> StorageFor<T>()
         {
             return selectStorage(_providers.StorageFor<T>());
+        }
+
+        public IEventStorage EventStorage()
+        {
+            return (IEventStorage) selectStorage(_providers.StorageFor<IEvent>());
         }
 
         public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;

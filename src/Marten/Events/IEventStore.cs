@@ -14,28 +14,28 @@ namespace Marten.Events
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="events"></param>
-        EventStream Append(Guid stream, IEnumerable<object> events);
+        StreamAction Append(Guid stream, IEnumerable<object> events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="events"></param>
-        EventStream Append(Guid stream, params object[] events);
+        StreamAction Append(Guid stream, params object[] events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="events"></param>
-        EventStream Append(string stream, IEnumerable<object> events);
+        StreamAction Append(string stream, IEnumerable<object> events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="events"></param>
-        EventStream Append(string stream, params object[] events);
+        StreamAction Append(string stream, params object[] events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
@@ -44,7 +44,7 @@ namespace Marten.Events
         /// <param name="stream"></param>
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
-        EventStream Append(Guid stream, int expectedVersion, IEnumerable<object> events);
+        StreamAction Append(Guid stream, int expectedVersion, IEnumerable<object> events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
@@ -53,7 +53,7 @@ namespace Marten.Events
         /// <param name="stream"></param>
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
-        EventStream Append(Guid stream, int expectedVersion, params object[] events);
+        StreamAction Append(Guid stream, int expectedVersion, params object[] events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
@@ -62,7 +62,7 @@ namespace Marten.Events
         /// <param name="stream"></param>
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
-        EventStream Append(string stream, int expectedVersion, IEnumerable<object> events);
+        StreamAction Append(string stream, int expectedVersion, IEnumerable<object> events);
 
         /// <summary>
         /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
@@ -71,7 +71,7 @@ namespace Marten.Events
         /// <param name="stream"></param>
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
-        EventStream Append(string stream, int expectedVersion, params object[] events);
+        StreamAction Append(string stream, int expectedVersion, params object[] events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -80,7 +80,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class;
+        StreamAction StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -89,7 +89,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class;
+        StreamAction StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -98,7 +98,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Type aggregateType, Guid id, IEnumerable<object> events);
+        StreamAction StartStream(Type aggregateType, Guid id, IEnumerable<object> events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -107,7 +107,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Type aggregateType, Guid id, params object[] events);
+        StreamAction StartStream(Type aggregateType, Guid id, params object[] events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -117,7 +117,7 @@ namespace Marten.Events
         /// <param name="streamKey">String identifier of this stream</param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class;
+        StreamAction StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -127,7 +127,7 @@ namespace Marten.Events
         /// <param name="streamKey">String identifier of this stream</param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class;
+        StreamAction StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -137,7 +137,7 @@ namespace Marten.Events
         /// <param name="streamKey">String identifier of this stream</param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Type aggregateType, string streamKey, IEnumerable<object> events);
+        StreamAction StartStream(Type aggregateType, string streamKey, IEnumerable<object> events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -147,7 +147,7 @@ namespace Marten.Events
         /// <param name="streamKey">String identifier of this stream</param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Type aggregateType, string streamKey, params object[] events);
+        StreamAction StartStream(Type aggregateType, string streamKey, params object[] events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
@@ -155,7 +155,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Guid id, IEnumerable<object> events);
+        StreamAction StartStream(Guid id, IEnumerable<object> events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
@@ -163,7 +163,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Guid id, params object[] events);
+        StreamAction StartStream(Guid id, params object[] events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -172,7 +172,7 @@ namespace Marten.Events
         /// <param name="streamKey"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(string streamKey, IEnumerable<object> events);
+        StreamAction StartStream(string streamKey, IEnumerable<object> events);
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -181,7 +181,7 @@ namespace Marten.Events
         /// <param name="streamKey"></param>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(string streamKey, params object[] events);
+        StreamAction StartStream(string streamKey, params object[] events);
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -190,7 +190,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class;
+        StreamAction StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -199,7 +199,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class;
+        StreamAction StartStream<TAggregate>(params object[] events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -208,7 +208,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Type aggregateType, IEnumerable<object> events);
+        StreamAction StartStream(Type aggregateType, IEnumerable<object> events);
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -217,7 +217,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(Type aggregateType, params object[] events);
+        StreamAction StartStream(Type aggregateType, params object[] events);
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -226,7 +226,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(IEnumerable<object> events);
+        StreamAction StartStream(IEnumerable<object> events);
 
         /// <summary>
         /// Creates a new event stream, assigns a new Guid id, and appends the events in order to the new stream
@@ -235,7 +235,7 @@ namespace Marten.Events
         /// <typeparam name="TAggregate"></typeparam>
         /// <param name="events"></param>
         /// <returns></returns>
-        EventStream StartStream(params object[] events);
+        StreamAction StartStream(params object[] events);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream

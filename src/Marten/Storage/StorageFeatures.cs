@@ -211,7 +211,7 @@ namespace Marten.Storage
 
             Add(_options.Events);
             _features[typeof(StreamState)] = _options.Events;
-            _features[typeof(EventStream)] = _options.Events;
+            _features[typeof(StreamAction)] = _options.Events;
             _features[typeof(IEvent)] = _options.Events;
 
             _mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));

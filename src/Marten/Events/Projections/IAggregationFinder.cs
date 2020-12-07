@@ -5,10 +5,10 @@ namespace Marten.Events.Projections
 {
     public interface IAggregationFinder<T>
     {
-        T Find(EventStream stream, IDocumentSession session);
+        T Find(StreamAction stream, IDocumentSession session);
 
-        Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token);
+        Task<T> FindAsync(StreamAction stream, IDocumentSession session, CancellationToken token);
 
-        Task FetchAllAggregates(IDocumentSession session, EventStream[] streams, CancellationToken token);
+        Task FetchAllAggregates(IDocumentSession session, StreamAction[] streams, CancellationToken token);
     }
 }

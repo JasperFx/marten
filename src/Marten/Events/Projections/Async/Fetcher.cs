@@ -21,7 +21,7 @@ namespace Marten.Events.Projections.Async
         private readonly IDaemonErrorHandler _errorHandler;
         private readonly DaemonSettings _settings;
         private readonly AsyncOptions _options;
-        private readonly IEventSelector _selector;
+        private readonly IEventStorage _selector;
         private Task _fetchingTask;
         private long _lastEncountered;
         private CancellationToken _token = default(CancellationToken);
@@ -43,9 +43,7 @@ namespace Marten.Events.Projections.Async
 
             _streamIdentity = store.Events.StreamIdentity;
 
-            _selector = store.Events.StreamIdentity == StreamIdentity.AsGuid
-                ? (IEventSelector)new EventSelector(store.Events, store.Advanced.Serializer)
-                : new StringIdentifiedEventSelector(store.Events, store.Advanced.Serializer);
+            _selector = _tenant.EventStorage();
 
             EventTypeNames = eventTypes.Select(x => store.Events.EventMappingFor(x).Alias).ToArray();
 

@@ -13,6 +13,7 @@ using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
+using Marten.Storage;
 using Marten.Util;
 using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Npgsql;
@@ -131,7 +132,7 @@ namespace Marten.Services.BatchQuerying
             where T : class
         {
             var events = _parent.DocumentStore.Events;
-            var inner = new EventQueryHandler<Guid>(new EventSelector(events, _parent.Serializer), streamId, version,
+            var inner = new EventQueryHandler<Guid>(_parent.Tenant.EventStorage(), streamId, version,
                 timestamp, events.TenancyStyle, _parent.Tenant.TenantId);
             var aggregator = events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner);
@@ -141,7 +142,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IEvent> Load(Guid id)
         {
-            var handler = new SingleEventQueryHandler(id, _parent.Options.Events, _parent.Serializer);
+            var handler = new SingleEventQueryHandler(id, _parent.Tenant.EventStorage());
             return AddItem(handler);
         }
 
@@ -153,8 +154,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
-            var selector = new EventSelector(_parent.Options.Events, _parent.Serializer);
-            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _parent.Options.Events.TenancyStyle, _parent.Tenant.TenantId);
+            var handler = new EventQueryHandler<Guid>(_parent.Tenant.EventStorage(), streamId, version, timestamp, _parent.Options.Events.TenancyStyle, _parent.Tenant.TenantId);
 
             return AddItem(handler);
         }

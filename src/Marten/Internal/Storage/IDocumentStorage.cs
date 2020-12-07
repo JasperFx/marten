@@ -63,6 +63,13 @@ namespace Marten.Internal.Storage
 
     public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
     {
+        /// <summary>
+        /// Assign the given identity to the document
+        /// </summary>
+        /// <param name="document"></param>
+        /// <param name="identity"></param>
+        void SetIdentity(T document, TId identity);
+
         IDeletion DeleteForId(TId id);
         IDeletion DeleteForId(TId id, ITenant tenant);
 

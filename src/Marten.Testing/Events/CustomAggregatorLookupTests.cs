@@ -38,8 +38,7 @@ namespace Marten.Testing.Events
 
             var aggregator = theGraph.AggregateFor<AggregateWithPrivateEventApply>();
 
-            var stream = new EventStream(Guid.NewGuid(), false)
-                .Add(new QuestStarted { Name = "Destroy the Ring" });
+            var stream = StreamAction.Append(Guid.NewGuid(), new[] {new QuestStarted {Name = "Destroy the Ring"}});
 
             var party = aggregator.Build(stream.Events, null);
 
@@ -57,8 +56,7 @@ namespace Marten.Testing.Events
 
             var aggregator = theGraph.AggregateFor<AggregateWithPrivateEventApply>();
 
-            var stream = new EventStream(Guid.NewGuid(), false)
-                .Add(new QuestStarted { Name = "Destroy the Ring" });
+            var stream = StreamAction.Append(Guid.NewGuid(), new object[]{new QuestStarted { Name = "Destroy the Ring" }});
 
             var party = aggregator.Build(stream.Events, null);
 
@@ -73,8 +71,7 @@ namespace Marten.Testing.Events
 
             var aggregator = theGraph.AggregateFor<AggregateWithPrivateEventApply>();
 
-            var stream = new EventStream(Guid.NewGuid(), false)
-                .Add(new QuestStarted { Name = "Destroy the Ring" });
+            var stream = StreamAction.Append(Guid.NewGuid(), new object[]{new QuestStarted { Name = "Destroy the Ring" }});
 
             var party = aggregator.Build(stream.Events, null);
             party.Name.ShouldBe("Destroy the Ring");
@@ -92,8 +89,7 @@ namespace Marten.Testing.Events
 
             var aggregator = theGraph.AggregateFor<QuestParty>();
 
-            var stream = new EventStream(Guid.NewGuid(), false)
-                .Add(new QuestStarted { Name = "Destroy the Ring" });
+            var stream = StreamAction.Start(Guid.NewGuid(), new object[]{new QuestStarted { Name = "Destroy the Ring" }});
 
             var party = aggregator.Build(stream.Events, null);
 

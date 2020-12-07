@@ -199,6 +199,11 @@ namespace Marten.Internal.Storage
             return _parent.DeleteForDocument(document, tenant);
         }
 
+        public void SetIdentity(T document, TId identity)
+        {
+            throw new NotSupportedException();
+        }
+
         public IDeletion DeleteForId(TId id)
         {
             return _parent.DeleteForId(id);

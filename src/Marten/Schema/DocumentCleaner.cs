@@ -61,6 +61,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
         public void DeleteDocumentsFor(Type documentType)
         {
             var mapping = _options.Storage.FindMapping(documentType);
+            _options.Tenancy.Default.EnsureStorageExists(documentType);
             mapping.DeleteAllDocuments(_tenant);
         }
 

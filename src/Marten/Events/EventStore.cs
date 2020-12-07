@@ -15,7 +15,6 @@ namespace Marten.Events
     {
         private readonly DocumentSessionBase _session;
         private readonly ITenant _tenant;
-        private readonly IEventSelector _selector;
         private readonly DocumentStore _store;
 
         public EventStore(DocumentSessionBase session, DocumentStore store, ITenant tenant)
@@ -24,270 +23,188 @@ namespace Marten.Events
             _store = store;
 
             _tenant = tenant;
-
-            // TODO -- we can make much more of this lazy
-            StreamIdentity = _store.Events.StreamIdentity;
-
-            if (StreamIdentity == StreamIdentity.AsGuid)
-            {
-                _selector = new EventSelector(_store.Events, _store.Serializer);
-            }
-            else
-            {
-                _selector = new StringIdentifiedEventSelector(_store.Events, _store.Serializer);
-            }
         }
 
-        private void ensureAsStringStorage()
-        {
-            if (StreamIdentity == StreamIdentity.AsGuid)
-                throw new InvalidOperationException("This Marten event store is configured to identify streams with Guids");
-            _tenant.EnsureStorageExists(typeof(EventStream));
-        }
-
-        private void ensureAsGuidStorage()
-        {
-            if (StreamIdentity == StreamIdentity.AsString)
-                throw new InvalidOperationException("This Marten event store is configured to identify streams with strings");
-            _tenant.EnsureStorageExists(typeof(EventStream));
-        }
-
-        public StreamIdentity StreamIdentity { get; }
-
-        public EventStream Append(Guid stream, IEnumerable<object> events)
+        public StreamAction Append(Guid stream, IEnumerable<object> events)
         {
             return Append(stream, events?.ToArray());
         }
 
-        public EventStream Append(Guid stream, params object[] events)
+        public StreamAction Append(Guid stream, params object[] events)
         {
-            ensureAsGuidStorage();
-
-
-            if (_session.UnitOfWork.TryFindStream(stream, out var eventStream))
-            {
-                eventStream.AddEvents(events.Select(EventStream.ToEvent));
-            }
-            else
-            {
-                eventStream = new EventStream(stream, events.Select(EventStream.ToEvent).ToArray(), false);
-                var operation = new AppendEventsOperation(eventStream, _store.Events);
-                _session.UnitOfWork.Add(operation);
-            }
-
-            return eventStream;
+            return _store.Events.Append(_session, stream, events);
         }
 
-        public EventStream Append(string stream, IEnumerable<object> events)
+        public StreamAction Append(string stream, IEnumerable<object> events)
         {
             return Append(stream, events?.ToArray());
         }
 
-        public EventStream Append(string stream, params object[] events)
+        public StreamAction Append(string stream, params object[] events)
         {
-            ensureAsStringStorage();
-
-            if (_session.UnitOfWork.TryFindStream(stream, out var eventStream))
-            {
-                eventStream.AddEvents(events.Select(EventStream.ToEvent));
-            }
-            else
-            {
-                eventStream = new EventStream(stream, events.Select(EventStream.ToEvent).ToArray(), false);
-                var operation = new AppendEventsOperation(eventStream, _store.Events);
-                _session.UnitOfWork.Add(operation);
-            }
-
-            return eventStream;
+            return _store.Events.Append(_session, stream, events);
         }
 
-        public EventStream Append(Guid stream, int expectedVersion, IEnumerable<object> events)
+        public StreamAction Append(Guid stream, int expectedVersion, IEnumerable<object> events)
         {
             return Append(stream, expectedVersion, events?.ToArray());
         }
 
-        public EventStream Append(Guid stream, int expectedVersion, params object[] events)
+        public StreamAction Append(Guid stream, int expectedVersion, params object[] events)
         {
             var eventStream = Append(stream, events);
-            eventStream.ExpectedVersionOnServer = expectedVersion;
+            eventStream.ExpectedVersionOnServer = expectedVersion - events.Length;
 
             return eventStream;
         }
 
-        public EventStream Append(string stream, int expectedVersion, IEnumerable<object> events)
+        public StreamAction Append(string stream, int expectedVersion, IEnumerable<object> events)
         {
             return Append(stream, expectedVersion, events?.ToArray());
         }
 
-        public EventStream Append(string stream, int expectedVersion, params object[] events)
+        public StreamAction Append(string stream, int expectedVersion, params object[] events)
         {
             var eventStream = Append(stream, events);
-            eventStream.ExpectedVersionOnServer = expectedVersion;
+            eventStream.ExpectedVersionOnServer = expectedVersion - events.Length;
 
             return eventStream;
         }
 
-        public EventStream StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class
+        public StreamAction StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class
         {
             return StartStream<TAggregate>(id, events?.ToArray());
         }
 
-        public EventStream StartStream<T>(Guid id, params object[] events) where T : class
+        public StreamAction StartStream<T>(Guid id, params object[] events) where T : class
         {
             return StartStream(typeof(T), id, events);
         }
 
-        public EventStream StartStream(Type aggregateType, Guid id, IEnumerable<object> events)
+        public StreamAction StartStream(Type aggregateType, Guid id, IEnumerable<object> events)
         {
             return StartStream(aggregateType, id, events?.ToArray());
         }
 
-        public EventStream StartStream(Type aggregateType, Guid id, params object[] events)
+        public StreamAction StartStream(Type aggregateType, Guid id, params object[] events)
         {
-            ensureAsGuidStorage();
-
-            var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true)
-            {
-                AggregateType = aggregateType
-            };
-
-            var operation = new AppendEventsOperation(stream, _store.Events);
-            _session.UnitOfWork.Add(operation);
+            var stream = _store.Events.StartStream(_session, id, events);
+            stream.AggregateType = aggregateType;
 
             return stream;
         }
 
-        public EventStream StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class
+        public StreamAction StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class
         {
             return StartStream<TAggregate>(streamKey, events?.ToArray());
         }
 
-        public EventStream StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
+        public StreamAction StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
         {
             return StartStream(typeof(TAggregate), streamKey, events);
         }
 
-        public EventStream StartStream(Type aggregateType, string streamKey, IEnumerable<object> events)
+        public StreamAction StartStream(Type aggregateType, string streamKey, IEnumerable<object> events)
         {
             return StartStream(aggregateType, streamKey, events?.ToArray());
         }
 
-        public EventStream StartStream(Type aggregateType, string streamKey, params object[] events)
+        public StreamAction StartStream(Type aggregateType, string streamKey, params object[] events)
         {
-            ensureAsStringStorage();
-
-            var stream = new EventStream(streamKey, events.Select(EventStream.ToEvent).ToArray(), true)
-            {
-                AggregateType = aggregateType
-            };
-
-            var operation = new AppendEventsOperation(stream, _store.Events);
-            _session.UnitOfWork.Add(operation);
+            var stream = _store.Events.StartStream(_session, streamKey, events);
+            stream.AggregateType = aggregateType;
 
             return stream;
         }
 
-        public EventStream StartStream(Guid id, IEnumerable<object> events)
+        public StreamAction StartStream(Guid id, IEnumerable<object> events)
         {
             return StartStream(id, events?.ToArray());
         }
 
-        public EventStream StartStream(Guid id, params object[] events)
+        public StreamAction StartStream(Guid id, params object[] events)
         {
-            ensureAsGuidStorage();
-
-            var stream = new EventStream(id, events.Select(EventStream.ToEvent).ToArray(), true);
-
-            var operation = new AppendEventsOperation(stream, _store.Events);
-            _session.UnitOfWork.Add(operation);
-
-            return stream;
+            return _store.Events.StartStream(_session, id, events);
         }
 
-        public EventStream StartStream(string streamKey, IEnumerable<object> events)
+        public StreamAction StartStream(string streamKey, IEnumerable<object> events)
         {
             return StartStream(streamKey, events?.ToArray());
         }
 
-        public EventStream StartStream(string streamKey, params object[] events)
+        public StreamAction StartStream(string streamKey, params object[] events)
         {
-            ensureAsStringStorage();
-
-            var stream = new EventStream(streamKey, events.Select(EventStream.ToEvent).ToArray(), true);
-
-            var operation = new AppendEventsOperation(stream, _store.Events);
-            _session.UnitOfWork.Add(operation);
-
-            return stream;
+            return _store.Events.StartStream(_session, streamKey, events);
         }
 
-        public EventStream StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class
+        public StreamAction StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class
         {
             return StartStream<TAggregate>(events?.ToArray());
         }
 
-        public EventStream StartStream<TAggregate>(params object[] events) where TAggregate : class
+        public StreamAction StartStream<TAggregate>(params object[] events) where TAggregate : class
         {
             return StartStream(typeof(TAggregate), events);
         }
 
-        public EventStream StartStream(Type aggregateType, IEnumerable<object> events)
+        public StreamAction StartStream(Type aggregateType, IEnumerable<object> events)
         {
             return StartStream(aggregateType, events?.ToArray());
         }
 
-        public EventStream StartStream(Type aggregateType, params object[] events)
+        public StreamAction StartStream(Type aggregateType, params object[] events)
         {
             return StartStream(aggregateType, CombGuidIdGeneration.NewGuid(), events);
         }
 
-        public EventStream StartStream(IEnumerable<object> events)
+        public StreamAction StartStream(IEnumerable<object> events)
         {
             return StartStream(events?.ToArray());
         }
 
-        public EventStream StartStream(params object[] events)
+        public StreamAction StartStream(params object[] events)
         {
             return StartStream(CombGuidIdGeneration.NewGuid(), events);
         }
 
         public IReadOnlyList<IEvent> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
         {
-            ensureAsGuidStorage();
+            // TODO -- do this later by just delegating to Load<StreamState>(streamId)
+            var selector = _store.Events.EnsureAsGuidStorage(_session);
 
-            var handler = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _session.ExecuteHandler(handler);
         }
 
         public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken))
         {
-            ensureAsGuidStorage();
+            var selector = _store.Events.EnsureAsGuidStorage(_session);
 
-            var handler = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public IReadOnlyList<IEvent> FetchStream(string streamKey, int version = 0, DateTime? timestamp = null)
         {
-            ensureAsStringStorage();
+            var selector = _store.Events.EnsureAsStringStorage(_session);
 
-            var handler = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var handler = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _session.ExecuteHandler(handler);
         }
 
         public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, int version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken))
         {
-            ensureAsStringStorage();
+            var selector = _store.Events.EnsureAsStringStorage(_session);
 
-            var handler = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var handler = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public T AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null, T state = null) where T : class
         {
-            ensureAsGuidStorage();
+            var selector = _store.Events.EnsureAsGuidStorage(_session);
 
-            var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var inner = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -302,9 +219,9 @@ namespace Marten.Events
         public async Task<T> AggregateStreamAsync<T>(Guid streamId, int version = 0, DateTime? timestamp = null,
             T state = null, CancellationToken token = new CancellationToken()) where T : class
         {
-            ensureAsGuidStorage();
+            var selector = _store.Events.EnsureAsGuidStorage(_session);
 
-            var inner = new EventQueryHandler<Guid>(_selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var inner = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -318,9 +235,9 @@ namespace Marten.Events
 
         public T AggregateStream<T>(string streamKey, int version = 0, DateTime? timestamp = null, T state = null) where T : class
         {
-            ensureAsStringStorage();
+            var selector = _store.Events.EnsureAsStringStorage(_session);
 
-            var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var inner = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -335,9 +252,9 @@ namespace Marten.Events
         public async Task<T> AggregateStreamAsync<T>(string streamKey, int version = 0, DateTime? timestamp = null,
             T state = null, CancellationToken token = new CancellationToken()) where T : class
         {
-            ensureAsStringStorage();
+            var selector = _store.Events.EnsureAsStringStorage(_session);
 
-            var inner = new EventQueryHandler<string>(_selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var inner = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.AggregateFor<T>();
             var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
@@ -351,7 +268,7 @@ namespace Marten.Events
 
         public IMartenQueryable<T> QueryRawEventDataOnly<T>()
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             if (_store.Events.AllAggregates().Any(x => x.AggregateType == typeof(T)))
             {
@@ -365,14 +282,14 @@ namespace Marten.Events
 
         public IMartenQueryable<IEvent> QueryAllRawEvents()
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             return _session.Query<IEvent>();
         }
 
         public Event<T> Load<T>(Guid id) where T : class
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             _store.Events.AddEventType(typeof(T));
 
@@ -381,7 +298,7 @@ namespace Marten.Events
 
         public async Task<Event<T>> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             _store.Events.AddEventType(typeof(T));
 
@@ -390,23 +307,21 @@ namespace Marten.Events
 
         public IEvent Load(Guid id)
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
-
-            var handler = new SingleEventQueryHandler(id, _store.Events, _store.Serializer);
+            var handler = new SingleEventQueryHandler(id, _session.EventStorage());
             return _session.ExecuteHandler(handler);
         }
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
-            var handler = new SingleEventQueryHandler(id, _store.Events, _store.Serializer);
+            var handler = new SingleEventQueryHandler(id, _session.EventStorage());
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public StreamState FetchStreamState(Guid streamId)
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             var handler = new StreamStateByGuidHandler(_store.Events, streamId, _tenant.TenantId);
             return _session.ExecuteHandler(handler);
@@ -414,7 +329,7 @@ namespace Marten.Events
 
         public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             var handler = new StreamStateByGuidHandler(_store.Events, streamId, _tenant.TenantId);
             return _session.ExecuteHandlerAsync(handler, token);
@@ -422,7 +337,7 @@ namespace Marten.Events
 
         public StreamState FetchStreamState(string streamKey)
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             var handler = new StreamStateByStringHandler(_store.Events, streamKey, _tenant.TenantId);
             return _session.ExecuteHandler(handler);
@@ -430,7 +345,7 @@ namespace Marten.Events
 
         public Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = new CancellationToken())
         {
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             var handler = new StreamStateByStringHandler(_store.Events, streamKey, _tenant.TenantId);
             return _session.ExecuteHandlerAsync(handler, token);

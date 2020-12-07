@@ -19,8 +19,6 @@ namespace Marten.Storage.Metadata
 
     public abstract class MetadataColumn : TableColumn
     {
-        // TODO -- there's a lot of duplication in the codegen across these columns
-
         public Type DotNetType { get; }
 
         protected MetadataColumn(string name, string type, Type dotNetType) : base(name, type)
@@ -54,30 +52,20 @@ namespace Marten.Storage.Metadata
             };
         }
 
-        protected static void generateCloseScope(GeneratedMethod async, GeneratedMethod sync)
+        protected void setMemberFromReader(GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync, int index,
+            DocumentMapping mapping)
         {
-            sync.Frames.Code("}}");
-            async.Frames.Code("}}");
-        }
+            if (Member == null) return;
 
-        protected static void generateIfValueIsNotNull(GeneratedMethod async, GeneratedMethod sync, int index)
-        {
-            sync.Frames.Code($"if (!reader.IsDBNull({index}))");
-            sync.Frames.Code("{{");
+            sync.IfDbReaderValueIsNotNull(index, () =>
+            {
+                sync.AssignMemberFromReader(generatedType, index, mapping.DocumentType, Member.Name);
+            });
 
-            async.Frames.CodeAsync($"if (!(await reader.IsDBNullAsync({index}, token)))");
-            async.Frames.Code("{{");
-        }
-
-        protected static void generateCodeToSetValuesOnDocumentFromReader(GeneratedType generatedType, GeneratedMethod async,
-            GeneratedMethod sync, int index, DocumentMapping mapping, string variableName, Type memberType, MemberInfo member)
-        {
-            sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
-            async.Frames.CodeAsync(
-                $"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
-
-            sync.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
-            async.Frames.SetMemberValue(member, variableName, mapping.DocumentType, generatedType);
+            async.IfDbReaderValueIsNotNullAsync(index, () =>
+            {
+                async.AssignMemberFromReaderAsync(generatedType, index, mapping.DocumentType, Member.Name);
+            });
         }
     }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using Baseline;
+using Marten.Events;
 using Marten.Util;
 using Npgsql;
 
@@ -9,6 +10,11 @@ namespace Marten.Storage
 {
     public static class TenantExtensions
     {
+        public static IEventStorage EventStorage(this ITenant tenant)
+        {
+            return (IEventStorage) tenant.StorageFor<IEvent>();
+        }
+
         public static void RunSql(this ITenant tenant, string sql)
         {
             using (var conn = tenant.CreateConnection())

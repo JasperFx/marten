@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
-using Marten.Events.Projections.Async;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -21,7 +20,7 @@ namespace Marten.Internal.Sessions
     public abstract class DocumentSessionBase: QuerySession, IDocumentSession
     {
         // The current unit of work can be replaced
-        protected UnitOfWork _unitOfWork;
+        internal UnitOfWork _unitOfWork;
 
 
         protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
@@ -196,7 +195,7 @@ namespace Marten.Internal.Sessions
 
             Database.BeginTransaction();
 
-            applyProjections();
+            Options.Events.ProcessEvents(this);
 
             _unitOfWork.Sort(Options);
 
@@ -215,7 +214,7 @@ namespace Marten.Internal.Sessions
                 throw;
             }
 
-            resetDirtyChecking(_unitOfWork);
+            resetDirtyChecking();
 
             EjectPatchedTypes(_unitOfWork);
             Logger.RecordSavedChanges(this, _unitOfWork);
@@ -235,7 +234,7 @@ namespace Marten.Internal.Sessions
 
             await Database.BeginTransactionAsync(token).ConfigureAwait(false);
 
-            await applyProjectionsAsync(token).ConfigureAwait(false);
+            await Options.Events.ProcessEventsAsync(this, token).ConfigureAwait(false);
 
             _unitOfWork.Sort(Options);
 
@@ -254,7 +253,7 @@ namespace Marten.Internal.Sessions
                 throw;
             }
 
-            resetDirtyChecking(_unitOfWork);
+            resetDirtyChecking();
 
             EjectPatchedTypes(_unitOfWork);
             Logger.RecordSavedChanges(this, _unitOfWork);
@@ -493,7 +492,7 @@ namespace Marten.Internal.Sessions
             // Nothing
         }
 
-        protected virtual void resetDirtyChecking(UnitOfWork unitOfWork)
+        protected virtual void resetDirtyChecking()
         {
             // Nothing
         }
@@ -512,6 +511,7 @@ namespace Marten.Internal.Sessions
                 var storage = StorageFor<T>();
 
                 if (Concurrency == ConcurrencyChecks.Disabled && storage.UseOptimisticConcurrency)
+                {
                     foreach (var entity in entities)
                     {
                         // Put it in the identity map -- if necessary
@@ -521,7 +521,9 @@ namespace Marten.Internal.Sessions
 
                         _unitOfWork.Add(overwrite);
                     }
+                }
                 else
+                {
                     foreach (var entity in entities)
                     {
                         // Put it in the identity map -- if necessary
@@ -531,6 +533,7 @@ namespace Marten.Internal.Sessions
 
                         _unitOfWork.Add(upsert);
                     }
+                }
             }
         }
 
@@ -546,29 +549,6 @@ namespace Marten.Internal.Sessions
         {
             var patchedTypes = changes.Patches().Select(x => x.DocumentType).Distinct().ToArray();
             foreach (var type in patchedTypes) EjectAllOfType(type);
-        }
-
-        private void applyProjections()
-        {
-            var streams = PendingChanges.Streams().ToArray();
-
-            if (streams.Length > 0)
-            {
-                var eventPage = new EventPage(streams);
-                foreach (var projection in DocumentStore.Events.InlineProjections) projection.Apply(this, eventPage);
-            }
-        }
-
-        private async Task applyProjectionsAsync(CancellationToken token)
-        {
-            var streams = PendingChanges.Streams().ToArray();
-
-            if (streams.Length > 0)
-            {
-                var eventPage = new EventPage(streams);
-                foreach (var projection in DocumentStore.Events.InlineProjections)
-                    await projection.ApplyAsync(this, eventPage, token).ConfigureAwait(false);
-            }
         }
 
         internal interface IHandler

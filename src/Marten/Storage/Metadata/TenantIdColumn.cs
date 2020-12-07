@@ -1,10 +1,11 @@
 using LamarCodeGeneration;
+using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
 namespace Marten.Storage.Metadata
 {
-    internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn
+    internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn, IStreamTableColumn
     {
         public static new readonly string Name = "tenant_id";
 
@@ -33,5 +34,45 @@ namespace Marten.Storage.Metadata
         {
             return Member != null;
         }
+
+        public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.IfDbReaderValueIsNotNull(index, () =>
+            {
+                method.AssignMemberFromReader<IEvent>(null, index, x => x.TenantId);
+            });
+        }
+
+        public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.IfDbReaderValueIsNotNullAsync(index, () =>
+            {
+                method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.TenantId);
+            });
+        }
+
+        public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.SetParameterFromMember<IEvent>(index, x => x.TenantId);
+        }
+
+        void IStreamTableColumn.GenerateAppendCode(GeneratedMethod method, int index)
+        {
+            method.SetParameterFromMember<StreamAction>(index, x => x.TenantId);
+        }
+
+        void IStreamTableColumn.GenerateSelectorCodeAsync(GeneratedMethod method, int index)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        void IStreamTableColumn.GenerateSelectorCodeSync(GeneratedMethod method, int index)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        bool IStreamTableColumn.Reads => true;
+
+        bool IStreamTableColumn.Writes => true;
     }
 }

@@ -103,7 +103,7 @@ namespace Marten.Events.Projections.Async
                 track.EnsureStorageExists(_tenant);
             }
 
-            _tenant.EnsureStorageExists(typeof(EventStream));
+            _tenant.EnsureStorageExists(typeof(StreamAction));
 
             findCurrentEventLogPositions();
 

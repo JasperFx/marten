@@ -3,12 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Projections;
+using Marten.Events.V4Concept;
 using Marten.Exceptions;
+using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
+using IProjection = Marten.Events.Projections.IProjection;
 
 namespace Marten.Events
 {
@@ -26,11 +33,16 @@ namespace Marten.Events
         private readonly Ref<ImHashMap<Type, IAggregator>> _aggregates =
             Ref.Of(ImHashMap<Type, IAggregator>.Empty);
 
+        // TODO -- absolutely replace this with ImHashMap
         private readonly ConcurrentCache<string, EventMapping> _byEventName = new ConcurrentCache<string, EventMapping>();
+
+        // TODO -- absolutely replace this with ImHashMap
         private readonly ConcurrentCache<Type, EventMapping> _events = new ConcurrentCache<Type, EventMapping>();
 
         private IAggregatorLookup _aggregatorLookup;
         private string _databaseSchemaName;
+
+        private readonly Lazy<IInlineProjection[]> _inlineProjections;
 
         public EventGraph(StoreOptions options)
         {
@@ -48,6 +60,9 @@ namespace Marten.Events
 
             InlineProjections = new ProjectionCollection(options);
             AsyncProjections = new ProjectionCollection(options);
+
+            // TODO -- this will change when we switch all the way over to the new V4 model
+            _inlineProjections = new Lazy<IInlineProjection[]>(() => InlineProjections.Select(x => new TemporaryV4InlineShim(x)).OfType<IInlineProjection>().ToArray());
         }
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
@@ -216,7 +231,7 @@ namespace Marten.Events
         Type IFeatureSchema.StorageType => typeof(EventGraph);
         public string Identifier { get; } = "eventstore";
 
-        public void WritePermissions(DdlRules rules, StringWriter writer)
+        void IFeatureSchema.WritePermissions(DdlRules rules, StringWriter writer)
         {
             // Nothing
         }
@@ -237,7 +252,7 @@ namespace Marten.Events
         {
             if (!_dotnetTypeNames.Value.TryFind(type, out var value))
             {
-                value = $"{type.FullName}, {type.GetTypeInfo().Assembly.GetName().Name}";
+                value = $"{type.FullName}, {type.Assembly.GetName().Name}";
 
                 _dotnetTypeNames.Swap(d => d.AddOrUpdate(type, value));
             }
@@ -261,5 +276,180 @@ namespace Marten.Events
 
             return value;
         }
+
+        internal IEventStorage EnsureAsStringStorage(IMartenSession session)
+        {
+            if (StreamIdentity == StreamIdentity.AsGuid)
+                throw new InvalidOperationException("This Marten event store is configured to identify streams with Guids");
+            return session.EventStorage();
+        }
+
+        internal IEventStorage EnsureAsGuidStorage(IMartenSession session)
+        {
+            if (StreamIdentity == StreamIdentity.AsString)
+                throw new InvalidOperationException("This Marten event store is configured to identify streams with strings");
+            return session.EventStorage();
+        }
+
+        internal StreamAction Append(DocumentSessionBase session, Guid stream, params object[] events)
+        {
+            EnsureAsGuidStorage(session);
+
+            if (session.UnitOfWork.TryFindStream(stream, out var eventStream))
+            {
+                eventStream.AddEvents(events);
+            }
+            else
+            {
+                eventStream = StreamAction.Append(stream, events);
+                session.UnitOfWork.Streams.Add(eventStream);
+            }
+
+            return eventStream;
+        }
+
+        internal StreamAction Append(DocumentSessionBase session, string stream, params object[] events)
+        {
+            EnsureAsStringStorage(session);
+
+            if (session.UnitOfWork.TryFindStream(stream, out var eventStream))
+            {
+                eventStream.AddEvents(events);
+            }
+            else
+            {
+                eventStream = StreamAction.Append(stream, events);
+                session.UnitOfWork.Streams.Add(eventStream);
+            }
+
+            return eventStream;
+        }
+
+        internal StreamAction StartStream(DocumentSessionBase session, Guid id, params object[] events)
+        {
+            EnsureAsGuidStorage(session);
+
+            var stream = StreamAction.Start(id, events);
+            session.UnitOfWork.Streams.Add(stream);
+
+            return stream;
+        }
+
+        internal StreamAction StartStream(DocumentSessionBase session, string streamKey, params object[] events)
+        {
+            EnsureAsStringStorage(session);
+
+            var stream = StreamAction.Start(streamKey, events);
+
+            session.UnitOfWork.Streams.Add(stream);
+
+            return stream;
+        }
+
+        internal void ProcessEvents(DocumentSessionBase session)
+        {
+            if (!session.UnitOfWork.Streams.Any())
+            {
+                return;
+            }
+
+            var storage = session.EventStorage();
+
+            // TODO -- we'll optimize this later to batch up queries to the database
+            var fetcher = new EventSequenceFetcher(this, session.UnitOfWork.Streams.Sum(x => x.Events.Count));
+            var sequences = session.ExecuteHandler(fetcher);
+
+
+            foreach (var stream in session.UnitOfWork.Streams)
+            {
+                stream.TenantId ??= session.Tenant.TenantId;
+
+                if (stream.ActionType == StreamActionType.Start)
+                {
+                    stream.PrepareEvents(0, this, sequences, session);
+                    session.QueueOperation(storage.InsertStream(stream));
+                }
+                else
+                {
+                    var handler = storage.QueryForStream(stream);
+                    var state = session.ExecuteHandler(handler);
+
+                    if (state == null)
+                    {
+                        stream.PrepareEvents(0, this, sequences, session);
+                        session.QueueOperation(storage.InsertStream(stream));
+                    }
+                    else
+                    {
+                        stream.PrepareEvents(state.Version, this, sequences, session);
+                        session.QueueOperation(storage.UpdateStreamVersion(stream));
+                    }
+                }
+
+                foreach (var @event in stream.Events)
+                {
+                    session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
+                }
+            }
+
+            foreach (var projection in _inlineProjections.Value)
+            {
+                projection.Apply(session, session.UnitOfWork.Streams.ToList());
+            }
+        }
+
+        internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
+        {
+            if (!session._unitOfWork.Streams.Any())
+            {
+                return;
+            }
+
+            // TODO -- we'll optimize this later to batch up queries to the database
+            var fetcher = new EventSequenceFetcher(this, session.UnitOfWork.Streams.Sum(x => x.Events.Count));
+            var sequences = await session.ExecuteHandlerAsync(fetcher, token);
+
+
+            var storage = session.EventStorage();
+
+            foreach (var stream in session.UnitOfWork.Streams)
+            {
+                stream.TenantId ??= session.Tenant.TenantId;
+
+                if (stream.ActionType == StreamActionType.Start)
+                {
+                    stream.PrepareEvents(0, this, sequences, session);
+                    session.QueueOperation(storage.InsertStream(stream));
+                }
+                else
+                {
+                    var handler = storage.QueryForStream(stream);
+                    var state = await session.ExecuteHandlerAsync(handler, token);
+
+                    if (state == null)
+                    {
+                        stream.PrepareEvents(0, this, sequences, session);
+                        session.QueueOperation(storage.InsertStream(stream));
+                    }
+                    else
+                    {
+                        stream.PrepareEvents(state.Version, this, sequences, session);
+                        session.QueueOperation(storage.UpdateStreamVersion(stream));
+                    }
+                }
+
+                foreach (var @event in stream.Events)
+                {
+                    session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
+                }
+            }
+
+            foreach (var projection in _inlineProjections.Value)
+            {
+                await projection.ApplyAsync(session, session.UnitOfWork.Streams.ToList(), token);
+            }
+        }
+
+
     }
 }

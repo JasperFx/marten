@@ -137,27 +137,6 @@ namespace Marten.Testing.Events
             }
         }
 
-        [Fact]
-        public void try_to_append_across_tenants_with_tenancy_style_single()
-        {
-            InitStore(TenancyStyle.Single);
-
-            Guid stream = Guid.NewGuid();
-            using (var session = theStore.OpenSession("Green"))
-            {
-                session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-                session.SaveChanges();
-            }
-
-            SpecificationExtensions.ShouldContain(Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
-            {
-                using (var session = theStore.OpenSession("Red"))
-                {
-                    session.Events.Append(stream, new MembersJoined(), new MembersJoined());
-                    session.SaveChanges();
-                }
-            }).Message, "The tenantid does not match the existing stream");
-        }
 
         [Fact]
         public void try_to_append_across_tenants_with_tenancy_style_conjoined()

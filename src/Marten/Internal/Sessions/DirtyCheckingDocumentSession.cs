@@ -31,7 +31,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        protected override void resetDirtyChecking(UnitOfWork unitOfWork)
+        protected override void resetDirtyChecking()
         {
             foreach (var tracker in ChangeTrackers)
             {
@@ -40,7 +40,7 @@ namespace Marten.Internal.Sessions
 
             var knownDocuments = ChangeTrackers.Select(x => x.Document).ToArray();
 
-            var operations =unitOfWork.AllOperations
+            var operations = _unitOfWork.AllOperations
                 .OfType<IDocumentStorageOperation>()
                 .Where(x => !knownDocuments.Contains(x.Document));
 

@@ -23,7 +23,7 @@ namespace Marten.Testing.CodeTracker
 
     public class CommitViewTransform: ITransform<Commit, CommitView>
     {
-        public CommitView Transform(EventStream stream, Event<Commit> input)
+        public CommitView Transform(StreamAction stream, Event<Commit> input)
         {
             return new CommitView
             {

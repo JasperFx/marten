@@ -118,6 +118,7 @@ namespace Marten.Events.Projections
                 (session, view, @event) => Task.FromResult(shouldDelete(session, view, @event)),
                 ProjectionEventType.Delete);
 
+        // This one doesn't play in the aggregations. This would be for the builders
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<TEvent, TId> viewIdSelector) where TEvent : class
         {
             if (viewIdSelector == null)

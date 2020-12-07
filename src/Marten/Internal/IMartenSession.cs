@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Marten.Events;
 using Marten.Internal.DirtyTracking;
 using Marten.Internal.Storage;
 using Marten.Services;
@@ -27,6 +28,8 @@ namespace Marten.Internal
 
         void MarkAsDocumentLoaded(object id, object document);
         IDocumentStorage<T> StorageFor<T>();
+
+        IEventStorage EventStorage();
 
         /// <summary>
         /// Override whether or not this session honors optimistic concurrency checks
