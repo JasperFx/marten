@@ -148,7 +148,9 @@ namespace Marten.Services.BatchQuerying
 
         public Task<StreamState> FetchStreamState(Guid streamId)
         {
-            var handler = new StreamStateByGuidHandler(_parent.Options.Events, streamId, _parent.Tenant.TenantId);
+            var handler = _parent.Tenant.EventStorage()
+                .QueryForStream(StreamAction.ForReference(streamId, _parent.Tenant));
+
             return AddItem(handler);
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -321,33 +322,25 @@ namespace Marten.Events
 
         public StreamState FetchStreamState(Guid streamId)
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
-
-            var handler = new StreamStateByGuidHandler(_store.Events, streamId, _tenant.TenantId);
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant));
             return _session.ExecuteHandler(handler);
         }
 
         public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
-
-            var handler = new StreamStateByGuidHandler(_store.Events, streamId, _tenant.TenantId);
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant));
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public StreamState FetchStreamState(string streamKey)
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
-
-            var handler = new StreamStateByStringHandler(_store.Events, streamKey, _tenant.TenantId);
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant));
             return _session.ExecuteHandler(handler);
         }
 
         public Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = new CancellationToken())
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
-
-            var handler = new StreamStateByStringHandler(_store.Events, streamKey, _tenant.TenantId);
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant));
             return _session.ExecuteHandlerAsync(handler, token);
         }
     }

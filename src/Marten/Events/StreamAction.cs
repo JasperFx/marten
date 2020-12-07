@@ -6,6 +6,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Schema.Identity;
+using Marten.Storage;
 
 namespace Marten.Events
 {
@@ -178,6 +179,22 @@ namespace Marten.Events
                 }
             }
             return this;
+        }
+
+        public static StreamAction ForReference(Guid streamId, ITenant tenant)
+        {
+            return new StreamAction(streamId, StreamActionType.Append)
+            {
+                TenantId = tenant?.TenantId
+            };
+        }
+
+        public static StreamAction ForReference(string streamKey, ITenant tenant)
+        {
+            return new StreamAction(streamKey, StreamActionType.Append)
+            {
+                TenantId = tenant?.TenantId
+            };
         }
     }
 }
