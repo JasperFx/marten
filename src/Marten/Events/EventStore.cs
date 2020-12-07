@@ -53,7 +53,7 @@ namespace Marten.Events
         public StreamAction Append(Guid stream, int expectedVersion, params object[] events)
         {
             var eventStream = Append(stream, events);
-            eventStream.ExpectedVersionOnServer = expectedVersion - events.Length;
+            eventStream.ExpectedVersionOnServer = expectedVersion - eventStream.Events.Count;
 
             return eventStream;
         }
