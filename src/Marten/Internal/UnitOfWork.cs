@@ -240,7 +240,7 @@ namespace Marten.Internal
                 {
                     // Arbitrary order if one is a delete but the other is not, because this will force the sorting
                     // to try and compare these documents against others and fall in to the below checks.
-                    return xIsDelete ? -1 : 1;
+                    return xIsDelete ? 0 : 1;
                 }
 
                 if (xIsDelete)

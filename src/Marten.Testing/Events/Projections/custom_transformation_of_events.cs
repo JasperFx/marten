@@ -479,8 +479,8 @@ namespace Marten.Testing.Events.Projections
             //fails as user is back in the database after rebuilding
             theSession.Query<Project>().Count().ShouldBe(0);
         }
-        
-        [Fact(Skip = "Failing")]
+
+        [Fact]
         public async Task projectview_withupdate_and_deleteevent_should_delete()
         {
             StoreOptions(_ =>
