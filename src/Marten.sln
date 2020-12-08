@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30709.64
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten", "Marten\Marten.csproj", "{FCCA5D3A-B632-4D81-B839-F6344FDD01F1}"
 EndProject
@@ -22,15 +22,16 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5A91B8F9-52F8-4322-BE34-E3A281902BEC}"
 	ProjectSection(SolutionItems) = preProject
 		..\.editorconfig = ..\.editorconfig
+		..\Directory.Build.props = ..\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.Schema.Testing", "Marten.Schema.Testing\Marten.Schema.Testing.csproj", "{3B5EFB35-DEA7-48C5-B9A0-CD16A7F272A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.Schema.Testing", "Marten.Schema.Testing\Marten.Schema.Testing.csproj", "{3B5EFB35-DEA7-48C5-B9A0-CD16A7F272A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreWithMarten", "AspNetCoreWithMarten\AspNetCoreWithMarten.csproj", "{739B657C-4E0D-40E8-853E-ADF5C2D3D89D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreWithMarten", "AspNetCoreWithMarten\AspNetCoreWithMarten.csproj", "{739B657C-4E0D-40E8-853E-ADF5C2D3D89D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.CommandLine.Testing", "Marten.CommandLine.Testing\Marten.CommandLine.Testing.csproj", "{D1D4DF75-17B4-4FFD-82DC-1137112AA340}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.CommandLine.Testing", "Marten.CommandLine.Testing\Marten.CommandLine.Testing.csproj", "{D1D4DF75-17B4-4FFD-82DC-1137112AA340}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StorytellerRunner", "StorytellerRunner\StorytellerRunner.csproj", "{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StorytellerRunner", "StorytellerRunner\StorytellerRunner.csproj", "{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

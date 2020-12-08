@@ -1,14 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
-        <VersionPrefix>4.0.0-alpha.4</VersionPrefix>
-        <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFrameworks>netstandard2.0;net5.0</TargetFrameworks>
-        <AssemblyName>Marten</AssemblyName>
-        <PackageId>Marten</PackageId>
-        <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
-        <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -16,19 +9,13 @@
         <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
-        <LangVersion>8</LangVersion>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamptz.sql" />
-        <EmbeddedResource Include="Schema\SQL\mt_transforms.js" />
-        <EmbeddedResource Include="Schema\SQL\mt_patching.js" />
-        <EmbeddedResource Include="Schema\SQL\mt_mark_event_progression.sql" />
-        <EmbeddedResource Include="Schema\SQL\mt_immutable_timestamp.sql" />
-        <EmbeddedResource Include="Schema\SQL\mt_stream.sql" />
-        <EmbeddedResource Include="Schema\SQL\mt_get_next_hi.sql" />
+        <EmbeddedResource Include="Schema\SQL\*.*" />
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
     <ItemGroup>
@@ -46,9 +33,6 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.1.0, 6.0.0]" />
     </ItemGroup>
 
-    <PropertyGroup>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    </PropertyGroup>
     <!--SourceLink specific settings-->
     <PropertyGroup>
         <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
@@ -60,9 +44,6 @@
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    </PropertyGroup>
-    <PropertyGroup>
-        <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735;0618</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />

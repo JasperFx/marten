@@ -1,11 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
-    <AssemblyName>Marten.Testing</AssemblyName>
-    <PackageId>Marten.Testing</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +35,6 @@
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
   <PropertyGroup>
-    <NoWarn>xUnit1013;CS0618</NoWarn>
+    <NoWarn>xUnit1013</NoWarn>
   </PropertyGroup>
 </Project>

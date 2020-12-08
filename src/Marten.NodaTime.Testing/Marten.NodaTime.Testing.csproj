@@ -21,6 +21,6 @@
     <PackageReference Include="Shouldly" Version="4.0.1" />
   </ItemGroup>
   <PropertyGroup>
-    <NoWarn>xUnit1013;CS0618</NoWarn>
+    <NoWarn>xUnit1013</NoWarn>
   </PropertyGroup>
 </Project>

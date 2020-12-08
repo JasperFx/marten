@@ -2,13 +2,7 @@
     <PropertyGroup>
         <Description>NodaTime extension for Marten</Description>
         <VersionPrefix>2.0.0-alpha.4</VersionPrefix>
-        <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <TargetFrameworks>netstandard2.0;net5.0</TargetFrameworks>
-        <AssemblyName>Marten.NodaTime</AssemblyName>
-        <PackageId>Marten.NodaTime</PackageId>
-        <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
-        <PackageProjectUrl>http://jasperfx.github.io/marten</PackageProjectUrl>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -17,7 +11,6 @@
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <LangVersion>8</LangVersion>
         <nullable>enable</nullable>
     </PropertyGroup>
 
@@ -32,9 +25,6 @@
     <PropertyGroup>
         <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
         <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
-    </PropertyGroup>
-    <PropertyGroup>
-        <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
