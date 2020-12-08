@@ -479,6 +479,41 @@ namespace Marten.Testing.Events.Projections
             //fails as user is back in the database after rebuilding
             theSession.Query<Project>().Count().ShouldBe(0);
         }
+        
+        [Fact(Skip = "Failing")]
+        public async Task projectview_withupdate_and_deleteevent_should_delete()
+        {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.ProjectView<PersistedView, Guid>()
+                    .ProjectEvent<ProjectionEvent<QuestStarted>>((view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
+                    .ProjectEvent<MembersJoined>(e => e.QuestId, (view, @event) => view.Events.Add(@event))
+                    .ProjectEvent<ProjectionEvent<MonsterSlayed>>(e => e.Data.QuestId, (view, @event) => { view.Events.Add(@event.Data); view.StreamIdsForEvents.Add(@event.StreamId); })
+                    .DeleteEvent<QuestEnded>()
+                    .DeleteEvent<MembersDeparted>(e => e.QuestId)
+                    .DeleteEvent<MonsterDestroyed>((session, e) => session.Load<QuestParty>(e.QuestId).Id);
+            });
+
+
+            theSession.Events.StartStream<QuestParty>(streamId, started, joined);
+            await theSession.SaveChangesAsync();
+
+            theSession.Events.StartStream<Monster>(slayed1, slayed2);
+            await theSession.SaveChangesAsync();
+
+            var document = await theSession.LoadAsync<PersistedView>(streamId);
+            document.Events.Count.ShouldBe(4);
+            document.Events.ShouldHaveTheSameElementsAs(started, joined, slayed1, slayed2);
+
+            theSession.Events.Append(streamId, joined2, ended);
+            await theSession.SaveChangesAsync();
+            var nullDocument = await theSession.LoadAsync<PersistedView>(streamId);
+            nullDocument.ShouldBeNull();
+
+        }
 
         public project_events_from_multiple_streams_into_view(DefaultStoreFixture fixture) : base(fixture)
         {
