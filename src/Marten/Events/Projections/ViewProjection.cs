@@ -923,14 +923,14 @@ namespace Marten.Events.Projections
     {
         public Guid Id { get; protected set; }
         public int Version { get; protected set; }
-        public DateTime Timestamp { get; protected set; }
+        public DateTimeOffset Timestamp { get; protected set; }
         public T Data { get; protected set; }
         public long Sequence { get; protected set; }
         public Guid StreamId { get; protected set; }
         public string StreamKey { get; protected set; }
         public string TenantId { get; protected set; }
 
-        public ProjectionEvent(Guid id, int version, DateTime timestamp, long sequence, Guid streamId, string streamKey, string tenantId, T data)
+        public ProjectionEvent(Guid id, int version, DateTimeOffset timestamp, long sequence, Guid streamId, string streamKey, string tenantId, T data)
         {
             Id = id;
             Version = version;

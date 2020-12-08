@@ -1,5 +1,4 @@
 using System;
-using Marten.Schema.Identity;
 
 namespace Marten.Events
 {
@@ -9,15 +8,15 @@ namespace Marten.Events
         public int Version { get; set;}
         public Type AggregateType { get; set;}
 
-        public DateTime LastTimestamp { get; set;}
-        public DateTime Created { get; set;}
+        public DateTimeOffset LastTimestamp { get; set;}
+        public DateTimeOffset Created { get; set;}
         public string Key { get; set;}
 
         public StreamState()
         {
         }
 
-        public StreamState(Guid id, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        public StreamState(Guid id, int version, Type aggregateType, DateTimeOffset lastTimestamp, DateTimeOffset created)
         {
             Id = id;
             Version = version;
@@ -26,7 +25,7 @@ namespace Marten.Events
             Created = created;
         }
 
-        public StreamState(string key, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        public StreamState(string key, int version, Type aggregateType, DateTimeOffset lastTimestamp, DateTimeOffset created)
         {
             Key = key;
             Version = version;
@@ -35,7 +34,7 @@ namespace Marten.Events
             Created = created;
         }
 
-        internal static StreamState Create(object identifier, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        internal static StreamState Create(object identifier, int version, Type aggregateType, DateTimeOffset lastTimestamp, DateTimeOffset created)
         {
             if (!(identifier is string) && !(identifier is Guid))
             {
