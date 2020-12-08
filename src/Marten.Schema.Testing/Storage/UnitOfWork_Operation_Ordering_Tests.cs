@@ -291,6 +291,21 @@ namespace Marten.Schema.Testing.Storage
             );
         }
 
+        [Fact]
+        public void upsert_followed_by_delete_should_order_correctly()
+        {
+            RunTest(s =>
+                {
+                    var newUser = new User();
+                    s.Store(newUser);
+                    s.DeleteWhere<User>(x => x.Id == newUser.Id);
+                },
+                expectedCompanyCount: _existingCompanyCount,
+                expectedUserCount: _existingUserCount,
+                expectedIssueCount: _existingIssueCount
+            );
+        }
+
         private void RunTest(
             Action<IDocumentSession> act,
             int expectedCompanyCount,
