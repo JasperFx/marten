@@ -5,18 +5,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
-using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Internal
 {
-    public class UpdateBatch
+    public class UpdateBatch: IUpdateBatch
     {
-        private readonly IReadOnlyList<IStorageOperation> _operations;
-
         private readonly IList<Exception> _exceptions = new List<Exception>();
+        private readonly IReadOnlyList<IStorageOperation> _operations;
 
         public UpdateBatch(IReadOnlyList<IStorageOperation> operations)
         {
@@ -57,10 +54,59 @@ namespace Marten.Internal
                 Exception transformed = null;
 
                 if (_operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                {
                     throw transformed;
-                }
                 throw;
+            }
+
+            throwExceptionsIfAny();
+        }
+
+        public async Task ApplyChangesAsync(IMartenSession session, CancellationToken token)
+        {
+            if (_operations.Count < session.Options.UpdateBatchSize)
+            {
+                var command = session.BuildCommand(_operations);
+                try
+                {
+                    using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                    await applyCallbacksAsync(_operations, reader, token).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Exception transformed = null;
+                    if (_operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
+                        throw transformed;
+                    throw;
+                }
+            }
+            else
+            {
+                var count = 0;
+
+                while (count < _operations.Count)
+                {
+                    var operations = _operations
+                        .Skip(count)
+                        .Take(session.Options.UpdateBatchSize)
+                        .ToArray();
+
+                    var command = session.BuildCommand(operations);
+                    try
+                    {
+                        using var reader =
+                            await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                        await applyCallbacksAsync(operations, reader, token).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        Exception transformed = null;
+                        if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
+                            throw transformed;
+                        throw;
+                    }
+
+                    count += session.Options.UpdateBatchSize;
+                }
             }
 
             throwExceptionsIfAny();
@@ -81,60 +127,6 @@ namespace Marten.Internal
             }
         }
 
-        public async Task ApplyChangesAsync(IMartenSession session, CancellationToken token)
-        {
-            if (_operations.Count < session.Options.UpdateBatchSize)
-            {
-                var command = session.BuildCommand(_operations);
-                try
-                {
-                    using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                    await applyCallbacksAsync(_operations, reader, token).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    Exception transformed = null;
-                    if (_operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                    {
-                        throw transformed;
-                    }
-                    throw;
-                }
-            }
-            else
-            {
-                var count = 0;
-
-                while (count < _operations.Count)
-                {
-                    var operations = _operations
-                        .Skip(count)
-                        .Take(session.Options.UpdateBatchSize)
-                        .ToArray();
-
-                    var command = session.BuildCommand(operations);
-                    try
-                    {
-                        using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                        await applyCallbacksAsync(operations, reader, token).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                            Exception transformed = null;
-                            if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                            {
-                                throw transformed;
-                            }
-                            throw;
-                    }
-
-                    count += session.Options.UpdateBatchSize;
-                }
-            }
-
-            throwExceptionsIfAny();
-        }
-
         private void applyCallbacks(IReadOnlyList<IStorageOperation> operations, DbDataReader reader)
         {
             var first = operations.First();
@@ -151,15 +143,12 @@ namespace Marten.Internal
                     Exception transformed = null;
 
                     if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                    {
                         throw transformed;
-                    }
                     throw;
                 }
             }
 
             foreach (var operation in operations.Skip(1))
-            {
                 if (!(operation is NoDataReturnedCall))
                 {
                     operation.Postprocess(reader, _exceptions);
@@ -172,16 +161,14 @@ namespace Marten.Internal
                         Exception transformed = null;
 
                         if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                        {
                             throw transformed;
-                        }
                         throw;
                     }
                 }
-            }
         }
 
-        private async Task applyCallbacksAsync(IReadOnlyList<IStorageOperation> operations, DbDataReader reader, CancellationToken token)
+        private async Task applyCallbacksAsync(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
+            CancellationToken token)
         {
             var first = operations.First();
 
@@ -192,13 +179,11 @@ namespace Marten.Internal
             }
 
             foreach (var operation in operations.Skip(1))
-            {
                 if (!(operation is NoDataReturnedCall))
                 {
                     await operation.PostprocessAsync(reader, _exceptions, token).ConfigureAwait(false);
                     await reader.NextResultAsync(token).ConfigureAwait(false);
                 }
-            }
         }
     }
 }

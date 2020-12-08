@@ -3,14 +3,16 @@ using System.Collections.Generic;
 
 namespace Marten.Events.Projections
 {
+    [Obsolete("This is getting replaced in v4")]
     public interface IAggregator
     {
         Type AggregateType { get; }
         string Alias { get; }
 
-        bool AppliesTo(EventStream stream);
+        bool AppliesTo(StreamAction stream);
     }
 
+    [Obsolete("This is getting replaced in v4")]
     public interface IAggregator<T>: IAggregator
     {
         IAggregation<T, TEvent> AggregatorFor<TEvent>();

@@ -14,8 +14,8 @@ namespace Marten.Storage
             GeneratedMethod sync, int index,
             DocumentMapping mapping)
         {
-            sync.Frames.Deserialize(mapping, index);
-            async.Frames.DeserializeAsync(mapping, index);
+            sync.Frames.DeserializeDocument(mapping, index);
+            async.Frames.DeserializeDocumentAsync(mapping, index);
         }
 
         public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)

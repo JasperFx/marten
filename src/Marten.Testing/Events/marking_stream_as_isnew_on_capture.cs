@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Marten.Events;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -17,7 +18,7 @@ namespace Marten.Testing.Events
 
             var id = theSession.Events.StartStream<Quest>(joined, departed);
 
-            theSession.PendingChanges.Streams().Single().IsNew.ShouldBeTrue();
+            theSession.PendingChanges.Streams().Single().ActionType.ShouldBe(StreamActionType.Start);
         }
 
         [Fact]
@@ -28,7 +29,7 @@ namespace Marten.Testing.Events
 
             theSession.Events.StartStream<Quest>(Guid.NewGuid(), joined, departed);
 
-            theSession.PendingChanges.Streams().Single().IsNew.ShouldBeTrue();
+            theSession.PendingChanges.Streams().Single().ActionType.ShouldBe(StreamActionType.Start);
         }
 
         [Fact]
@@ -39,8 +40,8 @@ namespace Marten.Testing.Events
 
             theSession.Events.Append(Guid.NewGuid(), joined, departed);
 
-            theSession.PendingChanges.Streams().Single().IsNew
-                .ShouldBeFalse();
+            theSession.PendingChanges.Streams().Single().ActionType
+                .ShouldBe(StreamActionType.Append);
         }
 
         public marking_stream_as_isnew_on_capture(DefaultStoreFixture fixture) : base(fixture)

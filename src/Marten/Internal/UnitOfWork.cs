@@ -5,13 +5,12 @@ using Baseline;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Patching;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Util;
 
 namespace Marten.Internal
 {
-    public class UnitOfWork : IUnitOfWork, IChangeSet
+    internal class UnitOfWork : IUnitOfWork, IChangeSet
     {
         private readonly IMartenSession _parent;
         private readonly List<IStorageOperation> _operations = new List<IStorageOperation>();
@@ -146,10 +145,9 @@ namespace Marten.Internal
                 .Distinct();
         }
 
-        IEnumerable<EventStream> IUnitOfWork.Streams()
-        {
-            return _operations.OfType<AppendEventsOperation>().Select(x => x.Stream);
-        }
+        public List<StreamAction> Streams { get; } = new List<StreamAction>();
+
+        IList<StreamAction> IUnitOfWork.Streams() => Streams;
 
         IEnumerable<PatchOperation> IUnitOfWork.Patches()
         {
@@ -179,14 +177,14 @@ namespace Marten.Internal
 
         IEnumerable<IEvent> IChangeSet.GetEvents()
         {
-            return _operations.OfType<AppendEventsOperation>().SelectMany(x => x.Stream.Events);
+            return Streams.SelectMany(x => x.Events);
         }
 
         IEnumerable<PatchOperation> IChangeSet.Patches => _operations.OfType<PatchOperation>();
 
-        IEnumerable<EventStream> IChangeSet.GetStreams()
+        IEnumerable<StreamAction> IChangeSet.GetStreams()
         {
-            return _operations.OfType<AppendEventsOperation>().Select(x => x.Stream);
+            return Streams;
         }
 
         private IEnumerable<IStorageOperation> operationsFor(Type documentType)
@@ -323,21 +321,21 @@ namespace Marten.Internal
 
         public bool HasOutstandingWork()
         {
-            return _operations.Any();
+            return _operations.Any() || Streams.Any();
         }
 
-        public bool TryFindStream(string streamKey, out EventStream stream)
+        public bool TryFindStream(string streamKey, out StreamAction stream)
         {
-            stream = _operations.OfType<AppendEventsOperation>()
-                .FirstOrDefault(x => x.Stream.Key == streamKey)?.Stream;
+            stream = Streams
+                .FirstOrDefault(x => x.Key == streamKey);
 
             return stream != null;
         }
 
-        public bool TryFindStream(Guid streamId, out EventStream stream)
+        public bool TryFindStream(Guid streamId, out StreamAction stream)
         {
-            stream = _operations.OfType<AppendEventsOperation>()
-                .FirstOrDefault(x => x.Stream.Id == streamId)?.Stream;
+            stream = Streams
+                .FirstOrDefault(x => x.Id == streamId);
 
             return stream != null;
         }

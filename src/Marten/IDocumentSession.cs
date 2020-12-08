@@ -320,8 +320,6 @@ namespace Marten
         /// <returns></returns>
         object GetHeader(string key);
 
-
-
     }
 
     public interface ILoadByKeys<TDoc>

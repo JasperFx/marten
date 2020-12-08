@@ -20,7 +20,7 @@ namespace Marten.Testing.Events.Projections
             var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
-            finder.Find(new EventStream(id, true), session)
+            finder.Find(StreamAction.Start(id), session)
                 .ShouldNotBeNull();
 
             session.DidNotReceive().Load<QuestParty>(id);
@@ -38,7 +38,7 @@ namespace Marten.Testing.Events.Projections
 
             session.Load<QuestParty>(id).Returns(persisted);
 
-            finder.Find(new EventStream(id, false), session)
+            finder.Find(StreamAction.Append(id), session)
                 .ShouldBeTheSameAs(persisted);
         }
 
@@ -50,7 +50,7 @@ namespace Marten.Testing.Events.Projections
 
             var finder = new AggregateFinder<QuestParty>();
 
-            finder.Find(new EventStream(id, false), session)
+            finder.Find(StreamAction.Append(id), session)
                 .ShouldNotBeNull();
         }
     }
@@ -63,7 +63,7 @@ namespace Marten.Testing.Events.Projections
             var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
-            (await finder.FindAsync(new EventStream(id, true), theSession, new CancellationToken()))
+            (await finder.FindAsync(StreamAction.Start(id), theSession, new CancellationToken()))
                 .ShouldNotBeNull();
         }
 
@@ -78,7 +78,7 @@ namespace Marten.Testing.Events.Projections
 
             var finder = new AggregateFinder<QuestParty>();
 
-            (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))
+            (await finder.FindAsync(StreamAction.Append(id), theSession, new CancellationToken()))
                 .ShouldBeTheSameAs(persisted);
         }
 
@@ -89,7 +89,7 @@ namespace Marten.Testing.Events.Projections
 
             var finder = new AggregateFinder<QuestParty>();
 
-            (await finder.FindAsync(new EventStream(id, false), theSession, new CancellationToken()))
+            (await finder.FindAsync(StreamAction.Append(id), theSession, new CancellationToken()))
                 .ShouldNotBeNull();
         }
 

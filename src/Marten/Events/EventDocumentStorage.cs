@@ -1,4 +1,10 @@
 using System;
+using System.Data.Common;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Baseline;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -12,37 +18,41 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 using Remotion.Linq;
 
 namespace Marten.Events
 {
 
-
-    public class EventDocumentStorage : IDocumentStorage<IEvent>
+    public abstract class EventDocumentStorage : IEventStorage
     {
-        private readonly EventGraph _graph;
         private readonly EventQueryMapping _mapping;
-        private readonly IEventSelector _selector;
+        private readonly ISerializer _serializer;
+        private readonly string[] _fields;
+        private readonly string _selectClause;
 
-        public EventDocumentStorage(EventGraph graph, EventQueryMapping mapping, ISerializer serializer)
+        public EventDocumentStorage(StoreOptions options)
         {
-            _graph = graph;
-            _mapping = mapping;
+            Events = options.Events;
+            _mapping = new EventQueryMapping(options);
 
             FromObject = _mapping.TableName.QualifiedName;
-            Fields = mapping;
+            Fields = _mapping;
 
-            if (graph.StreamIdentity == StreamIdentity.AsGuid)
-            {
-                IdType = typeof(Guid);
-                _selector = new EventSelector(graph, serializer);
-            }
-            else
-            {
-                IdType = typeof(string);
-                _selector = new StringIdentifiedEventSelector(graph, serializer);
-            }
+            _serializer = options.Serializer();
+
+            IdType = Events.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+
+            // The json data column has to go first
+            var table = new EventsTable(Events);
+            var columns = table.SelectColumns();
+
+            _fields = columns.Select(x => x.Name).ToArray();
+
+            _selectClause = $"select {_fields.Join(", ")} from {Events.DatabaseSchemaName}.mt_events as d";
         }
+
+        public EventGraph Events { get; }
 
         public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
 
@@ -65,22 +75,22 @@ namespace Marten.Events
         public Type SelectedType => typeof(IEvent);
         public void WriteSelectClause(CommandBuilder sql)
         {
-            _selector.WriteSelectClause(sql);
+            sql.Append(_selectClause);
         }
 
         public string[] SelectFields()
         {
-            return _selector.SelectFields();
+            return _fields;
         }
 
         public ISelector BuildSelector(IMartenSession session)
         {
-            return _selector;
+            return this;
         }
 
         public IQueryHandler<T> BuildHandler<T>(IMartenSession session, Statement topStatement, Statement currentStatement)
         {
-            return LinqHandlerBuilder.BuildHandler<IEvent, T>(_selector, topStatement);
+            return LinqHandlerBuilder.BuildHandler<IEvent, T>(this, topStatement);
         }
 
         public ISelectClause UseStatistics(QueryStatistics statistics)
@@ -108,7 +118,7 @@ namespace Marten.Events
 
         public object IdentityFor(IEvent document)
         {
-            return _graph.StreamIdentity == StreamIdentity.AsGuid ? (object) document.Id : document.StreamKey;
+            return Events.StreamIdentity == StreamIdentity.AsGuid ? (object) document.Id : document.StreamKey;
         }
 
         public Type IdType { get; }
@@ -156,6 +166,75 @@ namespace Marten.Events
         {
             throw new NotSupportedException();
         }
+
+        public abstract IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream, IEvent e);
+        public abstract IStorageOperation InsertStream(StreamAction stream);
+        public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
+        public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
+
+        public IEvent Resolve(DbDataReader reader)
+        {
+            var eventTypeName = reader.GetString(1);
+            var mapping = Events.EventMappingFor(eventTypeName);
+            if (mapping == null)
+            {
+                var dotnetTypeName = reader.GetFieldValue<string>(2);
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+
+                var type = Events.TypeForDotNetName(dotnetTypeName);
+                mapping = Events.EventMappingFor(type);
+            }
+
+            var dataJson = reader.GetTextReader(0);
+            var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
+
+            var @event = mapping.Wrap(data);
+
+            ApplyReaderDataToEvent(reader, @event);
+
+            return @event;
+        }
+
+        public abstract void ApplyReaderDataToEvent(DbDataReader reader, IEvent e);
+
+        public async Task<IEvent> ResolveAsync(DbDataReader reader, CancellationToken token)
+        {
+            var eventTypeName = await reader.GetFieldValueAsync<string>(1, token);
+            var mapping = Events.EventMappingFor(eventTypeName);
+            if (mapping == null)
+            {
+                var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+                if (dotnetTypeName.IsEmpty())
+                {
+                    throw new UnknownEventTypeException(eventTypeName);
+                }
+                Type type;
+                try
+                {
+                    type = Events.TypeForDotNetName(dotnetTypeName);
+                }
+                catch (ArgumentNullException)
+                {
+                    throw new UnknownEventTypeException(dotnetTypeName);
+                }
+                mapping = Events.EventMappingFor(type);
+            }
+
+            var dataJson = await reader.As<NpgsqlDataReader>().GetTextReaderAsync(0, token);
+            var data = _serializer.FromJson(mapping.DocumentType, dataJson);
+
+            var @event = mapping.Wrap(data);
+
+            await ApplyReaderDataToEventAsync(reader, @event, token);
+
+            return @event;
+        }
+
+        public abstract Task ApplyReaderDataToEventAsync(DbDataReader reader, IEvent e, CancellationToken token);
+
 
     }
 }

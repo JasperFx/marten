@@ -97,7 +97,7 @@ namespace Marten.Testing.Events.Projections.Async
         [Fact]
         public async Task correctly_correlates_by_stream()
         {
-            var streams = new List<EventStream>();
+            var streams = new List<StreamAction>();
             var logger = new RecordingLogger();
 
             using (var session = theStore.LightweightSession())
