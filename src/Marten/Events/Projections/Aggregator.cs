@@ -80,7 +80,7 @@ namespace Marten.Events.Projections
             return null;
         }
 
-        public bool AppliesTo(EventStream stream)
+        public bool AppliesTo(StreamAction stream)
         {
             return stream.Events.Any(x => _aggregations.ContainsKey(x.Data.GetType()));
         }

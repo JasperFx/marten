@@ -15,26 +15,20 @@ namespace Marten.Events.Projections.Async
 
     public class EventPage
     {
-        private EventStream[] _streams;
+        private StreamAction[] _streams;
         private IReadOnlyList<IEvent> _events;
 
-        public static EventStream[] ToStreams(StreamIdentity streamIdentity, IEnumerable<IEvent> events)
+        public static StreamAction[] ToStreams(StreamIdentity streamIdentity, IEnumerable<IEvent> events)
         {
             if (streamIdentity == StreamIdentity.AsGuid)
             {
                 return events.GroupBy(x => x.StreamId)
-                    .Select(group =>
-                    {
-                        return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
-                    })
+                    .Select(group => StreamAction.Append(@group.Key, @group.ToArray()))
                     .ToArray();
             }
 
             return events.GroupBy(x => x.StreamKey)
-                .Select(group =>
-                {
-                    return new EventStream(group.Key, group.OrderBy(x => x.Version).ToArray(), false);
-                })
+                .Select(group => StreamAction.Append(@group.Key, @group.ToArray()))
                 .ToArray();
         }
 
@@ -52,7 +46,7 @@ namespace Marten.Events.Projections.Async
         public long From { get; set; }
         public long To { get; set; }
 
-        public EventStream[] Streams => _streams ?? (_streams = ToStreams(StreamIdentity, Events));
+        public StreamAction[] Streams => _streams ?? (_streams = ToStreams(StreamIdentity, Events));
 
         public int Count => Events.Count;
         public EventPage Next { get; set; }
@@ -76,7 +70,7 @@ namespace Marten.Events.Projections.Async
             return From;
         }
 
-        public EventPage(EventStream[] streams)
+        public EventPage(StreamAction[] streams)
         {
             _streams = streams;
             From = 0;

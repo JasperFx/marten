@@ -5,20 +5,22 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
 using Marten.Services;
 using Marten.Util;
 
 namespace Marten.Events
 {
+    [Obsolete("Use EventDocumentStorage as a generic ISelector<IEvent> and use generic handler instead")]
     internal class SingleEventQueryHandler: IQueryHandler<IEvent>
     {
         private readonly Guid _id;
-        private readonly EventSelector _selector;
+        private readonly IEventStorage _selector;
 
-        public SingleEventQueryHandler(Guid id, EventGraph events, ISerializer serializer)
+        public SingleEventQueryHandler(Guid id, IEventStorage selector)
         {
             _id = id;
-            _selector = new EventSelector(events, serializer);
+            _selector = selector;
         }
 
         public void ConfigureCommand(CommandBuilder sql, IMartenSession session)

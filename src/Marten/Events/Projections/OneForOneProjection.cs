@@ -6,6 +6,7 @@ using Marten.Events.Projections.Async;
 
 namespace Marten.Events.Projections
 {
+    [Obsolete("This is going away in V4")]
     public class OneForOneProjection<TEvent, TView>: DocumentProjection<TView>, IDocumentProjection
     {
         private readonly ITransform<TEvent, TView> _transform;

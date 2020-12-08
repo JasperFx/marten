@@ -71,7 +71,7 @@ namespace Marten.Services
         /// All of the pending events for the event store in this unit of work
         /// </summary>
         /// <returns></returns>
-        IEnumerable<EventStream> Streams();
+        IList<StreamAction> Streams();
 
         /// <summary>
         /// All of the pending patch operations in this unit of work

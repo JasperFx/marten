@@ -5,13 +5,17 @@ namespace Marten.Events
 {
     public class StreamState
     {
-        public Guid Id { get; } = CombGuidIdGeneration.NewGuid();
-        public int Version { get; }
-        public Type AggregateType { get; }
+        public Guid Id { get; set; }
+        public int Version { get; set;}
+        public Type AggregateType { get; set;}
 
-        public DateTime LastTimestamp { get; }
-        public DateTime Created { get; }
-        public string Key { get; }
+        public DateTime LastTimestamp { get; set;}
+        public DateTime Created { get; set;}
+        public string Key { get; set;}
+
+        public StreamState()
+        {
+        }
 
         public StreamState(Guid id, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
         {

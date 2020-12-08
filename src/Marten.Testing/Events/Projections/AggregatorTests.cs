@@ -29,7 +29,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void applies_to()
         {
-            var stream = new EventStream(Guid.NewGuid(), false);
+            var stream = StreamAction.Append(Guid.NewGuid());
 
             theAggregator.AppliesTo(stream).ShouldBeFalse();
 
@@ -50,7 +50,7 @@ namespace Marten.Testing.Events.Projections
                 party.Slayed.Fill(slayed.Name);
             });
 
-            theAggregator.AppliesTo(new EventStream(Guid.NewGuid(), false).Add(new MonsterSlayed()))
+            theAggregator.AppliesTo(StreamAction.Append(Guid.NewGuid()).Add(new MonsterSlayed()))
                 .ShouldBeTrue();
         }
 
@@ -66,7 +66,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void build_a_series_of_events()
         {
-            var stream = new EventStream(Guid.NewGuid(), false)
+            var stream = StreamAction.Append(Guid.NewGuid())
                 .Add(new QuestStarted { Name = "Destroy the Ring" })
                 .Add(new MembersJoined { Members = new string[] { "Frodo", "Sam" } })
                 .Add(new MembersJoined { Members = new string[] { "Merry", "Pippin" } })
@@ -111,7 +111,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void applies_to()
         {
-            var stream = new EventStream(Guid.NewGuid(), false);
+            var stream = StreamAction.Append(Guid.NewGuid());
 
             theAggregator.AppliesTo(stream).ShouldBeFalse();
 
@@ -132,14 +132,14 @@ namespace Marten.Testing.Events.Projections
                 party.Slayed.Fill(slayed.Name);
             });
 
-            theAggregator.AppliesTo(new EventStream(Guid.NewGuid(), false).Add(new MonsterSlayed()))
+            theAggregator.AppliesTo(StreamAction.Append(Guid.NewGuid()).Add(new MonsterSlayed()))
                 .ShouldBeTrue();
         }
 
         [Fact]
         public void build_a_series_of_events()
         {
-            var stream = new EventStream(Guid.NewGuid(), false)
+            var stream = StreamAction.Append(Guid.NewGuid())
                 .Add(new QuestStarted { Name = "Destroy the Ring" })
                 .Add(new MembersJoined { Members = new string[] { "Frodo", "Sam" } })
                 .Add(new MembersJoined { Members = new string[] { "Merry", "Pippin" } })
@@ -177,7 +177,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void applies_to()
         {
-            var stream = new EventStream(Guid.NewGuid(), false);
+            var stream = StreamAction.Append(Guid.NewGuid());
 
             theAggregator.AppliesTo(stream).ShouldBeFalse();
 
@@ -193,7 +193,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void uses_default_aggregate_constructor_if_no_instance_provided()
         {
-            var stream = new EventStream(Guid.NewGuid(), false)
+            var stream = StreamAction.Append(Guid.NewGuid())
                 .Add(new QuestStarted { Name = "Destroy the Ring" })
                 .Add(new MembersJoined { Members = new string[] { "Frodo", "Sam" } })
                 .Add(new MembersJoined { Members = new string[] { "Merry", "Pippin" } })
@@ -207,7 +207,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void uses_provided_instance()
         {
-            var stream = new EventStream(Guid.NewGuid(), false)
+            var stream = StreamAction.Append(Guid.NewGuid())
                 .Add(new QuestStarted { Name = "Destroy the Ring" })
                 .Add(new MembersJoined { Members = new string[] { "Frodo", "Sam" } })
                 .Add(new MembersJoined { Members = new string[] { "Merry", "Pippin" } })

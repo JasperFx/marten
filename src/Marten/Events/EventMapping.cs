@@ -106,6 +106,7 @@ namespace Marten.Events
         }
 
 
+        public abstract IEvent Wrap(object data);
     }
 
     public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
@@ -244,6 +245,11 @@ namespace Marten.Events
         void IDocumentStorage<T>.RemoveDirtyTracker(IMartenSession session, object id)
         {
             // Nothing
+        }
+
+        public override IEvent Wrap(object data)
+        {
+            return new Event<T>((T) data);
         }
     }
 }

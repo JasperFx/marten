@@ -176,7 +176,7 @@ namespace Marten.Testing.Events.Projections
             theSession.Events.Append(streamId, ended);
             theSession.SaveChanges();
             var nullDocument = theSession.Load<PersistedView>(streamId);
-            SpecificationExtensions.ShouldBeNull(nullDocument);
+            nullDocument.ShouldBeNull();
 
             // Add document back to so we can delete it by selector
             theSession.Events.Append(streamId, started);

@@ -12,10 +12,6 @@ namespace Marten.Events
     {
         public EventQueryMapping(StoreOptions storeOptions) : base(typeof(IEvent), storeOptions)
         {
-            Selector = storeOptions.Events.StreamIdentity == StreamIdentity.AsGuid
-                ? (IEventSelector)new EventSelector(storeOptions.Events, storeOptions.Serializer())
-                : new StringIdentifiedEventSelector(storeOptions.Events, storeOptions.Serializer());
-
             DatabaseSchemaName = storeOptions.Events.DatabaseSchemaName;
 
             TableName = new DbObjectName(DatabaseSchemaName, "mt_events");
@@ -33,8 +29,6 @@ namespace Marten.Events
             duplicateField(x => x.Version, "version");
             duplicateField(x => x.Timestamp, "timestamp");
         }
-
-        internal IEventSelector Selector { get; }
 
         public override DbObjectName TableName { get; }
 

@@ -31,24 +31,24 @@ namespace Marten.Events.Projections
             _setId = ExpressionCompiler.Compile<Action<T, Guid>>(lambda);
         }
 
-        public T Find(EventStream stream, IDocumentSession session)
+        public T Find(StreamAction stream, IDocumentSession session)
         {
-            var returnValue = stream.IsNew ? New<T>.Instance() : session.Load<T>(stream.Id) ?? New<T>.Instance();
+            var returnValue = stream.ActionType == StreamActionType.Start ? New<T>.Instance() : session.Load<T>(stream.Id) ?? New<T>.Instance();
             _setId(returnValue, stream.Id);
 
             return returnValue;
         }
 
-        public async Task<T> FindAsync(EventStream stream, IDocumentSession session, CancellationToken token)
+        public async Task<T> FindAsync(StreamAction stream, IDocumentSession session, CancellationToken token)
         {
-            var returnValue = stream.IsNew ? New<T>.Instance() : await session.LoadAsync<T>(stream.Id, token).ConfigureAwait(false) ?? New<T>.Instance();
+            var returnValue = stream.ActionType == StreamActionType.Start ? New<T>.Instance() : await session.LoadAsync<T>(stream.Id, token).ConfigureAwait(false) ?? New<T>.Instance();
 
             _setId(returnValue, stream.Id);
 
             return returnValue;
         }
 
-        public Task FetchAllAggregates(IDocumentSession session, EventStream[] streams, CancellationToken token)
+        public Task FetchAllAggregates(IDocumentSession session, StreamAction[] streams, CancellationToken token)
         {
             if (streams.Length > 0)
             {

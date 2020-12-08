@@ -96,4 +96,5 @@ namespace Marten.Storage
 
         IProviderGraph Providers { get; }
     }
+
 }

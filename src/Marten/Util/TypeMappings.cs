@@ -26,6 +26,7 @@ namespace Marten.Util
             PgTypeMemo = Ref.Of(ImHashMap<Type, string>.Empty);
 
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(long), "bigint"));
+            PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(Guid), "uuid"));
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(string), "varchar"));
             PgTypeMemo.Swap(d => d.AddOrUpdate(typeof(float), "decimal"));
 

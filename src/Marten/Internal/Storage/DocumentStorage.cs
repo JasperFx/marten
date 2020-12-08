@@ -18,6 +18,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
+using Microsoft.CodeAnalysis;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
@@ -77,6 +78,11 @@ namespace Marten.Internal.Storage
                 : new SoftDelete(this);
 
             DuplicatedFields = _mapping.DuplicatedFields;
+        }
+
+        public void SetIdentity(T document, TId identity)
+        {
+            _setter(document, identity);
         }
 
         private void determineDefaultWhereFragment()

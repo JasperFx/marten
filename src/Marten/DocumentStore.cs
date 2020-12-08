@@ -357,7 +357,7 @@ namespace Marten
 
         public IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null)
         {
-            Tenancy.Default.EnsureStorageExists(typeof(EventStream));
+            Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
             if (projections == null)
             {
