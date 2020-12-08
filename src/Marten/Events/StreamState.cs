@@ -33,19 +33,17 @@ namespace Marten.Events
 
         internal static StreamState Create(object identifier, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
         {
-            if (!(identifier is string) && !(identifier is Guid))
-            {
-                throw new ArgumentException("Stream identifier needs to be string or Guid type", nameof(identifier));
-            }
-
             if (identifier is string stringValue)
             {
                 return new StreamState(stringValue, version, aggregateType, lastTimestamp, created);
             }
-            else
+
+            if (identifier is Guid guidValue)
             {
-                return new StreamState((Guid)identifier, version, aggregateType, lastTimestamp, created);
+                return new StreamState(guidValue, version, aggregateType, lastTimestamp, created);
             }
+
+            throw new ArgumentException("Stream identifier needs to be string or Guid type", nameof(identifier));
         }
     }
 }
