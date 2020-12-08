@@ -204,7 +204,7 @@ namespace Marten.Schema
         public Type DocumentType { get; }
 
 
-        public virtual DbObjectName TableName { get; private set; }
+        public virtual DbObjectName TableName { get; protected set; }
 
         private void SetTableName()
         {

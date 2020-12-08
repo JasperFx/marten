@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
-using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Marten.Schema;
@@ -29,8 +28,6 @@ namespace Marten.Events
             duplicateField(x => x.Version, "version");
             duplicateField(x => x.Timestamp, "timestamp");
         }
-
-        public override DbObjectName TableName { get; }
 
         private DuplicatedField duplicateField(Expression<Func<IEvent, object>> property, string columnName)
         {
