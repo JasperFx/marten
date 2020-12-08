@@ -211,6 +211,26 @@ namespace Marten.Internal.Sessions
             catch (Exception)
             {
                 Database.Rollback();
+
+
+                if (_unitOfWork.Streams.Any())
+                {
+                    try
+                    {
+                        var operations = _unitOfWork
+                            .Streams
+                            .SelectMany(x => x.Events)
+                            .Select(x => new InsertTombstone(x.Sequence, Options.Events))
+                            .ToList();
+
+                        var tombstoneBatch = new UpdateBatch(operations);
+                        tombstoneBatch.ApplyChanges(this);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+
                 throw;
             }
 
@@ -250,6 +270,24 @@ namespace Marten.Internal.Sessions
             catch (Exception)
             {
                 await Database.RollbackAsync(token).ConfigureAwait(false);
+
+                if (_unitOfWork.Streams.Any())
+                {
+                    try
+                    {
+                        var operations = _unitOfWork
+                            .Streams
+                            .SelectMany(x => x.Events)
+                            .Select(x => new InsertTombstone(x.Sequence, Options.Events))
+                            .ToList();
+
+                        var tombstoneBatch = new UpdateBatch(operations);
+                        await tombstoneBatch.ApplyChangesAsync(this, token);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
                 throw;
             }
 

@@ -218,7 +218,7 @@ namespace Marten.Events
                     eventsTable,
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
-
+                    new TombstoneTable(this),
                     new AppendEventFunction(this),
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
                 };
