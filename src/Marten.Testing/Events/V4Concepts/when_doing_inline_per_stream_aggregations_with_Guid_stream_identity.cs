@@ -260,7 +260,7 @@ namespace Marten.Testing.Events.V4Concepts
                 };
             }
 
-            public bool MaybeDelete(MyAggregate aggregate, Finished @event)
+            public bool ShouldDelete(MyAggregate aggregate, Finished @event)
             {
                 return (aggregate.ACount + aggregate.BCount + aggregate.CCount + aggregate.DCount) > 10;
             }

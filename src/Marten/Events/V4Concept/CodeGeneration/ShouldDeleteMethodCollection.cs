@@ -3,13 +3,13 @@ using System.Reflection;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
-    internal class MaybeDeleteMethodCollection : MethodCollection
+    internal class ShouldDeleteMethodCollection : MethodCollection
     {
         private readonly Type _identityType;
         public Type AggregateType { get; }
-        public static readonly string MethodName = "MaybeDelete";
+        public static readonly string MethodName = "ShouldDelete";
 
-        public MaybeDeleteMethodCollection(Type projectionType, Type aggregateType, Type identityType) : base(MethodName, projectionType)
+        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType, Type identityType) : base(MethodName, projectionType)
         {
             _identityType = identityType;
             AggregateType = aggregateType;

@@ -24,7 +24,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         private readonly DocumentMapping _aggregateMapping;
         private readonly CreateMethodCollection _createMethods;
         private readonly ApplyMethodCollection _applyMethods;
-        private readonly MaybeDeleteMethodCollection _maybeDeleteMethods;
+        private readonly ShouldDeleteMethodCollection _shouldDeleteMethods;
         private readonly bool _isAsync;
         private readonly Type _storageType;
 
@@ -45,7 +45,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
             _createMethods = new CreateMethodCollection(_projectionType, projection.AggregateType);
             _applyMethods = new ApplyMethodCollection(_projectionType, projection.AggregateType);
-            _maybeDeleteMethods = new MaybeDeleteMethodCollection(_projectionType, projection.AggregateType, _aggregateMapping.IdType);
+            _shouldDeleteMethods = new ShouldDeleteMethodCollection(_projectionType, projection.AggregateType, _aggregateMapping.IdType);
 
             _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
         }
@@ -66,7 +66,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         private void buildAsyncDaemonAggregation()
         {
-            var daemonBuilderIsAsync = _applyMethods.IsAsync || _createMethods.IsAsync || _maybeDeleteMethods.IsAsync;
+            var daemonBuilderIsAsync = _applyMethods.IsAsync || _createMethods.IsAsync || _shouldDeleteMethods.IsAsync;
             var baseType = (daemonBuilderIsAsync ? typeof(AsyncDaemonAggregationBase<,>) : typeof(SyncDaemonAggregationBase<,>))
                 .MakeGenericType(_projection.AggregateType, _aggregateMapping.IdType);
 
@@ -138,7 +138,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             method.Frames.Add(createFrame);
             method.Frames.Add(new MethodCall(_storageType, "SetIdentity"));
 
-            var handlers = MethodCollection.AddEventHandling(_projection.AggregateType, _applyMethods, _maybeDeleteMethods);
+            var handlers = MethodCollection.AddEventHandling(_projection.AggregateType, _applyMethods, _shouldDeleteMethods);
             var iterate = new ForEachEventFrame((IReadOnlyList<Frame>) handlers)
             {
                 EventIteration = "fragment.Events"
@@ -183,7 +183,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
             method.Frames.Add(new MethodCall(_storageType, "SetIdentity"));
 
-            var handlers = MethodCollection.AddEventHandling( _projection.AggregateType, _applyMethods, _maybeDeleteMethods);
+            var handlers = MethodCollection.AddEventHandling( _projection.AggregateType, _applyMethods, _shouldDeleteMethods);
             var iterate = new ForEachEventFrame((IReadOnlyList<Frame>) handlers);
             method.Frames.Add(iterate);
 
