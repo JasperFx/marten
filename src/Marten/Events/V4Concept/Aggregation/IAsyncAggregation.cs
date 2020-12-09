@@ -32,7 +32,7 @@ namespace Marten.Events.V4Concept.Aggregation
 
         public bool WillDelete(StreamFragment<TDoc, TId> fragment)
         {
-            return _projection.WillDelete(fragment.Events);
+            return _projection.MatchesAnyDeleteType(fragment.Events);
         }
 
         public abstract IReadOnlyList<StreamFragment<TDoc, TId>> Split(IEnumerable<IEvent> events,
@@ -51,7 +51,7 @@ namespace Marten.Events.V4Concept.Aggregation
 
         public bool WillDelete(StreamFragment<TDoc, TId> fragment)
         {
-            return _projection.WillDelete(fragment.Events);
+            return _projection.MatchesAnyDeleteType(fragment.Events);
         }
 
         public abstract IReadOnlyList<StreamFragment<TDoc, TId>> Split(IEnumerable<IEvent> events,
