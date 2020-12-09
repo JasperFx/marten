@@ -23,8 +23,7 @@ namespace Marten.Events.Projections.Async.ErrorHandling
             {
                 condition = ex =>
                 {
-                    var arg = ex as T;
-                    return arg != null && filter(arg);
+                    return ex is T arg && filter(arg);
                 };
             }
 

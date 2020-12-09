@@ -253,8 +253,7 @@ namespace Marten
 
         private static IMartenQueryable<T> CastToMartenQueryable<T>(IQueryable<T> queryable)
         {
-            var martenQueryable = queryable as IMartenQueryable<T>;
-            if (martenQueryable == null)
+            if (!(queryable is IMartenQueryable<T> martenQueryable))
             {
                 throw new InvalidOperationException($"{typeof(T)} is not IMartenQueryable<>");
             }

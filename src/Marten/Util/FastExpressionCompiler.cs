@@ -671,12 +671,10 @@ namespace Marten.Util
                            && TryCollectBoundConstants(ref closure, conditionalExpr.IfFalse, paramExprs);
 
                 default:
-                    var unaryExpr = expr as UnaryExpression;
-                    if (unaryExpr != null)
+                    if (expr is UnaryExpression unaryExpr)
                         return TryCollectBoundConstants(ref closure, unaryExpr.Operand, paramExprs);
 
-                    var binaryExpr = expr as BinaryExpression;
-                    if (binaryExpr != null)
+                    if (expr is BinaryExpression binaryExpr)
                         return TryCollectBoundConstants(ref closure, binaryExpr.Left, paramExprs)
                                && TryCollectBoundConstants(ref closure, binaryExpr.Right, paramExprs);
                     break;
@@ -934,13 +932,13 @@ namespace Marten.Util
                 {
                     il.Emit((bool)constant ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 }
-                else if (constant is string)
+                else if (constant is string stringConstant)
                 {
-                    il.Emit(OpCodes.Ldstr, (string)constant);
+                    il.Emit(OpCodes.Ldstr, stringConstant);
                 }
-                else if (constant is Type)
+                else if (constant is Type typeConstant)
                 {
-                    il.Emit(OpCodes.Ldtoken, (Type)constant);
+                    il.Emit(OpCodes.Ldtoken, typeConstant);
                     var getTypeFromHandle = typeof(Type).GetTypeInfo()
                                                         .DeclaredMethods.First(m => m.Name == "GetTypeFromHandle");
                     il.Emit(OpCodes.Call, getTypeFromHandle);

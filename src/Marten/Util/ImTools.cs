@@ -211,8 +211,7 @@ namespace Marten.Util
         /// <returns>First item matching condition or default value.</returns>
         public static T FindFirst<T>(this IEnumerable<T> source, Func<T, bool> predicate)
         {
-            var sourceArr = source as T[];
-            if (sourceArr != null)
+            if (source is T[] sourceArr)
                 return sourceArr.FindFirst(predicate);
             return source.FirstOrDefault(predicate);
         }
@@ -429,8 +428,7 @@ namespace Marten.Util
         {
             if (source == null)
                 return null;
-            var arr = source as T[];
-            if (arr != null)
+            if (source is T[] arr)
                 return arr.Map(map);
             return source.Select(map);
         }
@@ -444,8 +442,7 @@ namespace Marten.Util
         {
             if (source == null)
                 return null;
-            var arr = source as T[];
-            if (arr != null)
+            if (source is T[] arr)
                 return arr.Match(condition);
             return source.Where(condition);
         }
@@ -460,8 +457,7 @@ namespace Marten.Util
         {
             if (source == null)
                 return null;
-            var arr = source as T[];
-            if (arr != null)
+            if (source is T[] arr)
                 return arr.Match(condition, map);
             return source.Where(condition).Select(map);
         }
@@ -585,8 +581,7 @@ namespace Marten.Util
         /// <param name="obj">Object to check equality with.</param> <returns>True if equal.</returns>
         public override bool Equals(object obj)
         {
-            var other = obj as KV<K, V>;
-            return other != null
+            return obj is KV<K, V> other
                    && (ReferenceEquals(other.Key, Key) || Equals(other.Key, Key))
                    && (ReferenceEquals(other.Value, Value) || Equals(other.Value, Value));
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -80,8 +80,7 @@ namespace Marten.Linq.Operators
                 var storage = session.StorageFor<T>();
                 if (storage is IDocumentStorage<T, TId> typed)
                 {
-                    var dict = value as Dictionary<TId, T>;
-                    if (dict == null)
+                    if (!(value is Dictionary<TId, T> dict))
                     {
                         throw new ArgumentOutOfRangeException(nameof(value));
                     }

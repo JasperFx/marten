@@ -314,10 +314,8 @@ namespace Marten.Storage
                 .SelectMany(keyDefinition =>
                 {
                     var results = new List<Type>();
-                    var referenceMappingType =
-                        FindMapping(keyDefinition.ReferenceDocumentType) as DocumentMapping;
                     // If the reference type has sub-classes, also need to insert/update them first too
-                    if (referenceMappingType != null && referenceMappingType.SubClasses.Any())
+                    if (FindMapping(keyDefinition.ReferenceDocumentType) is DocumentMapping referenceMappingType && referenceMappingType.SubClasses.Any())
                     {
                         results.AddRange(referenceMappingType.SubClasses.Select(s => s.DocumentType));
                     }

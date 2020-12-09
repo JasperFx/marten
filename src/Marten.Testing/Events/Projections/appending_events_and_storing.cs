@@ -57,13 +57,13 @@ namespace Marten.Testing.Events
 
                 foreach (var @event in questEvents)
                 {
-                    if (@event is Quest)
+                    if (@event is Quest quest)
                     {
-                        session.Store(new QuestPatchTestProjection { Id = ((Quest)@event).Id });
+                        session.Store(new QuestPatchTestProjection { Id = quest.Id });
                     }
-                    else if (@event is QuestStarted)
+                    else if (@event is QuestStarted started)
                     {
-                        session.Patch<QuestPatchTestProjection>(((QuestStarted)@event).Id).Set(x => x.Name, "New Name");
+                        session.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
                     }
                 }
             }
