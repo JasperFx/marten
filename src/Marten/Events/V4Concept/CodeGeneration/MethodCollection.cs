@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
+using Marten.Schema;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
@@ -19,13 +20,15 @@ namespace Marten.Events.V4Concept.CodeGeneration
             IsAsync = Methods.Any(x => x.IsAsync());
         }
 
-        public abstract IEventHandlingFrame CreateAggregationHandler(Type aggregateType, MethodInfo method);
+        public abstract IEventHandlingFrame CreateAggregationHandler(Type aggregateType,
+            DocumentMapping aggregateMapping, MethodInfo method);
 
         public MethodInfo[] Methods { get; }
 
         public bool IsAsync { get;}
 
-        public static IList<Frame> AddEventHandling(Type aggregateType, params MethodCollection[] collections)
+        public static IList<Frame> AddEventHandling(Type aggregateType, DocumentMapping mapping,
+            params MethodCollection[] collections)
         {
             var byType = new Dictionary<Type, EventProcessingFrame>();
 
@@ -40,7 +43,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             {
                 foreach (var methodInfo in collection.Methods)
                 {
-                    var frame = collection.CreateAggregationHandler(aggregateType, methodInfo);
+                    var frame = collection.CreateAggregationHandler(aggregateType, mapping, methodInfo);
                     if (byType.TryGetValue(frame.EventType, out var container))
                     {
                         container.Add((Frame) frame);

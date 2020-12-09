@@ -10,6 +10,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
+using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -49,7 +50,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
 
             var compiler = new AssemblyGenerator();
-            compiler.ReferenceAssembly(typeof(AggregationTypeBuilder).Assembly);
+            compiler.ReferenceAssembly(typeof(IMartenSession).Assembly);
             compiler.Compile(assembly);
 
             var code = streamQueryHandlerType.SourceCode;

@@ -29,8 +29,7 @@ namespace Marten.Testing.Events.V4Concepts
         {
             _projection = new T();
 
-            var builder = new AggregationTypeBuilder(_projection, theStore);
-            builder.Compile();
+            _projection.Compile(theStore);
         }
 
 

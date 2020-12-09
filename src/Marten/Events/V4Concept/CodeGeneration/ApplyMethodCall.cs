@@ -9,12 +9,12 @@ namespace Marten.Events.V4Concept.CodeGeneration
     {
         public ApplyMethodCall(Type handlerType, string methodName) : base(handlerType, methodName)
         {
-            EventType = AggregationTypeBuilder.EventTypeFor(Method);
+            EventType = Method.GetEventType();
         }
 
         public ApplyMethodCall(Type handlerType, MethodInfo method) : base(handlerType, method)
         {
-            EventType = AggregationTypeBuilder.EventTypeFor(Method);
+            EventType = Method.GetEventType();
         }
 
         public Type EventType { get; }

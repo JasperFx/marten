@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Schema;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
@@ -19,7 +20,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             AggregateType = aggregateType;
         }
 
-        public void BuildCreateMethod(GeneratedType generatedType)
+        public void BuildCreateMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)
         {
             var returnType = IsAsync
                 ? typeof(ValueTask<>).MakeGenericType(AggregateType)
@@ -34,7 +35,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             var method = new GeneratedMethod(MethodName, returnType, args);
             generatedType.AddMethod(method);
 
-            var frames = AddEventHandling(AggregateType, this);
+            var frames = AddEventHandling(AggregateType, aggregateMapping, this);
             method.Frames.AddRange(frames);
 
 
@@ -43,7 +44,8 @@ namespace Marten.Events.V4Concept.CodeGeneration
         }
 
 
-        public override IEventHandlingFrame CreateAggregationHandler(Type aggregateType, MethodInfo method)
+        public override IEventHandlingFrame CreateAggregationHandler(Type aggregateType,
+            DocumentMapping aggregateMapping, MethodInfo method)
         {
             return new CreateAggregateFrame(ProjectionType, method);
         }

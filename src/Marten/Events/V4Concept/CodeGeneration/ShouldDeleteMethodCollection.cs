@@ -1,23 +1,23 @@
 using System;
 using System.Reflection;
+using Marten.Schema;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
     internal class ShouldDeleteMethodCollection : MethodCollection
     {
-        private readonly Type _identityType;
         public Type AggregateType { get; }
         public static readonly string MethodName = "ShouldDelete";
 
-        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType, Type identityType) : base(MethodName, projectionType)
+        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType)
         {
-            _identityType = identityType;
             AggregateType = aggregateType;
         }
 
-        public override IEventHandlingFrame CreateAggregationHandler(Type aggregateType, MethodInfo method)
+        public override IEventHandlingFrame CreateAggregationHandler(Type aggregateType,
+            DocumentMapping aggregateMapping, MethodInfo method)
         {
-            return new MaybeDeleteFrame(ProjectionType, aggregateType, _identityType, method);
+            return new MaybeDeleteFrame(ProjectionType, aggregateType, aggregateMapping.IdType, method);
         }
     }
 }

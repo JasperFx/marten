@@ -12,13 +12,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public CreateAggregateFrame(Type handlerType, string methodName): base(handlerType, methodName)
         {
             ReturnAction = ReturnAction.Return;
-            EventType = AggregationTypeBuilder.EventTypeFor(Method);
+            EventType = Method.GetEventType();
         }
 
         public CreateAggregateFrame(Type handlerType, MethodInfo method): base(handlerType, method)
         {
             ReturnAction = ReturnAction.Return;
-            EventType = AggregationTypeBuilder.EventTypeFor(Method);
+            EventType = Method.GetEventType();
         }
 
         public Type EventType { get;}

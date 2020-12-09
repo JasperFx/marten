@@ -21,7 +21,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         {
             _aggregateType = aggregateType;
             _identityType = identityType;
-            EventType = AggregationTypeBuilder.EventTypeFor(method);
+            EventType = method.GetEventType();
             Maybe = new MethodCall(projectionType, method);
         }
 
