@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
+using Marten.Linq.SqlGeneration;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
@@ -13,7 +14,7 @@ namespace Marten.Events.V4Concept.Aggregation
 
         // This will determine the action too
         public abstract void SplitAndRoute(IReadOnlyList<IEvent> events, AggregatedPage<TDoc, TId> page);
-        public Task<IV4EventPage> Fetch(long floor, long ceiling, CancellationToken token)
+        public Task<IAsyncBatch> Fetch(long floor, long ceiling, CancellationToken token)
         {
             // TODO -- *Think* this won't be generated. Just the SQL WHERE clause may vary a little bit
             throw new System.NotImplementedException();
@@ -21,5 +22,9 @@ namespace Marten.Events.V4Concept.Aggregation
 
         public abstract Task<IReadOnlyList<TDoc>> LoadDocuments(IEnumerable<TId> ids, CancellationToken cancellation);
 
+        public ISqlFragment EventFilter()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

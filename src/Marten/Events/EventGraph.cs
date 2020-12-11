@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -10,9 +9,11 @@ using Marten.Events.Projections;
 using Marten.Events.V4Concept;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 using IProjection = Marten.Events.Projections.IProjection;
@@ -41,6 +42,9 @@ namespace Marten.Events
 
         private readonly Lazy<IInlineProjection[]> _inlineProjections;
 
+        private readonly Lazy<EstablishTombstoneStream> _establishTombstone;
+
+
         public EventGraph(StoreOptions options)
         {
             Options = options;
@@ -60,6 +64,8 @@ namespace Marten.Events
 
             // TODO -- this will change when we switch all the way over to the new V4 model
             _inlineProjections = new Lazy<IInlineProjection[]>(() => InlineProjections.Select(x => new TemporaryV4InlineShim(x)).OfType<IInlineProjection>().ToArray());
+
+            _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
         }
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
@@ -218,7 +224,6 @@ namespace Marten.Events
                     eventsTable,
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
-                    new TombstoneTable(this),
                     new AppendEventFunction(this),
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
                 };
@@ -447,6 +452,45 @@ namespace Marten.Events
             }
         }
 
+        internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
+        {
+            if (session.UnitOfWork.Streams.Any())
+            {
+                var stream = StreamAction.ForTombstone();
 
+                var tombstone = new Tombstone();
+                var mapping = EventMappingFor<Tombstone>();
+
+                var operations = new List<IStorageOperation>();
+                var storage = session.EventStorage();
+
+                var dotNetTypeName = DotnetTypeNameFor(typeof(Tombstone));
+
+                operations.Add(_establishTombstone.Value);
+                var tombstones = session.UnitOfWork.Streams
+                    .SelectMany(x => x.Events)
+                    .Select(x => new Event<Tombstone>(tombstone)
+                    {
+                        Sequence = x.Sequence,
+                        Version = x.Version,
+                        TenantId = x.TenantId,
+                        StreamId = EstablishTombstoneStream.StreamId,
+                        StreamKey = EstablishTombstoneStream.StreamKey,
+                        Id = CombGuidIdGeneration.NewGuid(),
+                        EventTypeName = mapping.EventTypeName,
+                        DotNetTypeName = dotNetTypeName
+                    })
+                    .Select(e => storage.AppendEvent(this, session, stream, e));
+
+                operations.AddRange(tombstones);
+
+                batch = new UpdateBatch(operations);
+
+                return true;
+            }
+
+            batch = null;
+            return false;
+        }
     }
 }

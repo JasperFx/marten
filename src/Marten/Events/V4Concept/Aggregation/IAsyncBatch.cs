@@ -5,15 +5,18 @@ using Marten.Internal;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public interface IV4EventPage : IDisposable
+    public interface IAsyncBatch : IDisposable
     {
-        // This will track the IDocumentSession? Yes. Also the resolve?
-
         public long Floor { get;}
         public long Ceiling { get; }
 
-        Task<IUpdateBatch> ApplyChanges(CancellationToken cancellation);
-
         int Count { get; }
+
+        Task<IUpdateBatch> Complete(CancellationToken cancellation);
+    }
+
+    public interface IStreamingAsyncBatch: IAsyncBatch
+    {
+        void Enqueue(IEvent @event);
     }
 }

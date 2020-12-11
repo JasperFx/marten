@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events.V4Concept;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -43,6 +44,13 @@ namespace Marten.Events
         private StreamAction(string stream, StreamActionType actionType)
         {
             Key = stream;
+            ActionType = actionType;
+        }
+
+        private StreamAction(Guid id, string key, StreamActionType actionType)
+        {
+            Id = id;
+            Key = key;
             ActionType = actionType;
         }
 
@@ -194,6 +202,14 @@ namespace Marten.Events
             return new StreamAction(streamKey, StreamActionType.Append)
             {
                 TenantId = tenant?.TenantId
+            };
+        }
+
+        internal static StreamAction ForTombstone()
+        {
+            return new StreamAction(EstablishTombstoneStream.StreamId, EstablishTombstoneStream.StreamKey, StreamActionType.Append)
+            {
+
             };
         }
     }

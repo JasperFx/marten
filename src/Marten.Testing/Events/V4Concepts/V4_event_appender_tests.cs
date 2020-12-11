@@ -1,16 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using ImTools;
 using Marten.Events;
+using Marten.Events.V4Concept;
 using Marten.Events.V4Concept.CodeGeneration;
 using Marten.Exceptions;
+using Marten.Internal;
+using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Marten.Util;
+using NSubstitute.Extensions;
 using Xunit;
 using Shouldly;
 using Xunit.Abstractions;
@@ -127,6 +133,158 @@ namespace Marten.Testing.Events.V4Concepts
 
             await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => session.SaveChangesAsync());
         }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public async Task can_establish_the_tombstone_stream_from_scratch(TestCase @case)
+        {
+            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+            @case.Store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var operation = new EstablishTombstoneStream(@case.Store.Events);
+            using var session = @case.Store.LightweightSession();
+
+            var batch = new UpdateBatch(new []{operation});
+            await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+
+            if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
+            }
+            else
+            {
+                (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
+            }
+        }
+
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public async Task can_re_run_the_tombstone_stream(TestCase @case)
+        {
+            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+            @case.Store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var operation = new EstablishTombstoneStream(@case.Store.Events);
+            using var session = @case.Store.LightweightSession();
+
+            var batch = new UpdateBatch(new []{operation});
+            await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+            await batch.ApplyChangesAsync((IMartenSession) session, CancellationToken.None);
+
+            if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
+            }
+            else
+            {
+                (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public async Task exercise_tombstone_workflow_async(TestCase @case)
+        {
+            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+
+            using var session = @case.Store.LightweightSession();
+
+            if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                session.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent());
+            }
+            else
+            {
+                session.Events.Append(Guid.NewGuid().ToString(), new AEvent(), new BEvent(), new CEvent());
+            }
+
+
+            session.QueueOperation(new FailingOperation());
+
+            await Should.ThrowAsync<DivideByZeroException>(async () =>
+            {
+                await session.SaveChangesAsync();
+            });
+
+            using var session2 = @case.Store.LightweightSession();
+
+            if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                (await session2.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
+
+                var events = await session2.Events.FetchStreamAsync(EstablishTombstoneStream.StreamId);
+                events.Any().ShouldBeTrue();
+                foreach (var @event in events)
+                {
+                    @event.Data.ShouldBeOfType<Tombstone>();
+                }
+            }
+            else
+            {
+                (await session2.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
+
+                var events = await session2.Events.FetchStreamAsync(EstablishTombstoneStream.StreamKey);
+                events.Any().ShouldBeTrue();
+                foreach (var @event in events)
+                {
+                    @event.Data.ShouldBeOfType<Tombstone>();
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void exercise_tombstone_workflow_sync(TestCase @case)
+        {
+            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+
+            using var session = @case.Store.LightweightSession();
+
+            if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                session.Events.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent());
+            }
+            else
+            {
+                session.Events.Append(Guid.NewGuid().ToString(), new AEvent(), new BEvent(), new CEvent());
+            }
+
+
+            session.QueueOperation(new FailingOperation());
+
+            Should.Throw<DivideByZeroException>(() =>
+            {
+                session.SaveChanges();
+            });
+
+            using var session2 = @case.Store.LightweightSession();
+
+            if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                session2.Events.FetchStreamState(EstablishTombstoneStream.StreamId).ShouldNotBeNull();
+
+                var events = session2.Events.FetchStream(EstablishTombstoneStream.StreamId);
+                events.Any().ShouldBeTrue();
+                foreach (var @event in events)
+                {
+                    @event.Data.ShouldBeOfType<Tombstone>();
+                }
+            }
+            else
+            {
+                session2.Events.FetchStreamState(EstablishTombstoneStream.StreamKey).ShouldNotBeNull();
+
+                var events = session2.Events.FetchStream(EstablishTombstoneStream.StreamKey);
+                events.Any().ShouldBeTrue();
+                foreach (var @event in events)
+                {
+                    @event.Data.ShouldBeOfType<Tombstone>();
+                }
+            }
+        }
+
+
 
         public static IEnumerable<object[]> Data()
         {
@@ -252,6 +410,31 @@ namespace Marten.Testing.Events.V4Concepts
 
                     return stream;
                 }
+            }
+        }
+
+        public class FailingOperation: IStorageOperation
+        {
+            public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
+            {
+                builder.Append("select 1");
+            }
+
+            public Type DocumentType => GetType();
+            public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+            {
+                throw new DivideByZeroException("Boom!");
+            }
+
+            public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+            {
+                exceptions.Add(new DivideByZeroException("Boom!"));
+                return Task.CompletedTask;
+            }
+
+            public OperationRole Role()
+            {
+                return OperationRole.Other;
             }
         }
     }

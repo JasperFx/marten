@@ -9,7 +9,7 @@ using Marten.Internal.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public class AggregatedPage<TDoc, TId> : IV4EventPage
+    public class AggregatedPage<TDoc, TId> : IAsyncBatch
     {
         protected readonly IDocumentStore _store;
         private readonly IAsyncAggregation<TDoc, TId> _aggregation;
@@ -57,7 +57,7 @@ namespace Marten.Events.V4Concept.Aggregation
         public long Floor { get; private set; }
         public long Ceiling { get; private set;}
 
-        public async Task<IUpdateBatch> ApplyChanges(CancellationToken cancellation)
+        public async Task<IUpdateBatch> Complete(CancellationToken cancellation)
         {
             await _splitting;
 
@@ -66,6 +66,8 @@ namespace Marten.Events.V4Concept.Aggregation
 
             return new UpdateBatch(_operations);
         }
+
+
         public int Count { get; private set;}
 
         public void StartLoadingEvents(long floor, long ceiling, IReadOnlyList<IEvent> events)
