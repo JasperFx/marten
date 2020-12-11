@@ -94,6 +94,7 @@ namespace Marten.Events.Projections
         public Type[] Consumes => getUniqueEventTypes();
         public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
+
         public ViewProjection<TView, TId> DeleteEvent<TEvent>() where TEvent : class
             => projectEvent<TEvent>(
                 (session, @event, streamId) => convertToTId(streamId),

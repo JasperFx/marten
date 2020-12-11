@@ -11,6 +11,8 @@ namespace Marten.Events.Projections
         Type Produces { get; }
     }
 
+
+
     public abstract class DocumentProjection<T>
     {
         public Type Produces => typeof(T);

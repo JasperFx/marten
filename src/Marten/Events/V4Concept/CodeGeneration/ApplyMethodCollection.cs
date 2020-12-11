@@ -22,7 +22,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         }
 
-        public override IEventHandlingFrame CreateAggregationHandler(Type aggregateType,
+        public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodInfo method)
         {
             return new ApplyMethodCall(ProjectionType, method);

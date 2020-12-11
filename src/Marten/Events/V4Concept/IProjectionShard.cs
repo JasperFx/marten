@@ -5,5 +5,6 @@ namespace Marten.Events.V4Concept
         IProjection Parent { get; }
         string ShardName { get; }
 
+        IAsyncProjection BuildAsyncProjection();
     }
 }
