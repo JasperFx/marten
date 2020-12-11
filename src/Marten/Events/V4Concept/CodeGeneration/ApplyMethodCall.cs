@@ -12,9 +12,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
             EventType = Method.GetEventType();
         }
 
-        public ApplyMethodCall(Type handlerType, MethodInfo method) : base(handlerType, method)
+        public ApplyMethodCall(Type handlerType, MethodSlot slot) : base(handlerType, slot.Method)
         {
-            EventType = Method.GetEventType();
+            EventType = slot.EventType;
+            if (slot.Setter != null)
+            {
+                Target = slot.Setter;
+            }
         }
 
         public Type EventType { get; }

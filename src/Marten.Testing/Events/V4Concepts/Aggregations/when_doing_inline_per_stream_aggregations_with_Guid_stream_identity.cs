@@ -1,14 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Events.V4Concept.Aggregation;
-using Marten.Testing.Events.Projections.Async;
 using Marten.Testing.Harness;
-using NSubstitute.Extensions;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.Testing.Events.V4Concepts
+namespace Marten.Testing.Events.V4Concepts.Aggregations
 {
     public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity : AggregationContext
     {

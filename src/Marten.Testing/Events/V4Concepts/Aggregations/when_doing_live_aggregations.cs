@@ -9,7 +9,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.Testing.Events.V4Concepts
+namespace Marten.Testing.Events.V4Concepts.Aggregations
 {
     public class when_doing_live_aggregations : AggregationContext
     {
@@ -325,6 +325,7 @@ namespace Marten.Testing.Events.V4Concepts
             aggregate.DCount++;
         }
     }
+
 
     public class AllSync: V4AggregateProjection<MyAggregate>
     {

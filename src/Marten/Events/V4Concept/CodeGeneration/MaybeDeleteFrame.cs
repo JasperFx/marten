@@ -17,12 +17,12 @@ namespace Marten.Events.V4Concept.CodeGeneration
         private Variable _storage;
         private Variable _tenant;
 
-        public MaybeDeleteFrame(Type projectionType, Type aggregateType, Type identityType, MethodInfo method) : base(method.IsAsync())
+        public MaybeDeleteFrame(Type projectionType, Type aggregateType, Type identityType, MethodSlot slot) : base(slot.Method.IsAsync())
         {
             _aggregateType = aggregateType;
             _identityType = identityType;
-            EventType = method.GetEventType();
-            Maybe = new MethodCall(projectionType, method);
+            EventType = slot.EventType;
+            Maybe = new MethodCall(projectionType, slot.Method);
         }
 
         public MethodCall Maybe { get; }

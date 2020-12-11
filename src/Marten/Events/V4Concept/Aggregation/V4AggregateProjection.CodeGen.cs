@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -15,7 +16,7 @@ using Marten.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public abstract partial class V4AggregateProjection<T>
+    public partial class V4AggregateProjection<T>
     {
         private GeneratedType _liveType;
         private GeneratedType _inlineType;
@@ -46,7 +47,10 @@ namespace Marten.Events.V4Concept.Aggregation
 
         internal ILiveAggregator<T> BuildLiveAggregator()
         {
-            return (ILiveAggregator<T>)Activator.CreateInstance(_liveType.CompiledType, this);
+            var aggregator = (ILiveAggregator<T>)Activator.CreateInstance(_liveType.CompiledType, this);
+            _liveType.ApplySetterValues(aggregator);
+
+            return aggregator;
         }
 
         internal IInlineProjection BuildInlineProjection(IMartenSession session)
@@ -74,6 +78,10 @@ namespace Marten.Events.V4Concept.Aggregation
             _assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
 
             _assembly.Generation.Assemblies.Add(GetType().Assembly);
+            _assembly.Generation.Assemblies.AddRange(_applyMethods.ReferencedAssemblies());
+            _assembly.Generation.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
+            _assembly.Generation.Assemblies.AddRange(_shouldDeleteMethods.ReferencedAssemblies());
+
             _assembly.Namespaces.Add("System.Linq");
 
             _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
@@ -256,6 +264,10 @@ namespace Marten.Events.V4Concept.Aggregation
 
             _createMethods.BuildCreateMethod(_liveType, _aggregateMapping);
             _applyMethods.BuildApplyMethod(_liveType, _aggregateMapping);
+
+            _liveType.Setters.AddRange(_applyMethods.Setters());
+            _liveType.Setters.AddRange(_createMethods.Setters());
+            _liveType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
 

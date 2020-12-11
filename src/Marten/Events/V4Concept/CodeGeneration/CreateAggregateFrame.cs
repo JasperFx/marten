@@ -15,10 +15,10 @@ namespace Marten.Events.V4Concept.CodeGeneration
             EventType = Method.GetEventType();
         }
 
-        public CreateAggregateFrame(Type handlerType, MethodInfo method): base(handlerType, method)
+        public CreateAggregateFrame(Type handlerType, MethodSlot slot): base(handlerType, slot.Method)
         {
             ReturnAction = ReturnAction.Return;
-            EventType = Method.GetEventType();
+            EventType = slot.EventType;
         }
 
         public Type EventType { get;}

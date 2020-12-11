@@ -45,9 +45,9 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            DocumentMapping aggregateMapping, MethodInfo method)
+            DocumentMapping aggregateMapping, MethodSlot slot)
         {
-            return new CreateAggregateFrame(ProjectionType, method);
+            return new CreateAggregateFrame(ProjectionType, slot);
         }
     }
 }

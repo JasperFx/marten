@@ -18,7 +18,8 @@ namespace Marten.Events.V4Concept
         {
         }
 
-        public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType, DocumentMapping aggregateMapping, MethodInfo method)
+        public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType, DocumentMapping aggregateMapping,
+            MethodSlot slot)
         {
             throw new NotImplementedException();
         }

@@ -14,6 +14,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Storage;
+using Marten.Testing.Events.V4Concepts.Aggregations;
 using Marten.Testing.Harness;
 using Marten.Util;
 using NSubstitute.Extensions;

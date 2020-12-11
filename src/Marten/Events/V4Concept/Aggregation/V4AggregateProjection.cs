@@ -4,9 +4,19 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public abstract partial class V4AggregateProjection<T>: IAggregateProjection
+    public partial class V4AggregateProjection<T>: IAggregateProjection
     {
         internal IList<Type> DeleteEvents { get; } = new List<Type>();
+
+        public V4AggregateProjection<T> CreateEvent<TEvent>(Func<TEvent, T> creator) where TEvent : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public V4AggregateProjection<T> CreateEvent<TEvent>(Func<TEvent, IQuerySession, Task<T>> creator) where TEvent : class
+        {
+            throw new NotImplementedException();
+        }
 
         public V4AggregateProjection<T> DeleteEvent<TEvent>() where TEvent : class
         {
@@ -51,7 +61,28 @@ namespace Marten.Events.V4Concept.Aggregation
          *
          */
 
+        public V4AggregateProjection<T> ProjectEvent<TEvent>(Action<T> handler)
+            where TEvent : class
+        {
+            _applyMethods.AddLambda(handler, typeof(TEvent));
+            return this;
+        }
+
         public V4AggregateProjection<T> ProjectEvent<TEvent>(Action<T, TEvent> handler)
+            where TEvent : class
+        {
+            _applyMethods.AddLambda(handler, typeof(TEvent));
+            return this;
+        }
+
+        public V4AggregateProjection<T> ProjectEvent<TEvent>(Func<T, TEvent, T> handler)
+            where TEvent : class
+        {
+            _applyMethods.AddLambda(handler, typeof(TEvent));
+            return this;
+        }
+
+        public V4AggregateProjection<T> ProjectEvent<TEvent>(Func<T, T> handler)
             where TEvent : class
         {
             _applyMethods.AddLambda(handler, typeof(TEvent));

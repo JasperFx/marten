@@ -7,6 +7,7 @@ using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Events.V4Concept.Aggregation;
 using Marten.Schema;
 
 namespace Marten.Events.V4Concept.CodeGeneration
@@ -19,13 +20,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public ApplyMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType)
         {
             AggregateType = aggregateType;
-
+            LambdaName = nameof(V4AggregateProjection<string>.ProjectEvent);
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            DocumentMapping aggregateMapping, MethodInfo method)
+            DocumentMapping aggregateMapping, MethodSlot slot)
         {
-            return new ApplyMethodCall(ProjectionType, method);
+            return new ApplyMethodCall(ProjectionType, slot);
         }
 
         public void BuildApplyMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)

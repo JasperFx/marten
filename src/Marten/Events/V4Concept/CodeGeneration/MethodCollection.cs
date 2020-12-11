@@ -27,7 +27,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
         {
             Setter = setter;
             Method = method;
-            EventType = eventType;
+            EventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
+        }
+
+        public IEnumerable<Type> ReferencedTypes()
+        {
+            yield return Method.DeclaringType;
+            yield return EventType;
         }
     }
 
@@ -41,6 +47,12 @@ namespace Marten.Events.V4Concept.CodeGeneration
     {
         private int _lambdaNumber = 0;
 
+        internal IEnumerable<Assembly> ReferencedAssemblies()
+        {
+            return Methods.SelectMany(x => x.ReferencedTypes())
+                .Select(x => x.Assembly)
+                .Distinct();
+        }
 
         public Type ProjectionType { get; }
 
@@ -60,17 +72,24 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         public string LambdaName { get; protected set; }
 
+        public IEnumerable<Setter> Setters()
+        {
+            return Methods.Where(x => x.Setter != null).Select(x => x.Setter);
+        }
+
         public void AddLambda<T>(T lambda, Type eventType)
         {
+            if (eventType == null) throw new ArgumentNullException(nameof(eventType));
+
             var name = LambdaName + (++_lambdaNumber).ToString();
             var method = lambda.GetType().GetMethod("Invoke");
-            var setter = new Setter(typeof(T), name);
+            var setter = new Setter(typeof(T), name){InitialValue = lambda};
             var slot = new MethodSlot(setter, method, eventType);
             Methods.Add(slot);
         }
 
         public abstract IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            DocumentMapping aggregateMapping, MethodInfo method);
+            DocumentMapping aggregateMapping, MethodSlot slot);
 
         public List<MethodSlot> Methods { get; }
 
@@ -92,7 +111,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             {
                 foreach (var slot in collection.Methods)
                 {
-                    var frame = collection.CreateEventTypeHandler(aggregateType, mapping, slot.Method);
+                    var frame = collection.CreateEventTypeHandler(aggregateType, mapping, slot);
                     if (byType.TryGetValue(frame.EventType, out var container))
                     {
                         container.Add((Frame) frame);

@@ -5,6 +5,7 @@ using Marten.Events;
 using Marten.Internal;
 using Marten.Storage;
 using Marten.Testing.Events.V4Concepts;
+using Marten.Testing.Events.V4Concepts.Aggregations;
 using NSubstitute;
 using Shouldly;
 using Xunit;
