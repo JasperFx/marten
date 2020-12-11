@@ -10,12 +10,14 @@ namespace Marten.Events.V4Concept.Aggregation
 
         public V4AggregateProjection<T> CreateEvent<TEvent>(Func<TEvent, T> creator) where TEvent : class
         {
-            throw new NotImplementedException();
+            _createMethods.AddLambda(creator, typeof(TEvent));
+            return this;
         }
 
         public V4AggregateProjection<T> CreateEvent<TEvent>(Func<TEvent, IQuerySession, Task<T>> creator) where TEvent : class
         {
-            throw new NotImplementedException();
+            _createMethods.AddLambda(creator, typeof(TEvent));
+            return this;
         }
 
         public V4AggregateProjection<T> DeleteEvent<TEvent>() where TEvent : class

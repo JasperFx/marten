@@ -19,6 +19,10 @@ namespace Marten.Events.V4Concept.CodeGeneration
         {
             ReturnAction = ReturnAction.Return;
             EventType = slot.EventType;
+            if (slot.Setter != null)
+            {
+                Target = slot.Setter;
+            }
         }
 
         public Type EventType { get;}
