@@ -220,8 +220,6 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 
         }
 
-        public class Finished{}
-
         public class SometimesDeletes: V4AggregateProjection<MyAggregate>
         {
             public void Apply(AEvent @event, MyAggregate aggregate)
@@ -265,4 +263,6 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         }
 
     }
+
+    public class Finished{}
 }

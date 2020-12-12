@@ -50,11 +50,6 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 
     public class MyAggregate
     {
-        public MyAggregate()
-        {
-            Debug.WriteLine("I'm here");
-        }
-
         public Guid Id { get; set; }
 
         public int ACount { get; set; }

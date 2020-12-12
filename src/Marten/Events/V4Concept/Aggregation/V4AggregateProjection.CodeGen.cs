@@ -57,7 +57,10 @@ namespace Marten.Events.V4Concept.Aggregation
         {
             var storage = session.StorageFor<T>();
 
-            return (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, GetType().Name, storage, this);
+            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, GetType().Name, storage, this);
+            _inlineType.ApplySetterValues(inline);
+
+            return inline;
         }
 
 
@@ -126,6 +129,10 @@ namespace Marten.Events.V4Concept.Aggregation
             buildDetermineOperationMethodForDaemonRunner(daemonBuilderIsAsync);
 
             buildAsyncDaemonSplitMethod();
+
+            _asyncDaemonType.Setters.AddRange(_applyMethods.Setters());
+            _asyncDaemonType.Setters.AddRange(_createMethods.Setters());
+            _asyncDaemonType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
 
@@ -238,6 +245,10 @@ namespace Marten.Events.V4Concept.Aggregation
             };
 
             method.Frames.Add(upsert);
+
+            _inlineType.Setters.AddRange(_applyMethods.Setters());
+            _inlineType.Setters.AddRange(_createMethods.Setters());
+            _inlineType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
         private void buildLiveAggregationType()

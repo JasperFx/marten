@@ -22,7 +22,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             _aggregateType = aggregateType;
             _identityType = identityType;
             EventType = slot.EventType;
-            Maybe = new MethodCall(projectionType, slot.Method);
+            Maybe = new MethodCall(projectionType, slot.Method) {Target = slot.Setter};
         }
 
         public MethodCall Maybe { get; }

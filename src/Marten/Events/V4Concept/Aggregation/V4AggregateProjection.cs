@@ -26,6 +26,12 @@ namespace Marten.Events.V4Concept.Aggregation
             return this;
         }
 
+        public V4AggregateProjection<T> DeleteEvent<TEvent>(Func<TEvent, bool> shouldDelete) where TEvent : class
+        {
+            _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
+            return this;
+        }
+
         public V4AggregateProjection<T> DeleteEvent<TEvent>(Func<T, TEvent, bool> shouldDelete) where TEvent : class
         {
             _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
