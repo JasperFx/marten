@@ -9,10 +9,10 @@ namespace Marten.Events.V4Concept.CodeGeneration
     /// </summary>
     internal class CreateAggregateFrame: MethodCall, IEventHandlingFrame
     {
-        public CreateAggregateFrame(Type handlerType, string methodName): base(handlerType, methodName)
+        public CreateAggregateFrame(Type handlerType, string methodName, Type aggregateType): base(handlerType, methodName)
         {
             ReturnAction = ReturnAction.Return;
-            EventType = Method.GetEventType();
+            EventType = Method.GetEventType(aggregateType);
         }
 
         public CreateAggregateFrame(Type handlerType, MethodSlot slot): base(handlerType, slot.Method)

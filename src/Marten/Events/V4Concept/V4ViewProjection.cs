@@ -14,7 +14,7 @@ namespace Marten.Events.V4Concept
     {
         public static readonly string MethodName = "Process";
 
-        public ProjectMethodCollection(Type projectionType) : base(MethodName, projectionType)
+        public ProjectMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
         }
 
@@ -33,7 +33,7 @@ namespace Marten.Events.V4Concept
 
         public ViewProjection()
         {
-            _projectMethods = new ProjectMethodCollection(GetType());
+            _projectMethods = new ProjectMethodCollection(GetType(), null);
         }
 
         [IgnoreProjectionMethod]

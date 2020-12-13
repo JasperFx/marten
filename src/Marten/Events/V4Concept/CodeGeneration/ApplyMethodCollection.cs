@@ -17,7 +17,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public Type AggregateType { get; }
         public static readonly string MethodName = "Apply";
 
-        public ApplyMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType)
+        public ApplyMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
             AggregateType = aggregateType;
             LambdaName = nameof(V4AggregateProjection<string>.ProjectEvent);

@@ -15,10 +15,10 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public Setter Setter { get; }
         public MethodInfo Method { get; }
 
-        public MethodSlot(MethodInfo method)
+        public MethodSlot(MethodInfo method, Type aggregateType)
         {
             Method = method;
-            EventType = method.GetEventType();
+            EventType = method.GetEventType(aggregateType);
         }
 
         public Type EventType { get; }
@@ -56,7 +56,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         public Type ProjectionType { get; }
 
-        protected MethodCollection(string methodName, Type projectionType)
+        protected MethodCollection(string methodName, Type projectionType, Type aggregateType)
         {
             ProjectionType = projectionType;
 
@@ -64,7 +64,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
                 .GetMethods()
                 .Where(x => x.Name == methodName)
                 .Where(x => !x.HasAttribute<IgnoreProjectionMethodAttribute>())
-                .Select(x => new MethodSlot(x)).ToList();
+                .Select(x => new MethodSlot(x, aggregateType)).ToList();
 
             IsAsync = Methods.Any(x => x.Method.IsAsync());
             LambdaName = methodName;

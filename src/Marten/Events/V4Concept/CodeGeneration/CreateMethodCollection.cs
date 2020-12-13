@@ -15,7 +15,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public Type AggregateType { get; }
         public static readonly string MethodName = "Create";
 
-        public CreateMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType)
+        public CreateMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
             AggregateType = aggregateType;
         }

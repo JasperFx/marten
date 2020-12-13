@@ -9,7 +9,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public Type AggregateType { get; }
         public static readonly string MethodName = "ShouldDelete";
 
-        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType)
+        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
             AggregateType = aggregateType;
         }
