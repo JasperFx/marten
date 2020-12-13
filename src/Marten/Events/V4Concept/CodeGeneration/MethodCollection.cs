@@ -86,6 +86,11 @@ namespace Marten.Events.V4Concept.CodeGeneration
             var setter = new Setter(typeof(T), name){InitialValue = lambda};
             var slot = new MethodSlot(setter, method, eventType);
             Methods.Add(slot);
+
+            if (method.IsAsync())
+            {
+                IsAsync = true;
+            }
         }
 
         public abstract IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
@@ -93,7 +98,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         public List<MethodSlot> Methods { get; }
 
-        public bool IsAsync { get;}
+        public bool IsAsync { get; private set; }
 
         public static IList<Frame> AddEventHandling(Type aggregateType, DocumentMapping mapping,
             params MethodCollection[] collections)

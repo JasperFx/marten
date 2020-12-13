@@ -7,10 +7,13 @@ namespace Marten.Events.V4Concept.Aggregation
 {
     public abstract class InlineAggregationBase<TDoc, TId>: IInlineProjection
     {
-        public InlineAggregationBase(string projectionName)
+        public InlineAggregationBase(IAggregateProjection projection)
         {
-            ProjectionName = projectionName;
+            ProjectionName = projection.ProjectionName;
+            Projection = projection;
         }
+
+        public IAggregateProjection Projection { get; }
 
         public string ProjectionName { get; }
 

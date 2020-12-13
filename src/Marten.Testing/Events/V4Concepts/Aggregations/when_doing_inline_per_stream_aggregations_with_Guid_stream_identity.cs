@@ -264,5 +264,8 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 
     }
 
-    public class Finished{}
+    public class Finished
+    {
+        public bool Nevermind { get; set; }
+    }
 }

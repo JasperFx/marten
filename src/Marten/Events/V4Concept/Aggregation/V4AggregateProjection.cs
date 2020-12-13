@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Marten.Events.V4Concept.Aggregation
@@ -38,19 +39,6 @@ namespace Marten.Events.V4Concept.Aggregation
             return this;
         }
 
-        public V4AggregateProjection<T> DeleteEvent<TEvent>(Func<IQuerySession, T, TEvent, bool> shouldDelete)
-            where TEvent : class
-        {
-            _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
-            return this;
-        }
-
-        public V4AggregateProjection<T> DeleteEventAsync<TEvent>(Func<T, TEvent, Task<bool>> shouldDelete)
-            where TEvent : class
-        {
-            _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
-            return this;
-        }
 
         public V4AggregateProjection<T> DeleteEventAsync<TEvent>(
             Func<IQuerySession, T, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -58,16 +46,6 @@ namespace Marten.Events.V4Concept.Aggregation
             _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
             return this;
         }
-
-        /*
-         * TODOs
-         * 1. Add overloads for immutable aggregates on ProjectEvent
-         * 2. Add overloads called "Apply" instead
-         * 3. Add Lambda overloads for "Create"
-         *
-         *
-         *
-         */
 
         public V4AggregateProjection<T> ProjectEvent<TEvent>(Action<T> handler)
             where TEvent : class
@@ -104,17 +82,20 @@ namespace Marten.Events.V4Concept.Aggregation
             return this;
         }
 
-        public V4AggregateProjection<T> ProjectEventAsync<TEvent>(Func<T, TEvent, Task> handler)
-            where TEvent : class
+        public V4AggregateProjection<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler)
         {
             _applyMethods.AddLambda(handler, typeof(TEvent));
             return this;
         }
 
-        public V4AggregateProjection<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler)
+        public bool MatchesAnyDeleteType(IStreamFragment fragment)
         {
-            _applyMethods.AddLambda(handler, typeof(TEvent));
-            return this;
+            return fragment.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
+        }
+
+        public bool MatchesAnyDeleteType(StreamAction action)
+        {
+            return action.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
         }
     }
 }

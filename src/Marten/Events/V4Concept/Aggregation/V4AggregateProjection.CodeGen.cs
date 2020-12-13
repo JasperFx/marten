@@ -35,14 +35,15 @@ namespace Marten.Events.V4Concept.Aggregation
             _createMethods = new CreateMethodCollection(GetType(), typeof(T));
             _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
             _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T));
+
+            ProjectionName = typeof(T).Name;
         }
 
         Type IAggregateProjection.AggregateType => typeof(T);
 
-        public bool MatchesAnyDeleteType(IEnumerable<IEvent> events)
-        {
-            return events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
-        }
+
+
+        public string ProjectionName { get; protected set; }
 
 
         internal ILiveAggregator<T> BuildLiveAggregator()
@@ -57,7 +58,7 @@ namespace Marten.Events.V4Concept.Aggregation
         {
             var storage = session.StorageFor<T>();
 
-            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, GetType().Name, storage, this);
+            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, this, storage, this);
             _inlineType.ApplySetterValues(inline);
 
             return inline;
@@ -165,6 +166,7 @@ namespace Marten.Events.V4Concept.Aggregation
             if (daemonBuilderIsAsync)
             {
                 method.AsyncMode = AsyncMode.AsyncTask;
+
             }
 
             method.DerivedVariables.Add(Variable.For<ITenant>($"fragment.{nameof(StreamFragment<string, string>.Tenant)}"));
@@ -227,6 +229,12 @@ namespace Marten.Events.V4Concept.Aggregation
             method.DerivedVariables.Add(Variable.For<IEvent>("@event"));
             method.DerivedVariables.Add(Variable.For<IMartenSession>($"({typeof(IMartenSession).FullNameInCode()})session"));
             method.DerivedVariables.Add(Variable.For<IQuerySession>("session"));
+            method.DerivedVariables.Add(Variable.For<IAggregateProjection>(nameof(InlineAggregationBase<string, string>.Projection)));
+
+            if (DeleteEvents.Any())
+            {
+                method.Frames.Code($"if (Projection.{nameof(MatchesAnyDeleteType)}({{0}})) return {{1}}.{nameof(IDocumentStorage<string, string>.DeleteForId)}({{2}});", Use.Type<StreamAction>(), new Use(_storageType), new Use(_aggregateMapping.IdType));
+            }
 
             var createFrame = new CallCreateAggregateFrame(_createMethods);
             method.Frames.Add(new InitializeLiveAggregateFrame(typeof(T), _aggregateMapping.IdType, createFrame));

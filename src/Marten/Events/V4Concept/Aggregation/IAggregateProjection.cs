@@ -8,6 +8,9 @@ namespace Marten.Events.V4Concept.Aggregation
     {
         Type AggregateType { get; }
 
-        bool MatchesAnyDeleteType(IEnumerable<IEvent> events);
+        bool MatchesAnyDeleteType(StreamAction action);
+        bool MatchesAnyDeleteType(IStreamFragment action);
+
+        string ProjectionName { get; }
     }
 }
