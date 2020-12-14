@@ -202,6 +202,41 @@ namespace Marten.Testing.Linq.Compiled
             (await theSession.QueryAsync(new CompiledQuery1())).ShouldNotBeNull();
             (await theSession.QueryAsync(new CompiledQuery2())).ShouldNotBeNull();
         }
+
+        [Fact]
+        public async Task Bug_1623_use_any_within_compiled_query()
+        {
+            var user = new User {Age = 5, UserName = "testUser"};
+
+            theSession.Store(user);
+            await theSession.SaveChangesAsync();
+
+            // this should pass => Any works.
+            user.ShouldSatisfyAllConditions(
+                () => theSession.Query<User>().Any(x => x.Age == 6).ShouldBeFalse(),
+                () => theSession.Query<User>().Any(x => x.Age == 5).ShouldBeTrue()
+            );
+
+            // this should pass => AnyAsync works, too
+            var asyncR1 = await theSession.Query<User>().AnyAsync(x => x.Age == 6);
+            asyncR1.ShouldBeFalse();
+            var asyncR2 = await theSession.Query<User>().AnyAsync(x => x.Age == 5);
+            asyncR2.ShouldBeTrue();
+
+            var q = new TestQuery() {Age = 6};
+            var queryAsync = theSession.Query(q);  // theSession.QueryAsync(q, default) will fail also!
+            queryAsync.ShouldBeFalse();
+        }
+
+        public class TestQuery: ICompiledQuery<User, bool>
+        {
+            public Expression<Func<IMartenQueryable<User>, bool>> QueryIs()
+            {
+                return query => query.Any(x => x.Age == Age);
+            }
+
+            public int Age { get; set; }
+        }
     }
 
     // SAMPLE: FindUserByAllTheThings
