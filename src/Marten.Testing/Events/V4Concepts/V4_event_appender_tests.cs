@@ -13,7 +13,9 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Bugs;
 using Marten.Testing.Events.V4Concepts.Aggregations;
 using Marten.Testing.Harness;
 using Marten.Util;
@@ -33,6 +35,22 @@ namespace Marten.Testing.Events.V4Concepts
         public V4_event_appender_tests(ITestOutputHelper output)
         {
             _output = output;
+        }
+
+        public class EventMetadataChecker : DocumentSessionListenerBase
+        {
+            public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+            {
+                var events = commit.GetEvents();
+                foreach (var @event in events)
+                {
+
+                    @event.TenantId.ShouldNotBeNull();
+                    @event.Timestamp.ShouldNotBe(DateTime.MinValue);
+                }
+
+                return Task.CompletedTask;
+            }
         }
 
         [Theory]
@@ -338,6 +356,8 @@ namespace Marten.Testing.Events.V4Concepts
                 using var session = Store.Events.TenancyStyle == TenancyStyle.Conjoined
                     ? Store.LightweightSession(TenantId)
                     : Store.LightweightSession();
+
+                session.Listeners.Add(new EventMetadataChecker());
 
                 if (logger != null)
                 {

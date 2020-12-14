@@ -158,9 +158,6 @@ namespace Marten.Events
                 ExpectedVersionOnServer = currentVersion;
             }
 
-
-
-
             foreach (var @event in _events)
             {
                 @event.Version = ++i;
