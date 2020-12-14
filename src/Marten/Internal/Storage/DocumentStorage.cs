@@ -18,7 +18,6 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
-using Microsoft.CodeAnalysis;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
@@ -76,6 +75,8 @@ namespace Marten.Internal.Storage
             DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
                 ? (IOperationFragment) new HardDelete(this)
                 : new SoftDelete(this);
+
+            HardDeleteFragment = new HardDelete(this);
 
             DuplicatedFields = _mapping.DuplicatedFields;
         }
@@ -136,6 +137,42 @@ namespace Marten.Internal.Storage
             return new ByIdFilter<TId>(id, _idType);
         }
 
+        public IDeletion HardDeleteForId(TId id)
+        {
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                return new Deletion(this, HardDeleteFragment)
+                {
+                    Where = new CompoundWhereFragment("and", CurrentTenantFilter.Instance, ByIdFilter(id)),
+                    Id = id
+                };
+            }
+
+            return new Deletion(this, HardDeleteFragment)
+            {
+                Where = ByIdFilter(id),
+                Id = id
+            };
+        }
+
+        public IDeletion HardDeleteForId(TId id, ITenant tenant)
+        {
+            if (TenancyStyle == TenancyStyle.Conjoined)
+            {
+                return new Deletion(this, HardDeleteFragment)
+                {
+                    Where = new CompoundWhereFragment("and", new SpecificTenantFilter(tenant), ByIdFilter(id)),
+                    Id = id
+                };
+            }
+
+            return new Deletion(this, HardDeleteFragment)
+            {
+                Where = ByIdFilter(id),
+                Id = id
+            };
+        }
+
         public void EjectById(IMartenSession session, object id)
         {
             var typedId = (TId)id;
@@ -157,6 +194,26 @@ namespace Marten.Internal.Storage
 
                 return false;
             });
+        }
+
+        public IDeletion HardDeleteForDocument(T document)
+        {
+            var id = Identity(document);
+
+            var deletion = HardDeleteForId(id);
+            deletion.Document = document;
+
+            return deletion;
+        }
+
+        public IDeletion HardDeleteForDocument(T document, ITenant tenant)
+        {
+            var id = Identity(document);
+
+            var deletion = HardDeleteForId(id, tenant);
+            deletion.Document = document;
+
+            return deletion;
         }
 
         public bool UseOptimisticConcurrency { get; }
@@ -218,14 +275,14 @@ namespace Marten.Internal.Storage
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
-                return new Deletion(this)
+                return new Deletion(this, DeleteFragment)
                 {
                     Where = new CompoundWhereFragment("and", CurrentTenantFilter.Instance, ByIdFilter(id)),
                     Id = id
                 };
             }
 
-            return new Deletion(this)
+            return new Deletion(this, DeleteFragment)
             {
                 Where = ByIdFilter(id),
                 Id = id
@@ -237,14 +294,14 @@ namespace Marten.Internal.Storage
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
-                return new Deletion(this)
+                return new Deletion(this, DeleteFragment)
                 {
                     Where = new CompoundWhereFragment("and", new SpecificTenantFilter(tenant), ByIdFilter(id)),
                     Id = id
                 };
             }
 
-            return new Deletion(this)
+            return new Deletion(this, DeleteFragment)
             {
                 Where = ByIdFilter(id),
                 Id = id
@@ -252,6 +309,8 @@ namespace Marten.Internal.Storage
         }
 
         public IOperationFragment DeleteFragment { get; }
+
+        public IOperationFragment HardDeleteFragment { get; }
 
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {

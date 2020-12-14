@@ -49,13 +49,15 @@ namespace Marten.Linq.SqlGeneration
 
         public OperationRole Role() => _operation.Role();
 
-        public void ApplyFiltering<T>(DocumentSessionBase session, Expression<Func<T, bool>> expression)
+        public ISqlFragment ApplyFiltering<T>(DocumentSessionBase session, Expression<Func<T, bool>> expression)
         {
             var queryExpression = session.Query<T>().Where(expression).Expression;
             var model = MartenQueryParser.Flyweight.GetParsedQuery(queryExpression);
             var where = model.BodyClauses.OfType<WhereClause>().Single();
             WhereClauses.Add(where);
             CompileLocal(session);
+
+            return Where;
         }
     }
 }

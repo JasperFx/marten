@@ -5,9 +5,8 @@ namespace Marten.Linq.SqlGeneration
 {
     public class Deletion: StatementOperation, IDeletion
     {
-        public Deletion(IDocumentStorage storage) : base(storage, storage.DeleteFragment)
+        public Deletion(IDocumentStorage storage, IOperationFragment operation) : base(storage, operation)
         {
-
         }
 
         public object Document { get; set; }

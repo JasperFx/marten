@@ -26,6 +26,7 @@ namespace Marten.Internal.Storage
 
         bool UseOptimisticConcurrency { get; }
         IOperationFragment DeleteFragment { get; }
+        IOperationFragment HardDeleteFragment { get; }
         DuplicatedField[] DuplicatedFields { get; }
         DbObjectName TableName { get; }
         Type DocumentType { get; }
@@ -59,6 +60,8 @@ namespace Marten.Internal.Storage
 
         void EjectById(IMartenSession session, object id);
         void RemoveDirtyTracker(IMartenSession session, object id);
+        IDeletion HardDeleteForDocument(T document);
+        IDeletion HardDeleteForDocument(T document, ITenant tenant);
     }
 
     public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
@@ -83,6 +86,8 @@ namespace Marten.Internal.Storage
         TId AssignIdentity(T document, ITenant tenant);
         TId Identity(T document);
         ISqlFragment ByIdFilter(TId id);
+        IDeletion HardDeleteForId(TId id);
+        IDeletion HardDeleteForId(TId id, ITenant tenant);
     }
 
 }

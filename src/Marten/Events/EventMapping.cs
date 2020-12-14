@@ -124,6 +124,7 @@ namespace Marten.Events
 
         public bool UseOptimisticConcurrency { get; } = false;
         public IOperationFragment DeleteFragment => throw new NotSupportedException();
+        public IOperationFragment HardDeleteFragment { get; }
 
         string ISelectClause.FromObject => _tableName;
 
@@ -245,6 +246,16 @@ namespace Marten.Events
         void IDocumentStorage<T>.RemoveDirtyTracker(IMartenSession session, object id)
         {
             // Nothing
+        }
+
+        public IDeletion HardDeleteForDocument(T document)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDeletion HardDeleteForDocument(T document, ITenant tenant)
+        {
+            throw new NotImplementedException();
         }
 
         public override IEvent Wrap(object data)

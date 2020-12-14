@@ -50,6 +50,11 @@ namespace Marten.Linq.Filters
             _children.Add(child);
         }
 
+        public void Remove(ISqlFragment fragment)
+        {
+            _children.Remove(fragment);
+        }
+
         public IEnumerable<ISqlFragment> Children => _children;
     }
 }

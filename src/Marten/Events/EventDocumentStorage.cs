@@ -71,6 +71,16 @@ namespace Marten.Events
             // Nothing
         }
 
+        public IDeletion HardDeleteForDocument(IEvent document)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDeletion HardDeleteForDocument(IEvent document, ITenant tenant)
+        {
+            throw new NotImplementedException();
+        }
+
         public string FromObject { get; }
         public Type SelectedType => typeof(IEvent);
         public void WriteSelectClause(CommandBuilder sql)
@@ -112,6 +122,7 @@ namespace Marten.Events
 
         public bool UseOptimisticConcurrency { get; } = false;
         public IOperationFragment DeleteFragment => throw new NotSupportedException();
+        public IOperationFragment HardDeleteFragment { get; }
         public DuplicatedField[] DuplicatedFields { get; } = new DuplicatedField[0];
         public DbObjectName TableName => _mapping.TableName;
         public Type DocumentType => typeof(IEvent);

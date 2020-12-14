@@ -4,7 +4,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class HardDelete: IOperationFragment
+    internal class HardDelete: IOperationFragment
     {
         private readonly string _sql;
 

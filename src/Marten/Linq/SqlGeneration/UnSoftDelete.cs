@@ -5,14 +5,14 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    internal class SoftDelete: IOperationFragment
+    internal class UnSoftDelete: IOperationFragment
     {
         private readonly string _sql;
 
-        public SoftDelete(IDocumentStorage storage)
+        public UnSoftDelete(IDocumentStorage storage)
         {
             _sql =
-                $"update {storage.TableName.QualifiedName} as d set {SchemaConstants.DeletedColumn} = True, {SchemaConstants.DeletedAtColumn} = now()";
+                $"update {storage.TableName.QualifiedName} as d set {SchemaConstants.DeletedColumn} = False, {SchemaConstants.DeletedAtColumn} = NULL";
         }
 
         public void Apply(CommandBuilder builder)

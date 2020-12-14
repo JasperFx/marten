@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
+using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten.Testing.Internals;
 using Marten.Util;
 using Shouldly;
 using Xunit;
@@ -26,6 +28,12 @@ namespace Marten.Testing.Acceptance
                 .SoftDeleted()
                 .AddSubClass<AdminUser>()
                 .AddSubClass<SuperUser>();
+
+            Options.Schema.For<IntDoc>().SoftDeleted().MultiTenanted();
+            Options.Schema.For<LongDoc>().SoftDeleted().MultiTenanted();
+            Options.Schema.For<StringDoc>().SoftDeleted().MultiTenanted();
+            Options.Schema.For<GuidDoc>().SoftDeleted().MultiTenanted();
+
         }
     }
 
@@ -104,6 +112,19 @@ namespace Marten.Testing.Acceptance
             }
         }
 
+        private void assertDocumentIsHardDeleted<T>(IDocumentSession session, object id)
+        {
+            var mapping = theStore.Options.Storage.MappingFor(typeof(T));
+
+
+            var cmd = session.Connection.CreateCommand()
+                .Sql($"select count(*) from {mapping.TableName} where id = :id")
+                .With("id", id);
+
+            var count = (long)cmd.ExecuteScalar();
+            count.ShouldBe(0);
+        }
+
         [Fact]
         public void soft_delete_a_document_row_state()
         {
@@ -118,6 +139,83 @@ namespace Marten.Testing.Acceptance
 
                 userIsMarkedAsDeleted(session, user.Id);
             }
+        }
+
+        [Fact]
+        public void hard_delete_a_document_row_state()
+        {
+            using var session = theStore.OpenSession();
+            var user = new User();
+            session.Store(user);
+            session.SaveChanges();
+
+            session.HardDelete(user);
+            session.SaveChanges();
+
+            assertDocumentIsHardDeleted<User>(session, user.Id);
+        }
+
+        [Fact]
+        public async Task hard_delete_by_linq()
+        {
+            var doc1 = new StringDoc {Id = "red", Size = "big"};
+            var doc2 = new StringDoc {Id = "blue", Size = "small"};
+            var doc3 = new StringDoc {Id = "green", Size = "big"};
+            var doc4 = new StringDoc {Id = "purple", Size = "medium"};
+
+            theSession.Store(doc1, doc2, doc3, doc4);
+            await theSession.SaveChangesAsync();
+
+            theSession.HardDeleteWhere<StringDoc>(x => x.Size == "big");
+            await theSession.SaveChangesAsync();
+
+            assertDocumentIsHardDeleted<StringDoc>(theSession,"red");
+            assertDocumentIsHardDeleted<StringDoc>(theSession, "green");
+
+            var count = await theSession.Query<StringDoc>().Where(x => x.MaybeDeleted()).CountAsync();
+            count.ShouldBe(2);
+        }
+
+        [Fact]
+        public void hard_delete_a_document_row_state_int()
+        {
+            using var session = theStore.OpenSession();
+            var doc = new IntDoc();
+            session.Store(doc);
+            session.SaveChanges();
+
+            session.HardDelete<IntDoc>(doc.Id);
+            session.SaveChanges();
+
+            assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
+        }
+
+        [Fact]
+        public void hard_delete_a_document_row_state_long()
+        {
+            using var session = theStore.OpenSession();
+            var doc = new LongDoc();
+            session.Store(doc);
+            session.SaveChanges();
+
+            session.HardDelete<LongDoc>(doc.Id);
+            session.SaveChanges();
+
+            assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
+        }
+
+        [Fact]
+        public void hard_delete_a_document_row_state_string()
+        {
+            using var session = theStore.OpenSession();
+            var doc = new StringDoc{Id = Guid.NewGuid().ToString()};
+            session.Store(doc);
+            session.SaveChanges();
+
+            session.HardDelete<StringDoc>(doc.Id);
+            session.SaveChanges();
+
+            assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
         }
 
         private static void userIsMarkedAsDeleted(IDocumentSession session, Guid userId)
@@ -154,6 +252,34 @@ namespace Marten.Testing.Acceptance
                 userIsMarkedAsDeleted(session, user2.Id);
                 userIsMarkedAsDeleted(session, user3.Id);
             }
+        }
+
+        [Fact]
+        public void un_delete_a_document_by_where_row_state()
+        {
+            var user1 = new User { UserName = "foo" };
+            var user2 = new User { UserName = "bar" };
+            var user3 = new User { UserName = "baz" };
+
+            using var session = theStore.OpenSession();
+            session.Logger = new TestOutputMartenLogger(_output);
+
+            session.Store(user1, user2, user3);
+            session.SaveChanges();
+
+            session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+            session.SaveChanges();
+
+            userIsNotMarkedAsDeleted(session, user1.Id);
+            userIsMarkedAsDeleted(session, user2.Id);
+            userIsMarkedAsDeleted(session, user3.Id);
+
+            session.UndoDeleteWhere<User>(x => x.UserName == "bar");
+            session.SaveChanges();
+
+            userIsNotMarkedAsDeleted(session, user1.Id);
+            userIsNotMarkedAsDeleted(session, user2.Id);
+            userIsMarkedAsDeleted(session, user3.Id);
         }
 
         // SAMPLE: query_soft_deleted_docs
@@ -447,6 +573,106 @@ namespace Marten.Testing.Acceptance
                 files = session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToList();
                 files.Count.ShouldBe(1);
             }
+        }
+
+        [Fact]
+        public async Task hard_delete_by_document_and_tenant_by_string()
+        {
+            var doc1 = new StringDoc{Id = "big"};
+
+            theSession.Store("red", doc1);
+            theSession.Store("blue", doc1);
+
+            await theSession.SaveChangesAsync();
+
+            theSession.HardDeleteInTenant("red", doc1);
+
+            using var query = theStore.QuerySession();
+
+            var redCount = await query.Query<StringDoc>().Where(x => x.TenantIsOneOf("red"))
+                .CountAsync();
+
+            redCount.ShouldBe(0);
+
+            var blueCount = await query.Query<StringDoc>().Where(x => x.TenantIsOneOf("blue"))
+                .CountAsync();
+
+            blueCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task hard_delete_by_document_and_tenant_by_int()
+        {
+            var doc1 = new IntDoc{Id = 5000};
+
+            theSession.Store("red", doc1);
+            theSession.Store("blue", doc1);
+
+            await theSession.SaveChangesAsync();
+
+            theSession.HardDeleteInTenant("red", doc1);
+
+            using var query = theStore.QuerySession();
+
+            var redCount = await query.Query<IntDoc>().Where(x => x.TenantIsOneOf("red"))
+                .CountAsync();
+
+            redCount.ShouldBe(0);
+
+            var blueCount = await query.Query<IntDoc>().Where(x => x.TenantIsOneOf("blue"))
+                .CountAsync();
+
+            blueCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task hard_delete_by_document_and_tenant_by_long()
+        {
+            var doc1 = new LongDoc{Id = 5000};
+
+            theSession.Store("red", doc1);
+            theSession.Store("blue", doc1);
+
+            await theSession.SaveChangesAsync();
+
+            theSession.HardDeleteInTenant("red", doc1);
+
+            using var query = theStore.QuerySession();
+
+            var redCount = await query.Query<LongDoc>().Where(x => x.TenantIsOneOf("red"))
+                .CountAsync();
+
+            redCount.ShouldBe(0);
+
+            var blueCount = await query.Query<LongDoc>().Where(x => x.TenantIsOneOf("blue"))
+                .CountAsync();
+
+            blueCount.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task hard_delete_by_document_and_tenant_by_Guid()
+        {
+            var doc1 = new GuidDoc{Id = Guid.NewGuid()};
+
+            theSession.Store("red", doc1);
+            theSession.Store("blue", doc1);
+
+            await theSession.SaveChangesAsync();
+
+            theSession.HardDeleteInTenant("red", doc1);
+
+            using var query = theStore.QuerySession();
+
+            var redCount = await query.Query<GuidDoc>().Where(x => x.TenantIsOneOf("red"))
+                .CountAsync();
+
+            redCount.ShouldBe(0);
+
+            var blueCount = await query.Query<GuidDoc>().Where(x => x.TenantIsOneOf("blue"))
+                .CountAsync();
+
+            blueCount.ShouldBe(1);
         }
     }
 

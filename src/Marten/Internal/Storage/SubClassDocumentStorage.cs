@@ -144,6 +144,7 @@ namespace Marten.Internal.Storage
 
         public bool UseOptimisticConcurrency => _parent.UseOptimisticConcurrency;
         public IOperationFragment DeleteFragment => _parent.DeleteFragment;
+        public IOperationFragment HardDeleteFragment { get; }
         public DuplicatedField[] DuplicatedFields => _parent.DuplicatedFields;
         public DbObjectName TableName => _parent.TableName;
         public Type DocumentType => typeof(T);
@@ -257,6 +258,16 @@ namespace Marten.Internal.Storage
             return _parent.ByIdFilter(id);
         }
 
+        public IDeletion HardDeleteForId(TId id)
+        {
+            return _parent.HardDeleteForId(id);
+        }
+
+        public IDeletion HardDeleteForId(TId id, ITenant tenant)
+        {
+            return _parent.HardDeleteForId(id, tenant);
+        }
+
         public void EjectById(IMartenSession session, object id)
         {
             _parent.EjectById(session, id);
@@ -265,6 +276,16 @@ namespace Marten.Internal.Storage
         public void RemoveDirtyTracker(IMartenSession session, object id)
         {
             _parent.RemoveDirtyTracker(session, id);
+        }
+
+        public IDeletion HardDeleteForDocument(T document)
+        {
+            return _parent.HardDeleteForDocument(document);
+        }
+
+        public IDeletion HardDeleteForDocument(T document, ITenant tenant)
+        {
+            return _parent.HardDeleteForDocument(document, tenant);
         }
     }
 }
