@@ -330,7 +330,7 @@ namespace Marten
 
             foreach (var mapping in Storage.AllDocumentMappings)
             {
-                mapping.Validate();
+                mapping.CompileAndValidate();
             }
         }
 

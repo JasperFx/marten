@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.SoftDeletes;
+using Marten.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
@@ -26,11 +29,51 @@ namespace Marten.Testing.Acceptance
         }
     }
 
+    public class SoftDeletedDocument: ISoftDeleted
+    {
+        public string Id { get; set; }
+        public bool Deleted { get; set; }
+        public DateTimeOffset? DeletedAt { get; set; }
+    }
+
     public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftDeletedFixture>
     {
-        public soft_deletes(SoftDeletedFixture fixture): base(fixture)
+        private readonly ITestOutputHelper _output;
+
+        public soft_deletes(SoftDeletedFixture fixture, ITestOutputHelper output): base(fixture)
         {
+            _output = output;
             theStore.Advanced.Clean.DeleteAllDocuments();
+        }
+
+        [Fact]
+        public async Task can_query_by_the_deleted_column_if_it_exists()
+        {
+            var doc1 = new SoftDeletedDocument{Id = "1"};
+            var doc2 = new SoftDeletedDocument{Id = "2"};
+            var doc3 = new SoftDeletedDocument{Id = "3"};
+            var doc4 = new SoftDeletedDocument{Id = "4"};
+            var doc5 = new SoftDeletedDocument{Id = "5"};
+
+            theSession.Store(doc1, doc2, doc3, doc4, doc5);
+            await theSession.SaveChangesAsync();
+
+            var session2 = theStore.LightweightSession();
+            session2.Delete(doc1);
+            session2.Delete(doc3);
+            await session2.SaveChangesAsync();
+
+            var query = theStore.QuerySession();
+            query.Logger = new TestOutputMartenLogger(_output);
+
+            var deleted = await query.Query<SoftDeletedDocument>().Where(x => x.Deleted)
+                .CountAsync();
+
+            var notDeleted = await query.Query<SoftDeletedDocument>().Where(x => !x.Deleted)
+                .CountAsync();
+
+            deleted.ShouldBe(2);
+            notDeleted.ShouldBe(3);
         }
 
         [Fact]

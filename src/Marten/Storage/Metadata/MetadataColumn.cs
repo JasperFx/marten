@@ -34,6 +34,16 @@ namespace Marten.Storage.Metadata
         public abstract MemberInfo Member { get; set; }
         public bool Enabled { get; set; } = true;
 
+        public virtual void RegisterForLinqSearching(DocumentMapping mapping)
+        {
+            if (!Enabled || Member == null) return;
+
+
+
+            mapping.DuplicateField(new MemberInfo[] {Member}, columnName: Name)
+                .OnlyForSearching = true;
+        }
+
         public bool EnabledWithMember()
         {
             return Enabled && Member != null;

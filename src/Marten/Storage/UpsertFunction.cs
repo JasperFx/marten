@@ -54,7 +54,7 @@ namespace Marten.Storage
 
             Arguments.Add(new DocJsonBodyArgument());
 
-            Arguments.AddRange(mapping.DuplicatedFields.Select(x => x.UpsertArgument));
+            Arguments.AddRange(mapping.DuplicatedFields.Where(x => !x.OnlyForSearching).Select(x => x.UpsertArgument));
 
             // TODO -- see the columns below
             if (mapping.Metadata.Version.Enabled) Arguments.Add(new VersionArgument());

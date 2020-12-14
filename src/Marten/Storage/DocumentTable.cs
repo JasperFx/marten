@@ -15,7 +15,7 @@ namespace Marten.Storage
         public DocumentTable(DocumentMapping mapping): base(mapping.TableName)
         {
             // validate to ensure document has an Identity field or property
-            mapping.Validate();
+            mapping.CompileAndValidate();
 
             _mapping = mapping;
 
@@ -43,7 +43,7 @@ namespace Marten.Storage
             AddIfActive(_mapping.Metadata.LastModifiedBy);
             AddIfActive(_mapping.Metadata.Headers);
 
-            foreach (var field in mapping.DuplicatedFields) AddColumn(new DuplicatedFieldColumn(field));
+            foreach (var field in mapping.DuplicatedFields.Where(x => !x.OnlyForSearching)) AddColumn(new DuplicatedFieldColumn(field));
 
             if (mapping.IsHierarchy())
             {

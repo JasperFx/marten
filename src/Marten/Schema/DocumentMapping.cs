@@ -458,7 +458,7 @@ namespace Marten.Schema
             return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
         }
 
-        internal void Validate()
+        internal void CompileAndValidate()
         {
             if (IdMember == null)
                 throw new InvalidDocumentException(

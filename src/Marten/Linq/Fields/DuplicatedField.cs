@@ -76,6 +76,8 @@ namespace Marten.Linq.Fields
 
         public bool NotNull { get; }
 
+        public bool OnlyForSearching { get; set; } = false;
+
         /// <summary>
         ///     Used to override the assigned DbType used by Npgsql when a parameter
         ///     is used in a query against this column

@@ -24,7 +24,7 @@ namespace Marten.Linq.Filters
 
         public bool Contains(string sqlText)
         {
-            return false;
+            return _field.RawLocator.Contains(sqlText);
         }
 
         public ISqlFragment Reverse()

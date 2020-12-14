@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 
 namespace Marten.Schema
 {
@@ -16,6 +17,12 @@ namespace Marten.Schema
             _mapping = mapping;
 
             Table = new DocumentTable(_mapping);
+
+            foreach (var metadataColumn in Table.Columns.OfType<MetadataColumn>())
+            {
+                metadataColumn.RegisterForLinqSearching(mapping);
+            }
+
             Upsert = new UpsertFunction(_mapping);
             Insert = new InsertFunction(_mapping);
             Update = new UpdateFunction(_mapping);
