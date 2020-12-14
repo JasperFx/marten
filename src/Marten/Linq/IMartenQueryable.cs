@@ -58,6 +58,12 @@ namespace Marten.Linq
         /// </summary>
         /// <returns></returns>
         Task<string> ToJsonArrayAsync(CancellationToken token);
+
+        /// <summary>
+        /// Retrieve the document data as a JSON array string
+        /// </summary>
+        /// <returns></returns>
+        Task<string> ToJsonArrayAsync();
     }
 
     public interface IMartenQueryable<T>: IQueryable<T>, IMartenQueryable

@@ -30,5 +30,20 @@ namespace Marten.Internal.CompiledQueries
         {
             return _inner.HandleAsync(reader, session, token);
         }
+
+        protected string StartsWith(string value)
+        {
+            return $"%{value}";
+        }
+
+        protected string ContainsString(string value)
+        {
+            return $"%{value}%";
+        }
+
+        protected string EndsWith(string value)
+        {
+            return $"{value}%";
+        }
     }
 }

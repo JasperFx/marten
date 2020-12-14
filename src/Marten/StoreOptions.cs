@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Exceptions;
@@ -468,6 +469,11 @@ namespace Marten
             if (_querySources.TryFind(query.GetType(), out var source))
             {
                 return source;
+            }
+
+            if (typeof(TOut).CanBeCastTo<Task>())
+            {
+                throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
             }
 
             var plan = QueryCompiler.BuildPlan(session, query, this);

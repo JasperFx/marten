@@ -127,6 +127,11 @@ namespace Marten.Linq
             return _provider.ExecuteAsync<string>(Expression, token, LinqConstants.AsJsonOperator);
         }
 
+        public Task<string> ToJsonArrayAsync()
+        {
+            return _provider.ExecuteAsync<string>(Expression, CancellationToken.None, LinqConstants.AsJsonOperator);
+        }
+
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany,
             Action<IConfigureExplainExpressions> configureExplain = null)
         {

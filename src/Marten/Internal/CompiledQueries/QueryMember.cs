@@ -51,6 +51,8 @@ namespace Marten.Internal.CompiledQueries
                 tryToFind(command, parameterValue);
             }
 
+            // These methods are on the ClonedCompiledQuery base class, and are
+            // used to set the right parameters
             if (!tryToFind(command, Value) && Type == typeof(string))
             {
                 if (tryToFind(command, $"%{Value}"))
