@@ -102,11 +102,14 @@ namespace Marten.Events
 
         public static StreamAction Start(Guid streamId, params object[] events)
         {
+            if (!events.Any()) throw new EmptyEventStreamException(streamId);
+
             return new StreamAction(streamId, StreamActionType.Start).AddEvents(events);
         }
 
         public static StreamAction Start(string streamKey, params object[] events)
         {
+            if (!events.Any()) throw new EmptyEventStreamException(streamKey);
             return new StreamAction(streamKey, StreamActionType.Start).AddEvents(events);
         }
 

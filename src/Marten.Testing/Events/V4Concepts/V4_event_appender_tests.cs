@@ -349,7 +349,7 @@ namespace Marten.Testing.Events.V4Concepts
                     session.Events.StartStream(StreamId, events);
                     session.SaveChanges();
 
-                    var stream = StreamAction.Start(StreamId);
+                    var stream = StreamAction.Append(StreamId);
                     stream.Version = 4;
                     stream.TenantId = TenantId;
 
@@ -360,7 +360,7 @@ namespace Marten.Testing.Events.V4Concepts
                     session.Events.StartStream(StreamId.ToString(), events);
                     session.SaveChanges();
 
-                    var stream = StreamAction.Start(StreamId.ToString());
+                    var stream = StreamAction.Start(StreamId.ToString(), new AEvent());
                     stream.Version = 4;
                     stream.TenantId = TenantId;
 
@@ -399,14 +399,14 @@ namespace Marten.Testing.Events.V4Concepts
             {
                 if (Store.Events.StreamIdentity == StreamIdentity.AsGuid)
                 {
-                    var stream = StreamAction.Start(StreamId);
+                    var stream = StreamAction.Start(StreamId, new AEvent());
                     stream.TenantId = TenantId;
 
                     return stream;
                 }
                 else
                 {
-                    var stream = StreamAction.Start(StreamId.ToString());
+                    var stream = StreamAction.Start(StreamId.ToString(), new AEvent());
                     stream.TenantId = TenantId;
 
                     return stream;

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Services;
+using Marten.Testing.Events.V4Concepts.Aggregations;
 using Marten.Testing.Harness;
 using NSubstitute;
 using Xunit;
@@ -20,7 +21,7 @@ namespace Marten.Testing.Events.Projections
             var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
-            finder.Find(StreamAction.Start(id), session)
+            finder.Find(StreamAction.Start(id, new AEvent()), session)
                 .ShouldNotBeNull();
 
             session.DidNotReceive().Load<QuestParty>(id);
@@ -63,7 +64,7 @@ namespace Marten.Testing.Events.Projections
             var finder = new AggregateFinder<QuestParty>();
 
             var id = Guid.NewGuid();
-            (await finder.FindAsync(StreamAction.Start(id), theSession, new CancellationToken()))
+            (await finder.FindAsync(StreamAction.Start(id, new AEvent()), theSession, new CancellationToken()))
                 .ShouldNotBeNull();
         }
 
