@@ -5,6 +5,10 @@ using Marten.Services;
 namespace Marten
 {
     // SAMPLE: IDocumentSessionListener
+    /// <summary>
+    /// Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
+    /// operation
+    /// </summary>
     public interface IDocumentSessionListener
     {
         /// <summary>
@@ -53,6 +57,9 @@ namespace Marten
 
     // ENDSAMPLE
 
+    /// <summary>
+    /// Base class to help create custom IDocumentSessionListener classes
+    /// </summary>
     public abstract class DocumentSessionListenerBase: IDocumentSessionListener
     {
         public virtual void BeforeSaveChanges(IDocumentSession session)

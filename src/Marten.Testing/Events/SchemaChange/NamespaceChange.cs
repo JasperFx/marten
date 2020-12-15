@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -168,7 +169,7 @@ namespace Marten.Testing.Events.SchemaChange
                 Body = new {TaskId = taskId, Description = "updated description"}
             };
 
-            using (var session = theStore.OpenSession())
+            using (var session = (DocumentSessionBase)theStore.OpenSession())
             {
                 // ensure events tables already exists
                 session.Tenant.EnsureStorageExists(typeof(StreamAction));
@@ -202,12 +203,12 @@ namespace Marten.Testing.Events.SchemaChange
                 }
             }
 
-            static void AppendRawEvent(IDocumentSession session, dynamic @event)
+            static void AppendRawEvent(DocumentSessionBase session, dynamic @event)
             {
                 using var conn = session.Tenant.OpenConnection();
 
                 conn.Execute(
-                    $@"select * from {session.DocumentStore.Events.DatabaseSchemaName}.mt_append_event(
+                    $@"select * from {session.Options.Events.DatabaseSchemaName}.mt_append_event(
                                 stream := '{@event.StreamId}',
                                 stream_type := null,
                                 tenantid := '{Tenancy.DefaultTenantId}',

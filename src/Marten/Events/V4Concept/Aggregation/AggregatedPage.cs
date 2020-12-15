@@ -11,7 +11,7 @@ namespace Marten.Events.V4Concept.Aggregation
 {
     public class AggregatedPage<TDoc, TId> : IAsyncBatch
     {
-        protected readonly IDocumentStore _store;
+        protected readonly DocumentStore _store;
         private readonly IAsyncAggregation<TDoc, TId> _aggregation;
         protected readonly IDocumentStorage<TDoc, TId> _storage;
 
@@ -25,7 +25,7 @@ namespace Marten.Events.V4Concept.Aggregation
         private readonly List<IStorageOperation> _operations = new List<IStorageOperation>();
         private readonly IQuerySession _session;
 
-        public AggregatedPage(IDocumentStore store, IAsyncAggregation<TDoc, TId> aggregation)
+        public AggregatedPage(DocumentStore store, IAsyncAggregation<TDoc, TId> aggregation)
         {
             _store = store;
             _aggregation = aggregation;

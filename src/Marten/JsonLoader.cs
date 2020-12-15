@@ -5,7 +5,7 @@ using Marten.Internal.Sessions;
 
 namespace Marten
 {
-    public class JsonLoader: IJsonLoader
+    internal class JsonLoader: IJsonLoader
     {
         private readonly QuerySession _session;
 

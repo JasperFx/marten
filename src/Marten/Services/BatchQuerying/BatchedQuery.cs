@@ -131,7 +131,7 @@ namespace Marten.Services.BatchQuerying
         public Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null)
             where T : class
         {
-            var events = _parent.DocumentStore.Events;
+            var events = _parent.Options.Events;
             var inner = new EventQueryHandler<Guid>(_parent.Tenant.EventStorage(), streamId, version,
                 timestamp, events.TenancyStyle, _parent.Tenant.TenantId);
             var aggregator = events.AggregateFor<T>();

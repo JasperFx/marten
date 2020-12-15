@@ -74,7 +74,7 @@ namespace Marten.Internal.Sessions
         public void DeleteInTenant<T>(string tenantId, T document)
         {
             assertNotDisposed();
-            var tenant = DocumentStore.Tenancy[tenantId];
+            var tenant = Tenancy[tenantId];
             var documentStorage = selectStorage(tenant.Providers.StorageFor<T>());
 
 
@@ -88,7 +88,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var tenant = DocumentStore.Tenancy[tenantId];
+            var tenant = Tenancy[tenantId];
             var storage = (IDocumentStorage<T, Guid>)selectStorage(tenant.Providers.StorageFor<T>());
 
             var deletion = storage.DeleteForId(id, tenant);
@@ -101,7 +101,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var tenant = DocumentStore.Tenancy[tenantId];
+            var tenant = Tenancy[tenantId];
             var storage = selectStorage(tenant.Providers.StorageFor<T>());
 
             if (storage is IDocumentStorage<T, int> i)
@@ -126,7 +126,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var tenant = DocumentStore.Tenancy[tenantId];
+            var tenant = Tenancy[tenantId];
             var storage = (IDocumentStorage<T, string>)selectStorage(tenant.Providers.StorageFor<T>());
 
 
@@ -140,7 +140,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var tenant = DocumentStore.Tenancy[tenantId];
+            var tenant = Tenancy[tenantId];
             var storage = (IDocumentStorage<T, long>)selectStorage(tenant.Providers.StorageFor<T>());
 
 

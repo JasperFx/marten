@@ -225,7 +225,9 @@ namespace Marten.Events.V4Concept.Aggregation
             // This gets you the StreamAction Id
             method.DerivedVariables.Add(Variable.For<Guid>($"stream.{nameof(StreamAction.Id)}"));
             method.DerivedVariables.Add(Variable.For<string>($"stream.{nameof(StreamAction.Key)}"));
-            method.DerivedVariables.Add(Variable.For<ITenant>($"session.{nameof(IMartenSession.Tenant)}"));
+
+            // TODO -- this is hokey. Just pass in ITenant?
+            method.DerivedVariables.Add(Variable.For<ITenant>($"(({typeof(IMartenSession).FullNameInCode()})session).{nameof(IMartenSession.Tenant)}"));
             method.DerivedVariables.Add(Variable.For<IEvent>("@event"));
             method.DerivedVariables.Add(Variable.For<IMartenSession>($"({typeof(IMartenSession).FullNameInCode()})session"));
             method.DerivedVariables.Add(Variable.For<IQuerySession>("session"));

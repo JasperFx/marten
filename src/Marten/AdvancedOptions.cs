@@ -5,13 +5,38 @@ using Marten.Schema;
 
 namespace Marten
 {
+    /// <summary>
+    /// Access to advanced, rarely used features of IDocumentStore
+    /// </summary>
     public class AdvancedOptions
     {
         private readonly DocumentStore _store;
 
-        public AdvancedOptions(DocumentStore store)
+        internal AdvancedOptions(DocumentStore store)
         {
             _store = store;
+        }
+
+        /// <summary>
+        ///     Set the minimum sequence number for a Hilo sequence for a specific document type
+        ///     to the specified floor. Useful for migrating data between databases
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="floor"></param>
+        public void ResetHiloSequenceFloor<T>(long floor)
+        {
+            _store.Tenancy.Default.ResetHiloSequenceFloor<T>(floor);
+        }
+
+        /// <summary>
+        ///     Set the minimum sequence number for a Hilo sequence for a specific document type
+        ///     to the specified floor. Useful for migrating data between databases
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="floor"></param>
+        public void ResetHiloSequenceFloor<T>(string tenantId, long floor)
+        {
+            _store.Tenancy[tenantId].ResetHiloSequenceFloor<T>(floor);
         }
 
         /// <summary>

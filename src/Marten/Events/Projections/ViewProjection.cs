@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
+using Marten.Internal.Sessions;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
@@ -734,7 +735,7 @@ namespace Marten.Events.Projections
             {
                 var views = _sessionLoadMany(session, viewIds);
 
-                applyProjections(session, projections, views);
+                applyProjections((DocumentSessionBase) session, projections, views);
             }
         }
 
@@ -748,13 +749,13 @@ namespace Marten.Events.Projections
             {
                 var views = _sessionLoadMany(session, viewIds);
 
-                return applyProjectionsAsync(session, projections, views);
+                return applyProjectionsAsync((DocumentSessionBase) session, projections, views);
             }
 
             return Task.CompletedTask;
         }
 
-        private void applyProjections(IDocumentSession session, ICollection<EventProjection> projections, IEnumerable<TView> views)
+        private void applyProjections(DocumentSessionBase session, ICollection<EventProjection> projections, IEnumerable<TView> views)
         {
              var idAssigner = session.Tenant.IdAssignmentFor<TView>();
              var resolver = session.Tenant.StorageFor<TView>();
@@ -795,7 +796,7 @@ namespace Marten.Events.Projections
             }
         }
 
-        private async Task applyProjectionsAsync(IDocumentSession session, ICollection<EventProjection> projections, IEnumerable<TView> views)
+        private async Task applyProjectionsAsync(DocumentSessionBase session, ICollection<EventProjection> projections, IEnumerable<TView> views)
         {
              var idAssigner = session.Tenant.IdAssignmentFor<TView>();
              var resolver = session.Tenant.StorageFor<TView>();

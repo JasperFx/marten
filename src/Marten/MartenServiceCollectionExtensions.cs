@@ -64,7 +64,7 @@ namespace Marten
             private readonly IServiceCollection _services;
             private readonly StoreOptions _options;
 
-            public MartenConfigurationExpression(IServiceCollection services, StoreOptions options)
+            internal MartenConfigurationExpression(IServiceCollection services, StoreOptions options)
             {
                 _services = services;
                 _options = options;
@@ -120,7 +120,16 @@ namespace Marten
     /// </summary>
     public interface ISessionFactory
     {
+        /// <summary>
+        /// Build new instances of IQuerySession on demand
+        /// </summary>
+        /// <returns></returns>
         IQuerySession QuerySession();
+
+        /// <summary>
+        /// Build new instances of IDocumentSession on demand
+        /// </summary>
+        /// <returns></returns>
         IDocumentSession OpenSession();
     }
 

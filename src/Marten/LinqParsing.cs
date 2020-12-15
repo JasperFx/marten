@@ -19,6 +19,11 @@ namespace Marten
 {
     public class LinqParsing
     {
+        internal LinqParsing()
+        {
+
+        }
+
         // The out of the box method call parsers
         private static readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
         {
@@ -66,7 +71,7 @@ namespace Marten
 
 
         /// <summary>
-        ///     Add custom Linq expression parsers for your own methods
+        /// Add custom Linq expression parsers for your own methods
         /// </summary>
         public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 

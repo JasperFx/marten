@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace Marten
 {
+
     public interface IJsonLoader
     {
         /// <summary>

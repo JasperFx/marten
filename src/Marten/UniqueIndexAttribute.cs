@@ -10,7 +10,8 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            var membersGroupedByIndexName = member.DeclaringType.GetMembers()
+            var membersGroupedByIndexName = member.DeclaringType
+                .GetMembers()
                 .Where(mi => mi.GetCustomAttributes<UniqueIndexAttribute>().Any())
                 .Select(mi => new
                 {
@@ -18,8 +19,7 @@ namespace Marten.Schema
                     IndexInformation = mi.GetCustomAttributes<UniqueIndexAttribute>().First()
                 })
                 .GroupBy(m => m.IndexInformation.IndexName ?? m.Member.Name)
-                .Where(mg => mg.Any(m => m.Member == member))
-                .Single();
+                .Single(mg => mg.Any(m => m.Member == member));
 
             mapping.AddUniqueIndex(
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),

@@ -4,6 +4,9 @@ using Npgsql;
 
 namespace Marten
 {
+    /// <summary>
+    /// Access to diagnostics about the current Marten IDocumentStore
+    /// </summary>
     public interface IDiagnostics
     {
         /// <summary>

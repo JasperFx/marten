@@ -16,12 +16,12 @@ namespace Marten.CommandLine.Commands.Projection
 
         protected override bool execute(IDocumentStore store, ProjectionInput input)
         {
-            var daemon = GetDaemon(input.Kind, store);
+            var daemon = GetDaemon(input.Kind, (DocumentStore)store);
             daemon.RebuildAll().Wait();
             return true;
         }
 
-        private IDaemon GetDaemon(ProjectionInput.ProjectionKind inputKind, IDocumentStore store)
+        private IDaemon GetDaemon(ProjectionInput.ProjectionKind inputKind, DocumentStore store)
         {
             var logger = GetDaemonLogger();
             switch (inputKind)

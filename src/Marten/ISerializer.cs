@@ -77,19 +77,51 @@ namespace Marten
 
     // ENDSAMPLE
 
+    /// <summary>
+    /// Governs how .Net Enum types are persisted
+    /// in the serialized JSON
+    /// </summary>
     public enum EnumStorage
     {
+        /// <summary>
+        /// Serialize Enum values as their integer value
+        /// </summary>
         AsInteger,
+
+        /// <summary>
+        /// Serialize Enum values as their string value
+        /// </summary>
         AsString
     }
 
+    /// <summary>
+    /// Governs the JSON serialization behavior of how .Net
+    /// member names are persisted in the JSON stored in
+    /// the database
+    /// </summary>
     public enum Casing
     {
+        /// <summary>
+        /// Exactly mimic the .Net member names in the JSON persisted to the database
+        /// </summary>
         Default,
+
+        /// <summary>
+        /// Force the .Net member names to camel casing when serialized to JSON in
+        /// the database
+        /// </summary>
         CamelCase,
+
+        /// <summary>
+        /// Force the .Net member names to snake casing when serialized to JSON in
+        /// the database
+        /// </summary>
         SnakeCase
     }
 
+    /// <summary>
+    /// Governs .Net collection serialization
+    /// </summary>
     public enum CollectionStorage
     {
         Default,

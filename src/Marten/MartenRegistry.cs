@@ -652,6 +652,9 @@ namespace Marten
         }
     }
 
+    /// <summary>
+    /// Configures hierarchical type mapping to its parent
+    /// </summary>
     public class MappedType
     {
         public MappedType(Type type, string alias = null)
@@ -660,7 +663,15 @@ namespace Marten
             Alias = alias;
         }
 
+        /// <summary>
+        /// The .Net Type
+        /// </summary>
         public Type Type { get; set; }
+
+        /// <summary>
+        /// String alias that will be used to persist or load the documents
+        /// from the underlying database
+        /// </summary>
         public string Alias { get; set; }
 
         public static implicit operator MappedType(Type type)

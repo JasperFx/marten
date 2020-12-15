@@ -30,7 +30,7 @@ namespace Marten.Events.Projections.Async
         private readonly ITenant _tenant;
         private StreamIdentity _streamIdentity;
 
-        public Fetcher(IDocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IDaemonErrorHandler errorHandler, IEnumerable<Type> eventTypes)
+        public Fetcher(DocumentStore store, DaemonSettings settings, AsyncOptions options, IDaemonLogger logger, IDaemonErrorHandler errorHandler, IEnumerable<Type> eventTypes)
         {
             _settings = settings;
             _options = options;

@@ -13,6 +13,14 @@ namespace Marten
 {
     public static class QueryableExtensions
     {
+
+        /// <summary>
+        /// Fetch the Postgresql QueryPlan for the Linq query
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="configureExplain"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static QueryPlan Explain<T>(this IQueryable<T> queryable, Action<IConfigureExplainExpressions> configureExplain = null)
         {
             return queryable.As<IMartenQueryable<T>>().Explain(configureExplain: configureExplain);
@@ -20,6 +28,13 @@ namespace Marten
 
         #region ToList
 
+        /// <summary>
+        /// Fetch results asynchronously to a read only list
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
             CancellationToken token = default(CancellationToken))
         {
@@ -29,6 +44,7 @@ namespace Marten
         #endregion ToList
 
         #region Any
+
 
         public static Task<bool> AnyAsync<TSource>(
             this IQueryable<TSource> source,
@@ -249,20 +265,14 @@ namespace Marten
 
         #endregion Single/SingleOrDefault
 
-        #region Shared
-
-        private static IMartenQueryable<T> CastToMartenQueryable<T>(IQueryable<T> queryable)
-        {
-            if (!(queryable is IMartenQueryable<T> martenQueryable))
-            {
-                throw new InvalidOperationException($"{typeof(T)} is not IMartenQueryable<>");
-            }
-
-            return martenQueryable;
-        }
-
-        #endregion Shared
-
+        /// <summary>
+        /// Builds the database command that would be used to execute this Linq query
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="fetchType"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
         {
             if (queryable is MartenLinqQueryable<T> q1)
@@ -273,6 +283,16 @@ namespace Marten
             throw new InvalidOperationException($"{nameof(ToCommand)} is only valid on Marten IQueryable objects");
         }
 
+        /// <summary>
+        /// Fetch a related document of type TInclude when executing the Linq query and
+        /// call the supplied callback for each result
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="idSource"></param>
+        /// <param name="callback"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TInclude"></typeparam>
+        /// <returns></returns>
         public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
             Action<TInclude> callback)
@@ -281,6 +301,16 @@ namespace Marten
             return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
         }
 
+        /// <summary>
+        /// Fetch a related document of type TInclude when executing the Linq query and
+        /// store these documents in the supplied List<TInclude>
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="idSource"></param>
+        /// <param name="list"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TInclude"></typeparam>
+        /// <returns></returns>
         public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
             IList<TInclude> list)
@@ -289,6 +319,17 @@ namespace Marten
             return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
         }
 
+        /// <summary>
+        /// Fetch related documents when executing the Linq query and store the related documents
+        /// into the supplied dictionary
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="idSource"></param>
+        /// <param name="dictionary"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TInclude"></typeparam>
+        /// <returns></returns>
         public static IMartenQueryable<T> Include<T, TKey, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary)

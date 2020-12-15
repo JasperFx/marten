@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
 using Marten.Events.V4Concept;
+using Marten.Internal.Sessions;
 using Marten.Storage;
 
 namespace Marten.Events.Projections
@@ -18,7 +19,6 @@ namespace Marten.Events.Projections
         void Apply(IDocumentSession session, EventPage page);
 
         Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token);
-
         void EnsureStorageExists(ITenant tenant);
     }
 

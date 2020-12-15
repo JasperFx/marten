@@ -331,9 +331,6 @@ namespace Marten
         /// </summary>
         IJsonLoader Json { get; }
 
-        ITenant Tenant { get; }
-        ISerializer Serializer { get; }
-
         /// <summary>
         /// Retrieve the current known version of the given document
         /// according to this session. Will return null if the document is

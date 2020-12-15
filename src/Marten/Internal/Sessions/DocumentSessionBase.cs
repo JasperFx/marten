@@ -30,6 +30,8 @@ namespace Marten.Internal.Sessions
             Events = new EventStore(this, store, tenant);
         }
 
+        internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
+
         internal UnitOfWork UnitOfWork => _unitOfWork;
 
 
@@ -66,7 +68,7 @@ namespace Marten.Internal.Sessions
                 throw new ArgumentOutOfRangeException(typeof(T).Name,
                     "Do not use IEnumerable<T> here as the document type. Cast entities to an array or use the IEnumerable<T> Store() overload instead.");
 
-            var tenant = DocumentStore.Tenancy[tenantId];
+            var tenant = Tenancy[tenantId];
 
             var storage = tenant.StorageFor<T>();
 

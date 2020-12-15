@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
 using Npgsql;
@@ -12,8 +11,17 @@ namespace Marten
     /// </summary>
     public interface IMartenLogger
     {
+        /// <summary>
+        /// Called when the session is initialized
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns></returns>
         IMartenSessionLogger StartSession(IQuerySession session);
 
+        /// <summary>
+        /// Capture any DDL executed at runtime by Marten
+        /// </summary>
+        /// <param name="sql"></param>
         void SchemaChange(string sql);
     }
 
@@ -45,35 +53,6 @@ namespace Marten
     }
 
     // ENDSAMPLE
-
-    public class NulloMartenLogger: IMartenLogger, IMartenSessionLogger
-    {
-        public IMartenSessionLogger StartSession(IQuerySession session)
-        {
-            return this;
-        }
-
-        public void SchemaChange(string sql)
-        {
-            Debug.WriteLine("Executing DDL change:");
-            Debug.WriteLine(sql);
-            Debug.WriteLine("");
-        }
-
-        public void LogSuccess(NpgsqlCommand command)
-        {
-        }
-
-        public void LogFailure(NpgsqlCommand command, Exception ex)
-        {
-        }
-
-        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
-        {
-        }
-
-        public static IMartenSessionLogger Flyweight { get; } = new NulloMartenLogger();
-    }
 
     // SAMPLE: ConsoleMartenLogger
     public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger

@@ -13,6 +13,10 @@ using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten
 {
+    /// <summary>
+    /// The core abstraction for a Marten document and event store. This should probably be scoped as a
+    /// singleton in your system
+    /// </summary>
     public interface IDocumentStore: IDisposable
     {
         /// <summary>
@@ -193,9 +197,7 @@ namespace Marten
         /// </summary>
         IDocumentTransforms Transform { get; }
 
-        EventGraph Events { get; }
-        ITenancy Tenancy { get; }
-
+        [Obsolete("This will be removed in V4 with a new async daemon replacement yet to be determined and now I'm embarrassed at the lack of detail")]
         IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);
     }
 }
