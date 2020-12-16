@@ -185,9 +185,9 @@ namespace Marten
 
         internal ChildDocument GetChildDocument(string locator, Type documentType)
         {
-            var byType = _childDocs.GetOrAdd(documentType, type => new ConcurrentDictionary<string, ChildDocument>());
+            var byType = _childDocs.GetOrAdd(documentType, _ => new ConcurrentDictionary<string, ChildDocument>());
 
-            return byType.GetOrAdd(locator, loc => new ChildDocument(locator, documentType, this));
+            return byType.GetOrAdd(locator, _ => new ChildDocument(locator, documentType, this));
         }
 
         /// <summary>

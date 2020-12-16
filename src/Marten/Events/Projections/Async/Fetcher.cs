@@ -94,7 +94,7 @@ select max(seq_id) from {events.DatabaseSchemaName}.mt_events where seq_id >= :l
 
             _fetchingTask =
                 Task.Run(() => fetchEvents(track, lifecycle), token)
-                    .ContinueWith(t =>
+                    .ContinueWith(_ =>
                     {
                         _logger.FetchingStopped(track);
                     }, token, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
@@ -258,7 +258,7 @@ select max(seq_id) from {events.DatabaseSchemaName}.mt_events where seq_id >= :l
                         _logger.PausingFetching(track, _lastEncountered);
 
 #pragma warning disable 4014
-                        Task.Delay(_settings.FetchingCooldown, _token).ContinueWith(t =>
+                        Task.Delay(_settings.FetchingCooldown, _token).ContinueWith(_ =>
                         {
                             Start(track, lifecycle, _token);
                         }, _token);

@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
  using System.Collections;
  using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -88,7 +88,7 @@ using Baseline;
         public IField FieldFor(MemberInfo member)
         {
             return _fields.GetOrAdd(member.Name,
-                name => resolveField(new []{member}));
+                _ => resolveField(new []{member}));
         }
 
         protected IField resolveField(MemberInfo[] members)
