@@ -6,6 +6,7 @@ namespace Marten.Events.Projections
     /// <summary>
     /// Default IAggregator lookup strategy. Defaults to <see cref="Aggregator{T}"/>
     /// </summary>
+    [Obsolete("This will be eliminated in V4")]
     public sealed class AggregatorLookup: IAggregatorLookup
     {
         private readonly Func<Type, IAggregator> factory;

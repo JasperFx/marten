@@ -6,6 +6,7 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
+    [Obsolete("This will be eliminated in V4")]
     public class EventAggregationStep<T, TEvent>: IAggregationWithMetadata<T, TEvent>
     {
         private readonly Action<T, Event<TEvent>> _apply;

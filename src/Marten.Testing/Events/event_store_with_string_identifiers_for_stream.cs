@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

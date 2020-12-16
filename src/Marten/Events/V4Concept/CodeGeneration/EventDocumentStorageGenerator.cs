@@ -10,6 +10,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;

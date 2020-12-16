@@ -9,6 +9,7 @@ using Marten.Util;
 namespace Marten.Events.Projections
 {
     // This is mostly tested through integration tests and in the Storyteller suite
+    [Obsolete("This will be replaced in V4")]
     public class AggregationProjection<T>: DocumentProjection<T>, IDocumentProjection where T : class
     {
         private readonly IAggregationFinder<T> _finder;

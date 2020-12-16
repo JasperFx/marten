@@ -13,6 +13,7 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
+    // TODO -- gut this in V4, focus it on non-aggregation projections only
     public class ViewProjection<TView, TId>: DocumentProjection<TView>, IDocumentProjection
         where TView : class
     {

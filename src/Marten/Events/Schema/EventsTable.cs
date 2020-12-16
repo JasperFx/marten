@@ -1,12 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Baseline;
+using Marten.Events.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 
-namespace Marten.Events
+namespace Marten.Events.Schema
 {
     // SAMPLE: EventsTable
     internal class EventsTable: Table

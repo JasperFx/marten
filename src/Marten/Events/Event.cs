@@ -4,12 +4,24 @@ using Marten.Events.Projections;
 
 namespace Marten.Events
 {
+    // TODO -- make the properties on the interface all be get only?
+
     // SAMPLE: IEvent
     public interface IEvent
     {
+        /// <summary>
+        /// Unique identifier for the event. Uses a sequential Guid
+        /// </summary>
         Guid Id { get; set; }
+
+        /// <summary>
+        /// The version of the stream this event reflects. The place in the stream.
+        /// </summary>
         int Version { get; set; }
 
+        /// <summary>
+        /// The sequential order of this event in the entire event store
+        /// </summary>
         long Sequence { get; set; }
 
         /// <summary>
@@ -39,10 +51,20 @@ namespace Marten.Events
         /// </summary>
         string TenantId { get; set; }
 
+        /// <summary>
+        /// The .Net type of the event body
+        /// </summary>
         Type EventType { get; }
 
+        /// <summary>
+        /// Marten's type alias string for the Event type
+        /// </summary>
         string EventTypeName { get; set; }
 
+        /// <summary>
+        /// Marten's string representation of the event type
+        /// in assembly qualified name
+        /// </summary>
         string DotNetTypeName { get; set; }
 
         [Obsolete("Eliminate in v4")]

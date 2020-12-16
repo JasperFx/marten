@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
+using Marten.Events.Querying;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;

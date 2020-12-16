@@ -1,16 +1,13 @@
-using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Sessions;
-using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-using Marten.Services;
 using Marten.Util;
 
-namespace Marten.Events
+namespace Marten.Events.Querying
 {
     internal class AggregationQueryHandler<T>: IQueryHandler<T> where T : class
     {
@@ -35,6 +32,7 @@ namespace Marten.Events
 
         public T Handle(DbDataReader reader, IMartenSession session)
         {
+            // TODO -- return null if there are no events
             var @events = _inner.Handle(reader, session);
 
             return _state == null ? _aggregator.Build(@events, (IDocumentSession) _session) : _aggregator.Build(@events, (IDocumentSession) _session, _state);
@@ -42,6 +40,7 @@ namespace Marten.Events
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
+            // TODO -- return null if there are no events
             var @events = await _inner.HandleAsync(reader, session, token).ConfigureAwait(false);
 
             return _state == null ? _aggregator.Build(@events, (IDocumentSession) _session) : _aggregator.Build(@events, (IDocumentSession) _session, _state);

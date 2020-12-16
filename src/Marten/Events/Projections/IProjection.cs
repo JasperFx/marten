@@ -10,6 +10,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
+    [Obsolete("This will be eliminated in V4 and replaced w/ the new ViewProjection")]
     public interface IProjection
     {
         Type[] Consumes { get; }

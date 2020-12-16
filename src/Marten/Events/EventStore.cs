@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Querying;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Schema.Identity;
@@ -12,7 +13,7 @@ using Marten.Storage;
 
 namespace Marten.Events
 {
-    public class EventStore: IEventStore
+    internal class EventStore: IEventStore
     {
         private readonly DocumentSessionBase _session;
         private readonly ITenant _tenant;

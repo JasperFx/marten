@@ -12,9 +12,9 @@ using Marten.Storage.Metadata;
 using Marten.Util;
 using NpgsqlTypes;
 
-namespace Marten.Events
+namespace Marten.Events.Schema
 {
-    public class StreamsTable: Table
+    internal class StreamsTable: Table
     {
         public StreamsTable(EventGraph events) : base(new DbObjectName(events.DatabaseSchemaName, "mt_streams"))
         {

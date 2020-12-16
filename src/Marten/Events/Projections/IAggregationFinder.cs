@@ -1,8 +1,10 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marten.Events.Projections
 {
+    [Obsolete("This will be eliminated in V4")]
     public interface IAggregationFinder<T>
     {
         T Find(StreamAction stream, IDocumentSession session);

@@ -12,6 +12,7 @@ namespace Marten.Events.Projections
     /// Simple aggregation finder that looks for an aggregate document based on the stream id
     /// </summary>
     /// <typeparam name="T"></typeparam>
+    [Obsolete("This will be completely replaced by the new AggregateProjection in V4")]
     public class AggregateFinder<T>: IAggregationFinder<T> where T : class
     {
         private readonly Action<T, Guid> _setId;

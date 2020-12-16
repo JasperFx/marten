@@ -7,6 +7,7 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
+    [Obsolete("This will be eliminated in V4")]
     public class Aggregator<T>: IAggregator<T> where T : class
     {
         public static readonly string ApplyMethod = "Apply";

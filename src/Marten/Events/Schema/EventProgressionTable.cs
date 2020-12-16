@@ -1,9 +1,9 @@
 using Marten.Schema;
 using Marten.Storage;
 
-namespace Marten.Events
+namespace Marten.Events.Schema
 {
-    public class EventProgressionTable: Table
+    internal class EventProgressionTable: Table
     {
         public EventProgressionTable(string schemaName) : base(new DbObjectName(schemaName, "mt_event_progression"))
         {

@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
@@ -23,7 +23,13 @@ using Remotion.Linq;
 
 namespace Marten.Events
 {
+    // NOTE!!!! This type has to remain public for the code generation to work
 
+    /// <summary>
+    /// Base type for the IEventStorage type that provides all the read/write operation
+    /// mapping for the event store in a running system. The actual implementation of this
+    /// base type is generated and compiled at runtime by Marten
+    /// </summary>
     public abstract class EventDocumentStorage : IEventStorage
     {
         private readonly EventQueryMapping _mapping;

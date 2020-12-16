@@ -6,8 +6,11 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Util;
 
-namespace Marten.Events
+namespace Marten.Events.V4Concept
 {
+    /// <summary>
+    /// Used to fetch the next N values of the event store sequence numbers
+    /// </summary>
     internal class EventSequenceFetcher: IQueryHandler<Queue<long>>
     {
         private readonly string _sql;

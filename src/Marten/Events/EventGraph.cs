@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Projections;
+using Marten.Events.Schema;
 using Marten.Events.V4Concept;
 using Marten.Exceptions;
 using Marten.Internal;

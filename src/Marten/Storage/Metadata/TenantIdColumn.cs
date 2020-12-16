@@ -1,5 +1,7 @@
 using LamarCodeGeneration;
 using Marten.Events;
+using Marten.Events.CodeGeneration;
+using Marten.Events.Schema;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 

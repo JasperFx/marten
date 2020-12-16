@@ -1,11 +1,13 @@
+using System;
 using System.IO;
 using Marten.Schema;
 using Marten.Storage;
 
-namespace Marten.Events
+namespace Marten.Events.Schema
 {
     // SAMPLE: AppendEventFunction
-    public class AppendEventFunction: Function
+    [Obsolete("Delete this in V4 when the database migration is ready")]
+    internal class AppendEventFunction: Function
     {
         private readonly EventGraph _events;
 

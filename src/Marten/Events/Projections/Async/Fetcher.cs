@@ -48,13 +48,13 @@ namespace Marten.Events.Projections.Async
             EventTypeNames = eventTypes.Select(x => store.Events.EventMappingFor(x).Alias).ToArray();
 
             var fields = _selector.SelectFields().Join(", ");
-
+            var events = store.Events;
             _sql =
     $@"
-select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
-select {fields} from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
-select min(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer;
-select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer
+select seq_id from {events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and extract(epoch from age(transaction_timestamp(), {events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
+select {fields} from {events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer order by seq_id;
+select min(seq_id) from {events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer;
+select max(seq_id) from {events.DatabaseSchemaName}.mt_events where seq_id >= :limit and extract(epoch from age(transaction_timestamp(), {events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer
 ".Replace(" as d", "");
         }
 
