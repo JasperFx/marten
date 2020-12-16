@@ -27,7 +27,7 @@ namespace Marten.Storage
         {
             _options = options;
 
-            SystemFunctions = new SystemFunctions(options);
+            SystemFunctions = new SystemFunctions();
 
             Transforms = options.Transforms.As<Transforms.Transforms>();
         }

@@ -4,14 +4,12 @@ using System.Linq;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
-using Marten.Internal.Sessions;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
     internal class InitializeLiveAggregateFrame : Frame
     {
         private readonly Type _aggregateType;
-        private readonly Type _idType;
         private readonly CallCreateAggregateFrame _create;
         private readonly MethodCall _loadMethod;
         private Variable _stream;
@@ -19,7 +17,6 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public InitializeLiveAggregateFrame(Type aggregateType, Type idType, CallCreateAggregateFrame create) : base(true)
         {
             _aggregateType = aggregateType;
-            _idType = idType;
             _create = create;
             _create.FirstEventExpression = "stream.Events.First()";
 

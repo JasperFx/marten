@@ -8,14 +8,8 @@ namespace Marten.Storage
 {
     public class SystemFunctions: IFeatureSchema
     {
-        private readonly StoreOptions _options;
         private readonly IDictionary<string, SystemFunction> _systemFunctions = new Dictionary<string, SystemFunction>();
         private readonly bool _isActive = true;
-
-        public SystemFunctions(StoreOptions options)
-        {
-            _options = options;
-        }
 
         public void AddSystemFunction(StoreOptions options, string name, string args)
         {

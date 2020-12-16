@@ -9,13 +9,11 @@ namespace Marten.Schema.Identity
     {
         public IIdGenerator<TId> Generator { get; }
 
-        private readonly Func<TDoc, TId> _getter;
         private readonly Action<TDoc, TId> _setter;
 
         public IdAssigner(MemberInfo member, IIdGeneration generation)
         {
             Generator = generation.Build<TId>();
-            _getter = LambdaBuilder.Getter<TDoc, TId>(member);
             _setter = LambdaBuilder.Setter<TDoc, TId>(member);
         }
 

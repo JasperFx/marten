@@ -5,9 +5,7 @@ namespace Marten.Schema
 {
     public class SystemFunction: Function
     {
-        private readonly string _args;
         private readonly string _dropSql;
-        private readonly DbObjectName _function;
 
         public SystemFunction(StoreOptions options, string functionName, string args)
             : this(options.DatabaseSchemaName, functionName, args)
@@ -17,8 +15,6 @@ namespace Marten.Schema
         public SystemFunction(string schema, string functionName, string args)
             : base(new DbObjectName(schema, functionName))
         {
-            _args = args;
-            _function = new DbObjectName(schema, functionName);
             _dropSql = $"drop function if exists {schema}.{functionName}({args}) cascade;";
 
             Name = functionName;

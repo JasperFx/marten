@@ -25,14 +25,10 @@ using LambdaBuilder = Baseline.Expressions.LambdaBuilder;
 
 namespace Marten.Internal.Storage
 {
-
     public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>
     {
         private ISqlFragment _defaultWhere;
         private readonly string _selectClause;
-
-        protected readonly string _loadArraySql;
-        protected readonly string _loaderSql;
         protected Action<T, TId> _setter;
         protected readonly DocumentMapping _mapping;
         private NpgsqlDbType _idType;
@@ -55,20 +51,7 @@ namespace Marten.Internal.Storage
             var fieldSelector = _selectFields.Join(", ");
             _selectClause = $"select {fieldSelector} from {document.TableName.QualifiedName} as d";
 
-            _loaderSql =
-                $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = :id";
-
-            _loadArraySql =
-                $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = ANY(:ids)";
-
-            if (document.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                _loaderSql += $" and {CurrentTenantFilter.Filter}";
-                _loadArraySql += $" and {CurrentTenantFilter.Filter}";
-            }
-
             UseOptimisticConcurrency = document.UseOptimisticConcurrency;
-
 
             _setter = LambdaBuilder.Setter<T, TId>(document.IdMember);
 

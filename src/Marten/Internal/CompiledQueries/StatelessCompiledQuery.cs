@@ -9,14 +9,10 @@ namespace Marten.Internal.CompiledQueries
     public abstract class StatelessCompiledQuery<TOut, TQuery> : IQueryHandler<TOut>
     {
         private IQueryHandler<TOut> _inner;
-        protected readonly TQuery _query;
-        protected readonly HardCodedParameters _hardcoded;
 
-        public StatelessCompiledQuery(IQueryHandler<TOut> inner, TQuery query, HardCodedParameters hardcoded)
+        public StatelessCompiledQuery(IQueryHandler<TOut> inner)
         {
             _inner = inner;
-            _query = query;
-            _hardcoded = hardcoded;
         }
 
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);

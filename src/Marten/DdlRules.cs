@@ -15,7 +15,7 @@ namespace Marten
         public static readonly string METADATA_COLUMNS = "%METADATA_COLUMNS%";
 
         public readonly LightweightCache<string, DdlTemplate> Templates
-            = new LightweightCache<string, DdlTemplate>(name => new DdlTemplate(name));
+            = new LightweightCache<string, DdlTemplate>(_ => new DdlTemplate());
 
         /// <summary>
         ///     Alters the syntax used to create tables in DDL
@@ -67,13 +67,6 @@ namespace Marten
 
     public class DdlTemplate
     {
-        private readonly string _name;
-
-        public DdlTemplate(string name)
-        {
-            _name = name;
-        }
-
         public string TableCreation { get; set; }
         public string FunctionCreation { get; set; }
     }

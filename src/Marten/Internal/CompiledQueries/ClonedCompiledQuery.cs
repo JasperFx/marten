@@ -10,16 +10,12 @@ namespace Marten.Internal.CompiledQueries
     public abstract class ClonedCompiledQuery<TOut, TQuery> : IQueryHandler<TOut>
     {
         private readonly IMaybeStatefulHandler _inner;
-        protected readonly TQuery _query;
         private readonly QueryStatistics _statistics;
-        protected readonly HardCodedParameters _hardcoded;
 
-        public ClonedCompiledQuery(IMaybeStatefulHandler inner, TQuery query, QueryStatistics statistics, HardCodedParameters hardcoded)
+        public ClonedCompiledQuery(IMaybeStatefulHandler inner, QueryStatistics statistics)
         {
             _inner = inner;
-            _query = query;
             _statistics = statistics;
-            _hardcoded = hardcoded;
         }
 
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
