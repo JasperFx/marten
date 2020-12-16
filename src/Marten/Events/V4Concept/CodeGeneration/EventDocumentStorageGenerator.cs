@@ -226,7 +226,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             var columns = new EventsTable(graph).SelectColumns();
 
             var sql =
-                $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(x => "?").Join(", ")})";
+                $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
 
             configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(\"{sql}\");",
                 Use.Type<CommandBuilder>());
@@ -248,7 +248,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
                 .Where(x => x.Writes)
                 .ToArray();
 
-            var sql = $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(x => "?").Join(", ")})";
+            var sql = $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
             var configureCommand = operationType.MethodFor("ConfigureCommand");
             configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(InsertStreamBase.Stream)));
 

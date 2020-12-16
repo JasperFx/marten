@@ -98,7 +98,7 @@ namespace Marten.Events.Projections
 
         public ViewProjection<TView, TId> DeleteEvent<TEvent>() where TEvent : class
             => projectEvent<TEvent>(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 null,
                 null,
@@ -106,7 +106,7 @@ namespace Marten.Events.Projections
 
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<TView, TEvent, bool> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 null,
                 (_, view, @event) => Task.FromResult(shouldDelete(view, @event)),
@@ -114,7 +114,7 @@ namespace Marten.Events.Projections
 
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<IDocumentSession, TView, TEvent, bool> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 null,
                 (session, view, @event) => Task.FromResult(shouldDelete(session, view, @event)),
@@ -126,7 +126,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 null,
                 null,
@@ -140,7 +140,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 null,
                 (_, view, @event) => Task.FromResult(shouldDelete(view, @event)),
@@ -154,7 +154,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 null,
                 (session, view, @event) => Task.FromResult(shouldDelete(session, view, @event)),
@@ -166,7 +166,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 null,
                 null,
@@ -180,7 +180,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 null,
                 (_, view, @event) => Task.FromResult(shouldDelete(view, @event)),
@@ -194,7 +194,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 null,
                 (session, view, @event) => Task.FromResult(shouldDelete(session, view, @event)),
@@ -207,7 +207,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 null,
                 null,
                 ProjectionEventType.Delete);
@@ -221,7 +221,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 null,
                 (_, view, @event) => Task.FromResult(shouldDelete(view, @event)),
                 ProjectionEventType.Delete);
@@ -235,7 +235,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 null,
                 (session, view, @event) => Task.FromResult(shouldDelete(session, view, @event)),
                 ProjectionEventType.Delete);
@@ -247,7 +247,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 null,
                 null,
                 ProjectionEventType.Delete);
@@ -261,7 +261,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 null,
                 (_, view, @event) => Task.FromResult(shouldDelete(view, @event)),
                 ProjectionEventType.Delete);
@@ -275,7 +275,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 null,
                 (session, view, @event) => Task.FromResult(shouldDelete(session, view, @event)),
                 ProjectionEventType.Delete);
@@ -283,7 +283,7 @@ namespace Marten.Events.Projections
 
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 null,
                 (_, view, @event) => shouldDelete(view, @event),
@@ -292,7 +292,7 @@ namespace Marten.Events.Projections
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 null,
                 shouldDelete,
@@ -305,7 +305,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 null,
                 (_, view, @event) => shouldDelete(view, @event),
@@ -319,7 +319,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 null,
                 shouldDelete,
@@ -333,7 +333,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 null,
                 (_, view, @event) => shouldDelete(view, @event),
@@ -347,7 +347,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent<TEvent>(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 null,
                 shouldDelete,
@@ -362,7 +362,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 null,
                 (_, view, @event) => shouldDelete(view, @event),
                 ProjectionEventType.Delete);
@@ -376,7 +376,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 null,
                 shouldDelete,
                 ProjectionEventType.Delete);
@@ -390,7 +390,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 null,
                 (_, view, @event) => shouldDelete(view, @event),
                 ProjectionEventType.Delete);
@@ -404,7 +404,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent<TEvent>(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 null,
                 shouldDelete,
                 ProjectionEventType.Delete);
@@ -412,7 +412,7 @@ namespace Marten.Events.Projections
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<TView, TEvent> handler, bool onlyUpdate = false) where TEvent : class
             => projectEvent(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 (IDocumentSession _, TView view, TEvent @event) =>
                 {
@@ -424,7 +424,7 @@ namespace Marten.Events.Projections
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<IDocumentSession, TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
             => projectEvent(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 (IDocumentSession session, TView view, TEvent @event) =>
                 {
@@ -439,7 +439,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 (IDocumentSession _, TView view, TEvent @event) =>
                 {
@@ -455,7 +455,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 (IDocumentSession session, TView view, TEvent @event) =>
                 {
@@ -471,7 +471,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 (IDocumentSession _, TView view, TEvent @event) =>
                 {
@@ -487,7 +487,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 (IDocumentSession session, TView view, TEvent @event) =>
                 {
@@ -505,7 +505,7 @@ namespace Marten.Events.Projections
 
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
@@ -521,7 +521,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
@@ -537,7 +537,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 (IDocumentSession _, TView view, TEvent @event) =>
                 {
                     handler(view, @event);
@@ -553,7 +553,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 (IDocumentSession session, TView view, TEvent @event) =>
                 {
                     handler(session, view, @event);
@@ -565,7 +565,7 @@ namespace Marten.Events.Projections
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
             => projectEvent(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 (IDocumentSession _, TView view, TEvent @event) => handler(view, @event),
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
@@ -573,7 +573,7 @@ namespace Marten.Events.Projections
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
             => projectEvent(
-                (session, @event, streamId) => convertToTId(streamId),
+                (_, _, streamId) => convertToTId(streamId),
                 null,
                 handler,
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
@@ -584,7 +584,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 (IDocumentSession _, TView view, TEvent @event) => handler(view, @event),
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
@@ -596,7 +596,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdSelector(session, @event as TEvent),
                 null,
                 handler,
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
@@ -608,7 +608,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 (IDocumentSession _, TView view, TEvent @event) => handler(view, @event),
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
@@ -620,7 +620,7 @@ namespace Marten.Events.Projections
             if (viewIdSelector == null)
                 throw new ArgumentNullException(nameof(viewIdSelector));
             return projectEvent(
-                (session, @event, streamId) => viewIdSelector(@event as TEvent),
+                (_, @event, _) => viewIdSelector(@event as TEvent),
                 null,
                 handler,
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
@@ -633,7 +633,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 (IDocumentSession _, TView view, TEvent @event) => handler(view, @event),
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
@@ -645,7 +645,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(session, @event as TEvent),
+                (session, @event, _) => viewIdsSelector(session, @event as TEvent),
                 handler,
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
@@ -657,7 +657,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 (IDocumentSession _, TView view, TEvent @event) => handler(view, @event),
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
@@ -669,7 +669,7 @@ namespace Marten.Events.Projections
                 throw new ArgumentNullException(nameof(viewIdsSelector));
             return projectEvent(
                 null,
-                (session, @event, streamId) => viewIdsSelector(@event as TEvent),
+                (_, @event, _) => viewIdsSelector(@event as TEvent),
                 handler,
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
@@ -757,42 +757,42 @@ namespace Marten.Events.Projections
 
         private void applyProjections(DocumentSessionBase session, ICollection<EventProjection> projections, IEnumerable<TView> views)
         {
-             var idAssigner = session.Tenant.IdAssignmentFor<TView>();
-             var resolver = session.Tenant.StorageFor<TView>();
-             var viewMap = views.ToDictionary(view => (TId)resolver.IdentityFor(view), view => view);
+            var idAssigner = session.Tenant.IdAssignmentFor<TView>();
+            var resolver = session.Tenant.StorageFor<TView>();
+            var viewMap = views.ToDictionary(view => (TId)resolver.IdentityFor(view), view => view);
 
-             foreach (var eventProjection in projections)
-             {
-                 var viewId = eventProjection.ViewId;
-                 var hasExistingView = viewMap.TryGetValue(viewId, out var view);
-                 if (!hasExistingView)
-                 {
-                     if (eventProjection.Type == ProjectionEventType.CreateAndUpdate)
-                     {
-                         view = newView(session.Tenant, idAssigner, viewId);
-                         viewMap.Add(viewId, view);
-                         hasExistingView = true;
-                     }
-                 }
+            foreach (var eventProjection in projections)
+            {
+                var viewId = eventProjection.ViewId;
+                var hasExistingView = viewMap.TryGetValue(viewId, out var view);
+                if (!hasExistingView)
+                {
+                    if (eventProjection.Type == ProjectionEventType.CreateAndUpdate)
+                    {
+                        view = newView(session.Tenant, idAssigner, viewId);
+                        viewMap.Add(viewId, view);
+                        hasExistingView = true;
+                    }
+                }
 
-                 using (NoSynchronizationContextScope.Enter())
-                 {
-                     if (eventProjection.Type == ProjectionEventType.CreateAndUpdate
-                         || (eventProjection.Type == ProjectionEventType.UpdateOnly && hasExistingView))
-                     {
-                         session.Store(view);
-                         eventProjection.ProjectTo(session, view).Wait();
-                     }
-                     else if (eventProjection.Type == ProjectionEventType.Delete && hasExistingView)
-                     {
-                         var shouldDeleteTask = eventProjection.ShouldDelete(session, view);
-                         shouldDeleteTask.Wait();
-                         if (shouldDeleteTask.Result)
-                         {
-                             session.Delete(view);
-                         }
-                     }
-                 }
+                using (NoSynchronizationContextScope.Enter())
+                {
+                    if (eventProjection.Type == ProjectionEventType.CreateAndUpdate
+                        || (eventProjection.Type == ProjectionEventType.UpdateOnly && hasExistingView))
+                    {
+                        session.Store(view);
+                        eventProjection.ProjectTo(session, view).Wait();
+                    }
+                    else if (eventProjection.Type == ProjectionEventType.Delete && hasExistingView)
+                    {
+                        var shouldDeleteTask = eventProjection.ShouldDelete(session, view);
+                        shouldDeleteTask.Wait();
+                        if (shouldDeleteTask.Result)
+                        {
+                            session.Delete(view);
+                        }
+                    }
+                }
             }
         }
 

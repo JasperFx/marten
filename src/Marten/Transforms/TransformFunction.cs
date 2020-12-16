@@ -41,7 +41,7 @@ namespace Marten.Transforms
 
         public string ToDropSignature()
         {
-            var signature = allArgs().Select(x => $"JSONB").Join(", ");
+            var signature = allArgs().Select(_ => $"JSONB").Join(", ");
             return $"DROP FUNCTION IF EXISTS {Identifier}({signature});";
         }
 

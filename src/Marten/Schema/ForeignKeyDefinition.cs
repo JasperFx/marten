@@ -21,8 +21,8 @@ namespace Marten.Schema
         ) : this(
             columnName,
             parent,
-            fkd => reference.TableName.QualifiedName,
-            fkd => $"(id{(parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined ? ", tenant_id" : "")})",
+            _ => reference.TableName.QualifiedName,
+            _ => $"(id{(parent.TenancyStyle == TenancyStyle.Conjoined && reference?.TenancyStyle == TenancyStyle.Conjoined ? ", tenant_id" : "")})",
             GenerateOnDeleteClause
         )
         {

@@ -177,7 +177,7 @@ namespace Marten.Storage
         public IdAssignment<T> IdAssignmentFor<T>()
         {
             EnsureStorageExists(typeof(T));
-            return _identityAssignments.GetOrAdd(typeof(T), t =>
+            return _identityAssignments.GetOrAdd(typeof(T), _ =>
             {
                 var mapping = MappingFor(typeof(T));
                 return mapping.ToIdAssignment<T>(this);
