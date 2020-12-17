@@ -18,17 +18,19 @@ Notes:
 The proposal is that Marten will support these mechanisms for users to **define** a projection:
 
 1. "Self-aggregating Aggregates" like we do today (see [QuestParty](https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestParty.cs)), but V4 will only support this pattern for live aggregations
-1. `ViewProjection` will be a simplified version of the current `ViewProjection<T>` that allows you to do any kind of projected operation by directly using the new `IDocumentOperations` interface (a subset of `IDocumentSession`) to take actions based on events, event metadata, or persisted state. This will support a mix of inline Lambdas and conventional methods like `void Project(MonsterSlayed slayed, IDocumentOperations operations)`
-1. `ViewProjection<TDoc, TId>` will be a rewritten *subset* version of today's `ViewProjection` with all new internals, and anything related to aggregating a document across events removed. This will support a mix of inline Lambdas like the current `ViewProjection` as well as conventional methods
+1. `EventProjection` will be the "anything goes" alternative that allows you to do any kind of operation by directly using the new `IDocumentOperations` interface (a subset of `IDocumentSession`) to take actions based on events, event metadata, or persisted state. This will support a mix of inline Lambdas and conventional methods like `void Project(MonsterSlayed slayed, IDocumentOperations operations)`. This option will also support the ability to execute arbitrary SQL
+1. `ViewProjection<TDoc, TId>` will support creating/updating/deleting a single projected view type across an arbitrary collection of events. This is what Jeremy has called the "aggregate across streams" option. The API will be a rewritten *subset* version of today's `ViewProjection` with all new internals. This will support a mix of inline Lambdas like the current `ViewProjection` as well as conventional methods.
 1. `AggregateProjection<T>` will be specifically for projected views that are aggregated across events. This should support either an aggregate across streams, or a user-defined grouping across different streams. This will support both inline Lambdas and conventiona methods
-1. Users can directly implement the `IInlineProjection` interface as a "do anything you possibly want" alternative
+1. Users can directly implement the `IInlineProjection` interface as a "do anything you possibly want" alternative. So if you just wanna use C# pattern matching, you could do this. 
 1. Users could maybe write their own implementation of `ILiveAggregator<T>` to do on the fly, "live" aggregation. Not sure why you'd want to do that, but it'd still be possible
 
 More notes:
 
+* Users will still have to explicitly register projections as either async or inline with the same syntax as today
 * `ViewProjection` and `AggregateProjection` types *define* a projection. Both will generate an implementation of `IInlineProjection` if they're configured to run "inline". 
-* If used asynchronously, the `AggregateProjection` will generate an `IProjectionAgent` to most efficiently run as part of the V4 version of the async daemon
-* If used asynchronously, any `IInlineProjection` class, including implementations generated at runtime for `IViewProjection`, will be executed through a new 
+* `ViewProjection` and `AggregateProjection` will both share quite a bit of code in the async daemon mode
+* If used asynchronously, the `AggregateProjection` or `ViewProjection` will generate an `IProjectionAgent` to most efficiently run as part of the V4 version of the async daemon
+* If used asynchronously, any `IInlineProjection` class, including implementations generated at runtime for `EventProjection`, will be executed through a new 
   `InlineProjectionAsyncRunner` class that acts as an adapter to plug an inline projection into an `IProjectionAgent` for the new async daemon
 * If the aggregate type "T" of an `AggregateProjection<T>` is used for a live aggregation, `AggregateProjection` will generate and compile an instance of `ILiveAggregator<T>`
 
@@ -85,17 +87,22 @@ class ILiveAggregator {
 
 AggregateProjection --> ILiveAggregator : Builds
 
-class ViewProjection
-class ViewProjectionOfT
+class EventProjection {
+    <<abstract>>
+}
+
+EventProjection --> IInlineProjection: Builds
+
+class ViewProjection {
+    <<abstract>>
+}
 
 ViewProjection --> IInlineProjection : Builds
-ViewProjectionOfT --|> ViewProjection
 
 class IInlineProjection {
     <<interface>> IInlineProjection
 }
 
-ViewProjection ..|> IInlineProjection
 
 
 ```
