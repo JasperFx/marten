@@ -26,7 +26,7 @@ namespace Marten.Events.V4Concept
     }
 
     // This would be the basis for the newly improved V4 version of ViewProjection
-    public abstract class ViewProjection : IProjection
+    public abstract class ViewProjection
     {
         private readonly ProjectMethodCollection _projectMethods;
         private string _projectionName; // More on this later
@@ -48,29 +48,6 @@ namespace Marten.Events.V4Concept
             _projectMethods.AddLambda(project, typeof(TEvent));
         }
 
-
-        string IProjectionBase.ProjectionName => _projectionName;
-
-        void IProjection.GenerateHandlerTypes(DocumentStore store, GeneratedAssembly assembly)
-        {
-            throw new NotImplementedException();
-        }
-
-        IProjectionShard IProjection.AsyncShards()
-        {
-            throw new NotImplementedException();
-        }
-
-        IInlineProjection IProjection.ToInline()
-        {
-            throw new NotImplementedException();
-        }
-
-        bool IProjection.TryResolveLiveAggregator<T>(out ILiveAggregator<T> aggregator)
-        {
-            aggregator = null;
-            return false;
-        }
     }
 
 }

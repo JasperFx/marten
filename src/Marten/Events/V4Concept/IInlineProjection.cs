@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.V4Concept
 {
-    public interface IInlineProjection : IProjectionBase
+    public interface IInlineProjection
     {
         void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams);
 
