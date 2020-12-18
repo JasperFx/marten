@@ -144,13 +144,6 @@ namespace Marten.Events
             return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
-        public ViewProjection<TView, TId> ProjectView<TView, TId>() where TView : class
-        {
-            var projection = new ViewProjection<TView, TId>();
-            InlineProjections.Add(projection);
-            return projection;
-        }
-
         IEnumerable<Type> IFeatureSchema.DependentTypes()
         {
             yield break;

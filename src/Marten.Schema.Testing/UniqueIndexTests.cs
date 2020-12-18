@@ -1,5 +1,6 @@
 ﻿using System;
 using Marten.Events.Projections;
+using Marten.Events.V4Concept;
 using Marten.Exceptions;
 using Npgsql;
 using Shouldly;
@@ -17,14 +18,14 @@ namespace Marten.Schema.Testing
         public string Surname { get; set; }
     }
 
-    public class UserViewProjection : ViewProjection<UniqueUser, Guid>
+    public class UserViewProjection : V4ViewProjection<UniqueUser, Guid>
     {
         public UserViewProjection()
         {
-            ProjectEvent<UserCreated>(Apply);
+            Identity<UserCreated>(x => x.UserId);
         }
 
-        private void Apply(UniqueUser view, UserCreated @event)
+        public void Apply(UniqueUser view, UserCreated @event)
         {
             view.Id = @event.UserId;
             view.Email = @event.Email;
@@ -62,7 +63,7 @@ namespace Marten.Schema.Testing
             StoreOptions(opts =>
             {
                 opts.Events.AddEventTypes(new[] { typeof(UserCreated) });
-                opts.Events.InlineProjections.Add(new UserViewProjection());
+                opts.Events.V4Projections.InlineView(new UserViewProjection());
                 opts.RegisterDocumentType<UniqueUser>();
             });
         }
