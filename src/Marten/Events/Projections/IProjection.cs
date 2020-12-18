@@ -66,9 +66,6 @@ namespace Marten.Events.Projections
         {
             switch (projection)
             {
-                case IDocumentsProjection documentsProjection:
-                    return documentsProjection.Produces;
-
                 default:
                     return new[] { projection.ProjectedType() };
             }
