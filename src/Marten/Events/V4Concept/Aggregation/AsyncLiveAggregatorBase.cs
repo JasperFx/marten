@@ -7,12 +7,13 @@ namespace Marten.Events.V4Concept.Aggregation
 
     public abstract class AsyncLiveAggregatorBase<T> : ILiveAggregator<T> where T : class
     {
-        public T Build(IReadOnlyList<IEvent> events, IQuerySession session)
+        public abstract ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, T snapshot,
+            CancellationToken cancellation);
+
+        public T Build(IReadOnlyList<IEvent> events, IQuerySession session, T snapshot)
         {
-            return BuildAsync(events, session, CancellationToken.None).GetAwaiter().GetResult();
+            return BuildAsync(events, session, snapshot, CancellationToken.None).GetAwaiter().GetResult();
         }
 
-        public abstract ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session,
-            CancellationToken cancellation);
     }
 }

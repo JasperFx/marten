@@ -1,7 +1,9 @@
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
+using Marten.Events.V4Concept;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
@@ -11,17 +13,17 @@ namespace Marten.Events.Querying
 {
     internal class AggregationQueryHandler<T>: IQueryHandler<T> where T : class
     {
-        private readonly IAggregator<T> _aggregator;
+        private readonly ILiveAggregator<T> _aggregator;
         private readonly IEventQueryHandler _inner;
         private readonly QuerySession _session;
-        private readonly T _state;
+        private readonly T _snapshot;
 
-        public AggregationQueryHandler(IAggregator<T> aggregator, IEventQueryHandler inner, QuerySession session = null, T state = null)
+        public AggregationQueryHandler(ILiveAggregator<T> aggregator, IEventQueryHandler inner, QuerySession session = null, T snapshot = null)
         {
             _aggregator = aggregator;
             _inner = inner;
             _session = session;
-            _state = state;
+            _snapshot = snapshot;
         }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
@@ -32,18 +34,19 @@ namespace Marten.Events.Querying
 
         public T Handle(DbDataReader reader, IMartenSession session)
         {
-            // TODO -- return null if there are no events
             var @events = _inner.Handle(reader, session);
-
-            return _state == null ? _aggregator.Build(@events, (IDocumentSession) _session) : _aggregator.Build(@events, (IDocumentSession) _session, _state);
+            return @events.Any()
+                ? _aggregator.Build(@events, _session, _snapshot)
+                : null;
         }
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            // TODO -- return null if there are no events
             var @events = await _inner.HandleAsync(reader, session, token).ConfigureAwait(false);
 
-            return _state == null ? _aggregator.Build(@events, (IDocumentSession) _session) : _aggregator.Build(@events, (IDocumentSession) _session, _state);
+            return @events.Any()
+                ? await _aggregator.BuildAsync(@events, _session, _snapshot, token)
+                : null;
         }
     }
 }

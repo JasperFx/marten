@@ -17,13 +17,6 @@ namespace Marten.Testing.Events
         }
 
         [Fact]
-        public void find_stream_mapping_initially()
-        {
-            theGraph.AggregateFor<Issue>()
-                .AggregateType.ShouldBe(typeof(Issue));
-        }
-
-        [Fact]
         public void caches_the_stream_mapping()
         {
             theGraph.AggregateFor<Issue>()
@@ -52,13 +45,6 @@ namespace Marten.Testing.Events
             theGraph.EventMappingFor("members_joined").DocumentType.ShouldBe(typeof(MembersJoined));
 
             theGraph.EventMappingFor("issue_created").DocumentType.ShouldBe(typeof(IssueCreated));
-        }
-
-        [Fact]
-        public void derives_the_stream_type_name()
-        {
-            theGraph.AggregateFor<HouseRemodeling>().Alias.ShouldBe("house_remodeling");
-            theGraph.AggregateFor<Quest>().Alias.ShouldBe("quest");
         }
 
         [Fact]

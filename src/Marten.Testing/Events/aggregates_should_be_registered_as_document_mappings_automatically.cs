@@ -21,17 +21,6 @@ namespace Marten.Testing.Events
                 .ShouldContain(typeof(QuestParty));
         }
 
-        [Fact]
-        public void aggregations_added_manually_are_registered()
-        {
-            StoreOptions(_ =>
-            {
-                _.Events.AddAggregator(new Aggregator<QuestParty>());
-            });
-
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
-                .ShouldContain(typeof(QuestParty));
-        }
 
         [Fact]
         public void inline_aggregations_are_registered()
