@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj" />
         <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
     </ItemGroup>
 
