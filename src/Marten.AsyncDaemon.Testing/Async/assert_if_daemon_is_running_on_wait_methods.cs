@@ -16,7 +16,7 @@ namespace Marten.Testing.Events.Projections.Async
             StoreOptions(_ =>
             {
                 _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
-                _.Events.AsyncProjections.TransformEvents(new CommitViewTransform());
+                _.Events.V4Projections.Async(new CommitViewTransform());
             });
 
             theDaemon = theStore.BuildProjectionDaemon();

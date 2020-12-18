@@ -62,7 +62,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(_ =>
             {
-                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
+                _.Events.V4Projections.Inline(new MonsterDefeatedTransform());
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
@@ -74,7 +74,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(_ =>
             {
-                _.Events.AsyncProjections.TransformEvents(new MonsterDefeatedTransform());
+                _.Events.V4Projections.Async(new MonsterDefeatedTransform());
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)

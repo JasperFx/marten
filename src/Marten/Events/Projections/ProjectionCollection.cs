@@ -45,14 +45,6 @@ namespace Marten.Events.Projections
             return projection;
         }
 
-        public OneForOneProjection<TEvent, TView> TransformEvents<TEvent, TView>(ITransform<TEvent, TView> transform)
-        {
-            var projection = new OneForOneProjection<TEvent, TView>(transform);
-            Add(projection);
-
-            return projection;
-        }
-
         public void Add(IProjection projection)
         {
             if (projection == null)

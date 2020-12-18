@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Events.V4Concept;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -30,7 +31,8 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = tenancyStyle;
-                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
+
+                _.Events.V4Projections.Inline(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events
@@ -55,7 +57,8 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.Add(new OneForOneProjection<MonsterSlayed, MonsterDefeated>(new MonsterDefeatedTransform()));
+
+                _.Events.V4Projections.Inline(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events
@@ -83,7 +86,7 @@ namespace Marten.Testing.Events.Projections
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = "monster_defeated";
 
-                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
+                _.Events.V4Projections.Inline(new MonsterDefeatedTransform());
             });
             // ENDSAMPLE
 
@@ -92,7 +95,8 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.TransformEvents(new MonsterDefeatedTransform());
+
+                _.Events.V4Projections.Inline(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events
@@ -117,7 +121,7 @@ namespace Marten.Testing.Events.Projections
     }
 
     // SAMPLE: MonsterDefeatedTransform
-    public class MonsterDefeatedTransform: ITransform<MonsterSlayed, MonsterDefeated>
+    public class MonsterDefeatedTransform: EventProjection
     {
         public MonsterDefeated Transform(StreamAction stream, Event<MonsterSlayed> input)
         {
