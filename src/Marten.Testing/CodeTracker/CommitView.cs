@@ -1,6 +1,7 @@
 using System;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Events.V4Concept;
 using Marten.Schema;
 
 namespace Marten.Testing.CodeTracker
@@ -21,15 +22,15 @@ namespace Marten.Testing.CodeTracker
         public DateTimeOffset Timestamp { get; set; }
     }
 
-    public class CommitViewTransform: ITransform<Commit, CommitView>
+    public class CommitViewTransform: EventProjection
     {
-        public CommitView Transform(StreamAction stream, Event<Commit> input)
+        public CommitView Transform(Event<Commit> input)
         {
             return new CommitView
             {
                 Sha = input.Data.Sha,
                 Message = input.Data.Message,
-                ProjectId = stream.Id,
+                ProjectId = input.StreamId,
                 Additions = input.Data.Additions,
                 Deletions = input.Data.Deletions,
                 Timestamp = input.Data.Timestamp

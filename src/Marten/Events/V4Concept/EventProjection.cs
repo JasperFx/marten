@@ -15,6 +15,8 @@ namespace Marten.Events.V4Concept
         private readonly ProjectMethodCollection _projectMethods;
         private readonly CreateMethodCollection _createMethods;
 
+        // TODO -- ALSO support Transform() method names!!!!
+
         public EventProjection()
         {
             _projectMethods = new ProjectMethodCollection(GetType(), null);
