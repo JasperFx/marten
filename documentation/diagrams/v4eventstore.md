@@ -124,6 +124,10 @@ To run the new asynchronous projection support across an application cluster, we
 * Each node will be constantly try to take away the advisory lock for other known nodes and the leader process. This is a way to "know" if another node has fallen offline
 * A node should release its own advisory lock on its node id and delete the node record for itself on graceful shutdowns
 
+Ref implementation:
+* https://docs.microsoft.com/en-us/azure/architecture/patterns/leader-election
+* https://github.com/mspnp/cloud-design-patterns/tree/master/leader-election
+
 
 ## Async Daemon Class Diagram
 
