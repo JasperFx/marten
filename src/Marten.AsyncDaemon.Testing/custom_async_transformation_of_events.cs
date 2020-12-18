@@ -37,7 +37,8 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = tenancyStyle;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
                     .ProjectEventAsync<MembersJoined>(e => e.QuestId, (view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
@@ -98,7 +99,7 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = tenancyStyle;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
                     .ProjectEventAsync<MembersJoined>(e => e.QuestId, (view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
@@ -156,7 +157,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.InlineProjections.Add(new PersistAsyncViewProjection());
             });
 
@@ -207,7 +208,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.InlineProjections.Add(new PersistAsyncViewProjection());
             });
 
@@ -258,7 +259,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.ProjectView<QuestView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Name = @event.Name; return Task.CompletedTask; })
                     .ProjectEventAsync<MonsterQuestsAdded>(e => e.QuestIds, (view, @event) => { view.Name = view.Name.Insert(0, $"{@event.Name}: "); return Task.CompletedTask; })
@@ -292,7 +293,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.ProjectView<QuestView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Name = @event.Name; return Task.CompletedTask; })
                     .ProjectEventAsync<MonsterQuestsAdded>(e => e.QuestIds, (view, @event) => { view.Name = view.Name.Insert(0, $"{@event.Name}: "); return Task.CompletedTask; })
@@ -326,7 +327,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<BankAccount>();
+                _.Events.V4Projections.InlineSelfAggregate<BankAccount>();
                 _.Events.InlineProjections.Add<BankAccountViewProjection>();
             });
 
@@ -400,7 +401,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
                     .DeleteEvent<QuestEnded>();
@@ -429,7 +430,7 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
                 _.Events.ProjectView<PersistedView, Guid>()
                     .ProjectEventAsync<QuestStarted>((view, @event) => { view.Events.Add(@event); return Task.CompletedTask; })
                     .DeleteEvent<QuestEnded>();

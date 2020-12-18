@@ -27,7 +27,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestParty>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
             });
 
             Context.State.Store(_store);

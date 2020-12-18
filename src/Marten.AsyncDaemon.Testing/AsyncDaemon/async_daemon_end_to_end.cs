@@ -43,7 +43,7 @@ namespace Marten.Testing.AsyncDaemon
 
             StoreOptions(_ =>
             {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.V4Projections.AsyncSelfAggregate<ActiveProject>();
                 _.Events.DatabaseSchemaName = "events";
             });
 
@@ -69,7 +69,7 @@ namespace Marten.Testing.AsyncDaemon
 
             StoreOptions(_ =>
             {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.V4Projections.AsyncSelfAggregate<ActiveProject>();
                 _.Events.DatabaseSchemaName = "events";
             });
 
@@ -96,7 +96,7 @@ namespace Marten.Testing.AsyncDaemon
 
             StoreOptions(_ =>
             {
-                _.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+                _.Events.V4Projections.AsyncSelfAggregate<ActiveProject>();
                 _.Events.DatabaseSchemaName = "events";
             });
 
@@ -255,7 +255,7 @@ namespace Marten.Testing.AsyncDaemon
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.InlineProjections.AggregateStreamsWith<Project>();
+                _.Events.V4Projections.InlineSelfAggregate<Project>();
             });
 
             var projectId = Guid.NewGuid();

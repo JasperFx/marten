@@ -517,7 +517,7 @@ namespace Marten.Testing.Events
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.Events.StreamIdentity = StreamIdentity.AsString;
-                _.Events.InlineProjections.AggregateStreamsWith<QuestPartyWithStringIdentifier>();
+                _.Events.V4Projections.InlineSelfAggregate<QuestPartyWithStringIdentifier>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));

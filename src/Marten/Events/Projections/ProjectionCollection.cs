@@ -30,21 +30,6 @@ namespace Marten.Events.Projections
             return GetEnumerator();
         }
 
-        public AggregationProjection<T> AggregateStreamsWith<T>() where T : class
-        {
-            var aggregator = _options.Events.AggregateFor<T>();
-
-            var finder = _options.Events.StreamIdentity == StreamIdentity.AsGuid
-                ? (IAggregationFinder<T>)new AggregateFinder<T>()
-                : new StringIdentifiedAggregateFinder<T>();
-
-            var projection = new AggregationProjection<T>(finder, aggregator);
-
-            Add(projection);
-
-            return projection;
-        }
-
         public void Add(IProjection projection)
         {
             if (projection == null)

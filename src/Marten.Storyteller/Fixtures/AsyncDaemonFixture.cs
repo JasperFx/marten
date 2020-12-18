@@ -26,7 +26,7 @@ namespace Marten.Storyteller.Fixtures
             _options = new StoreOptions();
             _options.Connection(ConnectionSource.ConnectionString);
 
-            _options.Events.AsyncProjections.AggregateStreamsWith<ActiveProject>();
+            _options.Events.V4Projections.AsyncSelfAggregate<ActiveProject>();
 
             _options.Events.V4Projections.Async(new CommitViewTransform());
 
