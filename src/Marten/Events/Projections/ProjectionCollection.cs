@@ -63,21 +63,6 @@ namespace Marten.Events.Projections
             Add(New<T>.Instance());
         }
 
-        public void Add<T>(Func<T> projectionFactory) where T : IProjection
-        {
-            var lazyLoadedProjection = new LazyLoadedProjection<T>(projectionFactory);
-
-            if (lazyLoadedProjection == null)
-                throw new ArgumentNullException(nameof(lazyLoadedProjection));
-
-            if (typeof(T).GetTypeInfo().IsAssignableFrom(typeof(IDocumentProjection).GetTypeInfo()))
-            {
-                _options.Storage.MappingFor(lazyLoadedProjection.ProjectedType());
-            }
-
-            _projections.Add(lazyLoadedProjection);
-        }
-
         public IProjection ForView(Type viewType)
         {
             return _projections.FirstOrDefault(x => x.ProjectedType() == viewType);
