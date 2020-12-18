@@ -25,7 +25,7 @@ namespace Marten.Testing.Events
                 serializer.Customize(c => c.ContractResolver = new ResolvePrivateSetters());
                 options.Serializer(serializer);
                 options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePrivateApply);
-                options.Events.InlineProjections.AggregateStreamsWith<AggregateWithPrivateEventApply>();
+                options.Events.V4Projections.InlineSelfAggregate<AggregateWithPrivateEventApply>();
                 // ENDSAMPLE
             });
         }

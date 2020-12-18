@@ -31,6 +31,16 @@ namespace Marten.Events.V4Concept
             throw new NotImplementedException();
         }
 
+        public void InlineSelfAggregate<T>()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AsyncSelfAggregate<T>()
+        {
+            throw new NotImplementedException();
+        }
+
         public void InlineView<TDoc, TId>(V4ViewProjection<TDoc, TId> projection)
         {
             throw new NotImplementedException();
