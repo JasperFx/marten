@@ -4,8 +4,10 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Async;
+using Marten.Events.V4Concept;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -56,7 +58,7 @@ namespace Marten.Testing.Events.Projections.Async
         /// A projection which uses multiple streams and manages several document types: main Read Model it's builiding and
         /// a side-readmodel used as a kind of helper
         /// </summary>
-        public class OrderProjection: DocumentsProjection
+        public class OrderProjection: IInlineProjection
         {
             public class CompanySideReadModel
             {
@@ -103,20 +105,14 @@ namespace Marten.Testing.Events.Projections.Async
 
             #region Infrastructure and dispatching
 
-            public override Type[] Consumes => new[] { typeof(Events.CompanyCreated), typeof(Events.OrderPlaced), typeof(Events.CompanyNameChanged) };
-
-            public override Type[] Produces => new[] { typeof(ReadModels.Order), typeof(CompanySideReadModel) };
-
-            public override AsyncOptions AsyncOptions { get; } = new AsyncOptions();
-
-            public override void Apply(IDocumentSession session, EventPage page)
+            public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
             {
-                ApplyAsync(session, page, CancellationToken.None).Wait();
+                ApplyAsync(session, streams, CancellationToken.None).GetAwaiter().GetResult();
             }
 
-            public override async Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+            public async Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
             {
-                foreach (var @event in page.Events)
+                foreach (var @event in streams.SelectMany(x => x.Events))
                 {
                     switch (@event.Data)
                     {
@@ -132,7 +128,7 @@ namespace Marten.Testing.Events.Projections.Async
                             When(session, changed);
                             break;
                     }
-                    await session.SaveChangesAsync(token).ConfigureAwait(false);
+                    await session.SaveChangesAsync(cancellation);
                 }
             }
 
@@ -156,7 +152,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             StoreOptions(_ =>
             {
-                _.Events.AsyncProjections.Add(new Projections.OrderProjection());
+                _.Events.V4Projections.Async(new Projections.OrderProjection());
                 _.Events.TenancyStyle = tenancyStyle;
             });
 
@@ -184,7 +180,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             StoreOptions(cfg =>
             {
-                cfg.Events.AsyncProjections.Add(() => new Projections.OrderProjection());
+                cfg.Events.V4Projections.Async(new Projections.OrderProjection());
             });
             // 1. publish events
             await PublishEvents();
@@ -222,7 +218,7 @@ namespace Marten.Testing.Events.Projections.Async
         {
             StoreOptions(cfg =>
             {
-                cfg.Events.AsyncProjections.Add(new Projections.OrderProjection());
+                cfg.Events.V4Projections.Async(new Projections.OrderProjection());
             });
 
             var daemon = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger());
