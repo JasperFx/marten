@@ -20,7 +20,6 @@ namespace Marten.Testing.Events
             StoreOptions(options =>
             {
                 options.Events.StreamIdentity = StreamIdentity.AsString;
-                options.Events.UseAggregatorLookup(AggregationLookupStrategy.UsePublicAndPrivateApply);
             });
         }
 

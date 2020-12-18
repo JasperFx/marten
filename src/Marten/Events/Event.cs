@@ -67,9 +67,6 @@ namespace Marten.Events
         /// </summary>
         string DotNetTypeName { get; set; }
 
-        [Obsolete("Eliminate in v4")]
-        void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
-            where TAggregate : class;
     }
 
     // ENDSAMPLE
@@ -93,12 +90,6 @@ namespace Marten.Events
         public Type EventType { get; }
         public string EventTypeName { get; set; }
         public string DotNetTypeName { get; set; }
-        public void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator) where TAggregate : class
-        {
-            var clone = Clone();
-
-            clone.Apply(state, aggregator);
-        }
 
         public IEvent Clone()
         {
@@ -167,18 +158,6 @@ namespace Marten.Events
         // ENDSAMPLE
 
         object IEvent.Data => Data;
-
-        [Obsolete("Make this go away in v4")]
-        public virtual void Apply<TAggregate>(TAggregate state, IAggregator<TAggregate> aggregator)
-            where TAggregate : class
-        {
-            var step = aggregator.AggregatorFor<T>();
-            if (step is IAggregationWithMetadata<TAggregate, T>)
-                step.As<IAggregationWithMetadata<TAggregate, T>>()
-                    .Apply(state, this);
-            else
-                step?.Apply(state, Data);
-        }
 
         public Type EventType => typeof(T);
         public string EventTypeName { get; set; }

@@ -272,11 +272,6 @@ namespace Marten.Events
         {
             _tenant.EnsureStorageExists(typeof(StreamAction));
 
-            if (_store.Events.AllAggregates().Any(x => x.AggregateType == typeof(T)))
-            {
-                return _session.Query<T>();
-            }
-
             _store.Events.AddEventType(typeof(T));
 
             return _session.Query<T>();

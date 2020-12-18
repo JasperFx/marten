@@ -60,5 +60,10 @@ namespace Marten.Events.V4Concept
         {
             throw new NotImplementedException();
         }
+
+        public bool Any()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

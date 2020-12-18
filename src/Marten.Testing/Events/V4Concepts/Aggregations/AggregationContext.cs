@@ -41,8 +41,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
             var fragment = BuildStreamFragment(action);
 
             var aggregator = _projection.BuildLiveAggregator();
-
-            return aggregator.BuildAsync((IReadOnlyList<IEvent>) fragment.Events, theSession, CancellationToken.None);
+            return aggregator.BuildAsync((IReadOnlyList<IEvent>)fragment.Events, theSession, null, CancellationToken.None);
         }
 
 

@@ -29,27 +29,19 @@ namespace Marten.Events
 
     public class EventGraph: IFeatureSchema
     {
-        private readonly Ref<ImHashMap<string, IAggregator>> _aggregateByName =
-            Ref.Of(ImHashMap<string, IAggregator>.Empty);
-
-        private readonly Ref<ImHashMap<Type, IAggregator>> _aggregates =
-            Ref.Of(ImHashMap<Type, IAggregator>.Empty);
 
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
 
-        private IAggregatorLookup _aggregatorLookup;
         private string _databaseSchemaName;
 
         private readonly Lazy<IInlineProjection[]> _inlineProjections;
 
         private readonly Lazy<EstablishTombstoneStream> _establishTombstone;
 
-
         public EventGraph(StoreOptions options)
         {
             Options = options;
-            _aggregatorLookup = new AggregatorLookup();
             _events.OnMissing = eventType =>
             {
                 var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
@@ -104,11 +96,6 @@ namespace Marten.Events
             return _events;
         }
 
-        public IEnumerable<IAggregator> AllAggregates()
-        {
-            return _aggregates.Value.Enumerate().Select(x => x.Value);
-        }
-
         public EventMapping EventMappingFor(string eventType)
         {
             return _byEventName[eventType];
@@ -124,7 +111,8 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        public bool IsActive(StoreOptions options) => _events.Any() || _aggregates.Value.Enumerate().Any();
+        // TODO -- check if there are any projections here!
+        public bool IsActive(StoreOptions options) => _events.Any() || V4Projections.Any() ;
 
         public string DatabaseSchemaName
         {
@@ -132,39 +120,10 @@ namespace Marten.Events
             set { _databaseSchemaName = value; }
         }
 
-        public void AddAggregator<T>(IAggregator<T> aggregator) where T : class
-        {
-            Options.Storage.MappingFor(typeof(T));
-            _aggregates.Swap(a => a.AddOrUpdate(typeof(T), aggregator));
-        }
-
-        public IAggregator<T> AggregateFor<T>() where T : class
-        {
-            if (!_aggregates.Value.TryFind(typeof(T), out var aggregator))
-            {
-                Options.Storage.MappingFor(typeof(T));
-                aggregator = _aggregatorLookup.Lookup<T>();
-                _aggregates.Swap(a => a.AddOrUpdate(typeof(T), aggregator));
-            }
-            return aggregator.As<IAggregator<T>>();
-        }
-
         public Type AggregateTypeFor(string aggregateTypeName)
         {
-            if (_aggregateByName.Value.TryFind(aggregateTypeName, out var aggregate))
-            {
-                return aggregate.AggregateType;
-            }
-
-            aggregate = AllAggregates().FirstOrDefault(x => x.Alias == aggregateTypeName);
-            if (aggregate == null)
-            {
-                return null;
-            }
-
-            _aggregateByName.Swap(a => a.AddOrUpdate(aggregateTypeName, aggregate));
-
-            return aggregate.AggregateType;
+            // TODO -- redo!
+            return null;
         }
 
         [Obsolete("Remove in V4")]
@@ -176,13 +135,8 @@ namespace Marten.Events
 
         public string AggregateAliasFor(Type aggregateType)
         {
-            if (!_aggregates.Value.TryFind(aggregateType, out var aggregator))
-            {
-                aggregator = _aggregatorLookup.Lookup(aggregateType);
-                _aggregates.Swap(a => a.AddOrUpdate(aggregateType, aggregator));
-            }
-
-            return aggregator.Alias;
+            // TODO -- redo!
+            return null;
         }
 
         public IProjection ProjectionFor(Type viewType)
@@ -195,15 +149,6 @@ namespace Marten.Events
             var projection = new ViewProjection<TView, TId>();
             InlineProjections.Add(projection);
             return projection;
-        }
-
-        /// <summary>
-        /// Set default strategy to lookup IAggregator when no explicit IAggregator registration exists.
-        /// </summary>
-        /// <remarks>Unless called, <see cref="AggregatorLookup"/> is used</remarks>
-        public void UseAggregatorLookup(IAggregatorLookup aggregatorLookup)
-        {
-            _aggregatorLookup = aggregatorLookup;
         }
 
         IEnumerable<Type> IFeatureSchema.DependentTypes()
@@ -501,5 +446,10 @@ namespace Marten.Events
         }
 
         public V4ProjectionCollection V4Projections { get; }
+
+        public ILiveAggregator<T> AggregateFor<T>() where T : class
+        {
+            throw new NotImplementedException("Actually do this:)");
+        }
     }
 }
