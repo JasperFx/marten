@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Projections.Async;
@@ -61,6 +62,7 @@ namespace Marten.Events.Projections
             private Task<bool> defaultShouldDelete(IDocumentSession session, TView view, object @event) => Task.FromResult(true);
         }
 
+        [Obsolete]
         private class EventProjection
         {
             public TId ViewId { get; }
@@ -122,6 +124,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
 
         // This one doesn't play in the aggregations. This would be for the builders
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<TEvent, TId> viewIdSelector) where TEvent : class
         {
             if (viewIdSelector == null)
@@ -134,6 +137,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<TEvent, TId> viewIdSelector,
             Func<TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -148,6 +152,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<TEvent, TId> viewIdSelector,
             Func<IDocumentSession, TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -162,6 +167,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        // Keep
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector) where TEvent : class
         {
             if (viewIdSelector == null)
@@ -174,6 +180,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<IDocumentSession, TEvent, TId> viewIdSelector,
             Func<TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -188,6 +195,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<IDocumentSession, TEvent, TId> viewIdSelector,
             Func<IDocumentSession, TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -202,6 +210,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<TEvent, List<TId>> viewIdsSelector) where TEvent : class
         {
             if (viewIdsSelector == null)
@@ -214,6 +223,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<TEvent, List<TId>> viewIdsSelector,
             Func<TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -228,6 +238,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the fanout")]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<TEvent, List<TId>> viewIdsSelector,
             Func<IDocumentSession, TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -242,6 +253,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the fanout")]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector) where TEvent : class
         {
             if (viewIdsSelector == null)
@@ -254,6 +266,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the fanout")]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector,
             Func<TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -268,6 +281,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the fanout")]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector,
             Func<IDocumentSession, TView, TEvent, bool> shouldDelete) where TEvent : class
@@ -282,6 +296,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        // Keep
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
                 (_, _, streamId) => convertToTId(streamId),
@@ -290,6 +305,7 @@ namespace Marten.Events.Projections
                 (_, view, @event) => shouldDelete(view, @event),
                 ProjectionEventType.Delete);
 
+        // Keep
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
             => projectEvent<TEvent>(
@@ -299,6 +315,7 @@ namespace Marten.Events.Projections
                 shouldDelete,
                 ProjectionEventType.Delete);
 
+        [Obsolete("Use the identity")]
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<TEvent, TId> viewIdSelector,
             Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -313,6 +330,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity")]
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<TEvent, TId> viewIdSelector,
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -327,6 +345,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity")]
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TEvent, TId> viewIdSelector,
             Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -341,6 +360,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity")]
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TEvent, TId> viewIdSelector,
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -355,6 +375,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity")]
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<TEvent, List<TId>> viewIdsSelector,
             Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -369,6 +390,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity")]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<TEvent, List<TId>> viewIdsSelector,
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -383,6 +405,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity & fanout")]
         public ViewProjection<TView, TId> DeleteEventAsync<TEvent>(
             Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector,
             Func<TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -397,6 +420,7 @@ namespace Marten.Events.Projections
                 ProjectionEventType.Delete);
         }
 
+        [Obsolete("Use the identity & fanout")]
         public ViewProjection<TView, TId> DeleteEvent<TEvent>(
             Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector,
             Func<IDocumentSession, TView, TEvent, Task<bool>> shouldDelete) where TEvent : class
@@ -410,6 +434,7 @@ namespace Marten.Events.Projections
                 shouldDelete,
                 ProjectionEventType.Delete);
         }
+
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<TView, TEvent> handler, bool onlyUpdate = false) where TEvent : class
             => projectEvent(
@@ -421,6 +446,7 @@ namespace Marten.Events.Projections
                     return Task.CompletedTask;
                 },
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
+
 
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Action<IDocumentSession, TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
@@ -434,6 +460,7 @@ namespace Marten.Events.Projections
                 },
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Action<TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -450,6 +477,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Action<IDocumentSession, TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -466,6 +494,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, TId> viewIdSelector, Action<TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -482,6 +511,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, TId> viewIdSelector, Action<IDocumentSession, TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -498,6 +528,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Action<TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -515,6 +546,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Action<IDocumentSession, TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -531,6 +563,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Action<TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -547,6 +580,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEvent<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Action<IDocumentSession, TView, TEvent> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -563,6 +597,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
             => projectEvent(
@@ -579,6 +614,7 @@ namespace Marten.Events.Projections
                 handler,
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -591,6 +627,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, TId> viewIdSelector, Func<IDocumentSession, TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -603,6 +640,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, TId> viewIdSelector, Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -615,6 +653,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, TId> viewIdSelector, Func<IDocumentSession, TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -627,6 +666,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -639,6 +679,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<IDocumentSession, TEvent, List<TId>> viewIdsSelector, Func<IDocumentSession, TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -651,6 +692,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Func<TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -663,6 +705,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         public ViewProjection<TView, TId> ProjectEventAsync<TEvent>(Func<TEvent, List<TId>> viewIdsSelector, Func<IDocumentSession, TView, TEvent, Task> handler, bool onlyUpdate = false)
             where TEvent : class
         {
@@ -675,6 +718,7 @@ namespace Marten.Events.Projections
                 type: onlyUpdate ? ProjectionEventType.UpdateOnly : ProjectionEventType.CreateAndUpdate);
         }
 
+        [Obsolete]
         private ViewProjection<TView, TId> projectEvent<TEvent>(
             Func<IDocumentSession, object, Guid, TId> viewIdSelector,
             Func<IDocumentSession, object, Guid, List<TId>> viewIdsSelector,

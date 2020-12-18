@@ -8,6 +8,8 @@ using Marten.Util;
 
 namespace Marten.Events.Projections
 {
+
+    [Obsolete("Remove in V4")]
     public class ProjectionCollection: IEnumerable<IProjection>
     {
         private readonly StoreOptions _options;

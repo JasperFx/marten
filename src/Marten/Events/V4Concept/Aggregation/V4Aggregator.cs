@@ -6,7 +6,7 @@ using Marten.Linq.SqlGeneration;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public abstract class V4Aggregator<TDoc, TId> : IAsyncProjection
+    public abstract class V4Aggregator<TDoc, TId>
     {
         // This is what would be generated.
         public abstract ValueTask<IStorageOperation> ResolveOperation(StreamFragment<TDoc, TId> fragment);

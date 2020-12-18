@@ -60,6 +60,7 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
+
             InlineProjections = new ProjectionCollection(options);
             AsyncProjections = new ProjectionCollection(options);
 
@@ -67,6 +68,8 @@ namespace Marten.Events
             _inlineProjections = new Lazy<IInlineProjection[]>(() => InlineProjections.Select(x => new TemporaryV4InlineShim(x)).OfType<IInlineProjection>().ToArray());
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
+
+            V4Projections = new V4ProjectionCollection(options);
         }
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
@@ -164,7 +167,10 @@ namespace Marten.Events
             return aggregate.AggregateType;
         }
 
+        [Obsolete("Remove in V4")]
         public ProjectionCollection InlineProjections { get; }
+
+        [Obsolete("Remove in V4")]
         public ProjectionCollection AsyncProjections { get; }
         internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
 
@@ -493,5 +499,7 @@ namespace Marten.Events
             batch = null;
             return false;
         }
+
+        public V4ProjectionCollection V4Projections { get; }
     }
 }
