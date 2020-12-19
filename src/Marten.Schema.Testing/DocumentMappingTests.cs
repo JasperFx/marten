@@ -81,6 +81,16 @@ namespace Marten.Schema.Testing
             public Guid Id { get; set; }
         }
 
+        [GinIndexed]
+        public class BaseDocumentWithAttribute
+        {
+            public int Id;
+        }
+
+        public class BaseDocumentSubClass : BaseDocumentWithAttribute
+        {
+        }
+
         [PropertySearching(PropertySearching.JSON_Locator_Only)]
         public class Organization
         {
@@ -490,10 +500,22 @@ namespace Marten.Schema.Testing
         }
 
         [Fact]
-        public void picks_up_marten_attibute_on_document_type()
+        public void picks_up_marten_attribute_on_document_type()
         {
             var mapping = DocumentMapping.For<Organization>();
             mapping.PropertySearching.ShouldBe(PropertySearching.JSON_Locator_Only);
+        }
+
+        [Fact]
+        public void picks_up_marten_ginindexed_attribute_on_document_type()
+        {
+            var mapping = DocumentMapping.For<BaseDocumentWithAttribute>();
+            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "data");
+            indexDefinition.Method.ShouldBe(IndexMethod.gin);
+
+            var mappingSub = DocumentMapping.For<BaseDocumentSubClass>();
+            indexDefinition = mappingSub.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "data");
+            indexDefinition.Method.ShouldBe(IndexMethod.gin);
         }
 
         [Fact]
