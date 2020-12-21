@@ -1,13 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Baseline.Dates;
 using Marten.Events;
-using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
 using Marten.Events.V4Concept;
-using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

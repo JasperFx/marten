@@ -33,8 +33,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Marten.CommandLine.Testing"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StorytellerRunner", "StorytellerRunner\StorytellerRunner.csproj", "{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.AsyncDaemon.Testing", "Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj", "{93E1F940-F310-430E-A98C-00669DBB8488}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -89,10 +87,6 @@ Global
 		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B921A5AB-3A70-4F12-9ABD-EA7B772DFA4D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{93E1F940-F310-430E-A98C-00669DBB8488}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{93E1F940-F310-430E-A98C-00669DBB8488}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{93E1F940-F310-430E-A98C-00669DBB8488}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{93E1F940-F310-430E-A98C-00669DBB8488}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

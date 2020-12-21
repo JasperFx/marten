@@ -120,30 +120,5 @@ namespace Marten.Testing.Events
             }
         }
 
-        //[Fact] -- so this does work, but there's a race condition that makes the test unreliable
-        public async Task async_daemon_with_string_identifiers()
-        {
-            using (var session = theStore.OpenSession())
-            {
-                session.Events.Append("First", new MembersJoined { Members = new string[] { "Bill" } }, new MembersJoined());
-                session.Events.Append("Second", new MembersJoined(), new MembersJoined(), new MembersJoined());
-                await session.SaveChangesAsync();
-            }
-
-            Thread.Sleep(100);
-
-            using (var daemon = theStore.BuildProjectionDaemon())
-            {
-                await daemon.RebuildAll();
-            }
-
-            Thread.Sleep(50);
-
-            using (var query = theStore.QuerySession())
-            {
-                SpecificationExtensions.ShouldNotBeNull(query.Load<QuestPartyWithStringIdentifier>("First"));
-                SpecificationExtensions.ShouldNotBeNull(query.Load<QuestPartyWithStringIdentifier>("Second"));
-            }
-        }
     }
 }

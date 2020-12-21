@@ -4,8 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Dates;
+using Marten.Events;
 using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
+using Marten.Events.V4Concept;
 using Marten.Storage;
 using Marten.Testing.CodeTracker;
 using Marten.Testing.Events.Projections;
@@ -122,7 +123,8 @@ namespace Marten.Testing.AsyncDaemon
             StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(ProjectStarted));
-                _.Events.AsyncProjections.Add(new ProjectCountProjection());
+
+                _.Events.V4Projections.Async(new ProjectCountProjection());
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -164,13 +166,13 @@ namespace Marten.Testing.AsyncDaemon
             StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(ProjectStarted));
-                _.Events.AsyncProjections.Add(projection);
+                _.Events.V4Projections.Async(projection);
                 _.Events.DatabaseSchemaName = "events";
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            _testHelper.PublishAllProjectEvents(theStore, false);
+            await _testHelper.PublishAllProjectEventsAsync(theStore, false);
 
             using (var daemon = theStore.BuildProjectionDaemon(
                 logger: _logger,
@@ -214,7 +216,7 @@ namespace Marten.Testing.AsyncDaemon
             StoreOptions(_ =>
             {
                 _.Events.AddEventType(typeof(ProjectStarted));
-                _.Events.AsyncProjections.Add(projection);
+                _.Events.V4Projections.Async(projection);
                 _.Events.DatabaseSchemaName = "events";
             });
 
@@ -281,7 +283,7 @@ namespace Marten.Testing.AsyncDaemon
             theSession.Query<Project>().SingleOrDefault(x=>x.Id == projectId).ShouldNotBeNull();
         }
 
-        public class ProjectCountProjection: IProjection
+        public class ProjectCountProjection: IInlineProjection
         {
             public Guid Id { get; set; }
 
@@ -291,15 +293,16 @@ namespace Marten.Testing.AsyncDaemon
             public Type Produces { get; } = typeof(ProjectCountProjection);
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
-            public void Apply(IDocumentSession session, EventPage page)
+            public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
             {
+
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
             {
                 _session = session;
 
-                var projectEvents = page.Events.OrderBy(s => s.Sequence).Select(s => s.Data).OfType<ProjectStarted>();
+                var projectEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data).OfType<ProjectStarted>();
 
                 foreach (var e in projectEvents)
                 {
@@ -307,10 +310,6 @@ namespace Marten.Testing.AsyncDaemon
                 }
 
                 return Task.CompletedTask;
-            }
-
-            public void EnsureStorageExists(ITenant tenant)
-            {
             }
 
             public int ProjectCount { get; set; }
@@ -323,20 +322,21 @@ namespace Marten.Testing.AsyncDaemon
             }
         }
 
-        public class ProjectionWithCustomProjectionKeyName: IProjection, IHasCustomEventProgressionName
+        public class ProjectionWithCustomProjectionKeyName: IInlineProjection, IHasCustomEventProgressionName
         {
             public Guid Id { get; set; }
 
             public Type[] Consumes { get; } = { typeof(ProjectStarted) };
             public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
 
-            public void Apply(IDocumentSession session, EventPage page)
+            public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
             {
+
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
             {
-                foreach (var pageEvent in page.Events)
+                foreach (var pageEvent in streams.SelectMany(x => x.Events))
                 {
                     Observed.Add(pageEvent.Sequence);
                 }
@@ -344,29 +344,22 @@ namespace Marten.Testing.AsyncDaemon
                 return Task.CompletedTask;
             }
 
-            public void EnsureStorageExists(ITenant tenant)
-            {
-            }
-
             public string Name => "Custom_projection_key_name";
 
             public List<long> Observed { get; } = new List<long>();
         }
 
-        public class OccasionalErroringProjection: IProjection
+        public class OccasionalErroringProjection: IInlineProjection
         {
             private readonly Random _random = new Random(5);
             private bool _failed;
 
-            public Type[] Consumes { get; } = new Type[] { typeof(ProjectStarted), typeof(IssueCreated), typeof(IssueClosed), typeof(Commit) };
-            public Type Produces { get; } = typeof(FakeThing);
-            public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
-
-            public void Apply(IDocumentSession session, EventPage page)
+            public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
             {
+
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
             {
                 if (!_failed && _random.Next(0, 10) == 9)
                 {
@@ -379,9 +372,6 @@ namespace Marten.Testing.AsyncDaemon
                 return Task.CompletedTask;
             }
 
-            public void EnsureStorageExists(ITenant tenant)
-            {
-            }
         }
 
         public class FakeThing

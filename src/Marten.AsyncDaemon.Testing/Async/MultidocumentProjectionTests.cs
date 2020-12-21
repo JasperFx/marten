@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
 using Marten.Events.V4Concept;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -197,11 +196,12 @@ namespace Marten.Testing.Events.Projections.Async
             // daemon stopped, now rebuild them with a new one
             var dt = DateTime.UtcNow;
 
-            using (var daemon2 = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger(), projections: theStore.Events.AsyncProjections.ToArray()))
-            {
-                await daemon2.RebuildAll(new CancellationTokenSource(10 * 1000).Token);
-                await daemon2.WaitForNonStaleResults(new CancellationTokenSource(10 * 1000).Token);
-            }
+            throw new NotImplementedException("REDO");
+            // using (var daemon2 = theStore.BuildProjectionDaemon(logger: new DebugDaemonLogger(), projections: theStore.Events.AsyncProjections.ToArray()))
+            // {
+            //     await daemon2.RebuildAll(new CancellationTokenSource(10 * 1000).Token);
+            //     await daemon2.WaitForNonStaleResults(new CancellationTokenSource(10 * 1000).Token);
+            // }
 
             using (var session = theStore.OpenSession())
             {

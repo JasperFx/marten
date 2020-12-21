@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using Marten.Events.Projections.Async;
 using Oakton;
 
 namespace Marten.CommandLine.Commands.Projection
@@ -16,28 +14,9 @@ namespace Marten.CommandLine.Commands.Projection
 
         protected override bool execute(IDocumentStore store, ProjectionInput input)
         {
-            var daemon = GetDaemon(input.Kind, (DocumentStore)store);
-            daemon.RebuildAll().Wait();
+            throw new NotImplementedException("REDO");
             return true;
         }
 
-        private IDaemon GetDaemon(ProjectionInput.ProjectionKind inputKind, DocumentStore store)
-        {
-            var logger = GetDaemonLogger();
-            switch (inputKind)
-            {
-                case ProjectionInput.ProjectionKind.async:
-                    return store.BuildProjectionDaemon(logger: logger);
-
-                case ProjectionInput.ProjectionKind.inline:
-                    return store.BuildProjectionDaemon(projections: store.Events.InlineProjections.ToArray(),
-                        logger: GetDaemonLogger());
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(inputKind), inputKind, null);
-            }
-        }
-
-        private IDaemonLogger GetDaemonLogger() => new ConsoleDaemonLogger();
     }
 }

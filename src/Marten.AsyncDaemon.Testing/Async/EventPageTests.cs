@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Marten.Events;
-using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
 using Shouldly;
 using Xunit;
