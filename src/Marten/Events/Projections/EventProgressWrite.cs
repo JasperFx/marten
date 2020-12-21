@@ -9,7 +9,7 @@ using Marten.Schema;
 using Marten.Util;
 using NpgsqlTypes;
 
-namespace Marten.Events.Projections.Async
+namespace Marten.Events.Projections
 {
     public class EventProgressWrite: IStorageOperation
     {

@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
 using Marten.Storage;
 using Marten.Testing.CodeTracker;
 using Marten.Testing.Harness;

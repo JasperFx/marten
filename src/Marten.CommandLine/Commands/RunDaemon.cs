@@ -1,5 +1,4 @@
 using System;
-using Marten.Events.Projections.Async;
 using Oakton;
 
 namespace Marten.CommandLine.Commands
@@ -9,13 +8,7 @@ namespace Marten.CommandLine.Commands
     {
         protected override bool execute(IDocumentStore store, MartenInput input)
         {
-            var daemon = store.BuildProjectionDaemon(logger: new ConsoleDaemonLogger());
-            daemon.StartAll();
-            input.WriteLine(ConsoleColor.Green, "Daemon started. Press enter to stop.");
-            Console.ReadLine();
-            daemon.StopAll();
-            input.WriteLine(ConsoleColor.DarkCyan, "Daemon stopped");
-            return true;
+            throw new NotImplementedException("REDO");
         }
     }
 }

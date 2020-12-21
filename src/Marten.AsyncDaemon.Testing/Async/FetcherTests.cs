@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Events;
-using Marten.Events.Projections.Async;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Harness;
 using NSubstitute;

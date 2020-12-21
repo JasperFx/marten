@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Events.V4Concept;
 using Marten.Exceptions;
@@ -14,10 +13,8 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Identity;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
-using IProjection = Marten.Events.Projections.IProjection;
 
 namespace Marten.Events
 {
@@ -52,12 +49,8 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-
-            InlineProjections = new ProjectionCollection(options);
-            AsyncProjections = new ProjectionCollection(options);
-
             // TODO -- this will change when we switch all the way over to the new V4 model
-            _inlineProjections = new Lazy<IInlineProjection[]>(() => InlineProjections.Select(x => new TemporaryV4InlineShim(x)).OfType<IInlineProjection>().ToArray());
+            _inlineProjections = new Lazy<IInlineProjection[]>(() => throw new NotImplementedException("REDO"));
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
 
@@ -126,22 +119,12 @@ namespace Marten.Events
             return null;
         }
 
-        [Obsolete("Remove in V4")]
-        public ProjectionCollection InlineProjections { get; }
-
-        [Obsolete("Remove in V4")]
-        public ProjectionCollection AsyncProjections { get; }
         internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
 
         public string AggregateAliasFor(Type aggregateType)
         {
             // TODO -- redo!
             return null;
-        }
-
-        public IProjection ProjectionFor(Type viewType)
-        {
-            return AsyncProjections.ForView(viewType) ?? InlineProjections.ForView(viewType);
         }
 
         IEnumerable<Type> IFeatureSchema.DependentTypes()

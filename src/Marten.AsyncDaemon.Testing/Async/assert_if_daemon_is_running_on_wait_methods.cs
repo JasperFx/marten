@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Marten.Events.Projections.Async;
 using Marten.Testing.CodeTracker;
 using Marten.Testing.Harness;
 using Xunit;

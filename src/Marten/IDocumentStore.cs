@@ -2,12 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events;
-using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Storage;
 using Marten.Transforms;
 using IsolationLevel = System.Data.IsolationLevel;
 
@@ -197,7 +193,5 @@ namespace Marten
         /// </summary>
         IDocumentTransforms Transform { get; }
 
-        [Obsolete("This will be removed in V4 with a new async daemon replacement yet to be determined and now I'm embarrassed at the lack of detail")]
-        IDaemon BuildProjectionDaemon(Type[] viewTypes = null, IDaemonLogger logger = null, DaemonSettings settings = null, IProjection[] projections = null);
     }
 }

@@ -1,10 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Projections;
-using Marten.Events.Projections.Async;
-using Marten.Services;
+using Marten.Events;
+using Marten.Events.V4Concept;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -23,7 +23,8 @@ namespace Marten.Testing.Events
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = tenancyStyle;
-                _.Events.InlineProjections.Add(new QuestPatchTestProjection());
+
+                _.Events.V4Projections.Inline(new QuestPatchTestProjection());
             });
 
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
@@ -45,15 +46,15 @@ namespace Marten.Testing.Events
             theSession.Events.FetchStreamState(aggregateId).Version.ShouldBe(2);
         }
 
-        public class QuestPatchTestProjection: IProjection
+        public class QuestPatchTestProjection: IInlineProjection
         {
             public Guid Id { get; set; }
 
             public string Name { get; set; }
 
-            public void Apply(IDocumentSession session, EventPage page)
+            public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
             {
-                var questEvents = page.Events.OrderBy(s => s.Sequence).Select(s => s.Data);
+                var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
 
                 foreach (var @event in questEvents)
                 {
@@ -68,21 +69,10 @@ namespace Marten.Testing.Events
                 }
             }
 
-            public Task ApplyAsync(IDocumentSession session, EventPage page, CancellationToken token)
+            public Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
             {
                 return Task.CompletedTask;
             }
-
-            public void EnsureStorageExists(ITenant tenant)
-            {
-                tenant.EnsureStorageExists(typeof(QuestPatchTestProjection));
-            }
-
-            public Type[] Consumes { get; } = new Type[] { typeof(Quest), typeof(QuestStarted) };
-
-            public Type Produces { get; } = typeof(QuestPatchTestProjection);
-
-            public AsyncOptions AsyncOptions { get; } = new AsyncOptions();
         }
 
         public appending_events_and_storing(DefaultStoreFixture fixture) : base(fixture)

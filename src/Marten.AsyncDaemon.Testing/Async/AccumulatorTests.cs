@@ -1,5 +1,4 @@
 using Marten.Events;
-using Marten.Events.Projections.Async;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

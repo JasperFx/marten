@@ -1,7 +1,5 @@
 using System;
-using System.Reflection;
 using LamarCodeGeneration.Frames;
-using Marten.Events.Projections.Async;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
