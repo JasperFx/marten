@@ -1,6 +1,6 @@
 using Baseline;
 using Marten.Events;
-using Marten.Events.Projections.Async;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
