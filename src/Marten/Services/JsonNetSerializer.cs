@@ -1,10 +1,12 @@
 using System;
 using System.Buffers;
 using System.IO;
+using System.Text;
 using Baseline;
 using Marten.Services.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using StreamExtensions = Marten.Util.StreamExtensions;
 
 namespace Marten.Services
 {
@@ -68,7 +70,6 @@ namespace Marten.Services
                 AutoCompleteOnClose = false
             };
 
-
             _serializer.Serialize(jsonWriter, document);
 
             jsonWriter.Flush();
@@ -87,21 +88,10 @@ namespace Marten.Services
 
         public T FromJson<T>(Stream stream)
         {
-            using var jsonReader = new JsonTextReader(new StreamReader(stream))
+            using var jsonReader = new JsonTextReader(StreamExtensions.GetStreamReader(stream))
             {
                 ArrayPool = _jsonArrayPool,
-                CloseInput = false
-            };
-
-            return _serializer.Deserialize<T>(jsonReader);
-        }
-
-        public T FromJson<T>(TextReader reader)
-        {
-            using var jsonReader = new JsonTextReader(reader)
-            {
-                ArrayPool = _jsonArrayPool,
-                CloseInput = false
+                CloseInput = false,
             };
 
             return _serializer.Deserialize<T>(jsonReader);
@@ -109,7 +99,7 @@ namespace Marten.Services
 
         public object FromJson(Type type, Stream stream)
         {
-            using var jsonReader = new JsonTextReader(new StreamReader(stream))
+            using var jsonReader = new JsonTextReader(StreamExtensions.GetStreamReader(stream))
             {
                 ArrayPool = _jsonArrayPool,
                 CloseInput = false

@@ -33,19 +33,16 @@ namespace Marten.Testing.CoreFunctionality
 
             theSession.SaveChanges();
 
-            using (var runner = theStore.Tenancy.Default.OpenConnection())
-            {
-                var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
+            using var runner = theStore.Tenancy.Default.OpenConnection();
+            var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
 
+            json.ShouldNotBeNull();
 
-                json.ShouldNotBeNull();
+            var loadedUser = new JsonNetSerializer().FromJson<User>(Marten.Util.StreamExtensions.GetMemoryStreamFromString(json));
 
-                var loadedUser = new JsonNetSerializer().FromJson<User>(new StringReader(json));
-
-                user.ShouldNotBeSameAs(loadedUser);
-                loadedUser.FirstName.ShouldBe(user.FirstName);
-                loadedUser.LastName.ShouldBe(user.LastName);
-            }
+            user.ShouldNotBeSameAs(loadedUser);
+            loadedUser.FirstName.ShouldBe(user.FirstName);
+            loadedUser.LastName.ShouldBe(user.LastName);
         }
 
         [Theory]

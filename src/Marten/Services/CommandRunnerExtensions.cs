@@ -29,7 +29,7 @@ namespace Marten.Services
             cmd.CommandText = string.Concat($"explain ({config} format json) ", cmd.CommandText);
             using (var reader = runner.ExecuteReader(cmd))
             {
-                var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetTextReader(0)) : null;
+                var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetStream(0)) : null;
                 var planToReturn = queryPlans?[0].Plan;
                 if (planToReturn != null)
                 {

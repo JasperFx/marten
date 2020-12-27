@@ -72,7 +72,6 @@ namespace Marten.Testing.Bugs
         {
             theStore.Advanced.Clean.DeleteAllDocuments();
 
-
             var customer1 = new Customer{LastName = "Sir Mixalot"};
             var customer2 = new Customer{LastName = "Sir Gawain"};
             var customer3 = new Customer{LastName = "Ser Jaime"};
