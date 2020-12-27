@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Baseline;
+using Marten.Util;
 
 namespace Marten.Services
 {
@@ -46,14 +47,14 @@ namespace Marten.Services
 
         public T FromJson<T>(Stream stream)
         {
-            var reader = new Utf8JsonReader();
-            return JsonSerializer.Deserialize<T>(ref reader);
+            var str = stream.GetStreamReader().ReadToEnd();
+            return JsonSerializer.Deserialize<T>(str, _options);
         }
 
         public object FromJson(Type type, Stream stream)
         {
-            var reader = new Utf8JsonReader();
-            return JsonSerializer.Deserialize(ref reader, type, _options);
+            var str = stream.GetStreamReader().ReadToEnd();
+            return JsonSerializer.Deserialize(str, type, _options);
         }
 
         public string ToCleanJson(object document)
