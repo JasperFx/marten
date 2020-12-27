@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Util;
 
@@ -51,10 +52,20 @@ namespace Marten.Services
             return JsonSerializer.Deserialize<T>(str, _options);
         }
 
+        public async Task<T> FromJsonAsync<T>(Stream stream)
+        {
+            return await JsonSerializer.DeserializeAsync<T>(stream, _options);
+        }
+
         public object FromJson(Type type, Stream stream)
         {
             var str = stream.GetStreamReader().ReadToEnd();
             return JsonSerializer.Deserialize(str, type, _options);
+        }
+
+        public async Task<object> FromJsonAsync(Type type, Stream stream)
+        {
+            return await JsonSerializer.DeserializeAsync(stream, type, _options);
         }
 
         public string ToCleanJson(object document)

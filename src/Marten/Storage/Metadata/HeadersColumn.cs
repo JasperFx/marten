@@ -33,7 +33,7 @@ namespace Marten.Storage.Metadata
             }
 
             var json = reader.GetStream(index);
-            metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(json);
+            metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(json);
         }
 
         public override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,

@@ -19,10 +19,10 @@ namespace Marten.Linq.Selectors
             return _serializer.FromJson<T>(json);
         }
 
-        public Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
+        public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            var doc = Resolve(reader);
-            return Task.FromResult(doc);
+            using var json = reader.GetStream(0);
+            return await _serializer.FromJsonAsync<T>(json);
         }
     }
 }

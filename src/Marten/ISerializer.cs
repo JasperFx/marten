@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Marten
 {
@@ -23,10 +24,22 @@ namespace Marten
         /// </summary>
         T FromJson<T>(Stream stream);
 
+
+        /// <summary>
+        /// Deserialize a JSON string into an object of type T
+        /// </summary>
+        Task<T> FromJsonAsync<T>(Stream stream);
+
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
         /// </summary>
         object FromJson(Type type, Stream stream);
+
+
+        /// <summary>
+        /// Deserialize a JSON string into the supplied Type
+        /// </summary>
+        Task<object> FromJsonAsync(Type type, Stream stream);
 
         /// <summary>
         /// Serialize a document without any extra

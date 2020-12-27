@@ -165,12 +165,12 @@ namespace Marten.Events
                 return _serializer.FromJson<TEvent>(json);
             }
 
-            public Task<TEvent> ResolveAsync(DbDataReader reader, CancellationToken token)
+            public async Task<TEvent> ResolveAsync(DbDataReader reader, CancellationToken token)
             {
                 using var json = reader.GetStream(0);
-                var doc = _serializer.FromJson<TEvent>(json);
+                var doc = await _serializer.FromJsonAsync<TEvent>(json);
 
-                return Task.FromResult(doc);
+                return doc;
             }
         }
 

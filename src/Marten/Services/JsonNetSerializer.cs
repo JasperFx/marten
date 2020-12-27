@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Services.Json;
 using Newtonsoft.Json;
@@ -97,6 +98,11 @@ namespace Marten.Services
             return _serializer.Deserialize<T>(jsonReader);
         }
 
+        public Task<T> FromJsonAsync<T>(Stream stream)
+        {
+            return Task.FromResult(FromJson<T>(stream));
+        }
+
         public object FromJson(Type type, Stream stream)
         {
             using var jsonReader = new JsonTextReader(StreamExtensions.GetStreamReader(stream))
@@ -106,6 +112,11 @@ namespace Marten.Services
             };
 
             return _serializer.Deserialize(jsonReader, type);
+        }
+
+        public Task<object> FromJsonAsync(Type type, Stream stream)
+        {
+            return Task.FromResult(FromJson(type, stream));
         }
 
         public string ToCleanJson(object document)

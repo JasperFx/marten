@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Jil;
 using Marten.Services;
 
@@ -28,9 +29,19 @@ namespace Marten.Testing
             return JSON.Deserialize<T>(new StreamReader(stream), _options);
         }
 
+        public Task<T> FromJsonAsync<T>(Stream stream)
+        {
+            return Task.FromResult(FromJson<T>(stream));
+        }
+
         public object FromJson(Type type, Stream stream)
         {
             return JSON.Deserialize(new StreamReader(stream), type, _options);
+        }
+
+        public Task<object> FromJsonAsync(Type type, Stream stream)
+        {
+            return Task.FromResult(FromJson(type, stream));
         }
 
         public string ToCleanJson(object document)

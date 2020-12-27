@@ -215,7 +215,17 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
+            public Task<T> FromJsonAsync<T>(Stream stream)
+            {
+                throw new NotImplementedException();
+            }
+
             public object FromJson(Type type, Stream stream)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<object> FromJsonAsync(Type type, Stream stream)
             {
                 throw new NotImplementedException();
             }
