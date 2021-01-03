@@ -13,28 +13,18 @@ namespace Marten.Testing.Events.Projections
     public interface IMonstersView
     {
         Guid Id { get; }
-        string[] Monsters { get; }
+        List<string> Monsters { get; }
     }
 
     public class QuestMonsters
     {
         public Guid Id { get; set; }
 
-        private readonly IList<string> _monsters = new List<string>();
+        public List<string> Monsters { get; set; } = new();
 
         public void Apply(MonsterSlayed slayed)
         {
-            _monsters.Fill(slayed.Name);
-        }
-
-        public string[] Monsters
-        {
-            get { return _monsters.ToArray(); }
-            set
-            {
-                _monsters.Clear();
-                _monsters.AddRange(value);
-            }
+            Monsters.Fill(slayed.Name);
         }
     }
 
@@ -42,21 +32,11 @@ namespace Marten.Testing.Events.Projections
     {
         public Guid Id { get; private set; }
 
-        private readonly IList<string> _monsters = new List<string>();
+        public List<string> Monsters { get; set; } = new();
 
         public void Apply(MonsterSlayed slayed)
         {
-            _monsters.Fill(slayed.Name);
-        }
-
-        public string[] Monsters
-        {
-            get { return _monsters.ToArray(); }
-            set
-            {
-                _monsters.Clear();
-                _monsters.AddRange(value);
-            }
+            Monsters.Fill(slayed.Name);
         }
     }
 
@@ -64,41 +44,21 @@ namespace Marten.Testing.Events.Projections
     {
         public Guid Id { get; protected set; }
 
-        private readonly IList<string> _monsters = new List<string>();
+        public List<string> Monsters { get; set; } = new();
 
         public void Apply(MonsterSlayed slayed)
         {
-            _monsters.Fill(slayed.Name);
-        }
-
-        public string[] Monsters
-        {
-            get { return _monsters.ToArray(); }
-            set
-            {
-                _monsters.Clear();
-                _monsters.AddRange(value);
-            }
+            Monsters.Fill(slayed.Name);
         }
     }
 
     public class QuestMonstersWithBaseClass: Root, IMonstersView
     {
-        private readonly IList<string> _monsters = new List<string>();
+        public List<string> Monsters { get; set; } = new();
 
         public void Apply(MonsterSlayed slayed)
         {
-            _monsters.Fill(slayed.Name);
-        }
-
-        public string[] Monsters
-        {
-            get { return _monsters.ToArray(); }
-            set
-            {
-                _monsters.Clear();
-                _monsters.AddRange(value);
-            }
+            Monsters.Fill(slayed.Name);
         }
     }
 
@@ -106,21 +66,11 @@ namespace Marten.Testing.Events.Projections
     {
         public new Guid Id { get; set; }
 
-        private readonly IList<string> _monsters = new List<string>();
+        public List<string> Monsters { get; set; } = new();
 
         public void Apply(MonsterSlayed slayed)
         {
-            _monsters.Fill(slayed.Name);
-        }
-
-        public string[] Monsters
-        {
-            get { return _monsters.ToArray(); }
-            set
-            {
-                _monsters.Clear();
-                _monsters.AddRange(value);
-            }
+            Monsters.Fill(slayed.Name);
         }
     }
 
@@ -128,21 +78,11 @@ namespace Marten.Testing.Events.Projections
     {
         public new Guid Id { get; set; }
 
-        private readonly IList<string> _monsters = new List<string>();
+        public List<string> Monsters { get; set; } = new();
 
         public void Apply(MonsterSlayed slayed)
         {
-            _monsters.Fill(slayed.Name);
-        }
-
-        public string[] Monsters
-        {
-            get { return _monsters.ToArray(); }
-            set
-            {
-                _monsters.Clear();
-                _monsters.AddRange(value);
-            }
+            Monsters.Fill(slayed.Name);
         }
     }
 
@@ -150,13 +90,11 @@ namespace Marten.Testing.Events.Projections
     {
         public Guid Id { get; private set; }
 
-        public IList<string> Monsters { get; private set; }
-
-        string[] IMonstersView.Monsters => Monsters.ToArray();
+        public List<string> Monsters { get; set; } = new();
 
         public QuestMonstersWithNonDefaultPublicConstructor(
             Guid id,
-            string[] monsters
+            List<string> monsters
         )
         {
             Id = id;
@@ -165,9 +103,6 @@ namespace Marten.Testing.Events.Projections
 
         public void Apply(MonsterSlayed slayed)
         {
-            if (Monsters == null)
-                Monsters = new List<string>();
-
             Monsters.Fill(slayed.Name);
         }
     }
@@ -176,13 +111,11 @@ namespace Marten.Testing.Events.Projections
     {
         public Guid Id { get; private set; }
 
-        public IList<string> Monsters { get; private set; } = new List<string>();
-
-        string[] IMonstersView.Monsters => Monsters.ToArray();
+        public List<string> Monsters { get; set; } = new();
 
         public QuestMonstersWithDefaultPrivateConstructorAndNonDefaultPublicConstructor(
             Guid id,
-            string[] monsters
+            List<string> monsters
         )
         {
             Id = id;

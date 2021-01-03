@@ -8,31 +8,18 @@ namespace Marten.Testing.Events.Projections
     // SAMPLE: QuestParty
     public class QuestParty
     {
-        protected readonly IList<string> _members = new List<string>();
-
-        public string[] Members
-        {
-            get
-            {
-                return _members.ToArray();
-            }
-            set
-            {
-                _members.Clear();
-                _members.AddRange(value);
-            }
-        }
+        public List<string> Members { get; set; } = new();
 
         public IList<string> Slayed { get; } = new List<string>();
 
         public void Apply(MembersJoined joined)
         {
-            _members.Fill(joined.Members);
+            Members.Fill(joined.Members);
         }
 
         public void Apply(MembersDeparted departed)
         {
-            _members.RemoveAll(x => departed.Members.Contains(x));
+            Members.RemoveAll(x => departed.Members.Contains(x));
         }
 
         public void Apply(QuestStarted started)
@@ -72,7 +59,7 @@ namespace Marten.Testing.Events.Projections
                 throw new NullReferenceException("Can't escape w/o an Ex Machina");
             }
 
-            _members.RemoveAll(x => escaped.Members.Contains(x));
+            Members.RemoveAll(x => escaped.Members.Contains(x));
         }
     }
 
