@@ -17,10 +17,6 @@ namespace Marten.Internal.CodeGeneration
             _inner = inner;
         }
 
-
-
-
-
         public void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
         {
             _inner.Load(tenant, serializer, conn, documents.OfType<TRoot>());

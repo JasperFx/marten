@@ -33,6 +33,7 @@ namespace Marten.Services
         {
             configure(_clean);
             configure(_options);
+            configure(_withTypes);
         }
 
         public void ToJson(object document, Stream stream)
@@ -86,22 +87,23 @@ namespace Marten.Services
             {
                 _enumStorage = value;
 
-                if (value == EnumStorage.AsString)
-                {
-                    JsonNamingPolicy jsonNamingPolicy = null;
-                    if (_casing == Casing.CamelCase)
-                    {
-                        jsonNamingPolicy = JsonNamingPolicy.CamelCase;
-                    }
+                var jsonNamingPolicy = _casing == Casing.CamelCase ?
+                    JsonNamingPolicy.CamelCase : null;
 
+                _options.PropertyNamingPolicy
+                    = _clean.PropertyNamingPolicy
+                        = _withTypes.PropertyNamingPolicy = jsonNamingPolicy;
+
+                _options.Converters.RemoveAll(x => x is JsonStringEnumConverter);
+                _clean.Converters.RemoveAll(x => x is JsonStringEnumConverter);
+                _withTypes.Converters.RemoveAll(x => x is JsonStringEnumConverter);
+
+                if (_enumStorage != EnumStorage.AsString)
+                {
                     var converter = new JsonStringEnumConverter(jsonNamingPolicy);
                     _options.Converters.Add(converter);
                     _clean.Converters.Add(converter);
-                }
-                else
-                {
-                    _options.Converters.RemoveAll(x => x is JsonStringEnumConverter);
-                    _clean.Converters.RemoveAll(x => x is JsonStringEnumConverter);
+                    _withTypes.Converters.Add(converter);
                 }
             }
         }
@@ -112,6 +114,12 @@ namespace Marten.Services
             get => _casing;
             set
             {
+                if (Casing != Casing.Default && Casing != Casing.CamelCase)
+                {
+                    throw new NotImplementedException(
+                        "System.Text.JSON does not support other casing than PascalCase or camelCase.");
+                }
+
                 _casing = value;
                 // ensure we refresh
                 EnumStorage = _enumStorage;
