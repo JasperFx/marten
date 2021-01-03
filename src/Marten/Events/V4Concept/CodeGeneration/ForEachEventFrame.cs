@@ -16,7 +16,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             Event = new Variable(typeof(IEvent), "@event");
         }
 
-        public string EventIteration { get; set; } = "stream.Events";
+        public string EventIteration { get; set; } = "slice.Events";
 
         public Variable Event { get; }
 

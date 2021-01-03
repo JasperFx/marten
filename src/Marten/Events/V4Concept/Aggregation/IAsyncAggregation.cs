@@ -11,58 +11,54 @@ namespace Marten.Events.V4Concept.Aggregation
 {
     public interface IAsyncAggregation<TDoc, TId>
     {
-        // TODO -- generate this a lot like the equivalent in the inline operation
 
+        public Task<IStorageOperation> DetermineOperation(IMartenSession session, EventSlice<TDoc, TId> slice, CancellationToken cancellation);
 
-        IReadOnlyList<StreamFragment<TDoc, TId>> Split(IEnumerable<IEvent> events, ITenancy storeTenancy);
-
-        public Task<IStorageOperation> DetermineOperation(IMartenSession session, StreamFragment<TDoc, TId> fragment, CancellationToken cancellation);
-
-        public bool WillDelete(StreamFragment<TDoc, TId> fragment);
+        public bool WillDelete(EventSlice<TDoc, TId> slice);
+        IEventSlicer<TDoc, TId> Slicer { get; }
     }
 
     public abstract class AsyncDaemonAggregationBase<TDoc, TId> : IAsyncAggregation<TDoc, TId>
     {
+        public IEventSlicer<TDoc, TId> Slicer { get; }
         private readonly IAggregateProjection _projection;
 
-        public AsyncDaemonAggregationBase(IAggregateProjection projection)
+        public AsyncDaemonAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer)
         {
+            Slicer = slicer;
             _projection = projection;
         }
 
-        public bool WillDelete(StreamFragment<TDoc, TId> fragment)
+        public bool WillDelete(EventSlice<TDoc, TId> slice)
         {
-            return _projection.MatchesAnyDeleteType(fragment);
+            return _projection.MatchesAnyDeleteType(slice);
         }
 
-        public abstract IReadOnlyList<StreamFragment<TDoc, TId>> Split(IEnumerable<IEvent> events,
-            ITenancy storeTenancy);
-        public abstract Task<IStorageOperation> DetermineOperation(IMartenSession session, StreamFragment<TDoc, TId> fragment, CancellationToken cancellation);
+        public abstract Task<IStorageOperation> DetermineOperation(IMartenSession session, EventSlice<TDoc, TId> slice, CancellationToken cancellation);
     }
 
     public abstract class SyncDaemonAggregationBase<TDoc, TId> : IAsyncAggregation<TDoc, TId>
     {
+        public IEventSlicer<TDoc, TId> Slicer { get; set; }
         private readonly IAggregateProjection _projection;
 
-        public SyncDaemonAggregationBase(IAggregateProjection projection)
+        public SyncDaemonAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer)
         {
+            Slicer = slicer;
             _projection = projection;
         }
 
-        public bool WillDelete(StreamFragment<TDoc, TId> fragment)
+        public bool WillDelete(EventSlice<TDoc, TId> slice)
         {
-            return _projection.MatchesAnyDeleteType(fragment);
+            return _projection.MatchesAnyDeleteType(slice);
         }
 
-        public abstract IReadOnlyList<StreamFragment<TDoc, TId>> Split(IEnumerable<IEvent> events,
-            ITenancy storeTenancy);
-
-        public Task<IStorageOperation> DetermineOperation(IMartenSession session, StreamFragment<TDoc, TId> fragment,
+        public Task<IStorageOperation> DetermineOperation(IMartenSession session, EventSlice<TDoc, TId> slice,
             CancellationToken cancellation)
         {
-            return Task.FromResult(DetermineOperationSync(session, fragment));
+            return Task.FromResult(DetermineOperationSync(session, slice));
         }
 
-        public abstract IStorageOperation DetermineOperationSync(IMartenSession session, StreamFragment<TDoc,TId> fragment);
+        public abstract IStorageOperation DetermineOperationSync(IMartenSession session, EventSlice<TDoc,TId> slice);
     }
 }

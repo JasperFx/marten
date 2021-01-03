@@ -369,7 +369,7 @@ namespace Marten.Testing.Events.V4Concepts
                     session.Events.StartStream(StreamId, events);
                     session.SaveChanges();
 
-                    var stream = StreamAction.Append(StreamId);
+                    var stream = StreamAction.Append(Store.Events, StreamId);
                     stream.Version = 4;
                     stream.TenantId = TenantId;
 
@@ -380,7 +380,7 @@ namespace Marten.Testing.Events.V4Concepts
                     session.Events.StartStream(StreamId.ToString(), events);
                     session.SaveChanges();
 
-                    var stream = StreamAction.Start(StreamId.ToString(), new AEvent());
+                    var stream = StreamAction.Start(Store.Events, StreamId.ToString(), new AEvent());
                     stream.Version = 4;
                     stream.TenantId = TenantId;
 
@@ -391,7 +391,7 @@ namespace Marten.Testing.Events.V4Concepts
             public StreamAction CreateNewStream()
             {
                 var events = new IEvent[] {new Event<AEvent>(new AEvent())};
-                var stream = Store.Events.StreamIdentity == StreamIdentity.AsGuid ? StreamAction.Start(Guid.NewGuid(), events) : StreamAction.Start(Guid.NewGuid().ToString(), events, true);
+                var stream = Store.Events.StreamIdentity == StreamIdentity.AsGuid ? StreamAction.Start(Guid.NewGuid(), events) : StreamAction.Start(Guid.NewGuid().ToString(), events);
 
                 stream.TenantId = TenantId;
                 stream.Version = 1;
@@ -419,14 +419,14 @@ namespace Marten.Testing.Events.V4Concepts
             {
                 if (Store.Events.StreamIdentity == StreamIdentity.AsGuid)
                 {
-                    var stream = StreamAction.Start(StreamId, new AEvent());
+                    var stream = StreamAction.Start(Store.Events, StreamId, new AEvent());
                     stream.TenantId = TenantId;
 
                     return stream;
                 }
                 else
                 {
-                    var stream = StreamAction.Start(StreamId.ToString(), new AEvent());
+                    var stream = StreamAction.Start(Store.Events, StreamId.ToString(), new AEvent());
                     stream.TenantId = TenantId;
 
                     return stream;

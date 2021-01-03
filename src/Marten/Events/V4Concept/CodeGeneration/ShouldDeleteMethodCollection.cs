@@ -17,7 +17,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot)
         {
-            return new MaybeDeleteFrame(ProjectionType, aggregateType, aggregateMapping.IdType, slot);
+            return new MaybeDeleteFrame(aggregateType, aggregateMapping.IdType, slot);
         }
     }
 }

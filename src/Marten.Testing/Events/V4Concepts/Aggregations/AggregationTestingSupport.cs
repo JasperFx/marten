@@ -10,12 +10,12 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 {
     public class TestEventScenario
     {
-        public readonly Cache<Guid, TestStreamFragment> Streams = new Cache<Guid, TestStreamFragment>(id => new TestStreamFragment(id));
+        public readonly Cache<Guid, TestEventSlice> Streams = new Cache<Guid, TestEventSlice>(id => new TestEventSlice(id));
     }
 
-    public class TestStreamFragment: StreamFragment<MyAggregate, Guid>
+    public class TestEventSlice: EventSlice<MyAggregate, Guid>
     {
-        public TestStreamFragment(Guid id) : base(id, Substitute.For<ITenant>())
+        public TestEventSlice(Guid id) : base(id, Substitute.For<ITenant>())
         {
         }
 
@@ -34,7 +34,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         public Event<T> Add<T>() where T : new()
         {
             var @event = new Event<T>(new T());
-            Events.Add(@event);
+            AddEvent(@event);
 
             return @event;
         }
@@ -42,7 +42,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         public IEvent Add<T>(T @event)
         {
             var item = new Event<T>(@event);
-            Events.Add(item);
+            AddEvent(item);
 
             return item;
         }

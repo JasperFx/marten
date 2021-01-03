@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
@@ -79,6 +80,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 
             UsingDefinition<AsyncEverything>();
 
+            _output.WriteLine(_projection.SourceCode());
 
             var aggregate = await LiveAggregation(x =>
             {
@@ -207,7 +209,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         public Guid UserId { get; set; }
     }
 
-    public class UsingMetadata : V4AggregateProjection<MyAggregate>
+    public class UsingMetadata : AggregateProjection<MyAggregate>
     {
         public MyAggregate Create(Event<CreateEvent> @event)
         {
@@ -228,7 +230,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         }
     }
 
-    public class AsyncEverything: V4AggregateProjection<MyAggregate>
+    public class AsyncEverything: AggregateProjection<MyAggregate>
     {
         public async Task<MyAggregate> Create(UserStarted @event, IQuerySession session, CancellationToken cancellation)
         {
@@ -253,7 +255,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 
     }
 
-    public class AsyncCreateSyncApply: V4AggregateProjection<MyAggregate>
+    public class AsyncCreateSyncApply: AggregateProjection<MyAggregate>
     {
         public async Task<MyAggregate> Create(UserStarted @event, IQuerySession session, CancellationToken cancellation)
         {
@@ -286,7 +288,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 
     }
 
-    public class SyncCreateAsyncApply: V4AggregateProjection<MyAggregate>
+    public class SyncCreateAsyncApply: AggregateProjection<MyAggregate>
     {
         public MyAggregate Create(CreateEvent @event)
         {
@@ -327,7 +329,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
     }
 
 
-    public class AllSync: V4AggregateProjection<MyAggregate>
+    public class AllSync: AggregateProjection<MyAggregate>
     {
         public MyAggregate Create(CreateEvent @event)
         {

@@ -2,15 +2,22 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
+using Marten.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
     public abstract class InlineAggregationBase<TDoc, TId>: IInlineProjection
     {
-        public InlineAggregationBase(IAggregateProjection projection)
+        private readonly IEventSlicer<TDoc, TId> _slicer;
+        private readonly ITenancy _tenancy;
+
+        public InlineAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer, ITenancy tenancy)
         {
+            _slicer = slicer;
+            _tenancy = tenancy;
             ProjectionName = projection.ProjectionName;
             Projection = projection;
+
         }
 
         public IAggregateProjection Projection { get; }
@@ -25,13 +32,16 @@ namespace Marten.Events.V4Concept.Aggregation
         public async Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams,
             CancellationToken cancellation)
         {
-            foreach (var stream in streams)
+            var slices = _slicer.Slice(streams, _tenancy);
+
+            foreach (var slice in slices)
             {
-                var operation = await DetermineOperation(session, stream, cancellation);
+                var operation = await DetermineOperation(session, slice, cancellation);
                 session.QueueOperation(operation);
             }
         }
 
-        public abstract Task<IStorageOperation> DetermineOperation(IDocumentSession session, StreamAction stream, CancellationToken cancellation);
+        public abstract Task<IStorageOperation> DetermineOperation(IDocumentSession session,
+            EventSlice<TDoc, TId> slice, CancellationToken cancellation);
     }
 }

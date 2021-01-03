@@ -14,14 +14,17 @@ namespace Marten.Events.V4Concept.CodeGeneration
         private readonly Type _idType;
         private readonly CallCreateAggregateFrame _create;
         private readonly MethodCall _loadMethod;
-        private Variable _stream;
+        private Variable _slice;
+        private readonly Type _sliceType;
 
         public InitializeLiveAggregateFrame(Type aggregateType, Type idType, CallCreateAggregateFrame create) : base(true)
         {
             _aggregateType = aggregateType;
             _idType = idType;
             _create = create;
-            _create.FirstEventExpression = "stream.Events.First()";
+            _create.FirstEventExpression = "slice.Events.First()";
+
+            _sliceType = typeof(EventSlice<,>).MakeGenericType(aggregateType, idType);
 
             Aggregate = new Variable(aggregateType, this);
 
@@ -40,7 +43,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         {
             yield return Aggregate;
 
-            _stream = chain.FindVariable(typeof(StreamAction));
+            _slice = chain.FindVariable(_sliceType);
 
             foreach (var variable in _create.FindVariables(chain))
             {
@@ -56,7 +59,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
         {
             writer.WriteLine($"{_aggregateType.FullNameInCode()} {Aggregate.Usage} = default({_aggregateType.FullNameInCode()});");
-            writer.Write($"BLOCK:if ({_stream.Usage}.{nameof(StreamAction.ActionType)} == {Constant.ForEnum(StreamActionType.Start).Usage})");
+            writer.Write($"BLOCK:if ({_slice.Usage}.{nameof(StreamAction.ActionType)} == {Constant.ForEnum(StreamActionType.Start).Usage})");
 
             _create.Action = CreateAggregateAction.Assign;
             _create.GenerateCode(method, writer);

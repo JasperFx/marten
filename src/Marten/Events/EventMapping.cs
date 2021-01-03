@@ -42,7 +42,11 @@ namespace Marten.Events
             IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
 
             _inner = new DocumentMapping(eventType, parent.Options);
+
+            DotNetTypeName = $"{eventType.FullName}, {eventType.Assembly.GetName().Name}";
         }
+
+        public string DotNetTypeName { get; set; }
 
         public IDocumentMapping Root => this;
         public Type DocumentType { get; }
@@ -260,7 +264,11 @@ namespace Marten.Events
 
         public override IEvent Wrap(object data)
         {
-            return new Event<T>((T) data);
+            return new Event<T>((T) data)
+            {
+                EventTypeName = EventTypeName,
+                DotNetTypeName = DotNetTypeName
+            };
         }
     }
 }

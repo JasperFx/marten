@@ -14,6 +14,8 @@ namespace Marten.Events.V4Concept.CodeGeneration
         NullCoalesce // TODO -- this should be in Lamar itself
     }
 
+
+
     // TODO -- LamarCodeGeneration needs a "call generated method" Frame
     internal class CallCreateAggregateFrame: Frame
     {
@@ -30,9 +32,15 @@ namespace Marten.Events.V4Concept.CodeGeneration
             Aggregate = aggregate;
         }
 
+        public void CoalesceAssignTo(Variable aggregate)
+        {
+            Aggregate = aggregate;
+            Action = CreateAggregateAction.NullCoalesce;
+        }
+
         public CreateAggregateAction Action { get; set; } = CreateAggregateAction.Initialize;
 
-        public Variable Aggregate { get;  }
+        public Variable Aggregate { get; private set; }
 
         public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
         {

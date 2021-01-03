@@ -30,6 +30,11 @@ namespace Marten.Events
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
         private readonly Cache<Type, EventMapping> _events = new Cache<Type, EventMapping>();
 
+        private readonly Cache<string, Type> _aggregateTypeByName;
+
+        private readonly Cache<Type, string> _aggregateNameByType =
+            new Cache<Type, string>(type => type.Name.ToTableAlias());
+
         private string _databaseSchemaName;
 
         private readonly Lazy<IInlineProjection[]> _inlineProjections;
@@ -49,12 +54,24 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-            // TODO -- this will change when we switch all the way over to the new V4 model
-            _inlineProjections = new Lazy<IInlineProjection[]>(() => throw new NotImplementedException("REDO"));
+            _inlineProjections = new Lazy<IInlineProjection[]>(() => Projections.BuildInlineProjections());
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
 
-            V4Projections = new V4ProjectionCollection(options);
+            Projections = new ProjectionCollection(options);
+
+            _aggregateTypeByName = new Cache<string, Type>(name => findAggregateType(name));
+        }
+
+        private Type findAggregateType(string name)
+        {
+            foreach (var aggregateType in Projections.AllAggregateTypes())
+            {
+                var possibleName = _aggregateNameByType[aggregateType];
+                if (name.EqualsIgnoreCase(possibleName)) return aggregateType;
+            }
+
+            return null;
         }
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
@@ -104,8 +121,7 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        // TODO -- check if there are any projections here!
-        public bool IsActive(StoreOptions options) => _events.Any() || V4Projections.Any() ;
+        public bool IsActive(StoreOptions options) => _events.Any() || Projections.Any() ;
 
         public string DatabaseSchemaName
         {
@@ -115,16 +131,18 @@ namespace Marten.Events
 
         public Type AggregateTypeFor(string aggregateTypeName)
         {
-            // TODO -- redo!
-            return null;
+            return _aggregateTypeByName[aggregateTypeName];
         }
 
         internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
 
         public string AggregateAliasFor(Type aggregateType)
         {
-            // TODO -- redo!
-            return null;
+            var alias = _aggregateNameByType[aggregateType];
+
+            _aggregateTypeByName.Fill(alias, aggregateType);
+
+            return alias;
         }
 
         IEnumerable<Type> IFeatureSchema.DependentTypes()
@@ -176,19 +194,6 @@ namespace Marten.Events
             return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }
 
-        private readonly Ref<ImHashMap<Type, string>> _dotnetTypeNames = Ref.Of(ImHashMap<Type, string>.Empty);
-
-        internal string DotnetTypeNameFor(Type type)
-        {
-            if (!_dotnetTypeNames.Value.TryFind(type, out var value))
-            {
-                value = $"{type.FullName}, {type.Assembly.GetName().Name}";
-
-                _dotnetTypeNames.Swap(d => d.AddOrUpdate(type, value));
-            }
-
-            return value;
-        }
 
         private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
@@ -225,13 +230,15 @@ namespace Marten.Events
         {
             EnsureAsGuidStorage(session);
 
+            var wrapped = events.Select(BuildEvent).ToArray();
+
             if (session.UnitOfWork.TryFindStream(stream, out var eventStream))
             {
-                eventStream.AddEvents(events);
+                eventStream.AddEvents(wrapped);
             }
             else
             {
-                eventStream = StreamAction.Append(stream, events);
+                eventStream = StreamAction.Append(stream, wrapped);
                 session.UnitOfWork.Streams.Add(eventStream);
             }
 
@@ -242,13 +249,15 @@ namespace Marten.Events
         {
             EnsureAsStringStorage(session);
 
+            var wrapped = events.Select(BuildEvent).ToArray();
+
             if (session.UnitOfWork.TryFindStream(stream, out var eventStream))
             {
-                eventStream.AddEvents(events);
+                eventStream.AddEvents(wrapped);
             }
             else
             {
-                eventStream = StreamAction.Append(stream, events);
+                eventStream = StreamAction.Append(stream, wrapped);
                 session.UnitOfWork.Streams.Add(eventStream);
             }
 
@@ -259,7 +268,7 @@ namespace Marten.Events
         {
             EnsureAsGuidStorage(session);
 
-            var stream = StreamAction.Start(id, events);
+            var stream = StreamAction.Start(this, id, events);
             session.UnitOfWork.Streams.Add(stream);
 
             return stream;
@@ -269,7 +278,7 @@ namespace Marten.Events
         {
             EnsureAsStringStorage(session);
 
-            var stream = StreamAction.Start(streamKey, events);
+            var stream = StreamAction.Start(this, streamKey, events);
 
             session.UnitOfWork.Streams.Add(stream);
 
@@ -392,8 +401,6 @@ namespace Marten.Events
                 var operations = new List<IStorageOperation>();
                 var storage = session.EventStorage();
 
-                var dotNetTypeName = DotnetTypeNameFor(typeof(Tombstone));
-
                 operations.Add(_establishTombstone.Value);
                 var tombstones = session.UnitOfWork.Streams
                     .SelectMany(x => x.Events)
@@ -406,7 +413,7 @@ namespace Marten.Events
                         StreamKey = EstablishTombstoneStream.StreamKey,
                         Id = CombGuidIdGeneration.NewGuid(),
                         EventTypeName = mapping.EventTypeName,
-                        DotNetTypeName = dotNetTypeName
+                        DotNetTypeName = mapping.DotNetTypeName
                     })
                     .Select(e => storage.AppendEvent(this, session, stream, e));
 
@@ -421,11 +428,14 @@ namespace Marten.Events
             return false;
         }
 
-        public V4ProjectionCollection V4Projections { get; }
+        public ProjectionCollection Projections { get; }
 
-        public ILiveAggregator<T> AggregateFor<T>() where T : class
+        public IEvent BuildEvent(object eventData)
         {
-            throw new NotImplementedException("Actually do this:)");
+            if (eventData == null) throw new ArgumentNullException(nameof(eventData));
+
+            var mapping = EventMappingFor(eventData.GetType());
+            return mapping.Wrap(eventData);
         }
     }
 }

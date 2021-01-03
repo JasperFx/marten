@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -8,6 +9,7 @@ using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
 using Marten.Events.V4Concept.CodeGeneration;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
@@ -16,7 +18,7 @@ using Marten.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public partial class V4AggregateProjection<T>
+    public partial class AggregateProjection<T> : ILiveAggregatorSource<T>, IProjectionSource
     {
         private GeneratedType _liveType;
         private GeneratedType _inlineType;
@@ -30,7 +32,7 @@ namespace Marten.Events.V4Concept.Aggregation
         private GeneratedAssembly _assembly;
         private Type _storageType;
 
-        public V4AggregateProjection()
+        public AggregateProjection()
         {
             _createMethods = new CreateMethodCollection(GetType(), typeof(T));
             _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
@@ -44,6 +46,18 @@ namespace Marten.Events.V4Concept.Aggregation
 
 
         public string ProjectionName { get; protected set; }
+        public IInlineProjection BuildInline(StoreOptions options)
+        {
+            if (_inlineType == null)
+            {
+                Compile(options);
+            }
+
+            // This will have to change when we introduce 1st class support for tenancy by
+            // separate databases
+            options.Tenancy.Default.EnsureStorageExists(typeof(T));
+            return BuildInlineProjection(options);
+        }
 
 
         internal ILiveAggregator<T> BuildLiveAggregator()
@@ -54,14 +68,33 @@ namespace Marten.Events.V4Concept.Aggregation
             return aggregator;
         }
 
-        internal IInlineProjection BuildInlineProjection(IMartenSession session)
+        internal IInlineProjection BuildInlineProjection(StoreOptions options)
         {
-            var storage = session.StorageFor<T>();
+            var storage = options.Providers.StorageFor<T>().Lightweight;
+            var slicer = buildEventSlicer();
 
-            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, this, storage, this);
+            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, this, slicer, options.Tenancy, storage, this);
             _inlineType.ApplySetterValues(inline);
 
             return inline;
+        }
+
+        protected virtual object buildEventSlicer()
+        {
+            if (_aggregateMapping.IdType == typeof(Guid))
+            {
+                var slicerType = typeof(ByStreamId<>).MakeGenericType(_aggregateMapping.DocumentType);
+                return Activator.CreateInstance(slicerType);
+            }
+
+            if (_aggregateMapping.IdType != typeof(string))
+                throw new ArgumentOutOfRangeException(
+                    $"{_aggregateMapping.IdType.FullNameInCode()} is not a supported stream id type for aggregate {_aggregateMapping.DocumentType.FullNameInCode()}");
+            {
+                var slicerType = typeof(ByStreamKey<>).MakeGenericType(_aggregateMapping.DocumentType);
+                return Activator.CreateInstance(slicerType);
+            }
+
         }
 
 
@@ -77,11 +110,12 @@ namespace Marten.Events.V4Concept.Aggregation
             return writer.ToString();
         }
 
-        internal GeneratedAssembly Compile(DocumentStore store)
+        internal GeneratedAssembly Compile(StoreOptions options)
         {
             _assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
 
             _assembly.Generation.Assemblies.Add(GetType().Assembly);
+            _assembly.Generation.Assemblies.Add(typeof(T).Assembly);
             _assembly.Generation.Assemblies.AddRange(_applyMethods.ReferencedAssemblies());
             _assembly.Generation.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
             _assembly.Generation.Assemblies.AddRange(_shouldDeleteMethods.ReferencedAssemblies());
@@ -90,7 +124,16 @@ namespace Marten.Events.V4Concept.Aggregation
 
             _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
 
-            _aggregateMapping = store.Storage.MappingFor(typeof(T));
+            _aggregateMapping = options.Storage.MappingFor(typeof(T));
+
+
+            if (_aggregateMapping.IdMember == null)
+            {
+                // TODO -- possibly try to relax this!!!
+                throw new InvalidDocumentException(
+                    $"No identity property or field can be determined for the aggregate '{typeof(T).FullNameInCode()}', but one is required to be used as an aggregate in projections");
+            }
+
             _storageType = typeof(IDocumentStorage<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
 
 
@@ -129,35 +172,12 @@ namespace Marten.Events.V4Concept.Aggregation
 
             buildDetermineOperationMethodForDaemonRunner(daemonBuilderIsAsync);
 
-            buildAsyncDaemonSplitMethod();
-
             _asyncDaemonType.Setters.AddRange(_applyMethods.Setters());
             _asyncDaemonType.Setters.AddRange(_createMethods.Setters());
             _asyncDaemonType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
 
-        private void buildAsyncDaemonSplitMethod()
-        {
-            var method = _asyncDaemonType.MethodFor("Split");
-
-            string splitterMethodName = null;
-            if (_aggregateMapping.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                splitterMethodName = _aggregateMapping.IdType == typeof(Guid)
-                    ? nameof(StreamFragmentSplitter.SplitByStreamIdMultiTenanted)
-                    : nameof(StreamFragmentSplitter.SplitByStreamKeyMultiTenanted);
-            }
-            else
-            {
-                splitterMethodName = _aggregateMapping.IdType == typeof(Guid)
-                    ? nameof(StreamFragmentSplitter.SplitByStreamId)
-                    : nameof(StreamFragmentSplitter.SplitByStreamKey);
-            }
-
-            method.Frames.Code(
-                $"return {typeof(StreamFragmentSplitter).FullNameInCode()}.{splitterMethodName}<{typeof(T).FullNameInCode()}>(events, storeTenancy);");
-        }
 
         private void buildDetermineOperationMethodForDaemonRunner(bool daemonBuilderIsAsync)
         {
@@ -169,21 +189,21 @@ namespace Marten.Events.V4Concept.Aggregation
 
             }
 
-            method.DerivedVariables.Add(Variable.For<ITenant>($"fragment.{nameof(StreamFragment<string, string>.Tenant)}"));
+            method.DerivedVariables.Add(Variable.For<ITenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
             method.DerivedVariables.Add(Variable.For<IEvent>("@event"));
             method.DerivedVariables.Add(Variable.For<IQuerySession>($"(({typeof(IQuerySession).FullNameInCode()})session)"));
 
             // At most, only one of these would be used
-            method.DerivedVariables.Add(Variable.For<Guid>($"fragment.Id"));
-            method.DerivedVariables.Add(Variable.For<string>($"fragment.Id"));
+            method.DerivedVariables.Add(Variable.For<Guid>($"slice.Id"));
+            method.DerivedVariables.Add(Variable.For<string>($"slice.Id"));
 
             var aggregate = new Variable(typeof(T),
-                $"fragment.{nameof(StreamFragment<string, string>.Aggregate)}");
+                $"slice.{nameof(EventSlice<string, string>.Aggregate)}");
             method.DerivedVariables.Add(aggregate);
 
             var createFrame = new CallCreateAggregateFrame(_createMethods, aggregate)
             {
-                FirstEventExpression = $"fragment.{nameof(StreamFragment<string, string>.Events)}[0]",
+                FirstEventExpression = $"slice.{nameof(EventSlice<string, string>.Events)}[0]",
                 Action = CreateAggregateAction.NullCoalesce
             };
 
@@ -193,7 +213,7 @@ namespace Marten.Events.V4Concept.Aggregation
             var handlers = MethodCollection.AddEventHandling(typeof(T), _aggregateMapping, _applyMethods, _shouldDeleteMethods);
             var iterate = new ForEachEventFrame((IReadOnlyList<Frame>) handlers)
             {
-                EventIteration = "fragment.Events"
+                EventIteration = "slice.Events"
             };
             method.Frames.Add(iterate);
 
@@ -222,9 +242,9 @@ namespace Marten.Events.V4Concept.Aggregation
 
             var method = _inlineType.MethodFor(nameof(InlineAggregationBase<string,string>.DetermineOperation));
 
-            // This gets you the StreamAction Id
-            method.DerivedVariables.Add(Variable.For<Guid>($"stream.{nameof(StreamAction.Id)}"));
-            method.DerivedVariables.Add(Variable.For<string>($"stream.{nameof(StreamAction.Key)}"));
+            // This gets you the EventSlice aggregate Id
+            method.DerivedVariables.Add(Variable.For<Guid>($"slice.{nameof(EventSlice<string, string>.Id)}"));
+            method.DerivedVariables.Add(Variable.For<string>($"slice.{nameof(EventSlice<string, string>.Id)}"));
 
             // TODO -- this is hokey. Just pass in ITenant?
             method.DerivedVariables.Add(Variable.For<ITenant>($"(({typeof(IMartenSession).FullNameInCode()})session).{nameof(IMartenSession.Tenant)}"));
@@ -233,9 +253,12 @@ namespace Marten.Events.V4Concept.Aggregation
             method.DerivedVariables.Add(Variable.For<IQuerySession>("session"));
             method.DerivedVariables.Add(Variable.For<IAggregateProjection>(nameof(InlineAggregationBase<string, string>.Projection)));
 
+            var sliceType =
+                typeof(EventSlice<,>).MakeGenericType(_aggregateMapping.DocumentType, _aggregateMapping.IdType);
+
             if (DeleteEvents.Any())
             {
-                method.Frames.Code($"if (Projection.{nameof(MatchesAnyDeleteType)}({{0}})) return {{1}}.{nameof(IDocumentStorage<string, string>.DeleteForId)}({{2}});", Use.Type<StreamAction>(), new Use(_storageType), new Use(_aggregateMapping.IdType));
+                method.Frames.Code($"if (Projection.{nameof(MatchesAnyDeleteType)}({{0}})) return {{1}}.{nameof(IDocumentStorage<string, string>.DeleteForId)}({{2}});", new Use(sliceType), new Use(_storageType), new Use(_aggregateMapping.IdType));
             }
 
             var createFrame = new CallCreateAggregateFrame(_createMethods);
@@ -276,7 +299,13 @@ namespace Marten.Events.V4Concept.Aggregation
             var overrideMethodName = _isAsync ? "BuildAsync" : "Build";
             var buildMethod = _liveType.MethodFor(overrideMethodName);
             buildMethod.Frames.Code("if (!events.Any()) return null;");
-            buildMethod.Frames.Add(new CallCreateAggregateFrame(_createMethods));
+            var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
+
+            // This is the existing snapshot passed into the LiveAggregator
+            var snapshot = buildMethod.Arguments.Single(x => x.VariableType == typeof(T));
+            callCreateAggregateFrame.CoalesceAssignTo(snapshot);
+
+            buildMethod.Frames.Add(callCreateAggregateFrame);
             buildMethod.Frames.Add(new CallApplyAggregateFrame(_applyMethods){InsideForEach = true});
 
             buildMethod.Frames.Return(typeof(T));
@@ -292,6 +321,14 @@ namespace Marten.Events.V4Concept.Aggregation
         }
 
 
+        public ILiveAggregator<T> Build(StoreOptions options)
+        {
+            if (_liveType == null)
+            {
+                Compile(options);
+            }
 
+            return BuildLiveAggregator();
+        }
     }
 }

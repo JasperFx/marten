@@ -1,5 +1,7 @@
 using System;
 using Marten.Events;
+using Marten.Events.V4Concept;
+using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -11,6 +13,20 @@ namespace Marten.Testing.Events
         private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
         [Fact]
+        public void build_event()
+        {
+            var slayed = new MonsterSlayed {Name = "The Gorgon"};
+            var @event = theGraph.BuildEvent(slayed);
+
+            @event.ShouldBeOfType<Event<MonsterSlayed>>();
+
+            @event.Data.ShouldBe(slayed);
+            var mapping = theGraph.EventMappingFor<MonsterSlayed>();
+            @event.EventTypeName.ShouldBe(mapping.EventTypeName);
+            @event.DotNetTypeName.ShouldBe(mapping.DotNetTypeName);
+        }
+
+        [Fact]
         public void stream_identity_is_guid_by_default()
         {
             theGraph.StreamIdentity.ShouldBe(StreamIdentity.AsGuid);
@@ -19,8 +35,8 @@ namespace Marten.Testing.Events
         [Fact]
         public void caches_the_stream_mapping()
         {
-            theGraph.AggregateFor<Issue>()
-                .ShouldBeSameAs(theGraph.AggregateFor<Issue>());
+            theGraph.Projections.AggregatorFor<Issue>()
+                .ShouldBeSameAs(theGraph.Projections.AggregatorFor<Issue>());
         }
 
         [Fact]

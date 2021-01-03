@@ -192,13 +192,13 @@ namespace Marten.Testing.Events
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                SpecificationExtensions.ShouldNotBeNull(party_yesterday);
+                party_yesterday.ShouldBeNull();
             }
 
             using (var session = store.OpenSession())
             {
                 var party = session.Load<QuestParty>(questId);
-                ShouldBeTestExtensions.ShouldBe(party.Id, questId);
+                party.Id.ShouldBe(questId);
             }
 
             var newStore = InitStore("event_store", false);
@@ -212,7 +212,7 @@ namespace Marten.Testing.Events
             //GetAll
             using (var session = store.OpenSession())
             {
-                var parties = Enumerable.ToArray<QuestParty>(session.Events.QueryRawEventDataOnly<QuestParty>());
+                var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray<QuestParty>();
                 foreach (var party in parties)
                 {
                     SpecificationExtensions.ShouldNotBeNull(party);
@@ -223,15 +223,15 @@ namespace Marten.Testing.Events
             {
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestParty>(questId);//Here we get NPE
-                ShouldBeTestExtensions.ShouldBe(party.Id, questId);
+                party.Id.ShouldBe(questId);
 
                 var party_at_version_3 = session.Events
                                                 .AggregateStream<QuestParty>(questId, 3);
-                ShouldBeTestExtensions.ShouldBe(party_at_version_3.Id, questId);
+                party_at_version_3.Id.ShouldBe(questId);
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                ShouldBeTestExtensions.ShouldBe(party_yesterday.Id, questId);
+                party_yesterday.ShouldBeNull();
             }
         }
 
@@ -243,7 +243,7 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession())
             {
-                var parties = Enumerable.ToArray<QuestParty>(session.Query<QuestParty>());
+                var parties = session.Query<QuestParty>().ToArray<QuestParty>();
                 parties.Length.ShouldBeLessThanOrEqualTo(0);
             }
 
@@ -283,7 +283,7 @@ namespace Marten.Testing.Events
                 await session.SaveChangesAsync();
 
                 var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
-                ShouldBeTestExtensions.ShouldBe(party.Id, questId);
+                party.Id.ShouldBe(questId);
             }
         }
 
@@ -334,11 +334,11 @@ namespace Marten.Testing.Events
 
                 var streamEvents = session.Events.FetchStream(id);
 
-                Enumerable.Count<IEvent>(streamEvents).ShouldBe(2);
-                Enumerable.ElementAt<IEvent>(streamEvents, 0).Data.ShouldBeOfType<MembersJoined>();
-                Enumerable.ElementAt<IEvent>(streamEvents, 0).Version.ShouldBe(1);
-                Enumerable.ElementAt<IEvent>(streamEvents, 1).Data.ShouldBeOfType<MembersDeparted>();
-                Enumerable.ElementAt<IEvent>(streamEvents, 1).Version.ShouldBe(2);
+                streamEvents.Count<IEvent>().ShouldBe(2);
+                streamEvents.ElementAt<IEvent>(0).Data.ShouldBeOfType<MembersJoined>();
+                streamEvents.ElementAt<IEvent>(0).Version.ShouldBe(1);
+                streamEvents.ElementAt<IEvent>(1).Data.ShouldBeOfType<MembersDeparted>();
+                streamEvents.ElementAt<IEvent>(1).Version.ShouldBe(2);
             }
         }
 
@@ -568,7 +568,7 @@ namespace Marten.Testing.Events
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
+                _.Events.Projections.InlineSelfAggregate<QuestParty>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));

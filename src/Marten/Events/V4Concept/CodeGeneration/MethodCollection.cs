@@ -10,39 +10,6 @@ using Marten.Schema;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
-    internal class MethodSlot
-    {
-        public Setter Setter { get; }
-        public MethodInfo Method { get; }
-
-        public MethodSlot(MethodInfo method, Type aggregateType)
-        {
-            Method = method;
-            EventType = method.GetEventType(aggregateType);
-        }
-
-        public Type EventType { get; }
-
-        public MethodSlot(Setter setter, MethodInfo method, Type eventType)
-        {
-            Setter = setter;
-            Method = method;
-            EventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
-        }
-
-        public IEnumerable<Type> ReferencedTypes()
-        {
-            yield return Method.DeclaringType;
-            yield return EventType;
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Method)]
-    internal class IgnoreProjectionMethodAttribute: Attribute
-    {
-
-    }
-
     internal abstract class MethodCollection
     {
         private int _lambdaNumber = 0;
@@ -57,18 +24,39 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public Type ProjectionType { get; }
 
         protected MethodCollection(string methodName, Type projectionType, Type aggregateType)
+        : this(new string[]{methodName}, projectionType, aggregateType)
         {
+
+        }
+
+        protected MethodCollection(string[] methodNames, Type projectionType, Type aggregateType)
+        {
+            MethodNames.AddRange(methodNames);
+
             ProjectionType = projectionType;
 
-            Methods = projectionType
-                .GetMethods()
-                .Where(x => x.Name == methodName)
+            Methods = projectionType.GetMethods()
+                .Where(x => MethodNames.Contains(x.Name))
                 .Where(x => !x.HasAttribute<IgnoreProjectionMethodAttribute>())
-                .Select(x => new MethodSlot(x, aggregateType)).ToList();
+                .Select(x => new MethodSlot(x, aggregateType){HandlerType = projectionType}).ToList();
+
+            if (aggregateType != null)
+            {
+                var aggregateSlots = aggregateType.GetMethods()
+                    .Where(x => MethodNames.Contains(x.Name))
+                    .Where(x => !x.HasAttribute<IgnoreProjectionMethodAttribute>())
+                    .Select(x => new MethodSlot(x, aggregateType){HandlerType = aggregateType});
+
+                Methods.AddRange(aggregateSlots);
+            }
+
 
             IsAsync = Methods.Any(x => x.Method.IsAsync());
-            LambdaName = methodName;
+            LambdaName = methodNames.First();
         }
+
+        public List<string> MethodNames { get; } = new List<string>();
+
 
         public string LambdaName { get; protected set; }
 

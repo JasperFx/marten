@@ -20,13 +20,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
         public ApplyMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
             AggregateType = aggregateType;
-            LambdaName = nameof(V4AggregateProjection<string>.ProjectEvent);
+            LambdaName = nameof(AggregateProjection<string>.ProjectEvent);
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot)
         {
-            return new ApplyMethodCall(ProjectionType, slot);
+            return new ApplyMethodCall(slot);
         }
 
         public void BuildApplyMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)

@@ -9,7 +9,7 @@ namespace Marten.Events.V4Concept.Aggregation
     public abstract class V4Aggregator<TDoc, TId>
     {
         // This is what would be generated.
-        public abstract ValueTask<IStorageOperation> ResolveOperation(StreamFragment<TDoc, TId> fragment);
+        public abstract ValueTask<IStorageOperation> ResolveOperation(EventSlice<TDoc, TId> fragment);
         public abstract ValueTask<TDoc> Create(IEvent @event);
 
         // This will determine the action too

@@ -223,7 +223,7 @@ namespace Marten.Testing.Events
                     var party = session.Events.AggregateStream<QuestParty>(questId);
 
                     party.Id.ShouldBe(questId);
-                    SpecificationExtensions.ShouldNotBeNull(party);
+                    party.ShouldNotBeNull();
 
                     var party_at_version_3 = session.Events
                         .AggregateStream<QuestParty>(questId, 3);
@@ -232,7 +232,7 @@ namespace Marten.Testing.Events
 
                     var party_yesterday = session.Events
                         .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                    SpecificationExtensions.ShouldNotBeNull(party_yesterday);
+                    party_yesterday.ShouldBeNull();
                 }
 
                 using (var session = store.OpenSession(tenantId, sessionType))
@@ -271,7 +271,7 @@ namespace Marten.Testing.Events
 
                     var party_yesterday = session.Events
                         .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                    party_yesterday.Id.ShouldBe(questId);
+                    party_yesterday.ShouldBeNull();
                 }
             }).ShouldThrowIf(
                 (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
@@ -699,7 +699,7 @@ namespace Marten.Testing.Events
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
+                _.Events.Projections.InlineSelfAggregate<QuestParty>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));
