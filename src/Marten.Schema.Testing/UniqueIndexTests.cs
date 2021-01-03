@@ -18,7 +18,7 @@ namespace Marten.Schema.Testing
         public string Surname { get; set; }
     }
 
-    public class UserViewProjection : V4ViewProjection<UniqueUser, Guid>
+    public class UserViewProjection : ViewProjection<UniqueUser, Guid>
     {
         public UserViewProjection()
         {
@@ -63,7 +63,7 @@ namespace Marten.Schema.Testing
             StoreOptions(opts =>
             {
                 opts.Events.AddEventTypes(new[] { typeof(UserCreated) });
-                opts.Events.V4Projections.InlineView(new UserViewProjection());
+                opts.Events.Projections.Inline(new UserViewProjection());
                 opts.RegisterDocumentType<UniqueUser>();
             });
         }

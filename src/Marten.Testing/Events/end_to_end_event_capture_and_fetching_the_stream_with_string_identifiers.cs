@@ -178,16 +178,16 @@ namespace Marten.Testing.Events
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
 
-                SpecificationExtensions.ShouldNotBeNull(party);
+                party.ShouldNotBeNull();
 
                 var party_at_version_3 = session.Events
                                                 .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
 
-                SpecificationExtensions.ShouldNotBeNull(party_at_version_3);
+                party_at_version_3.ShouldNotBeNull();
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                SpecificationExtensions.ShouldNotBeNull(party_yesterday);
+                party_yesterday.ShouldBeNull();
             }
 
             using (var session = store.OpenSession())
@@ -226,7 +226,7 @@ namespace Marten.Testing.Events
 
                 var party_yesterday = session.Events
                                              .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-                party_yesterday.ShouldNotBeNull();
+                party_yesterday.ShouldBeNull();
             }
         }
 
@@ -517,7 +517,7 @@ namespace Marten.Testing.Events
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.Events.StreamIdentity = StreamIdentity.AsString;
-                _.Events.V4Projections.InlineSelfAggregate<QuestPartyWithStringIdentifier>();
+                _.Events.Projections.InlineSelfAggregate<QuestPartyWithStringIdentifier>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));

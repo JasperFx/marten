@@ -71,43 +71,6 @@ namespace Marten.Events
 
     // ENDSAMPLE
 
-    public class Event: IEvent
-    {
-        public Event(object data)
-        {
-            Data = data;
-            EventType = data.GetType();
-        }
-
-        public Guid Id { get; set; }
-        public int Version { get; set; }
-        public long Sequence { get; set; }
-        public object Data { get; }
-        public Guid StreamId { get; set; }
-        public string StreamKey { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
-        public string TenantId { get; set; }
-        public Type EventType { get; }
-        public string EventTypeName { get; set; }
-        public string DotNetTypeName { get; set; }
-
-        public IEvent Clone()
-        {
-            // TODO -- GET RID OF THIS! THIS IS TEMPORARY
-
-            var cloneType = typeof(Event<>).MakeGenericType(Data.GetType());
-            var clone = (IEvent) Activator.CreateInstance(cloneType, Data);
-            clone.Version = Version;
-            clone.StreamId = StreamId;
-            clone.StreamKey = StreamKey;
-            clone.Sequence = Sequence;
-            clone.Timestamp = Timestamp;
-            clone.Id = Id;
-            clone.TenantId = TenantId;
-            return clone;
-        }
-    }
-
     public class Event<T>: IEvent
     {
         public Event(T data)

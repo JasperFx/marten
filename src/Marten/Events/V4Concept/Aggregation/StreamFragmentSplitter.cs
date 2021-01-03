@@ -1,53 +1,50 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public static class StreamFragmentSplitter
+
+    public interface IEventSlicer<TDoc, TId>
     {
-        public static IReadOnlyList<StreamFragment<T, Guid>> SplitByStreamId<T>(IEnumerable<IEvent> events,
-            ITenancy storeTenancy)
-        {
-            return events.GroupBy(x => x.StreamId).Select(group =>
-                    new StreamFragment<T, Guid>(@group.Key, storeTenancy.Default, @group))
-                .ToList();
-        }
-
-        public static IReadOnlyList<StreamFragment<T, string>> SplitByStreamKey<T>(IEnumerable<IEvent> events,
-            ITenancy storeTenancy)
-        {
-            return events.GroupBy(x => x.StreamKey).Select(group =>
-                    new StreamFragment<T, string>(@group.Key, storeTenancy.Default, @group))
-                .ToList();
-        }
-
-        internal static IEnumerable<StreamFragment<TDoc, TId>> SplitByTenant<TDoc, TId>(
-            this IGrouping<TId, IEvent> grouping, ITenancy storeTenancy)
-        {
-            return grouping.GroupBy(x => x.TenantId)
-                .Select(x => new StreamFragment<TDoc, TId>(grouping.Key, storeTenancy[x.Key], x));
-        }
-
-
-        public static IReadOnlyList<StreamFragment<T, Guid>> SplitByStreamIdMultiTenanted<T>(IEnumerable<IEvent> events,
-            ITenancy storeTenancy)
-        {
-            return events
-                .GroupBy(x => x.StreamId)
-                .SelectMany(g => g.SplitByTenant<T, Guid>(storeTenancy))
-                .ToList();
-        }
-
-        public static IReadOnlyList<StreamFragment<T, string>> SplitByStreamKeyMultiTenanted<T>(IEnumerable<IEvent> events,
-            ITenancy storeTenancy)
-        {
-            return events
-                .GroupBy(x => x.StreamKey)
-                .SelectMany(g => g.SplitByTenant<T, string>(storeTenancy))
-                .ToList();
-        }
-
+        IReadOnlyList<EventSlice<TDoc, TId>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy);
+        Task<IReadOnlyList<EventSlice<TDoc, TId>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy);
     }
+
+    public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
+    {
+        public IReadOnlyList<EventSlice<TDoc, Guid>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
+        {
+            return streams.Select(s =>
+            {
+                var tenant = tenancy[s.TenantId];
+                return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events);
+            }).ToList();
+        }
+
+        public Task<IReadOnlyList<EventSlice<TDoc, Guid>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
+    {
+        public IReadOnlyList<EventSlice<TDoc, string>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
+        {
+            return streams.Select(s =>
+            {
+                var tenant = tenancy[s.TenantId];
+                return new EventSlice<TDoc, string>(s.Key, tenant, s.Events);
+            }).ToList();
+        }
+
+        public Task<IReadOnlyList<EventSlice<TDoc, string>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
 }

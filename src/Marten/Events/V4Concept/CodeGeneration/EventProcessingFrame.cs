@@ -59,9 +59,12 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
         {
-            // You don't need it if you're in a Create method
-            Aggregate = chain.TryFindVariable(AggregateType, VariableSource.All);
-            if (Aggregate != null) yield return Aggregate;
+            if (AggregateType != null)
+            {
+                // You don't need it if you're in a Create method
+                Aggregate = chain.TryFindVariable(AggregateType, VariableSource.All);
+                if (Aggregate != null) yield return Aggregate;
+            }
 
             foreach (var inner in _inner.OfType<IEventHandlingFrame>())
             {

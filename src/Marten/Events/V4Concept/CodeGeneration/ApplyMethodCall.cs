@@ -10,7 +10,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             EventType = Method.GetEventType(aggregateType);
         }
 
-        public ApplyMethodCall(Type handlerType, MethodSlot slot) : base(handlerType, slot.Method)
+        public ApplyMethodCall(MethodSlot slot) : base(slot.HandlerType, slot.Method)
         {
             EventType = slot.EventType;
             if (slot.Setter != null)

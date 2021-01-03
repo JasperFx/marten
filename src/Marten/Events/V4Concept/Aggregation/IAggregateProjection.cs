@@ -9,7 +9,7 @@ namespace Marten.Events.V4Concept.Aggregation
         Type AggregateType { get; }
 
         bool MatchesAnyDeleteType(StreamAction action);
-        bool MatchesAnyDeleteType(IStreamFragment action);
+        bool MatchesAnyDeleteType(IEventSlice slice);
 
         string ProjectionName { get; }
     }

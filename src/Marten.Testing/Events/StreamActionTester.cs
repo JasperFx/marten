@@ -16,6 +16,7 @@ namespace Marten.Testing.Events
     {
         private IMartenSession theSession;
         private ITenant theTenant;
+        private EventGraph theEvents;
 
         public StreamActionTester()
         {
@@ -23,19 +24,21 @@ namespace Marten.Testing.Events
             theTenant = Substitute.For<ITenant>();
             theSession.Tenant.Returns(theTenant);
             theTenant.TenantId.Returns("TX");
+
+            theEvents = new EventGraph(new StoreOptions());
         }
 
         [Fact]
         public void ApplyServerVersion_for_new_streams()
         {
-            var action = StreamAction.Start(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+            var action = StreamAction.Start(theEvents, Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
 
             var queue = new Queue<long>();
             queue.Enqueue(11);
             queue.Enqueue(12);
             queue.Enqueue(13);
             queue.Enqueue(14);
-            action.PrepareEvents(0, new EventGraph(new StoreOptions()), queue, theSession);
+            action.PrepareEvents(0, theEvents, queue, theSession);
 
 
             action.Events[0].Version.ShouldBe(1);
@@ -52,7 +55,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void ApplyServerVersion_for_existing_streams()
         {
-            var action = StreamAction.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
+            var action = StreamAction.Append(theEvents, Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
 
             var queue = new Queue<long>();
             queue.Enqueue(11);
@@ -61,7 +64,7 @@ namespace Marten.Testing.Events
             queue.Enqueue(14);
 
 
-            action.PrepareEvents(5, new EventGraph(new StoreOptions()),queue, theSession);
+            action.PrepareEvents(5, theEvents, queue, theSession);
 
             action.ExpectedVersionOnServer.ShouldBe(5);
 

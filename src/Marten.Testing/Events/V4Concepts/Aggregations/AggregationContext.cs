@@ -12,7 +12,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
 {
     public class AggregationContext : IntegrationContext
     {
-        protected V4AggregateProjection<MyAggregate> _projection;
+        protected AggregateProjection<MyAggregate> _projection;
         private V4Aggregator<MyAggregate, Guid> _aggregator;
 
         public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
@@ -20,23 +20,23 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
             theStore.Advanced.Clean.DeleteDocumentsFor(typeof(MyAggregate));
         }
 
-        public void UsingDefinition<T>() where T : V4AggregateProjection<MyAggregate>, new()
+        public void UsingDefinition<T>() where T : AggregateProjection<MyAggregate>, new()
         {
             _projection = new T();
 
-            _projection.Compile(theStore);
+            _projection.Compile(theStore.Options);
         }
 
-        public void UsingDefinition(Action<V4AggregateProjection<MyAggregate>> configure)
+        public void UsingDefinition(Action<AggregateProjection<MyAggregate>> configure)
         {
-            _projection = new V4AggregateProjection<MyAggregate>();
+            _projection = new AggregateProjection<MyAggregate>();
             configure(_projection);
 
-            _projection.Compile(theStore);
+            _projection.Compile(theStore.Options);
         }
 
 
-        public ValueTask<MyAggregate> LiveAggregation(Action<TestStreamFragment> action)
+        public ValueTask<MyAggregate> LiveAggregation(Action<TestEventSlice> action)
         {
             var fragment = BuildStreamFragment(action);
 
@@ -45,9 +45,9 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         }
 
 
-        public static TestStreamFragment BuildStreamFragment(Action<TestStreamFragment> action)
+        public static TestEventSlice BuildStreamFragment(Action<TestEventSlice> action)
         {
-            var fragment = new TestStreamFragment(Guid.NewGuid());
+            var fragment = new TestEventSlice(Guid.NewGuid());
             action(fragment);
             return fragment;
         }
@@ -71,7 +71,7 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
                 .Select(x => StreamAction.Append(x.Key, x.Value.Events.ToArray()))
                 .ToArray();
 
-            var inline = _projection.BuildInlineProjection((IMartenSession) theSession);
+            var inline = _projection.BuildInlineProjection(theStore.Options);
 
             await inline.ApplyAsync(theSession, streams, CancellationToken.None);
             await theSession.SaveChangesAsync();

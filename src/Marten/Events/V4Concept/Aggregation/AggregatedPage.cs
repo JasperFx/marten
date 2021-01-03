@@ -18,7 +18,7 @@ namespace Marten.Events.V4Concept.Aggregation
         private readonly ActionBlock<IStorageOperation> _enqueueOperations;
 
         // TODO -- this needs to be connected to the
-        private readonly TransformBlock<StreamFragment<TDoc, TId>, IStorageOperation> _builder;
+        private readonly TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
         private Task<Task> _splitting;
 
         // TODO -- replace when https://github.com/JasperFx/marten/issues/1627 is done.
@@ -42,12 +42,12 @@ namespace Marten.Events.V4Concept.Aggregation
                 });
 
             // TODO -- pass along a real CancellationToken
-            _builder = new TransformBlock<StreamFragment<TDoc, TId>, IStorageOperation>(fragment => _aggregation.DetermineOperation((IMartenSession) _session, fragment, CancellationToken.None));
+            _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(fragment => _aggregation.DetermineOperation((IMartenSession) _session, fragment, CancellationToken.None));
 
         }
 
 
-        public void EnqueueDelete(StreamFragment<TDoc, TId> fragment)
+        public void EnqueueDelete(EventSlice<TDoc, TId> fragment)
         {
             var deletion = _storage.DeleteForId(fragment.Id);
             _enqueueOperations.Post(deletion);
@@ -70,18 +70,19 @@ namespace Marten.Events.V4Concept.Aggregation
 
         public int Count { get; private set;}
 
-        public void StartLoadingEvents(long floor, long ceiling, IReadOnlyList<IEvent> events)
+        public void StartLoadingEvents(long floor, long ceiling, IAsyncEnumerable<IEvent> events)
         {
-            Count = events.Count;
+            // TODO -- have to figure out how to set this later
+            //Count = events.Count;
             Floor = floor;
             Ceiling = ceiling;
 
 
             _splitting = Task.Factory.StartNew(async () =>
             {
-                var fragments = _aggregation.Split(events, _store.Tenancy);
+                var fragments = await _aggregation.Slicer.Slice(events, _store.Tenancy);
 
-                var beingFetched = new Dictionary<TId, StreamFragment<TDoc, TId>>();
+                var beingFetched = new Dictionary<TId, EventSlice<TDoc, TId>>();
 
                 foreach (var fragment in fragments)
                 {
@@ -125,7 +126,7 @@ namespace Marten.Events.V4Concept.Aggregation
         }
 
 
-        public virtual bool IsNew(StreamFragment<TDoc, TId> fragment)
+        public virtual bool IsNew(EventSlice<TDoc, TId> fragment)
         {
             return fragment.Events.First().Version == 1;
         }

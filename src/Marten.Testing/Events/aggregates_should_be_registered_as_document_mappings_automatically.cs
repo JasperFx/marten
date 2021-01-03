@@ -14,7 +14,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(_ =>
             {
-                _.Events.AggregateFor<QuestParty>();
+                _.Events.Projections.AggregatorFor<QuestParty>();
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
@@ -27,7 +27,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(_ =>
             {
-                _.Events.V4Projections.InlineSelfAggregate<QuestParty>();
+                _.Events.Projections.InlineSelfAggregate<QuestParty>();
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
@@ -39,36 +39,13 @@ namespace Marten.Testing.Events
         {
             StoreOptions(_ =>
             {
-                _.Events.V4Projections.AsyncSelfAggregate<QuestParty>();
+                _.Events.Projections.AsyncSelfAggregate<QuestParty>();
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
                 .ShouldContain(typeof(QuestParty));
         }
 
-        [Fact]
-        public void inline_transformations_are_registered()
-        {
-            StoreOptions(_ =>
-            {
-                _.Events.V4Projections.Inline(new MonsterDefeatedTransform());
-            });
-
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
-                .ShouldContain(typeof(MonsterDefeated));
-        }
-
-        [Fact]
-        public void async_transformations_are_registered()
-        {
-            StoreOptions(_ =>
-            {
-                _.Events.V4Projections.Async(new MonsterDefeatedTransform());
-            });
-
-            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
-                .ShouldContain(typeof(MonsterDefeated));
-        }
 
         public aggregates_should_be_registered_as_document_mappings_automatically(DefaultStoreFixture fixture) : base(fixture)
         {

@@ -39,15 +39,20 @@ namespace Marten.Events.V4Concept.CodeGeneration
             method.Frames.AddRange(frames);
 
 
-            method.Frames.Add(new DefaultAggregateConstruction(AggregateType)
+
+            method.Frames.Add(new DefaultAggregateConstruction(AggregateType, generatedType)
                 {IfStyle = Methods.Any() ? IfStyle.Else : IfStyle.None});
+
+
+
+
         }
 
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot)
         {
-            return new CreateAggregateFrame(ProjectionType, slot);
+            return new CreateAggregateFrame(slot);
         }
     }
 }

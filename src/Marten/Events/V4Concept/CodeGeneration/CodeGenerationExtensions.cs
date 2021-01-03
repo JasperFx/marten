@@ -10,6 +10,12 @@ namespace Marten.Events.V4Concept.CodeGeneration
     {
         public static Type GetEventType(this MethodInfo method, Type aggregateType)
         {
+            var candidate = method.GetParameters().Where(x => x.ParameterType.Closes(typeof(Event<>)));
+            if (candidate.Count() == 1)
+            {
+                return candidate.Single().ParameterType.GetGenericArguments()[0];
+            }
+
             var parameterInfo = method.GetParameters().FirstOrDefault(x => x.Name == "@event" || x.Name == "event");
             if (parameterInfo == null)
             {

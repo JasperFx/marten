@@ -161,7 +161,7 @@ namespace Marten.Testing.Events
         private readonly List<Tuple<string, decimal, decimal>> lines = new List<Tuple<string, decimal, decimal>>();
 
         // Apply the deltas to mutate our state
-        private void Apply(InvoiceCreated @event)
+        public void Apply(InvoiceCreated @event)
         {
             Id = @event.InvoiceNumber.ToString(CultureInfo.InvariantCulture);
 
@@ -170,7 +170,7 @@ namespace Marten.Testing.Events
         }
 
         // Apply the deltas to mutate our state
-        private void Apply(LineItemAdded @event)
+        public void Apply(LineItemAdded @event)
         {
             var price = @event.Price * (1 + @event.Vat / 100);
             Total += price;
