@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,9 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
+using Marten.Events.V4Concept.Aggregation;
 using Marten.Events.V4Concept.CodeGeneration;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
@@ -21,12 +24,10 @@ namespace Marten.Events.V4Concept
     /// <summary>
     /// This is the "do anything" projection type
     /// </summary>
-    public abstract class EventProjection : IProjectionSource
+    public abstract class EventProjection : IProjectionSource, IValidatedProjection
     {
         private readonly ProjectMethodCollection _projectMethods;
         private readonly CreateMethodCollection _createMethods;
-
-        // TODO -- ALSO support Transform() method names!!!!
 
         public EventProjection()
         {
@@ -37,13 +38,23 @@ namespace Marten.Events.V4Concept
             ProjectionName = GetType().FullName;
         }
 
-        [IgnoreProjectionMethod]
+        void IValidatedProjection.AssertValidity()
+        {
+            var invalidMethods = MethodCollection.FindInvalidMethods(GetType(), _projectMethods, _createMethods);
+
+            if (invalidMethods.Any())
+            {
+                throw new InvalidProjectionDefinitionException(this, invalidMethods);
+            }
+        }
+
+        [MartenIgnore]
         public void Project<TEvent>(Action<TEvent, IDocumentOperations> project)
         {
             _projectMethods.AddLambda(project, typeof(TEvent));
         }
 
-        [IgnoreProjectionMethod]
+        [MartenIgnore]
         public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project)
         {
             _projectMethods.AddLambda(project, typeof(TEvent));
@@ -59,6 +70,17 @@ namespace Marten.Events.V4Concept
 
             public ProjectMethodCollection(Type projectionType) : base(MethodName, projectionType, null)
             {
+                _validArgumentTypes.Add(typeof(IDocumentOperations));
+                _validReturnTypes.Add(typeof(void));
+                _validReturnTypes.Add(typeof(Task));
+            }
+
+            protected override void validateMethod(MethodSlot method)
+            {
+                if (method.Method.GetParameters().All(x => x.ParameterType != typeof(IDocumentOperations)))
+                {
+                    method.AddError($"{typeof(IDocumentOperations).FullNameInCode()} is a required parameter");
+                }
             }
 
             public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType, DocumentMapping aggregateMapping,
@@ -97,13 +119,21 @@ namespace Marten.Events.V4Concept
 
             public CreateMethodCollection(Type projectionType): base(new[] { MethodName, TransformMethodName}, projectionType, null)
             {
-
+                _validArgumentTypes.Add(typeof(IDocumentOperations));
             }
 
             public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType, DocumentMapping aggregateMapping,
                 MethodSlot slot)
             {
                 return new CreateMethodFrame(slot);
+            }
+
+            protected override void validateMethod(MethodSlot method)
+            {
+                if (method.Method.ReturnType == typeof(void))
+                {
+                    method.AddError($"The return value must be a new document");
+                }
             }
         }
 

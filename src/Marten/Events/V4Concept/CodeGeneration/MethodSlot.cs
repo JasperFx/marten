@@ -1,12 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Baseline;
+using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
+using Marten.Linq.SoftDeletes;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
-    internal class MethodSlot
+    public class MethodSlot
     {
+        public static readonly string NoEventType = "No event type can be determined. The argument for the event should be named '@event'";
+
+        private readonly List<string> _errors = new List<string>();
+
         public Setter Setter { get; }
         public MethodInfo Method { get; }
 
@@ -31,6 +39,74 @@ namespace Marten.Events.V4Concept.CodeGeneration
         {
             yield return Method.DeclaringType;
             yield return EventType;
+        }
+
+        public string Signature()
+        {
+            var description = $"{Method.Name}({Method.GetParameters().Select(x => ReflectionExtensions.NameInCode(x.ParameterType)).Join(", ")})";
+            if (Method.ReturnType != typeof(void))
+            {
+                description += $" : {Method.ReturnType.NameInCode()}";
+            }
+
+            return description;
+        }
+
+        public IReadOnlyList<string> Errors => _errors;
+        public bool DeclaredByAggregate { get; set; }
+
+        internal void Validate(MethodCollection collection)
+        {
+            if (EventType == null)
+            {
+                _errors.Add(NoEventType);
+            }
+            else
+            {
+                validateArguments(collection);
+            }
+
+            if (collection.ValidReturnTypes.Any() && !collection.ValidReturnTypes.Contains(Method.ReturnType))
+            {
+                var message = $"Return type '{Method.ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
+                AddError(message);
+            }
+        }
+
+        internal void AddError(string error)
+        {
+            _errors.Add(error);
+        }
+
+        private void validateArguments(MethodCollection collection)
+        {
+            var possibleTypes = new List<Type>(collection.ValidArgumentTypes) {EventType};
+            if (EventType != null)
+            {
+                possibleTypes.Add(typeof(Event<>).MakeGenericType(EventType));
+            }
+            if (collection.AggregateType != null)
+            {
+                possibleTypes.Fill(collection.AggregateType);
+            }
+
+            foreach (var parameter in Method.GetParameters())
+            {
+                var type = parameter.ParameterType;
+                if (!possibleTypes.Contains(type))
+                {
+                    _errors.Add(
+                        $"Parameter of type '{type.FullNameInCode()}' is not supported. Valid options are {possibleTypes.Select(x => x.FullNameInCode()).Join(", ")}");
+                }
+            }
+        }
+
+        public static MethodSlot InvalidMethodName(MethodInfo methodInfo, string[] methodNames)
+        {
+            var slot = new MethodSlot(methodInfo, null);
+            slot._errors.Add($"Unrecognized method name '{methodInfo.Name}'. Either mark with [MartenIgnore] or use one of {methodNames.Select(x => $"'{x}'").Join(", ")}");
+
+            return slot;
         }
     }
 }

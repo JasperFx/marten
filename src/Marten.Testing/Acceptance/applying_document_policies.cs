@@ -2,13 +2,18 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Acceptance
 {
     public class applying_document_policies: IntegrationContext
     {
-        public applying_document_policies(DefaultStoreFixture fixture) : base(fixture)
+        private readonly ITestOutputHelper _output;
+
+        public applying_document_policies(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
+
             StoreOptions(_ =>
             {
                 _.Schema.For<Target>();

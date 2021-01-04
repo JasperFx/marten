@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -18,7 +17,7 @@ using Marten.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {
-    public partial class AggregateProjection<T> : ILiveAggregatorSource<T>, IProjectionSource
+    public partial class AggregateProjection<T> : ILiveAggregatorSource<T>, IProjectionSource, IValidatedProjection
     {
         private GeneratedType _liveType;
         private GeneratedType _inlineType;
@@ -46,6 +45,11 @@ namespace Marten.Events.V4Concept.Aggregation
 
 
         public string ProjectionName { get; protected set; }
+        public IEnumerable<MethodSlot> InvalidMethods()
+        {
+            throw new NotImplementedException();
+        }
+
         public IInlineProjection BuildInline(StoreOptions options)
         {
             if (_inlineType == null)
@@ -329,6 +333,16 @@ namespace Marten.Events.V4Concept.Aggregation
             }
 
             return BuildLiveAggregator();
+        }
+
+        void IValidatedProjection.AssertValidity()
+        {
+            var invalidMethods = MethodCollection.FindInvalidMethods(GetType(), _applyMethods, _createMethods, _shouldDeleteMethods);
+
+            if (invalidMethods.Any())
+            {
+                throw new InvalidProjectionDefinitionException(this, invalidMethods);
+            }
         }
     }
 }

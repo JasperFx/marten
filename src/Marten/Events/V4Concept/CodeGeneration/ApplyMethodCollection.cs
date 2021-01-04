@@ -1,9 +1,7 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -14,13 +12,26 @@ namespace Marten.Events.V4Concept.CodeGeneration
 {
     internal class ApplyMethodCollection : MethodCollection
     {
-        public Type AggregateType { get; }
+        protected override void validateMethod(MethodSlot method)
+        {
+            if (!method.DeclaredByAggregate && method.Method.GetParameters().All(x => x.ParameterType != AggregateType))
+            {
+                method.AddError($"Aggregate type '{AggregateType.FullNameInCode()}' is required as a parameter");
+            }
+        }
+
         public static readonly string MethodName = "Apply";
 
         public ApplyMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
-            AggregateType = aggregateType;
             LambdaName = nameof(AggregateProjection<string>.ProjectEvent);
+            _validArgumentTypes.Add(typeof(IQuerySession));
+            _validArgumentTypes.Add(aggregateType);
+
+            _validReturnTypes.Add(typeof(Task));
+            _validReturnTypes.Add(typeof(void));
+            _validReturnTypes.Add(aggregateType);
+            _validReturnTypes.Add(typeof(Task<>).MakeGenericType(aggregateType));
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,

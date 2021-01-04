@@ -23,6 +23,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         public Type ProjectionType { get; }
 
+        protected readonly List<Type> _validArgumentTypes = new List<Type>();
+        protected readonly List<Type> _validReturnTypes = new List<Type>();
+
+        internal IReadOnlyList<Type> ValidArgumentTypes => _validArgumentTypes;
+
+        public IReadOnlyList<Type> ValidReturnTypes => _validReturnTypes;
+
         protected MethodCollection(string methodName, Type projectionType, Type aggregateType)
         : this(new string[]{methodName}, projectionType, aggregateType)
         {
@@ -37,15 +44,21 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
             Methods = projectionType.GetMethods()
                 .Where(x => MethodNames.Contains(x.Name))
-                .Where(x => !x.HasAttribute<IgnoreProjectionMethodAttribute>())
+                .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
                 .Select(x => new MethodSlot(x, aggregateType){HandlerType = projectionType}).ToList();
+
+            AggregateType = aggregateType;
 
             if (aggregateType != null)
             {
                 var aggregateSlots = aggregateType.GetMethods()
                     .Where(x => MethodNames.Contains(x.Name))
-                    .Where(x => !x.HasAttribute<IgnoreProjectionMethodAttribute>())
-                    .Select(x => new MethodSlot(x, aggregateType){HandlerType = aggregateType});
+                    .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
+                    .Select(x => new MethodSlot(x, aggregateType)
+                    {
+                        HandlerType = aggregateType,
+                        DeclaredByAggregate = true
+                    });
 
                 Methods.AddRange(aggregateSlots);
             }
@@ -53,7 +66,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
             IsAsync = Methods.Any(x => x.Method.IsAsync());
             LambdaName = methodNames.First();
+
+
         }
+
+        protected abstract void validateMethod(MethodSlot method);
+
+        public Type AggregateType { get; }
 
         public List<string> MethodNames { get; } = new List<string>();
 
@@ -127,6 +146,34 @@ namespace Marten.Events.V4Concept.CodeGeneration
             }
 
             return frames;
+        }
+
+
+        public static MethodSlot[] FindInvalidMethods(Type projectionType, params MethodCollection[] collections)
+        {
+            var methodNames = collections.SelectMany(x => x.MethodNames).Distinct().ToArray();
+
+            var invalidMethods = projectionType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
+                .Where(x => x.DeclaringType.Assembly != typeof(MethodCollection).Assembly)
+                .Where(x => x.DeclaringType != typeof(object))
+                .Where(x => !methodNames.Contains(x.Name))
+                .Select(x => MethodSlot.InvalidMethodName(x, methodNames))
+                .ToList();
+
+            foreach (var collection in collections)
+            {
+                // We won't validate the methods that come through inline Lambdas
+                foreach (var method in collection.Methods)
+                {
+                    method.Validate(collection);
+                    collection.validateMethod(method); // hook for unusual rules
+                }
+
+                invalidMethods.AddRange(collection.Methods.Where(x => x.Errors.Any()));
+            }
+
+            return invalidMethods.ToArray();
         }
     }
 }

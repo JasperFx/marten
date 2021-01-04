@@ -52,11 +52,13 @@ namespace Marten.Events.V4Concept
 
         public void Inline(EventProjection projection)
         {
+            projection.As<IValidatedProjection>().AssertValidity();
             _inlineProjections.Add(projection);
         }
 
         public void Async(EventProjection projection)
         {
+            projection.As<IValidatedProjection>().AssertValidity();
             _asyncProjections.Add(projection);
         }
 
@@ -64,6 +66,7 @@ namespace Marten.Events.V4Concept
         {
             _options.Storage.MappingFor(typeof(T));
             var source = new AggregateProjection<T>();
+            source.As<IValidatedProjection>().AssertValidity();
             _inlineProjections.Add(source);
         }
 
@@ -71,17 +74,20 @@ namespace Marten.Events.V4Concept
         {
             _options.Storage.MappingFor(typeof(T));
             var source = new AggregateProjection<T>();
+            source.As<IValidatedProjection>().AssertValidity();
             _asyncProjections.Add(source);
         }
 
         public void Inline<T>(AggregateProjection<T> projection)
         {
+            projection.As<IValidatedProjection>().AssertValidity();
             _options.Storage.MappingFor(typeof(T));
             _inlineProjections.Add(projection);
         }
 
         public void Async<T>(AggregateProjection<T> projection)
         {
+            projection.As<IValidatedProjection>().AssertValidity();
             _options.Storage.MappingFor(typeof(T));
             _asyncProjections.Add(projection);
         }
@@ -103,6 +109,7 @@ namespace Marten.Events.V4Concept
                 // TODO -- there needs to be a validating step here I think to see if there are any projection methods.
 
                 source = new AggregateProjection<T>();
+                source.As<IValidatedProjection>().AssertValidity();
             }
 
             aggregator = source.As<ILiveAggregatorSource<T>>().Build(_options);

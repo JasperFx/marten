@@ -85,6 +85,24 @@ namespace Marten.Testing.Events.V4Concepts.Aggregations
         }
     }
 
+    public class CreateEvent2
+    {
+        public int A { get; }
+        public int B { get; }
+        public int C { get; }
+        public int D { get; }
+
+        public CreateEvent2(int a, int b, int c, int d)
+        {
+            A = a;
+            B = b;
+            C = c;
+            D = d;
+        }
+    }
+
+
+
     public class AlternativeCreateEvent
     {
 
