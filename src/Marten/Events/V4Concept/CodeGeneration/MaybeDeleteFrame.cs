@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -17,12 +18,12 @@ namespace Marten.Events.V4Concept.CodeGeneration
         private Variable _storage;
         private Variable _tenant;
 
-        public MaybeDeleteFrame(Type aggregateType, Type identityType, MethodSlot slot) : base(slot.Method.IsAsync())
+        public MaybeDeleteFrame(Type aggregateType, Type identityType, MethodSlot slot) : base(slot.Method.As<MethodInfo>().IsAsync())
         {
             _aggregateType = aggregateType;
             _identityType = identityType;
             EventType = slot.EventType;
-            Maybe = new MethodCall(slot.HandlerType, slot.Method) {Target = slot.Setter};
+            Maybe = new MethodCall(slot.HandlerType, (MethodInfo) slot.Method) {Target = slot.Setter};
         }
 
         public MethodCall Maybe { get; }

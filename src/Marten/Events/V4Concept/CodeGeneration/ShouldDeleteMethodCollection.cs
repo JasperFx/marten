@@ -23,7 +23,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             return new MaybeDeleteFrame(aggregateType, aggregateMapping.IdType, slot);
         }
 
-        protected override void validateMethod(MethodSlot method)
+        internal override void validateMethod(MethodSlot method)
         {
             if (!method.Method.GetParameters().Any())
             {

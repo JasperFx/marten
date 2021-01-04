@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using LamarCodeGeneration.Frames;
 
 namespace Marten.Events.V4Concept.CodeGeneration
@@ -10,7 +11,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             EventType = Method.GetEventType(aggregateType);
         }
 
-        public ApplyMethodCall(MethodSlot slot) : base(slot.HandlerType, slot.Method)
+        public ApplyMethodCall(MethodSlot slot) : base(slot.HandlerType, (MethodInfo) slot.Method)
         {
             EventType = slot.EventType;
             if (slot.Setter != null)

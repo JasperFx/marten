@@ -5,7 +5,6 @@ using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
-using Marten.Linq.SoftDeletes;
 
 namespace Marten.Events.V4Concept.CodeGeneration
 {
@@ -16,13 +15,19 @@ namespace Marten.Events.V4Concept.CodeGeneration
         private readonly List<string> _errors = new List<string>();
 
         public Setter Setter { get; }
-        public MethodInfo Method { get; }
+        public MethodBase Method { get; }
 
         public MethodSlot(MethodInfo method, Type aggregateType)
         {
             Method = method;
             EventType = method.GetEventType(aggregateType);
+            ReturnType = method.ReturnType;
+            DeclaringType = method.DeclaringType;
         }
+
+        public Type DeclaringType { get; }
+
+        public Type ReturnType { get; }
 
         public Type HandlerType { get; set; }
 
@@ -33,20 +38,22 @@ namespace Marten.Events.V4Concept.CodeGeneration
             Setter = setter;
             Method = method;
             EventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
+            DeclaringType = method.DeclaringType;
+            ReturnType = method.ReturnType;
         }
 
         public IEnumerable<Type> ReferencedTypes()
         {
-            yield return Method.DeclaringType;
+            yield return DeclaringType;
             yield return EventType;
         }
 
         public string Signature()
         {
-            var description = $"{Method.Name}({Method.GetParameters().Select(x => ReflectionExtensions.NameInCode(x.ParameterType)).Join(", ")})";
-            if (Method.ReturnType != typeof(void))
+            var description = $"{Method.Name}({Method.GetParameters().Select(x => x.ParameterType.NameInCode()).Join(", ")})";
+            if (ReturnType != typeof(void))
             {
-                description += $" : {Method.ReturnType.NameInCode()}";
+                description += $" : {ReturnType.NameInCode()}";
             }
 
             return description;
@@ -66,9 +73,9 @@ namespace Marten.Events.V4Concept.CodeGeneration
                 validateArguments(collection);
             }
 
-            if (collection.ValidReturnTypes.Any() && !collection.ValidReturnTypes.Contains(Method.ReturnType))
+            if (collection.ValidReturnTypes.Any() && !collection.ValidReturnTypes.Contains(ReturnType))
             {
-                var message = $"Return type '{Method.ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
+                var message = $"Return type '{ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
                 AddError(message);
             }
         }

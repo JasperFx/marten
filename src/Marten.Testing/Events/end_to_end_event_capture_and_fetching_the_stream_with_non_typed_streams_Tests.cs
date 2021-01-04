@@ -182,7 +182,7 @@ namespace Marten.Testing.Events
                 // questId is the id of the stream
                 var party = session.Events.AggregateStream<QuestParty>(questId);
 
-                ShouldBeTestExtensions.ShouldBe(party.Id, questId);
+                party.Id.ShouldBe(questId);
                 SpecificationExtensions.ShouldNotBeNull(party);
 
                 var party_at_version_3 = session.Events

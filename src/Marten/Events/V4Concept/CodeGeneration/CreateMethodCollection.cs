@@ -12,7 +12,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 {
     internal class CreateMethodCollection : MethodCollection
     {
-        protected override void validateMethod(MethodSlot method)
+        internal override void validateMethod(MethodSlot method)
         {
             // Nothing, no special rules
         }

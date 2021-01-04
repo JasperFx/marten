@@ -64,13 +64,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
             }
 
 
-            IsAsync = Methods.Any(x => x.Method.IsAsync());
+            IsAsync = Methods.Select(x => x.Method).OfType<MethodInfo>().Any(x => x.IsAsync());
             LambdaName = methodNames.First();
 
 
         }
 
-        protected abstract void validateMethod(MethodSlot method);
+        internal abstract void validateMethod(MethodSlot method);
 
         public Type AggregateType { get; }
 

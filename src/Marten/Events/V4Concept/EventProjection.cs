@@ -75,7 +75,7 @@ namespace Marten.Events.V4Concept
                 _validReturnTypes.Add(typeof(Task));
             }
 
-            protected override void validateMethod(MethodSlot method)
+            internal override void validateMethod(MethodSlot method)
             {
                 if (method.Method.GetParameters().All(x => x.ParameterType != typeof(IDocumentOperations)))
                 {
@@ -92,7 +92,7 @@ namespace Marten.Events.V4Concept
 
         internal class ProjectMethodCall: MethodCall, IEventHandlingFrame
         {
-            public ProjectMethodCall(MethodSlot slot) : base(slot.HandlerType, slot.Method)
+            public ProjectMethodCall(MethodSlot slot) : base(slot.HandlerType, (MethodInfo) slot.Method)
             {
                 EventType = Method.GetEventType(null);
             }
@@ -128,9 +128,9 @@ namespace Marten.Events.V4Concept
                 return new CreateMethodFrame(slot);
             }
 
-            protected override void validateMethod(MethodSlot method)
+            internal override void validateMethod(MethodSlot method)
             {
-                if (method.Method.ReturnType == typeof(void))
+                if (method.ReturnType == typeof(void))
                 {
                     method.AddError($"The return value must be a new document");
                 }
@@ -141,7 +141,7 @@ namespace Marten.Events.V4Concept
         {
             private Variable _operations;
 
-            public CreateMethodFrame(MethodSlot slot) : base(slot.HandlerType, slot.Method)
+            public CreateMethodFrame(MethodSlot slot) : base(slot.HandlerType, (MethodInfo) slot.Method)
             {
                 EventType = Method.GetEventType(null);
             }
