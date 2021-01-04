@@ -3,8 +3,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Schema;
 
@@ -12,12 +12,19 @@ namespace Marten.Events.V4Concept.CodeGeneration
 {
     internal class CreateMethodCollection : MethodCollection
     {
-        public Type AggregateType { get; }
+        protected override void validateMethod(MethodSlot method)
+        {
+            // Nothing, no special rules
+        }
+
         public static readonly string MethodName = "Create";
 
         public CreateMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
         {
-            AggregateType = aggregateType;
+            _validArgumentTypes.Add(typeof(IQuerySession));
+
+            _validReturnTypes.Fill(aggregateType);
+            _validReturnTypes.Add(typeof(Task<>).MakeGenericType(aggregateType));
         }
 
         public void BuildCreateMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)

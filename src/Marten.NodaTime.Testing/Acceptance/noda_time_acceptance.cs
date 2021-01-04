@@ -63,6 +63,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 docFromDb.ShouldNotBeNull();
                 docFromDb.Equals(testDoc).ShouldBeTrue();
             }
+
         }
 
         //[Fact]
