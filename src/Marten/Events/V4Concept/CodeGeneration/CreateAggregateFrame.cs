@@ -15,7 +15,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
             EventType = Method.GetEventType(aggregateType);
         }
 
-        public CreateAggregateFrame(MethodSlot slot): base(slot.HandlerType, slot.Method)
+        public CreateAggregateFrame(MethodSlot slot): base(slot.HandlerType, (MethodInfo) slot.Method)
         {
             ReturnAction = ReturnAction.Return;
             EventType = slot.EventType;

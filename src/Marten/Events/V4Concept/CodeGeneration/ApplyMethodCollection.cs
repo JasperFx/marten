@@ -12,7 +12,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 {
     internal class ApplyMethodCollection : MethodCollection
     {
-        protected override void validateMethod(MethodSlot method)
+        internal override void validateMethod(MethodSlot method)
         {
             if (!method.DeclaredByAggregate && method.Method.GetParameters().All(x => x.ParameterType != AggregateType))
             {
