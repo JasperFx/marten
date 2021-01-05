@@ -2,7 +2,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace Marten.Testing.Events.Bugs
 {
     public class Bug_499_event_store_objects_should_not_be_erroneously_in_the_patch: BugIntegrationContext
     {
