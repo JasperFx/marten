@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -21,6 +22,8 @@ namespace Marten.Events.V4Concept.CodeGeneration
                 .Distinct();
         }
 
+        protected virtual BindingFlags flags() => BindingFlags.Instance | BindingFlags.Public;
+
         public Type ProjectionType { get; }
 
         protected readonly List<Type> _validArgumentTypes = new List<Type>();
@@ -38,11 +41,13 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
         protected MethodCollection(string[] methodNames, Type projectionType, Type aggregateType)
         {
+            _validArgumentTypes.Add(typeof(CancellationToken));
+
             MethodNames.AddRange(methodNames);
 
             ProjectionType = projectionType;
 
-            Methods = projectionType.GetMethods()
+            Methods = projectionType.GetMethods(flags())
                 .Where(x => MethodNames.Contains(x.Name))
                 .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
                 .Select(x => new MethodSlot(x, aggregateType){HandlerType = projectionType}).ToList();
@@ -51,7 +56,7 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
             if (aggregateType != null)
             {
-                var aggregateSlots = aggregateType.GetMethods()
+                var aggregateSlots = aggregateType.GetMethods(flags())
                     .Where(x => MethodNames.Contains(x.Name))
                     .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
                     .Select(x => new MethodSlot(x, aggregateType)

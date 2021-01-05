@@ -25,6 +25,22 @@ namespace Marten.Events.V4Concept.CodeGeneration
 
             _validReturnTypes.Fill(aggregateType);
             _validReturnTypes.Add(typeof(Task<>).MakeGenericType(aggregateType));
+
+
+            var constructors = aggregateType
+                .GetConstructors()
+                .Where(x => x.GetParameters().Length == 1);
+
+            foreach (var constructor in constructors)
+            {
+                var slot = new MethodSlot(constructor, projectionType, aggregateType);
+                Methods.Add(slot);
+            }
+        }
+
+        protected override BindingFlags flags()
+        {
+            return BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
         }
 
         public void BuildCreateMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)
@@ -50,15 +66,17 @@ namespace Marten.Events.V4Concept.CodeGeneration
             method.Frames.Add(new DefaultAggregateConstruction(AggregateType, generatedType)
                 {IfStyle = Methods.Any() ? IfStyle.Else : IfStyle.None});
 
-
-
-
         }
 
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot)
         {
+            if (slot.Method is ConstructorInfo)
+            {
+                return new AggregateConstructorFrame(slot);
+            }
+
             return new CreateAggregateFrame(slot);
         }
     }

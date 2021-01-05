@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Baseline;
@@ -45,10 +46,6 @@ namespace Marten.Events.V4Concept.Aggregation
 
 
         public string ProjectionName { get; protected set; }
-        public IEnumerable<MethodSlot> InvalidMethods()
-        {
-            throw new NotImplementedException();
-        }
 
         public IInlineProjection BuildInline(StoreOptions options)
         {
@@ -153,6 +150,8 @@ namespace Marten.Events.V4Concept.Aggregation
 
             assemblyGenerator.ReferenceAssembly(typeof(IMartenSession).Assembly);
             assemblyGenerator.Compile(_assembly);
+
+            Debug.WriteLine(_liveType.SourceCode);
 
             return _assembly;
         }

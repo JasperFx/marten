@@ -209,11 +209,12 @@ namespace Marten.Events
 
             var inner = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.Projections.AggregatorFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
-            var aggregate = _session.ExecuteHandler(handler);
 
-            if (aggregate == null) return null;
+            var events = _session.ExecuteHandler(inner);
+            if (!events.Any()) return null;
+
+            var aggregate = aggregator.Build(events, _session, state);
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamId);
@@ -227,10 +228,12 @@ namespace Marten.Events
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
             var inner = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
-            var aggregator = _store.Events.Projections.AggregatorFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
-            var aggregate = await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+            var events = await _session.ExecuteHandlerAsync(inner, token);
+            if (!events.Any()) return null;
+
+            var aggregator = _store.Events.Projections.AggregatorFor<T>();
+            var aggregate = await aggregator.BuildAsync(events, _session, state, token);
 
             if (aggregate == null) return null;
 
@@ -245,12 +248,15 @@ namespace Marten.Events
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
             var inner = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+
+            var events = _session.ExecuteHandler(inner);
+            if (!events.Any())
+            {
+                return null;
+            }
+
             var aggregator = _store.Events.Projections.AggregatorFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
-
-            var aggregate = _session.ExecuteHandler(handler);
-
-            if (aggregate == null) return null;
+            var aggregate = aggregator.Build(events, _session, state);
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamKey);
@@ -264,12 +270,15 @@ namespace Marten.Events
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
             var inner = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var events = await _session.ExecuteHandlerAsync(inner, token);
+            if (!events.Any())
+            {
+                return null;
+            }
+
             var aggregator = _store.Events.Projections.AggregatorFor<T>();
-            var handler = new AggregationQueryHandler<T>(aggregator, inner, _session, state);
 
-            var aggregate = await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-
-            if (aggregate == null) return null;
+            var aggregate = await aggregator.BuildAsync(events, _session, state, token);
 
             var assignment = _tenant.IdAssignmentFor<T>();
             assignment.Assign(_tenant, aggregate, streamKey);
