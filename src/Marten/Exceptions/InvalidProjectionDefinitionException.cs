@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LamarCodeGeneration;
-using Marten.Events.V4Concept;
-using Marten.Events.V4Concept.CodeGeneration;
+using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 
 namespace Marten.Exceptions
 {

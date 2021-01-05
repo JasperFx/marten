@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Events.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;

@@ -7,7 +7,6 @@ using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Querying;
-using Marten.Events.V4Concept;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;

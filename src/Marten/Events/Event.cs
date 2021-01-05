@@ -1,6 +1,5 @@
 using System;
 using Baseline;
-using Marten.Events.Projections;
 
 namespace Marten.Events
 {

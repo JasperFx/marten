@@ -1,5 +1,4 @@
 using System.Linq;
-using Marten.Events.Projections;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
