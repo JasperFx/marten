@@ -3,7 +3,7 @@
 -> id = e71003c6-9676-4a2b-b91b-980e35cf8124
 -> lifecycle = Regression
 -> max-retries = 0
--> last-updated = 2016-04-22T00:00:00.0000000
+-> last-updated = 2021-01-05T18:45:26.0936850Z
 -> tags = 
 
 [EventStore]
@@ -52,22 +52,6 @@ Quest party 'TheOneRing' is Frodo, Sam, Merry, Pippin, Strider
 ```
 
 |> FetchMode mode=Asynchronously
-|> LiveAggregationToQueryPartyVersionShouldBe version=2
-``` returnValue
-Quest party 'TheOneRing' is Frodo, Sam
-```
-
-|> LiveAggregationToQueryPartyVersionShouldBe version=3
-``` returnValue
-Quest party 'TheOneRing' is Frodo, Sam, Merry, Pippin
-```
-
-|> LiveAggregationToQueryPartyVersionShouldBe version=4
-``` returnValue
-Quest party 'TheOneRing' is Frodo, Sam, Merry, Pippin, Strider
-```
-
-|> FetchMode mode=In a batch
 |> LiveAggregationToQueryPartyVersionShouldBe version=2
 ``` returnValue
 Quest party 'TheOneRing' is Frodo, Sam
