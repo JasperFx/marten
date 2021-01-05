@@ -34,8 +34,8 @@ namespace Marten.Testing.Events
         [Fact]
         public void caches_the_stream_mapping()
         {
-            theGraph.Projections.AggregatorFor<Issue>()
-                .ShouldBeSameAs(theGraph.Projections.AggregatorFor<Issue>());
+            theGraph.Projections.AggregatorFor<IssueAggregate>()
+                .ShouldBeSameAs(theGraph.Projections.AggregatorFor<IssueAggregate>());
         }
 
         [Fact]
@@ -78,6 +78,16 @@ namespace Marten.Testing.Events
         public class HouseRemodeling
         {
             public Guid Id { get; set; }
+        }
+    }
+
+    public class IssueAggregate
+    {
+        public Guid Id { get; set; }
+
+        public void Apply(IssueAssigned e)
+        {
+            // Do stuff
         }
     }
 }

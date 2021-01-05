@@ -77,6 +77,8 @@ namespace Marten.Testing.Events
     public class FooAggregate
     {
         public Guid Id;
+
+        public void Apply(FooEvent e){}
     }
 
     // SAMPLE: fetching_stream_state
