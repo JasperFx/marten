@@ -8,7 +8,9 @@ using Marten.Exceptions;
 
 namespace Marten.Events.Projections
 {
-    // TODO -- Add Xml comments
+    /// <summary>
+    /// Used to register projections with Marten
+    /// </summary>
     public class ProjectionCollection
     {
         private readonly StoreOptions _options;
@@ -41,58 +43,105 @@ namespace Marten.Events.Projections
             return _inlineProjections.Select(x => x.BuildInline(_options)).ToArray();
         }
 
+
+        /// <summary>
+        /// Add a projection to be executed inline
+        /// </summary>
+        /// <param name="projection"></param>
         public void Inline(IInlineProjection projection)
         {
             _inlineProjections.Add(new InlineProjectionSource(projection));
         }
 
+        /// <summary>
+        /// Add a projection that should be executed asynchronously
+        /// </summary>
+        /// <param name="projection"></param>
         public void Async(IInlineProjection projection)
         {
             _asyncProjections.Add(new InlineProjectionSource(projection));
         }
 
+        /// <summary>
+        /// Add a projection that will be executed inline
+        /// </summary>
+        /// <param name="projection"></param>
         public void Inline(EventProjection projection)
         {
             projection.As<IValidatedProjection>().AssertValidity();
             _inlineProjections.Add(projection);
         }
 
+        /// <summary>
+        /// Add a projection that should be executed asynchronously
+        /// </summary>
+        /// <param name="projection"></param>
         public void Async(EventProjection projection)
         {
             projection.As<IValidatedProjection>().AssertValidity();
             _asyncProjections.Add(projection);
         }
 
-        public void InlineSelfAggregate<T>()
+        /// <summary>
+        /// Use a "self-aggregating" aggregate of type as an inline projection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>The extended storage configuration for document T</returns>
+        public MartenRegistry.DocumentMappingExpression<T> InlineSelfAggregate<T>()
         {
             // Make sure there's a DocumentMapping for the aggregate
-            _options.Schema.For<T>();
+            var expression = _options.Schema.For<T>();
             var source = new AggregateProjection<T>();
             source.As<IValidatedProjection>().AssertValidity();
             _inlineProjections.Add(source);
+
+            return expression;
         }
 
-        public void AsyncSelfAggregate<T>()
+        /// <summary>
+        /// Use a "self-aggregating" aggregate of type as an async projection
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>The extended storage configuration for document T</returns>
+        public MartenRegistry.DocumentMappingExpression<T> AsyncSelfAggregate<T>()
         {
             // Make sure there's a DocumentMapping for the aggregate
-            _options.Schema.For<T>();
+            var expression = _options.Schema.For<T>();
             var source = new AggregateProjection<T>();
             source.As<IValidatedProjection>().AssertValidity();
             _asyncProjections.Add(source);
+
+            return expression;
         }
 
-        public void Inline<T>(AggregateProjection<T> projection)
+        /// <summary>
+        /// Register an aggregate projection that should be evaluated inline
+        /// </summary>
+        /// <param name="projection"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>The extended storage configuration for document T</returns>
+        public MartenRegistry.DocumentMappingExpression<T> Inline<T>(AggregateProjection<T> projection)
         {
+            var expression = _options.Schema.For<T>();
             projection.As<IValidatedProjection>().AssertValidity();
-            _options.Storage.MappingFor(typeof(T));
             _inlineProjections.Add(projection);
+
+            return expression;
         }
 
-        public void Async<T>(AggregateProjection<T> projection)
+        /// <summary>
+        /// Register an aggregate projection that should be evaluated asynchronously
+        /// </summary>
+        /// <param name="projection"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>The extended storage configuration for document T</returns>
+        public MartenRegistry.DocumentMappingExpression<T> Async<T>(AggregateProjection<T> projection)
         {
+            var expression = _options.Schema.For<T>();
             projection.As<IValidatedProjection>().AssertValidity();
-            _options.Storage.MappingFor(typeof(T));
             _asyncProjections.Add(projection);
+
+            return expression;
         }
 
         internal bool Any()
@@ -100,7 +149,7 @@ namespace Marten.Events.Projections
             return _asyncProjections.Any() || _inlineProjections.Any();
         }
 
-        public ILiveAggregator<T> AggregatorFor<T>() where T : class
+        internal ILiveAggregator<T> AggregatorFor<T>() where T : class
         {
             if (_liveAggregators.TryFind(typeof(T), out var aggregator))
             {
