@@ -40,6 +40,7 @@ namespace Marten.Events.CodeGeneration
             EventType = eventType ?? throw new ArgumentNullException(nameof(eventType));
             DeclaringType = method.DeclaringType;
             ReturnType = method.ReturnType;
+            HandlerType = setter.VariableType;
         }
 
         public MethodSlot(ConstructorInfo constructor, Type projectionType, Type aggregateType)

@@ -26,7 +26,10 @@ namespace Marten.Testing.Events.Projections
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Events.TenancyStyle = tenancyStyle;
                 _.DatabaseSchemaName = "quest_sample";
-                _.Schema.For<QuestParty>().MultiTenanted();
+                if (tenancyStyle == TenancyStyle.Conjoined)
+                {
+                    _.Schema.For<QuestParty>().MultiTenanted();
+                }
 
                 // This is all you need to create the QuestParty projected
                 // view

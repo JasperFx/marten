@@ -100,6 +100,7 @@ namespace Marten.Events.Projections
             public ProjectMethodCall(MethodSlot slot) : base(slot.HandlerType, (MethodInfo) slot.Method)
             {
                 EventType = Method.GetEventType(null);
+                Target = slot.Setter;
             }
 
             public Type EventType { get; }

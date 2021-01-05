@@ -97,6 +97,7 @@ namespace Marten.Events.CodeGeneration
             var method = lambda.GetType().GetMethod("Invoke");
             var setter = new Setter(typeof(T), name){InitialValue = lambda};
             var slot = new MethodSlot(setter, method, eventType);
+
             Methods.Add(slot);
 
             if (method.IsAsync())
