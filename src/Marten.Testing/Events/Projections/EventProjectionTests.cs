@@ -51,7 +51,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void use_simple_synchronous_project_methods_with_inline_lambdas()
         {
-            UseProjection<SimpleProjection>();
+            UseProjection<LambdaProjection>();
 
             var stream = Guid.NewGuid();
             theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
