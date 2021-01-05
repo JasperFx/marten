@@ -4,13 +4,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Events.V4Concept;
+using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events
+namespace Marten.Testing.Events.Projections
 {
     public class appending_events_and_storing: IntegrationContext
     {

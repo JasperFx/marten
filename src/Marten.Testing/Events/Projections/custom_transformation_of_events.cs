@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Events.V4Concept;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

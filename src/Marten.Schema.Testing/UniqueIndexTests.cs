@@ -1,6 +1,4 @@
 ﻿using System;
-using Marten.Events.Projections;
-using Marten.Events.V4Concept;
 using Marten.Exceptions;
 using Npgsql;
 using Shouldly;

@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Testing.Documents;
-using Marten.Testing.Events.V4Concepts.Aggregations;
+using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

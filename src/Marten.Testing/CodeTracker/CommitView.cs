@@ -1,7 +1,6 @@
 using System;
 using Marten.Events;
 using Marten.Events.Projections;
-using Marten.Events.V4Concept;
 using Marten.Schema;
 
 namespace Marten.Testing.CodeTracker

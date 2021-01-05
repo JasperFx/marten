@@ -1,12 +1,12 @@
 using Baseline;
 using Marten.Events;
-using Marten.Events.Projections;
+using Marten.Events.Operations;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events.Projections.Async
+namespace Marten.Testing.Events
 {
     public class EventProgressWriteTests: IntegrationContext
     {

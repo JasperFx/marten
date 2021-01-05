@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Events.V4Concept;
+using Marten.Events.Operations;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema.Identity;

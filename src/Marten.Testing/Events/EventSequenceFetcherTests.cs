@@ -2,7 +2,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Events.V4Concept;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Testing.Harness;

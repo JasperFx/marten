@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Querying;
-using Marten.Events.V4Concept;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Schema.Identity;

@@ -2,7 +2,7 @@ using System;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
-using Marten.Events.V4Concept.CodeGeneration;
+using Marten.Events.CodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Schema;

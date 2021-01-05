@@ -1,6 +1,5 @@
 using System;
 using Marten.Events;
-using Marten.Events.V4Concept;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;

@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
-using Marten.Events.V4Concept;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
