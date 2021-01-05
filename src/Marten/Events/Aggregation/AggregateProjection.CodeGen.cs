@@ -341,7 +341,35 @@ namespace Marten.Events.Aggregation
 
             if (invalidMethods.Any())
             {
-                throw new InvalidProjectionDefinitionException(this, invalidMethods);
+                throw new InvalidProjectionException(this, invalidMethods);
+            }
+        }
+
+        public IEnumerable<string> ValidateConfiguration(StoreOptions options)
+        {
+            var mapping = options.Storage.MappingFor(typeof(T));
+            if (options.Events.StreamIdentity == StreamIdentity.AsGuid)
+            {
+                if (mapping.IdType != typeof(Guid))
+                {
+                    yield return
+                        $"Id type mismatch. The stream identity type is System.Guid, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+                }
+            }
+
+            if (options.Events.StreamIdentity == StreamIdentity.AsString)
+            {
+                if (mapping.IdType != typeof(string))
+                {
+                    yield return
+                        $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+                }
+            }
+
+            if (options.Events.TenancyStyle != mapping.TenancyStyle)
+            {
+                yield return
+                    $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";
             }
         }
     }

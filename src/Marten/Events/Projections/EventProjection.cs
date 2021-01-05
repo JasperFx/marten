@@ -43,8 +43,14 @@ namespace Marten.Events.Projections
 
             if (invalidMethods.Any())
             {
-                throw new InvalidProjectionDefinitionException(this, invalidMethods);
+                throw new InvalidProjectionException(this, invalidMethods);
             }
+        }
+
+        IEnumerable<string> IValidatedProjection.ValidateConfiguration(StoreOptions options)
+        {
+            // Nothing
+            yield break;
         }
 
         [MartenIgnore]
