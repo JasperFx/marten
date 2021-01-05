@@ -9,15 +9,6 @@ namespace Marten.Services.BatchQuerying
 {
     public interface IBatchEvents
     {
-        /// <summary>
-        /// Fetch a live aggregation of a single event stream
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="streamId"></param>
-        /// <param name="version"></param>
-        /// <param name="timestamp"></param>
-        /// <returns></returns>
-        Task<T> AggregateStream<T>(Guid streamId, int version = 0, DateTime? timestamp = null) where T : class;
 
         /// <summary>
         /// Load a single event with all of its metadata

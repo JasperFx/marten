@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Marten.Storage;
 
 namespace Marten.Events.V4Concept.Aggregation
 {

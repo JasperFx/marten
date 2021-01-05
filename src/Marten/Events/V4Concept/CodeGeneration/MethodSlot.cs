@@ -42,6 +42,24 @@ namespace Marten.Events.V4Concept.CodeGeneration
             ReturnType = method.ReturnType;
         }
 
+        public MethodSlot(ConstructorInfo constructor, Type projectionType, Type aggregateType)
+        {
+            if (constructor.GetParameters().Length > 1)
+            {
+                throw new ArgumentOutOfRangeException($"Only single argument constructor functions can be used here.");
+            }
+
+            var parameterType = constructor.GetParameters().Single().ParameterType;
+            EventType = parameterType.Closes(typeof(Event<>))
+                ? parameterType.GetGenericArguments().Single()
+                : parameterType;
+
+            ReturnType = aggregateType;
+            HandlerType = projectionType;
+            DeclaringType = aggregateType;
+            Method = constructor;
+        }
+
         public IEnumerable<Type> ReferencedTypes()
         {
             yield return DeclaringType;

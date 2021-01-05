@@ -38,7 +38,7 @@ namespace Marten.Testing.Events.V4Concepts
             var ex = Should.Throw<InvalidProjectionDefinitionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors
-                .ShouldContain("Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are Marten.IQuerySession, Marten.Testing.Events.V4Concepts.Aggregations.MyAggregate, Marten.Testing.Events.V4Concepts.Aggregations.AEvent, Marten.Events.Event<Marten.Testing.Events.V4Concepts.Aggregations.AEvent>"
+                .ShouldContain("Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.V4Concepts.Aggregations.MyAggregate, Marten.Testing.Events.V4Concepts.Aggregations.AEvent, Marten.Events.Event<Marten.Testing.Events.V4Concepts.Aggregations.AEvent>"
                 );
         }
 
@@ -65,7 +65,7 @@ namespace Marten.Testing.Events.V4Concepts
             var ex = Should.Throw<InvalidProjectionDefinitionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(
-                    "Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are Marten.IQuerySession, Marten.Testing.Events.V4Concepts.Aggregations.MyAggregate, Marten.Testing.Events.V4Concepts.Aggregations.AEvent, Marten.Events.Event<Marten.Testing.Events.V4Concepts.Aggregations.AEvent>");
+                    "Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.V4Concepts.Aggregations.MyAggregate, Marten.Testing.Events.V4Concepts.Aggregations.AEvent, Marten.Events.Event<Marten.Testing.Events.V4Concepts.Aggregations.AEvent>", "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.V4Concepts.Aggregations.MyAggregate");
         }
 
         [Fact]
