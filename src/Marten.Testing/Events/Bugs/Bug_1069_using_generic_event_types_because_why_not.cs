@@ -3,7 +3,7 @@ using System.Linq;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace Marten.Testing.Events.Bugs
 {
     public class Bug_1069_using_generic_event_types_because_why_not: BugIntegrationContext
     {

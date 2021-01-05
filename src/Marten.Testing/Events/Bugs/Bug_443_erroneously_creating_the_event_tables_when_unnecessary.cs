@@ -6,7 +6,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace Marten.Testing.Events.Bugs
 {
     public class Bug_443_erroneously_creating_the_event_tables_when_unnecessary: BugIntegrationContext
     {

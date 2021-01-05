@@ -1,11 +1,10 @@
 using System;
-using Marten.Events;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace Marten.Testing.Events.Bugs
 {
     public class Bug_1019_event_type_not_found_bad_exception_message: BugIntegrationContext
     {
@@ -13,7 +12,7 @@ namespace Marten.Testing.Bugs
         public void unknown_type_should_report_type_name()
         {
             var streamGuid = Guid.Parse("378b8405-8cdc-40ef-bafa-2033cd3c43c3");
-            var typeName = "Marten.Testing.Bugs.Bug1019.Product, Marten.Testing";
+            var typeName = "Marten.Testing.Events.Bugs.Bug1019.Product, Marten.Testing";
             var newTypeName = "Foo, Bar";
             using (var session = theStore.OpenSession())
             {
