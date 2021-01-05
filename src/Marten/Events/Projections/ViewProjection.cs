@@ -4,7 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Events.Aggregation;
+using Marten.Exceptions;
 using Marten.Storage;
 
 namespace Marten.Events.Projections
@@ -46,6 +48,15 @@ namespace Marten.Events.Projections
                 if (@event.Data is TEvent e) return _func(e);
 
                 return default;
+            }
+        }
+
+        protected override void specialAssertValid()
+        {
+            if (!_groupers.Any())
+            {
+                throw new InvalidProjectionException(
+                    $"ViewProjection {GetType().FullNameInCode()} has no Identity() rules defined and does not know how to identify event membership in the aggregated document {typeof(TDoc).FullNameInCode()}");
             }
         }
 

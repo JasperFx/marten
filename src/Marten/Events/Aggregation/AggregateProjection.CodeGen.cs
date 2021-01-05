@@ -349,9 +349,15 @@ namespace Marten.Events.Aggregation
             {
                 throw new InvalidProjectionException(this, invalidMethods);
             }
+
+            specialAssertValid();
         }
 
-        public IEnumerable<string> ValidateConfiguration(StoreOptions options)
+        protected virtual void specialAssertValid()
+        {
+        }
+
+        IEnumerable<string> IValidatedProjection.ValidateConfiguration(StoreOptions options)
         {
             var mapping = options.Storage.MappingFor(typeof(T));
             if (options.Events.StreamIdentity == StreamIdentity.AsGuid)

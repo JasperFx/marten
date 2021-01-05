@@ -223,6 +223,17 @@ namespace Marten.Testing.Events.Aggregation
         {
 
         }
+
+        public MyAggregate Create(CreateEvent @event)
+        {
+            return new MyAggregate
+            {
+                ACount = @event.A,
+                BCount = @event.B,
+                CCount = @event.C,
+                DCount = @event.D
+            };
+        }
     }
 
     public class AllGood: AggregateProjection<MyAggregate>
