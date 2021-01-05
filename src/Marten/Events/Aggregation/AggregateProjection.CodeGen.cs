@@ -337,6 +337,12 @@ namespace Marten.Events.Aggregation
 
         void IValidatedProjection.AssertValidity()
         {
+            if (_applyMethods.IsEmpty() && _createMethods.IsEmpty())
+            {
+                throw new InvalidProjectionException(
+                    $"AggregateProjection for {typeof(T).FullNameInCode()} has no valid create or apply operations");
+            }
+
             var invalidMethods = MethodCollection.FindInvalidMethods(GetType(), _applyMethods, _createMethods, _shouldDeleteMethods);
 
             if (invalidMethods.Any())

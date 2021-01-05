@@ -67,6 +67,5 @@ namespace Marten.Events.CodeGeneration
 
             method.Frames.Code("return {0};", new Use(AggregateType));
         }
-
     }
 }
