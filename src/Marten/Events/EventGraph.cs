@@ -438,5 +438,10 @@ namespace Marten.Events
             var mapping = EventMappingFor(eventData.GetType());
             return mapping.Wrap(eventData);
         }
+
+        internal void AssertValidity()
+        {
+            Projections.AssertValidity();
+        }
     }
 }

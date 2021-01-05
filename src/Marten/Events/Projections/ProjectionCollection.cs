@@ -4,10 +4,11 @@ using System.Linq;
 using Baseline;
 using ImTools;
 using Marten.Events.Aggregation;
+using Marten.Exceptions;
 
 namespace Marten.Events.Projections
 {
-    // TODO -- well, everything. Add Xml comments
+    // TODO -- Add Xml comments
     public class ProjectionCollection
     {
         private readonly StoreOptions _options;
@@ -64,7 +65,8 @@ namespace Marten.Events.Projections
 
         public void InlineSelfAggregate<T>()
         {
-            _options.Storage.MappingFor(typeof(T));
+            // Make sure there's a DocumentMapping for the aggregate
+            _options.Schema.For<T>();
             var source = new AggregateProjection<T>();
             source.As<IValidatedProjection>().AssertValidity();
             _inlineProjections.Add(source);
@@ -72,7 +74,8 @@ namespace Marten.Events.Projections
 
         public void AsyncSelfAggregate<T>()
         {
-            _options.Storage.MappingFor(typeof(T));
+            // Make sure there's a DocumentMapping for the aggregate
+            _options.Schema.For<T>();
             var source = new AggregateProjection<T>();
             source.As<IValidatedProjection>().AssertValidity();
             _asyncProjections.Add(source);
@@ -106,8 +109,6 @@ namespace Marten.Events.Projections
 
             if (!_liveAggregateSources.TryGetValue(typeof(T), out var source))
             {
-                // TODO -- there needs to be a validating step here I think to see if there are any projection methods.
-
                 source = new AggregateProjection<T>();
                 source.As<IValidatedProjection>().AssertValidity();
             }
@@ -116,6 +117,18 @@ namespace Marten.Events.Projections
             _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
 
             return (ILiveAggregator<T>) aggregator;
+        }
+
+        internal void AssertValidity()
+        {
+            var messages = _asyncProjections.Concat(_inlineProjections).Concat(_liveAggregateSources.Values)
+                .OfType<IValidatedProjection>().Distinct().SelectMany(x => x.ValidateConfiguration(_options))
+                .ToArray();
+
+            if (messages.Any())
+            {
+                throw new InvalidProjectionException(messages);
+            }
         }
     }
 }

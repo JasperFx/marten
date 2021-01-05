@@ -35,8 +35,9 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
-
+                _.Schema.For<NewsletterSubscription>().MultiTenanted();
                 _.Events.Projections.Inline(new NewsletterSubscriptionProjection());
+
             });
 
             var subscriptionId = Guid.NewGuid();
