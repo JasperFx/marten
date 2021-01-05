@@ -181,5 +181,10 @@ namespace Marten.Events.CodeGeneration
 
             return invalidMethods.ToArray();
         }
+
+        public bool IsEmpty()
+        {
+            return !Methods.Any();
+        }
     }
 }

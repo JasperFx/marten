@@ -77,6 +77,22 @@ namespace Marten.Testing.Events.Aggregation
             }).ShouldContain("Tenancy storage style mismatch between the events (Single) and the aggregate type Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate (Conjoined)", StringComparisonOption.Default);
         }
 
+        [Fact]
+        public void validation_errors_on_empty_aggregation()
+        {
+            errorMessageFor(opts =>
+            {
+                opts.Events.Projections.Inline(new Projections.EmptyProjection());
+            }).ShouldNotBeNull();
+        }
+
+        public class EmptyProjection: AggregateProjection<GuidIdentifiedAggregate>
+        {
+
+        }
+
+
+
         public class GuidIdentifiedAggregate
         {
             public Guid Id { get; set; }

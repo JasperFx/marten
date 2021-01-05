@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using Baseline;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -128,7 +130,19 @@ namespace Marten.Testing.Events.Projections
                 .Single()
                 .ShouldBe("two");
         }
+
+        [Fact]
+        public void empty_projection_throws_validation_error()
+        {
+            var projection = new EmptyProjection();
+            Should.Throw<InvalidProjectionException>(() =>
+            {
+                projection.As<IValidatedProjection>().AssertValidity();
+            });
+        }
     }
+
+    public class EmptyProjection : EventProjection{}
 
     public class SimpleProjection: EventProjection
     {

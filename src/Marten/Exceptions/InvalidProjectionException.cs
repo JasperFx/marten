@@ -14,6 +14,9 @@ namespace Marten.Exceptions
     /// </summary>
     public class InvalidProjectionException : Exception
     {
+        public InvalidProjectionException(string message) : base(message)
+        {
+        }
 
         internal InvalidProjectionException(IValidatedProjection projection, IEnumerable<MethodSlot> invalidMethods) : base(ToMessage(projection, invalidMethods))
         {

@@ -4,7 +4,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events
+namespace Marten.Testing.Events.Aggregation
 {
     public class aggregates_should_be_registered_as_document_mappings_automatically: IntegrationContext
     {

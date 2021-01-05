@@ -39,6 +39,12 @@ namespace Marten.Events.Projections
 
         void IValidatedProjection.AssertValidity()
         {
+            if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())
+            {
+                throw new InvalidProjectionException(
+                    $"EventProjection {GetType().FullNameInCode()} has no valid projection operations");
+            }
+
             var invalidMethods = MethodCollection.FindInvalidMethods(GetType(), _projectMethods, _createMethods);
 
             if (invalidMethods.Any())
