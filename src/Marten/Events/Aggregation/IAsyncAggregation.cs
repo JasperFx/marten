@@ -3,11 +3,13 @@ using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Internal.Storage;
 
 namespace Marten.Events.Aggregation
 {
     public interface IAsyncAggregation<TDoc, TId>
     {
+        public IDocumentStorage<TDoc, TId> Storage { get; }
 
         public Task<IStorageOperation> DetermineOperation(IMartenSession session, EventSlice<TDoc, TId> slice, CancellationToken cancellation);
 
@@ -18,11 +20,13 @@ namespace Marten.Events.Aggregation
     public abstract class AsyncDaemonAggregationBase<TDoc, TId> : IAsyncAggregation<TDoc, TId>
     {
         public IEventSlicer<TDoc, TId> Slicer { get; }
+        public IDocumentStorage<TDoc, TId> Storage { get; }
         private readonly IAggregateProjection _projection;
 
-        public AsyncDaemonAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer)
+        public AsyncDaemonAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage)
         {
             Slicer = slicer;
+            Storage = storage;
             _projection = projection;
         }
 
@@ -37,11 +41,13 @@ namespace Marten.Events.Aggregation
     public abstract class SyncDaemonAggregationBase<TDoc, TId> : IAsyncAggregation<TDoc, TId>
     {
         public IEventSlicer<TDoc, TId> Slicer { get; set; }
+        public IDocumentStorage<TDoc, TId> Storage { get; }
         private readonly IAggregateProjection _projection;
 
-        public SyncDaemonAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer)
+        public SyncDaemonAggregationBase(IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage)
         {
             Slicer = slicer;
+            Storage = storage;
             _projection = projection;
         }
 

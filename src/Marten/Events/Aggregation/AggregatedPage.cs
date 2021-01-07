@@ -6,41 +6,38 @@ using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
-    public class AggregatedPage<TDoc, TId> : IAsyncBatch
+    public class AggregatedPage<TDoc, TId>
     {
         protected readonly DocumentStore _store;
         private readonly IAsyncAggregation<TDoc, TId> _aggregation;
-        protected readonly IDocumentStorage<TDoc, TId> _storage;
-
-        private readonly ActionBlock<IStorageOperation> _enqueueOperations;
 
         // TODO -- this needs to be connected to the
         private readonly TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
         private Task<Task> _splitting;
 
-        // TODO -- replace when https://github.com/JasperFx/marten/issues/1627 is done.
-        private readonly List<IStorageOperation> _operations = new List<IStorageOperation>();
+
         private readonly IQuerySession _session;
+        private IncrementalUpdateBatch _batch;
+        private readonly IDocumentStorage<TDoc, TId> _storage;
 
         public AggregatedPage(DocumentStore store, IAsyncAggregation<TDoc, TId> aggregation)
         {
             _store = store;
             _aggregation = aggregation;
 
+            _storage = aggregation.Storage;
+
             // TODO -- this will change maybe when we have the "pre fetch"
             // options.
             // Watch https://github.com/JasperFx/marten/issues/1627
-            _session = _store.QuerySession();
-
-            _enqueueOperations = new ActionBlock<IStorageOperation>(x => _operations.Add(x),
-                new ExecutionDataflowBlockOptions
-                {
-                    MaxDegreeOfParallelism = 1
-                });
+            _session = _store.LightweightSession();
+            _batch = new IncrementalUpdateBatch((DocumentSessionBase) _session);
 
             // TODO -- pass along a real CancellationToken
             _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(fragment => _aggregation.DetermineOperation((IMartenSession) _session, fragment, CancellationToken.None));
@@ -50,8 +47,8 @@ namespace Marten.Events.Aggregation
 
         public void EnqueueDelete(EventSlice<TDoc, TId> fragment)
         {
-            var deletion = _storage.DeleteForId(fragment.Id);
-            _enqueueOperations.Post(deletion);
+            var deletion = _aggregation.Storage.DeleteForId(fragment.Id);
+            _batch.Enqueue(deletion);
         }
 
 
@@ -63,73 +60,80 @@ namespace Marten.Events.Aggregation
             await _splitting;
 
             await _builder.Completion;
-            await _enqueueOperations.Completion;
+            await _batch.Completion;
 
-            return new UpdateBatch(_operations);
+            return _batch;
         }
 
 
-        public int Count { get; private set;}
-
         public void StartLoadingEvents(long floor, long ceiling, IAsyncEnumerable<IEvent> events)
         {
-            // TODO -- have to figure out how to set this later
-            //Count = events.Count;
             Floor = floor;
             Ceiling = ceiling;
 
-
             _splitting = Task.Factory.StartNew(async () =>
             {
-                var fragments = await _aggregation.Slicer.Slice(events, _store.Tenancy);
+                var slices = await _aggregation.Slicer.Slice(events, _store.Tenancy);
 
-                var beingFetched = new Dictionary<TId, EventSlice<TDoc, TId>>();
+                var beingFetched = new List<EventSlice<TDoc, TId>>();
 
-                foreach (var fragment in fragments)
+                foreach (var slice in slices)
                 {
-                    if (_aggregation.WillDelete(fragment))
+                    if (_aggregation.WillDelete(slice))
                     {
-                        EnqueueDelete(fragment);
+                        EnqueueDelete(slice);
                     }
-                    else if (IsNew(fragment))
+                    else if (IsNew(slice))
                     {
-                        _builder.Post(fragment);
+                        _builder.Post(slice);
                     }
                     else
                     {
-                        beingFetched.Add(fragment.Id, fragment);
+                        beingFetched.Add(slice);
                     }
                 }
 
-                using (var query = _store.QuerySession())
+                var byTenant = beingFetched.GroupBy(x => x.Tenant);
+                foreach (var group in byTenant)
                 {
-                    // TODO -- THIS DOES NOT WORK IF MULTI-TENANTED. NEED TO BREAK UP BY TENANT
-                    // TODO -- pass along the right CancellationToken
-                    var aggregates = await _storage
-                        .LoadManyAsync(beingFetched.Keys.ToArray(), (IMartenSession)query, CancellationToken.None);
-
-                    foreach (var aggregate in aggregates)
-                    {
-                        var id = _storage.Identity(aggregate);
-                        if (beingFetched.TryGetValue(id, out var fragment))
-                        {
-                            fragment.Aggregate = aggregate;
-                        }
-                    }
+                    await startWithExistingAggregates(@group);
                 }
 
-                foreach (var fragment in beingFetched.Values)
-                {
-                    _builder.Post(fragment);
-                }
+
+
+
+
+
             });
 
         }
 
-
-        public virtual bool IsNew(EventSlice<TDoc, TId> fragment)
+        private async Task startWithExistingAggregates(IGrouping<ITenant, EventSlice<TDoc, TId>> @group)
         {
-            return fragment.Events.First().Version == 1;
+            using var query = _store.QuerySession(@group.Key.TenantId);
+            var dict = @group.ToDictionary(x => x.Id);
+            var aggregates = await _storage
+                .LoadManyAsync(dict.Keys.ToArray(), (IMartenSession) query, CancellationToken.None);
+
+            foreach (var aggregate in aggregates)
+            {
+                var id = _storage.Identity(aggregate);
+                if (dict.TryGetValue(id, out var fragment))
+                {
+                    fragment.Aggregate = aggregate;
+                }
+            }
+
+            foreach (var slice in @group)
+            {
+                _builder.Post(slice);
+            }
+        }
+
+        // TODO -- Override for the ViewProjection!
+        public virtual bool IsNew(EventSlice<TDoc, TId> slice)
+        {
+            return slice.Events.First().Version == 1;
         }
 
         public void Dispose()
