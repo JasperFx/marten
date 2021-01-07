@@ -28,7 +28,7 @@ namespace Marten.Internal
                 {
                     var command = session.BuildCommand(_operations);
                     using var reader = session.Database.ExecuteReader(command);
-                    applyCallbacks(_operations, reader);
+                    ApplyCallbacks(_operations, reader, _exceptions);
                 }
                 else
                 {
@@ -43,7 +43,7 @@ namespace Marten.Internal
 
                         var command = session.BuildCommand(operations);
                         using var reader = session.Database.ExecuteReader(command);
-                        applyCallbacks(operations, reader);
+                        ApplyCallbacks(operations, reader, _exceptions);
 
                         count += session.Options.UpdateBatchSize;
                     }
@@ -69,7 +69,7 @@ namespace Marten.Internal
                 try
                 {
                     using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                    await applyCallbacksAsync(_operations, reader, token).ConfigureAwait(false);
+                    await ApplyCallbacksAsync(_operations, reader, _exceptions, token).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -95,7 +95,7 @@ namespace Marten.Internal
                     {
                         using var reader =
                             await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                        await applyCallbacksAsync(operations, reader, token).ConfigureAwait(false);
+                        await ApplyCallbacksAsync(operations, reader, _exceptions, token).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -127,13 +127,14 @@ namespace Marten.Internal
             }
         }
 
-        private void applyCallbacks(IReadOnlyList<IStorageOperation> operations, DbDataReader reader)
+        public static void ApplyCallbacks(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
+            IList<Exception> exceptions)
         {
             var first = operations.First();
 
             if (!(first is NoDataReturnedCall))
             {
-                first.Postprocess(reader, _exceptions);
+                first.Postprocess(reader, exceptions);
                 try
                 {
                     reader.NextResult();
@@ -149,41 +150,72 @@ namespace Marten.Internal
             }
 
             foreach (var operation in operations.Skip(1))
-                if (!(operation is NoDataReturnedCall))
-                {
-                    operation.Postprocess(reader, _exceptions);
-                    try
-                    {
-                        reader.NextResult();
-                    }
-                    catch (Exception e)
-                    {
-                        Exception transformed = null;
+            {
+                if (operation is NoDataReturnedCall) continue;
 
-                        if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                            throw transformed;
-                        throw;
-                    }
+                operation.Postprocess(reader, exceptions);
+
+                try
+                {
+                    reader.NextResult();
                 }
+                catch (Exception e)
+                {
+                    Exception transformed = null;
+
+                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
+                        throw transformed;
+                    throw;
+                }
+            }
         }
 
-        private async Task applyCallbacksAsync(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
+        public static async Task ApplyCallbacksAsync(IReadOnlyList<IStorageOperation> operations, DbDataReader reader,
+            IList<Exception> exceptions,
             CancellationToken token)
         {
             var first = operations.First();
 
             if (!(first is NoDataReturnedCall))
             {
-                await first.PostprocessAsync(reader, _exceptions, token).ConfigureAwait(false);
-                await reader.NextResultAsync(token).ConfigureAwait(false);
+                await first.PostprocessAsync(reader, exceptions, token);
+                try
+                {
+                    await reader.NextResultAsync(token);
+                }
+                catch (Exception e)
+                {
+                    Exception transformed = null;
+
+                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
+                    {
+                        throw transformed;
+                    }
+                    throw;
+                }
             }
 
             foreach (var operation in operations.Skip(1))
-                if (!(operation is NoDataReturnedCall))
+            {
+                if (operation is NoDataReturnedCall) continue;
+
+                await operation.PostprocessAsync(reader, exceptions, token);
+                try
                 {
-                    await operation.PostprocessAsync(reader, _exceptions, token).ConfigureAwait(false);
-                    await reader.NextResultAsync(token).ConfigureAwait(false);
+                    await reader.NextResultAsync(token);
                 }
+                catch (Exception e)
+                {
+                    Exception transformed = null;
+
+                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
+                    {
+                        throw transformed;
+                    }
+
+                    throw;
+                }
+            }
         }
     }
 }
