@@ -18,7 +18,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         private readonly LightweightCache<string, Guid> _streams = new LightweightCache<string, Guid>();
         private IDocumentStore _store;
         private Guid _lastStream;
-        private int _version;
+        private long _version;
         private DateTime _time;
         private string _mode;
 
@@ -52,7 +52,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         }
 
         [FormatAs("The version of quest {name} should be {version}")]
-        public int TheQuestVersionShouldBe(string name)
+        public long TheQuestVersionShouldBe(string name)
         {
             using (var session = _store.LightweightSession())
             {
@@ -64,7 +64,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         }
 
         [ExposeAsTable("If the Event Timestamps were")]
-        public void OverwriteTimestamps(int version, DateTime time)
+        public void OverwriteTimestamps(long version, DateTime time)
         {
             var store = Context.State.Retrieve<IDocumentStore>();
             using (var session = store.OpenSession())
@@ -97,7 +97,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         }
 
         [Hidden, FormatAs("For version # {version}")]
-        public void Version(int version)
+        public void Version(long version)
         {
             _version = version;
         }
@@ -170,7 +170,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
             });
         }
 
-        private IEnumerable<string> allEvents(int version)
+        private IEnumerable<string> allEvents(long version)
         {
             using (var session = _store.LightweightSession())
             {
@@ -248,7 +248,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         }
 
         [FormatAs("Live aggregating to QuestParty at version {version} should be {returnValue}")]
-        public string LiveAggregationToQueryPartyVersionShouldBe(int version)
+        public string LiveAggregationToQueryPartyVersionShouldBe(long version)
         {
             using (var session = _store.OpenSession())
             {

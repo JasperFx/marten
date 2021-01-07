@@ -16,7 +16,7 @@ namespace Marten.Events
         /// <summary>
         /// The version of the stream this event reflects. The place in the stream.
         /// </summary>
-        int Version { get; set; }
+        long Version { get; set; }
 
         /// <summary>
         /// The sequential order of this event in the entire event store
@@ -104,7 +104,7 @@ namespace Marten.Events
         /// <summary>
         ///     An event's version position within its event stream
         /// </summary>
-        public int Version { get; set; }
+        public long Version { get; set; }
 
         /// <summary>
         ///     A global sequential number identifying the Event

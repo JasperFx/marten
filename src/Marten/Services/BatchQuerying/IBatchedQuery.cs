@@ -31,7 +31,7 @@ namespace Marten.Services.BatchQuerying
         /// <param name="version"></param>
         /// <param name="timestamp"></param>
         /// <returns></returns>
-        Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null);
+        Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null);
     }
 
     public interface IBatchedQuery

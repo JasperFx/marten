@@ -144,7 +144,7 @@ namespace Marten.Services.BatchQuerying
             return AddItem(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, int version = 0, DateTime? timestamp = null)
+        public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null)
         {
             var handler = new EventQueryHandler<Guid>(_parent.Tenant.EventStorage(), streamId, version, timestamp, _parent.Options.Events.TenancyStyle, _parent.Tenant.TenantId);
 

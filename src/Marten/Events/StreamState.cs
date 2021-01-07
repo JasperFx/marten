@@ -14,7 +14,7 @@ namespace Marten.Events
         /// Current version of the stream in the database. Corresponds to
         /// the number of events in the stream
         /// </summary>
-        public int Version { get; set;}
+        public long Version { get; set;}
 
         /// <summary>
         /// If the stream was started as tagged to an aggregate type, that will
@@ -43,7 +43,7 @@ namespace Marten.Events
         {
         }
 
-        public StreamState(Guid id, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        public StreamState(Guid id, long version, Type aggregateType, DateTime lastTimestamp, DateTime created)
         {
             Id = id;
             Version = version;
@@ -52,7 +52,7 @@ namespace Marten.Events
             Created = created;
         }
 
-        public StreamState(string key, int version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        public StreamState(string key, long version, Type aggregateType, DateTime lastTimestamp, DateTime created)
         {
             Key = key;
             Version = version;
