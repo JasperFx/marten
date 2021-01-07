@@ -104,9 +104,9 @@ namespace Marten.Events
 
 
         public IReadOnlyList<IEvent> Events => _events;
-        public int? ExpectedVersionOnServer { get; internal set; }
+        public long? ExpectedVersionOnServer { get; internal set; }
 
-        public int Version { get; internal set; }
+        public long Version { get; internal set; }
 
 
         public DateTime? Timestamp { get; internal set; }
@@ -229,7 +229,7 @@ namespace Marten.Events
         /// <param name="sequences"></param>
         /// <param name="session"></param>
         /// <exception cref="EventStreamUnexpectedMaxEventIdException"></exception>
-        internal void PrepareEvents(int currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session)
+        internal void PrepareEvents(long currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session)
         {
             var timestamp = DateTimeOffset.UtcNow;
 

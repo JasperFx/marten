@@ -20,11 +20,11 @@ namespace Marten.Events.Querying
         private readonly IEventStorage _selector;
         private readonly TIdentity _streamId;
         private readonly DateTime? _timestamp;
-        private readonly int _version;
+        private readonly long _version;
         private readonly TenancyStyle _tenancyStyle;
         private readonly string _tenantId;
 
-        public EventQueryHandler(IEventStorage selector, TIdentity streamId, int version = 0, DateTime? timestamp = null, TenancyStyle tenancyStyle = TenancyStyle.Single, string tenantId = null)
+        public EventQueryHandler(IEventStorage selector, TIdentity streamId, long version = 0, DateTime? timestamp = null, TenancyStyle tenancyStyle = TenancyStyle.Single, string tenantId = null)
         {
             if (timestamp != null && timestamp.Value.Kind != DateTimeKind.Utc)
             {

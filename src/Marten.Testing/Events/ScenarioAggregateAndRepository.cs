@@ -219,7 +219,7 @@ namespace Marten.Testing.Events
 
         // For protecting the state, i.e. conflict prevention
         // The setter is only public for setting up test conditions
-        public int Version { get; set; }
+        public long Version { get; set; }
 
         // JsonIgnore - for making sure that it won't be stored in inline projection
         [JsonIgnore]
