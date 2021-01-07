@@ -75,6 +75,12 @@ namespace Marten.Events.Aggregation
             var storage = options.Providers.StorageFor<T>().Lightweight;
             var slicer = buildEventSlicer();
 
+            var ctor = _inlineType.CompiledType.GetConstructors().Single();
+            foreach (var parameter in ctor.GetParameters())
+            {
+                Debug.WriteLine(parameter.ParameterType.NameInCode());
+            }
+
             var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, this, slicer, options.Tenancy, storage, this);
             _inlineType.ApplySetterValues(inline);
 
@@ -83,20 +89,22 @@ namespace Marten.Events.Aggregation
 
         protected virtual object buildEventSlicer()
         {
+            Type slicerType = null;
             if (_aggregateMapping.IdType == typeof(Guid))
             {
-                var slicerType = typeof(ByStreamId<>).MakeGenericType(_aggregateMapping.DocumentType);
-                return Activator.CreateInstance(slicerType);
+                slicerType = typeof(ByStreamId<>).MakeGenericType(_aggregateMapping.DocumentType);
             }
-
-            if (_aggregateMapping.IdType != typeof(string))
+            else if (_aggregateMapping.IdType != typeof(string))
+            {
                 throw new ArgumentOutOfRangeException(
                     $"{_aggregateMapping.IdType.FullNameInCode()} is not a supported stream id type for aggregate {_aggregateMapping.DocumentType.FullNameInCode()}");
+            }
+            else
             {
-                var slicerType = typeof(ByStreamKey<>).MakeGenericType(_aggregateMapping.DocumentType);
-                return Activator.CreateInstance(slicerType);
+                slicerType = typeof(ByStreamKey<>).MakeGenericType(_aggregateMapping.DocumentType);
             }
 
+            return Activator.CreateInstance(slicerType);
         }
 
 

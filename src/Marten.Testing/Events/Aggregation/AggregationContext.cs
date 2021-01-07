@@ -12,7 +12,6 @@ namespace Marten.Testing.Events.Aggregation
     public class AggregationContext : IntegrationContext
     {
         protected AggregateProjection<MyAggregate> _projection;
-        private V4Aggregator<MyAggregate, Guid> _aggregator;
 
         public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
         {
@@ -49,14 +48,6 @@ namespace Marten.Testing.Events.Aggregation
             var fragment = new TestEventSlice(Guid.NewGuid());
             action(fragment);
             return fragment;
-        }
-
-        public V4Aggregator<MyAggregate, Guid> theAggregator
-        {
-            get
-            {
-                return _aggregator ??= (V4Aggregator<MyAggregate, Guid>)_projection.BuildLiveAggregator();
-            }
         }
 
         public async Task InlineProject(Action<TestEventScenario> action)
