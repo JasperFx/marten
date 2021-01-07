@@ -133,7 +133,10 @@ namespace Marten.Services
                 }
                 finally
                 {
-                    Connection.Close();
+                    if (_ownsConnection)
+                    {
+                        Connection.Close();
+                    }
                 }
             }
         }
@@ -154,7 +157,10 @@ namespace Marten.Services
                 }
                 finally
                 {
-                    await Connection.CloseAsync().ConfigureAwait(false);
+                    if (_ownsConnection)
+                    {
+                        await Connection.CloseAsync().ConfigureAwait(false);
+                    }
                 }
             }
         }
