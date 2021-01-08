@@ -4,28 +4,44 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Util;
 using Npgsql;
 
-namespace Marten.Internal
+namespace Marten.Events.Daemon
 {
-    internal class IncrementalUpdateBatch : IUpdateBatch, IDisposable
+    internal class EventRange
     {
+        public EventRange(long floor, long ceiling)
+        {
+            Floor = floor;
+            Ceiling = ceiling;
+        }
+
+        public long Floor { get; }
+        public long Ceiling { get; }
+    }
+
+    internal class ProjectionUpdateBatch : IUpdateBatch, IDisposable
+    {
+        public EventRange Range { get; }
         private readonly DocumentSessionBase _session;
-        private readonly ActionBlock<IStorageOperation> _block;
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
 
-        public IncrementalUpdateBatch(DocumentSessionBase session)
+        public ProjectionUpdateBatch(DocumentSessionBase session, EventRange range)
         {
+            Range = range;
             _session = session;
-            _block = new ActionBlock<IStorageOperation>(processOperation,
+            Queue = new ActionBlock<IStorageOperation>(processOperation,
                 new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 1, EnsureOrdered = true});
 
             startNewPage(session);
         }
+
+        public ActionBlock<IStorageOperation> Queue { get; }
 
         private void startNewPage(IMartenSession session)
         {
@@ -47,12 +63,12 @@ namespace Marten.Internal
 
         public void Enqueue(IStorageOperation operation)
         {
-            _block.Post(operation);
+            Queue.Post(operation);
         }
 
-        public Task Completion => _block.Completion;
+        public Task Completion => Queue.Completion;
 
-        public void ApplyChanges(IMartenSession session)
+        void IUpdateBatch.ApplyChanges(IMartenSession session)
         {
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
@@ -67,7 +83,7 @@ namespace Marten.Internal
             }
         }
 
-        public async Task ApplyChangesAsync(IMartenSession session, CancellationToken token)
+        async Task IUpdateBatch.ApplyChangesAsync(IMartenSession session, CancellationToken token)
         {
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
@@ -121,7 +137,7 @@ namespace Marten.Internal
 
         public void Dispose()
         {
-            _block.Complete();
+            Queue.Complete();
         }
     }
 }

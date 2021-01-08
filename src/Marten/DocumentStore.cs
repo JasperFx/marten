@@ -48,7 +48,7 @@ namespace Marten
             Schema = Tenancy.Schema;
 
             Storage.PostProcessConfiguration();
-            Events.AssertValidity();
+            Events.AssertValidity(this);
 
             Advanced = new AdvancedOptions(this);
 

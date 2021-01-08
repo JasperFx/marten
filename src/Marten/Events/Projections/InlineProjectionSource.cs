@@ -13,7 +13,7 @@ namespace Marten.Events.Projections
         }
 
         public string ProjectionName { get; }
-        public IInlineProjection BuildInline(StoreOptions options)
+        public IInlineProjection BuildInline(DocumentStore store)
         {
             return _projection;
         }

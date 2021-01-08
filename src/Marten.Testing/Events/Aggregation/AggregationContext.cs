@@ -61,7 +61,7 @@ namespace Marten.Testing.Events.Aggregation
                 .Select(x => StreamAction.Append(x.Key, x.Value.Events.ToArray()))
                 .ToArray();
 
-            var inline = _projection.BuildInlineProjection(theStore.Options);
+            var inline = _projection.BuildInlineProjection(theStore);
 
             await inline.ApplyAsync(theSession, streams, CancellationToken.None);
             await theSession.SaveChangesAsync();
