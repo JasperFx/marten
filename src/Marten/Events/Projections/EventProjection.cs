@@ -193,11 +193,11 @@ namespace Marten.Events.Projections
         private GeneratedAssembly _assembly;
         private bool _isAsync;
 
-        IInlineProjection IProjectionSource.BuildInline(StoreOptions options)
+        IInlineProjection IProjectionSource.BuildInline(DocumentStore store)
         {
             if (_inlineType == null)
             {
-                Compile(options);
+                Compile(store.Options);
             }
 
             Debug.WriteLine(_inlineType.SourceCode);

@@ -4,7 +4,7 @@ namespace Marten.Events.Projections
     {
         string ProjectionName { get; }
 
-        IInlineProjection BuildInline(StoreOptions options);
+        IInlineProjection BuildInline(DocumentStore store);
         // TODO -- add an async option later.
 
 

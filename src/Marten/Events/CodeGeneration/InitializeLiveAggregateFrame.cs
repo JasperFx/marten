@@ -33,7 +33,7 @@ namespace Marten.Events.CodeGeneration
                 .Single(x => x.Name == "LoadAsync" && x.GetParameters().First().ParameterType == idType)
                 .MakeGenericMethod(aggregateType);
 
-            _loadMethod = new MethodCall(typeof(IDocumentSession), load);
+            _loadMethod = new MethodCall(typeof(IQuerySession), load);
             _loadMethod.AssignResultTo(Aggregate);
         }
 

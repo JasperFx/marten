@@ -38,9 +38,9 @@ namespace Marten.Events.Projections
             }
         }
 
-        internal IInlineProjection[] BuildInlineProjections()
+        internal IInlineProjection[] BuildInlineProjections(DocumentStore store)
         {
-            return _inlineProjections.Select(x => x.BuildInline(_options)).ToArray();
+            return _inlineProjections.Select(x => x.BuildInline(store)).ToArray();
         }
 
 

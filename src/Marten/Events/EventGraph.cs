@@ -42,6 +42,8 @@ namespace Marten.Events
 
         private readonly Lazy<EstablishTombstoneStream> _establishTombstone;
 
+        private DocumentStore _store;
+
         public EventGraph(StoreOptions options)
         {
             Options = options;
@@ -55,7 +57,7 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-            _inlineProjections = new Lazy<IInlineProjection[]>(() => Projections.BuildInlineProjections());
+            _inlineProjections = new Lazy<IInlineProjection[]>(() => Projections.BuildInlineProjections(_store));
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
 
@@ -445,8 +447,9 @@ namespace Marten.Events
             return mapping.Wrap(eventData);
         }
 
-        internal void AssertValidity()
+        internal void AssertValidity(DocumentStore store)
         {
+            _store = store;
             Projections.AssertValidity();
         }
     }
