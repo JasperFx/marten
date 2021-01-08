@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -337,7 +339,7 @@ namespace Marten.Testing.Services
 
 
         [Fact]
-        public async Task log_execute_with_answer_failure_2_asycn()
+        public async Task log_execute_with_answer_failure_2_async()
         {
             var ex = new DivideByZeroException();
             var logger = new RecordingLogger();
@@ -360,6 +362,50 @@ namespace Marten.Testing.Services
                 logger.LastCommand.ShouldBe(cmd);
                 logger.LastException.ShouldBe(ex);
             }
+        }
+
+        [Fact]
+        public void external_connection_should_not_be_closed_on_rollback()
+        {
+            var connectionSource = new ConnectionSource();
+
+            using var externalConnection = connectionSource.Create();
+            externalConnection.Open();
+
+            var tx = externalConnection.BeginTransaction();
+
+            var sessionOptions = new SessionOptions
+            {
+                Transaction = tx,
+                OwnsConnection = false
+            };
+
+            using var connection = new ManagedConnection(sessionOptions, CommandRunnerMode.AutoCommit, new NulloRetryPolicy());
+            connection.Rollback();
+
+            externalConnection.State.ShouldBe(ConnectionState.Open);
+        }
+
+        [Fact]
+        public async Task external_connection_should_not_be_closed_on_rollback_async()
+        {
+            var connectionSource = new ConnectionSource();
+
+            await using var externalConnection = connectionSource.Create();
+            await externalConnection.OpenAsync();
+
+            var tx = await externalConnection.BeginTransactionAsync();
+
+            var sessionOptions = new SessionOptions
+            {
+                Transaction = tx,
+                OwnsConnection = false
+            };
+
+            using var connection = new ManagedConnection(sessionOptions, CommandRunnerMode.AutoCommit, new NulloRetryPolicy());
+            await connection.RollbackAsync(new CancellationToken());
+
+            externalConnection.State.ShouldBe(ConnectionState.Open);
         }
     }
 
