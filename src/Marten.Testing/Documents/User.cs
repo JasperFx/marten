@@ -92,7 +92,7 @@ namespace Marten.Testing.Documents
         public string Name { get; private set; }
         public IReadOnlyCollection<int> Collection { get; private set; }
 
-        public UserWithReadonlyCollectionWithPrivateSetter(Guid id, string name, IEnumerable<int> collection)
+        public UserWithReadonlyCollectionWithPrivateSetter(Guid id, string name, IReadOnlyCollection<int> collection)
         {
             Id = id;
             Name = name;
