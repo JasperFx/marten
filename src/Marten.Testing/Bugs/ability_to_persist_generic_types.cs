@@ -1,5 +1,4 @@
 using System;
-using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -7,7 +6,7 @@ namespace Marten.Testing.Bugs
 {
     public class GenericTypeToPersist<T>
     {
-        public Guid Id = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
     }
 
     public class TypeA { }
