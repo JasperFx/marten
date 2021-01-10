@@ -33,8 +33,6 @@ namespace Marten.Util
             var streamReader = new StreamReader(stream);
 
             var firstByte = streamReader.Peek();
-            stream.Position = 0;
-            stream.Seek(0, SeekOrigin.Begin);
             if (firstByte == 1)
             {
                 streamReader.Read();
