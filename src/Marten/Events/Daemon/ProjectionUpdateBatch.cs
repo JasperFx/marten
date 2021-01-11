@@ -12,18 +12,6 @@ using Npgsql;
 
 namespace Marten.Events.Daemon
 {
-    internal class EventRange
-    {
-        public EventRange(long floor, long ceiling)
-        {
-            Floor = floor;
-            Ceiling = ceiling;
-        }
-
-        public long Floor { get; }
-        public long Ceiling { get; }
-    }
-
     internal class ProjectionUpdateBatch : IUpdateBatch, IDisposable
     {
         public EventRange Range { get; }
@@ -31,7 +19,7 @@ namespace Marten.Events.Daemon
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
 
-        public ProjectionUpdateBatch(DocumentSessionBase session, EventRange range)
+        public ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range)
         {
             Range = range;
             _session = session;
@@ -39,6 +27,9 @@ namespace Marten.Events.Daemon
                 new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 1, EnsureOrdered = true});
 
             startNewPage(session);
+
+            var progressOperation = range.BuildProgressionOperation(events);
+            Queue.Post(progressOperation);
         }
 
         public ActionBlock<IStorageOperation> Queue { get; }

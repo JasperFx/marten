@@ -10,12 +10,12 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Daemon.Progress
 {
-    public class InsertProjectionProgress: IStorageOperation
+    internal class InsertProjectionProgress: IStorageOperation
     {
         private readonly EventGraph _events;
-        private readonly ProjectionProgress _progress;
+        private readonly EventRange _progress;
 
-        public InsertProjectionProgress(EventGraph events, ProjectionProgress progress)
+        public InsertProjectionProgress(EventGraph events, EventRange progress)
         {
             _events = events;
             _progress = progress;
@@ -28,7 +28,7 @@ namespace Marten.Events.Daemon.Progress
 
             parameters[0].Value = _progress.ProjectionOrShardName;
             parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar;
-            parameters[1].Value = _progress.LastSequenceId;
+            parameters[1].Value = _progress.SequenceCeiling;
             parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
         }
 

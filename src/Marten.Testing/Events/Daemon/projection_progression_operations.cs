@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Daemon;
 using Marten.Events.Daemon.Progress;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
@@ -21,10 +22,10 @@ namespace Marten.Testing.Events.Daemon
         public async Task insert_progression()
         {
             var operation1 = new InsertProjectionProgress(theStore.Events,
-                new ProjectionProgress {ProjectionOrShardName = "one", LastSequenceId = 12});
+                new EventRange("one", 12));
 
             var operation2 = new InsertProjectionProgress(theStore.Events,
-                new ProjectionProgress {ProjectionOrShardName = "two", LastSequenceId = 25});
+                new EventRange( "two", 25));
 
             theSession.QueueOperation(operation1);
             theSession.QueueOperation(operation2);
@@ -42,15 +43,13 @@ namespace Marten.Testing.Events.Daemon
         public async Task update_happy_path()
         {
             var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
-                new ProjectionProgress {ProjectionOrShardName = "three", LastSequenceId = 12});
+                new EventRange( "three", 12));
 
             theSession.QueueOperation(insertProjectionProgress);
             await theSession.SaveChangesAsync();
 
-            var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events)
-            {
-                ProjectionOrShardName = "three", StartingSequence = 12, UpdatedSequence = 50
-            };
+            var updateProjectionProgress =
+                new UpdateProjectionProgress(theStore.Events, new EventRange("three", 12, 50));
 
             theSession.QueueOperation(updateProjectionProgress);
             await theSession.SaveChangesAsync();
@@ -63,15 +62,12 @@ namespace Marten.Testing.Events.Daemon
         public async Task update_sad_path()
         {
             var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
-                new ProjectionProgress {ProjectionOrShardName = "four", LastSequenceId = 12});
+                new EventRange("four", 12));
 
             theSession.QueueOperation(insertProjectionProgress);
             await theSession.SaveChangesAsync();
 
-            var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events)
-            {
-                ProjectionOrShardName = "four", StartingSequence = 5, UpdatedSequence = 50
-            };
+            var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events, new EventRange("four", 5, 50));
 
             var ex = await Should.ThrowAsync<ProgressionProgressOutOfOrderException>(async () =>
             {
@@ -90,10 +86,10 @@ namespace Marten.Testing.Events.Daemon
         public async Task fetch_all_projections()
         {
             var operation1 = new InsertProjectionProgress(theStore.Events,
-                new ProjectionProgress {ProjectionOrShardName = "five", LastSequenceId = 12});
+                new EventRange("five", 12));
 
             var operation2 = new InsertProjectionProgress(theStore.Events,
-                new ProjectionProgress {ProjectionOrShardName = "six", LastSequenceId = 25});
+                new EventRange("six", 25));
 
             theSession.QueueOperation(operation1);
             theSession.QueueOperation(operation2);
