@@ -11,29 +11,27 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Daemon.Progress
 {
-    public class UpdateProjectionProgress: IStorageOperation
+    internal class UpdateProjectionProgress: IStorageOperation
     {
+        public EventRange Range { get; }
         private readonly EventGraph _events;
 
-        public UpdateProjectionProgress(EventGraph events)
+        public UpdateProjectionProgress(EventGraph events, EventRange range)
         {
+            Range = range;
             _events = events;
         }
-
-        public string ProjectionOrShardName { get; set; }
-        public long StartingSequence { get; set; }
-        public long UpdatedSequence { get; set; }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
             var parameters =
                 builder.AppendWithParameters($"update {_events.ProgressionTable} set last_seq_id = ? where name = ? and last_seq_id = ?");
 
-            parameters[0].Value = UpdatedSequence;
+            parameters[0].Value = Range.SequenceCeiling;
             parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[1].Value = ProjectionOrShardName;
+            parameters[1].Value = Range.ProjectionOrShardName;
             parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
-            parameters[2].Value = StartingSequence;
+            parameters[2].Value = Range.SequenceFloor;
             parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
         }
 
@@ -42,7 +40,7 @@ namespace Marten.Events.Daemon.Progress
         {
             if (reader.RecordsAffected != 1)
             {
-                throw new ProgressionProgressOutOfOrderException(ProjectionOrShardName);
+                throw new ProgressionProgressOutOfOrderException(Range.ProjectionOrShardName);
             }
         }
 
@@ -50,7 +48,7 @@ namespace Marten.Events.Daemon.Progress
         {
             if (reader.RecordsAffected != 1)
             {
-                throw new ProgressionProgressOutOfOrderException(ProjectionOrShardName);
+                throw new ProgressionProgressOutOfOrderException(Range.ProjectionOrShardName);
             }
 
             return Task.CompletedTask;
