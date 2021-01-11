@@ -581,8 +581,10 @@ namespace Marten.Internal.Sessions
         {
             var cmd = this.BuildCommand(handler);
 
-            using var reader = await Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
-            return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
+            using (var reader = await Database.ExecuteReaderAsync(cmd, token))
+            {
+                return await handler.HandleAsync(reader, this, token);
+            }
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)
