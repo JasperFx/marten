@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Daemon.Progress;
 using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
@@ -12,6 +13,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Storage;
@@ -451,6 +453,48 @@ namespace Marten.Events
         {
             _store = store;
             Projections.AssertValidity();
+        }
+
+        /// <summary>
+        /// Check the current progress of all asynchronous projections
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<IReadOnlyList<ProjectionProgress>> AllProjectionProgress(CancellationToken token = default(CancellationToken))
+        {
+            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var handler = (IQueryHandler<IReadOnlyList<ProjectionProgress>>)new ListQueryHandler<ProjectionProgress>(new ProjectionProgressStatement(this),
+                new ProjectionProgressSelector());
+
+            using (var session = (QuerySession)_store.QuerySession())
+            {
+                return await session.ExecuteHandlerAsync(handler, token);
+            }
+        }
+
+        /// <summary>
+        /// Check the current progress of a single projection or projection shard
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<long> ProjectionProgressFor(string projectionOrShardName, CancellationToken token = default(CancellationToken))
+        {
+            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var statement = new ProjectionProgressStatement(this)
+            {
+                ProjectionOrShardName = projectionOrShardName
+            };
+
+            var handler = new OneResultHandler<ProjectionProgress>(statement,
+                new ProjectionProgressSelector(), true, false);
+
+            await using var session = (QuerySession)_store.QuerySession();
+
+            var progress = await session.ExecuteHandlerAsync(handler, token);
+
+            return progress?.LastSequenceId ?? 0;
         }
     }
 }
