@@ -1,6 +1,6 @@
 namespace Marten.Events.Daemon
 {
-    public class ProjectionAgent
+    internal class ProjectionAgent
     {
         private readonly DocumentStore _store;
         private readonly IAsyncProjection _projection;
@@ -12,5 +12,16 @@ namespace Marten.Events.Daemon
         }
 
         public string ProjectionOrShardName => _projection.ProjectionOrShardName;
+
+        public void MarkHighWater(long sequence)
+        {
+            // TODO -- decide whether to keep
+
+        }
+    }
+
+    internal class EventFetcher
+    {
+
     }
 }
