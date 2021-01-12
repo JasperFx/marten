@@ -115,5 +115,15 @@ namespace Marten.Testing.Events.Daemon
             assertRangeWasEnqueued(500, 1000);
             assertRangeWasEnqueued(1000, 1200);
         }
+
+        [Fact]
+        public void should_dequeue_in_flight_when_finished()
+        {
+            theController.Start(1200, 0);
+
+            theController.EventRangeUpdated(new EventRange("the projection", 0 ,500));
+            theController.LastCommitted.ShouldBe(500);
+            theController.InFlightCount.ShouldBe(700);
+        }
     }
 }

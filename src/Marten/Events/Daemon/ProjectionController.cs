@@ -75,6 +75,10 @@ namespace Marten.Events.Daemon
         public void EventRangeUpdated(EventRange range)
         {
             LastCommitted = range.SequenceCeiling;
+            if (Equals(range, _inFlight.Peek()))
+            {
+                _inFlight.Dequeue();
+            }
 
             enqueueNewEventRanges();
         }
