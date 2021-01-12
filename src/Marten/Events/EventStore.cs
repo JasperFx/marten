@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Events.Querying;
 using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema.Identity;
 using Marten.Storage;
 
@@ -23,7 +24,6 @@ namespace Marten.Events
         {
             _session = session;
             _store = store;
-
             _tenant = tenant;
         }
 
@@ -174,7 +174,13 @@ namespace Marten.Events
             // TODO -- do this later by just delegating to Load<StreamState>(streamId)
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
-            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var statement = new EventStatement(selector)
+            {
+                StreamId = streamId, Version = version, Timestamp = timestamp, TenantId = _tenant.TenantId
+            };
+
+            IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
+
             return _session.ExecuteHandler(handler);
         }
 
@@ -182,7 +188,13 @@ namespace Marten.Events
         {
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
-            var handler = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var statement = new EventStatement(selector)
+            {
+                StreamId = streamId, Version = version, Timestamp = timestamp, TenantId = _tenant.TenantId
+            };
+
+            IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
+
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
@@ -190,7 +202,13 @@ namespace Marten.Events
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
-            var handler = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var statement = new EventStatement(selector)
+            {
+                StreamKey = streamKey, Version = version, Timestamp = timestamp, TenantId = _tenant.TenantId
+            };
+
+            IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
+
             return _session.ExecuteHandler(handler);
         }
 
@@ -198,19 +216,22 @@ namespace Marten.Events
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
-            var handler = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
+            var statement = new EventStatement(selector)
+            {
+                StreamKey = streamKey, Version = version, Timestamp = timestamp, TenantId = _tenant.TenantId
+            };
+
+            IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
+
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public T AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T state = null) where T : class
         {
-            var selector = _store.Events.EnsureAsGuidStorage(_session);
+            var events = FetchStream(streamId, version, timestamp);
 
-            var inner = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
             var aggregator = _store.Events.Projections.AggregatorFor<T>();
 
-
-            var events = _session.ExecuteHandler(inner);
             if (!events.Any()) return null;
 
             var aggregate = aggregator.Build(events, _session, state);
@@ -224,11 +245,7 @@ namespace Marten.Events
         public async Task<T> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null,
             T state = null, CancellationToken token = new CancellationToken()) where T : class
         {
-            var selector = _store.Events.EnsureAsGuidStorage(_session);
-
-            var inner = new EventQueryHandler<Guid>(selector, streamId, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
-
-            var events = await _session.ExecuteHandlerAsync(inner, token);
+            var events = await FetchStreamAsync(streamId, version, timestamp, token);
             if (!events.Any()) return null;
 
             var aggregator = _store.Events.Projections.AggregatorFor<T>();
@@ -244,11 +261,7 @@ namespace Marten.Events
 
         public T AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T state = null) where T : class
         {
-            var selector = _store.Events.EnsureAsStringStorage(_session);
-
-            var inner = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
-
-            var events = _session.ExecuteHandler(inner);
+            var events = FetchStream(streamKey, version, timestamp);
             if (!events.Any())
             {
                 return null;
@@ -266,10 +279,7 @@ namespace Marten.Events
         public async Task<T> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null,
             T state = null, CancellationToken token = new CancellationToken()) where T : class
         {
-            var selector = _store.Events.EnsureAsStringStorage(_session);
-
-            var inner = new EventQueryHandler<string>(selector, streamKey, version, timestamp, _store.Events.TenancyStyle, _tenant.TenantId);
-            var events = await _session.ExecuteHandlerAsync(inner, token);
+            var events = await FetchStreamAsync(streamKey, version, timestamp, token);
             if (!events.Any())
             {
                 return null;

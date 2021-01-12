@@ -53,8 +53,6 @@ namespace Marten.Events
 
         private IEnumerable<ISqlFragment> filters()
         {
-
-
             if (Range != null)
             {
                 yield return new WhereFragment("d.seq_id > ?", Range.SequenceFloor);
@@ -63,7 +61,7 @@ namespace Marten.Events
 
             if (Version != 0)
             {
-                yield return new WhereFragment("d.version >= ?", Version);
+                yield return new WhereFragment("d.version <= ?", Version);
             }
 
             if (Timestamp.HasValue)
