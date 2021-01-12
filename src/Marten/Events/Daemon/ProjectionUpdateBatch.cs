@@ -12,14 +12,15 @@ using Npgsql;
 
 namespace Marten.Events.Daemon
 {
-    internal class ProjectionUpdateBatch : IUpdateBatch, IDisposable
+
+    public class ProjectionUpdateBatch : IUpdateBatch, IDisposable
     {
         public EventRange Range { get; }
         private readonly DocumentSessionBase _session;
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
 
-        public ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range)
+        internal ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range)
         {
             Range = range;
             _session = session;
@@ -49,15 +50,6 @@ namespace Marten.Events.Daemon
                 startNewPage(_session);
             }
         }
-
-
-
-        public void Enqueue(IStorageOperation operation)
-        {
-            Queue.Post(operation);
-        }
-
-        public Task Completion => Queue.Completion;
 
         void IUpdateBatch.ApplyChanges(IMartenSession session)
         {
@@ -128,6 +120,7 @@ namespace Marten.Events.Daemon
 
         public void Dispose()
         {
+            _session.Dispose();
             Queue.Complete();
         }
     }
