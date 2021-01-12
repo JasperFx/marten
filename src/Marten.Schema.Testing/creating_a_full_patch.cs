@@ -54,7 +54,6 @@ namespace Marten.Schema.Testing
                 patch.RollbackDDL.ShouldContain($"drop function if exists public.mt_immutable_timestamptz(text) cascade;");
                 patch.RollbackDDL.ShouldContain($"DROP FUNCTION IF EXISTS public.mt_transform_patch_doc(JSONB, JSONB);");
 
-                patch.RollbackDDL.ShouldContain($"drop function if exists public.mt_append_event (uuid, varchar, varchar, uuid[], varchar[], jsonb[]);");
                 patch.RollbackDDL.ShouldContain($"drop function if exists public.mt_mark_event_progression(varchar, bigint) cascade;");
             }
         }

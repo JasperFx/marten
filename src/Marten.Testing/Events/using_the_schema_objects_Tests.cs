@@ -61,9 +61,6 @@ namespace Marten.Testing.Events
 
             store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
-            var schemaDbObjectNames = store.Tenancy.Default.DbObjects.Functions();
-            schemaDbObjectNames.ShouldContain("event_store.mt_append_event");
-
             var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("event_store.mt_streams");
             schemaTableNames.ShouldContain("event_store.mt_events");
@@ -73,9 +70,6 @@ namespace Marten.Testing.Events
         public void can_build_the_mt_stream_schema_objects()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
-
-            var schemaDbObjectNames = theStore.Tenancy.Default.DbObjects.Functions();
-            schemaDbObjectNames.ShouldContain($"{SchemaName}.mt_append_event");
 
             var schemaTableNames = theStore.Tenancy.Default.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain($"{SchemaName}.mt_streams");
@@ -92,9 +86,6 @@ namespace Marten.Testing.Events
             });
 
             store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
-
-            var schemaDbObjectNames = store.Tenancy.Default.DbObjects.Functions();
-            schemaDbObjectNames.ShouldContain("other.mt_append_event");
 
             var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
             schemaTableNames.ShouldContain("other.mt_streams");

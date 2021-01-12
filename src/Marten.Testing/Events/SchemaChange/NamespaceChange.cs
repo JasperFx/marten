@@ -1,9 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Internal.Sessions;
-using Marten.Services;
-using Marten.Storage;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;
@@ -89,7 +89,87 @@ namespace Marten.Testing.Events.SchemaChange
         }
     }
 
-    // Different namespace - event will be stored with "Old"
+    public abstract class AggregateBase
+    {
+        public Guid Id { get; protected set; }
+        public long Version { get; protected set; }
+
+        [JsonIgnore] private readonly List<object> _uncommittedEvents = new List<object>();
+
+        public IEnumerable<object> DequeueEvents()
+        {
+            var events = _uncommittedEvents.ToList();
+            _uncommittedEvents.Clear();
+            return events;
+        }
+
+        protected void EnqueueEvent(object @event)
+        {
+            // add the event to the uncommitted list
+            _uncommittedEvents.Add(@event);
+            Version++;
+        }
+    }
+
+    // Events in old namespace `Old`
+    namespace Old
+    {
+        public class TaskCreated
+        {
+            public Guid TaskId { get; }
+            public string Description { get; }
+
+            public TaskCreated(Guid taskId, string description)
+            {
+                TaskId = taskId;
+                Description = description;
+            }
+        }
+
+        public class TaskDescriptionUpdated
+        {
+            public string Description { get; }
+
+            public TaskDescriptionUpdated(string description)
+            {
+                Description = description;
+            }
+        }
+
+        public class Task : AggregateBase
+        {
+            public string Description { get; private set; }
+
+            private Task() {}
+
+            public Task(Guid id, string description)
+            {
+                var @event = new TaskCreated(id, description);
+                EnqueueEvent(@event);
+                Apply(@event);
+            }
+
+            public void UpdateDescription(string description)
+            {
+                var @event = new TaskDescriptionUpdated(description);
+                EnqueueEvent(@event);
+                Apply(@event);
+            }
+
+            public void Apply(TaskCreated @event)
+            {
+                Id = @event.TaskId;
+                Description = @event.Description;
+            }
+
+            public void Apply(TaskDescriptionUpdated @event)
+            {
+                Description = @event.Description;
+            }
+        }
+    }
+
+    // Events in new namespace `New`
     namespace New
     {
         public class TaskCreated
@@ -104,24 +184,38 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
 
-        // Type name has changed - Event will be stored with `TaskDescriptionUpdated`
-        public class TaskDescriptionUpdatedNewName
+        // Type name has changed - Event will be stored with `TaskDescriptionChanged`
+        public class TaskDescriptionChanged
         {
             public Guid TaskId { get; }
             public string Description { get; }
 
-            public TaskDescriptionUpdatedNewName(Guid taskId, string description)
+            public TaskDescriptionChanged(string description)
             {
-                TaskId = taskId;
                 Description = description;
             }
         }
 
 
-        public class Task
+        public class Task : AggregateBase
         {
-            public Guid Id { get; private set; }
             public string Description { get; private set; }
+
+            private Task() {}
+
+            public Task(Guid id, string description)
+            {
+                var @event = new TaskCreated(id, description);
+                EnqueueEvent(@event);
+                Apply(@event);
+            }
+
+            public void UpdateDescription(string description)
+            {
+                var @event = new TaskDescriptionChanged(description);
+                EnqueueEvent(@event);
+                Apply(@event);
+            }
 
             public void Apply(TaskCreated @event)
             {
@@ -129,7 +223,7 @@ namespace Marten.Testing.Events.SchemaChange
                 Description = @event.Description;
             }
 
-            public void Apply(TaskDescriptionUpdatedNewName @event)
+            public void Apply(TaskDescriptionChanged @event)
             {
                 Description = @event.Description;
             }
@@ -145,41 +239,14 @@ namespace Marten.Testing.Events.SchemaChange
             // test events data
             var taskId = Guid.NewGuid();
 
-            var oldTaskCreatedEvent = new
-            {
-                Id = Guid.NewGuid(),
-                StreamId = taskId,
-                EventTypeName = "task_created",
+            var task = new Old.Task(taskId, "Initial Description");
+            task.UpdateDescription("updated description");
 
-                // simulate namespace change from `Old` to `New`
-                DotnetTypeName = "Marten.Testing.Events.SchemaChange.Old.TaskCreated, Marten.Testing",
-
-                Body = new {TaskId = taskId, Description = "initial description"}
-            };
-
-            var oldTaskDescriptionUpdatedEvent = new
-            {
-                Id = Guid.NewGuid(),
-                StreamId = taskId,
-                EventTypeName = "task_description_updated",
-
-                // simulate namespace change from `Old` to `New`
-                // and type name change from `TaskDescriptionUpdated` to `TaskDescriptionUpdatedNewName`
-                DotnetTypeName = "Marten.Testing.Events.SchemaChange.Old.TaskDescriptionUpdated, Marten.Testing",
-                Body = new {TaskId = taskId, Description = "updated description"}
-            };
+            theStore.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
             using (var session = (DocumentSessionBase)theStore.OpenSession())
             {
-                // ensure events tables already exists
-                session.Tenant.EnsureStorageExists(typeof(StreamAction));
-
-                // we need to insert data manually, as if we keep old type in assembly then Marten would use it.
-                // Marten at first tries to find concrete type based on the `mt_dotnet_type` column value.
-                // When Marten cannot find concrete CLR type then it searches it by `type` column value
-                AppendRawEvent(session, oldTaskCreatedEvent);
-                AppendRawEvent(session, oldTaskDescriptionUpdatedEvent);
-
+                session.Events.Append(taskId, task.DequeueEvents());
                 await session.SaveChangesAsync();
             }
 
@@ -187,11 +254,11 @@ namespace Marten.Testing.Events.SchemaChange
             {
                 // Add new Event types, if type names won't change then the same type name will be generated
                 // and we don't need additional config
-                _.Events.AddEventTypes(new []{typeof(New.TaskCreated), typeof(New.TaskDescriptionUpdatedNewName)});
+                _.Events.AddEventTypes(new []{typeof(New.TaskCreated), typeof(New.TaskDescriptionChanged)});
 
                 // When type name has changed we need to define custom mapping
-                _.Events.EventMappingFor<New.TaskDescriptionUpdatedNewName>()
-                        .EventTypeName = oldTaskDescriptionUpdatedEvent.EventTypeName;
+                _.Events.EventMappingFor<New.TaskDescriptionChanged>()
+                        .EventTypeName = "task_description_updated";
             }))
             {
                 using (var session = store.OpenSession())
@@ -199,23 +266,8 @@ namespace Marten.Testing.Events.SchemaChange
                     var taskNew = await session.Events.AggregateStreamAsync<New.Task>(taskId);
 
                     taskNew.Id.ShouldBe(taskId);
-                    taskNew.Description.ShouldBe(oldTaskDescriptionUpdatedEvent.Body.Description);
+                    taskNew.Description.ShouldBe(task.Description);
                 }
-            }
-
-            static void AppendRawEvent(DocumentSessionBase session, dynamic @event)
-            {
-                using var conn = session.Tenant.OpenConnection();
-
-                conn.Execute(
-                    $@"select * from {session.Options.Events.DatabaseSchemaName}.mt_append_event(
-                                stream := '{@event.StreamId}',
-                                stream_type := null,
-                                tenantid := '{Tenancy.DefaultTenantId}',
-                                event_ids := '{{""{@event.Id}""}}',
-                                event_types := '{{""{@event.EventTypeName}""}}',
-                                dotnet_types := '{{""{@event.DotnetTypeName}""}}',
-                                bodies := '{{""{JsonConvert.SerializeObject(@event.Body).Replace("\"", "\\\"")}""}}')");
             }
         }
 
