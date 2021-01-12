@@ -1,24 +1,22 @@
-using System;
-using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Internal.Sessions;
 
 namespace Marten.Events.Daemon
 {
-    internal class AgentCommand
-    {
-        public EventRange Completed { get; set; }
 
-    }
-
-
-
+    // TODO -- need a Drain() method
+    // TODO -- need a Dispose that really cleans things off
     internal class ProjectionAgent : IProjectionUpdater
     {
         private readonly DocumentStore _store;
         private readonly IAsyncProjectionShard _projectionShard;
         private ITargetBlock<EventRange> _hopper;
+        private readonly ProjectionController _controller;
+        private readonly ActionBlock<Command> _commandBlock;
+        private readonly TransformBlock<EventRange, EventRange> _loader;
+        private EventFetcher _fetcher;
 
         public ProjectionAgent(DocumentStore store, IAsyncProjectionShard projectionShard)
         {
@@ -30,34 +28,61 @@ namespace Marten.Events.Daemon
                 EnsureOrdered = true,
                 MaxDegreeOfParallelism = 1
             };
+
+            _commandBlock = new ActionBlock<Command>(processCommand, singleFile);
+
+            _controller =
+                new ProjectionController(projectionShard.ProjectionOrShardName, this, projectionShard.Options);
+
+            _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFile);
         }
+
+        private async Task<EventRange> loadEvents(EventRange range)
+        {
+            // TODO -- pass around a real CancellationToken
+            await _fetcher.Load(range, CancellationToken.None);
+
+            return range;
+        }
+
+        private void processCommand(Command command) => command.Apply(_controller);
 
         public AgentStatus Status { get; private set; }
 
 
-        public long LastCommittedSequence { get; private set; }
-        public long LastLoadedCeiling { get; private set; }
+        public void StartRange(EventRange range) => _loader.Post(range);
 
-        public long HighWaterSequence { get; private set; }
-
-        public void StartRange(EventRange range)
+        public async Task Start(long highWaterMark)
         {
-            throw new NotImplementedException();
-        }
-
-        public async Task Start()
-        {
-            // TODO -- need to look for the current projection status
+            _fetcher = new EventFetcher(_store, _projectionShard.EventFilters);
             _hopper = _projectionShard.Start(this);
+            _loader.LinkTo(_hopper);
 
+            var lastCommitted = await _store.Events.ProjectionProgressFor(_projectionShard.ProjectionOrShardName);
 
-
-            // TODO - set a command message
+            _commandBlock.Post(Command.Started(highWaterMark, lastCommitted));
         }
 
-        private async Task commitUpdates(ProjectionUpdateBatch batch)
+        public string ProjectionOrShardName => _projectionShard.ProjectionOrShardName;
+
+        public void MarkHighWater(long sequence) => _commandBlock.Post(
+            Command.HighWaterMarkUpdated(sequence));
+
+        public ProjectionUpdateBatch StartNewBatch(EventRange range)
+        {
+            var session = _store.LightweightSession();
+            return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, range);
+        }
+
+        public async Task ExecuteBatch(ProjectionUpdateBatch batch)
         {
             await batch.Queue.Completion;
+
+            using (var session = (DocumentSessionBase)_store.LightweightSession())
+            {
+                // TODO -- use a real cancellation
+                await session.ExecuteBatchAsync(batch, CancellationToken.None);
+            }
 
             batch.Dispose();
 
@@ -67,41 +92,7 @@ namespace Marten.Events.Daemon
             // TODO -- instrumentation
             // TODO -- re-evaluate what should be happening next
 
-            throw new System.NotImplementedException();
+            _commandBlock.Post(Command.Completed(batch.Range));
         }
-
-        public string ProjectionOrShardName => _projectionShard.ProjectionOrShardName;
-
-        public void MarkHighWater(long sequence)
-        {
-            // TODO -- decide whether to keep
-
-        }
-
-        public ProjectionUpdateBatch StartNewBatch(EventRange range)
-        {
-            var session = _store.LightweightSession();
-            return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, range);
-        }
-
-        public Task ExecuteBatch(ProjectionUpdateBatch batch)
-        {
-            throw new System.NotImplementedException();
-        }
-
-    }
-
-    public interface IProjectionUpdater
-    {
-        ProjectionUpdateBatch StartNewBatch(EventRange range);
-        Task ExecuteBatch(ProjectionUpdateBatch batch);
-
-        void StartRange(EventRange range);
-    }
-
-    public class AsyncOptions
-    {
-        public int BatchSize { get; set; } = 500;
-        public int MaximumHopperSize { get; set; } = 2500;
     }
 }

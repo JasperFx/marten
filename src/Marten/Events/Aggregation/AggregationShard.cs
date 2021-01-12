@@ -8,6 +8,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
+
     public class AggregationShard<TDoc, TId> : IAsyncProjectionShard
     {
         private readonly AggregationRuntime<TDoc, TId> _runtime;
@@ -28,6 +29,7 @@ namespace Marten.Events.Aggregation
         public ISqlFragment[] EventFilters { get; }
 
         public string ProjectionOrShardName { get; }
+        public AsyncOptions Options { get; }
 
         public ITargetBlock<EventRange> Start(IProjectionUpdater updater)
         {

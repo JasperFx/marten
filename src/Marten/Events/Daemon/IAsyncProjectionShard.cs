@@ -10,6 +10,7 @@ namespace Marten.Events.Daemon
     {
         ISqlFragment[] EventFilters { get; }
         string ProjectionOrShardName { get; }
+        AsyncOptions Options { get; }
         ITargetBlock<EventRange> Start(IProjectionUpdater updater);
 
         Task Stop();
