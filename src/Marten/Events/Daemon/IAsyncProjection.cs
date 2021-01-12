@@ -10,6 +10,6 @@ namespace Marten.Events.Daemon
     {
         ISqlFragment[] EventFilters { get; }
         string ProjectionOrShardName { get; }
-        Task Configure(ActionBlock<IStorageOperation> queue, IAsyncEnumerable<IEvent> events);
+        Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<IEvent> events);
     }
 }

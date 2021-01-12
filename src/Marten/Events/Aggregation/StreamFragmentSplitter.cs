@@ -11,7 +11,7 @@ namespace Marten.Events.Aggregation
     public interface IEventSlicer<TDoc, TId>
     {
         IReadOnlyList<EventSlice<TDoc, TId>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy);
-        Task<IReadOnlyList<EventSlice<TDoc, TId>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy);
+        IReadOnlyList<EventSlice<TDoc, TId>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy);
     }
 
     public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>
@@ -25,7 +25,7 @@ namespace Marten.Events.Aggregation
             }).ToList();
         }
 
-        public Task<IReadOnlyList<EventSlice<TDoc, Guid>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy)
+        public IReadOnlyList<EventSlice<TDoc, Guid>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             throw new NotImplementedException();
         }
@@ -42,7 +42,7 @@ namespace Marten.Events.Aggregation
             }).ToList();
         }
 
-        public Task<IReadOnlyList<EventSlice<TDoc, string>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy)
+        public IReadOnlyList<EventSlice<TDoc, string>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             throw new NotImplementedException();
         }
