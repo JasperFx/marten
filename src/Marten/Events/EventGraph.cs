@@ -136,6 +136,7 @@ namespace Marten.Events
         }
 
         internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
+        internal DbObjectName StreamsTable => new DbObjectName(DatabaseSchemaName, "mt_streams");
 
         public string AggregateAliasFor(Type aggregateType)
         {
@@ -156,6 +157,7 @@ namespace Marten.Events
             get
             {
                 var eventsTable = new EventsTable(this);
+                var streamsTable = new StreamsTable(this);
 
                 // SAMPLE: using-sequence
                 var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
@@ -167,11 +169,10 @@ namespace Marten.Events
 
                 return new ISchemaObject[]
                 {
-                    new StreamsTable(this),
+                    streamsTable,
                     eventsTable,
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
-                    new AppendEventFunction(this),
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
                 };
             }
