@@ -38,13 +38,13 @@ namespace Marten.Events.Aggregation
         public ISqlFragment[] EventFilters { get; set; }
 
         public string ProjectionOrShardName { get; set; }
-        public async Task Configure(ActionBlock<IStorageOperation> queue, IAsyncEnumerable<IEvent> events)
+        public async Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<IEvent> events)
         {
             await using var session = (DocumentSessionBase)_store.LightweightSession();
             var builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice => DetermineOperation(session, slice, CancellationToken.None));
             builder.LinkTo(queue);
 
-            var slices = await Slicer.Slice(events, Tenancy);
+            var slices = Slicer.Slice(events, Tenancy);
             var beingFetched = new List<EventSlice<TDoc, TId>>();
 
             foreach (var slice in slices)

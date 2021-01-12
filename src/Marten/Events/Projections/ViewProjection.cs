@@ -107,7 +107,7 @@ namespace Marten.Events.Projections
             }
         }
 
-        public Task<IReadOnlyList<EventSlice<TDoc, TId>>> Slice(IAsyncEnumerable<IEvent> events, ITenancy tenancy)
+        public IReadOnlyList<EventSlice<TDoc, TId>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             throw new NotImplementedException();
         }
