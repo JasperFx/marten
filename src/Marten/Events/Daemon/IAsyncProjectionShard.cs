@@ -6,10 +6,12 @@ using Marten.Linq.SqlGeneration;
 
 namespace Marten.Events.Daemon
 {
-    public interface IAsyncProjection
+    public interface IAsyncProjectionShard
     {
         ISqlFragment[] EventFilters { get; }
         string ProjectionOrShardName { get; }
-        Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<IEvent> events);
+        ITargetBlock<EventRange> Start(IProjectionUpdater updater);
+
+        Task Stop();
     }
 }

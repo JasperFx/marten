@@ -3,18 +3,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
-using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
-    public abstract class AggregationRuntime<TDoc, TId>: IAsyncProjection, IInlineProjection
+    public abstract class AggregationRuntime<TDoc, TId>: IInlineProjection
     {
         private readonly IDocumentStore _store;
         public IDocumentStorage<TDoc, TId> Storage { get; }
@@ -35,16 +33,12 @@ namespace Marten.Events.Aggregation
         public abstract Task<IStorageOperation> DetermineOperation(DocumentSessionBase session,
             EventSlice<TDoc, TId> slice, CancellationToken cancellation);
 
-        public ISqlFragment[] EventFilters { get; set; }
-
-        public string ProjectionOrShardName { get; set; }
-        public async Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<IEvent> events)
+        public async Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<EventSlice<TDoc, TId>> slices)
         {
             await using var session = (DocumentSessionBase)_store.LightweightSession();
             var builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice => DetermineOperation(session, slice, CancellationToken.None));
             builder.LinkTo(queue);
 
-            var slices = Slicer.Slice(events, Tenancy);
             var beingFetched = new List<EventSlice<TDoc, TId>>();
 
             foreach (var slice in slices)
