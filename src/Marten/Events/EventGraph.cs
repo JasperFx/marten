@@ -496,5 +496,70 @@ namespace Marten.Events
 
             return progress?.LastSequenceId ?? 0;
         }
+
+        /// <summary>
+        /// Fetch the current size of the event store tables, including the current value
+        /// of the event sequence number
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<EventStoreStatistics> FetchStatistics(CancellationToken token = default)
+        {
+            var sql = $@"
+select count(*) from {DatabaseSchemaName}.mt_events;
+select count(*) from {DatabaseSchemaName}.mt_streams;
+select last_value from {DatabaseSchemaName}.mt_events_sequence;
+";
+
+            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var statistics = new EventStoreStatistics();
+
+            await using var conn = _store.Tenancy.Default.CreateConnection();
+            await conn.OpenAsync(token);
+
+            await using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token);
+
+            if (await reader.ReadAsync(token))
+            {
+                statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token);
+            }
+
+            await reader.NextResultAsync(token);
+
+            if (await reader.ReadAsync(token))
+            {
+                statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token);
+            }
+
+            await reader.NextResultAsync(token);
+
+            if (await reader.ReadAsync(token))
+            {
+                statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token);
+            }
+
+            return statistics;
+        }
+    }
+
+    public class EventStoreStatistics
+    {
+        /// <summary>
+        /// Number of unique events in the event store table
+        /// </summary>
+        public long EventCount { get; set; }
+
+        /// <summary>
+        /// Number of unique streams in the event store
+        /// </summary>
+        public long StreamCount { get; set; }
+
+        /// <summary>
+        /// Current value of the event sequence. This may be higher than the number
+        /// of events if events have been archived or if there were failures while
+        /// appending events
+        /// </summary>
+        public long EventSequenceNumber { get; set; }
     }
 }
