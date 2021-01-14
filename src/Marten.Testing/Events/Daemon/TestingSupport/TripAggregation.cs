@@ -1,7 +1,6 @@
-using System;
 using Marten.Events.Aggregation;
 
-namespace Marten.Testing.Events.Daemon
+namespace Marten.Testing.Events.Daemon.TestingSupport
 {
     public class TripAggregation: AggregateProjection<Trip>
     {
@@ -24,21 +23,5 @@ namespace Marten.Testing.Events.Daemon
         {
             return new Trip {StartedOn = started.Day, Active = true};
         }
-    }
-
-    public class Trip
-    {
-        public Guid Id { get; set; }
-
-
-        public int EndedOn { get; set; }
-
-        public double Traveled { get; set; }
-
-        public string State { get; set; }
-
-        public bool Active { get; set; }
-
-        public int StartedOn { get; set; }
     }
 }

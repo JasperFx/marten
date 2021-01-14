@@ -32,7 +32,7 @@ namespace Marten.Events.Daemon.Progress
             parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
         }
 
-        public Type DocumentType => typeof(ProjectionProgress);
+        public Type DocumentType => typeof(IEvent);
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             // Nothing

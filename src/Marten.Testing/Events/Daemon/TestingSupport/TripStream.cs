@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
-namespace Marten.Testing.Events.Daemon
+namespace Marten.Testing.Events.Daemon.TestingSupport
 {
     public class TripStream
     {
@@ -122,9 +123,18 @@ namespace Marten.Testing.Events.Daemon
                 return false;
             }
 
-            var next = Random.Next(_index + 1, Events.Count - 1);
-            events = Events.GetRange(_index, next).ToArray();
-            _index = next + 1;
+            var number = Random.Next(1, 5);
+
+            if (_index + number >= Events.Count)
+            {
+                events = Events.Skip(_index).ToArray();
+            }
+            else
+            {
+                events = Events.GetRange(_index, number).ToArray();
+            }
+
+            _index += number;
             return true;
         }
 
