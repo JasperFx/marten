@@ -138,5 +138,6 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
             return true;
         }
 
+        public Trip Expected { get; set; }
     }
 }
