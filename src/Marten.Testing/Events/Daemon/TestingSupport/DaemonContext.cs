@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Linq;
+using Marten.Events.Daemon;
+using Marten.Linq.SqlGeneration;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -11,8 +13,31 @@ using Xunit;
 namespace Marten.Testing.Events.Daemon.TestingSupport
 {
 
-    public class TryItOut: DaemonContext
+    public class basic_async_daemon_tests: DaemonContext
     {
+        [Fact]
+        public async Task try_event_fetcher()
+        {
+            using var fetcher = new EventFetcher(theStore, new ISqlFragment[0]);
+
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            var range1 = new EventRange("foo", 0, 10);
+            await fetcher.Load(range1, CancellationToken.None);
+
+            var range2 = new EventRange("foo", 10, 20);
+            await fetcher.Load(range2, CancellationToken.None);
+
+            var range3 = new EventRange("foo", 20, 30);
+            await fetcher.Load(range3, CancellationToken.None);
+
+            range1.Events.Count.ShouldBe(10);
+            range2.Events.Count.ShouldBe(10);
+            range3.Events.Count.ShouldBe(10);
+        }
+
+
         [Fact]
         public async Task publish_single_file()
         {
