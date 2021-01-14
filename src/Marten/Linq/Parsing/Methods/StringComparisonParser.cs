@@ -28,9 +28,20 @@ namespace Marten.Linq.Parsing.Methods
         {
             var locator = GetLocator(mapping, expression);
 
-            var value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
+            ConstantExpression value;
+            if (expression.Object.NodeType == ExpressionType.Constant)
+            {
+                value = (ConstantExpression) expression.Object;   
+            }
+            else
+            {
+                value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();    
+            }
+
             if (value == null)
+            {
                 throw new BadLinqExpressionException("Could not extract string value from {0}.".ToFormat(expression), null);
+            }
 
             var stringOperator = GetOperator(expression);
             return new WhereFragment("{0} {1} ?".ToFormat(locator, stringOperator), FormatValue(expression.Method, value.Value as string));
