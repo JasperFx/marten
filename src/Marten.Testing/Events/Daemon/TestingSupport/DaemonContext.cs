@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -22,6 +23,15 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
 
             statistics.EventCount.ShouldBe(NumberOfEvents);
             statistics.StreamCount.ShouldBe(NumberOfStreams);
+        }
+
+        [Fact]
+        public async Task try_build_everything()
+        {
+            NumberOfStreams = 10;
+            await BuildAllExpectedAggregates();
+
+
         }
 
 
@@ -66,6 +76,29 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
         public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
         private readonly List<TripStream> _streams = new List<TripStream>();
+
+        protected async Task BuildAllExpectedAggregates()
+        {
+            StoreOptions(opts => opts.Events.Projections.Inline(new TripAggregation()));
+
+            await PublishSingleThreaded();
+
+            var data = await theSession.Query<Trip>().ToListAsync();
+            var dict = data.ToDictionary(x => x.Id);
+
+            foreach (var stream in _streams)
+            {
+                if (dict.TryGetValue(stream.StreamId, out var trip))
+                {
+                    stream.Expected = trip;
+                }
+                else
+                {
+                    stream.Expected = null;
+                }
+
+            }
+        }
 
         protected async Task PublishSingleThreaded()
         {
