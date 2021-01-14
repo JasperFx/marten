@@ -71,7 +71,19 @@ namespace Marten.Events.Daemon
 
         public void Publish(ShardState state)
         {
+            if (state.ShardName == ShardState.HighWaterMark)
+            {
+                HighWaterMark = state.Sequence;
+            }
+
             _block.Post(state);
+        }
+
+        public long HighWaterMark { get; private set; }
+
+        public void MarkHighWater(long sequence)
+        {
+            Publish(new ShardState(ShardState.HighWaterMark, sequence));
         }
 
         public Task Complete()
