@@ -21,7 +21,7 @@ namespace Marten.Events.Operations
 
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
 
-        public Type DocumentType => typeof(StreamAction);
+        public Type DocumentType => typeof(IEvent);
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
         {
             if (reader.RecordsAffected != 0) return;
