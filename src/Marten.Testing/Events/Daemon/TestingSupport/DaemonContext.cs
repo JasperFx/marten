@@ -16,7 +16,7 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
     public class basic_async_daemon_tests: DaemonContext
     {
         [Fact]
-        public async Task try_event_fetcher()
+        public async Task event_fetcher_simple_case()
         {
             using var fetcher = new EventFetcher(theStore, new ISqlFragment[0]);
 
@@ -29,14 +29,40 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
             var range2 = new EventRange("foo", 10, 20);
             await fetcher.Load(range2, CancellationToken.None);
 
-            var range3 = new EventRange("foo", 20, 30);
+            var range3 = new EventRange("foo", 20, 38);
             await fetcher.Load(range3, CancellationToken.None);
 
             range1.Events.Count.ShouldBe(10);
             range2.Events.Count.ShouldBe(10);
-            range3.Events.Count.ShouldBe(10);
+            range3.Events.Count.ShouldBe(18);
         }
 
+        [Fact]
+        public async Task use_type_filters()
+        {
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            using var fetcher1 = new EventFetcher(theStore, new ISqlFragment[0]);
+
+            var range1 = new EventRange("foo", 0, NumberOfEvents);
+            await fetcher1.Load(range1, CancellationToken.None);
+
+            var uniqueTypeCount = range1.Events.Select(x => x.EventType).Distinct()
+                .Count();
+
+            uniqueTypeCount.ShouldBe(5);
+
+            var filter = new EventTypeFilter(theStore.Events, new Type[] {typeof(Travel), typeof(Arrival)});
+            using var fetcher2 = new EventFetcher(theStore, new ISqlFragment[]{filter});
+
+            var range2 = new EventRange("foo", 0, NumberOfEvents);
+            await fetcher2.Load(range2, CancellationToken.None);
+            range2.Events
+                .Select(x => x.EventType)
+                .OrderBy(x => x.Name).Distinct()
+                .ShouldHaveTheSameElementsAs(typeof(Arrival), typeof(Travel));
+        }
 
         [Fact]
         public async Task publish_single_file()
