@@ -95,6 +95,7 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .Count
                     .ShouldBe(1);
+                
             }
         }
     }
