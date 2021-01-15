@@ -107,12 +107,16 @@ namespace Marten.Events.Daemon
 
             public void ApplyChanges(IList<Exception> exceptions)
             {
+                _command.CommandText = _builder.ToString();
+
                 using var reader = _session.Database.ExecuteReader(_command);
                 UpdateBatch.ApplyCallbacks(_operations, reader, exceptions);
             }
 
             public async Task ApplyChangesAsync(IList<Exception> exceptions, CancellationToken token)
             {
+                _command.CommandText = _builder.ToString();
+
                 using var reader = await _session.Database.ExecuteReaderAsync(_command, token);
                 await UpdateBatch.ApplyCallbacksAsync(_operations, reader, exceptions, token);
             }

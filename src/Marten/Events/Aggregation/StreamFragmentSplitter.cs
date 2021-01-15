@@ -27,7 +27,22 @@ namespace Marten.Events.Aggregation
 
         public IReadOnlyList<EventSlice<TDoc, Guid>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            var list = new List<EventSlice<TDoc, Guid>>();
+            var byTenant = events.GroupBy(x => x.TenantId);
+
+            foreach (var tenantGroup in byTenant)
+            {
+                var tenant = tenancy[tenantGroup.Key];
+
+                var slices = tenantGroup
+                    .GroupBy(x => x.StreamId)
+                    .Select(x => new EventSlice<TDoc, Guid>(x.Key, tenant, x));
+
+                list.AddRange(slices);
+            }
+
+            return list;
+
         }
     }
 
@@ -44,7 +59,21 @@ namespace Marten.Events.Aggregation
 
         public IReadOnlyList<EventSlice<TDoc, string>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            var list = new List<EventSlice<TDoc, string>>();
+            var byTenant = events.GroupBy(x => x.TenantId);
+
+            foreach (var tenantGroup in byTenant)
+            {
+                var tenant = tenancy[tenantGroup.Key];
+
+                var slices = tenantGroup
+                    .GroupBy(x => x.StreamKey)
+                    .Select(x => new EventSlice<TDoc, string>(x.Key, tenant, x));
+
+                list.AddRange(slices);
+            }
+
+            return list;
         }
     }
 

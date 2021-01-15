@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Daemon;
@@ -53,9 +54,14 @@ namespace Marten.Events.Aggregation
 
         private async Task configureBatch(AggregateRange aggregateRange)
         {
+            Debug.WriteLine($"Starting {aggregateRange}");
             var batch = _updater.StartNewBatch(aggregateRange.Range);
             await _runtime.Configure(batch.Queue, aggregateRange.Slices);
+            batch.Queue.Complete();
+            await batch.Queue.Completion;
+            Debug.WriteLine($"Configured batch for {aggregateRange}");
             await _updater.ExecuteBatch(batch);
+            Debug.WriteLine($"Executed batch {aggregateRange}");
         }
 
         internal class AggregateRange
@@ -69,11 +75,17 @@ namespace Marten.Events.Aggregation
             public EventRange Range { get; }
             public IReadOnlyList<EventSlice<TDoc, TId>> Slices { get; }
 
+            public override string ToString()
+            {
+                return $"Aggregate range: {Range}, {Slices.Count} slices";
+            }
         }
 
         private AggregateRange slice(EventRange range)
         {
+            Debug.WriteLine($"slicing {range}");
             var slices = _runtime.Slicer.Slice(range.Events, _tenancy);
+            Debug.WriteLine($"sliced {range}");
             return new AggregateRange(range, slices);
         }
 

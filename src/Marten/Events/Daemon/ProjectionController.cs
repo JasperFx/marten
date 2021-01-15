@@ -17,7 +17,7 @@ namespace Marten.Events.Daemon
         {
             _shardName = shardName;
             _updater = updater;
-            _options = options;
+            _options = options ?? new AsyncOptions();
         }
 
         public int InFlightCount => _inFlight.Sum(x => x.Size);

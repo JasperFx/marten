@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -105,8 +106,16 @@ namespace Marten.Events.Daemon
 
             using (var session = (DocumentSessionBase)_store.LightweightSession())
             {
-                // TODO -- use a real cancellation
-                await session.ExecuteBatchAsync(batch, CancellationToken.None);
+                try
+                {
+                    // TODO -- use a real cancellation
+                    await session.ExecuteBatchAsync(batch, CancellationToken.None);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
             }
 
             batch.Dispose();
