@@ -29,9 +29,9 @@ namespace Marten.Linq.Parsing.Methods
             var locator = GetLocator(mapping, expression);
 
             ConstantExpression value;
-            if (expression.Object.NodeType == ExpressionType.Constant)
+            if (expression.Object?.NodeType == ExpressionType.Constant)
             {
-                value = (ConstantExpression) expression.Object;   
+             value = (ConstantExpression) expression.Object;   
             }
             else
             {
