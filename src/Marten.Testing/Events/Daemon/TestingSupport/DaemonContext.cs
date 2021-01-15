@@ -12,7 +12,6 @@ using Xunit;
 
 namespace Marten.Testing.Events.Daemon.TestingSupport
 {
-
     public class basic_async_daemon_tests: DaemonContext
     {
         [Fact]
@@ -76,14 +75,6 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
             statistics.StreamCount.ShouldBe(NumberOfStreams);
         }
 
-        [Fact]
-        public async Task try_build_everything()
-        {
-            NumberOfStreams = 10;
-            await BuildAllExpectedAggregates();
-
-
-        }
 
 
         [Fact]
@@ -128,14 +119,39 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
 
         private readonly List<TripStream> _streams = new List<TripStream>();
 
+        protected async Task CheckAllExpectedAggregatesAgainstActuals()
+        {
+            var actuals = await LoadAllAggregatesFromDatabase();
+
+
+
+            foreach (var stream in _streams)
+            {
+                if (stream.Expected == null)
+                {
+                    actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
+                }
+                else
+                {
+                    if (actuals.TryGetValue(stream.StreamId, out var actual))
+                    {
+                        stream.Expected.ShouldBe(actual);
+                    }
+                    else
+                    {
+                        throw new Exception("Missing expected aggregate");
+                    }
+                }
+            }
+        }
+
         protected async Task BuildAllExpectedAggregates()
         {
             StoreOptions(opts => opts.Events.Projections.Inline(new TripAggregation()));
 
             await PublishSingleThreaded();
 
-            var data = await theSession.Query<Trip>().ToListAsync();
-            var dict = data.ToDictionary(x => x.Id);
+            var dict = await LoadAllAggregatesFromDatabase();
 
             foreach (var stream in _streams)
             {
@@ -149,6 +165,13 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
                 }
 
             }
+        }
+
+        protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase()
+        {
+            var data = await theSession.Query<Trip>().ToListAsync();
+            var dict = data.ToDictionary(x => x.Id);
+            return dict;
         }
 
         protected async Task PublishSingleThreaded()

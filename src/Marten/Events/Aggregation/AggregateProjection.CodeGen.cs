@@ -48,7 +48,7 @@ namespace Marten.Events.Aggregation
 
         public string ProjectionName { get; protected set; }
 
-        public IProjection Build(DocumentStore store)
+        IProjection IProjectionSource.Build(DocumentStore store)
         {
             if (_inlineType == null)
             {

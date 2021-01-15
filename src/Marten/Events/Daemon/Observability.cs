@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Baseline;
 
 namespace Marten.Events.Daemon
 {
@@ -14,6 +16,11 @@ namespace Marten.Events.Daemon
             ShardName = shardName;
             Sequence = sequence;
             Timestamp = DateTimeOffset.UtcNow;
+        }
+
+        public ShardState(IAsyncProjectionShard shard, long sequenceNumber) : this(shard.ProjectionOrShardName, sequenceNumber)
+        {
+
         }
 
         public DateTimeOffset Timestamp { get; }
@@ -86,6 +93,12 @@ namespace Marten.Events.Daemon
             Publish(new ShardState(ShardState.HighWaterMark, sequence));
         }
 
+        public Task<ShardState> WaitForShardState(ShardState expected, TimeSpan timeout)
+        {
+            var listener = new ShardStatusWatcher(this, expected, timeout);
+            return listener.Task;
+        }
+
         public Task Complete()
         {
             return _block.Completion;
@@ -140,6 +153,51 @@ namespace Marten.Events.Daemon
             public void Dispose()
             {
                 if (_observer != null) _tracker._listeners = _tracker._listeners.Remove(_observer);
+            }
+        }
+    }
+
+    internal class ShardStatusWatcher: IObserver<ShardState>
+    {
+        private readonly IDisposable _unsubscribe;
+        private readonly ShardState _expected;
+        private readonly TaskCompletionSource<ShardState> _completion;
+        private readonly CancellationTokenSource _timeout;
+
+        public ShardStatusWatcher(ShardStateTracker tracker, ShardState expected, TimeSpan timeout)
+        {
+            _expected = expected;
+            _completion = new TaskCompletionSource<ShardState>();
+
+
+            _timeout = new CancellationTokenSource(timeout);
+            _timeout.Token.Register(() =>
+            {
+                _completion.TrySetException(new TimeoutException(
+                    $"Shard {_expected.ShardName} did not reach sequence number {_expected.Sequence} in the time allowed"));
+            });
+
+            _unsubscribe = tracker.Subscribe(this);
+        }
+
+        public Task<ShardState> Task => _completion.Task;
+
+        public void OnCompleted()
+        {
+
+        }
+
+        public void OnError(Exception error)
+        {
+            _completion.SetException(error);
+        }
+
+        public void OnNext(ShardState value)
+        {
+            if (value.ShardName.EqualsIgnoreCase(_expected.ShardName) && value.Sequence >= _expected.Sequence)
+            {
+                _completion.SetResult(value);
+                _unsubscribe.Dispose();
             }
         }
     }

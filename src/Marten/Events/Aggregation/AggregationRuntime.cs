@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +40,18 @@ namespace Marten.Events.Aggregation
         public async Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<EventSlice<TDoc, TId>> slices)
         {
             await using var session = (DocumentSessionBase)_store.LightweightSession();
-            var builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice => DetermineOperation(session, slice, CancellationToken.None));
+            var builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice =>
+            {
+                try
+                {
+                    return DetermineOperation(session, slice, CancellationToken.None);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    throw;
+                }
+            });
             builder.LinkTo(queue);
 
             var beingFetched = new List<EventSlice<TDoc, TId>>();
@@ -66,6 +79,7 @@ namespace Marten.Events.Aggregation
                 await startWithExistingAggregates(builder, @group);
             }
 
+            builder.Complete();
             await builder.Completion;
 
         }
