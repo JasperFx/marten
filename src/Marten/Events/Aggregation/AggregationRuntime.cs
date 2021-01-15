@@ -3,16 +3,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
-    public abstract class AggregationRuntime<TDoc, TId>: IInlineProjection
+    public abstract class AggregationRuntime<TDoc, TId>: IAsyncCapableProjection
     {
         private readonly IDocumentStore _store;
         public IDocumentStorage<TDoc, TId> Storage { get; }
@@ -122,6 +124,15 @@ namespace Marten.Events.Aggregation
 
                 session.QueueOperation(operation);
             }
+        }
+
+        public IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(IDocumentStore store, ITenancy tenancy)
+        {
+            // TODO -- support sharding
+            // TODO -- use event filters!!!
+            var shard = new AggregationShard<TDoc, TId>(Projection.ProjectionName, new ISqlFragment[0], this, tenancy);
+
+            return new List<IAsyncProjectionShard> {shard};
         }
     }
 }

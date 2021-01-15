@@ -11,10 +11,12 @@ using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
@@ -193,7 +195,7 @@ namespace Marten.Events.Projections
         private GeneratedAssembly _assembly;
         private bool _isAsync;
 
-        IInlineProjection IProjectionSource.BuildInline(DocumentStore store)
+        IProjection IProjectionSource.Build(DocumentStore store)
         {
             if (_inlineType == null)
             {
@@ -202,7 +204,7 @@ namespace Marten.Events.Projections
 
             Debug.WriteLine(_inlineType.SourceCode);
 
-            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, this);
+            var inline = (IProjection)Activator.CreateInstance(_inlineType.CompiledType, this);
             _inlineType.ApplySetterValues(inline);
 
             return inline;
@@ -220,7 +222,7 @@ namespace Marten.Events.Projections
 
             _isAsync = _createMethods.IsAsync || _projectMethods.IsAsync;
 
-            var baseType = _isAsync ? typeof(AsyncInlineEventProjection<>) : typeof(SyncInlineEventProjection<>);
+            var baseType = _isAsync ? typeof(AsyncEventProjection<>) : typeof(SyncEventProjection<>);
             baseType = baseType.MakeGenericType(GetType());
             _inlineType = _assembly.AddType(GetType().Name.Sanitize() + "GeneratedInlineProjection", baseType);
 
@@ -238,11 +240,11 @@ namespace Marten.Events.Projections
 
     }
 
-    public abstract class SyncInlineEventProjection<T>: IInlineProjection where T : EventProjection
+    public abstract class SyncEventProjection<T>: IProjection where T : EventProjection
     {
         public T Projection { get; }
 
-        public SyncInlineEventProjection(T projection)
+        public SyncEventProjection(T projection)
         {
             Projection = projection;
         }
@@ -267,11 +269,11 @@ namespace Marten.Events.Projections
         }
     }
 
-    public abstract class AsyncInlineEventProjection<T> : IInlineProjection where T : EventProjection
+    public abstract class AsyncEventProjection<T> : IProjection where T : EventProjection
     {
         public T Projection { get; }
 
-        public AsyncInlineEventProjection(T projection)
+        public AsyncEventProjection(T projection)
         {
             Projection = projection;
         }

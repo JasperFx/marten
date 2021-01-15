@@ -40,7 +40,7 @@ namespace Marten.Events
 
         private string _databaseSchemaName;
 
-        private readonly Lazy<IInlineProjection[]> _inlineProjections;
+        private readonly Lazy<IProjection[]> _inlineProjections;
 
         private readonly Lazy<EstablishTombstoneStream> _establishTombstone;
 
@@ -59,7 +59,7 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-            _inlineProjections = new Lazy<IInlineProjection[]>(() => Projections.BuildInlineProjections(_store));
+            _inlineProjections = new Lazy<IProjection[]>(() => Projections.BuildInlineProjections(_store));
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
 

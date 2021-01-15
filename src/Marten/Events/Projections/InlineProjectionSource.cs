@@ -2,9 +2,9 @@ namespace Marten.Events.Projections
 {
     internal class InlineProjectionSource: IProjectionSource
     {
-        private readonly IInlineProjection _projection;
+        private readonly IProjection _projection;
 
-        public InlineProjectionSource(IInlineProjection projection)
+        public InlineProjectionSource(IProjection projection)
         {
             _projection = projection;
 
@@ -13,7 +13,7 @@ namespace Marten.Events.Projections
         }
 
         public string ProjectionName { get; }
-        public IInlineProjection BuildInline(DocumentStore store)
+        public IProjection Build(DocumentStore store)
         {
             return _projection;
         }
