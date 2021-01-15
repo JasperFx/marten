@@ -48,7 +48,7 @@ namespace Marten.Events.Aggregation
 
         public string ProjectionName { get; protected set; }
 
-        public IInlineProjection BuildInline(DocumentStore store)
+        public IProjection Build(DocumentStore store)
         {
             if (_inlineType == null)
             {
@@ -70,7 +70,7 @@ namespace Marten.Events.Aggregation
             return aggregator;
         }
 
-        internal IInlineProjection BuildInlineProjection(DocumentStore store)
+        internal IProjection BuildInlineProjection(DocumentStore store)
         {
             var storage = store.Options.Providers.StorageFor<T>().Lightweight;
             var slicer = buildEventSlicer();
@@ -81,7 +81,7 @@ namespace Marten.Events.Aggregation
                 Debug.WriteLine(parameter.ParameterType.NameInCode());
             }
 
-            var inline = (IInlineProjection)Activator.CreateInstance(_inlineType.CompiledType, store, this, slicer, store.Options.Tenancy, storage, this);
+            var inline = (IProjection)Activator.CreateInstance(_inlineType.CompiledType, store, this, slicer, store.Options.Tenancy, storage, this);
             _inlineType.ApplySetterValues(inline);
 
             return inline;

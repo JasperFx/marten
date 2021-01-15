@@ -46,7 +46,7 @@ namespace Marten.Testing.Events.Projections
             theSession.Events.FetchStreamState(aggregateId).Version.ShouldBe(2);
         }
 
-        public class QuestPatchTestProjection: IInlineProjection
+        public class QuestPatchTestProjection: IProjection
         {
             public Guid Id { get; set; }
 

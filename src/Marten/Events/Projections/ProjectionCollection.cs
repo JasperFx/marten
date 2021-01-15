@@ -38,9 +38,9 @@ namespace Marten.Events.Projections
             }
         }
 
-        internal IInlineProjection[] BuildInlineProjections(DocumentStore store)
+        internal IProjection[] BuildInlineProjections(DocumentStore store)
         {
-            return _inlineProjections.Select(x => x.BuildInline(store)).ToArray();
+            return _inlineProjections.Select(x => x.Build(store)).ToArray();
         }
 
 
@@ -48,7 +48,7 @@ namespace Marten.Events.Projections
         /// Add a projection to be executed inline
         /// </summary>
         /// <param name="projection"></param>
-        public void Inline(IInlineProjection projection)
+        public void Inline(IProjection projection)
         {
             _inlineProjections.Add(new InlineProjectionSource(projection));
         }
@@ -57,7 +57,7 @@ namespace Marten.Events.Projections
         /// Add a projection that should be executed asynchronously
         /// </summary>
         /// <param name="projection"></param>
-        public void Async(IInlineProjection projection)
+        public void Async(IProjection projection)
         {
             _asyncProjections.Add(new InlineProjectionSource(projection));
         }
