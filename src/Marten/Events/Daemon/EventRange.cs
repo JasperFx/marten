@@ -45,7 +45,7 @@ namespace Marten.Events.Daemon
 
         public override string ToString()
         {
-            return $"{nameof(ProjectionOrShardName)}: {ProjectionOrShardName}, {nameof(SequenceFloor)}: {SequenceFloor}, {nameof(SequenceCeiling)}: {SequenceCeiling}";
+            return $"Event range of '{ProjectionOrShardName}', {SequenceFloor} to {SequenceCeiling}";
         }
 
         public string ProjectionOrShardName { get; }

@@ -6,6 +6,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation
 {
@@ -17,6 +18,7 @@ namespace Marten.Events.Aggregation
         private TransformBlock<EventRange, AggregateRange> _slicing;
         private ActionBlock<AggregateRange> _building;
         private IProjectionUpdater _updater;
+        private ILogger<IProjection> _logger;
 
         public AggregationShard(string projectionOrShardName, ISqlFragment[] eventFilters,
             AggregationRuntime<TDoc, TId> runtime, ITenancy tenancy)
@@ -32,9 +34,10 @@ namespace Marten.Events.Aggregation
         public string ProjectionOrShardName { get; }
         public AsyncOptions Options { get; }
 
-        public ITargetBlock<EventRange> Start(IProjectionUpdater updater)
+        public ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger<IProjection> logger)
         {
             _updater = updater;
+            _logger = logger;
 
             var singleFileOptions = new ExecutionDataflowBlockOptions
             {
@@ -54,14 +57,22 @@ namespace Marten.Events.Aggregation
 
         private async Task configureBatch(AggregateRange aggregateRange)
         {
-            Debug.WriteLine($"Starting {aggregateRange}");
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"Shard '{ProjectionOrShardName}': Starting to build an update batch for {aggregateRange}");
+            }
+
             var batch = _updater.StartNewBatch(aggregateRange.Range);
             await _runtime.Configure(batch.Queue, aggregateRange.Slices);
             batch.Queue.Complete();
             await batch.Queue.Completion;
-            Debug.WriteLine($"Configured batch for {aggregateRange}");
+
             await _updater.ExecuteBatch(batch);
-            Debug.WriteLine($"Executed batch {aggregateRange}");
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"Shard '{ProjectionOrShardName}': Configured batch {aggregateRange}");
+            }
         }
 
         internal class AggregateRange
@@ -77,15 +88,23 @@ namespace Marten.Events.Aggregation
 
             public override string ToString()
             {
-                return $"Aggregate range: {Range}, {Slices.Count} slices";
+                return $"Aggregate for {Range}, {Slices.Count} slices";
             }
         }
 
         private AggregateRange slice(EventRange range)
         {
-            Debug.WriteLine($"slicing {range}");
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"Shard '{ProjectionOrShardName}': Starting to slice {range}");
+            }
+
             var slices = _runtime.Slicer.Slice(range.Events, _tenancy);
-            Debug.WriteLine($"sliced {range}");
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug($"Shard '{ProjectionOrShardName}': successfully sliced {range}");
+            }
+
             return new AggregateRange(range, slices);
         }
 
@@ -96,6 +115,8 @@ namespace Marten.Events.Aggregation
 
             _slicing.Complete();
             _building.Complete();
+
+            _logger.LogInformation($"Shard '{ProjectionOrShardName}': Stopped");
         }
     }
 }
