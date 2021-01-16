@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Marten.Testing.Events.Daemon.TestingSupport
@@ -25,7 +27,7 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
 
             var statistics = await theStore.Events.FetchStatistics();
 
-            var agent = new ProjectionAgent(theStore, shard);
+            var agent = new ProjectionAgent(theStore, shard, new Logger<IProjection>(new NullLoggerFactory()));
             var tracker = new ShardStateTracker();
             tracker.MarkHighWater(statistics.EventSequenceNumber);
 
