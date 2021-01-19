@@ -117,7 +117,6 @@ namespace Marten.Events.Daemon
 
             _commandBlock.Post(Command.Started(tracker.HighWaterMark, lastCommitted));
 
-            // TODO -- track and dispose this
             _subscription = _tracker.Subscribe(this);
 
             _logger.LogInformation($"Projection agent for '{_projectionShard.ProjectionOrShardName}' has started from sequence {lastCommitted} and a high water mark of {tracker.HighWaterMark}");

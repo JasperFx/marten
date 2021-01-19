@@ -9,6 +9,8 @@ namespace Marten.Events.Schema
         {
             AddPrimaryKey(new TableColumn("name", "varchar"));
             AddColumn("last_seq_id", "bigint", "NULL");
+            AddColumn("last_updated", "timestamp with time zone", "DEFAULT transaction_timestamp()")
+                .CanAdd = true;
         }
     }
 }

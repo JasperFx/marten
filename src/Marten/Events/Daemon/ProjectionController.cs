@@ -24,6 +24,11 @@ namespace Marten.Events.Daemon
 
         public void MarkHighWater(long sequence)
         {
+            // Ignore the high water mark if it's lower than
+            // already encountered. Not sure how that could happen,
+            // but still be ready for that.
+            if (sequence <= HighWaterMark) return;
+
             HighWaterMark = sequence;
 
             enqueueNewEventRanges();
