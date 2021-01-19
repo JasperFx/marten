@@ -37,76 +37,16 @@ namespace Marten.Events.Aggregation
         public abstract Task<IStorageOperation> DetermineOperation(DocumentSessionBase session,
             EventSlice<TDoc, TId> slice, CancellationToken cancellation);
 
-        public async Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<EventSlice<TDoc, TId>> slices)
+        public Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups)
         {
-            await using var session = (DocumentSessionBase)_store.LightweightSession();
-            var builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice =>
+            foreach (var @group in groups)
             {
-                try
-                {
-                    return DetermineOperation(session, slice, CancellationToken.None);
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    throw;
-                }
-            });
-            builder.LinkTo(queue);
-
-            var beingFetched = new List<EventSlice<TDoc, TId>>();
-
-            foreach (var slice in slices)
-            {
-                if (Projection.MatchesAnyDeleteType(slice))
-                {
-                    var deletion = Storage.DeleteForId(slice.Id);
-                    queue.Post(deletion);
-                }
-                else if (IsNew(slice))
-                {
-                    builder.Post(slice);
-                }
-                else
-                {
-                    beingFetched.Add(slice);
-                }
+                @group.Start(queue, this, _store);
             }
 
-            var byTenant = beingFetched.GroupBy(x => x.Tenant);
-            foreach (var group in byTenant)
-            {
-                await startWithExistingAggregates(builder, @group);
-            }
-
-            builder.Complete();
-            await builder.Completion;
-
+            return Task.WhenAll(groups.Select(x => x.Complete()).ToArray());
         }
 
-        private async Task startWithExistingAggregates(
-            TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> builder,
-            IGrouping<ITenant, EventSlice<TDoc, TId>> @group)
-        {
-            await using var query = _store.QuerySession(@group.Key.TenantId);
-            var dict = @group.ToDictionary(x => x.Id);
-            var aggregates = await Storage
-                .LoadManyAsync(dict.Keys.ToArray(), (IMartenSession) query, CancellationToken.None);
-
-            foreach (var aggregate in aggregates)
-            {
-                var id = Storage.Identity(aggregate);
-                if (dict.TryGetValue(id, out var fragment))
-                {
-                    fragment.Aggregate = aggregate;
-                }
-            }
-
-            foreach (var slice in @group)
-            {
-                builder.Post(slice);
-            }
-        }
 
         public virtual bool IsNew(EventSlice<TDoc, TId> slice)
         {
