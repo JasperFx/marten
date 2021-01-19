@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -23,9 +22,12 @@ namespace Marten.Events.Daemon
         private EventFetcher _fetcher;
         private ShardStateTracker _tracker;
         private IDisposable _subscription;
+        private CancellationTokenSource _cancellationSource = new CancellationTokenSource();
 
+        // ReSharper disable once ContextualLoggerProblem
         public ProjectionAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger<IProjection> logger)
         {
+
             _store = store;
             _projectionShard = projectionShard;
             _logger = logger;
@@ -33,7 +35,8 @@ namespace Marten.Events.Daemon
             var singleFile = new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
-                MaxDegreeOfParallelism = 1
+                MaxDegreeOfParallelism = 1,
+                CancellationToken = _cancellationSource.Token
             };
 
             _commandBlock = new ActionBlock<Command>(processCommand, singleFile);
@@ -44,13 +47,31 @@ namespace Marten.Events.Daemon
             _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFile);
         }
 
+        // TODO -- use IAsyncDisposable
+        public async Task Stop()
+        {
+            _cancellationSource.Cancel();
+            _commandBlock.Complete();
+            await _commandBlock.Completion;
+
+            _loader.Complete();
+            await _loader.Completion;
+
+            _hopper.Complete();
+            await _hopper.Completion;
+
+            await _projectionShard.Stop();
+
+            _subscription.Dispose();
+
+        }
+
         private async Task<EventRange> loadEvents(EventRange range)
         {
             try
             {
                 // TODO -- resiliency here.
-                // TODO -- pass around a real CancellationToken
-                await _fetcher.Load(range, CancellationToken.None);
+                await _fetcher.Load(range, _cancellationSource.Token);
             }
             catch (Exception e)
             {
@@ -89,7 +110,7 @@ namespace Marten.Events.Daemon
 
 
             _fetcher = new EventFetcher(_store, _projectionShard.EventFilters);
-            _hopper = _projectionShard.Start(this, _logger);
+            _hopper = _projectionShard.Start(this, _logger, _cancellationSource.Token);
             _loader.LinkTo(_hopper);
 
             var lastCommitted = await _store.Events.ProjectionProgressFor(_projectionShard.ProjectionOrShardName);
@@ -100,6 +121,8 @@ namespace Marten.Events.Daemon
             _subscription = _tracker.Subscribe(this);
 
             _logger.LogInformation($"Projection agent for '{_projectionShard.ProjectionOrShardName}' has started from sequence {lastCommitted} and a high water mark of {tracker.HighWaterMark}");
+
+            Status = AgentStatus.Running;
         }
 
         void IObserver<ShardState>.OnCompleted()
@@ -142,8 +165,7 @@ namespace Marten.Events.Daemon
             {
                 try
                 {
-                    // TODO -- use a real cancellation
-                    await session.ExecuteBatchAsync(batch, CancellationToken.None);
+                    await session.ExecuteBatchAsync(batch, _cancellationSource.Token);
 
                     _logger.LogInformation($"Shard '{ProjectionOrShardName}': Executed updates for {batch.Range}");
                 }

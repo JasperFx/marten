@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Daemon;
@@ -20,6 +21,7 @@ namespace Marten.Events.Aggregation
         private ActionBlock<AggregateRange> _building;
         private IProjectionUpdater _updater;
         private ILogger<IProjection> _logger;
+        private CancellationToken _token;
 
         public AggregationShard(string projectionOrShardName, ISqlFragment[] eventFilters,
             AggregationRuntime<TDoc, TId> runtime, ITenancy tenancy)
@@ -35,15 +37,18 @@ namespace Marten.Events.Aggregation
         public string ProjectionOrShardName { get; }
         public AsyncOptions Options { get; }
 
-        public ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger<IProjection> logger)
+        public ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger<IProjection> logger,
+            CancellationToken token)
         {
+            _token = token;
             _updater = updater;
             _logger = logger;
 
             var singleFileOptions = new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
-                MaxDegreeOfParallelism = 1
+                MaxDegreeOfParallelism = 1,
+                CancellationToken = token
             };
 
             _slicing = new TransformBlock<EventRange, AggregateRange>(x => slice(x), singleFileOptions);
@@ -58,13 +63,15 @@ namespace Marten.Events.Aggregation
 
         private async Task configureBatch(AggregateRange aggregateRange)
         {
+            if (_token.IsCancellationRequested) return;
+
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug($"Shard '{ProjectionOrShardName}': Starting to build an update batch for {aggregateRange}");
             }
 
             var batch = _updater.StartNewBatch(aggregateRange.Range);
-            await _runtime.Configure(batch.Queue, aggregateRange.Groups);
+            await _runtime.Configure(batch.Queue, aggregateRange.Groups, _token);
             batch.Queue.Complete();
             await batch.Queue.Completion;
 
@@ -105,6 +112,8 @@ namespace Marten.Events.Aggregation
 
         private AggregateRange slice(EventRange range)
         {
+            if (_token.IsCancellationRequested) return null;
+
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug($"Shard '{ProjectionOrShardName}': Starting to slice {range}");

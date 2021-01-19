@@ -37,11 +37,12 @@ namespace Marten.Events.Aggregation
         public abstract Task<IStorageOperation> DetermineOperation(DocumentSessionBase session,
             EventSlice<TDoc, TId> slice, CancellationToken cancellation);
 
-        public Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups)
+        public Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups,
+            CancellationToken token)
         {
             foreach (var @group in groups)
             {
-                @group.Start(queue, this, _store);
+                @group.Start(queue, this, _store, token);
             }
 
             return Task.WhenAll(groups.Select(x => x.Complete()).ToArray());

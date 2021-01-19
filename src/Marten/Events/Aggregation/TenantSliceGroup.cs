@@ -26,7 +26,8 @@ namespace Marten.Events.Aggregation
             Slices = new List<EventSlice<TDoc, TId>>(slices);
         }
 
-        internal void Start(ActionBlock<IStorageOperation> queue, AggregationRuntime<TDoc, TId> runtime, IDocumentStore store)
+        internal void Start(ActionBlock<IStorageOperation> queue, AggregationRuntime<TDoc, TId> runtime,
+            IDocumentStore store, CancellationToken token)
         {
             _session = (DocumentSessionBase)store.LightweightSession(Tenant.TenantId);
 
@@ -34,13 +35,16 @@ namespace Marten.Events.Aggregation
             {
                 try
                 {
-                    return runtime.DetermineOperation(_session, slice, CancellationToken.None);
+                    return runtime.DetermineOperation(_session, slice, token);
                 }
                 catch (Exception e)
                 {
                     Debug.WriteLine(e);
                     throw;
                 }
+            }, new ExecutionDataflowBlockOptions
+            {
+                CancellationToken = token
             });
 
             _builder.LinkTo(queue);
@@ -67,7 +71,7 @@ namespace Marten.Events.Aggregation
 
                 var ids = beingFetched.Select(x => x.Id).ToArray();
                 var aggregates = await runtime.Storage
-                    .LoadManyAsync(ids, _session, CancellationToken.None); // TODO -- pass a real cancellation around
+                    .LoadManyAsync(ids, _session, token);
 
                 var dict = aggregates.ToDictionary(x => runtime.Storage.Identity(x));
 
@@ -80,7 +84,7 @@ namespace Marten.Events.Aggregation
 
                     _builder.Post(slice);
                 }
-            });
+            }, token);
         }
 
         internal async Task Complete()
