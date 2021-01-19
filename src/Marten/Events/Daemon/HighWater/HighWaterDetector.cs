@@ -6,7 +6,7 @@ using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
-namespace Marten.Events.Daemon
+namespace Marten.Events.Daemon.HighWater
 {
     internal class HighWaterDetector: IHighWaterDetector
     {
@@ -44,7 +44,7 @@ select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id > :sta
 
             _stateDetection = new NpgsqlCommand($@"
 select last_value from {graph.DatabaseSchemaName}.mt_events_sequence;
-select last_seq_id, last_updated from {graph.DatabaseSchemaName}.mt_event_progression where name = '{ShardState.HighWaterMark}';
+select last_seq_id, last_updated, transaction_timestamp() as timestamp from {graph.DatabaseSchemaName}.mt_event_progression where name = '{ShardState.HighWaterMark}';
 ".Trim());
 
             _updateStatus =
@@ -64,7 +64,7 @@ select last_seq_id, last_updated from {graph.DatabaseSchemaName}.mt_event_progre
             {
                 if (await reader.ReadAsync(token))
                 {
-                    statistics.LastMark = await reader.GetFieldValueAsync<long>(0, token);
+                    statistics.SafeStartMark = await reader.GetFieldValueAsync<long>(0, token);
                 }
             }
 
@@ -134,8 +134,9 @@ select last_seq_id, last_updated from {graph.DatabaseSchemaName}.mt_event_progre
 
             if (!await reader.ReadAsync(token)) return statistics;
 
-            statistics.LastMark = await reader.GetFieldValueAsync<long>(0, token);
+            statistics.LastMark = statistics.SafeStartMark = await reader.GetFieldValueAsync<long>(0, token);
             statistics.LastUpdated = await reader.GetFieldValueAsync<DateTimeOffset>(1, token);
+            statistics.Timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(2, token);
 
             return statistics;
         }
@@ -143,7 +144,7 @@ select last_seq_id, last_updated from {graph.DatabaseSchemaName}.mt_event_progre
         private async Task<long> findCurrentMark(HighWaterStatistics statistics, IManagedConnection conn, CancellationToken token)
         {
             // look for the current mark
-            _start.Value = statistics.LastMark;
+            _start.Value = statistics.SafeStartMark;
             using var reader = await conn.ExecuteReaderAsync(_gapDetection, token);
 
             // If there is a row, this tells us the first sequence gap
