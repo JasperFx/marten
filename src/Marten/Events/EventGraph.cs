@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Aggregation;
+using Marten.Events.Daemon;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Operations;
 using Marten.Events.Projections;
@@ -78,6 +80,11 @@ namespace Marten.Events
 
             return null;
         }
+
+        /// <summary>
+        /// Advanced configuration for the asynchronous projection execution
+        /// </summary>
+        public DaemonSettings Daemon { get; } = new DaemonSettings();
 
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
@@ -541,25 +548,5 @@ select last_value from {DatabaseSchemaName}.mt_events_sequence;
 
             return statistics;
         }
-    }
-
-    public class EventStoreStatistics
-    {
-        /// <summary>
-        /// Number of unique events in the event store table
-        /// </summary>
-        public long EventCount { get; set; }
-
-        /// <summary>
-        /// Number of unique streams in the event store
-        /// </summary>
-        public long StreamCount { get; set; }
-
-        /// <summary>
-        /// Current value of the event sequence. This may be higher than the number
-        /// of events if events have been archived or if there were failures while
-        /// appending events
-        /// </summary>
-        public long EventSequenceNumber { get; set; }
     }
 }
