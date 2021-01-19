@@ -62,7 +62,7 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
 
             Events.Add(new Departure{Day = startDay, State = state});
 
-            var duration = Random.Next(1, 50);
+            var duration = Random.Next(1, 20);
 
             var randomNumber = Random.NextDouble();
             for (var i = 0; i < duration; i++)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -63,7 +64,7 @@ namespace Marten.Events.Aggregation
             }
 
             var batch = _updater.StartNewBatch(aggregateRange.Range);
-            await _runtime.Configure(batch.Queue, aggregateRange.Slices);
+            await _runtime.Configure(batch.Queue, aggregateRange.Groups);
             batch.Queue.Complete();
             await batch.Queue.Completion;
 
@@ -73,22 +74,32 @@ namespace Marten.Events.Aggregation
             {
                 _logger.LogDebug($"Shard '{ProjectionOrShardName}': Configured batch {aggregateRange}");
             }
+
+            aggregateRange.Dispose();
         }
 
-        internal class AggregateRange
+        internal class AggregateRange : IDisposable
         {
-            public AggregateRange(EventRange range, IReadOnlyList<EventSlice<TDoc, TId>> slices)
+            public AggregateRange(EventRange range, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups)
             {
                 Range = range;
-                Slices = slices;
+                Groups = groups;
             }
 
             public EventRange Range { get; }
-            public IReadOnlyList<EventSlice<TDoc, TId>> Slices { get; }
+            public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Groups { get; }
 
             public override string ToString()
             {
-                return $"Aggregate for {Range}, {Slices.Count} slices";
+                return $"Aggregate for {Range}, {Groups.Count} slices";
+            }
+
+            public void Dispose()
+            {
+                foreach (var @group in Groups)
+                {
+                    @group.Dispose();
+                }
             }
         }
 
@@ -99,13 +110,13 @@ namespace Marten.Events.Aggregation
                 _logger.LogDebug($"Shard '{ProjectionOrShardName}': Starting to slice {range}");
             }
 
-            var slices = _runtime.Slicer.Slice(range.Events, _tenancy);
+            var groups = _runtime.Slicer.Slice(range.Events, _tenancy);
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug($"Shard '{ProjectionOrShardName}': successfully sliced {range}");
             }
 
-            return new AggregateRange(range, slices);
+            return new AggregateRange(range, groups);
         }
 
         public async Task Stop()

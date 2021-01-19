@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Aggregation;
@@ -71,6 +70,11 @@ namespace Marten.Events.Projections
             return slice(streams, tenancy).ToList();
         }
 
+        public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
+        {
+            throw new NotImplementedException();
+        }
+
         private bool tryFindId(IEvent @event, out TId id)
         {
             foreach (var grouper in _groupers)
@@ -105,11 +109,6 @@ namespace Marten.Events.Projections
                     yield return eventSlice;
                 }
             }
-        }
-
-        public IReadOnlyList<EventSlice<TDoc, TId>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
-        {
-            throw new NotImplementedException();
         }
 
         protected override object buildEventSlicer()
