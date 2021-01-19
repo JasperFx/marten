@@ -4,11 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Linq.SqlGeneration;
+using Marten.Testing.Events.Daemon.TestingSupport;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events.Daemon.TestingSupport
+namespace Marten.Testing.Events.Daemon
 {
     public class basic_async_daemon_tests: DaemonContext
     {

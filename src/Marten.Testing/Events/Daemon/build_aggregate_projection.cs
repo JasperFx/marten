@@ -3,11 +3,12 @@ using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Testing.Events.Daemon.TestingSupport;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace Marten.Testing.Events.Daemon.TestingSupport
+namespace Marten.Testing.Events.Daemon
 {
     public class build_aggregate_projection: DaemonContext
     {

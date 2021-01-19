@@ -3,14 +3,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Testing.Harness;
+using Marten.Events.Daemon.HighWater;
+using Marten.Testing.Events.Daemon.TestingSupport;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events.Daemon.TestingSupport
+namespace Marten.Testing.Events.Daemon
 {
     public class HighWaterDetectorTests: DaemonContext
     {
