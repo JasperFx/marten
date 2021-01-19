@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
@@ -11,7 +12,8 @@ namespace Marten.Events.Daemon
         ISqlFragment[] EventFilters { get; }
         string ProjectionOrShardName { get; }
         AsyncOptions Options { get; }
-        ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger<IProjection> logger);
+        ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger<IProjection> logger,
+            CancellationToken token);
 
         Task Stop();
     }
