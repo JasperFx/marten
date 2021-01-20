@@ -51,7 +51,15 @@ namespace Marten.Linq.Parsing.Methods
             var field = GetField(mapping, expression);
             var locator = field.TypedLocator;
 
-            var value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
+            ConstantExpression value;
+            if (expression.Object?.NodeType == ExpressionType.Constant)
+            {
+                value = (ConstantExpression) expression.Object;
+            }
+            else
+            {
+                value =  expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
+            }
             if (value == null)
                 throw new BadLinqExpressionException("Could not extract value from {0}.".ToFormat(expression), null);
 
