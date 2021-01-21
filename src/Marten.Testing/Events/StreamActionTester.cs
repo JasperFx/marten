@@ -28,6 +28,52 @@ namespace Marten.Testing.Events
         }
 
         [Fact]
+        public void for_determines_action_type_guid()
+        {
+            var events = new List<IEvent>
+            {
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+            };
+
+            events[0].Version = 5;
+
+            StreamAction.For(Guid.NewGuid(), events)
+                .ActionType.ShouldBe(StreamActionType.Append);
+
+            events[0].Version = 1;
+
+            StreamAction.For(Guid.NewGuid(), events)
+                .ActionType.ShouldBe(StreamActionType.Start);
+        }
+
+        [Fact]
+        public void for_determines_action_type_string()
+        {
+            var events = new List<IEvent>
+            {
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+                new Event<AEvent>(new AEvent()),
+            };
+
+            events[0].Version = 5;
+
+            StreamAction.For(Guid.NewGuid().ToString(), events)
+                .ActionType.ShouldBe(StreamActionType.Append);
+
+            events[0].Version = 1;
+
+            StreamAction.For(Guid.NewGuid().ToString(), events)
+                .ActionType.ShouldBe(StreamActionType.Start);
+        }
+
+        [Fact]
         public void ApplyServerVersion_for_new_streams()
         {
             var action = StreamAction.Start(theEvents, Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
@@ -50,6 +96,8 @@ namespace Marten.Testing.Events
             action.Events[2].Sequence.ShouldBe(13);
             action.Events[3].Sequence.ShouldBe(14);
         }
+
+
 
         [Fact]
         public void ApplyServerVersion_for_existing_streams()

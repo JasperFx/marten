@@ -292,5 +292,19 @@ namespace Marten.Events
 
             };
         }
+
+        public static StreamAction For(Guid streamId, IReadOnlyList<IEvent> events)
+        {
+            var action = events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
+            return new StreamAction(streamId, action)
+                .AddEvents(events);
+        }
+
+        public static StreamAction For(string streamKey, IReadOnlyList<IEvent> events)
+        {
+            var action = events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
+            return new StreamAction(streamKey, action)
+                .AddEvents(events);
+        }
     }
 }
