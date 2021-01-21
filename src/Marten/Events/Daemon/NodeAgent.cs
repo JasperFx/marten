@@ -16,6 +16,7 @@ namespace Marten.Events.Daemon
         private readonly Dictionary<string, ProjectionAgent> _agents = new Dictionary<string, ProjectionAgent>();
         private readonly CancellationTokenSource _cancellation;
         private readonly HighWaterAgent _highWater;
+        private bool _hasStarted;
 
         public NodeAgent(DocumentStore store, ILogger<IProjection> logger)
         {
@@ -33,20 +34,38 @@ namespace Marten.Events.Daemon
 
         public void Start()
         {
+
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
             _highWater.Start();
+            _hasStarted = true;
+        }
+
+        public async Task StartAll()
+        {
+            if (!_hasStarted) Start();
+            var shards = _store.Events.Projections.AllShards();
+            foreach (var shard in shards)
+            {
+                await startShard(shard);
+            }
+
         }
 
         public async Task StartShard(string shardName)
         {
             if (_store.Events.Projections.TryFindAsyncShard(shardName, out var shard))
             {
-                // TODO -- log the start, or error if it fails
-                var agent = new ProjectionAgent(_store, shard, _logger);
-                await agent.Start(Tracker);
-
-                _agents[shardName] = agent;
+                await startShard(shard);
             }
+        }
+
+        private async Task startShard(IAsyncProjectionShard shard)
+        {
+            // TODO -- log the start, or error if it fails
+            var agent = new ProjectionAgent(_store, shard, _logger);
+            await agent.Start(Tracker);
+
+            _agents[shard.ProjectionOrShardName] = agent;
         }
 
         public async Task StopShard(string shardName)
@@ -76,5 +95,7 @@ namespace Marten.Events.Daemon
             _cancellation?.Dispose();
             _highWater?.Dispose();
         }
+
+
     }
 }

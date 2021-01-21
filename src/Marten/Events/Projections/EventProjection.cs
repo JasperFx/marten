@@ -14,6 +14,7 @@ using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Storage;
 
@@ -188,7 +189,7 @@ namespace Marten.Events.Projections
             }
         }
 
-        public string ProjectionName { get; }
+        public string ProjectionName { get; protected set; }
 
         private GeneratedType _inlineType;
         private GeneratedAssembly _assembly;
@@ -198,7 +199,7 @@ namespace Marten.Events.Projections
         {
             if (_inlineType == null)
             {
-                Compile(store.Options);
+                Compile();
             }
 
             Debug.WriteLine(_inlineType.SourceCode);
@@ -211,10 +212,23 @@ namespace Marten.Events.Projections
 
         IReadOnlyList<IAsyncProjectionShard> IProjectionSource.AsyncProjectionShards(IDocumentStore store, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            // TODO -- an actual sharding strategy!!!
+            if (_inlineType == null)
+            {
+                Compile();
+            }
+
+            var projection = this.As<IProjectionSource>().Build((DocumentStore) store);
+
+            // TODO -- how do users specify AsyncOptions config?
+            // TODO -- sharding behavior
+            var shard = new AsyncProjectionShard(ProjectionName, projection, new ISqlFragment[0], (DocumentStore) store,
+                new AsyncOptions());
+
+            return new List<IAsyncProjectionShard> {shard};
         }
 
-        internal void Compile(StoreOptions options)
+        internal void Compile()
         {
             _assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
 

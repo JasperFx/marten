@@ -36,10 +36,12 @@ namespace Marten.Testing.Events.Daemon
 
             agent.Start();
 
+
             await PublishSingleThreaded();
 
-            var shard = theStore.Events.Projections.AllShards().Single();
+            await agent.StartAll();
 
+            var shard = theStore.Events.Projections.AllShards().Single();
             var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
 
             await agent.StartShard(shard.ProjectionOrShardName);
