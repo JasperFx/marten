@@ -4,6 +4,7 @@ using System.Linq;
 using Baseline;
 using ImTools;
 using Marten.Events.Aggregation;
+using Marten.Events.Daemon;
 using Marten.Exceptions;
 
 namespace Marten.Events.Projections
@@ -20,9 +21,13 @@ namespace Marten.Events.Projections
         private readonly IList<IProjectionSource> _inlineProjections = new List<IProjectionSource>();
         private readonly IList<IProjectionSource> _asyncProjections = new List<IProjectionSource>();
 
+        private Lazy<Dictionary<string, IAsyncProjectionShard>> _asyncShards;
+
         internal ProjectionCollection(StoreOptions options)
         {
             _options = options;
+
+
         }
 
         internal IEnumerable<Type> AllAggregateTypes()
@@ -57,6 +62,8 @@ namespace Marten.Events.Projections
         /// Add a projection that should be executed asynchronously
         /// </summary>
         /// <param name="projection"></param>
+        // TODO -- this will need to take in AsyncOptions as well. And maybe someway to
+        // determine async sharding & retries
         public void Async(IProjection projection)
         {
             _asyncProjections.Add(new InlineProjectionSource(projection));
@@ -168,16 +175,36 @@ namespace Marten.Events.Projections
             return (ILiveAggregator<T>) aggregator;
         }
 
-        internal void AssertValidity()
+        internal void AssertValidity(DocumentStore store)
         {
             var messages = _asyncProjections.Concat(_inlineProjections).Concat(_liveAggregateSources.Values)
                 .OfType<IValidatedProjection>().Distinct().SelectMany(x => x.ValidateConfiguration(_options))
                 .ToArray();
+
+            _asyncShards = new Lazy<Dictionary<string, IAsyncProjectionShard>>(() =>
+            {
+                return _asyncProjections
+                    .SelectMany(x => x.AsyncProjectionShards(store, store.Tenancy))
+                    .ToDictionary(x => x.ProjectionOrShardName);
+
+            });
 
             if (messages.Any())
             {
                 throw new InvalidProjectionException(messages);
             }
         }
+
+        internal IReadOnlyList<IAsyncProjectionShard> AllShards()
+        {
+            return _asyncShards.Value.Values.ToList();
+        }
+
+        internal bool TryFindAsyncShard(string projectionOrShardName, out IAsyncProjectionShard shard)
+        {
+            return _asyncShards.Value.TryGetValue(projectionOrShardName, out shard);
+        }
+
+
     }
 }

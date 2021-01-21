@@ -4,37 +4,45 @@ using Baseline.Dates;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Testing.Events.Daemon.TestingSupport;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events.Daemon
 {
     public class build_aggregate_projection: DaemonContext
     {
+        private readonly ITestOutputHelper _output;
+
+        public build_aggregate_projection(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
-        public async Task end_to_end()
+        public async Task end_to_end_with_events_already_published()
         {
             NumberOfStreams = 10;
+
+            _output.WriteLine($"The expected number of events is " + NumberOfEvents);
+
             await BuildAllExpectedAggregates();
+
+            StoreOptions(x => x.Events.Projections.Async(new TripAggregation()));
 
             theStore.Advanced.Clean.DeleteDocumentsFor(typeof(Trip));
 
-            var aggregation = (IProjectionSource)new TripAggregation();
-            var projection = (IAsyncCapableProjection)aggregation.Build(theStore);
+            var logger = new TestLogger<IProjection>(_output);
+            var agent = new NodeAgent(theStore, logger);
 
-            var shard = projection.AsyncProjectionShards(theStore, theStore.Tenancy)
-                .Single();
+            agent.Start();
 
-            var statistics = await theStore.Events.FetchStatistics();
+            await PublishSingleThreaded();
 
-            var agent = new ProjectionAgent(theStore, shard, new Logger<IProjection>(new NullLoggerFactory()));
-            var tracker = new ShardStateTracker();
-            tracker.MarkHighWater(statistics.EventSequenceNumber);
+            var shard = theStore.Events.Projections.AllShards().Single();
 
-            var waiter = tracker.WaitForShardState(new ShardState(shard, statistics.EventSequenceNumber), 60.Seconds());
+            var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
 
-            await agent.Start(tracker);
+            await agent.StartShard(shard.ProjectionOrShardName);
 
             await waiter;
 

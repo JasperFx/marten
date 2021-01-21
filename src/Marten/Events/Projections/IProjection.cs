@@ -15,10 +15,6 @@ namespace Marten.Events.Projections
 
     }
 
-    public interface IAsyncCapableProjection : IProjection
-    {
-        IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(IDocumentStore store, ITenancy tenancy);
-    }
 
     public abstract class SynchronousProjectionBase: IProjection
     {
