@@ -99,6 +99,16 @@ namespace Marten.Events.Daemon
             return listener.Task;
         }
 
+        public Task<ShardState> WaitForShardState(string shardName, long sequence, TimeSpan timeout)
+        {
+            return WaitForShardState(new ShardState(shardName, sequence), timeout);
+        }
+
+        public Task<ShardState> WaitForHighWaterMark(long sequence, TimeSpan timeout)
+        {
+            return WaitForShardState(ShardState.HighWaterMark, sequence, timeout);
+        }
+
         public Task Complete()
         {
             return _block.Completion;

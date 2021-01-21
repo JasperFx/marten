@@ -9,6 +9,7 @@ using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events.Daemon
 {
@@ -16,7 +17,7 @@ namespace Marten.Testing.Events.Daemon
     {
         private HighWaterDetector theDetector;
 
-        public HighWaterDetectorTests()
+        public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
             theDetector = new HighWaterDetector(theStore.Tenancy.Default, theStore.Events);

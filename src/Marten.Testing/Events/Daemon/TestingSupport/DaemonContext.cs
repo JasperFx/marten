@@ -3,18 +3,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Daemon;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events.Daemon.TestingSupport
 {
     [Collection("daemon")]
     public abstract class DaemonContext : OneOffConfigurationsContext
     {
-        protected DaemonContext() : base("daemon")
+        protected DaemonContext(ITestOutputHelper output) : base("daemon")
         {
             theStore.Advanced.Clean.DeleteAllEventData();
+            Logger = new TestLogger<IProjection>(output);
+        }
+
+        public ILogger<IProjection> Logger { get; }
+
+        protected async Task<NodeAgent> StartNodeAgent()
+        {
+            var agent = new NodeAgent(theStore, Logger);
+
+            await agent.StartAll();
+
+            return agent;
         }
 
         public int NumberOfStreams
