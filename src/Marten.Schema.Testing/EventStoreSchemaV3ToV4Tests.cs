@@ -32,7 +32,6 @@ namespace Marten.Schema.Testing
         public void can_auto_update_event_store_schema_changes()
         {
             using var store1 = Store(AutoCreate.All);
-            //store1.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
             store1.Schema.ApplyAllConfiguredChangesToDatabase();
 
             SimulateEventStoreV3Schema();
@@ -92,8 +91,7 @@ namespace Marten.Schema.Testing
                 // version as integer in mt_streams
                 conn.CreateCommand($"alter table {_schemaName}.mt_streams alter column version type int")
                     .ExecuteNonQuery();
-                // note that the params for the functions does not matter for the drop function, it drops by function name
-                conn.CreateCommand($"create function {_schemaName}.mt_append_event() returns int language plpgsql as $$ begin return 1; end; $$;")
+                conn.CreateCommand($"create function {_schemaName}.mt_append_event(uuid, varchar, varchar, uuid[], varchar[], varchar[], jsonb[]) returns int language plpgsql as $$ begin return 1; end; $$;")
                     .ExecuteNonQuery();
             }
             finally

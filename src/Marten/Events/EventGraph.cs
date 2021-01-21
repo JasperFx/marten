@@ -167,6 +167,10 @@ namespace Marten.Events
                 };
                 // ENDSAMPLE
 
+                // compute the args for mt_append_event function
+                var streamIdTypeArg = StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
+                var appendEventFunctionArgs = $"{streamIdTypeArg}, varchar, varchar, uuid[], varchar[], varchar[], jsonb[]";
+
                 return new ISchemaObject[]
                 {
                     streamsTable,
@@ -174,7 +178,7 @@ namespace Marten.Events
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
-                    new DropFunction(DatabaseSchemaName, "mt_append_event", string.Empty),
+                    new DropFunction(DatabaseSchemaName, "mt_append_event", appendEventFunctionArgs),
                 };
             }
         }
