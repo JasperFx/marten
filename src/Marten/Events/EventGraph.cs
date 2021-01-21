@@ -459,7 +459,7 @@ namespace Marten.Events
         internal void AssertValidity(DocumentStore store)
         {
             _store = store;
-            Projections.AssertValidity();
+            Projections.AssertValidity(_store);
         }
 
         /// <summary>

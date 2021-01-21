@@ -1,6 +1,5 @@
 using System;
 using Baseline.Dates;
-using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Shouldly;
 using Xunit;
@@ -27,7 +26,7 @@ namespace Marten.Testing.Events.Daemon
             var statistics = new HighWaterStatistics();
             statistics.CurrentMark = statistics.HighestSequence = previous.HighestSequence;
 
-            statistics.InterpretStatus(previous, new DaemonSettings())
+            statistics.InterpretStatus(previous)
                 .ShouldBe(HighWaterStatus.CaughtUp);
         }
 
@@ -37,46 +36,37 @@ namespace Marten.Testing.Events.Daemon
             var previous = new HighWaterStatistics {CurrentMark = 11L, HighestSequence = 15L};
             var statistics = new HighWaterStatistics{CurrentMark = 22L, HighestSequence = 30L};
 
-            statistics.InterpretStatus(previous, new DaemonSettings())
+            statistics.InterpretStatus(previous)
                 .ShouldBe(HighWaterStatus.Changed);
         }
 
         [Fact]
-        public void falling_behind_but_not_stale_when_sequence_is_not_progressing()
+        public void falling_behind_when_sequence_is_not_progressing()
         {
-            var daemonSettings = new DaemonSettings {StaleSequenceThreshold = 3.Seconds()};
-
             var previous = new HighWaterStatistics {CurrentMark = 11L, HighestSequence = 15L, Timestamp = DateTimeOffset.UtcNow.Subtract(1.Seconds())};
             var statistics = new HighWaterStatistics{CurrentMark = 11L, HighestSequence = 15L, Timestamp = DateTimeOffset.UtcNow};
 
-
-            statistics.InterpretStatus(previous, daemonSettings)
-                .ShouldBe(HighWaterStatus.FallingBehind);
+            statistics.InterpretStatus(previous)
+                .ShouldBe(HighWaterStatus.Stale);
         }
 
         [Fact]
-        public void falling_behind_but_not_stale_when_sequence_is_progressing()
+        public void falling_behind_when_sequence_is_progressing()
         {
-            var daemonSettings = new DaemonSettings {StaleSequenceThreshold = 3.Seconds()};
-
             var previous = new HighWaterStatistics {CurrentMark = 11L, HighestSequence = 15L, Timestamp = DateTimeOffset.UtcNow.Subtract(1.Seconds())};
             var statistics = new HighWaterStatistics{CurrentMark = 11L, HighestSequence = 30L, Timestamp = DateTimeOffset.UtcNow};
 
-
-            statistics.InterpretStatus(previous, daemonSettings)
-                .ShouldBe(HighWaterStatus.FallingBehind);
+            statistics.InterpretStatus(previous)
+                .ShouldBe(HighWaterStatus.Stale);
         }
 
         [Fact]
         public void stale_when_sequence_is_progressing()
         {
-            var daemonSettings = new DaemonSettings {StaleSequenceThreshold = 3.Seconds()};
-
-
             var previous = new HighWaterStatistics {CurrentMark = 11L, HighestSequence = 15L, Timestamp = DateTimeOffset.UtcNow.Subtract(4.Seconds())};
             var statistics = new HighWaterStatistics{CurrentMark = 11L, HighestSequence = 30L, Timestamp = DateTimeOffset.UtcNow};
 
-            statistics.InterpretStatus(previous, daemonSettings)
+            statistics.InterpretStatus(previous)
                 .ShouldBe(HighWaterStatus.Stale);
         }
     }

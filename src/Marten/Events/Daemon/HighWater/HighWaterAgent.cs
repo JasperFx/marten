@@ -1,14 +1,14 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Marten.Events.Projections;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
 
 namespace Marten.Events.Daemon.HighWater
 {
-    internal class HighWaterAgent
+    internal class HighWaterAgent : IDisposable
     {
         private readonly IHighWaterDetector _detector;
         private readonly ShardStateTracker _tracker;
@@ -29,41 +29,116 @@ namespace Marten.Events.Daemon.HighWater
             _settings = settings;
             _token = token;
 
-            //_timer = new Timer(_settings.PollingTime) {AutoReset = false};
-            //_timer.Elapsed += TimerOnElapsed;
+            _timer = new Timer(_settings.HealthCheckPollingTime.TotalMilliseconds) {AutoReset = true};
+            _timer.Elapsed += TimerOnElapsed;
         }
 
         public void Start()
         {
-            // TODO -- make sure there's a timer trying to restart it????
-            _loop = Task.Factory.StartNew(DetectChanges, TaskCreationOptions.LongRunning);
 
+            _loop = Task.Factory.StartNew(DetectChanges, TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent);
 
+            _timer.Start();
+
+            _logger.LogInformation("Started HighWaterAgent.");
         }
+
 
         private async Task DetectChanges()
         {
-            _current = await _detector.Detect(_token);
+            // TODO -- need to put some retry & exception handling here.
+            try
+            {
+                _current = await _detector.Detect(_token);
 
-            _tracker.MarkHighWater(_current.CurrentMark);
+                _tracker.MarkHighWater(_current.CurrentMark);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed while making the initial determination of the high water mark");
+            }
 
-            await Task.Delay(_settings.PollingTime, _token);
+            await Task.Delay(_settings.FastPollingTime, _token);
 
             while (!_token.IsCancellationRequested)
             {
-                var statistics = await _detector.Detect(_token);
-                // This is where it gets harder.
-                // if changed, pass on the next change
-                // if changed by a lot, speed up the polling
-                // back pressure?????
-                // if not changing, go to notify???
-                // if high water hasn't changed, but sequence is higher, go to safe zone
+                HighWaterStatistics statistics = null;
+                try
+                {
+                    statistics = await _detector.Detect(_token);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("Failed while trying to detect high water statistics", e);
+                    await Task.Delay(_settings.SlowPollingTime, _token);
+                    continue;
+                }
+
+                var status = statistics.InterpretStatus(_current);
+
+                switch (status)
+                {
+                    case HighWaterStatus.Changed:
+                        await markProgress(statistics, _settings.FastPollingTime);
+                        break;
+
+                    case HighWaterStatus.CaughtUp:
+                        await markProgress(statistics, _settings.SlowPollingTime);
+                        break;
+
+                    case HighWaterStatus.Stale:
+                        var safeHarborTime = _current.Timestamp.Add(_settings.LeadingEdgeBuffer);
+                        var delayTime = safeHarborTime.Subtract(statistics.Timestamp);
+                        if (delayTime.TotalSeconds > 0)
+                        {
+                            await Task.Delay(delayTime, _token);
+                        }
+
+                        statistics = await _detector.DetectInSafeZone(safeHarborTime, _token);
+                        await markProgress(statistics, _settings.FastPollingTime);
+                        break;
+                }
             }
+
+            _logger.LogInformation($"HighWaterAgent has detected a cancellation and has stopped polling.");
+        }
+
+        private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("High Water mark detected at " + statistics.CurrentMark);
+            }
+            _current = statistics;
+            _tracker.MarkHighWater(statistics.CurrentMark);
+            await Task.Delay(delayTime, _token);
         }
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
+            if (_loop.IsFaulted && !_token.IsCancellationRequested)
+            {
+                _logger.LogError(_loop.Exception,$"HighWaterAgent polling loop was faulted.");
 
+                try
+                {
+                    _loop.Dispose();
+                    Start();
+                }
+                catch (Exception)
+                {
+
+                }
+            }
+
+
+        }
+
+        public void Dispose()
+        {
+            _timer?.Stop();
+            _timer?.Dispose();
+            _loop?.Dispose();
         }
     }
 }

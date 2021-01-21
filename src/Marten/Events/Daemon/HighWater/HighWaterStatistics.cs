@@ -12,18 +12,16 @@ namespace Marten.Events.Daemon.HighWater
         public long SafeStartMark { get; set; }
         public DateTimeOffset Timestamp { get; set; }
 
-        public HighWaterStatus InterpretStatus(HighWaterStatistics previous, DaemonSettings settings)
+        public HighWaterStatus InterpretStatus(HighWaterStatistics previous)
         {
+            if (HighestSequence == 1 && CurrentMark == 0) return HighWaterStatus.CaughtUp;
+
             if (CurrentMark > previous.CurrentMark)
             {
                 return CurrentMark == HighestSequence ? HighWaterStatus.CaughtUp : HighWaterStatus.Changed;
             }
 
-            return Timestamp.Subtract(previous.Timestamp) > settings.StaleSequenceThreshold
-                ? HighWaterStatus.Stale
-                : HighWaterStatus.FallingBehind;
-
-
+            return HighWaterStatus.Stale;
         }
     }
 
@@ -31,7 +29,6 @@ namespace Marten.Events.Daemon.HighWater
     {
         CaughtUp, // CurrentMark == HighestSequence, okay to pause
         Changed,  // The CurrentMark has progressed
-        FallingBehind, // The sequence is progressing, but the current mark is not
         Stale,    // The CurrentMark isn't changing, but the sequence is ahead. Implies that there's some skips in the sequence
     }
 }

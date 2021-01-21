@@ -15,6 +15,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
+using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Storage;
 
@@ -58,7 +59,7 @@ namespace Marten.Events.Aggregation
             // This will have to change when we introduce 1st class support for tenancy by
             // separate databases
             store.Tenancy.Default.EnsureStorageExists(typeof(T));
-            return BuildInlineProjection(store);
+            return BuildRuntime(store);
         }
 
 
@@ -70,8 +71,13 @@ namespace Marten.Events.Aggregation
             return aggregator;
         }
 
-        internal IProjection BuildInlineProjection(DocumentStore store)
+        internal IProjection BuildRuntime(DocumentStore store)
         {
+            if (_liveType == null)
+            {
+                Compile(store.Options);
+            }
+
             var storage = store.Options.Providers.StorageFor<T>().Lightweight;
             var slicer = buildEventSlicer();
 
@@ -316,6 +322,19 @@ namespace Marten.Events.Aggregation
                 yield return
                     $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";
             }
+        }
+
+        IReadOnlyList<IAsyncProjectionShard> IProjectionSource.AsyncProjectionShards(IDocumentStore store, ITenancy tenancy)
+        {
+            // TODO -- support sharding
+            // TODO -- use event filters!!!
+
+            var runtime = BuildRuntime((DocumentStore) store);
+
+            var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
+            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, ProjectionName, new ISqlFragment[0], runtime, tenancy);
+
+            return new List<IAsyncProjectionShard> {shard};
         }
     }
 }

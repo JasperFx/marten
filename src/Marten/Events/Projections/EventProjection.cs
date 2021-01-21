@@ -210,6 +210,11 @@ namespace Marten.Events.Projections
             return inline;
         }
 
+        IReadOnlyList<IAsyncProjectionShard> IProjectionSource.AsyncProjectionShards(IDocumentStore store, ITenancy tenancy)
+        {
+            throw new NotImplementedException();
+        }
+
         internal void Compile(StoreOptions options)
         {
             _assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
