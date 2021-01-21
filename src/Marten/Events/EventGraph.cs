@@ -174,6 +174,7 @@ namespace Marten.Events
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
+                    new DropFunction(DatabaseSchemaName, "mt_append_event", string.Empty),
                 };
             }
         }

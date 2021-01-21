@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Baseline;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Storage
 {
@@ -18,6 +20,8 @@ namespace Marten.Storage
                 expected.Where(x => actual.HasColumn(x.Name) && !x.Equals(actual.ColumnFor(x.Name))).ToArray();
 
             _tableName = expected.Identifier;
+
+            compareColumns(expected, actual, Different);
 
             compareIndices(expected, actual);
 
@@ -94,6 +98,23 @@ namespace Marten.Storage
             }
         }
 
+        private void compareColumns(Table expected, Table actual, IEnumerable<TableColumn> changedColumns)
+        {
+            foreach (var expectedColumn in changedColumns)
+            {
+                var actualColumn = actual.ColumnFor(expectedColumn.Name);
+                var actualType = TypeMappings.ConvertSynonyms(actualColumn.Type);
+                var expectedType = TypeMappings.ConvertSynonyms(expectedColumn.Type);
+
+                // check for altered column type which can be auto converted
+                if (actualType.EqualsIgnoreCase(expectedType) ||
+                    !TypeMappings.CanAutoConvertType(actualType, expectedType)) continue;
+
+                AlteredColumnTypes.Add(expectedColumn.AlterColumnTypeSql(expected));
+                AlteredColumnTypeRollbacks.Add(actualColumn.AlterColumnTypeSql(actual));
+            }
+        }
+
         public readonly IList<string> IndexChanges = new List<string>();
         public readonly IList<string> IndexRollbacks = new List<string>();
 
@@ -102,6 +123,9 @@ namespace Marten.Storage
 
         public readonly IList<string> ForeignKeyChanges = new List<string>();
         public readonly IList<string> ForeignKeyRollbacks = new List<string>();
+
+        public readonly IList<string> AlteredColumnTypes = new List<string>();
+        public readonly IList<string> AlteredColumnTypeRollbacks = new List<string>();
 
         public TableColumn[] Different { get; set; }
 

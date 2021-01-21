@@ -13,10 +13,12 @@ namespace Marten.Storage
     public abstract class Function: ISchemaObject
     {
         public DbObjectName Identifier { get; }
+        public bool IsRemoved { get; }
 
-        protected Function(DbObjectName identifier)
+        protected Function(DbObjectName identifier, bool isRemoved = false)
         {
             Identifier = identifier;
+            IsRemoved = isRemoved;
         }
 
         /// <summary>
@@ -49,12 +51,24 @@ AND    n.nspname = :{schemaParam};
         public SchemaPatchDifference CreatePatch(DbDataReader reader, SchemaPatch patch, AutoCreate autoCreate)
         {
             var diff = fetchDelta(reader, patch.Rules);
+
+            if (diff == null && IsRemoved)
+            {
+                return SchemaPatchDifference.None;
+            }
+
             if (diff == null)
             {
                 Write(patch.Rules, patch.UpWriter);
                 WriteDropStatement(patch.Rules, patch.DownWriter);
 
                 return SchemaPatchDifference.Create;
+            }
+
+            if (diff.Removed)
+            {
+                Write(patch.Rules, patch.UpWriter);
+                return SchemaPatchDifference.Update;
             }
 
             if (diff.AllNew)
@@ -90,6 +104,9 @@ AND    n.nspname = :{schemaParam};
 
             var existingFunction = reader.GetString(0);
 
+            if (string.IsNullOrEmpty(existingFunction))
+                return null;
+
             reader.NextResult();
             var drops = new List<string>();
             while (reader.Read())
@@ -97,12 +114,9 @@ AND    n.nspname = :{schemaParam};
                 drops.Add(reader.GetString(0));
             }
 
-            if (existingFunction == null)
-                return null;
-
             var actualBody = new FunctionBody(Identifier, drops.ToArray(), existingFunction.TrimEnd() + ";");
 
-            var expectedBody = ToBody(rules);
+            var expectedBody = IsRemoved ? null : ToBody(rules);
 
             return new FunctionDelta(expectedBody, actualBody);
         }

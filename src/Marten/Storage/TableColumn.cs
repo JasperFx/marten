@@ -74,5 +74,10 @@ namespace Marten.Storage
         {
             return $"alter table {table.Identifier} add column {ToDeclaration(Name.Length + 1)};";
         }
+
+        public virtual string AlterColumnTypeSql(Table table)
+        {
+            return $"alter table {table.Identifier} alter column {Name.PadRight(Name.Length)} type {Type};";
+        }
     }
 }
