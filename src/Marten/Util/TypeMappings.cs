@@ -142,6 +142,18 @@ namespace Marten.Util
             return type;
         }
 
+        public static bool CanAutoConvertType(string fromType, string toType)
+        {
+            toType = toType.ToLower();
+
+            return fromType.ToLower() switch
+            {
+                "int" => new[] {"bigint"}.Contains(toType),
+                "int[]" => new[] {"bigint[]"}.Contains(toType),
+                _ => false
+            };
+        }
+
         public static string ReplaceMultiSpace(this string str, string newStr)
         {
             var regex = new Regex("\\s+");

@@ -17,7 +17,10 @@ namespace Marten.Storage
         }
 
         public bool AllNew => Actual == null;
-        public bool HasChanged => AllNew || !Expected.Body.CanonicizeSql().Equals(Actual.Body.CanonicizeSql(), StringComparison.OrdinalIgnoreCase);
+
+        public bool Removed => Expected == null && Actual != null;
+
+        public bool HasChanged => AllNew || (Expected != null && !Expected.Body.CanonicizeSql().Equals(Actual.Body.CanonicizeSql(), StringComparison.OrdinalIgnoreCase));
 
         public void WritePatch(SchemaPatch patch)
         {

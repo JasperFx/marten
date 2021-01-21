@@ -288,7 +288,10 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
                     return SchemaPatchDifference.Create;
                 }
 
-                return SchemaPatchDifference.Invalid;
+                if (!delta.AlteredColumnTypes.Any())
+                {
+                    return SchemaPatchDifference.Invalid;
+                }
             }
 
             if (!delta.Missing.All(x => x.CanAdd))
@@ -301,6 +304,9 @@ GROUP BY constraint_name, constraint_type, schema_name, table_name, definition;
                 patch.Updates.Apply(this, missing.AddColumnSql(this));
                 patch.Rollbacks.RemoveColumn(this, Identifier, missing.Name);
             }
+
+            delta.AlteredColumnTypes.Each(x => patch.Updates.Apply(this, x));
+            delta.AlteredColumnTypeRollbacks.Each(x => patch.Rollbacks.Apply(this, x));
 
             delta.IndexChanges.Each(x => patch.Updates.Apply(this, x));
             delta.IndexRollbacks.Each(x => patch.Rollbacks.Apply(this, x));

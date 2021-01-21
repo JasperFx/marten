@@ -1,21 +1,21 @@
 using System.IO;
-using Marten.Storage;
+using Marten.Schema;
 
-namespace Marten.Schema
+namespace Marten.Storage
 {
     public class SystemFunction: Function
     {
         private readonly string _args;
         private readonly string _dropSql;
-        private readonly DbObjectName _function;
+        protected readonly DbObjectName _function;
 
-        public SystemFunction(StoreOptions options, string functionName, string args)
-            : this(options.DatabaseSchemaName, functionName, args)
+        public SystemFunction(StoreOptions options, string functionName, string args, bool isRemoved=false)
+            : this(options.DatabaseSchemaName, functionName, args, isRemoved)
         {
         }
 
-        public SystemFunction(string schema, string functionName, string args)
-            : base(new DbObjectName(schema, functionName))
+        public SystemFunction(string schema, string functionName, string args, bool isRemoved=false)
+            : base(new DbObjectName(schema, functionName), isRemoved)
         {
             _args = args;
             _function = new DbObjectName(schema, functionName);
