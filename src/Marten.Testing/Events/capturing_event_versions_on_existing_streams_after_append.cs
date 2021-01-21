@@ -24,7 +24,7 @@ namespace Marten.Testing.Events
 
             public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
             {
-                LastCommit = commit;
+                LastCommit = commit.Clone();
             }
 
             public IChangeSet LastCommit { get; set; }

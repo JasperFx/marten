@@ -26,7 +26,7 @@ namespace Marten.Internal.Sessions
             {
                 if (tracker.DetectChanges(this, out var operation))
                 {
-                    _unitOfWork.Add(operation);
+                    _workTracker.Add(operation);
                 }
             }
         }
@@ -40,7 +40,7 @@ namespace Marten.Internal.Sessions
 
             var knownDocuments = ChangeTrackers.Select(x => x.Document).ToArray();
 
-            var operations = _unitOfWork.AllOperations
+            var operations = _workTracker.AllOperations
                 .OfType<IDocumentStorageOperation>()
                 .Where(x => !knownDocuments.Contains(x.Document));
 

@@ -15,5 +15,7 @@ namespace Marten.Services
         IEnumerable<PatchOperation> Patches { get; }
 
         IEnumerable<StreamAction> GetStreams();
+
+        IChangeSet Clone();
     }
 }

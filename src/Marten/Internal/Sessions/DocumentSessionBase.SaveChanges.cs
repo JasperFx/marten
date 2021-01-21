@@ -12,29 +12,29 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
 
             processChangeTrackers();
-            if (!_unitOfWork.HasOutstandingWork()) return;
+            if (!_workTracker.HasOutstandingWork()) return;
 
             Database.BeginTransaction();
 
             Options.Events.ProcessEvents(this);
 
-            _unitOfWork.Sort(Options);
+            _workTracker.Sort(Options);
 
 
             foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
-            var batch = new UpdateBatch(_unitOfWork.AllOperations);
+            var batch = new UpdateBatch(_workTracker.AllOperations);
             ExecuteBatch(batch);
 
             resetDirtyChecking();
 
-            EjectPatchedTypes(_unitOfWork);
-            Logger.RecordSavedChanges(this, _unitOfWork);
+            EjectPatchedTypes(_workTracker);
+            Logger.RecordSavedChanges(this, _workTracker);
 
-            foreach (var listener in Listeners) listener.AfterCommit(this, _unitOfWork);
+            foreach (var listener in Listeners) listener.AfterCommit(this, _workTracker);
 
             // Need to clear the unit of work here
-            _unitOfWork = new UnitOfWork(this);
+            _workTracker.Reset();
         }
 
         internal void ExecuteBatch(IUpdateBatch batch)
@@ -69,31 +69,31 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
 
             processChangeTrackers();
-            if (!_unitOfWork.HasOutstandingWork()) return;
+            if (!_workTracker.HasOutstandingWork()) return;
 
             await Database.BeginTransactionAsync(token).ConfigureAwait(false);
 
             await Options.Events.ProcessEventsAsync(this, token).ConfigureAwait(false);
 
-            _unitOfWork.Sort(Options);
+            _workTracker.Sort(Options);
 
             foreach (var listener in Listeners)
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
 
-            var batch = new UpdateBatch(_unitOfWork.AllOperations);
+            var batch = new UpdateBatch(_workTracker.AllOperations);
 
             await ExecuteBatchAsync(batch, token);
 
             resetDirtyChecking();
 
-            EjectPatchedTypes(_unitOfWork);
-            Logger.RecordSavedChanges(this, _unitOfWork);
+            EjectPatchedTypes(_workTracker);
+            Logger.RecordSavedChanges(this, _workTracker);
 
             foreach (var listener in Listeners)
-                await listener.AfterCommitAsync(this, _unitOfWork, token).ConfigureAwait(false);
+                await listener.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
 
             // Need to clear the unit of work here
-            _unitOfWork = new UnitOfWork(this);
+            _workTracker.Reset();
         }
 
         internal async Task ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)

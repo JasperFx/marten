@@ -17,22 +17,33 @@ namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
     {
-        // The current unit of work can be replaced
-        internal UnitOfWork _unitOfWork;
+        internal readonly ISessionWorkTracker _workTracker;
 
 
         protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
             ITenant tenant): base(store, sessionOptions, database, tenant)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
-            _unitOfWork = new UnitOfWork(this);
+            _workTracker = new UnitOfWork(this);
 
             Events = new EventStore(this, store, tenant);
+            _workTracker = new UnitOfWork(this);
+        }
+
+        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
+            ITenant tenant, ISessionWorkTracker workTracker): base(store, sessionOptions, database, tenant)
+        {
+            Concurrency = sessionOptions.ConcurrencyChecks;
+            _workTracker = new UnitOfWork(this);
+
+            Events = new EventStore(this, store, tenant);
+
+            _workTracker = workTracker;
         }
 
         internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
 
-        internal UnitOfWork UnitOfWork => _unitOfWork;
+        internal ISessionWorkTracker WorkTracker => _workTracker;
 
 
         public void Store<T>(IEnumerable<T> entities)
@@ -77,7 +88,7 @@ namespace Marten.Internal.Sessions
                 var op = storage.Upsert(entity, this, tenant);
                 storage.Store(this, entity);
 
-                _unitOfWork.Add(op);
+                _workTracker.Add(op);
             }
         }
 
@@ -88,7 +99,7 @@ namespace Marten.Internal.Sessions
             var storage = StorageFor<T>();
             storage.Store(this, entity, version);
             var op = storage.Upsert(entity, this, Tenant);
-            _unitOfWork.Add(op);
+            _workTracker.Add(op);
         }
 
         public void Insert<T>(IEnumerable<T> entities)
@@ -118,7 +129,7 @@ namespace Marten.Internal.Sessions
                 {
                     storage.Store(this, entity);
                     var op = storage.Insert(entity, this, Tenant);
-                    _unitOfWork.Add(op);
+                    _workTracker.Add(op);
                 }
             }
         }
@@ -150,7 +161,7 @@ namespace Marten.Internal.Sessions
                 {
                     storage.Store(this, entity);
                     var op = storage.Update(entity, this, Tenant);
-                    _unitOfWork.Add(op);
+                    _workTracker.Add(op);
                 }
             }
         }
@@ -166,7 +177,7 @@ namespace Marten.Internal.Sessions
             });
         }
 
-        public IUnitOfWork PendingChanges => _unitOfWork;
+        public IUnitOfWork PendingChanges => _workTracker;
 
         public void StoreObjects(IEnumerable<object> documents)
         {
@@ -223,13 +234,13 @@ namespace Marten.Internal.Sessions
 
         public void QueueOperation(IStorageOperation storageOperation)
         {
-            _unitOfWork.Add(storageOperation);
+            _workTracker.Add(storageOperation);
         }
 
         public virtual void Eject<T>(T document)
         {
             StorageFor<T>().Eject(this, document);
-            _unitOfWork.Eject(document);
+            _workTracker.Eject(document);
 
             ChangeTrackers.RemoveAll(x => ReferenceEquals(document, x.Document));
         }
@@ -289,7 +300,7 @@ namespace Marten.Internal.Sessions
 
                         var overwrite = storage.Overwrite(entity, this, Tenant);
 
-                        _unitOfWork.Add(overwrite);
+                        _workTracker.Add(overwrite);
                     }
                 }
                 else
@@ -301,7 +312,7 @@ namespace Marten.Internal.Sessions
 
                         var upsert = storage.Upsert(entity, this, Tenant);
 
-                        _unitOfWork.Add(upsert);
+                        _workTracker.Add(upsert);
                     }
                 }
             }
