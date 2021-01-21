@@ -245,7 +245,7 @@ namespace Marten.Events.Projections
 
     }
 
-    public abstract class SyncEventProjection<T>: IProjection where T : EventProjection
+    public abstract class SyncEventProjection<T>: SyncEventProjectionBase where T : EventProjection
     {
         public T Projection { get; }
 
@@ -253,28 +253,9 @@ namespace Marten.Events.Projections
         {
             Projection = projection;
         }
-
-        public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
-        {
-            foreach (var stream in streams)
-            {
-                foreach (var @event in stream.Events)
-                {
-                    ApplyEvent(session, stream, @event);
-                }
-            }
-        }
-
-        public abstract void ApplyEvent(IDocumentOperations operations, StreamAction streamAction, IEvent e);
-
-        public Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
-        {
-            Apply(session, streams);
-            return Task.CompletedTask;
-        }
     }
 
-    public abstract class AsyncEventProjection<T> : IProjection where T : EventProjection
+    public abstract class AsyncEventProjection<T> : AsyncEventProjectionBase where T : EventProjection
     {
         public T Projection { get; }
 
@@ -283,24 +264,8 @@ namespace Marten.Events.Projections
             Projection = projection;
         }
 
-        public async Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
-        {
-            foreach (var stream in streams)
-            {
-                foreach (var @event in stream.Events)
-                {
-                    await ApplyEvent(session, stream, @event, cancellation);
-                }
-            }
-        }
 
-        public abstract Task ApplyEvent(IDocumentOperations operations, StreamAction streamAction, IEvent e,
-            CancellationToken cancellationToken);
 
-        public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
-        {
-            ApplyAsync(session, streams, CancellationToken.None).GetAwaiter().GetResult();
-        }
     }
 
 }
