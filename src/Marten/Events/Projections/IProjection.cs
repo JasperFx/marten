@@ -11,10 +11,7 @@ namespace Marten.Events.Projections
         void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams);
 
         Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation);
-
-
     }
-
 
     public abstract class SynchronousProjectionBase: IProjection
     {

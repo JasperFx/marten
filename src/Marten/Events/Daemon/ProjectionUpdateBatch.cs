@@ -7,13 +7,15 @@ using System.Threading.Tasks.Dataflow;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Patching;
+using Marten.Services;
 using Marten.Util;
 using Npgsql;
 
 namespace Marten.Events.Daemon
 {
 
-    public class ProjectionUpdateBatch : IUpdateBatch, IDisposable
+    public class ProjectionUpdateBatch : IUpdateBatch, IDisposable, ISessionWorkTracker
     {
         public EventRange Range { get; }
         private readonly DocumentSessionBase _session;
@@ -126,6 +128,133 @@ namespace Marten.Events.Daemon
         {
             _session.Dispose();
             Queue.Complete();
+        }
+
+        IEnumerable<IDeletion> IUnitOfWork.Deletions()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<IDeletion> IUnitOfWork.DeletionsFor<T>()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<IDeletion> IUnitOfWork.DeletionsFor(Type documentType)
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<object> IUnitOfWork.Updates()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<object> IUnitOfWork.Inserts()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<T> IUnitOfWork.UpdatesFor<T>()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<T> IUnitOfWork.InsertsFor<T>()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<T> IUnitOfWork.AllChangedFor<T>()
+        {
+            throw new NotSupportedException();
+        }
+
+        IList<StreamAction> IUnitOfWork.Streams()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<PatchOperation> IUnitOfWork.Patches()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<IStorageOperation> IUnitOfWork.Operations()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor<T>()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor(Type documentType)
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<object> IChangeSet.Updated => throw new NotSupportedException();
+
+        IEnumerable<object> IChangeSet.Inserted => throw new NotSupportedException();
+
+        IEnumerable<IDeletion> IChangeSet.Deleted => throw new NotSupportedException();
+
+        IEnumerable<IEvent> IChangeSet.GetEvents()
+        {
+            throw new NotSupportedException();
+        }
+
+        IEnumerable<PatchOperation> IChangeSet.Patches => throw new NotSupportedException();
+
+        IEnumerable<StreamAction> IChangeSet.GetStreams()
+        {
+            throw new NotSupportedException();
+        }
+
+        IChangeSet IChangeSet.Clone()
+        {
+            throw new NotSupportedException();
+        }
+
+        void ISessionWorkTracker.Reset()
+        {
+            throw new NotSupportedException();
+        }
+
+        void ISessionWorkTracker.Add(IStorageOperation operation)
+        {
+            Queue.Post(operation);
+        }
+
+        void ISessionWorkTracker.Sort(StoreOptions options)
+        {
+            throw new NotSupportedException();
+        }
+
+        List<StreamAction> ISessionWorkTracker.Streams => throw new NotSupportedException();
+
+        IReadOnlyList<IStorageOperation> ISessionWorkTracker.AllOperations => throw new NotSupportedException();
+
+        void ISessionWorkTracker.Eject<T>(T document)
+        {
+            throw new NotSupportedException();
+        }
+
+        bool ISessionWorkTracker.TryFindStream(string streamKey, out StreamAction stream)
+        {
+            throw new NotSupportedException();
+        }
+
+        bool ISessionWorkTracker.TryFindStream(Guid streamId, out StreamAction stream)
+        {
+            throw new NotSupportedException();
+        }
+
+        bool ISessionWorkTracker.HasOutstandingWork()
+        {
+            throw new NotSupportedException();
         }
     }
 }
