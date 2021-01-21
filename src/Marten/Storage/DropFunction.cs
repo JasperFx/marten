@@ -13,7 +13,7 @@ namespace Marten.Storage
 
         public override void Write(DdlRules rules, StringWriter writer)
         {
-            writer.WriteLine($"drop function if exists {_function.Schema}.{Name} cascade;");
+            writer.WriteLine(_dropSql);
         }
     }
 }

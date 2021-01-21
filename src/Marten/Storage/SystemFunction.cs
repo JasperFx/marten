@@ -6,7 +6,7 @@ namespace Marten.Storage
     public class SystemFunction: Function
     {
         private readonly string _args;
-        private readonly string _dropSql;
+        protected readonly string _dropSql;
         protected readonly DbObjectName _function;
 
         public SystemFunction(StoreOptions options, string functionName, string args, bool isRemoved=false)
