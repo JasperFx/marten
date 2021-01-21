@@ -14,7 +14,7 @@ namespace Marten.Internal.Sessions
             var documentStorage = StorageFor<T>();
 
             var deletion = documentStorage.DeleteForDocument(entity);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             documentStorage.Eject(this, entity);
         }
@@ -27,13 +27,13 @@ namespace Marten.Internal.Sessions
 
             if (storage is IDocumentStorage<T, int> i)
             {
-                _unitOfWork.Add(i.DeleteForId(id));
+                _workTracker.Add(i.DeleteForId(id));
 
                 ejectById<T>(id);
             }
             else if (storage is IDocumentStorage<T, long> l)
             {
-                _unitOfWork.Add(l.DeleteForId(id));
+                _workTracker.Add(l.DeleteForId(id));
 
                 ejectById<T>((long)id);
             }
@@ -47,7 +47,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
             var deletion = storageFor<T, long>().DeleteForId(id);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             ejectById<T>(id);
         }
@@ -56,7 +56,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
             var deletion = storageFor<T, Guid>().DeleteForId(id);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             ejectById<T>(id);
         }
@@ -66,7 +66,7 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
 
             var deletion = storageFor<T, string>().DeleteForId(id);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             ejectById<T>(id);
         }
@@ -79,7 +79,7 @@ namespace Marten.Internal.Sessions
 
 
             var deletion = documentStorage.DeleteForDocument(document, tenant);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             documentStorage.Eject(this, document);
         }
@@ -92,7 +92,7 @@ namespace Marten.Internal.Sessions
             var storage = (IDocumentStorage<T, Guid>)selectStorage(tenant.Providers.StorageFor<T>());
 
             var deletion = storage.DeleteForId(id, tenant);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             ejectById<T>(id);
         }
@@ -106,13 +106,13 @@ namespace Marten.Internal.Sessions
 
             if (storage is IDocumentStorage<T, int> i)
             {
-                _unitOfWork.Add(i.DeleteForId(id, tenant));
+                _workTracker.Add(i.DeleteForId(id, tenant));
 
                 ejectById<T>(id);
             }
             else if (storage is IDocumentStorage<T, long> l)
             {
-                _unitOfWork.Add(l.DeleteForId(id, tenant));
+                _workTracker.Add(l.DeleteForId(id, tenant));
 
                 ejectById<T>((long)id);
             }
@@ -131,7 +131,7 @@ namespace Marten.Internal.Sessions
 
 
             var deletion = storage.DeleteForId(id, tenant);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             ejectById<T>(id);
         }
@@ -145,7 +145,7 @@ namespace Marten.Internal.Sessions
 
 
             var deletion = storage.DeleteForId(id, tenant);
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
 
             ejectById<T>(id);
         }
@@ -158,7 +158,7 @@ namespace Marten.Internal.Sessions
             var deletion = new Deletion(documentStorage, documentStorage.DeleteFragment);
             deletion.ApplyFiltering(this, expression);
 
-            _unitOfWork.Add(deletion);
+            _workTracker.Add(deletion);
         }
 
     }

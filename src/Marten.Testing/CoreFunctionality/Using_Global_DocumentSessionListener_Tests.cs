@@ -434,7 +434,7 @@ namespace Marten.Testing.CoreFunctionality
 
         public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
-            LastCommit = commit;
+            LastCommit = commit.Clone();
             AfterCommitSession = session;
             return Task.CompletedTask;
         }
@@ -445,7 +445,7 @@ namespace Marten.Testing.CoreFunctionality
 
         public override void AfterCommit(IDocumentSession session, IChangeSet commit)
         {
-            LastCommit = commit;
+            LastCommit = commit.Clone();
             AfterCommitSession = session;
         }
 

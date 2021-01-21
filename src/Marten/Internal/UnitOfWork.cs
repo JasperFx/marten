@@ -10,7 +10,7 @@ using Marten.Util;
 
 namespace Marten.Internal
 {
-    internal class UnitOfWork : IUnitOfWork, IChangeSet
+    internal class UnitOfWork : ISessionWorkTracker
     {
         private readonly IMartenSession _parent;
         private readonly List<IStorageOperation> _operations = new List<IStorageOperation>();
@@ -18,6 +18,12 @@ namespace Marten.Internal
         public UnitOfWork(IMartenSession parent)
         {
             _parent = parent;
+        }
+
+        public void Reset()
+        {
+            _operations.Clear();
+            Streams.Clear();
         }
 
         public void Add(IStorageOperation operation)
@@ -185,6 +191,15 @@ namespace Marten.Internal
         IEnumerable<StreamAction> IChangeSet.GetStreams()
         {
             return Streams;
+        }
+
+        public IChangeSet Clone()
+        {
+            var clone = new UnitOfWork(null);
+            clone._operations.AddRange(_operations);
+            clone.Streams.AddRange(Streams);
+
+            return clone;
         }
 
         private IEnumerable<IStorageOperation> operationsFor(Type documentType)

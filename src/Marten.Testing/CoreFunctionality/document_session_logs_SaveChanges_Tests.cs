@@ -61,7 +61,7 @@ namespace Marten.Testing.CoreFunctionality
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
             LastSession = session;
-            LastCommit = commit;
+            LastCommit = commit.Clone();
 
             Commits.Add(commit);
         }

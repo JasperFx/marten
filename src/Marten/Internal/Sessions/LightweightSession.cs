@@ -19,7 +19,7 @@ namespace Marten.Internal.Sessions
 
         public override void Eject<T>(T document)
         {
-            _unitOfWork.Eject(document);
+            _workTracker.Eject(document);
         }
 
         public override void EjectAllOfType(Type type)

@@ -38,7 +38,7 @@ namespace Marten.Transforms
 
             // To bake in the default document filtering here
             statement.CompileLocal(session);
-            session.UnitOfWork.Add(statement);
+            session.WorkTracker.Add(statement);
             session.SaveChanges();
         }
 
@@ -61,7 +61,7 @@ namespace Marten.Transforms
             var operation = new DocumentTransformOperationFragment(mapping, transform);
             var statement = new StatementOperation(session.StorageFor<T>(), operation);
             statement.ApplyFiltering(session, @where);
-            session.UnitOfWork.Add(statement);
+            session.WorkTracker.Add(statement);
             session.SaveChanges();
         }
 
@@ -83,7 +83,7 @@ namespace Marten.Transforms
             // To bake in the default document filtering here
             statement.Where = filter;
             statement.CompileLocal(session);
-            session.UnitOfWork.Add(statement);
+            session.WorkTracker.Add(statement);
             session.SaveChanges();
         }
 

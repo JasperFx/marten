@@ -250,14 +250,14 @@ namespace Marten.Events
 
             var wrapped = events.Select(BuildEvent).ToArray();
 
-            if (session.UnitOfWork.TryFindStream(stream, out var eventStream))
+            if (session.WorkTracker.TryFindStream(stream, out var eventStream))
             {
                 eventStream.AddEvents(wrapped);
             }
             else
             {
                 eventStream = StreamAction.Append(stream, wrapped);
-                session.UnitOfWork.Streams.Add(eventStream);
+                session.WorkTracker.Streams.Add(eventStream);
             }
 
             return eventStream;
@@ -269,14 +269,14 @@ namespace Marten.Events
 
             var wrapped = events.Select(BuildEvent).ToArray();
 
-            if (session.UnitOfWork.TryFindStream(stream, out var eventStream))
+            if (session.WorkTracker.TryFindStream(stream, out var eventStream))
             {
                 eventStream.AddEvents(wrapped);
             }
             else
             {
                 eventStream = StreamAction.Append(stream, wrapped);
-                session.UnitOfWork.Streams.Add(eventStream);
+                session.WorkTracker.Streams.Add(eventStream);
             }
 
             return eventStream;
@@ -287,7 +287,7 @@ namespace Marten.Events
             EnsureAsGuidStorage(session);
 
             var stream = StreamAction.Start(this, id, events);
-            session.UnitOfWork.Streams.Add(stream);
+            session.WorkTracker.Streams.Add(stream);
 
             return stream;
         }
@@ -298,14 +298,14 @@ namespace Marten.Events
 
             var stream = StreamAction.Start(this, streamKey, events);
 
-            session.UnitOfWork.Streams.Add(stream);
+            session.WorkTracker.Streams.Add(stream);
 
             return stream;
         }
 
         internal void ProcessEvents(DocumentSessionBase session)
         {
-            if (!session.UnitOfWork.Streams.Any())
+            if (!session.WorkTracker.Streams.Any())
             {
                 return;
             }
@@ -313,11 +313,11 @@ namespace Marten.Events
             var storage = session.EventStorage();
 
             // TODO -- we'll optimize this later to batch up queries to the database
-            var fetcher = new EventSequenceFetcher(this, session.UnitOfWork.Streams.Sum(x => x.Events.Count));
+            var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
             var sequences = session.ExecuteHandler(fetcher);
 
 
-            foreach (var stream in session.UnitOfWork.Streams)
+            foreach (var stream in session.WorkTracker.Streams)
             {
                 stream.TenantId ??= session.Tenant.TenantId;
 
@@ -351,25 +351,25 @@ namespace Marten.Events
 
             foreach (var projection in _inlineProjections.Value)
             {
-                projection.Apply(session, session.UnitOfWork.Streams.ToList());
+                projection.Apply(session, session.WorkTracker.Streams.ToList());
             }
         }
 
         internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
         {
-            if (!session._unitOfWork.Streams.Any())
+            if (!session._workTracker.Streams.Any())
             {
                 return;
             }
 
             // TODO -- we'll optimize this later to batch up queries to the database
-            var fetcher = new EventSequenceFetcher(this, session.UnitOfWork.Streams.Sum(x => x.Events.Count));
+            var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
             var sequences = await session.ExecuteHandlerAsync(fetcher, token);
 
 
             var storage = session.EventStorage();
 
-            foreach (var stream in session.UnitOfWork.Streams)
+            foreach (var stream in session.WorkTracker.Streams)
             {
                 stream.TenantId ??= session.Tenant.TenantId;
 
@@ -403,13 +403,13 @@ namespace Marten.Events
 
             foreach (var projection in _inlineProjections.Value)
             {
-                await projection.ApplyAsync(session, session.UnitOfWork.Streams.ToList(), token);
+                await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token);
             }
         }
 
         internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
         {
-            if (session.UnitOfWork.Streams.Any())
+            if (session.WorkTracker.Streams.Any())
             {
                 var stream = StreamAction.ForTombstone();
 
@@ -420,7 +420,7 @@ namespace Marten.Events
                 var storage = session.EventStorage();
 
                 operations.Add(_establishTombstone.Value);
-                var tombstones = session.UnitOfWork.Streams
+                var tombstones = session.WorkTracker.Streams
                     .SelectMany(x => x.Events)
                     .Select(x => new Event<Tombstone>(tombstone)
                     {
