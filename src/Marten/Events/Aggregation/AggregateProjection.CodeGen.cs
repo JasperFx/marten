@@ -332,7 +332,9 @@ namespace Marten.Events.Aggregation
             var runtime = BuildRuntime((DocumentStore) store);
 
             var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
-            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, ProjectionName, new ISqlFragment[0], runtime, tenancy);
+
+            // TODO -- allow users to configure the options?????
+            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, ProjectionName, new ISqlFragment[0], runtime, store, new AsyncOptions());
 
             return new List<IAsyncProjectionShard> {shard};
         }
