@@ -8,11 +8,16 @@ using Marten.Testing.Events.Daemon.TestingSupport;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events.Daemon
 {
     public class basic_async_daemon_tests: DaemonContext
     {
+        public basic_async_daemon_tests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public async Task event_fetcher_simple_case()
         {

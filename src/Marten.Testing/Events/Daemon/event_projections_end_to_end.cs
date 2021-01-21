@@ -17,7 +17,7 @@ namespace Marten.Testing.Events.Daemon
     {
         private readonly ITestOutputHelper _output;
 
-        public event_projections_end_to_end(ITestOutputHelper output)
+        public event_projections_end_to_end(ITestOutputHelper output) : base(output)
         {
             _output = output;
         }
@@ -29,12 +29,9 @@ namespace Marten.Testing.Events.Daemon
 
             NumberOfStreams = 10;
 
-            var logger = new TestLogger<IProjection>(_output);
-            var agent = new NodeAgent(theStore, logger);
+            var agent = await StartNodeAgent();
 
-            await agent.StartAll();
-
-            var waiter = agent.Tracker.WaitForShardState(new ShardState("Distance", NumberOfEvents), 15.Seconds());
+            var waiter = agent.Tracker.WaitForShardState("Distance", NumberOfEvents, 15.Seconds());
 
             await PublishSingleThreaded();
 
@@ -59,7 +56,7 @@ namespace Marten.Testing.Events.Daemon
                     travel.ShouldNotBeNull();
                 }
 
-                logger.LogDebug("Compared distance " + distance);
+                Logger.LogDebug("Compared distance " + distance);
             }
         }
     }

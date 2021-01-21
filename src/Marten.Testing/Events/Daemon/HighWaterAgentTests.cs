@@ -3,6 +3,7 @@ using Baseline.Dates;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Testing.Events.Daemon.TestingSupport;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -11,11 +12,8 @@ namespace Marten.Testing.Events.Daemon
 {
     public class HighWaterAgentTests: DaemonContext
     {
-        private readonly ITestOutputHelper _output;
-
-        public HighWaterAgentTests(ITestOutputHelper output)
+        public HighWaterAgentTests(ITestOutputHelper output) : base(output)
         {
-            _output = output;
         }
 
         [Fact]
@@ -23,19 +21,13 @@ namespace Marten.Testing.Events.Daemon
         {
             NumberOfStreams = 10;
 
-            _output.WriteLine($"The expected high water mark at the end is " + NumberOfEvents);
+            Logger.LogDebug($"The expected high water mark at the end is " + NumberOfEvents);
 
             await PublishSingleThreaded();
 
-            var logger = new TestLogger<IProjection>(_output);
-            using var agent = new NodeAgent(theStore, logger);
+            using var agent = await StartNodeAgent();
 
-            agent.Start();
-
-            var statistics = await theStore.Events.FetchStatistics();
-
-            await agent.Tracker.WaitForShardState(new ShardState(ShardState.HighWaterMark, statistics.EventCount),
-                10.Seconds());
+            await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 
             agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
@@ -47,14 +39,11 @@ namespace Marten.Testing.Events.Daemon
         {
             NumberOfStreams = 100;
 
-            _output.WriteLine($"The expected high water mark at the end is " + NumberOfEvents);
+            Logger.LogDebug($"The expected high water mark at the end is " + NumberOfEvents);
 
 
 
-            var logger = new TestLogger<IProjection>(_output);
-            using var agent = new NodeAgent(theStore, logger);
-
-            agent.Start();
+            using var agent = await StartNodeAgent();
 
             await PublishSingleThreaded();
 

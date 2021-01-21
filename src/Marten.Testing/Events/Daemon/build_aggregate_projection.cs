@@ -4,6 +4,7 @@ using Baseline.Dates;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Testing.Events.Daemon.TestingSupport;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,11 +12,8 @@ namespace Marten.Testing.Events.Daemon
 {
     public class build_aggregate_projection: DaemonContext
     {
-        private readonly ITestOutputHelper _output;
-
-        public build_aggregate_projection(ITestOutputHelper output)
+        public build_aggregate_projection(ITestOutputHelper output) : base(output)
         {
-            _output = output;
         }
 
         [Fact]
@@ -23,7 +21,7 @@ namespace Marten.Testing.Events.Daemon
         {
             NumberOfStreams = 10;
 
-            _output.WriteLine($"The expected number of events is " + NumberOfEvents);
+            Logger.LogDebug($"The expected number of events is " + NumberOfEvents);
 
             await BuildAllExpectedAggregates();
 
@@ -31,15 +29,10 @@ namespace Marten.Testing.Events.Daemon
 
             theStore.Advanced.Clean.DeleteDocumentsFor(typeof(Trip));
 
-            var logger = new TestLogger<IProjection>(_output);
-            var agent = new NodeAgent(theStore, logger);
-
-            agent.Start();
-
+            var agent = await StartNodeAgent();
 
             await PublishSingleThreaded();
 
-            await agent.StartAll();
 
             var shard = theStore.Events.Projections.AllShards().Single();
             var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
