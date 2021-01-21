@@ -52,7 +52,7 @@ namespace Marten.Testing.Events.Projections
 
             public string Name { get; set; }
 
-            public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
+            public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
             {
                 var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
 
@@ -60,16 +60,17 @@ namespace Marten.Testing.Events.Projections
                 {
                     if (@event is Quest quest)
                     {
-                        session.Store(new QuestPatchTestProjection { Id = quest.Id });
+                        operations.Store(new QuestPatchTestProjection { Id = quest.Id });
                     }
                     else if (@event is QuestStarted started)
                     {
-                        session.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
+                        operations.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
                     }
                 }
             }
 
-            public Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+            public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+                CancellationToken cancellation)
             {
                 return Task.CompletedTask;
             }

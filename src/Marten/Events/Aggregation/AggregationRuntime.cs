@@ -49,16 +49,17 @@ namespace Marten.Events.Aggregation
             return slice.Events.First().Version == 1;
         }
 
-        public void Apply(IDocumentSession session, IReadOnlyList<StreamAction> streams)
+        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
         {
-            ApplyAsync(session, streams, CancellationToken.None).GetAwaiter().GetResult();
+            ApplyAsync(operations, streams, CancellationToken.None).GetAwaiter().GetResult();
         }
 
-        public async Task ApplyAsync(IDocumentSession session, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+        public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+            CancellationToken cancellation)
         {
             var slices = Slicer.Slice(streams, Tenancy);
 
-            var martenSession = (DocumentSessionBase)session;
+            var martenSession = (DocumentSessionBase)operations;
             foreach (var slice in slices)
             {
 
@@ -72,7 +73,7 @@ namespace Marten.Events.Aggregation
                     operation = await DetermineOperation(martenSession, slice, cancellation);
                 }
 
-                session.QueueOperation(operation);
+                operations.QueueOperation(operation);
             }
         }
 
