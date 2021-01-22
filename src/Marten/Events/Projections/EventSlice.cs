@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Marten.Storage;
 
@@ -45,5 +46,13 @@ namespace Marten.Events.Projections
         }
 
         public IReadOnlyList<IEvent> Events => _events;
+
+        internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)
+        {
+            foreach (var rule in rules)
+            {
+                rule.Apply(_events);
+            }
+        }
     }
 }

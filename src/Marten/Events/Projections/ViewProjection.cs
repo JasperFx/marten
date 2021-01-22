@@ -6,6 +6,7 @@ using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
+using Marten.Schema;
 using Marten.Storage;
 
 namespace Marten.Events.Projections
@@ -19,35 +20,12 @@ namespace Marten.Events.Projections
     public abstract class ViewProjection<TDoc, TId> : AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
     {
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
+        private readonly List<IFanOutRule> _fanouts = new List<IFanOutRule>();
 
-        public void Identity<TEvent>(Func<TEvent, TId> expression)
+        public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
-            var grouper = new Grouper<TEvent>(expression);
+            var grouper = new Grouper<TId, TEvent>(identityFunc);
             _groupers.Add(grouper);
-        }
-
-        private interface IGrouper<TId>
-        {
-            TId FindId(IEvent @event);
-        }
-
-        private class Grouper<TEvent> : IGrouper<TId>
-        {
-            private readonly Func<TEvent, TId> _func;
-
-            public Grouper(Func<TEvent, TId> expression)
-            {
-                // TODO -- it's possible we'll use the expression later to write metadata into the events table
-                // to support the async daemon, but I'm doing it the easy way for now
-                _func = expression;
-            }
-
-            public TId FindId(IEvent @event)
-            {
-                if (@event.Data is TEvent e) return _func(e);
-
-                return default;
-            }
         }
 
         protected override void specialAssertValid()
@@ -59,61 +37,57 @@ namespace Marten.Events.Projections
             }
         }
 
-        public void FanOut<TEvent, TChild>(Expression<Func<TEvent, IEnumerable<TChild>>> expression)
+        public void FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc)
         {
-
-            throw new NotImplementedException();
+            var fanout = new FanOutOperator<TEvent, TChild>(fanOutFunc);
+            _fanouts.Add(fanout);
         }
 
-        public IReadOnlyList<EventSlice<TDoc, TId>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
+        IReadOnlyList<EventSlice<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return slice(streams, tenancy).ToList();
+            return Slice(streams, tenancy).ToList();
         }
 
-        public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
+        IReadOnlyList<TenantSliceGroup<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            var tenantGroups = events.GroupBy(x => x.TenantId);
+            return tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();
         }
 
-        private bool tryFindId(IEvent @event, out TId id)
-        {
-            foreach (var grouper in _groupers)
-            {
-                id = grouper.FindId(@event);
-                if (!id.Equals(default(TId))) return true;
-            }
 
-            id = default;
-            return false;
-        }
-
-        public IEnumerable<EventSlice<TDoc, TId>> slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
+        internal IEnumerable<EventSlice<TDoc, TId>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            var groups = streams.SelectMany(x => x.Events).GroupBy(x => x.TenantId);
-            foreach (var @group in groups)
+            var events = streams.SelectMany(x => x.Events);
+            var tenantGroups = events.GroupBy(x => x.TenantId);
+            foreach (var @group in tenantGroups)
             {
                 var tenant = tenancy[@group.Key];
-                var slices =
-                    new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, tenant));
-
-                foreach (var @event in group)
+                foreach (var slice in Slice(tenant, @group.ToArray()).Slices)
                 {
-                    if (tryFindId(@event, out var id))
-                    {
-                        slices[id].AddEvent(@event);
-                    }
-                }
-
-                foreach (var eventSlice in slices)
-                {
-                    yield return eventSlice;
+                    yield return slice;
                 }
             }
+        }
+
+        internal TenantSliceGroup<TDoc, TId> Slice(ITenant tenant, IList<IEvent> events)
+        {
+            var grouping = new EventGrouping<TId>();
+            foreach (var grouper in _groupers)
+            {
+                grouper.Group(events, grouping);
+            }
+
+            return grouping.BuildSlices<TDoc>(tenant, _fanouts);
         }
 
         protected override object buildEventSlicer()
         {
             return this;
+        }
+
+        protected override IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
+        {
+            yield break;
         }
     }
 }

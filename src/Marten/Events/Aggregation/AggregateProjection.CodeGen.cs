@@ -202,11 +202,10 @@ namespace Marten.Events.Aggregation
             var method = _inlineType.MethodFor(nameof(AggregationRuntime<string, string>.DetermineOperation));
 
             // This gets you the EventSlice aggregate Id
-            method.DerivedVariables.Add(Variable.For<Guid>($"slice.{nameof(EventSlice<string, string>.Id)}"));
-            method.DerivedVariables.Add(Variable.For<string>($"slice.{nameof(EventSlice<string, string>.Id)}"));
+
+            method.DerivedVariables.Add(new Variable(_aggregateMapping.IdType, $"slice.{nameof(EventSlice<string, string>.Id)}"));
             method.DerivedVariables.Add(Variable.For<ITenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
-
-
+            method.DerivedVariables.Add(Variable.For<ITenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
             method.DerivedVariables.Add(Variable.For<IEvent>("@event"));
             method.DerivedVariables.Add(Variable.For<IMartenSession>($"({typeof(IMartenSession).FullNameInCode()})session"));
             method.DerivedVariables.Add(Variable.For<IQuerySession>("session"));
@@ -299,6 +298,17 @@ namespace Marten.Events.Aggregation
         IEnumerable<string> IValidatedProjection.ValidateConfiguration(StoreOptions options)
         {
             var mapping = options.Storage.MappingFor(typeof(T));
+            foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
+
+            if (options.Events.TenancyStyle != mapping.TenancyStyle)
+            {
+                yield return
+                    $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";
+            }
+        }
+
+        protected virtual IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
+        {
             if (options.Events.StreamIdentity == StreamIdentity.AsGuid)
             {
                 if (mapping.IdType != typeof(Guid))
@@ -315,12 +325,6 @@ namespace Marten.Events.Aggregation
                     yield return
                         $"Id type mismatch. The stream identity type is string, but the aggregate document {typeof(T).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
                 }
-            }
-
-            if (options.Events.TenancyStyle != mapping.TenancyStyle)
-            {
-                yield return
-                    $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";
             }
         }
 

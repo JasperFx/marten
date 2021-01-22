@@ -98,5 +98,13 @@ namespace Marten.Events.Aggregation
         {
             _session?.Dispose();
         }
+
+        internal void ApplyFanOutRules(IReadOnlyList<IFanOutRule> rules)
+        {
+            foreach (var slice in Slices)
+            {
+                slice.ApplyFanOutRules(rules);
+            }
+        }
     }
 }
