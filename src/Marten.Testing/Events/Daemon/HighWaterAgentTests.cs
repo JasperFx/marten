@@ -37,7 +37,7 @@ namespace Marten.Testing.Events.Daemon
         [Fact]
         public async Task detect_when_running_while_events_are_being_posted()
         {
-            NumberOfStreams = 100;
+            NumberOfStreams = 10;
 
             Logger.LogDebug($"The expected high water mark at the end is " + NumberOfEvents);
 
