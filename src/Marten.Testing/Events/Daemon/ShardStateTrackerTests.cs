@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Baseline.Dates;
 using Marten.Events.Daemon;
 using Marten.Testing.Harness;
 using Xunit;
@@ -35,12 +36,18 @@ namespace Marten.Testing.Events.Daemon
             theTracker.Publish(state2);
             theTracker.Publish(state3);
 
-            theTracker.Finish();
+            await theTracker.Complete();
+
+            // await theTracker.WaitForShardState("foo", 35, 30.Seconds());
+            // await theTracker.WaitForShardState("bar", 45, 30.Seconds());
+            // await theTracker.WaitForShardState("baz", 55, 30.Seconds());
 
             observer1.States.ShouldHaveTheSameElementsAs(state1, state2, state3);
             observer2.States.ShouldHaveTheSameElementsAs(state1, state2, state3);
             observer3.States.ShouldHaveTheSameElementsAs(state1, state2, state3);
 
+
+            theTracker.Finish();
 
         }
 
