@@ -111,6 +111,7 @@ namespace Marten.Events.Daemon
 
         public Task Complete()
         {
+            _block.Complete();
             return _block.Completion;
         }
 

@@ -77,7 +77,6 @@ namespace Marten.Testing.Events.Daemon
 
             // This gets under the gap, using the buffer
             statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
-            statistics.LastMark.ShouldBe(0);
             statistics.HighestSequence.ShouldBe(NumberOfEvents);
 
             await makeOldWhereSequenceIsLessThanOrEqualTo(NumberOfEvents - 40);
