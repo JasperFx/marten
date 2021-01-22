@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Marten.Events;
 
 namespace Marten.Testing.Events.Daemon.TestingSupport
 {
@@ -139,5 +140,10 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
         }
 
         public Trip Expected { get; set; }
+
+        public StreamAction ToAction(EventGraph graph)
+        {
+            return StreamAction.Start(graph, StreamId, Events.ToArray());
+        }
     }
 }

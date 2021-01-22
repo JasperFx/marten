@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -49,6 +50,11 @@ namespace Marten.Testing.Events.Daemon.TestingSupport
         public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
         private readonly List<TripStream> _streams = new List<TripStream>();
+
+        protected StreamAction[] ToStreamActions()
+        {
+            return _streams.Select(x => x.ToAction(theStore.Events)).ToArray();
+        }
 
         protected async Task CheckAllExpectedAggregatesAgainstActuals()
         {

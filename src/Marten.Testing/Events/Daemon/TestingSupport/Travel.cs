@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Marten.Testing.Events.Daemon.TestingSupport
 {
-    public class Travel
+    public class Travel : IDayEvent
     {
         public static Travel Random(int day)
         {
