@@ -11,8 +11,8 @@ namespace Marten.Util
             var arr = new byte[1];
             var currentPosition = stream.Position;
             var firstByte = await stream.ReadAsync(arr, 0, 1, token);
-            if (firstByte == 1)
-                stream.Seek(currentPosition + 1, SeekOrigin.Begin);
+            if (firstByte != 1)
+                stream.Seek(currentPosition - 1, SeekOrigin.Begin);
 
             return stream;
         }
@@ -22,8 +22,8 @@ namespace Marten.Util
             var arr = new byte[1];
             var currentPosition = stream.Position;
             var firstByte = stream.Read(arr, 0, 1);
-            if (firstByte == 1)
-                stream.Seek(currentPosition + 1, SeekOrigin.Begin);
+            if (firstByte != 1)
+                stream.Seek(currentPosition - 1, SeekOrigin.Begin);
 
             return stream;
         }
