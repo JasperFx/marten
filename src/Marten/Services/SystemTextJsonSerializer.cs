@@ -91,7 +91,7 @@ namespace Marten.Services
             {
                 _enumStorage = value;
 
-                var jsonNamingPolicy = _casing == Casing.CamelCase ? JsonNamingPolicy.CamelCase : null;
+                var jsonNamingPolicy = _casing == Casing.CamelCase ? JsonNamingPolicy.CamelCase : new JsonSnakeCaseNamingPolicy();
 
                 _optionsDeserialize.PropertyNamingPolicy =
                     _options.PropertyNamingPolicy
@@ -99,14 +99,14 @@ namespace Marten.Services
                             = _withTypes.PropertyNamingPolicy = jsonNamingPolicy;
 
                 _options.Converters.RemoveAll(x => x is JsonStringEnumConverter);
-                _options.Converters.RemoveAll(x => x is JsonStringEnumConverter);
+                _optionsDeserialize.Converters.RemoveAll(x => x is JsonStringEnumConverter);
                 _clean.Converters.RemoveAll(x => x is JsonStringEnumConverter);
                 _withTypes.Converters.RemoveAll(x => x is JsonStringEnumConverter);
 
                 if (_enumStorage != EnumStorage.AsString)
                 {
                     var converter = new JsonStringEnumConverter(jsonNamingPolicy);
-                    _optionsDeserialize.Converters.Add(converter);
+                    _options.Converters.Add(converter);
                     _optionsDeserialize.Converters.Add(converter);
                     _clean.Converters.Add(converter);
                     _withTypes.Converters.Add(converter);
@@ -120,12 +120,6 @@ namespace Marten.Services
             get => _casing;
             set
             {
-                if (Casing != Casing.Default && Casing != Casing.CamelCase)
-                {
-                    throw new NotImplementedException(
-                        "System.Text.JSON does not support other casing than PascalCase or camelCase.");
-                }
-
                 _casing = value;
                 // ensure we refresh
                 EnumStorage = _enumStorage;

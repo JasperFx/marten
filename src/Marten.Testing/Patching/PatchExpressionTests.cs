@@ -442,7 +442,7 @@ namespace Marten.Testing.Patching
         public class ItemGroup
         {
             public Guid Id { get; set; }
-            public List<Item> Items = new List<Item>();
+            public List<Item> Items { get; set; } = new List<Item>();
         }
 
         [Fact]
