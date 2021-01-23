@@ -25,6 +25,7 @@ namespace Marten.Services
         public SystemTextJsonSerializer()
         {
             _optionsDeserialize.Converters.Add(new SystemObjectNewtonsoftCompatibleConverter());
+            _optionsDeserialize.EnableDynamicTypes();
         }
 
         /// <summary>

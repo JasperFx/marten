@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 namespace Marten.Services.Json
 {
     /// <summary>
+    /// Taken from: https://github.com/dotnet/runtime/blob/3e4a06c0e90e65c0ad514d8e2a9f93cb584d775a/src/libraries/System.Text.Json/tests/Serialization/CustomConverterTests.Object.cs#L267
     /// A converter that converts System.Object similar to Newtonsoft's JSON.Net.
     /// Only primitives are the same; arrays and objects do not result in the same types.
     /// </summary>
