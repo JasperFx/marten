@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Jil;
 using Marten.Services;
@@ -29,7 +30,7 @@ namespace Marten.Testing
             return JSON.Deserialize<T>(new StreamReader(stream), _options);
         }
 
-        public Task<T> FromJsonAsync<T>(Stream stream)
+        public Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(FromJson<T>(stream));
         }
@@ -39,7 +40,7 @@ namespace Marten.Testing
             return JSON.Deserialize(new StreamReader(stream), type, _options);
         }
 
-        public Task<object> FromJsonAsync(Type type, Stream stream)
+        public Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(FromJson(type, stream));
         }

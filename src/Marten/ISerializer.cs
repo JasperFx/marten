@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marten
@@ -28,7 +29,7 @@ namespace Marten
         /// <summary>
         /// Deserialize a JSON string into an object of type T
         /// </summary>
-        Task<T> FromJsonAsync<T>(Stream stream);
+        Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
@@ -39,7 +40,7 @@ namespace Marten
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
         /// </summary>
-        Task<object> FromJsonAsync(Type type, Stream stream);
+        Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Serialize a document without any extra

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.NodaTime.Testing.TestData;
 using Marten.Testing.Events.Projections;
@@ -215,7 +216,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
-            public Task<T> FromJsonAsync<T>(Stream stream)
+            public Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }
@@ -225,7 +226,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
-            public Task<object> FromJsonAsync(Type type, Stream stream)
+            public Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }

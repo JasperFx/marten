@@ -1,7 +1,7 @@
 using System;
 using System.Buffers;
 using System.IO;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services.Json;
@@ -16,14 +16,14 @@ namespace Marten.Services
         private readonly ArrayPool<char> _charPool = ArrayPool<char>.Create();
         private readonly JsonArrayPool<char> _jsonArrayPool;
 
-        private readonly JsonSerializer _clean = new JsonSerializer
+        private readonly JsonSerializer _clean = new()
         {
             TypeNameHandling = TypeNameHandling.None,
             DateFormatHandling = DateFormatHandling.IsoDateFormat,
             ContractResolver = new JsonNetContractResolver()
         };
 
-        private readonly JsonSerializer _withTypes = new JsonSerializer
+        private readonly JsonSerializer _withTypes = new()
         {
             TypeNameHandling = TypeNameHandling.Objects,
             DateFormatHandling = DateFormatHandling.IsoDateFormat,
@@ -31,7 +31,7 @@ namespace Marten.Services
         };
 
         // SAMPLE: newtonsoft-configuration
-        private readonly JsonSerializer _serializer = new JsonSerializer
+        private readonly JsonSerializer _serializer = new()
         {
             TypeNameHandling = TypeNameHandling.Auto,
 
@@ -98,7 +98,7 @@ namespace Marten.Services
             return _serializer.Deserialize<T>(jsonReader);
         }
 
-        public Task<T> FromJsonAsync<T>(Stream stream)
+        public Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(FromJson<T>(stream));
         }
@@ -114,7 +114,7 @@ namespace Marten.Services
             return _serializer.Deserialize(jsonReader, type);
         }
 
-        public Task<object> FromJsonAsync(Type type, Stream stream)
+        public Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(FromJson(type, stream));
         }

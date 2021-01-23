@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services.Json;
@@ -63,9 +64,9 @@ namespace Marten.Services
             }
         }
 
-        public async Task<T> FromJsonAsync<T>(Stream stream)
+        public async Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(), _optionsDeserialize);
+            return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(cancellationToken), _optionsDeserialize, cancellationToken);
         }
 
         public object FromJson(Type type, Stream stream)
@@ -76,9 +77,9 @@ namespace Marten.Services
             }
         }
 
-        public async Task<object> FromJsonAsync(Type type, Stream stream)
+        public async Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(), type, _optionsDeserialize);
+            return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(cancellationToken), type, _optionsDeserialize, cancellationToken);
         }
 
         public string ToCleanJson(object document)
