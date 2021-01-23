@@ -60,7 +60,7 @@ namespace Marten.Testing.Linq
         {
             buildUpTargetData();
 
-            var expected = new Guid[] { targets[5].Id, targets[9].Id, targets[12].Id }.OrderBy(x => x);
+            var expected = new[] { targets[5].Id, targets[9].Id, targets[12].Id }.OrderBy(x => x);
 
             theSession.Query<Target>("where data @> '{\"Children\": [{\"Number\": 6}]}'")
                 .ToArray()
@@ -145,9 +145,9 @@ namespace Marten.Testing.Linq
             using (var session = theStore.OpenSession())
             {
                 var outer = new Outer();
-                outer.Inners.Add(new Inner() { Type = "T1", Value = "V11" });
-                outer.Inners.Add(new Inner() { Type = "T1", Value = "V12" });
-                outer.Inners.Add(new Inner() { Type = "T2", Value = "V21" });
+                outer.Inners.Add(new Inner { Type = "T1", Value = "V11" });
+                outer.Inners.Add(new Inner { Type = "T1", Value = "V12" });
+                outer.Inners.Add(new Inner { Type = "T2", Value = "V21" });
 
                 session.Store(outer);
                 session.SaveChanges();
@@ -239,7 +239,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Article
             {
                 Long = 1,
-                CategoryArray = new string[] { "sports", "finance", "health" },
+                CategoryArray = new [] { "sports", "finance", "health" },
                 CategoryList = new List<string> { "sports", "finance", "health" },
                 AuthorArray = favAuthors,
                 Published = true,
@@ -248,14 +248,14 @@ namespace Marten.Testing.Linq
             theSession.Store(new Article
             {
                 Long = 2,
-                CategoryArray = new string[] { "sports", "astrology" },
+                CategoryArray = new [] { "sports", "astrology" },
                 AuthorArray = favAuthors.Take(1).ToArray(),
             });
 
             theSession.Store(new Article
             {
                 Long = 3,
-                CategoryArray = new string[] { "health", "finance" },
+                CategoryArray = new [] { "health", "finance" },
                 CategoryList = new List<string> { "sports", "health" },
                 AuthorArray = favAuthors.Skip(1).ToArray(),
             });
@@ -263,7 +263,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Article
             {
                 Long = 4,
-                CategoryArray = new string[] { "health", "astrology" },
+                CategoryArray = new [] { "health", "astrology" },
                 AuthorList = new List<Guid> { Guid.NewGuid() },
                 Published = true,
             });
@@ -271,7 +271,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Article
             {
                 Long = 5,
-                CategoryArray = new string[] { "sports", "nested" },
+                CategoryArray = new [] { "sports", "nested" },
                 AuthorList = new List<Guid> { Guid.NewGuid(), favAuthors[1] },
             });
 
@@ -281,7 +281,7 @@ namespace Marten.Testing.Linq
                 AuthorArray = new Guid[] { favAuthors[0], Guid.NewGuid() },
                 ReferencedArticle = new Article
                 {
-                    CategoryArray = new string[] { "nested" },
+                    CategoryArray = new [] { "nested" },
                 }
             });
             theSession.SaveChanges();
@@ -304,7 +304,7 @@ namespace Marten.Testing.Linq
         {
             buildAuthorData();
 
-            var interests = new string[] { "finance", "astrology" };
+            var interests = new [] { "finance", "astrology" };
             var res = theSession.Query<Article>()
                 .Where(x => x.CategoryArray.Any(s => interests.Contains(s)))
                 .OrderBy(x => x.Long)
@@ -322,7 +322,7 @@ namespace Marten.Testing.Linq
         {
             buildAuthorData();
 
-            var interests = new string[] { "health", "astrology" };
+            var interests = new [] { "health", "astrology" };
             var res = theSession.Query<Article>()
                 .Where(x => x.CategoryList.Any(s => interests.Contains(s)))
                 .OrderBy(x => x.Long)
@@ -338,7 +338,7 @@ namespace Marten.Testing.Linq
         {
             buildAuthorData();
 
-            var interests = new string[] { "nested" };
+            var interests = new [] { "nested" };
             var res = theSession.Query<Article>()
                 .Where(x => x.ReferencedArticle.CategoryArray.Any(s => interests.Contains(s)))
                 .OrderBy(x => x.Long)
@@ -353,7 +353,7 @@ namespace Marten.Testing.Linq
         {
             buildAuthorData();
 
-            var interests = new string[] { "finance", "astrology" };
+            var interests = new [] { "finance", "astrology" };
             var res = theSession.Query<Article>()
                 .Where(x => x.CategoryArray.Any(s => interests.Contains(s)) && x.Published)
                 .OrderBy(x => x.Long)
@@ -411,42 +411,42 @@ namespace Marten.Testing.Linq
 
         public class DocWithArrays
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public int[] Numbers;
+            public int[] Numbers { get; set; }
 
-            public string[] Strings;
+            public string[] Strings { get; set; }
 
-            public DateTime[] Dates;
+            public DateTime[] Dates { get; set; }
         }
 
         public class DocWithLists
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public List<int> Numbers;
+            public List<int> Numbers { get; set; }
         }
 
         public class DocWithLists2
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public IList<int> Numbers;
+            public IList<int> Numbers { get; set; }
         }
 
         public class DocWithLists3
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public IEnumerable<int> Numbers;
+            public IEnumerable<int> Numbers { get; set; }
         }
 
         [Fact]
         public void query_against_number_array()
         {
-            var doc1 = new DocWithArrays { Numbers = new int[] { 1, 2, 3 } };
-            var doc2 = new DocWithArrays { Numbers = new int[] { 3, 4, 5 } };
-            var doc3 = new DocWithArrays { Numbers = new int[] { 5, 6, 7 } };
+            var doc1 = new DocWithArrays { Numbers = new [] { 1, 2, 3 } };
+            var doc2 = new DocWithArrays { Numbers = new [] { 3, 4, 5 } };
+            var doc3 = new DocWithArrays { Numbers = new [] { 5, 6, 7 } };
 
             theSession.Store(doc1, doc2, doc3);
 
@@ -460,9 +460,9 @@ namespace Marten.Testing.Linq
         // SAMPLE: query_against_string_array
         public void query_against_string_array()
         {
-            var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
-            var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
-            var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
+            var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
+            var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
+            var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f" } };
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -479,9 +479,9 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_against_string_array_with_Any()
         {
-            var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
-            var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
-            var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
+            var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
+            var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
+            var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f" } };
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -496,9 +496,9 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_against_string_array_with_Length()
         {
-            var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
-            var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
-            var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f", "g" } };
+            var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
+            var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
+            var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f", "g" } };
 
             theSession.Store(doc1);
             theSession.Store(doc2);
@@ -513,9 +513,9 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query_against_string_array_with_Count_method()
         {
-            var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
-            var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
-            var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f", "g" } };
+            var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
+            var doc2 = new DocWithArrays { Strings = new [] { "c", "d", "e" } };
+            var doc3 = new DocWithArrays { Strings = new [] { "d", "e", "f", "g" } };
 
             theSession.Store(doc1);
             theSession.Store(doc2);

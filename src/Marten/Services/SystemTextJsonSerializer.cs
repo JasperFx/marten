@@ -25,7 +25,11 @@ namespace Marten.Services
         public SystemTextJsonSerializer()
         {
             _optionsDeserialize.Converters.Add(new SystemObjectNewtonsoftCompatibleConverter());
-            _optionsDeserialize.EnableDynamicTypes();
+            _optionsDeserialize.PropertyNamingPolicy =
+                _options.PropertyNamingPolicy
+                    = _clean.PropertyNamingPolicy
+                        = _withTypes.PropertyNamingPolicy = null;
+            // _optionsDeserialize.EnableDynamicTypes();
         }
 
         /// <summary>
@@ -53,8 +57,10 @@ namespace Marten.Services
 
         public T FromJson<T>(Stream stream)
         {
-            var str = stream.GetStreamReader().ReadToEnd();
-            return JsonSerializer.Deserialize<T>(str, _optionsDeserialize);
+            using (NoSynchronizationContextScope.Enter())
+            {
+                return FromJsonAsync<T>(stream).GetAwaiter().GetResult();
+            }
         }
 
         public async Task<T> FromJsonAsync<T>(Stream stream)
@@ -64,13 +70,15 @@ namespace Marten.Services
 
         public object FromJson(Type type, Stream stream)
         {
-            var str = stream.GetStreamReader().ReadToEnd();
-            return JsonSerializer.Deserialize(str, type, _optionsDeserialize);
+            using (NoSynchronizationContextScope.Enter())
+            {
+                return FromJsonAsync(type, stream).GetAwaiter().GetResult();
+            }
         }
 
         public async Task<object> FromJsonAsync(Type type, Stream stream)
         {
-            return await JsonSerializer.DeserializeAsync(stream, type, _options);
+            return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(), type, _optionsDeserialize);
         }
 
         public string ToCleanJson(object document)
@@ -91,7 +99,12 @@ namespace Marten.Services
             {
                 _enumStorage = value;
 
-                var jsonNamingPolicy = _casing == Casing.CamelCase ? JsonNamingPolicy.CamelCase : new JsonSnakeCaseNamingPolicy();
+                var jsonNamingPolicy = _casing switch
+                {
+                    Casing.CamelCase => JsonNamingPolicy.CamelCase,
+                    Casing.SnakeCase => new JsonSnakeCaseNamingPolicy(),
+                    _ => null
+                };
 
                 _optionsDeserialize.PropertyNamingPolicy =
                     _options.PropertyNamingPolicy
@@ -103,9 +116,9 @@ namespace Marten.Services
                 _clean.Converters.RemoveAll(x => x is JsonStringEnumConverter);
                 _withTypes.Converters.RemoveAll(x => x is JsonStringEnumConverter);
 
-                if (_enumStorage != EnumStorage.AsString)
+                if (_enumStorage == EnumStorage.AsString)
                 {
-                    var converter = new JsonStringEnumConverter(jsonNamingPolicy);
+                    var converter = new JsonStringEnumConverter();
                     _options.Converters.Add(converter);
                     _optionsDeserialize.Converters.Add(converter);
                     _clean.Converters.Add(converter);

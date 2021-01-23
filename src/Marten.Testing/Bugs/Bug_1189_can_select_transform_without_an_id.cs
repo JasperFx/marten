@@ -27,9 +27,6 @@ namespace Marten.Testing.Bugs
                 .FirstOrDefault();
 
             view.ShouldNotBeNull();
-
-
-
         }
     }
 }
