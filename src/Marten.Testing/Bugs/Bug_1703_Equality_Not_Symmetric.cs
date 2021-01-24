@@ -8,14 +8,14 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public sealed class equality_not_symmetric: IntegrationContext
+    public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
-        public equality_not_symmetric(DefaultStoreFixture fixture) : base(fixture)
+        public Bug_1703_Equality_Not_Symmetric(DefaultStoreFixture fixture) : base(fixture)
         {
         }
         
         [Fact]
-        public void equality_equals_operator_should_be_symmetric()
+        public void string_equality_equals_operator_should_be_symmetric()
         {
             var random = Target.Random();
             var theString = random.String;
@@ -43,7 +43,7 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
-        public async Task equality_equals_should_be_symmetric()
+        public async Task string_equality_equals_should_be_symmetric()
         {
             var random = Target.Random();
             var theString = random.String;
@@ -69,9 +69,11 @@ namespace Marten.Testing.Bugs
                     .ShouldBe(1);
             }
         }
+
+        
         
         [Fact]
-        public async Task equality_equals_ignoring_case_should_be_symmetric()
+        public async Task string_equality_equals_ignoring_case_should_be_symmetric()
         {
             var random = Target.Random();
             var theString = random.String;
@@ -96,6 +98,62 @@ namespace Marten.Testing.Bugs
                     .Count
                     .ShouldBe(1);
                 
+            }
+        }
+        
+        [Fact]
+        public async Task object_equality_equals_should_be_symmetric()
+        {
+            var random = Target.Random();
+            var theNumber = random.Number;
+            using (var session = theStore.OpenSession())
+            {
+                session.Insert(random);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.QuerySession())
+            {
+
+                session.Query<Target>()
+                    .Where(x => x.Number.Equals(theNumber))
+                    .ToList()
+                    .Count
+                    .ShouldBe(1);
+                
+                session.Query<Target>()
+                    .Where(x => theNumber.Equals(x.Number))
+                    .ToList()
+                    .Count
+                    .ShouldBe(1);
+            }
+        }
+        
+        [Fact]
+        public async Task object_equality_equals_operator_should_be_symmetric()
+        {
+            var random = Target.Random();
+            var theNumber = random.Number;
+            using (var session = theStore.OpenSession())
+            {
+                session.Insert(random);
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.QuerySession())
+            {
+
+                session.Query<Target>()
+                    .Where(x => x.Number == theNumber )
+                    .ToList()
+                    .Count
+                    .ShouldBe(1);
+                
+                session.Query<Target>()
+                    .Where(x => theNumber == x.Number)
+                    .ToList()
+                    .Count
+                    .ShouldBe(1);
             }
         }
     }
