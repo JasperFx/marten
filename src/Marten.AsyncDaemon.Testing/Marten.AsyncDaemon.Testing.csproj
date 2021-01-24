@@ -1,26 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
-
-        <IsPackable>false</IsPackable>
+        <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
-        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="Lamar" Version="4.4.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="1.3.0">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
+        <PackageReference Include="xunit" Version="2.4.1" />
     </ItemGroup>
-
     <ItemGroup>
       <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
     </ItemGroup>
-
 </Project>
