@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Marten.Events.Daemon
 {
     // TODO -- implement IAsyncDisposable
-    public class NodeAgent : IDisposable
+    public class NodeAgent : INodeAgent, IDisposable
     {
         private readonly DocumentStore _store;
         private readonly ILogger<IProjection> _logger;
@@ -18,6 +18,7 @@ namespace Marten.Events.Daemon
         private readonly HighWaterAgent _highWater;
         private bool _hasStarted;
 
+        // ReSharper disable once ContextualLoggerProblem
         public NodeAgent(DocumentStore store, ILogger<IProjection> logger)
         {
             _cancellation = new CancellationTokenSource();
@@ -46,7 +47,7 @@ namespace Marten.Events.Daemon
             var shards = _store.Events.Projections.AllShards();
             foreach (var shard in shards)
             {
-                await startShard(shard);
+                await StartShard(shard);
             }
 
         }
@@ -55,17 +56,21 @@ namespace Marten.Events.Daemon
         {
             if (_store.Events.Projections.TryFindAsyncShard(shardName, out var shard))
             {
-                await startShard(shard);
+                await StartShard(shard);
             }
         }
 
-        private async Task startShard(IAsyncProjectionShard shard)
+        public async Task StartShard(IAsyncProjectionShard shard)
         {
             // TODO -- log the start, or error if it fails
             var agent = new ProjectionAgent(_store, shard, _logger);
-            await agent.Start(Tracker);
+            var position = await agent.Start(Tracker);
+
+            Tracker.Publish(new ShardState(shard.ProjectionOrShardName, position){Action = ShardAction.Start});
 
             _agents[shard.ProjectionOrShardName] = agent;
+
+
         }
 
         public async Task StopShard(string shardName)
@@ -74,6 +79,9 @@ namespace Marten.Events.Daemon
             {
                 await agent.Stop();
                 _agents.Remove(shardName);
+
+                Tracker.Publish(new ShardState(shardName, agent.Position){Action = ShardAction.Stop});
+
             }
         }
 

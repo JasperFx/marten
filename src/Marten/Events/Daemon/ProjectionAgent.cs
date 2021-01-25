@@ -22,7 +22,7 @@ namespace Marten.Events.Daemon
         private EventFetcher _fetcher;
         private ShardStateTracker _tracker;
         private IDisposable _subscription;
-        private CancellationTokenSource _cancellationSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationSource = new CancellationTokenSource();
 
         // ReSharper disable once ContextualLoggerProblem
         public ProjectionAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger<IProjection> logger)
@@ -102,7 +102,7 @@ namespace Marten.Events.Daemon
             _loader.Post(range);
         }
 
-        public async Task Start(ShardStateTracker tracker)
+        public async Task<long> Start(ShardStateTracker tracker)
         {
             _logger.LogInformation($"Starting projection agent for '{_projectionShard.ProjectionOrShardName}'");
 
@@ -122,6 +122,9 @@ namespace Marten.Events.Daemon
             _logger.LogInformation($"Projection agent for '{_projectionShard.ProjectionOrShardName}' has started from sequence {lastCommitted} and a high water mark of {tracker.HighWaterMark}");
 
             Status = AgentStatus.Running;
+
+            Position = lastCommitted;
+            return lastCommitted;
         }
 
         void IObserver<ShardState>.OnCompleted()
@@ -180,12 +183,14 @@ namespace Marten.Events.Daemon
             batch.Dispose();
 
 
-
+            Position = batch.Range.SequenceCeiling;
 
 
             _tracker.Publish(new ShardState(ProjectionOrShardName, batch.Range.SequenceCeiling));
 
             _commandBlock.Post(Command.Completed(batch.Range));
         }
+
+        public long Position { get; set; }
     }
 }

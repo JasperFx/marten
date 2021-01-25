@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace Marten.AsyncDaemon.Testing
@@ -48,6 +49,13 @@ namespace Marten.AsyncDaemon.Testing
 
             theTracker.Finish();
 
+        }
+
+        [Fact]
+        public void default_state_action_is_update()
+        {
+            new ShardState("foo", 22L)
+                .Action.ShouldBe(ShardAction.Update);
         }
 
         public class Observer: IObserver<ShardState>

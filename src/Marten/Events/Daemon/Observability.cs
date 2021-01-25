@@ -4,9 +4,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Baseline;
+using Baseline.Dates;
 
 namespace Marten.Events.Daemon
 {
+    public enum ShardAction
+    {
+        Update,
+        Start,
+        Stop
+    }
+
     public class ShardState
     {
         public const string HighWaterMark = "HighWaterMark";
@@ -22,6 +30,8 @@ namespace Marten.Events.Daemon
         {
 
         }
+
+        public ShardAction Action { get; set; } = ShardAction.Update;
 
         public DateTimeOffset Timestamp { get; }
 
@@ -76,7 +86,7 @@ namespace Marten.Events.Daemon
             return new Unsubscriber(this, observer);
         }
 
-        public void Publish(ShardState state)
+        internal void Publish(ShardState state)
         {
             if (state.ShardName == ShardState.HighWaterMark)
             {
@@ -88,23 +98,24 @@ namespace Marten.Events.Daemon
 
         public long HighWaterMark { get; private set; }
 
-        public void MarkHighWater(long sequence)
+        internal void MarkHighWater(long sequence)
         {
             Publish(new ShardState(ShardState.HighWaterMark, sequence));
         }
 
-        public Task<ShardState> WaitForShardState(ShardState expected, TimeSpan timeout)
+        public Task<ShardState> WaitForShardState(ShardState expected, TimeSpan? timeout = null)
         {
-            var listener = new ShardStatusWatcher(this, expected, timeout);
+            timeout ??= 1.Minutes();
+            var listener = new ShardStatusWatcher(this, expected, timeout.Value);
             return listener.Task;
         }
 
-        public Task<ShardState> WaitForShardState(string shardName, long sequence, TimeSpan timeout)
+        public Task<ShardState> WaitForShardState(string shardName, long sequence, TimeSpan? timeout = null)
         {
             return WaitForShardState(new ShardState(shardName, sequence), timeout);
         }
 
-        public Task<ShardState> WaitForHighWaterMark(long sequence, TimeSpan timeout)
+        public Task<ShardState> WaitForHighWaterMark(long sequence, TimeSpan? timeout = null)
         {
             return WaitForShardState(ShardState.HighWaterMark, sequence, timeout);
         }
