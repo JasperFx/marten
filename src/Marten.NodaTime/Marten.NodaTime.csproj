@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>NodaTime extension for Marten</Description>
         <VersionPrefix>2.0.0-alpha.4</VersionPrefix>
@@ -28,7 +28,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
-        <PackageReference Include="Npgsql.NodaTime" Version="5.0.0" />
+        <PackageReference Include="Npgsql.NodaTime" Version="5.0.2" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
