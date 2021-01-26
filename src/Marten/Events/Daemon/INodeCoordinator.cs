@@ -10,19 +10,6 @@ namespace Marten.Events.Daemon
         Task Stop();
     }
 
-    public class SoloCoordinator: INodeCoordinator
-    {
-        public Task Start(INodeAgent agent, CancellationToken token)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task Stop()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class HotColdCoordinator: INodeCoordinator
     {
         public Task Start(INodeAgent agent, CancellationToken token)

@@ -87,7 +87,7 @@ namespace Marten.Events.Daemon.HighWater
                         break;
 
                     case HighWaterStatus.Stale:
-                        var safeHarborTime = _current.Timestamp.Add(_settings.LeadingEdgeBuffer);
+                        var safeHarborTime = _current.Timestamp.Add(_settings.StaleSequenceThreshold);
                         var delayTime = safeHarborTime.Subtract(statistics.Timestamp);
                         if (delayTime.TotalSeconds > 0)
                         {
