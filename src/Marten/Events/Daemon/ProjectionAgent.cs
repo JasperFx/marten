@@ -8,9 +8,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
+
+    internal interface IProjectionAgent
+    {
+        Task Stop();
+
+        Task TryRestart();
+
+        Task<long> Start(ShardStateTracker tracker);
+        string ProjectionOrShardName { get; }
+    }
+
     // TODO -- need a Drain() method
     // TODO -- need a Dispose that really cleans things off. May need/want IAsyncDisposable
-    internal class ProjectionAgent : IProjectionUpdater, IObserver<ShardState>
+    internal class ProjectionAgent : IProjectionUpdater, IObserver<ShardState>, IProjectionAgent
     {
         private readonly DocumentStore _store;
         private readonly IAsyncProjectionShard _projectionShard;
@@ -125,6 +136,11 @@ namespace Marten.Events.Daemon
 
             Position = lastCommitted;
             return lastCommitted;
+        }
+
+        public Task TryRestart()
+        {
+            throw new NotImplementedException();
         }
 
         void IObserver<ShardState>.OnCompleted()

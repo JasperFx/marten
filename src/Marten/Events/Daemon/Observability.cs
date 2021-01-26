@@ -10,14 +10,18 @@ namespace Marten.Events.Daemon
 {
     public enum ShardAction
     {
-        Update,
-        Start,
-        Stop
+        Updated,
+        Started,
+        Stopped,
+        FailedToStart,
+        StoppedByFailures,
+        Paused
     }
 
     public class ShardState
     {
         public const string HighWaterMark = "HighWaterMark";
+        public const string AllProjections = "AllProjections";
 
         public ShardState(string shardName, long sequence)
         {
@@ -31,7 +35,12 @@ namespace Marten.Events.Daemon
 
         }
 
-        public ShardAction Action { get; set; } = ShardAction.Update;
+        public ShardState(IAsyncProjectionShard shard, ShardAction action) : this(shard.ProjectionOrShardName, 0)
+        {
+            Action = action;
+        }
+
+        public ShardAction Action { get; set; } = ShardAction.Updated;
 
         public DateTimeOffset Timestamp { get; }
 

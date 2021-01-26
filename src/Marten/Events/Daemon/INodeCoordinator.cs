@@ -1,19 +1,55 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Projections;
 
 namespace Marten.Events.Daemon
 {
     public interface INodeCoordinator
     {
-        Task Manage(INodeAgent agent);
-
-        Task Started(IAsyncProjectionShard shard);
-        Task Paused(IAsyncProjectionShard shard);
-        Task Stopped(IAsyncProjectionShard shard);
-
-        Task FailedToStart(IAsyncProjectionShard shard);
+        Task Start(INodeAgent agent, CancellationToken token);
+        Task Stop();
     }
+
+    public class SoloCoordinator: INodeCoordinator
+    {
+        public Task Start(INodeAgent agent, CancellationToken token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Stop()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class HotColdCoordinator: INodeCoordinator
+    {
+        public Task Start(INodeAgent agent, CancellationToken token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Stop()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class DistributedCoordinator: INodeCoordinator
+    {
+        public Task Start(INodeAgent agent, CancellationToken token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task Stop()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
 
     public interface INodeAgent
     {

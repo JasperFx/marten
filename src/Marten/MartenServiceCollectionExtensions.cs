@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using Marten.Events.Daemon;
 using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -40,6 +41,28 @@ namespace Marten
 
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
+
+            switch (options.Events.Daemon.Mode)
+            {
+                case DaemonMode.Disabled:
+                    // Nothing
+                    break;
+
+                case DaemonMode.Solo:
+                    services.AddSingleton<INodeCoordinator, SoloCoordinator>();
+                    services.AddHostedService<AsyncProjectionHostedService>();
+                    break;
+
+                case DaemonMode.HotCold:
+                    services.AddSingleton<INodeCoordinator, HotColdCoordinator>();
+                    services.AddHostedService<AsyncProjectionHostedService>();
+                    break;
+
+                case DaemonMode.Distributed:
+                    services.AddSingleton<INodeCoordinator, DistributedCoordinator>();
+                    services.AddHostedService<AsyncProjectionHostedService>();
+                    break;
+            }
 
             return new MartenConfigurationExpression(services, options);
         }

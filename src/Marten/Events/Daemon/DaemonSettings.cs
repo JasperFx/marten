@@ -17,5 +17,15 @@ namespace Marten.Events.Daemon
 
         // TODO -- maybe just bring back what was there before
         //public ExceptionHandling ExceptionHandling { get; } = new ExceptionHandling();
+
+        public DaemonMode Mode { get; set; } = DaemonMode.Disabled;
+    }
+
+    public enum DaemonMode
+    {
+        Disabled,
+        Solo,
+        HotCold,
+        Distributed
     }
 }

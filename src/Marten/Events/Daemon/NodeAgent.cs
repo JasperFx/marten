@@ -17,6 +17,7 @@ namespace Marten.Events.Daemon
         private readonly CancellationTokenSource _cancellation;
         private readonly HighWaterAgent _highWater;
         private bool _hasStarted;
+        private INodeCoordinator _coordinator;
 
         // ReSharper disable once ContextualLoggerProblem
         public NodeAgent(DocumentStore store, ILogger<IProjection> logger)
@@ -31,11 +32,17 @@ namespace Marten.Events.Daemon
 
         }
 
+        public async Task RegisterCoordinator(INodeCoordinator coordinator)
+        {
+            await coordinator.Start(this, _cancellation.Token);
+            _coordinator = coordinator;
+        }
+
         public ShardStateTracker Tracker { get; }
 
-        public void Start()
+        // TODO -- only start the high water when there's anything to start!
+        public void StartNode()
         {
-
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
             _highWater.Start();
             _hasStarted = true;
@@ -43,7 +50,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartAll()
         {
-            if (!_hasStarted) Start();
+            if (!_hasStarted) StartNode();
             var shards = _store.Events.Projections.AllShards();
             foreach (var shard in shards)
             {
@@ -54,6 +61,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartShard(string shardName)
         {
+
             if (_store.Events.Projections.TryFindAsyncShard(shardName, out var shard))
             {
                 await StartShard(shard);
@@ -62,17 +70,20 @@ namespace Marten.Events.Daemon
 
         public async Task StartShard(IAsyncProjectionShard shard)
         {
+            if (!_hasStarted) StartNode();
+
             // TODO -- log the start, or error if it fails
             var agent = new ProjectionAgent(_store, shard, _logger);
             var position = await agent.Start(Tracker);
 
-            Tracker.Publish(new ShardState(shard.ProjectionOrShardName, position){Action = ShardAction.Start});
+            Tracker.Publish(new ShardState(shard.ProjectionOrShardName, position){Action = ShardAction.Started});
 
             _agents[shard.ProjectionOrShardName] = agent;
 
 
         }
 
+        // TODO -- if all the shards are stopped, stop the high water agent
         public async Task StopShard(string shardName)
         {
             if (_agents.TryGetValue(shardName, out var agent))
@@ -80,13 +91,14 @@ namespace Marten.Events.Daemon
                 await agent.Stop();
                 _agents.Remove(shardName);
 
-                Tracker.Publish(new ShardState(shardName, agent.Position){Action = ShardAction.Stop});
+                Tracker.Publish(new ShardState(shardName, agent.Position){Action = ShardAction.Stopped});
 
             }
         }
 
         public async Task StopAll()
         {
+            // TODO -- stop the high water checking??
             foreach (var agent in _agents.Values)
             {
                 await agent.Stop();

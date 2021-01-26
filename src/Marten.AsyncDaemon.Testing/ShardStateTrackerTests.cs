@@ -55,7 +55,7 @@ namespace Marten.AsyncDaemon.Testing
         public void default_state_action_is_update()
         {
             new ShardState("foo", 22L)
-                .Action.ShouldBe(ShardAction.Update);
+                .Action.ShouldBe(ShardAction.Updated);
         }
 
         public class Observer: IObserver<ShardState>
