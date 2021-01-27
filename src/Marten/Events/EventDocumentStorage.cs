@@ -248,7 +248,7 @@ namespace Marten.Events
             }
 
             var dataJson = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
-            var data = _serializer.FromJson(mapping.DocumentType, dataJson);
+            var data = await _serializer.FromJsonAsync(mapping.DocumentType, dataJson, token);
 
             var @event = mapping.Wrap(data);
 

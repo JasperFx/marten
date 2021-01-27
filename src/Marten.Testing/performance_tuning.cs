@@ -30,9 +30,9 @@ namespace Marten.Testing
             return JSON.Deserialize<T>(new StreamReader(stream), _options);
         }
 
-        public Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+        public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(FromJson<T>(stream));
+            return new (FromJson<T>(stream));
         }
 
         public object FromJson(Type type, Stream stream)
@@ -40,9 +40,9 @@ namespace Marten.Testing
             return JSON.Deserialize(new StreamReader(stream), type, _options);
         }
 
-        public Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+        public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(FromJson(type, stream));
+            return new (FromJson(type, stream));
         }
 
         public string ToCleanJson(object document)

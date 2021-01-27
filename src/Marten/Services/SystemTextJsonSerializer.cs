@@ -64,7 +64,7 @@ namespace Marten.Services
             }
         }
 
-        public async Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+        public async ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
             return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(cancellationToken), _optionsDeserialize, cancellationToken);
         }
@@ -77,7 +77,7 @@ namespace Marten.Services
             }
         }
 
-        public async Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+        public async ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
             return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(cancellationToken), type, _optionsDeserialize, cancellationToken);
         }

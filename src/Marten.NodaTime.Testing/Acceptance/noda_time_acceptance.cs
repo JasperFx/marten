@@ -216,7 +216,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
-            public Task<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+            public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }
@@ -226,7 +226,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
-            public Task<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+            public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }
