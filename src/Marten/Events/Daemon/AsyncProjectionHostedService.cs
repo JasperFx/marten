@@ -27,7 +27,7 @@ namespace Marten.Events.Daemon
             }
             catch (Exception e)
             {
-                _logger.LogError("Unable to start the asynchronous projection agent", e);
+                _logger.LogError(e, "Unable to start the asynchronous projection agent");
                 throw;
             }
         }
@@ -41,7 +41,7 @@ namespace Marten.Events.Daemon
             }
             catch (Exception e)
             {
-                _logger.LogError("Error when trying to stop the asynchronous projection agent", e);
+                _logger.LogError(e, "Error when trying to stop the asynchronous projection agent");
             }
         }
     }
