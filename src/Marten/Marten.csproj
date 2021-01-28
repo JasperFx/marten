@@ -18,10 +18,6 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <LangVersion>7.2</LangVersion>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
-        <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.targetingpack.netframework.v4.6.1/1.0.1/lib/net461/</FrameworkPathOverride>
-        <RestoreAdditionalProjectSources>https://dotnet.myget.org/F/dotnet-core/api/v3/index.json</RestoreAdditionalProjectSources>
-    </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
     </ItemGroup>
@@ -55,8 +51,9 @@
     <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
         <Reference Include="System.Transactions" />
     </ItemGroup>
+    <!-- https://github.com/dotnet/designs/pull/33#issuecomment-557994646 -->
     <ItemGroup Condition="'$(OS)' != 'Windows_NT' AND '$(TargetFramework)'== 'net461'">
-        <PackageReference Include="Microsoft.TargetingPack.NETFramework.v4.6.1" Version="1.0.1" ExcludeAssets="All" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
     </ItemGroup>
 
 
