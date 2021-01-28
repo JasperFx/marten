@@ -75,6 +75,18 @@ namespace Marten.Events.CodeGeneration
 
         }
 
+        internal static Type[] AllEventTypes(params MethodCollection[] methods)
+        {
+            return methods.SelectMany(x => x.EventTypes())
+                .Distinct()
+                .ToArray();
+        }
+
+        internal IEnumerable<Type> EventTypes()
+        {
+            return Methods.Where(x => x.EventType != null).Select(x => x.EventType).Distinct();
+        }
+
         internal abstract void validateMethod(MethodSlot method);
 
         public Type AggregateType { get; }

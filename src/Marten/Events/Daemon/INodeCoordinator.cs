@@ -6,13 +6,13 @@ namespace Marten.Events.Daemon
 {
     public interface INodeCoordinator
     {
-        Task Start(IDaemon daemon, CancellationToken token);
+        Task Start(IProjectionDaemon daemon, CancellationToken token);
         Task Stop();
     }
 
     public class HotColdCoordinator: INodeCoordinator
     {
-        public Task Start(IDaemon daemon, CancellationToken token)
+        public Task Start(IProjectionDaemon daemon, CancellationToken token)
         {
             throw new NotImplementedException();
         }
@@ -25,7 +25,7 @@ namespace Marten.Events.Daemon
 
     public class DistributedCoordinator: INodeCoordinator
     {
-        public Task Start(IDaemon daemon, CancellationToken token)
+        public Task Start(IProjectionDaemon daemon, CancellationToken token)
         {
             throw new NotImplementedException();
         }
@@ -38,7 +38,7 @@ namespace Marten.Events.Daemon
 
 
     // This will be used by a single
-    public interface IDaemon : IDisposable
+    public interface IProjectionDaemon : IDisposable
     {
         Task RebuildProjection(string projectionName, CancellationToken token);
 

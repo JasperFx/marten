@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    public class Daemon : IDaemon
+    public class ProjectionDaemon : IProjectionDaemon
     {
         private readonly DocumentStore _store;
         private readonly ILogger _logger;
@@ -21,7 +21,7 @@ namespace Marten.Events.Daemon
         private readonly HighWaterAgent _highWater;
         private bool _hasStarted;
 
-        public Daemon(DocumentStore store, ILogger logger)
+        public ProjectionDaemon(DocumentStore store, ILogger logger)
         {
             _cancellation = new CancellationTokenSource();
             _store = store;

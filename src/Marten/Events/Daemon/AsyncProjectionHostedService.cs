@@ -8,11 +8,11 @@ namespace Marten.Events.Daemon
 {
     public class AsyncProjectionHostedService : IHostedService
     {
-        private readonly IDaemon _agent;
+        private readonly IProjectionDaemon _agent;
         private readonly INodeCoordinator _coordinator;
         private readonly ILogger<AsyncProjectionHostedService> _logger;
 
-        public AsyncProjectionHostedService(IDaemon agent, INodeCoordinator coordinator, ILogger<AsyncProjectionHostedService> logger)
+        public AsyncProjectionHostedService(IProjectionDaemon agent, INodeCoordinator coordinator, ILogger<AsyncProjectionHostedService> logger)
         {
             _agent = agent;
             _coordinator = coordinator;

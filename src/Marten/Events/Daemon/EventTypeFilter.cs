@@ -12,8 +12,12 @@ namespace Marten.Events.Daemon
 
         public EventTypeFilter(EventGraph graph, Type[] eventTypes)
         {
+            EventTypes = eventTypes;
             _typeNames = eventTypes.Select(x => graph.EventMappingFor((Type) x).Alias).ToArray();
         }
+
+        public Type[] EventTypes { get; }
+
 
         public void Apply(CommandBuilder builder)
         {

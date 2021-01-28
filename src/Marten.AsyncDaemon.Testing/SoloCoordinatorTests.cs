@@ -11,7 +11,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task start_starts_them_all()
         {
-            var agent = Substitute.For<IDaemon>();
+            var agent = Substitute.For<IProjectionDaemon>();
             var coordinator = new SoloCoordinator();
             await coordinator.Start(agent, CancellationToken.None);
 

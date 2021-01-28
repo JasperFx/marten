@@ -229,11 +229,11 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
-        public IDaemon BuildProjectionDaemon(ILogger logger = null)
+        public IProjectionDaemon BuildProjectionDaemon(ILogger logger = null)
         {
             logger ??= new NulloLogger();
 
-            return new Daemon(this, logger);
+            return new ProjectionDaemon(this, logger);
         }
 
         /// <summary>

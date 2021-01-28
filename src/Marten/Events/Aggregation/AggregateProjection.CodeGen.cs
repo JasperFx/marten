@@ -328,16 +328,30 @@ namespace Marten.Events.Aggregation
         internal override IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
         {
             // TODO -- support sharding
-            // TODO -- use event filters!!!
 
             var runtime = BuildRuntime(store);
 
+            var eventTypes = determineEventTypes();
+
+            var baseFilters = new ISqlFragment[0];
+            if (!eventTypes.Any(x => x.IsAbstract || x.IsInterface))
+            {
+                baseFilters = new ISqlFragment[] {new Marten.Events.Daemon.EventTypeFilter(store.Events, eventTypes)};
+            }
+
             var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
 
-            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), new ISqlFragment[0], runtime, store, Options);
+
+            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), baseFilters, runtime, store, Options);
 
             return new List<IAsyncProjectionShard> {shard};
         }
 
+        protected virtual Type[] determineEventTypes()
+        {
+            var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
+                .Concat(DeleteEvents).Distinct().ToArray();
+            return eventTypes;
+        }
     }
 }

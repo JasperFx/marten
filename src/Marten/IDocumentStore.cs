@@ -203,7 +203,7 @@ namespace Marten
         /// </summary>
         /// <paramref name="Override the logger inside this instance of the async daemon"/>
         /// <returns></returns>
-        IDaemon BuildProjectionDaemon(ILogger logger = null);
+        IProjectionDaemon BuildProjectionDaemon(ILogger logger = null);
 
 
     }

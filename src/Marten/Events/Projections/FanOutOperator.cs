@@ -13,6 +13,8 @@ namespace Marten.Events.Projections
             _fanOutFunc = fanOutFunc;
         }
 
+        public Type OriginatingType => typeof(TSource);
+
         public void Apply(List<IEvent> events)
         {
             var matches = events.OfType<Event<TSource>>().ToArray();

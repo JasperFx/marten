@@ -23,6 +23,20 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public void uses_event_type_filter()
+        {
+            var projection = new DistanceProjection();
+            var filter = projection
+                .AsyncProjectionShards(theStore)
+                .First()
+                .EventFilters
+                .OfType<Marten.Events.Daemon.EventTypeFilter>()
+                .Single();
+
+            filter.EventTypes.Single().ShouldBe(typeof(Travel));
+        }
+
+        [Fact]
         public async Task run_simultaneously()
         {
             StoreOptions(x => x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));

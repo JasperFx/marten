@@ -27,6 +27,12 @@ namespace Marten.Events.Projections
             Lifecycle = ProjectionLifecycle.Async;
         }
 
+        protected override Type[] determineEventTypes()
+        {
+            return base.determineEventTypes().Concat(_fanouts.Select(x => x.OriginatingType))
+                .Distinct().ToArray();
+        }
+
         public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
             var grouper = new Grouper<TId, TEvent>(identityFunc);

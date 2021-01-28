@@ -25,9 +25,9 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         public ILogger<IProjection> Logger { get; }
 
-        protected async Task<Daemon> StartNodeAgent()
+        protected async Task<ProjectionDaemon> StartNodeAgent()
         {
-            var agent = new Daemon(theStore, Logger);
+            var agent = new ProjectionDaemon(theStore, Logger);
 
             await agent.StartAll();
 

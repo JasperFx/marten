@@ -6,6 +6,7 @@ using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
+using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -15,6 +16,24 @@ namespace Marten.AsyncDaemon.Testing
     {
         public build_aggregate_projection(ITestOutputHelper output) : base(output)
         {
+        }
+
+        [Fact]
+        public void uses_event_type_filter_for_base_filter_when_not_using_base_types()
+        {
+            var projection = new TripAggregation();
+            var filter = projection
+                .AsyncProjectionShards(theStore)
+                .First()
+                .EventFilters
+                .OfType<EventTypeFilter>()
+                .Single();
+
+            filter.EventTypes.ShouldContain(typeof(TripAborted));
+            filter.EventTypes.ShouldContain(typeof(Arrival));
+            filter.EventTypes.ShouldContain(typeof(Travel));
+            filter.EventTypes.ShouldContain(typeof(TripEnded));
+            filter.EventTypes.ShouldContain(typeof(TripStarted));
         }
 
         [Fact]
