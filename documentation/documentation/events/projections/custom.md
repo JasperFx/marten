@@ -36,7 +36,7 @@ It comes of the way how Marten handles projection mechanism:
 <li>Try to find document that has the same <b>Id</b> as the value of the property selected from event (so eg. for <b>UserCreated</b> event it will be <b>UserId</b>).</li>
 <li>
     If no such document exists, then a new record needs to be created. Marten by default tries to use the <b>default constructor</b>. <br />
-    The default constructor doesn't have to be public, it can also private or protected. <br />
+    The default constructor doesn't have to be public, it can also be private or protected. <br />
     If the class does not have a default constructor then it creates an uninitialized object (see <a href="https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8" target="_parent">more</a>).<br />
     Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
 </li>
