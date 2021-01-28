@@ -1,16 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Events;
+using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Transforms;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten
 {
@@ -224,6 +229,12 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
+        public IDaemon BuildProjectionDaemon(ILogger logger = null)
+        {
+            logger ??= new NulloLogger();
+
+            return new Daemon(this, logger);
+        }
 
         /// <summary>
         ///     Quick way to stand up a DocumentStore to the given database connection
@@ -333,4 +344,35 @@ namespace Marten
             return new ManagedConnection(options, commandRunnerMode, retryPolicy);
         }
     }
+
+
+
+    internal class NulloLogger : ILogger, IDisposable
+    {
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+            var message = $"{logLevel}: {formatter(state, exception)}";
+            Debug.WriteLine(message);
+            Console.WriteLine(message);
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            return this;
+        }
+
+
+        public void Dispose()
+        {
+            // Nothing
+        }
+    }
+
+
 }

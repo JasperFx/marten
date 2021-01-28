@@ -9,7 +9,7 @@ namespace Marten.AsyncDaemon.Testing
 {
     public class AsyncProjectionHostedServiceTests
     {
-        private INodeAgent theAgent = Substitute.For<INodeAgent>();
+        private IDaemon theAgent = Substitute.For<IDaemon>();
         private INodeCoordinator theCoordinator = Substitute.For<INodeCoordinator>();
         private AsyncProjectionHostedService theHostedService;
 

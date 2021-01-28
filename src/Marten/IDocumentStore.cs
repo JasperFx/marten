@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon;
+using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Transforms;
+using Microsoft.Extensions.Logging;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten
@@ -192,6 +195,16 @@ namespace Marten
         /// Use Javascript transformations to alter existing documents
         /// </summary>
         IDocumentTransforms Transform { get; }
+
+
+        /// <summary>
+        /// Build a new instance of the asynchronous projection daemon to use interactively
+        /// in your own code
+        /// </summary>
+        /// <paramref name="Override the logger inside this instance of the async daemon"/>
+        /// <returns></returns>
+        IDaemon BuildProjectionDaemon(ILogger logger = null);
+
 
     }
 }

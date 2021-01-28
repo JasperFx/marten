@@ -5,7 +5,7 @@ namespace Marten.Events.Daemon
 {
     public class SoloCoordinator: INodeCoordinator
     {
-        public Task Start(INodeAgent agent, CancellationToken token)
+        public Task Start(IDaemon agent, CancellationToken token)
         {
             return agent.StartAll();
         }

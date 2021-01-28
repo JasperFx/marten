@@ -6,13 +6,13 @@ namespace Marten.Events.Daemon
 {
     public interface INodeCoordinator
     {
-        Task Start(INodeAgent agent, CancellationToken token);
+        Task Start(IDaemon daemon, CancellationToken token);
         Task Stop();
     }
 
     public class HotColdCoordinator: INodeCoordinator
     {
-        public Task Start(INodeAgent agent, CancellationToken token)
+        public Task Start(IDaemon daemon, CancellationToken token)
         {
             throw new NotImplementedException();
         }
@@ -25,7 +25,7 @@ namespace Marten.Events.Daemon
 
     public class DistributedCoordinator: INodeCoordinator
     {
-        public Task Start(INodeAgent agent, CancellationToken token)
+        public Task Start(IDaemon daemon, CancellationToken token)
         {
             throw new NotImplementedException();
         }
@@ -37,9 +37,14 @@ namespace Marten.Events.Daemon
     }
 
 
-
-    public interface INodeAgent
+    // This will be used by a single
+    public interface IDaemon : IDisposable
     {
+        Task RebuildProjection(string projectionName, CancellationToken token);
+
+        // TODO -- option to rebuild by projection type? view type?
+
+
         Task StartShard(string shardName, CancellationToken token);
         Task StartShard(IAsyncProjectionShard shard, CancellationToken token);
         Task StopShard(string shardName);
@@ -48,13 +53,5 @@ namespace Marten.Events.Daemon
         Task StopAll();
 
         ShardStateTracker Tracker { get; }
-    }
-
-    // This will be used by a single
-    public interface IDaemon : INodeAgent
-    {
-        Task RebuildProjection(string projectionName, CancellationToken token);
-
-        // TODO -- option to rebuild by projection type? view type?
     }
 }

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    public class Daemon : IDaemon, IDisposable
+    public class Daemon : IDaemon
     {
         private readonly DocumentStore _store;
         private readonly ILogger _logger;
