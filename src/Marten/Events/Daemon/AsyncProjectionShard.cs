@@ -13,8 +13,8 @@ namespace Marten.Events.Daemon
     {
         private readonly IProjection _projection;
 
-        public AsyncProjectionShard(string projectionOrShardName, IProjection projection, ISqlFragment[] eventFilters, DocumentStore store,
-            AsyncOptions options): base(projectionOrShardName, eventFilters, store, options)
+        public AsyncProjectionShard(ShardName identifier, IProjection projection, ISqlFragment[] eventFilters, DocumentStore store,
+            AsyncOptions options): base(identifier, eventFilters, store, options)
         {
             _projection = projection;
         }

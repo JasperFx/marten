@@ -22,6 +22,11 @@ namespace Marten.Events.Projections
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
         private readonly List<IFanOutRule> _fanouts = new List<IFanOutRule>();
 
+        protected ViewProjection()
+        {
+            Lifecycle = ProjectionLifecycle.Async;
+        }
+
         public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
             var grouper = new Grouper<TId, TEvent>(identityFunc);

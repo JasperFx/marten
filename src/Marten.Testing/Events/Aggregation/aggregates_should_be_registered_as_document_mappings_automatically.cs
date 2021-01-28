@@ -1,4 +1,5 @@
 using System.Linq;
+using Marten.Events.Projections;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -26,7 +27,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             StoreOptions(_ =>
             {
-                _.Events.Projections.InlineSelfAggregate<QuestParty>();
+                _.Events.Projections.SelfAggregate<QuestParty>();
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
@@ -38,7 +39,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             StoreOptions(_ =>
             {
-                _.Events.Projections.AsyncSelfAggregate<QuestParty>();
+                _.Events.Projections.SelfAggregate<QuestParty>(ProjectionLifecycle.Async);
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)

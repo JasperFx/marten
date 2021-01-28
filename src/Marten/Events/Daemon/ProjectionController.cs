@@ -6,14 +6,14 @@ namespace Marten.Events.Daemon
 {
     internal class ProjectionController
     {
-        private readonly string _shardName;
+        private readonly ShardName _shardName;
         private readonly IProjectionUpdater _updater;
         private readonly AsyncOptions _options;
 
         private readonly Queue<EventRange> _inFlight = new Queue<EventRange>();
 
 
-        public ProjectionController(string shardName, IProjectionUpdater updater, AsyncOptions options)
+        public ProjectionController(ShardName shardName, IProjectionUpdater updater, AsyncOptions options)
         {
             _shardName = shardName;
             _updater = updater;
@@ -45,7 +45,12 @@ namespace Marten.Events.Daemon
             HighWaterMark = highWaterMark;
             LastCommitted = LastEnqueued = lastCommitted;
 
-            enqueueNewEventRanges();
+
+
+            if (HighWaterMark > 0)
+            {
+                enqueueNewEventRanges();
+            }
         }
 
         private void enqueueNewEventRanges()

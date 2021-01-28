@@ -139,8 +139,6 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
             return true;
         }
 
-        public Trip Expected { get; set; }
-
         public StreamAction ToAction(EventGraph graph)
         {
             return StreamAction.Start(graph, StreamId, Events.ToArray());

@@ -19,8 +19,8 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
-                _.Events.Projections.InlineSelfAggregate<QuestMonstersWithPrivateIdSetter>();
-                _.Events.Projections.InlineSelfAggregate<QuestMonstersWithProtectedIdSetter>();
+                _.Events.Projections.SelfAggregate<QuestMonstersWithPrivateIdSetter>();
+                _.Events.Projections.SelfAggregate<QuestMonstersWithProtectedIdSetter>();
             });
 
             streamId = theSession.Events

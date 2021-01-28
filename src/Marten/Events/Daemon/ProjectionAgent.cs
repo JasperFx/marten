@@ -9,23 +9,21 @@ using Microsoft.Extensions.Logging;
 namespace Marten.Events.Daemon
 {
 
-    internal interface IProjectionAgent
+    internal interface IProjectionAgent : IAsyncDisposable
     {
-        Task Stop();
-
-        Task TryRestart();
-
         Task<long> Start(ShardStateTracker tracker);
-        string ProjectionOrShardName { get; }
+        ShardName ShardName { get; }
     }
 
-    // TODO -- need a Drain() method
-    // TODO -- need a Dispose that really cleans things off. May need/want IAsyncDisposable
+    /// <summary>
+    /// Responsible for running a single async projection shard at runtime. Equivalent to V3 ProjectionTrack
+    /// </summary>
     internal class ProjectionAgent : IProjectionUpdater, IObserver<ShardState>, IProjectionAgent
     {
         private readonly DocumentStore _store;
         private readonly IAsyncProjectionShard _projectionShard;
-        private readonly ILogger<IProjection> _logger;
+        private readonly ILogger _logger;
+        private readonly CancellationToken _cancellation;
         private ITargetBlock<EventRange> _hopper;
         private readonly ProjectionController _controller;
         private readonly ActionBlock<Command> _commandBlock;
@@ -33,56 +31,38 @@ namespace Marten.Events.Daemon
         private EventFetcher _fetcher;
         private ShardStateTracker _tracker;
         private IDisposable _subscription;
-        private readonly CancellationTokenSource _cancellationSource = new CancellationTokenSource();
 
-        // ReSharper disable once ContextualLoggerProblem
-        public ProjectionAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger<IProjection> logger)
+        public ProjectionAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
         {
-
             _store = store;
             _projectionShard = projectionShard;
             _logger = logger;
+            _cancellation = cancellation;
 
             var singleFile = new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
                 MaxDegreeOfParallelism = 1,
-                CancellationToken = _cancellationSource.Token
+                CancellationToken = _cancellation
             };
 
             _commandBlock = new ActionBlock<Command>(processCommand, singleFile);
 
             _controller =
-                new ProjectionController(projectionShard.ProjectionOrShardName, this, projectionShard.Options);
+                new ProjectionController(projectionShard.Name, this, projectionShard.Options);
 
             _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFile);
         }
 
-        // TODO -- use IAsyncDisposable
-        public async Task Stop()
-        {
-            _cancellationSource.Cancel();
-            _commandBlock.Complete();
-            await _commandBlock.Completion;
-
-            _loader.Complete();
-            await _loader.Completion;
-
-            _hopper.Complete();
-            await _hopper.Completion;
-
-            await _projectionShard.Stop();
-
-            _subscription.Dispose();
-
-        }
 
         private async Task<EventRange> loadEvents(EventRange range)
         {
+            if (_cancellation.IsCancellationRequested) return null;
+
             try
             {
                 // TODO -- resiliency here.
-                await _fetcher.Load(range, _cancellationSource.Token);
+                await _fetcher.Load(range, _cancellation);
             }
             catch (Exception e)
             {
@@ -105,6 +85,8 @@ namespace Marten.Events.Daemon
 
         public void StartRange(EventRange range)
         {
+            if (_cancellation.IsCancellationRequested) return;
+
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug("Enqueued processing of " + range);
@@ -115,32 +97,27 @@ namespace Marten.Events.Daemon
 
         public async Task<long> Start(ShardStateTracker tracker)
         {
-            _logger.LogInformation($"Starting projection agent for '{_projectionShard.ProjectionOrShardName}'");
+            _logger.LogInformation($"Starting projection agent for '{_projectionShard.Name}'");
 
             _tracker = tracker;
 
 
             _fetcher = new EventFetcher(_store, _projectionShard.EventFilters);
-            _hopper = _projectionShard.Start(this, _logger, _cancellationSource.Token);
+            _hopper = _projectionShard.Start(this, _logger, _cancellation);
             _loader.LinkTo(_hopper);
 
-            var lastCommitted = await _store.Events.ProjectionProgressFor(_projectionShard.ProjectionOrShardName);
+            var lastCommitted = await _store.Events.ProjectionProgressFor(_projectionShard.Name);
 
             _commandBlock.Post(Command.Started(tracker.HighWaterMark, lastCommitted));
 
             _subscription = _tracker.Subscribe(this);
 
-            _logger.LogInformation($"Projection agent for '{_projectionShard.ProjectionOrShardName}' has started from sequence {lastCommitted} and a high water mark of {tracker.HighWaterMark}");
+            _logger.LogInformation($"Projection agent for '{_projectionShard.Name}' has started from sequence {lastCommitted} and a high water mark of {tracker.HighWaterMark}");
 
             Status = AgentStatus.Running;
 
             Position = lastCommitted;
             return lastCommitted;
-        }
-
-        public Task TryRestart()
-        {
-            throw new NotImplementedException();
         }
 
         void IObserver<ShardState>.OnCompleted()
@@ -159,7 +136,7 @@ namespace Marten.Events.Daemon
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug($"Projection Shard '{ProjectionOrShardName}' received high water mark at {value.Sequence}");
+                    _logger.LogDebug($"Projection Shard '{ShardName}' received high water mark at {value.Sequence}");
                 }
 
                 _commandBlock.Post(
@@ -167,7 +144,7 @@ namespace Marten.Events.Daemon
             }
         }
 
-        public string ProjectionOrShardName => _projectionShard.ProjectionOrShardName;
+        public ShardName ShardName => _projectionShard.Name;
 
         public ProjectionUpdateBatch StartNewBatch(EventRange range)
         {
@@ -177,19 +154,21 @@ namespace Marten.Events.Daemon
 
         public async Task ExecuteBatch(ProjectionUpdateBatch batch)
         {
+            if (_cancellation.IsCancellationRequested) return;
+
             await batch.Queue.Completion;
 
             using (var session = (DocumentSessionBase)_store.LightweightSession())
             {
                 try
                 {
-                    await session.ExecuteBatchAsync(batch, _cancellationSource.Token);
+                    await session.ExecuteBatchAsync(batch, _cancellation);
 
-                    _logger.LogInformation($"Shard '{ProjectionOrShardName}': Executed updates for {batch.Range}");
+                    _logger.LogInformation($"Shard '{ShardName}': Executed updates for {batch.Range}");
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"Failure in shard '{ProjectionOrShardName}' trying to execute an update batch for {batch.Range}");
+                    _logger.LogError(e, $"Failure in shard '{ShardName}' trying to execute an update batch for {batch.Range}");
                     // TODO -- error handling
 
                     throw;
@@ -202,11 +181,35 @@ namespace Marten.Events.Daemon
             Position = batch.Range.SequenceCeiling;
 
 
-            _tracker.Publish(new ShardState(ProjectionOrShardName, batch.Range.SequenceCeiling));
+            _tracker.Publish(new ShardState(ShardName, batch.Range.SequenceCeiling));
 
             _commandBlock.Post(Command.Completed(batch.Range));
         }
 
         public long Position { get; set; }
+
+        public async ValueTask DisposeAsync()
+        {
+            _logger.LogInformation($"Stopping projection shard {_projectionShard.Name}");
+
+            _commandBlock.Complete();
+            await _commandBlock.Completion;
+
+            _loader.Complete();
+            await _loader.Completion;
+
+            _hopper.Complete();
+            await _hopper.Completion;
+
+            await _projectionShard.Stop();
+
+            _subscription.Dispose();
+
+            _fetcher.Dispose();
+
+        }
+
+
+
     }
 }

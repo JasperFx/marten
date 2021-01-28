@@ -12,7 +12,7 @@ namespace Marten.Events.Daemon.HighWater
     {
         private readonly IHighWaterDetector _detector;
         private readonly ShardStateTracker _tracker;
-        private readonly ILogger<IProjection> _logger;
+        private readonly ILogger _logger;
         private readonly DaemonSettings _settings;
         private readonly CancellationToken _token;
         private readonly Timer _timer;
@@ -21,7 +21,7 @@ namespace Marten.Events.Daemon.HighWater
         private HighWaterStatistics _current;
 
         // ReSharper disable once ContextualLoggerProblem
-        public HighWaterAgent(IHighWaterDetector detector, ShardStateTracker tracker, ILogger<IProjection> logger, DaemonSettings settings, CancellationToken token)
+        public HighWaterAgent(IHighWaterDetector detector, ShardStateTracker tracker, ILogger logger, DaemonSettings settings, CancellationToken token)
         {
             _detector = detector;
             _tracker = tracker;
@@ -51,7 +51,10 @@ namespace Marten.Events.Daemon.HighWater
             {
                 _current = await _detector.Detect(_token);
 
-                _tracker.MarkHighWater(_current.CurrentMark);
+                if (_current.CurrentMark > 0)
+                {
+                    _tracker.MarkHighWater(_current.CurrentMark);
+                }
             }
             catch (Exception e)
             {
@@ -105,6 +108,9 @@ namespace Marten.Events.Daemon.HighWater
 
         private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
         {
+            // don't bother sending updates if the current position is 0
+            if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark) return;
+
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug("High Water mark detected at " + statistics.CurrentMark);
@@ -139,6 +145,12 @@ namespace Marten.Events.Daemon.HighWater
             _timer?.Stop();
             _timer?.Dispose();
             _loop?.Dispose();
+        }
+
+        public async Task CheckNow()
+        {
+            var statistics = await _detector.Detect(_token);
+            _tracker.MarkHighWater(statistics.CurrentMark);
         }
     }
 }

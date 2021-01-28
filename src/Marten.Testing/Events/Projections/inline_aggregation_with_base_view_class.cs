@@ -18,9 +18,9 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.Projections.InlineSelfAggregate<QuestMonstersWithBaseClass>();
-                _.Events.Projections.InlineSelfAggregate<QuestMonstersWithBaseClassAndIdOverloaded>();
-                _.Events.Projections.InlineSelfAggregate<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+                _.Events.Projections.SelfAggregate<QuestMonstersWithBaseClass>();
+                _.Events.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloaded>();
+                _.Events.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
             });
 
             streamId = theSession.Events

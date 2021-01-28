@@ -18,16 +18,13 @@ namespace Marten.Events.Projections
         private readonly Dictionary<Type, object> _liveAggregateSources = new Dictionary<Type, object>();
         private ImHashMap<Type, object> _liveAggregators = ImHashMap<Type, object>.Empty;
 
-        private readonly IList<IProjectionSource> _inlineProjections = new List<IProjectionSource>();
-        private readonly IList<IProjectionSource> _asyncProjections = new List<IProjectionSource>();
+        private readonly IList<ProjectionSource> _projections = new List<ProjectionSource>();
 
         private Lazy<Dictionary<string, IAsyncProjectionShard>> _asyncShards;
 
         internal ProjectionCollection(StoreOptions options)
         {
             _options = options;
-
-
         }
 
         internal IEnumerable<Type> AllAggregateTypes()
@@ -37,7 +34,7 @@ namespace Marten.Events.Projections
                 yield return kv.Key;
             }
 
-            foreach (var projection in _inlineProjections.Concat(_asyncProjections).OfType<IAggregateProjection>())
+            foreach (var projection in _projections.OfType<IAggregateProjection>())
             {
                 yield return projection.AggregateType;
             }
@@ -45,78 +42,69 @@ namespace Marten.Events.Projections
 
         internal IProjection[] BuildInlineProjections(DocumentStore store)
         {
-            return _inlineProjections.Select(x => x.Build(store)).ToArray();
+            return _projections.Where(x => x.Lifecycle == ProjectionLifecycle.Inline).Select(x => x.Build(store)).ToArray();
         }
 
 
         /// <summary>
-        /// Add a projection to be executed inline
+        /// Register a projection to the Marten configuration
         /// </summary>
-        /// <param name="projection"></param>
-        public void Inline(IProjection projection)
+        /// <param name="projection">Value values are Inline/Async, The default is Inline</param>
+        /// <param name="lifecycle"></param>
+        /// <param name="projectionName">Overwrite the named identity of this projection. This is valuable if using the projection asynchonously</param>
+        /// <param name="asyncConfiguration">Optional configuration including teardown instructions for the usage of this projection within the async projection daempon</param>
+        public void Add(IProjection projection, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline,
+            string projectionName = null, Action<AsyncOptions> asyncConfiguration = null)
         {
-            _inlineProjections.Add(new InlineProjectionSource(projection));
-        }
+            if (lifecycle == ProjectionLifecycle.Live)
+            {
+                throw new ArgumentOutOfRangeException(nameof(lifecycle),
+                    $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
+            }
 
-        /// <summary>
-        /// Add a projection that should be executed asynchronously
-        /// </summary>
-        /// <param name="projection"></param>
-        // TODO -- this will need to take in AsyncOptions as well. And maybe someway to
-        // determine async sharding & retries
-        public void Async(IProjection projection)
-        {
-            _asyncProjections.Add(new InlineProjectionSource(projection));
+
+            var wrapper = new ProjectionWrapper(projection, lifecycle);
+            if (projectionName.IsNotEmpty())
+            {
+                wrapper.ProjectionName = projectionName;
+            }
+
+            asyncConfiguration?.Invoke(wrapper.Options);
+            _projections.Add(wrapper);
         }
 
         /// <summary>
         /// Add a projection that will be executed inline
         /// </summary>
         /// <param name="projection"></param>
-        public void Inline(EventProjection projection)
+        /// <param name="lifecycle">Optionally override the lifecycle of this projection. The default is Inline</param>
+        public void Add(EventProjection projection, ProjectionLifecycle? lifecycle = null)
         {
-            projection.As<IValidatedProjection>().AssertValidity();
-            _inlineProjections.Add(projection);
+            if (lifecycle.HasValue)
+            {
+                projection.Lifecycle = lifecycle.Value;
+            }
+            projection.AssertValidity();
+            _projections.Add(projection);
         }
 
         /// <summary>
-        /// Add a projection that should be executed asynchronously
-        /// </summary>
-        /// <param name="projection"></param>
-        public void Async(EventProjection projection)
-        {
-            projection.As<IValidatedProjection>().AssertValidity();
-            _asyncProjections.Add(projection);
-        }
-
-        /// <summary>
-        /// Use a "self-aggregating" aggregate of type as an inline projection
+        /// Use a "self-aggregating" aggregate of type.
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <param name="lifecycle">Override the aggregate lifecycle. The default is Inline</param>
         /// <returns>The extended storage configuration for document T</returns>
-        public MartenRegistry.DocumentMappingExpression<T> InlineSelfAggregate<T>()
+        public MartenRegistry.DocumentMappingExpression<T> SelfAggregate<T>(ProjectionLifecycle? lifecycle = null)
         {
             // Make sure there's a DocumentMapping for the aggregate
             var expression = _options.Schema.For<T>();
-            var source = new AggregateProjection<T>();
-            source.As<IValidatedProjection>().AssertValidity();
-            _inlineProjections.Add(source);
 
-            return expression;
-        }
-
-        /// <summary>
-        /// Use a "self-aggregating" aggregate of type as an async projection
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns>The extended storage configuration for document T</returns>
-        public MartenRegistry.DocumentMappingExpression<T> AsyncSelfAggregate<T>()
-        {
-            // Make sure there's a DocumentMapping for the aggregate
-            var expression = _options.Schema.For<T>();
-            var source = new AggregateProjection<T>();
-            source.As<IValidatedProjection>().AssertValidity();
-            _asyncProjections.Add(source);
+            var source = new AggregateProjection<T>()
+            {
+                Lifecycle = lifecycle ?? ProjectionLifecycle.Inline
+            };
+            source.AssertValidity();
+            _projections.Add(source);
 
             return expression;
         }
@@ -126,34 +114,26 @@ namespace Marten.Events.Projections
         /// </summary>
         /// <param name="projection"></param>
         /// <typeparam name="T"></typeparam>
+        /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
         /// <returns>The extended storage configuration for document T</returns>
-        public MartenRegistry.DocumentMappingExpression<T> Inline<T>(AggregateProjection<T> projection)
+        public MartenRegistry.DocumentMappingExpression<T> Add<T>(AggregateProjection<T> projection, ProjectionLifecycle? lifecycle = null)
         {
             var expression = _options.Schema.For<T>();
-            projection.As<IValidatedProjection>().AssertValidity();
-            _inlineProjections.Add(projection);
+            if (lifecycle.HasValue)
+            {
+                projection.Lifecycle = lifecycle.Value;
+            }
 
-            return expression;
-        }
+            projection.AssertValidity();
 
-        /// <summary>
-        /// Register an aggregate projection that should be evaluated asynchronously
-        /// </summary>
-        /// <param name="projection"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns>The extended storage configuration for document T</returns>
-        public MartenRegistry.DocumentMappingExpression<T> Async<T>(AggregateProjection<T> projection)
-        {
-            var expression = _options.Schema.For<T>();
-            projection.As<IValidatedProjection>().AssertValidity();
-            _asyncProjections.Add(projection);
+            _projections.Add(projection);
 
             return expression;
         }
 
         internal bool Any()
         {
-            return _asyncProjections.Any() || _inlineProjections.Any();
+            return _projections.Any();
         }
 
         internal ILiveAggregator<T> AggregatorFor<T>() where T : class
@@ -163,11 +143,8 @@ namespace Marten.Events.Projections
                 return (ILiveAggregator<T>) aggregator;
             }
 
-            if (!_liveAggregateSources.TryGetValue(typeof(T), out var source))
-            {
-                source = new AggregateProjection<T>();
-                source.As<IValidatedProjection>().AssertValidity();
-            }
+            var source = tryFindProjectionSourceForAggregateType<T>();
+            source.AssertValidity();
 
             aggregator = source.As<ILiveAggregatorSource<T>>().Build(_options);
             _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
@@ -175,17 +152,36 @@ namespace Marten.Events.Projections
             return (ILiveAggregator<T>) aggregator;
         }
 
+        private AggregateProjection<T> tryFindProjectionSourceForAggregateType<T>() where T : class
+        {
+            var candidate = _projections.OfType<AggregateProjection<T>>().FirstOrDefault();
+            if (candidate != null)
+            {
+                return candidate;
+            }
+
+            if (!_liveAggregateSources.TryGetValue(typeof(T), out var source))
+            {
+                return new AggregateProjection<T>();
+            }
+
+            return source as AggregateProjection<T>;
+        }
+
         internal void AssertValidity(DocumentStore store)
         {
-            var messages = _asyncProjections.Concat(_inlineProjections).Concat(_liveAggregateSources.Values)
-                .OfType<IValidatedProjection>().Distinct().SelectMany(x => x.ValidateConfiguration(_options))
+            var messages = _projections.Concat(_liveAggregateSources.Values)
+                .OfType<ProjectionSource>()
+                .Distinct()
+                .SelectMany(x => x.ValidateConfiguration(_options))
                 .ToArray();
 
             _asyncShards = new Lazy<Dictionary<string, IAsyncProjectionShard>>(() =>
             {
-                return _asyncProjections
-                    .SelectMany(x => x.AsyncProjectionShards(store, store.Tenancy))
-                    .ToDictionary(x => x.ProjectionOrShardName);
+                return _projections
+                    .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
+                    .SelectMany(x => x.AsyncProjectionShards(store))
+                    .ToDictionary(x => x.Name.Identity);
 
             });
 
@@ -205,6 +201,16 @@ namespace Marten.Events.Projections
             return _asyncShards.Value.TryGetValue(projectionOrShardName, out shard);
         }
 
+        internal bool TryFindProjection(string projectionName, out ProjectionSource source)
+        {
+            source = _projections.FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(projectionName));
+            return source != null;
+        }
 
+
+        internal string[] AllProjectionNames()
+        {
+            return _projections.Select(x => $"'{x.ProjectionName}'").ToArray();
+        }
     }
 }

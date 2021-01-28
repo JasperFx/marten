@@ -21,7 +21,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation
 {
-    public partial class AggregateProjection<T> : ILiveAggregatorSource<T>, IProjectionSource, IValidatedProjection
+    public partial class AggregateProjection<T> : ProjectionSource, ILiveAggregatorSource<T>
     {
         private GeneratedType _liveType;
         private GeneratedType _inlineType;
@@ -34,22 +34,20 @@ namespace Marten.Events.Aggregation
         private GeneratedAssembly _assembly;
         private Type _storageType;
 
-        public AggregateProjection()
+        public AggregateProjection() : base(typeof(T).NameInCode())
         {
             _createMethods = new CreateMethodCollection(GetType(), typeof(T));
             _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
             _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T));
 
             ProjectionName = typeof(T).Name;
+
+            Options.DeleteViewTypeOnTeardown<T>();
         }
 
         Type IAggregateProjection.AggregateType => typeof(T);
 
-
-
-        public string ProjectionName { get; protected set; }
-
-        IProjection IProjectionSource.Build(DocumentStore store)
+        internal override IProjection Build(DocumentStore store)
         {
             if (_inlineType == null)
             {
@@ -61,7 +59,6 @@ namespace Marten.Events.Aggregation
             store.Tenancy.Default.EnsureStorageExists(typeof(T));
             return BuildRuntime(store);
         }
-
 
         internal ILiveAggregator<T> BuildLiveAggregator()
         {
@@ -273,7 +270,7 @@ namespace Marten.Events.Aggregation
             return BuildLiveAggregator();
         }
 
-        void IValidatedProjection.AssertValidity()
+        internal override void AssertValidity()
         {
             if (_applyMethods.IsEmpty() && _createMethods.IsEmpty())
             {
@@ -295,7 +292,7 @@ namespace Marten.Events.Aggregation
         {
         }
 
-        IEnumerable<string> IValidatedProjection.ValidateConfiguration(StoreOptions options)
+        internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
         {
             var mapping = options.Storage.MappingFor(typeof(T));
             foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
@@ -328,19 +325,19 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        IReadOnlyList<IAsyncProjectionShard> IProjectionSource.AsyncProjectionShards(IDocumentStore store, ITenancy tenancy)
+        internal override IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
         {
             // TODO -- support sharding
             // TODO -- use event filters!!!
 
-            var runtime = BuildRuntime((DocumentStore) store);
+            var runtime = BuildRuntime(store);
 
             var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
 
-            // TODO -- allow users to configure the options?????
-            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, ProjectionName, new ISqlFragment[0], runtime, store, new AsyncOptions());
+            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), new ISqlFragment[0], runtime, store, Options);
 
             return new List<IAsyncProjectionShard> {shard};
         }
+
     }
 }

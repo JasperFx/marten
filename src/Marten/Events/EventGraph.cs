@@ -485,13 +485,13 @@ namespace Marten.Events
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<long> ProjectionProgressFor(string projectionOrShardName, CancellationToken token = default(CancellationToken))
+        public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default(CancellationToken))
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
 
             var statement = new ProjectionProgressStatement(this)
             {
-                ProjectionOrShardName = projectionOrShardName
+                Name = name
             };
 
             var handler = new OneResultHandler<ProjectionProgress>(statement,

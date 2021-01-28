@@ -22,11 +22,16 @@ namespace Marten.Events.Aggregation
         private ILogger<IProjection> _logger;
         private CancellationToken _token;
 
-        public AggregationShard(string projectionOrShardName, ISqlFragment[] eventFilters,
-            AggregationRuntime<TDoc, TId> runtime, DocumentStore store, AsyncOptions options) : base(projectionOrShardName, eventFilters, store, options)
+        public AggregationShard(ShardName identifier, ISqlFragment[] eventFilters,
+            AggregationRuntime<TDoc, TId> runtime, DocumentStore store, AsyncOptions options) : base(identifier, eventFilters, store, options)
         {
             _runtime = runtime;
             _tenancy = store.Tenancy;
+        }
+
+        protected override void ensureStorageExists()
+        {
+            Store.Tenancy.Default.EnsureStorageExists(typeof(TDoc));
         }
 
         protected override Task configureUpdateBatch(ProjectionUpdateBatch batch, TenantSliceRange<TDoc, TId> sliceGroup, CancellationToken token)

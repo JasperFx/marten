@@ -10,26 +10,24 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Daemon.Progress
 {
-    internal class InsertProjectionProgress: IStorageOperation
+    internal class DeleteProjectionProgress: IStorageOperation
     {
         private readonly EventGraph _events;
-        private readonly EventRange _progress;
+        private readonly string _shardName;
 
-        public InsertProjectionProgress(EventGraph events, EventRange progress)
+        public DeleteProjectionProgress(EventGraph events, string shardName)
         {
             _events = events;
-            _progress = progress;
+            _shardName = shardName;
         }
-
+        
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
             var parameters =
-                builder.AppendWithParameters($"insert into {_events.ProgressionTable} (name, last_seq_id) values (?, ?)");
+                builder.AppendWithParameters($"delete from {_events.ProgressionTable} where name = ?");
 
-            parameters[0].Value = _progress.ShardName.Identity;
+            parameters[0].Value = _shardName;
             parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar;
-            parameters[1].Value = _progress.SequenceCeiling;
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
         }
 
         public Type DocumentType => typeof(IEvent);

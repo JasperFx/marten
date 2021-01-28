@@ -13,7 +13,7 @@ namespace Marten.AsyncDaemon.Testing
 
         public ProjectionControllerTests()
         {
-            theController = new ProjectionController("the projection", theUpdater, theOptions);
+            theController = new ProjectionController(new ShardName("the projection"), theUpdater, theOptions);
         }
 
         private void assertNoRangeWasEnqueued()
@@ -23,7 +23,7 @@ namespace Marten.AsyncDaemon.Testing
 
         private void assertRangeWasEnqueued(long floor, long ceiling)
         {
-            var range = new EventRange("the projection", floor, ceiling);
+            var range = new EventRange(new ShardName("the projection"), floor, ceiling);
             theUpdater.Received().StartRange(range);
         }
 
@@ -121,7 +121,7 @@ namespace Marten.AsyncDaemon.Testing
         {
             theController.Start(1200, 0);
 
-            theController.EventRangeUpdated(new EventRange("the projection", 0 ,500));
+            theController.EventRangeUpdated(new EventRange(new ShardName("the projection"), 0 ,500));
             theController.LastCommitted.ShouldBe(500);
             theController.InFlightCount.ShouldBe(700);
         }

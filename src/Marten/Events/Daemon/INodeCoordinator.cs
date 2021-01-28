@@ -40,8 +40,8 @@ namespace Marten.Events.Daemon
 
     public interface INodeAgent
     {
-        Task StartShard(string shardName);
-        Task StartShard(IAsyncProjectionShard shard);
+        Task StartShard(string shardName, CancellationToken token);
+        Task StartShard(IAsyncProjectionShard shard, CancellationToken token);
         Task StopShard(string shardName);
 
         Task StartAll();
@@ -53,7 +53,8 @@ namespace Marten.Events.Daemon
     // This will be used by a single
     public interface IDaemon : INodeAgent
     {
-        Task RebuildProjection(string projectionName);
-        Task RebuildProjection(Type viewType);
+        Task RebuildProjection(string projectionName, CancellationToken token);
+
+        // TODO -- option to rebuild by projection type? view type?
     }
 }

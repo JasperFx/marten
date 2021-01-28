@@ -9,6 +9,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         public TripAggregation()
         {
             DeleteEvent<TripAborted>();
+
+            ProjectionName = "Trip";
         }
 
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;

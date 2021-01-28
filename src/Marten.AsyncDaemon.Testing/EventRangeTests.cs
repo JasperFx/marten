@@ -12,14 +12,14 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public void size_with_no_events()
         {
-            var range = new EventRange("name", 0, 100);
+            var range = new EventRange(new ShardName("name"), 0, 100);
             range.Size.ShouldBe(100);
         }
 
         [Fact]
         public void size_with_events()
         {
-            var range = new EventRange("name", 0, 100)
+            var range = new EventRange(new ShardName("name"), 0, 100)
             {
                 Events = new List<IEvent>
                 {

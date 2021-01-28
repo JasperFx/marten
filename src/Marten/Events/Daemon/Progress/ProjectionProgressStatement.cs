@@ -14,15 +14,15 @@ namespace Marten.Events.Daemon.Progress
             _events = events;
         }
 
-        public string ProjectionOrShardName { get; set; }
+        public ShardName Name { get; set; }
 
         protected override void configure(CommandBuilder builder)
         {
             builder.Append($"select name, last_seq_id from {_events.DatabaseSchemaName}.mt_event_progression");
-            if (ProjectionOrShardName.IsNotEmpty())
+            if (Name != null)
             {
                 builder.Append(" where name = :");
-                var parameter = builder.AddParameter(ProjectionOrShardName, NpgsqlDbType.Varchar);
+                var parameter = builder.AddParameter(Name.Identity, NpgsqlDbType.Varchar);
                 builder.Append(parameter.ParameterName);
             }
         }

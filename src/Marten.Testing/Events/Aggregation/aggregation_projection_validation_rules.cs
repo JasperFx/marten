@@ -38,7 +38,7 @@ namespace Marten.Testing.Events.Aggregation
             var message = errorMessageFor(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsGuid;
-                x.Events.Projections.AsyncSelfAggregate<StringIdentifiedAggregate>();
+                x.Events.Projections.SelfAggregate<StringIdentifiedAggregate>(ProjectionLifecycle.Async);
             });
 
             message.ShouldContain("Id type mismatch. The stream identity type is System.Guid, but the aggregate document Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.StringIdentifiedAggregate id type is string", StringComparisonOption.Default);
@@ -51,7 +51,7 @@ namespace Marten.Testing.Events.Aggregation
             var message = errorMessageFor(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Events.Projections.AsyncSelfAggregate<GuidIdentifiedAggregate>();
+                x.Events.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
             });
 
             message.ShouldContain("Id type mismatch. The stream identity type is string, but the aggregate document Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate id type is Guid", StringComparisonOption.Default);
@@ -63,7 +63,7 @@ namespace Marten.Testing.Events.Aggregation
             errorMessageFor(opts =>
             {
                 opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-                opts.Events.Projections.AsyncSelfAggregate<GuidIdentifiedAggregate>();
+                opts.Events.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
             }).ShouldContain("Tenancy storage style mismatch between the events (Conjoined) and the aggregate type Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate (Single)", StringComparisonOption.Default);
         }
 
@@ -72,7 +72,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             errorMessageFor(opts =>
             {
-                opts.Events.Projections.AsyncSelfAggregate<GuidIdentifiedAggregate>();
+                opts.Events.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
                 opts.Schema.For<GuidIdentifiedAggregate>().MultiTenanted();
             }).ShouldContain("Tenancy storage style mismatch between the events (Single) and the aggregate type Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate (Conjoined)", StringComparisonOption.Default);
         }
@@ -82,7 +82,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             errorMessageFor(opts =>
             {
-                opts.Events.Projections.Inline(new Projections.EmptyProjection());
+                opts.Events.Projections.Add(new Projections.EmptyProjection());
             }).ShouldNotBeNull();
         }
 
@@ -118,13 +118,13 @@ namespace Marten.Testing.Events.Aggregation
         public void happy_path_validation_for_aggregation()
         {
             var projection = new AllGood();
-            projection.As<IValidatedProjection>().AssertValidity();
+            projection.AssertValidity();
         }
 
         [Fact]
         public void find_bad_method_names_that_are_not_ignored()
         {
-            var projection = new BadMethodName().As<IValidatedProjection>();
+            var projection = new BadMethodName();
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
 
             ex.Message.ShouldContain("Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'", StringComparisonOption.NormalizeWhitespaces);
@@ -133,7 +133,7 @@ namespace Marten.Testing.Events.Aggregation
         [Fact]
         public void find_invalid_argument_type()
         {
-            var projection = new InvalidArgumentType().As<IValidatedProjection>();
+            var projection = new InvalidArgumentType();
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors
@@ -143,7 +143,7 @@ namespace Marten.Testing.Events.Aggregation
         [Fact]
         public void missing_event_altogether()
         {
-            var projection = new MissingEventType1().As<IValidatedProjection>();
+            var projection = new MissingEventType1();
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(MethodSlot.NoEventType);
@@ -152,14 +152,14 @@ namespace Marten.Testing.Events.Aggregation
         [Fact]
         public void marten_can_guess_the_event_based_on_what_is_left()
         {
-            var projection = new CanGuessEventType().As<IValidatedProjection>();
+            var projection = new CanGuessEventType();
             projection.AssertValidity();
         }
 
         [Fact]
         public void invalid_return_type()
         {
-            var projection = new BadReturnType().As<IValidatedProjection>();
+            var projection = new BadReturnType();
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(
@@ -169,7 +169,7 @@ namespace Marten.Testing.Events.Aggregation
         [Fact]
         public void missing_required_parameter()
         {
-            var projection = new MissingMandatoryType().As<IValidatedProjection>();
+            var projection = new MissingMandatoryType();
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
 
             ex.InvalidMethods.Single()

@@ -25,9 +25,9 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         public ILogger<IProjection> Logger { get; }
 
-        protected async Task<NodeAgent> StartNodeAgent()
+        protected async Task<Daemon> StartNodeAgent()
         {
-            var agent = new NodeAgent(theStore, Logger);
+            var agent = new Daemon(theStore, Logger);
 
             await agent.StartAll();
 
@@ -60,11 +60,11 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         {
             var actuals = await LoadAllAggregatesFromDatabase();
 
-
-
             foreach (var stream in _streams)
             {
-                if (stream.Expected == null)
+                var expected = await theSession.Events.AggregateStreamAsync<Trip>(stream.StreamId);
+
+                if (expected == null)
                 {
                     actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
                 }
@@ -72,35 +72,13 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
                 {
                     if (actuals.TryGetValue(stream.StreamId, out var actual))
                     {
-                        stream.Expected.ShouldBe(actual);
+                        expected.ShouldBe(actual);
                     }
                     else
                     {
                         throw new Exception("Missing expected aggregate");
                     }
                 }
-            }
-        }
-
-        protected async Task BuildAllExpectedAggregates()
-        {
-            StoreOptions(opts => opts.Events.Projections.Inline(new TripAggregation()));
-
-            await PublishSingleThreaded();
-
-            var dict = await LoadAllAggregatesFromDatabase();
-
-            foreach (var stream in _streams)
-            {
-                if (dict.TryGetValue(stream.StreamId, out var trip))
-                {
-                    stream.Expected = trip;
-                }
-                else
-                {
-                    stream.Expected = null;
-                }
-
             }
         }
 

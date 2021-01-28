@@ -26,13 +26,13 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
 
-            var range1 = new EventRange("foo", 0, 10);
+            var range1 = new EventRange(new ShardName("name"), 0, 10);
             await fetcher.Load(range1, CancellationToken.None);
 
-            var range2 = new EventRange("foo", 10, 20);
+            var range2 = new EventRange(new ShardName("name"), 10, 20);
             await fetcher.Load(range2, CancellationToken.None);
 
-            var range3 = new EventRange("foo", 20, 38);
+            var range3 = new EventRange(new ShardName("name"), 20, 38);
             await fetcher.Load(range3, CancellationToken.None);
 
             range1.Events.Count.ShouldBe(10);
@@ -48,7 +48,7 @@ namespace Marten.AsyncDaemon.Testing
 
             using var fetcher1 = new EventFetcher(theStore, new ISqlFragment[0]);
 
-            var range1 = new EventRange("foo", 0, NumberOfEvents);
+            var range1 = new EventRange(new ShardName("name"), 0, NumberOfEvents);
             await fetcher1.Load(range1, CancellationToken.None);
 
             var uniqueTypeCount = range1.Events.Select(x => x.EventType).Distinct()
@@ -59,7 +59,7 @@ namespace Marten.AsyncDaemon.Testing
             var filter = new EventTypeFilter(theStore.Events, new Type[] {typeof(Travel), typeof(Arrival)});
             using var fetcher2 = new EventFetcher(theStore, new ISqlFragment[]{filter});
 
-            var range2 = new EventRange("foo", 0, NumberOfEvents);
+            var range2 = new EventRange(new ShardName("name"), 0, NumberOfEvents);
             await fetcher2.Load(range2, CancellationToken.None);
             range2.Events
                 .Select(x => x.EventType)

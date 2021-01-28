@@ -30,12 +30,18 @@ namespace Marten.Events.Daemon
             Timestamp = DateTimeOffset.UtcNow;
         }
 
-        public ShardState(IAsyncProjectionShard shard, long sequenceNumber) : this(shard.ProjectionOrShardName, sequenceNumber)
+        public ShardState(ShardName shardName, long sequence) : this(shardName.Identity, sequence)
         {
 
         }
 
-        public ShardState(IAsyncProjectionShard shard, ShardAction action) : this(shard.ProjectionOrShardName, 0)
+
+        public ShardState(IAsyncProjectionShard shard, long sequenceNumber) : this(shard.Name, sequenceNumber)
+        {
+
+        }
+
+        public ShardState(IAsyncProjectionShard shard, ShardAction action) : this(shard.Name, 0)
         {
             Action = action;
         }
@@ -122,6 +128,11 @@ namespace Marten.Events.Daemon
         public Task<ShardState> WaitForShardState(string shardName, long sequence, TimeSpan? timeout = null)
         {
             return WaitForShardState(new ShardState(shardName, sequence), timeout);
+        }
+
+        public Task<ShardState> WaitForShardState(ShardName name, long sequence, TimeSpan? timeout = null)
+        {
+            return WaitForShardState(new ShardState(name.Identity, sequence), timeout);
         }
 
         public Task<ShardState> WaitForHighWaterMark(long sequence, TimeSpan? timeout = null)

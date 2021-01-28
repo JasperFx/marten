@@ -18,7 +18,7 @@ namespace Marten.Exceptions
         {
         }
 
-        internal InvalidProjectionException(IValidatedProjection projection, IEnumerable<MethodSlot> invalidMethods) : base(ToMessage(projection, invalidMethods))
+        internal InvalidProjectionException(ProjectionSource projection, IEnumerable<MethodSlot> invalidMethods) : base(ToMessage(projection, invalidMethods))
         {
             InvalidMethods = invalidMethods.ToArray();
         }
@@ -28,7 +28,7 @@ namespace Marten.Exceptions
             InvalidMethods = new MethodSlot[0];
         }
 
-        private static string ToMessage(IValidatedProjection projection, IEnumerable<MethodSlot> invalidMethods)
+        private static string ToMessage(ProjectionSource projection, IEnumerable<MethodSlot> invalidMethods)
         {
             var writer = new StringWriter();
             writer.WriteLine($"Projection {projection.GetType().FullNameInCode()} has validation errors:");

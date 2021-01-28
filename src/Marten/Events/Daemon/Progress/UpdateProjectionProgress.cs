@@ -29,7 +29,7 @@ namespace Marten.Events.Daemon.Progress
 
             parameters[0].Value = Range.SequenceCeiling;
             parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[1].Value = Range.ProjectionOrShardName;
+            parameters[1].Value = Range.ShardName.Identity;
             parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
             parameters[2].Value = Range.SequenceFloor;
             parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
@@ -40,7 +40,7 @@ namespace Marten.Events.Daemon.Progress
         {
             if (reader.RecordsAffected != 1)
             {
-                throw new ProgressionProgressOutOfOrderException(Range.ProjectionOrShardName);
+                throw new ProgressionProgressOutOfOrderException(Range.ShardName);
             }
         }
 
@@ -48,7 +48,7 @@ namespace Marten.Events.Daemon.Progress
         {
             if (reader.RecordsAffected != 1)
             {
-                throw new ProgressionProgressOutOfOrderException(Range.ProjectionOrShardName);
+                throw new ProgressionProgressOutOfOrderException(Range.ShardName);
             }
 
             return Task.CompletedTask;

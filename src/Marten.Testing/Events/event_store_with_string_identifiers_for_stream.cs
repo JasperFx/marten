@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -17,7 +18,7 @@ namespace Marten.Testing.Events
             {
                 // SAMPLE: eventstore-configure-stream-identity
                 storeOptions.Events.StreamIdentity = StreamIdentity.AsString;
-                storeOptions.Events.Projections.AsyncSelfAggregate<QuestPartyWithStringIdentifier>();
+                storeOptions.Events.Projections.SelfAggregate<QuestPartyWithStringIdentifier>(ProjectionLifecycle.Async);
                 // ENDSAMPLE
             });
         }

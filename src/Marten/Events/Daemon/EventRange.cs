@@ -6,22 +6,22 @@ namespace Marten.Events.Daemon
 {
     public class EventRange
     {
-        public EventRange(string projectionOrShardName, long floor, long ceiling)
+        public EventRange(ShardName shardName, long floor, long ceiling)
         {
-            ProjectionOrShardName = projectionOrShardName;
+            ShardName = shardName;
             SequenceFloor = floor;
             SequenceCeiling = ceiling;
         }
 
-        public EventRange(string projectionOrShardName, long sequenceCeiling)
+        public EventRange(ShardName shardName, long ceiling)
         {
-            ProjectionOrShardName = projectionOrShardName;
-            SequenceCeiling = sequenceCeiling;
+            ShardName = shardName;
+            SequenceCeiling = ceiling;
         }
 
         protected bool Equals(EventRange other)
         {
-            return ProjectionOrShardName == other.ProjectionOrShardName && SequenceFloor == other.SequenceFloor && SequenceCeiling == other.SequenceCeiling;
+            return Equals(ShardName, other.ShardName) && SequenceFloor == other.SequenceFloor && SequenceCeiling == other.SequenceCeiling;
         }
 
         public override bool Equals(object obj)
@@ -36,7 +36,7 @@ namespace Marten.Events.Daemon
         {
             unchecked
             {
-                var hashCode = (ProjectionOrShardName != null ? ProjectionOrShardName.GetHashCode() : 0);
+                var hashCode = (ShardName != null ? ShardName.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ SequenceFloor.GetHashCode();
                 hashCode = (hashCode * 397) ^ SequenceCeiling.GetHashCode();
                 return hashCode;
@@ -45,10 +45,10 @@ namespace Marten.Events.Daemon
 
         public override string ToString()
         {
-            return $"Event range of '{ProjectionOrShardName}', {SequenceFloor} to {SequenceCeiling}";
+            return $"Event range of '{ShardName}', {SequenceFloor} to {SequenceCeiling}";
         }
 
-        public string ProjectionOrShardName { get; }
+        public ShardName ShardName { get; }
         public long SequenceFloor { get; }
         public long SequenceCeiling { get; }
 

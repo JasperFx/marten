@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
@@ -24,19 +25,41 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task run_simultaneously()
         {
-            StoreOptions(x => x.Events.Projections.Async(new DistanceProjection()));
+            StoreOptions(x => x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
             NumberOfStreams = 10;
 
             var agent = await StartNodeAgent();
 
-            var waiter = agent.Tracker.WaitForShardState("Distance", NumberOfEvents, 15.Seconds());
+            var waiter = agent.Tracker.WaitForShardState("Distance:All", NumberOfEvents, 15.Seconds());
 
             await PublishSingleThreaded();
 
 
             await waiter;
 
+            await CheckExpectedResults();
+        }
+
+        [Fact]
+        public async Task rebuild()
+        {
+            StoreOptions(x => x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+
+            NumberOfStreams = 10;
+
+            var agent = await StartNodeAgent();
+
+            await PublishSingleThreaded();
+
+
+            await agent.RebuildProjection("Distance", CancellationToken.None);
+
+
+        }
+
+        private async Task CheckExpectedResults()
+        {
             var distances = await theSession.Query<Distance>().ToListAsync();
 
             var events = (await theSession.Events.QueryAllRawEvents().ToListAsync());
@@ -44,7 +67,6 @@ namespace Marten.AsyncDaemon.Testing
 
             foreach (var distance in distances)
             {
-
                 if (travels.TryGetValue(distance.Id, out var travel))
                 {
                     distance.Day.ShouldBe(travel.Data.Day);

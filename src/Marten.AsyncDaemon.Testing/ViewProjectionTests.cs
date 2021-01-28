@@ -22,6 +22,12 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public void lifecycle_is_async_by_default()
+        {
+            new DayProjection().Lifecycle.ShouldBe(ProjectionLifecycle.Async);
+        }
+
+        [Fact]
         public async Task splicing_events()
         {
             NumberOfStreams = 10;
@@ -60,7 +66,7 @@ namespace Marten.AsyncDaemon.Testing
         {
 
 
-            StoreOptions(x => x.Events.Projections.Async(new DayProjection()));
+            StoreOptions(x => x.Events.Projections.Add(new DayProjection()));
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Day));
 
@@ -69,7 +75,7 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
 
-            await agent.Tracker.WaitForShardState("Day", NumberOfEvents, 30.Seconds());
+            await agent.Tracker.WaitForShardState("Day:All", NumberOfEvents, 30.Seconds());
 
             var days = await theSession.Query<Day>().ToListAsync();
 
