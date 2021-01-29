@@ -40,7 +40,7 @@ namespace Marten.Events.Daemon.HighWater
 
             _timer.Start();
 
-            _logger.LogInformation("Started HighWaterAgent.");
+            _logger.LogInformation("Started HighWaterAgent");
         }
 
 
@@ -72,7 +72,7 @@ namespace Marten.Events.Daemon.HighWater
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Failed while trying to detect high water statistics", e);
+                    _logger.LogError(e, "Failed while trying to detect high water statistics");
                     await Task.Delay(_settings.SlowPollingTime, _token);
                     continue;
                 }
@@ -103,7 +103,7 @@ namespace Marten.Events.Daemon.HighWater
                 }
             }
 
-            _logger.LogInformation($"HighWaterAgent has detected a cancellation and has stopped polling.");
+            _logger.LogInformation("HighWaterAgent has detected a cancellation and has stopped polling");
         }
 
         private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
@@ -113,7 +113,7 @@ namespace Marten.Events.Daemon.HighWater
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("High Water mark detected at " + statistics.CurrentMark);
+                _logger.LogDebug("High Water mark detected at {CurrentMark}", statistics.CurrentMark);
             }
             _current = statistics;
             _tracker.MarkHighWater(statistics.CurrentMark);
@@ -124,7 +124,7 @@ namespace Marten.Events.Daemon.HighWater
         {
             if (_loop.IsFaulted && !_token.IsCancellationRequested)
             {
-                _logger.LogError(_loop.Exception,$"HighWaterAgent polling loop was faulted.");
+                _logger.LogError(_loop.Exception,"HighWaterAgent polling loop was faulted");
 
                 try
                 {
