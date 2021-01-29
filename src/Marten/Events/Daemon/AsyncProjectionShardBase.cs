@@ -71,7 +71,7 @@ namespace Marten.Events.Daemon
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Shard '{ProjectionOrShardName}': Starting to build an update batch for {group}", ProjectionOrShardName, group);
+                _logger.LogDebug("Shard '{ShardName}': Starting to build an update batch for {group}", Name, group);
             }
 
             var batch = _updater.StartNewBatch(group.Range);
@@ -85,7 +85,7 @@ namespace Marten.Events.Daemon
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Shard '{ProjectionOrShardName}': Configured batch {group}", ProjectionOrShardName, group);
+                _logger.LogDebug("Shard 'ShardName}': Configured batch {group}", Name, group);
             }
 
             group.Dispose();
@@ -99,13 +99,13 @@ namespace Marten.Events.Daemon
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Shard '{ProjectionOrShardName}': Starting to slice {range}", ProjectionOrShardName, range);
+                _logger.LogDebug("Shard '{ShardName}': Starting to slice {range}", Name, range);
             }
 
             var group = applyGrouping(range);
             if (_logger.IsEnabled(LogLevel.Debug))
             {
-                _logger.LogDebug("Shard '{ProjectionOrShardName}': successfully sliced {range}", ProjectionOrShardName, range);
+                _logger.LogDebug("Shard '{ShardName}': successfully sliced {range}", Name, range);
             }
 
             return group;
@@ -124,7 +124,7 @@ namespace Marten.Events.Daemon
             await _building.Completion;
 
 
-            _logger?.LogInformation("Shard '{ProjectionOrShardName}': Stopped", ProjectionOrShardName);
+            _logger?.LogInformation("Shard '{ShardName}': Stopped", Name.Identity);
         }
     }
 }

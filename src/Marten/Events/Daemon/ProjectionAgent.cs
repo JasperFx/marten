@@ -97,8 +97,7 @@ namespace Marten.Events.Daemon
 
         public async Task<long> Start(ShardStateTracker tracker)
         {
-            _logger.LogInformation($"Starting projection agent for '{_projectionShard.Name}'");
-            _logger.LogInformation("Starting projection agent for '{ProjectionOrShardName}'", ProjectionOrShardName);
+            _logger.LogInformation("Starting projection agent for '{ShardName}'", _projectionShard.Name);
 
             _tracker = tracker;
 
@@ -113,8 +112,7 @@ namespace Marten.Events.Daemon
 
             _subscription = _tracker.Subscribe(this);
 
-            _logger.LogInformation($"Projection agent for '{_projectionShard.Name}' has started from sequence {lastCommitted} and a high water mark of {tracker.HighWaterMark}");
-            _logger.LogInformation("Projection agent for '{ProjectionOrShardName}' has started from sequence {lastCommitted} and a high water mark of {HighWaterMark}", ProjectionOrShardName, lastCommitted, _tracker.HighWaterMark);
+            _logger.LogInformation("Projection agent for '{ShardName}' has started from sequence {lastCommitted} and a high water mark of {HighWaterMark}", _projectionShard.Name, lastCommitted, _tracker.HighWaterMark);
 
             Status = AgentStatus.Running;
 
@@ -138,8 +136,7 @@ namespace Marten.Events.Daemon
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug($"Projection Shard '{ShardName}' received high water mark at {value.Sequence}");
-                    _logger.LogDebug("Projection Shard '{ProjectionOrShardName}' received high water mark at {Sequence}", ProjectionOrShardName, value.Sequence);
+                    _logger.LogDebug("Projection Shard '{ShardName}' received high water mark at {Sequence}", ShardName, value.Sequence);
                 }
 
                 _commandBlock.Post(
@@ -167,13 +164,11 @@ namespace Marten.Events.Daemon
                 {
                     await session.ExecuteBatchAsync(batch, _cancellation);
 
-                    _logger.LogInformation($"Shard '{ShardName}': Executed updates for {batch.Range}");
-                    _logger.LogInformation("Shard '{ProjectionOrShardName}': Executed updates for {Range}", ProjectionOrShardName, batch.Range);
+                    _logger.LogInformation("Shard '{ShardName}': Executed updates for {Range}", ShardName, batch.Range);
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, $"Failure in shard '{ShardName}' trying to execute an update batch for {batch.Range}");
-                    _logger.LogError(e, "Failure in shard '{ProjectionOrShardName}' trying to execute an update batch for {Range}", ProjectionOrShardName, batch.Range);
+                    _logger.LogError(e, "Failure in shard '{ShardName}' trying to execute an update batch for {Range}", ShardName, batch.Range);
                     // TODO -- error handling
 
                     throw;
