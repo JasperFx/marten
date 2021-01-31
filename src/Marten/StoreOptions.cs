@@ -14,6 +14,7 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Transforms;
 using Marten.Util;
@@ -36,7 +37,7 @@ namespace Marten
         public const string PatchDoc = "patch_doc";
 
         private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs
-            = new ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>>();
+            = new();
 
         public StorageFeatures Storage { get; }
         public readonly IList<IInitialData> InitialData = new List<IInitialData>();
@@ -103,7 +104,7 @@ namespace Marten
         ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
         ///     type as well
         /// </summary>
-        public HiloSettings HiloSequenceDefaults { get; } = new HiloSettings();
+        public HiloSettings HiloSequenceDefaults { get; } = new();
 
         /// <summary>
         ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
@@ -241,17 +242,20 @@ namespace Marten
             EnumStorage enumStorage = EnumStorage.AsInteger,
             Casing casing = Casing.Default,
             CollectionStorage collectionStorage = CollectionStorage.Default,
-            NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default
+            NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default,
+            SerializerType serializerType = SerializerType.Newtonsoft
         )
         {
-            Serializer(
-                new JsonNetSerializer
+            var serializer = SerializerFactory.New(serializerType,
+                new SerializerOptions
                 {
                     EnumStorage = enumStorage,
                     Casing = casing,
                     CollectionStorage = collectionStorage,
                     NonPublicMembersStorage = nonPublicMembersStorage
                 });
+
+            Serializer(serializer);
         }
 
         /// <summary>
@@ -265,7 +269,7 @@ namespace Marten
 
         public ISerializer Serializer()
         {
-            return _serializer ?? new JsonNetSerializer();
+            return _serializer ?? SerializerFactory.New();
         }
 
         public IMartenLogger Logger()

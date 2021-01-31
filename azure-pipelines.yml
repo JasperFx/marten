@@ -47,12 +47,19 @@ jobs:
       matrix:
         pg9_6:
           postgresService: pg9_6
+          serializer: Newtonsoft
         pg10:
           postgresService: pg10
+          serializer: Newtonsoft
         pg11:
           postgresService: pg11
+          serializer: Newtonsoft
         pg12:
           postgresService: pg12
+          serializer: Newtonsoft
+        pg12_SystemTextJson:
+          postgresService: pg12
+          serializer: SystemTextJson
     services:
       postgres: $[ variables['postgresService'] ]
     steps:
@@ -72,3 +79,5 @@ jobs:
         displayName: Create db and add plv8 extension
       - script: ./build.sh --no-color ci
         displayName: Build
+        env:
+          DEFAULT_SERIALIZER: $(serializer)

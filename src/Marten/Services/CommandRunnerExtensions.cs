@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-using Marten.Linq.QueryHandlers;
-using Marten.Storage;
+using Marten.Services.Json;
 using Marten.Util;
 using Npgsql;
 
@@ -19,26 +16,26 @@ namespace Marten.Services
             return runner.Execute(cmd);
         }
 
-        public static QueryPlan ExplainQuery(this IManagedConnection runner, NpgsqlCommand cmd, Action<IConfigureExplainExpressions> configureExplain = null)
+        public static QueryPlan ExplainQuery(this IManagedConnection runner, ISerializer serializer, NpgsqlCommand cmd, Action<IConfigureExplainExpressions> configureExplain = null)
         {
-            var serializer = new JsonNetSerializer();
-
             var config = new ConfigureExplainExpressions();
             configureExplain?.Invoke(config);
 
             cmd.CommandText = string.Concat($"explain ({config} format json) ", cmd.CommandText);
-            using (var reader = runner.ExecuteReader(cmd))
-            {
-                var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetStream(0)) : null;
-                var planToReturn = queryPlans?[0].Plan;
-                if (planToReturn != null)
-                {
-                    planToReturn.PlanningTime = queryPlans[0].PlanningTime;
-                    planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
-                    planToReturn.Command = cmd;
-                }
-                return planToReturn;
-            }
+
+            using var reader = runner.ExecuteReader(cmd);
+
+            var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetStream(0)) : null;
+            var planToReturn = queryPlans?[0].Plan;
+
+            if (planToReturn == null)
+                return null;
+
+            planToReturn.PlanningTime = queryPlans[0].PlanningTime;
+            planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
+            planToReturn.Command = cmd;
+
+            return planToReturn;
         }
 
 
@@ -54,15 +51,14 @@ namespace Marten.Services
                 cmd.CommandText = cmd.CommandText.UseParameter(param);
             });
 
-            using (var reader = runner.ExecuteReader(cmd))
-            {
-                while (reader.Read())
-                {
-                    list.Add(reader.GetString(0));
-                }
+            using var reader = runner.ExecuteReader(cmd);
 
-                reader.Close();
+            while (reader.Read())
+            {
+                list.Add(reader.GetString(0));
             }
+
+            reader.Close();
 
             return list;
         }

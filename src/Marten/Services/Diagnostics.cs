@@ -51,10 +51,8 @@ namespace Marten.Services
         {
             var cmd = PreviewCommand(query);
 
-            using (var conn = _store.Tenancy.Default.OpenConnection())
-            {
-                return conn.ExplainQuery(cmd);
-            }
+            using var conn = _store.Tenancy.Default.OpenConnection();
+            return conn.ExplainQuery(_store.Serializer, cmd);
         }
 
         /// <summary>
@@ -66,10 +64,9 @@ namespace Marten.Services
             if (_postgreSqlVersion != null)
                 return _postgreSqlVersion;
 
-            using (var conn = _store.Tenancy.Default.OpenConnection())
-            {
-                _postgreSqlVersion = conn.Connection.PostgreSqlVersion;
-            }
+            using var conn = _store.Tenancy.Default.OpenConnection();
+
+            _postgreSqlVersion = conn.Connection.PostgreSqlVersion;
 
             return _postgreSqlVersion;
         }
