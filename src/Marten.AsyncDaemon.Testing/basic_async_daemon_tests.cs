@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
+using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -16,6 +17,25 @@ namespace Marten.AsyncDaemon.Testing
     {
         public basic_async_daemon_tests(ITestOutputHelper output) : base(output)
         {
+        }
+
+        [Fact]
+        public async Task start_and_stop_a_projection()
+        {
+            StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
+
+            using var daemon = await StartDaemon();
+            await daemon.StartAll();
+
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            await daemon.Tracker.WaitForHighWaterMark(NumberOfEvents);
+
+            await daemon.StopShard("Trip:All");
+
+            daemon.StatusFor("Trip:All")
+                .ShouldBe(AgentStatus.Stopped);
         }
 
         [Fact]

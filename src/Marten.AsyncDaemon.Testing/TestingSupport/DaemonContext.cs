@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.Dates;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -15,7 +17,7 @@ using Xunit.Abstractions;
 namespace Marten.AsyncDaemon.Testing.TestingSupport
 {
     [Collection("daemon")]
-    public abstract class DaemonContext : OneOffConfigurationsContext
+    public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
     {
         protected DaemonContext(ITestOutputHelper output) : base("daemon")
         {
@@ -25,13 +27,25 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         public ILogger<IProjection> Logger { get; }
 
-        protected async Task<ProjectionDaemon> StartNodeAgent()
+        protected async Task<ProjectionDaemon> StartDaemon()
         {
             var agent = new ProjectionDaemon(theStore, Logger);
 
             await agent.StartAll();
 
+            _agent = agent;
+
             return agent;
+        }
+
+        protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
+        {
+            if (timeout == default)
+            {
+                timeout = 30.Seconds();
+            }
+
+            return new ShardActionWatcher(_agent.Tracker,shardName, action, timeout).Task;
         }
 
         public int NumberOfStreams
@@ -50,6 +64,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
         private readonly List<TripStream> _streams = new List<TripStream>();
+        private ProjectionDaemon _agent;
 
         protected StreamAction[] ToStreamActions()
         {
@@ -186,6 +201,53 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
                 }
 
                 _completion.SetResult(true);
+            }
+        }
+    }
+
+    internal class ShardActionWatcher: IObserver<ShardState>
+    {
+        private readonly IDisposable _unsubscribe;
+        private readonly string _shardName;
+        private readonly ShardAction _expected;
+        private readonly TaskCompletionSource<ShardState> _completion;
+        private readonly CancellationTokenSource _timeout;
+
+        public ShardActionWatcher(ShardStateTracker tracker, string shardName, ShardAction expected, TimeSpan timeout)
+        {
+            _shardName = shardName;
+            _expected = expected;
+            _completion = new TaskCompletionSource<ShardState>();
+
+
+            _timeout = new CancellationTokenSource(timeout);
+            _timeout.Token.Register(() =>
+            {
+                _completion.TrySetException(new TimeoutException(
+                    $"Shard {_shardName} did receive the action {_expected} in the time allowed"));
+            });
+
+            _unsubscribe = tracker.Subscribe(this);
+        }
+
+        public Task<ShardState> Task => _completion.Task;
+
+        public void OnCompleted()
+        {
+
+        }
+
+        public void OnError(Exception error)
+        {
+            _completion.SetException(error);
+        }
+
+        public void OnNext(ShardState value)
+        {
+            if (value.ShardName.EqualsIgnoreCase(_shardName) && value.Action == _expected)
+            {
+                _completion.SetResult(value);
+                _unsubscribe.Dispose();
             }
         }
     }

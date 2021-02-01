@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -60,9 +59,18 @@ namespace Marten.Events.Daemon
 
         public IList<TenantActionGroup> Groups { get; } = new List<TenantActionGroup>();
         public EventRange Range { get; }
+        public void Reset()
+        {
+
+        }
 
         public void Dispose()
         {
+        }
+
+        public override string ToString()
+        {
+            return $"Tenant Group Range for: {Range}";
         }
     }
 

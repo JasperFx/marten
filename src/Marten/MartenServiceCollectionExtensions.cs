@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
 

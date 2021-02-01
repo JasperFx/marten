@@ -10,7 +10,7 @@ namespace Marten.AsyncDaemon.Testing
 {
     public class ShardStateTrackerTests : IDisposable
     {
-        private ShardStateTracker theTracker = new ShardStateTracker();
+        private ShardStateTracker theTracker = new ShardStateTracker(new NulloLogger());
 
         public void Dispose()
         {

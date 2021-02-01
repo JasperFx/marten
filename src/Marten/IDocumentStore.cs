@@ -201,7 +201,7 @@ namespace Marten
         /// Build a new instance of the asynchronous projection daemon to use interactively
         /// in your own code
         /// </summary>
-        /// <paramref name="Override the logger inside this instance of the async daemon"/>
+        /// <param name="logger">Override the logger inside this instance of the async daemon</param>
         /// <returns></returns>
         IProjectionDaemon BuildProjectionDaemon(ILogger logger = null);
 

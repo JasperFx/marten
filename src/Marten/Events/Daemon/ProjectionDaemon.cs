@@ -7,6 +7,7 @@ using Baseline;
 using Baseline.Dates;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 
@@ -28,10 +29,13 @@ namespace Marten.Events.Daemon
             _logger = logger;
             var detector = new HighWaterDetector(store.Tenancy.Default, store.Events);
 
-            Tracker = new ShardStateTracker();
+            Tracker = new ShardStateTracker(logger);
             _highWater = new HighWaterAgent(detector, Tracker, logger, store.Events.Daemon, _cancellation.Token);
 
+            Settings = store.Events.Daemon;
         }
+
+        public DaemonSettings Settings { get; }
 
         public ShardStateTracker Tracker { get; }
 
@@ -48,9 +52,8 @@ namespace Marten.Events.Daemon
             var shards = _store.Events.Projections.AllShards();
             foreach (var shard in shards)
             {
-                await StartShard(shard, _cancellation.Token);
+                await StartShard(shard, CancellationToken.None);
             }
-
         }
 
         public async Task StartShard(string shardName, CancellationToken token)
@@ -68,36 +71,60 @@ namespace Marten.Events.Daemon
         {
             if (!_hasStarted) StartNode();
 
-            // TODO -- log the start, or error if it fails
-            var agent = new ProjectionAgent(_store, shard, _logger, cancellationToken);
-            var position = await agent.Start(Tracker);
+            // Don't duplicate the shard
+            if (_agents.ContainsKey(shard.Name.Identity)) return;
 
-            Tracker.Publish(new ShardState(shard.Name, position){Action = ShardAction.Started});
+            await TryAction(null, async () =>
+            {
+                try
+                {
+                    var agent = new ProjectionAgent(_store, shard, _logger, cancellationToken);
+                    var position = await agent.Start(this);
 
-            _agents[shard.Name.Identity] = agent;
+                    Tracker.Publish(new ShardState(shard.Name, position){Action = ShardAction.Started});
 
-
+                    _agents[shard.Name.Identity] = agent;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error when trying to start projection shard '{ShardName}'", shard.Name.Identity);
+                    throw new ShardStartException(shard.Name, e);
+                }
+            }, cancellationToken);
         }
 
-        // TODO -- if all the shards are stopped, stop the high water agent
-        public async Task StopShard(string shardName)
+        public async Task StopShard(string shardName, Exception ex = null)
         {
             if (_agents.TryGetValue(shardName, out var agent))
             {
-                await agent.DisposeAsync();
-                _agents.Remove(shardName);
-
-                Tracker.Publish(new ShardState(shardName, agent.Position){Action = ShardAction.Stopped});
-
+                await TryAction(agent, async () =>
+                {
+                    try
+                    {
+                        await agent.Stop(ex);
+                        _agents.Remove(shardName);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error when trying to stop projection shard '{ShardName}'", shardName);
+                        throw new ShardStopException(agent.ShardName, e);
+                    }
+                }, _cancellation.Token);
             }
         }
 
         public async Task StopAll()
         {
-            // TODO -- stop the high water checking??
             foreach (var agent in _agents.Values)
             {
-                await agent.DisposeAsync();
+                try
+                {
+                    await agent.Stop();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error trying to stop shard '{ShardName}'", agent.ShardName.Identity);
+                }
             }
 
             _agents.Clear();
@@ -126,15 +153,14 @@ namespace Marten.Events.Daemon
         }
 
 
-
-        internal async Task RebuildProjection(ProjectionSource source, CancellationToken token)
+        private async Task RebuildProjection(ProjectionSource source, CancellationToken token)
         {
-            _logger.LogInformation($"Starting to rebuild Projection {source.ProjectionName}");
+            _logger.LogInformation("Starting to rebuild Projection {ProjectionName}", source.ProjectionName);
 
             var running = _agents.Values.Where(x => x.ShardName.ProjectionName == source.ProjectionName).ToArray();
             foreach (var agent in running)
             {
-                await agent.DisposeAsync();
+                await agent.Stop();
                 _agents.Remove(agent.ShardName.Identity);
             }
 
@@ -168,12 +194,10 @@ namespace Marten.Events.Daemon
             var waiters = shards.Select(async x =>
             {
                 await StartShard(x, token);
-
-                // TODO -- need to watch the CancellationToken here!!!!
                 return Tracker.WaitForShardState(x.Name, Tracker.HighWaterMark, 5.Minutes());
             });
 
-            await Task.WhenAll(waiters);
+            await waitForAllShardsToComplete(token, waiters);
 
             foreach (var shard in shards)
             {
@@ -181,5 +205,95 @@ namespace Marten.Events.Daemon
             }
         }
 
+        private static async Task waitForAllShardsToComplete(CancellationToken token, IEnumerable<Task<Task<ShardState>>> waiters)
+        {
+            var completion = Task.WhenAll(waiters);
+            var tcs = new TaskCompletionSource<bool>();
+            // ReSharper disable once MethodSupportsCancellation
+            token.Register(() => tcs.SetCanceled());
+
+            await Task.WhenAny(tcs.Task, completion);
+        }
+
+
+        internal async Task TryAction(ProjectionAgent projection, Func<Task> action, CancellationToken token, int attempts = 0, TimeSpan delay = default)
+        {
+            if (delay != default)
+            {
+                await Task.Delay(delay, token);
+            }
+
+            if (token.IsCancellationRequested) return;
+
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                if (token.IsCancellationRequested) return;
+
+                var continuation = Settings.DetermineContinuation(ex, attempts);
+                switch (continuation)
+                {
+                    case RetryLater r:
+                        await TryAction(projection, action, token, attempts + 1, r.Delay);
+                        break;
+                    case StopProjection:
+                        if (projection != null) await StopShard(projection.ShardName.Identity, ex);
+                        break;
+                    case StopAllProjections:
+                        var tasks = _agents.Keys.ToArray().Select(name =>
+                        {
+                            return Task.Run(async () =>
+                            {
+                                await StopShard(name, ex);
+                            }, _cancellation.Token);
+                        });
+
+                        await Task.WhenAll(tasks);
+
+                        Tracker.Publish(new ShardState(ShardName.All, Tracker.HighWaterMark){Action = ShardAction.Stopped, Exception = ex});
+                        break;
+                    case PauseProjection pause:
+                        if (projection != null)
+                        {
+                            await projection.Pause(pause.Delay);
+                        }
+                        break;
+                    case PauseAllProjections pauseAll:
+                        var tasks2 = _agents.Values.ToArray().Select(agent =>
+                        {
+                            return Task.Run(async () =>
+                            {
+                                await agent.Pause(pauseAll.Delay);
+                            }, _cancellation.Token);
+                        });
+
+                        await Task.WhenAll(tasks2);
+                        break;
+
+                    case DoNothing:
+                        // Don't do anything.
+                        break;
+                }
+            }
+        }
+
+        public AgentStatus StatusFor(string shardName)
+        {
+            return _agents.TryGetValue(shardName, out var agent)
+                ? agent.Status
+                : AgentStatus.Stopped;
+        }
+
+        public Task WaitForShardToStop(string shardName, TimeSpan? timeout = null)
+        {
+            if (StatusFor(shardName) == AgentStatus.Stopped) return Task.CompletedTask;
+
+            bool IsStopped(ShardState s) => s.ShardName.EqualsIgnoreCase(shardName) && s.Action == ShardAction.Stopped;
+
+            return Tracker.WaitForShardCondition(IsStopped, $"{shardName} is Stopped", timeout);
+        }
     }
 }

@@ -12,8 +12,8 @@ namespace Marten.Events.CodeGeneration
     {
         private readonly Type _returnType;
         private Variable _event;
-        private Setter _setter;
-        private ConstructorInfo? _constructor;
+        private readonly Setter _setter;
+        private readonly ConstructorInfo _constructor;
 
         public DefaultAggregateConstruction(Type returnType, GeneratedType generatedType)
         {

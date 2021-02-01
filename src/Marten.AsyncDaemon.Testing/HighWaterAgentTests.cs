@@ -24,7 +24,7 @@ namespace Marten.AsyncDaemon.Testing
 
             await PublishSingleThreaded();
 
-            using var agent = await StartNodeAgent();
+            using var agent = await StartDaemon();
 
             await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 
@@ -42,7 +42,7 @@ namespace Marten.AsyncDaemon.Testing
 
 
 
-            using var agent = await StartNodeAgent();
+            using var agent = await StartDaemon();
 
             await PublishSingleThreaded();
 

@@ -33,12 +33,16 @@ namespace Marten.Events.Aggregation
 
             _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice =>
             {
+                if (token.IsCancellationRequested) return null;
+
                 try
                 {
                     return runtime.DetermineOperation(_session, slice, token);
                 }
                 catch (Exception e)
                 {
+                    // TODO -- throw a specific error so you can capture the event information
+                    // to detect poison pill messages
                     Debug.WriteLine(e);
                     throw;
                 }
@@ -47,13 +51,19 @@ namespace Marten.Events.Aggregation
                 CancellationToken = token
             });
 
-            _builder.LinkTo(queue);
+            _builder.LinkTo(queue, x => x != null);
 
             _application = Task.Factory.StartNew(async () =>
             {
                 var beingFetched = new List<EventSlice<TDoc, TId>>();
                 foreach (var slice in Slices)
                 {
+                    if (token.IsCancellationRequested)
+                    {
+                        _builder.Complete();
+                        break;
+                    }
+
                     if (runtime.Projection.MatchesAnyDeleteType(slice))
                     {
                         var deletion = runtime.Storage.DeleteForId(slice.Id, Tenant);
@@ -69,9 +79,13 @@ namespace Marten.Events.Aggregation
                     }
                 }
 
+                if (token.IsCancellationRequested) return;
+
                 var ids = beingFetched.Select(x => x.Id).ToArray();
                 var aggregates = await runtime.Storage
                     .LoadManyAsync(ids, _session, token);
+
+                if (token.IsCancellationRequested) return;
 
                 var dict = aggregates.ToDictionary(x => runtime.Storage.Identity(x));
 
@@ -105,6 +119,13 @@ namespace Marten.Events.Aggregation
             {
                 slice.ApplyFanOutRules(rules);
             }
+        }
+
+        public void Reset()
+        {
+            _session?.Dispose();
+            _builder?.Complete();
+            _builder = null;
         }
     }
 }

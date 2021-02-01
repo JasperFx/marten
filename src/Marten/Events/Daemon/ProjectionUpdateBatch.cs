@@ -19,15 +19,17 @@ namespace Marten.Events.Daemon
     {
         public EventRange Range { get; }
         private readonly DocumentSessionBase _session;
+        private readonly CancellationToken _token;
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
 
-        internal ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range)
+        internal ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range, CancellationToken token)
         {
             Range = range;
             _session = session;
+            _token = token;
             Queue = new ActionBlock<IStorageOperation>(processOperation,
-                new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 1, EnsureOrdered = true});
+                new ExecutionDataflowBlockOptions {MaxDegreeOfParallelism = 1, EnsureOrdered = true, CancellationToken = token});
 
             startNewPage(session);
 
@@ -45,6 +47,8 @@ namespace Marten.Events.Daemon
 
         private void processOperation(IStorageOperation operation)
         {
+            if (_token.IsCancellationRequested) return;
+
             _current.Append(operation);
 
             if (_current.Count >= _session.Options.UpdateBatchSize)
@@ -55,6 +59,8 @@ namespace Marten.Events.Daemon
 
         void IUpdateBatch.ApplyChanges(IMartenSession session)
         {
+            if (_token.IsCancellationRequested) return;
+
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
             {
@@ -70,6 +76,8 @@ namespace Marten.Events.Daemon
 
         async Task IUpdateBatch.ApplyChangesAsync(IMartenSession session, CancellationToken token)
         {
+            if (_token.IsCancellationRequested) return;
+
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
             {
@@ -234,6 +242,7 @@ namespace Marten.Events.Daemon
         }
 
         List<StreamAction> ISessionWorkTracker.Streams => throw new NotSupportedException();
+
 
         IReadOnlyList<IStorageOperation> ISessionWorkTracker.AllOperations => throw new NotSupportedException();
 

@@ -43,7 +43,7 @@ namespace Marten.AsyncDaemon.Testing
 
             NumberOfStreams = 10;
 
-            var agent = await StartNodeAgent();
+            var agent = await StartDaemon();
 
             var waiter = agent.Tracker.WaitForShardState("Distance:All", NumberOfEvents, 15.Seconds());
 
@@ -62,7 +62,7 @@ namespace Marten.AsyncDaemon.Testing
 
             NumberOfStreams = 10;
 
-            var agent = await StartNodeAgent();
+            var agent = await StartDaemon();
 
             await PublishSingleThreaded();
 

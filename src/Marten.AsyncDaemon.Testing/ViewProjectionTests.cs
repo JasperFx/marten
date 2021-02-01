@@ -70,7 +70,7 @@ namespace Marten.AsyncDaemon.Testing
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Day));
 
-            using var agent = await StartNodeAgent();
+            using var agent = await StartDaemon();
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();

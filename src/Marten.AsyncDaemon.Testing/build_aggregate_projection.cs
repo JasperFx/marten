@@ -45,7 +45,7 @@ namespace Marten.AsyncDaemon.Testing
 
             StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async), true);
 
-            var agent = await StartNodeAgent();
+            var agent = await StartDaemon();
 
             await PublishSingleThreaded();
 
@@ -69,7 +69,7 @@ namespace Marten.AsyncDaemon.Testing
 
             StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async), true);
 
-            var agent = await StartNodeAgent();
+            var agent = await StartDaemon();
 
             await PublishSingleThreaded();
 

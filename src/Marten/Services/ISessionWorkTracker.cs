@@ -10,7 +10,7 @@ namespace Marten.Services
         void Reset();
         void Add(IStorageOperation operation);
         void Sort(StoreOptions options);
-        List<StreamAction> Streams { get; }
+        new List<StreamAction> Streams { get; }
         IReadOnlyList<IStorageOperation> AllOperations { get; }
         void Eject<T>(T document);
         bool TryFindStream(string streamKey, out StreamAction stream);

@@ -1,29 +1,20 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Marten.Events.Daemon;
-using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
-using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation
 {
-
-    internal class AggregationShard<TDoc, TId> : AsyncProjectionShardBase<TenantSliceRange<TDoc, TId>>
+    internal class AggregationShard<TDoc, TId>: AsyncProjectionShardBase<TenantSliceRange<TDoc, TId>>
     {
         private readonly AggregationRuntime<TDoc, TId> _runtime;
         private readonly ITenancy _tenancy;
-        private TransformBlock<EventRange, TenantSliceRange<TDoc, TId>> _slicing;
-        private ActionBlock<TenantSliceRange<TDoc, TId>> _building;
-        private IProjectionUpdater _updater;
-        private ILogger<IProjection> _logger;
-        private CancellationToken _token;
 
         public AggregationShard(ShardName identifier, ISqlFragment[] eventFilters,
-            AggregationRuntime<TDoc, TId> runtime, DocumentStore store, AsyncOptions options) : base(identifier, eventFilters, store, options)
+            AggregationRuntime<TDoc, TId> runtime, DocumentStore store, AsyncOptions options): base(identifier,
+            eventFilters, store, options)
         {
             _runtime = runtime;
             _tenancy = store.Tenancy;
@@ -34,9 +25,10 @@ namespace Marten.Events.Aggregation
             Store.Tenancy.Default.EnsureStorageExists(typeof(TDoc));
         }
 
-        protected override Task configureUpdateBatch(ProjectionUpdateBatch batch, TenantSliceRange<TDoc, TId> sliceGroup, CancellationToken token)
+        protected override Task configureUpdateBatch(ProjectionUpdateBatch batch,
+            TenantSliceRange<TDoc, TId> sliceGroup, CancellationToken token)
         {
-            return _runtime.Configure(batch.Queue, sliceGroup.Groups, _token);
+            return _runtime.Configure(batch.Queue, sliceGroup.Groups, token);
         }
 
         protected override TenantSliceRange<TDoc, TId> applyGrouping(EventRange range)
@@ -54,20 +46,23 @@ namespace Marten.Events.Aggregation
             Groups = groups;
         }
 
-        public EventRange Range { get; }
         public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Groups { get; }
 
-        public override string ToString()
+        public EventRange Range { get; }
+
+        public void Reset()
         {
-            return $"Aggregate for {Range}, {Groups.Count} slices";
+            foreach (var group in Groups) group.Reset();
         }
 
         public void Dispose()
         {
-            foreach (var @group in Groups)
-            {
-                @group.Dispose();
-            }
+            foreach (var group in Groups) group.Dispose();
+        }
+
+        public override string ToString()
+        {
+            return $"Aggregate for {Range}, {Groups.Count} slices";
         }
     }
 }

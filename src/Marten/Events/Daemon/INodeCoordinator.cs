@@ -37,7 +37,6 @@ namespace Marten.Events.Daemon
     }
 
 
-    // This will be used by a single
     public interface IProjectionDaemon : IDisposable
     {
         Task RebuildProjection(string projectionName, CancellationToken token);
@@ -47,7 +46,7 @@ namespace Marten.Events.Daemon
 
         Task StartShard(string shardName, CancellationToken token);
         Task StartShard(IAsyncProjectionShard shard, CancellationToken token);
-        Task StopShard(string shardName);
+        Task StopShard(string shardName, Exception ex = null);
 
         Task StartAll();
         Task StopAll();

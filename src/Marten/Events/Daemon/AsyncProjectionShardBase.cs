@@ -2,17 +2,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    internal interface IEventRangeGroup: IDisposable
-    {
-        EventRange Range { get; }
-    }
-
     internal abstract class AsyncProjectionShardBase<T> : IAsyncProjectionShard where T : class, IEventRangeGroup
     {
         private IProjectionUpdater _updater;
@@ -69,62 +63,102 @@ namespace Marten.Events.Daemon
         {
             if (_token.IsCancellationRequested) return;
 
-            if (_logger.IsEnabled(LogLevel.Debug))
+            await _updater.TryAction(async () =>
             {
-                _logger.LogDebug("Shard '{ShardName}': Starting to build an update batch for {group}", Name, group);
-            }
+                try
+                {
+                    group.Reset();
 
-            var batch = _updater.StartNewBatch(group.Range);
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}': Starting to build an update batch for {Group}", Name, group);
+                    }
 
-            await configureUpdateBatch(batch, group, _token);
+                    if (_token.IsCancellationRequested) return;
 
-            batch.Queue.Complete();
-            await batch.Queue.Completion;
+                    var batch = _updater.StartNewBatch(@group.Range, _token);
 
-            await _updater.ExecuteBatch(batch);
+                    await configureUpdateBatch(batch, group, _token);
 
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("Shard 'ShardName}': Configured batch {group}", Name, group);
-            }
+                    if (_token.IsCancellationRequested) return;
 
-            group.Dispose();
+                    batch.Queue.Complete();
+                    await batch.Queue.Completion;
+
+                    if (_token.IsCancellationRequested) return;
+
+                    await _updater.ExecuteBatch(batch);
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, group);
+                    }
+
+                    group.Dispose();
+                }
+                catch (Exception e)
+                {
+                    if (!_token.IsCancellationRequested)
+                    {
+                        _logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
+                        throw;
+                    }
+                }
+            }, _token);
         }
 
         protected abstract Task configureUpdateBatch(ProjectionUpdateBatch batch, T group, CancellationToken token);
 
-        private T groupEventRange(EventRange range)
+        private async Task<T> groupEventRange(EventRange range)
         {
             if (_token.IsCancellationRequested) return null;
 
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("Shard '{ShardName}': Starting to slice {range}", Name, range);
-            }
+            T group = null;
 
-            var group = applyGrouping(range);
-            if (_logger.IsEnabled(LogLevel.Debug))
+            await _updater.TryAction(() =>
             {
-                _logger.LogDebug("Shard '{ShardName}': successfully sliced {range}", Name, range);
-            }
+                try
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}':Starting to slice {Range}", Name, range);
+                    }
+
+                    group = applyGrouping(range);
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}': successfully slice {Range}", Name, range);
+                    }
+
+                    return Task.CompletedTask;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
+                    throw;
+                }
+            }, _token);
+
+
 
             return group;
         }
 
         protected abstract T applyGrouping(EventRange range);
 
-        public async Task Stop()
+        public Task Stop()
         {
-            if (_slicing == null) return;
+            if (_slicing == null) return Task.CompletedTask;
 
             _slicing.Complete();
             _building.Complete();
 
-            await _slicing.Completion;
-            await _building.Completion;
-
-
             _logger?.LogInformation("Shard '{ShardName}': Stopped", Name.Identity);
+
+            _slicing = null;
+            _building = null;
+
+            return Task.CompletedTask;
         }
     }
 }

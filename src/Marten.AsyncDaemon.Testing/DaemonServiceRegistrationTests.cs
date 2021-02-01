@@ -1,6 +1,7 @@
 using System.Linq;
 using Lamar;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
