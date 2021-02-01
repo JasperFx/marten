@@ -13,7 +13,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    public class ProjectionDaemon : IProjectionDaemon
+    /// <summary>
+    /// The main class for running asynchronous projections
+    /// </summary>
+    internal class ProjectionDaemon : IProjectionDaemon
     {
         private readonly DocumentStore _store;
         private readonly ILogger _logger;
@@ -134,7 +137,7 @@ namespace Marten.Events.Daemon
 
         public void Dispose()
         {
-            Tracker?.Dispose();
+            Tracker?.As<IDisposable>().Dispose();
             _cancellation?.Dispose();
             _highWater?.Dispose();
         }

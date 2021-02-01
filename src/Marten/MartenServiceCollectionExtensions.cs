@@ -59,10 +59,6 @@ namespace Marten
                     services.AddHostedService<AsyncProjectionHostedService>();
                     break;
 
-                case DaemonMode.Distributed:
-                    services.AddSingleton<INodeCoordinator, DistributedCoordinator>();
-                    services.AddHostedService<AsyncProjectionHostedService>();
-                    break;
             }
 
             return new MartenConfigurationExpression(services, options);

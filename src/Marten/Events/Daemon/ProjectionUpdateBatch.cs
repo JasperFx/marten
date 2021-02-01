@@ -14,7 +14,9 @@ using Npgsql;
 
 namespace Marten.Events.Daemon
 {
-
+    /// <summary>
+    /// Incrementally built batch command for projection updates
+    /// </summary>
     public class ProjectionUpdateBatch : IUpdateBatch, IDisposable, ISessionWorkTracker
     {
         public EventRange Range { get; }

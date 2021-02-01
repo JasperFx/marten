@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Helps control the "pull-based" event loading in an individual projection shard
+    /// </summary>
     internal class ProjectionController
     {
         private readonly ShardName _shardName;

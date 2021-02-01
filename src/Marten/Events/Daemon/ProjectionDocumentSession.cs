@@ -5,6 +5,10 @@ using Marten.Storage;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Lightweight session specifically used to capture operations for a specific tenant
+    /// in the asynchronous projections
+    /// </summary>
     internal class ProjectionDocumentSession: DocumentSessionBase
     {
         public ProjectionDocumentSession(DocumentStore store, ITenant tenant, ISessionWorkTracker workTracker): base(

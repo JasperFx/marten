@@ -6,6 +6,9 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// WHERE clause filter to limit event fetching to only the event types specified
+    /// </summary>
     internal class EventTypeFilter: ISqlFragment
     {
         private readonly string[] _typeNames;

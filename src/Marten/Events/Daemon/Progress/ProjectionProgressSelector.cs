@@ -5,7 +5,7 @@ using Marten.Linq.Selectors;
 
 namespace Marten.Events.Daemon.Progress
 {
-    public class ProjectionProgressSelector : ISelector<ProjectionProgress>
+    internal class ProjectionProgressSelector : ISelector<ProjectionProgress>
     {
         public ProjectionProgress Resolve(DbDataReader reader)
         {

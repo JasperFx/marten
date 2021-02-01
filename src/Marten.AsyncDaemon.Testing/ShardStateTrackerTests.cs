@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Events.Daemon;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -14,7 +15,7 @@ namespace Marten.AsyncDaemon.Testing
 
         public void Dispose()
         {
-            theTracker.Dispose();
+            theTracker.As<IDisposable>().Dispose();
         }
 
         [Fact]

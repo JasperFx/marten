@@ -6,6 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Registered automatically by Marten if the async projection daemon is enabled
+    /// to start and stop asynchronous projections on application start and shutdown
+    /// </summary>
     public class AsyncProjectionHostedService : IHostedService
     {
         private readonly IProjectionDaemon _agent;

@@ -7,6 +7,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Observable for progress and action updates for all running asynchronous projection shards
+    /// </summary>
     public class ShardStateTracker: IObservable<ShardState>, IDisposable
     {
         private readonly ILogger _logger;
@@ -23,6 +26,12 @@ namespace Marten.Events.Daemon
             });
         }
 
+        /// <summary>
+        /// Register a new observer of projection shard events. The return disposable
+        /// can be used to unsubscribe the observer from the tracker
+        /// </summary>
+        /// <param name="observer"></param>
+        /// <returns></returns>
         public IDisposable Subscribe(IObserver<ShardState> observer)
         {
             if (!_listeners.Contains(observer)) _listeners = _listeners.Add(observer);
@@ -40,6 +49,10 @@ namespace Marten.Events.Daemon
             _block.Post(state);
         }
 
+        /// <summary>
+        /// Currently known "high water mark" denoting the highest complete sequence
+        /// of the event storage
+        /// </summary>
         public long HighWaterMark { get; private set; }
 
         internal void MarkHighWater(long sequence)
@@ -47,6 +60,12 @@ namespace Marten.Events.Daemon
             Publish(new ShardState(ShardState.HighWaterMark, sequence));
         }
 
+        /// <summary>
+        /// Use to "wait" for an expected projection shard state
+        /// </summary>
+        /// <param name="expected"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public Task<ShardState> WaitForShardState(ShardState expected, TimeSpan? timeout = null)
         {
             timeout ??= 1.Minutes();
@@ -54,16 +73,37 @@ namespace Marten.Events.Daemon
             return listener.Task;
         }
 
+        /// <summary>
+        /// Use to "wait" for an expected projection shard state
+        /// </summary>
+        /// <param name="shardName"></param>
+        /// <param name="sequence"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public Task<ShardState> WaitForShardState(string shardName, long sequence, TimeSpan? timeout = null)
         {
             return WaitForShardState(new ShardState(shardName, sequence), timeout);
         }
 
+        /// <summary>
+        /// Use to "wait" for an expected projection shard state
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="sequence"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public Task<ShardState> WaitForShardState(ShardName name, long sequence, TimeSpan? timeout = null)
         {
             return WaitForShardState(new ShardState(name.Identity, sequence), timeout);
         }
 
+        /// <summary>
+        /// Use to "wait" for an expected projection shard condition
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="description"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public Task<ShardState> WaitForShardCondition(Func<ShardState, bool> condition, string description,
             TimeSpan? timeout = null)
         {
@@ -72,6 +112,12 @@ namespace Marten.Events.Daemon
             return listener.Task;
         }
 
+        /// <summary>
+        /// Wait for the high water mark to attain the given sequence number
+        /// </summary>
+        /// <param name="sequence"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
         public Task<ShardState> WaitForHighWaterMark(long sequence, TimeSpan? timeout = null)
         {
             return HighWaterMark >= sequence
@@ -79,13 +125,13 @@ namespace Marten.Events.Daemon
                 : WaitForShardState(ShardState.HighWaterMark, sequence, timeout);
         }
 
-        public Task Complete()
+        internal Task Complete()
         {
             _block.Complete();
             return _block.Completion;
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
             _block.Complete();
         }
@@ -111,7 +157,7 @@ namespace Marten.Events.Daemon
             }
         }
 
-        public void Finish()
+        internal void Finish()
         {
             foreach (var observer in _listeners)
                 try

@@ -3,16 +3,23 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Daemon
 {
-    public class SoloCoordinator: INodeCoordinator
+    /// <summary>
+    /// Default projection coordinator, assumes that there is only one
+    /// single node
+    /// </summary>
+    internal class SoloCoordinator: INodeCoordinator
     {
+        private IProjectionDaemon _agent;
+
         public Task Start(IProjectionDaemon agent, CancellationToken token)
         {
+            _agent = agent;
             return agent.StartAll();
         }
 
         public Task Stop()
         {
-            return Task.CompletedTask;
+            return _agent.StopAll();
         }
     }
 }

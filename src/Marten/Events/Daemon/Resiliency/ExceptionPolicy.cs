@@ -60,21 +60,37 @@ namespace Marten.Events.Daemon.Resiliency
             return _filters.All(x => x(ex));
         }
 
+        /// <summary>
+        /// Pause the execution of the current projection shard
+        /// for the defined amount of time before attempting to restart
+        /// </summary>
+        /// <param name="timeSpan"></param>
         public void Pause(TimeSpan timeSpan)
         {
             Continuations.Add(new PauseProjection(timeSpan));
         }
 
+        /// <summary>
+        /// Pause all running projection shards for the defined amount
+        /// of time before attempting to restart
+        /// </summary>
+        /// <param name="timeSpan"></param>
         public void PauseAll(TimeSpan timeSpan)
         {
             Continuations.Add(new PauseAllProjections(timeSpan));
         }
 
+        /// <summary>
+        /// Stop the running projection shard
+        /// </summary>
         public void Stop()
         {
             Continuations.Add(new StopProjection());
         }
 
+        /// <summary>
+        /// Stop all running projections shards
+        /// </summary>
         public void StopAll()
         {
             Continuations.Add(new StopAllProjections());
@@ -88,6 +104,9 @@ namespace Marten.Events.Daemon.Resiliency
 
         ICoreHandlerDefinition IThenExpression.Then => this;
 
+        /// <summary>
+        /// Ignore the exception and do nothing
+        /// </summary>
         public void DoNothing()
         {
             Continuations.Add(new DoNothing());
@@ -96,22 +115,54 @@ namespace Marten.Events.Daemon.Resiliency
 
     public interface ICoreHandlerDefinition
     {
+        /// <summary>
+        /// Pause the execution of the current projection shard
+        /// for the defined amount of time before attempting to restart
+        /// </summary>
+        /// <param name="timeSpan"></param>
         void Pause(TimeSpan timeSpan);
+
+        /// <summary>
+        /// Pause all running projection shards for the defined amount
+        /// of time before attempting to restart
+        /// </summary>
+        /// <param name="timeSpan"></param>
         void PauseAll(TimeSpan timeSpan);
+
+        /// <summary>
+        /// Stop the running projection shard
+        /// </summary>
         void Stop();
+
+        /// <summary>
+        /// Stop all running projections shards
+        /// </summary>
         void StopAll();
 
+        /// <summary>
+        /// Ignore the exception and do nothing
+        /// </summary>
         void DoNothing();
     }
 
     public interface IThenExpression
     {
+        /// <summary>
+        /// Define the next operation after retrying
+        /// a set number of times
+        /// </summary>
         ICoreHandlerDefinition Then { get; }
 
     }
 
     public interface IHandlerDefinition : ICoreHandlerDefinition
     {
+        /// <summary>
+        /// Set a limited number of retry attempts for matching exceptions.
+        /// Can be used to specify an exponential backoff strategy
+        /// </summary>
+        /// <param name="timeSpans"></param>
+        /// <returns></returns>
         IThenExpression RetryLater(params TimeSpan[] timeSpans);
     }
 }

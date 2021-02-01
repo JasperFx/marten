@@ -4,6 +4,10 @@ using Marten.Internal.Operations;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Used to specify then track a range of events by sequence number
+    /// within the asynchronous projections
+    /// </summary>
     public class EventRange
     {
         public EventRange(ShardName shardName, long floor, long ceiling)
@@ -48,14 +52,34 @@ namespace Marten.Events.Daemon
             return $"Event range of '{ShardName}', {SequenceFloor} to {SequenceCeiling}";
         }
 
+        /// <summary>
+        /// Identifies the projection shard consuming this event range
+        /// </summary>
         public ShardName ShardName { get; }
+
+        /// <summary>
+        /// The non-inclusive lower bound of the event sequence numbers
+        /// in this range
+        /// </summary>
         public long SequenceFloor { get; }
+
+        /// <summary>
+        /// The inclusive upper bound of the event sequence numbers in this range
+        /// </summary>
         public long SequenceCeiling { get; }
 
+        /// <summary>
+        /// The actual events fetched for this range and the base filters of the projection
+        /// shard
+        /// </summary>
         public IReadOnlyList<IEvent> Events { get; set; }
+
+        /// <summary>
+        /// The actual number of events in this range
+        /// </summary>
         public int Size => Events?.Count ?? (int)(SequenceCeiling - SequenceFloor);
 
-        public IStorageOperation BuildProgressionOperation(EventGraph events)
+        internal IStorageOperation BuildProgressionOperation(EventGraph events)
         {
             if (SequenceFloor == 0) return new InsertProjectionProgress(events, this);
 

@@ -77,24 +77,5 @@ namespace Marten.AsyncDaemon.Testing
                 .ImplementationType.ShouldBe(typeof(HotColdCoordinator));
         }
 
-        [Fact]
-        public void when_registering_as_Distributed()
-        {
-            var container = new Container(x =>
-            {
-                x.AddMarten(opts =>
-                {
-                    opts.Events.Daemon.Mode = DaemonMode.Distributed;
-                });
-            });
-
-            // No hosted service
-            container.Model.For<IHostedService>().Instances
-                .ShouldContain(x => x.ImplementationType == typeof(AsyncProjectionHostedService));
-
-            // No Node coordinator
-            container.Model.For<INodeCoordinator>().Instances.Single()
-                .ImplementationType.ShouldBe(typeof(DistributedCoordinator));
-        }
     }
 }

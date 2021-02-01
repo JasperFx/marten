@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Used mostly by tests to listen for expected shard events or progress
+    /// </summary>
     internal class ShardStatusWatcher: IObserver<ShardState>
     {
         private readonly IDisposable _unsubscribe;

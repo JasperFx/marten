@@ -2,6 +2,9 @@ using System;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Point in time state of a single projection shard or the high water mark
+    /// </summary>
     public class ShardState
     {
         public const string HighWaterMark = "HighWaterMark";
@@ -32,10 +35,24 @@ namespace Marten.Events.Daemon
 
         public ShardAction Action { get; set; } = ShardAction.Updated;
 
+        /// <summary>
+        /// Time this state was recorded
+        /// </summary>
         public DateTimeOffset Timestamp { get; }
 
+        /// <summary>
+        /// Name of the projection shard
+        /// </summary>
         public string ShardName { get; }
+
+        /// <summary>
+        /// Furthest event sequence number processed by this projection shard
+        /// </summary>
         public long Sequence { get; }
+
+        /// <summary>
+        /// If not null, this is the exception that caused this state to be published
+        /// </summary>
         public Exception Exception { get; set; }
 
         public override string ToString()

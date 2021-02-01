@@ -5,7 +5,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Daemon.Progress
 {
-    public class ProjectionProgressStatement: Statement
+    internal class ProjectionProgressStatement: Statement
     {
         private readonly EventGraph _events;
 

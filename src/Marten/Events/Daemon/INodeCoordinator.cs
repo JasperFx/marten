@@ -4,53 +4,28 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Swappable coordinator for the async daemon that is
+    /// responsible for starting projection shards and assigning
+    /// work to the locally running IProjectionDaemon
+    /// </summary>
     public interface INodeCoordinator
     {
+        /// <summary>
+        /// Called at the start of the application to register the projection
+        /// daemon with the coordinator
+        /// </summary>
+        /// <param name="daemon"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
         Task Start(IProjectionDaemon daemon, CancellationToken token);
+
+        /// <summary>
+        /// Called at application shutdown as a hook to perform
+        /// any work necessary to take the current node down
+        /// </summary>
+        /// <returns></returns>
         Task Stop();
     }
 
-    public class HotColdCoordinator: INodeCoordinator
-    {
-        public Task Start(IProjectionDaemon daemon, CancellationToken token)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task Stop()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class DistributedCoordinator: INodeCoordinator
-    {
-        public Task Start(IProjectionDaemon daemon, CancellationToken token)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task Stop()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
-    public interface IProjectionDaemon : IDisposable
-    {
-        Task RebuildProjection(string projectionName, CancellationToken token);
-
-        // TODO -- option to rebuild by projection type? view type?
-
-
-        Task StartShard(string shardName, CancellationToken token);
-        Task StartShard(IAsyncProjectionShard shard, CancellationToken token);
-        Task StopShard(string shardName, Exception ex = null);
-
-        Task StartAll();
-        Task StopAll();
-
-        ShardStateTracker Tracker { get; }
-    }
 }

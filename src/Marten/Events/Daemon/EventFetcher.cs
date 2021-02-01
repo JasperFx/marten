@@ -9,6 +9,9 @@ using Marten.Linq.SqlGeneration;
 
 namespace Marten.Events.Daemon
 {
+    /// <summary>
+    /// Fetches ranges of event objects. Used within the asynchronous projections
+    /// </summary>
     internal class EventFetcher : IDisposable
     {
         private readonly IDocumentStore _store;
