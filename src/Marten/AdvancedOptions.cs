@@ -1,7 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
+using Marten.Events;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Progress;
 using Marten.Internal;
+using Marten.Internal.Sessions;
+using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten
 {
@@ -45,6 +54,94 @@ namespace Marten
         public IDocumentCleaner Clean => _store.Tenancy.Cleaner;
 
         public ISerializer Serializer => _store.Serializer;
+
+        /// <summary>
+        /// Fetch the current size of the event store tables, including the current value
+        /// of the event sequence number
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<EventStoreStatistics> FetchEventStoreStatistics(CancellationToken token = default)
+        {
+            var sql = $@"
+select count(*) from {_store.Events.DatabaseSchemaName}.mt_events;
+select count(*) from {_store.Events.DatabaseSchemaName}.mt_streams;
+select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
+";
+
+            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var statistics = new EventStoreStatistics();
+
+            await using var conn = _store.Tenancy.Default.CreateConnection();
+            await conn.OpenAsync(token);
+
+            await using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token);
+
+            if (await reader.ReadAsync(token))
+            {
+                statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token);
+            }
+
+            await reader.NextResultAsync(token);
+
+            if (await reader.ReadAsync(token))
+            {
+                statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token);
+            }
+
+            await reader.NextResultAsync(token);
+
+            if (await reader.ReadAsync(token))
+            {
+                statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token);
+            }
+
+            return statistics;
+        }
+
+        /// <summary>
+        /// Check the current progress of all asynchronous projections
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<IReadOnlyList<ProjectionProgress>> AllProjectionProgress(CancellationToken token = default(CancellationToken))
+        {
+            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var handler = (IQueryHandler<IReadOnlyList<ProjectionProgress>>)new ListQueryHandler<ProjectionProgress>(new ProjectionProgressStatement(_store.Events),
+                new ProjectionProgressSelector());
+
+            using (var session = (QuerySession)_store.QuerySession())
+            {
+                return await session.ExecuteHandlerAsync(handler, token);
+            }
+        }
+
+        /// <summary>
+        /// Check the current progress of a single projection or projection shard
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default(CancellationToken))
+        {
+            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+
+            var statement = new ProjectionProgressStatement(_store.Events)
+            {
+                Name = name
+            };
+
+            var handler = new OneResultHandler<ProjectionProgress>(statement,
+                new ProjectionProgressSelector(), true, false);
+
+            await using var session = (QuerySession)_store.QuerySession();
+
+            var progress = await session.ExecuteHandlerAsync(handler, token);
+
+            return progress?.LastSequenceId ?? 0;
+        }
+
 
 
         /// <summary>

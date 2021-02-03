@@ -118,7 +118,7 @@ namespace Marten.Events.Daemon
             _hopper = _projectionShard.Start(this, _logger, _cancellation);
             _loader.LinkTo(_hopper, e => e.Events.Any());
 
-            var lastCommitted = await _store.Events.ProjectionProgressFor(_projectionShard.Name, _cancellation);
+            var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation);
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
 

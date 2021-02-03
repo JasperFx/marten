@@ -17,7 +17,7 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task fetch_from_empty_store()
         {
-            var statistics = await theStore.Events.FetchStatistics();
+            var statistics = await theStore.Advanced.FetchEventStoreStatistics();
 
             statistics.EventCount.ShouldBe(0);
             statistics.StreamCount.ShouldBe(0);
@@ -35,7 +35,7 @@ namespace Marten.Testing.Events
 
             await theSession.SaveChangesAsync();
 
-            var statistics = await theStore.Events.FetchStatistics();
+            var statistics = await theStore.Advanced.FetchEventStoreStatistics();
 
             statistics.EventCount.ShouldBe(18);
             statistics.StreamCount.ShouldBe(5);

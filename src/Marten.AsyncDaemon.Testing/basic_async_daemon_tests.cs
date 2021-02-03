@@ -93,7 +93,7 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
 
-            var statistics = await theStore.Events.FetchStatistics();
+            var statistics = await theStore.Advanced.FetchEventStoreStatistics();
 
             statistics.EventCount.ShouldBe(NumberOfEvents);
             statistics.StreamCount.ShouldBe(NumberOfStreams);
@@ -107,7 +107,7 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 100;
             await PublishMultiThreaded(10);
 
-            var statistics = await theStore.Events.FetchStatistics();
+            var statistics = await theStore.Advanced.FetchEventStoreStatistics();
 
             statistics.EventCount.ShouldBe(NumberOfEvents);
             statistics.StreamCount.ShouldBe(NumberOfStreams);

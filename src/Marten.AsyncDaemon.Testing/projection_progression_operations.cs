@@ -33,10 +33,10 @@ namespace Marten.AsyncDaemon.Testing
 
             await theSession.SaveChangesAsync();
 
-            var progress1 = await theStore.Events.ProjectionProgressFor(new ShardName("one"));
+            var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("one"));
             progress1.ShouldBe(12);
 
-            var progress2 = await theStore.Events.ProjectionProgressFor(new ShardName("two"));
+            var progress2 = await theStore.Advanced.ProjectionProgressFor(new ShardName("two"));
             progress2.ShouldBe(25);
         }
 
@@ -55,7 +55,7 @@ namespace Marten.AsyncDaemon.Testing
             theSession.QueueOperation(updateProjectionProgress);
             await theSession.SaveChangesAsync();
 
-            var progress = await theStore.Events.ProjectionProgressFor(new ShardName("three"));
+            var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));
             progress.ShouldBe(50);
         }
 
@@ -79,7 +79,7 @@ namespace Marten.AsyncDaemon.Testing
             ex.Message.ShouldContain("four", StringComparisonOption.Default);
 
             // Just verifying that the real progress didn't change
-            var progress = await theStore.Events.ProjectionProgressFor(new ShardName("four"));
+            var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("four"));
             progress.ShouldBe(12);
         }
 
@@ -97,7 +97,7 @@ namespace Marten.AsyncDaemon.Testing
 
             await theSession.SaveChangesAsync();
 
-            var progressions = await theStore.Events.AllProjectionProgress();
+            var progressions = await theStore.Advanced.AllProjectionProgress();
 
             progressions.Any(x => x.ProjectionOrShardName == "five:All").ShouldBeTrue();
             progressions.Any(x => x.ProjectionOrShardName == "six:All").ShouldBeTrue();
@@ -106,7 +106,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task fetch_progress_does_not_exist_returns_0()
         {
-            var progress1 = await theStore.Events.ProjectionProgressFor(new ShardName("none"));
+            var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("none"));
             progress1.ShouldBe(0);
         }
 
