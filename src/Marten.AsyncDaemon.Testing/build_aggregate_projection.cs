@@ -5,6 +5,8 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Storage;
+using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
@@ -43,7 +45,11 @@ namespace Marten.AsyncDaemon.Testing
 
             Logger.LogDebug($"The expected number of events is " + NumberOfEvents);
 
-            StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async), true);
+            StoreOptions(x =>
+            {
+                x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                x.Logger(new TestOutputMartenLogger(_output));
+            }, true);
 
             var agent = await StartDaemon();
 
@@ -58,6 +64,35 @@ namespace Marten.AsyncDaemon.Testing
             await waiter;
 
             await CheckAllExpectedAggregatesAgainstActuals();
+        }
+
+        [Fact]
+        public async Task build_with_multi_tenancy()
+        {
+            StoreOptions(x =>
+            {
+                x.Events.TenancyStyle = TenancyStyle.Conjoined;
+                x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                x.Schema.For<Trip>().MultiTenanted();
+                x.Logger(new TestOutputMartenLogger(_output));
+            }, true);
+
+            UseMixOfTenants(10);
+
+            Logger.LogDebug($"The expected number of events is " + NumberOfEvents);
+
+            var agent = await StartDaemon();
+
+            var shard = theStore.Events.Projections.AllShards().Single();
+            var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
+
+            await PublishSingleThreaded();
+
+            await waiter;
+
+            await CheckAllExpectedAggregatesAgainstActuals("a");
+            await CheckAllExpectedAggregatesAgainstActuals("b");
+
         }
 
         [Fact]

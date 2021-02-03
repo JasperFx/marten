@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Baseline.Dates;
+using Castle.Core.Internal;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -23,6 +24,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         {
             theStore.Advanced.Clean.DeleteAllEventData();
             Logger = new TestLogger<IProjection>(output);
+
+            _output = output;
         }
 
         public ILogger<IProjection> Logger { get; }
@@ -61,10 +64,28 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
             }
         }
 
+        public void UseMixOfTenants(int numberOfStreams)
+        {
+            NumberOfStreams = numberOfStreams;
+
+            foreach (var stream in _streams.ToArray())
+            {
+                stream.TenantId = "a";
+                var other = new TripStream
+                {
+                    TenantId = "b",
+                    StreamId = stream.StreamId
+                };
+
+                _streams.Add(other);
+            }
+        }
+
         public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
         private readonly List<TripStream> _streams = new List<TripStream>();
         private ProjectionDaemon _agent;
+        protected ITestOutputHelper _output;
 
         protected StreamAction[] ToStreamActions()
         {
@@ -97,23 +118,83 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
             }
         }
 
-        protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase()
+        protected async Task CheckAllExpectedAggregatesAgainstActuals(string tenantId)
         {
-            var data = await theSession.Query<Trip>().ToListAsync();
-            var dict = data.ToDictionary(x => x.Id);
-            return dict;
+            var actuals = await LoadAllAggregatesFromDatabase(tenantId);
+
+            using var session = theStore.LightweightSession(tenantId);
+
+            foreach (var stream in _streams.Where(x => x.TenantId == tenantId))
+            {
+                var expected = await session.Events.AggregateStreamAsync<Trip>(stream.StreamId);
+
+                if (expected == null)
+                {
+                    actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
+                }
+                else
+                {
+                    if (actuals.TryGetValue(stream.StreamId, out var actual))
+                    {
+                        expected.ShouldBe(actual);
+                    }
+                    else
+                    {
+                        throw new Exception("Missing expected aggregate");
+                    }
+                }
+            }
+        }
+
+        protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
+        {
+
+            if (tenantId.IsNullOrEmpty())
+            {
+                var data = await theSession.Query<Trip>().ToListAsync();
+                var dict = data.ToDictionary(x => x.Id);
+                return dict;
+            }
+            else
+            {
+                using var session = theStore.LightweightSession(tenantId);
+                var data = await session.Query<Trip>().ToListAsync();
+                var dict = data.ToDictionary(x => x.Id);
+                return dict;
+            }
         }
 
         protected async Task PublishSingleThreaded()
         {
-            foreach (var stream in _streams)
+
+            var groups = _streams.GroupBy(x => x.TenantId).ToArray();
+            if (groups.Length > 1)
             {
-                using (var session = theStore.LightweightSession())
+                foreach (var @group in groups)
                 {
-                    session.Events.StartStream(stream.StreamId, stream.Events);
-                    await session.SaveChangesAsync();
+                    foreach (var stream in @group)
+                    {
+                        using (var session = theStore.LightweightSession(@group.Key))
+                        {
+                            session.Events.StartStream(stream.StreamId, stream.Events);
+                            await session.SaveChangesAsync();
+                        }
+                    }
                 }
             }
+            else
+            {
+                foreach (var stream in _streams)
+                {
+                    using (var session = theStore.LightweightSession())
+                    {
+                        session.Events.StartStream(stream.StreamId, stream.Events);
+                        await session.SaveChangesAsync();
+                    }
+                }
+            }
+
+
         }
 
         protected Task PublishMultiThreaded(int threads)

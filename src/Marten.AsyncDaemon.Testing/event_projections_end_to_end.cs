@@ -6,6 +6,7 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
@@ -56,6 +57,29 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public async Task run_simultaneously_multitenancy()
+        {
+            StoreOptions(x =>
+            {
+                x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
+                x.Events.TenancyStyle = TenancyStyle.Conjoined;
+                x.Schema.For<Distance>().MultiTenanted();
+            });
+
+            UseMixOfTenants(10);
+
+            var agent = await StartDaemon();
+
+            var waiter = agent.Tracker.WaitForShardState("Distance:All", NumberOfEvents, 15.Seconds());
+
+            await PublishSingleThreaded();
+
+            await waiter;
+
+            await CheckExpectedResultsForTenants("a", "b");
+        }
+
+        [Fact]
         public async Task rebuild()
         {
             StoreOptions(x => x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
@@ -72,11 +96,29 @@ namespace Marten.AsyncDaemon.Testing
 
         }
 
-        private async Task CheckExpectedResults()
+        private Task CheckExpectedResults()
         {
-            var distances = await theSession.Query<Distance>().ToListAsync();
+            return CheckExpectedResults(theSession);
+        }
 
-            var events = (await theSession.Events.QueryAllRawEvents().ToListAsync());
+        private async Task CheckExpectedResultsForTenants(params string[] tenants)
+        {
+            foreach (var tenantId in tenants)
+            {
+                using (var session = theStore.LightweightSession(tenantId))
+                {
+                    await CheckExpectedResults(session);
+                }
+            }
+        }
+
+
+
+        private async Task CheckExpectedResults(IDocumentSession session)
+        {
+            var distances = await session.Query<Distance>().ToListAsync();
+
+            var events = (await session.Events.QueryAllRawEvents().ToListAsync());
             var travels = events.OfType<Event<Travel>>().ToDictionary(x => x.Id);
 
             foreach (var distance in distances)

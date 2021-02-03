@@ -14,6 +14,8 @@ namespace Marten.Events
         {
             DatabaseSchemaName = storeOptions.Events.DatabaseSchemaName;
 
+            TenancyStyle = storeOptions.Events.TenancyStyle;
+
             TableName = new DbObjectName(DatabaseSchemaName, "mt_events");
 
             duplicateField(x => x.Sequence, "seq_id");

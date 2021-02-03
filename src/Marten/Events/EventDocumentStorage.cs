@@ -49,6 +49,8 @@ namespace Marten.Events
 
             IdType = Events.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
 
+            TenancyStyle = options.Events.TenancyStyle;
+
             // The json data column has to go first
             var table = new EventsTable(Events);
             var columns = table.SelectColumns();
@@ -60,7 +62,7 @@ namespace Marten.Events
 
         public EventGraph Events { get; }
 
-        public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
+        public TenancyStyle TenancyStyle { get; }
 
         public IDeletion DeleteForDocument(IEvent document, ITenant tenant)
         {

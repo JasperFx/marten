@@ -35,6 +35,8 @@ namespace Marten.Events
 
         protected EventMapping(EventGraph parent, Type eventType)
         {
+            TenancyStyle = parent.TenancyStyle;
+
             _parent = parent;
             DocumentType = eventType;
 
@@ -47,6 +49,8 @@ namespace Marten.Events
         }
 
         public string DotNetTypeName { get; set; }
+
+
 
         public IDocumentMapping Root => this;
         public Type DocumentType { get; }

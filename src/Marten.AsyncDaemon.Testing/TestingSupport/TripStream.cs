@@ -143,5 +143,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         {
             return StreamAction.Start(graph, StreamId, Events.ToArray());
         }
+
+        public string TenantId { get; set; }
     }
 }
