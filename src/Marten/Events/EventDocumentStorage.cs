@@ -39,7 +39,7 @@ namespace Marten.Events
 
         public EventDocumentStorage(StoreOptions options)
         {
-            Events = options.Events;
+            Events = options.EventGraph;
             _mapping = new EventQueryMapping(options);
 
             FromObject = _mapping.TableName.QualifiedName;

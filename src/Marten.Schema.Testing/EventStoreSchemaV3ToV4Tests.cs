@@ -73,7 +73,7 @@ namespace Marten.Schema.Testing
                 _.DatabaseSchemaName = _schemaName;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = autoCreate;
-                _.Events.EventMappingFor<MembersJoined>();
+                _.EventGraph.EventMappingFor<MembersJoined>();
             });
         }
 

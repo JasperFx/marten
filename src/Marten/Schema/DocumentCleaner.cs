@@ -143,9 +143,9 @@ END; $$;
 
         private void DeleteSingleEventStream<T>(T streamId)
         {
-            if (typeof(T) != _options.Events.GetStreamIdType())
+            if (typeof(T) != _options.EventGraph.GetStreamIdType())
             {
-                throw new ArgumentException($"{nameof(streamId)} should  be of type {_options.Events.GetStreamIdType()}", nameof(streamId));
+                throw new ArgumentException($"{nameof(streamId)} should  be of type {_options.EventGraph.GetStreamIdType()}", nameof(streamId));
             }
 
             using (var conn = _tenant.CreateConnection())

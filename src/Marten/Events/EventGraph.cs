@@ -29,7 +29,61 @@ namespace Marten.Events
         AsString
     }
 
-    public class EventGraph: IFeatureSchema
+    public interface IEventStoreOptions
+    {
+        /// <summary>
+        /// Advanced configuration for the asynchronous projection execution
+        /// </summary>
+        DaemonSettings Daemon { get; }
+
+        /// <summary>
+        /// Configure whether event streams are identified with Guid or strings
+        /// </summary>
+        StreamIdentity StreamIdentity { get; set; }
+
+        /// <summary>
+        /// Configure the event sourcing storage for multi-tenancy
+        /// </summary>
+        TenancyStyle TenancyStyle { get; set; }
+
+        /// <summary>
+        ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the streams table
+        /// </summary>
+        /// <remarks>
+        ///     Not using this can result in race conditions in a concurrent environment that lead to
+        ///       event version mismatches between the event and stream version numbers
+        /// </remarks>
+        bool UseAppendEventForUpdateLock { get; set; }
+
+        /// <summary>
+        /// Override the database schema name for event related tables. By default this
+        /// is the same schema as the document storage
+        /// </summary>
+        string DatabaseSchemaName { get; set; }
+
+        /// <summary>
+        /// Configuration for all event store projections
+        /// </summary>
+        ProjectionCollection Projections { get; }
+
+        /// <summary>
+        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
+        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
+        /// the event type
+        /// </summary>
+        /// <param name="eventType"></param>
+        void AddEventType(Type eventType);
+
+        /// <summary>
+        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
+        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
+        /// the event type
+        /// </summary>
+        /// <param name="types"></param>
+        void AddEventTypes(IEnumerable<Type> types);
+    }
+
+    public class EventGraph: IFeatureSchema, IEventStoreOptions
     {
 
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
@@ -86,48 +140,67 @@ namespace Marten.Events
         /// </summary>
         public DaemonSettings Daemon { get; } = new DaemonSettings();
 
+        /// <summary>
+        /// Configure whether event streams are identified with Guid or strings
+        /// </summary>
         public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
 
+        /// <summary>
+        /// Configure the event sourcing storage for multi-tenancy
+        /// </summary>
         public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
         /// <summary>
         ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the streams table
         /// </summary>
-        /// <remkarks>
+        /// <remarks>
         ///     Not using this can result in race conditions in a concurrent environment that lead to
         ///       event version mismatches between the event and stream version numbers
-        /// </remkarks>
+        /// </remarks>
         public bool UseAppendEventForUpdateLock { get; set; } = false;
 
         internal StoreOptions Options { get; }
 
         internal DbObjectName Table => new DbObjectName(DatabaseSchemaName, "mt_events");
 
-        public EventMapping EventMappingFor(Type eventType)
+
+        internal EventMapping EventMappingFor(Type eventType)
         {
             return _events[eventType];
         }
 
-        public EventMapping EventMappingFor<T>() where T : class
+        internal EventMapping EventMappingFor<T>() where T : class
         {
             return EventMappingFor(typeof(T));
         }
 
-        public IEnumerable<EventMapping> AllEvents()
+        internal IEnumerable<EventMapping> AllEvents()
         {
             return _events;
         }
 
-        public EventMapping EventMappingFor(string eventType)
+        internal EventMapping EventMappingFor(string eventType)
         {
             return _byEventName[eventType];
         }
 
+        /// <summary>
+        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
+        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
+        /// the event type
+        /// </summary>
+        /// <param name="eventType"></param>
         public void AddEventType(Type eventType)
         {
             _events.FillDefault(eventType);
         }
 
+        /// <summary>
+        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
+        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
+        /// the event type
+        /// </summary>
+        /// <param name="types"></param>
         public void AddEventTypes(IEnumerable<Type> types)
         {
             types.Each(AddEventType);
@@ -135,13 +208,17 @@ namespace Marten.Events
 
         public bool IsActive(StoreOptions options) => _events.Any() || Projections.Any() ;
 
+        /// <summary>
+        /// Override the database schema name for event related tables. By default this
+        /// is the same schema as the document storage
+        /// </summary>
         public string DatabaseSchemaName
         {
             get { return _databaseSchemaName ?? Options.DatabaseSchemaName; }
             set { _databaseSchemaName = value; }
         }
 
-        public Type AggregateTypeFor(string aggregateTypeName)
+        internal Type AggregateTypeFor(string aggregateTypeName)
         {
             return _aggregateTypeByName[aggregateTypeName];
         }
@@ -149,7 +226,7 @@ namespace Marten.Events
         internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
         internal DbObjectName StreamsTable => new DbObjectName(DatabaseSchemaName, "mt_streams");
 
-        public string AggregateAliasFor(Type aggregateType)
+        internal string AggregateAliasFor(Type aggregateType)
         {
             var alias = _aggregateNameByType[aggregateType];
 
@@ -195,7 +272,7 @@ namespace Marten.Events
         }
 
         Type IFeatureSchema.StorageType => typeof(EventGraph);
-        public string Identifier { get; } = "eventstore";
+        string IFeatureSchema.Identifier { get; } = "eventstore";
 
         void IFeatureSchema.WritePermissions(DdlRules rules, StringWriter writer)
         {
@@ -446,9 +523,12 @@ namespace Marten.Events
             return false;
         }
 
+        /// <summary>
+        /// Configuration for all event store projections
+        /// </summary>
         public ProjectionCollection Projections { get; }
 
-        public IEvent BuildEvent(object eventData)
+        internal IEvent BuildEvent(object eventData)
         {
             if (eventData == null) throw new ArgumentNullException(nameof(eventData));
 

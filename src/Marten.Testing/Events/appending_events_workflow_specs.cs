@@ -335,7 +335,7 @@ namespace Marten.Testing.Events
 
                 Store = DocumentStore.For(opts =>
                 {
-                    config(opts.Events);
+                    config(opts.EventGraph);
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "v4events";
                     opts.AutoCreateSchemaObjects = AutoCreate.All;

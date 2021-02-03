@@ -192,9 +192,9 @@ namespace Marten.Storage
                 return schema;
             }
 
-            if (_options.Events.AllEvents().Any(x => x.DocumentType == featureType))
+            if (_options.EventGraph.AllEvents().Any(x => x.DocumentType == featureType))
             {
-                return _options.Events;
+                return _options.EventGraph;
             }
 
             return MappingFor(featureType).Schema;
@@ -209,10 +209,10 @@ namespace Marten.Storage
 
             Add(Transforms.As<IFeatureSchema>());
 
-            Add(_options.Events);
-            _features[typeof(StreamState)] = _options.Events;
-            _features[typeof(StreamAction)] = _options.Events;
-            _features[typeof(IEvent)] = _options.Events;
+            Add(_options.EventGraph);
+            _features[typeof(StreamState)] = _options.EventGraph;
+            _features[typeof(StreamAction)] = _options.EventGraph;
+            _features[typeof(IEvent)] = _options.EventGraph;
 
             _mappings.Swap(d => d.AddOrUpdate(typeof(IEvent), new EventQueryMapping(_options)));
 
@@ -269,9 +269,9 @@ namespace Marten.Storage
                 yield return Transforms;
             }
 
-            if (_options.Events.IsActive(_options))
+            if (_options.Events.As<IFeatureSchema>().IsActive(_options))
             {
-                yield return _options.Events;
+                yield return _options.EventGraph;
             }
 
             var custom = _features.Values

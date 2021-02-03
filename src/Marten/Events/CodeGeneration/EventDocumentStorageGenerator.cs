@@ -36,18 +36,18 @@ namespace Marten.Events.CodeGeneration
 
             buildSelectorMethods(options, builderType);
 
-            buildAppendEventOperation(options.Events, assembly);
+            buildAppendEventOperation(options.EventGraph, assembly);
 
             builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
                 .Frames.Code($"return new Marten.Generated.AppendEventOperation(stream, e);");
 
-            buildInsertStream(builderType, assembly, options.Events);
+            buildInsertStream(builderType, assembly, options.EventGraph);
 
-            var streamQueryHandlerType = buildStreamQueryHandlerType(options.Events, assembly);
+            var streamQueryHandlerType = buildStreamQueryHandlerType(options.EventGraph, assembly);
 
-            buildQueryForStreamMethod(options.Events, builderType);
+            buildQueryForStreamMethod(options.EventGraph, builderType);
 
-            buildUpdateStreamVersion(builderType, assembly, options.Events);
+            buildUpdateStreamVersion(builderType, assembly, options.EventGraph);
 
 
             var compiler = new AssemblyGenerator();
@@ -65,13 +65,13 @@ namespace Marten.Events.CodeGeneration
             var async = builderType.MethodFor(nameof(EventDocumentStorage.ApplyReaderDataToEventAsync));
 
             // The json data column has to go first
-            var table = new EventsTable(options.Events);
+            var table = new EventsTable(options.EventGraph);
             var columns = table.SelectColumns();
 
             for (var i = 3; i < columns.Count; i++)
             {
-                columns[i].GenerateSelectorCodeSync(sync, options.Events, i);
-                columns[i].GenerateSelectorCodeAsync(async, options.Events, i);
+                columns[i].GenerateSelectorCodeSync(sync, options.EventGraph, i);
+                columns[i].GenerateSelectorCodeAsync(async, options.EventGraph, i);
             }
         }
 

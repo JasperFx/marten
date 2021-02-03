@@ -30,13 +30,13 @@ namespace Marten.Events.Querying
         public void SetAggregateType(StreamState state, DbDataReader reader, IMartenSession session)
         {
             var typeName = reader.IsDBNull(2) ? null : reader.GetFieldValue<string>(2);
-            if (typeName.IsNotEmpty()) state.AggregateType = session.Options.Events.AggregateTypeFor(typeName);
+            if (typeName.IsNotEmpty()) state.AggregateType = session.Options.EventGraph.AggregateTypeFor(typeName);
         }
 
         public async Task SetAggregateTypeAsync(StreamState state, DbDataReader reader, IMartenSession session, CancellationToken token)
         {
             var typeName = await reader.IsDBNullAsync(2, token) ? null : await reader.GetFieldValueAsync<string>(2, token);
-            if (typeName.IsNotEmpty()) state.AggregateType = session.Options.Events.AggregateTypeFor(typeName);
+            if (typeName.IsNotEmpty()) state.AggregateType = session.Options.EventGraph.AggregateTypeFor(typeName);
         }
     }
 

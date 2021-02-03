@@ -66,7 +66,7 @@ namespace Marten
 
         public ITenancy Tenancy => Options.Tenancy;
 
-        public EventGraph Events => Options.Events;
+        public EventGraph Events => Options.EventGraph;
 
         public StorageFeatures Storage => Options.Storage;
 

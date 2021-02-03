@@ -81,7 +81,7 @@ namespace Marten.Testing.Events.SchemaChange
             // SAMPLE: event_type_name_migration_options
             var options = new StoreOptions();
 
-            var orderStatusChangedMapping = options.Events.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
+            var orderStatusChangedMapping = options.EventGraph.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
             orderStatusChangedMapping.EventTypeName = "order_status_changed";
 
             var store = new DocumentStore(options);
@@ -257,7 +257,7 @@ namespace Marten.Testing.Events.SchemaChange
                 _.Events.AddEventTypes(new []{typeof(New.TaskCreated), typeof(New.TaskDescriptionChanged)});
 
                 // When type name has changed we need to define custom mapping
-                _.Events.EventMappingFor<New.TaskDescriptionChanged>()
+                _.EventGraph.EventMappingFor<New.TaskDescriptionChanged>()
                         .EventTypeName = "task_description_updated";
             }))
             {

@@ -16,7 +16,7 @@ namespace Marten.Internal.Sessions
 
             Database.BeginTransaction();
 
-            Options.Events.ProcessEvents(this);
+            Options.EventGraph.ProcessEvents(this);
 
             _workTracker.Sort(Options);
 
@@ -48,7 +48,7 @@ namespace Marten.Internal.Sessions
             {
                 Database.Rollback();
 
-                if (Options.Events.TryCreateTombstoneBatch(this, out var tombstoneBatch))
+                if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
                 {
                     try
                     {
@@ -73,7 +73,7 @@ namespace Marten.Internal.Sessions
 
             await Database.BeginTransactionAsync(token).ConfigureAwait(false);
 
-            await Options.Events.ProcessEventsAsync(this, token).ConfigureAwait(false);
+            await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
 
             _workTracker.Sort(Options);
 
@@ -107,7 +107,7 @@ namespace Marten.Internal.Sessions
             {
                 await Database.RollbackAsync(token).ConfigureAwait(false);
 
-                if (Options.Events.TryCreateTombstoneBatch(this, out var tombstoneBatch))
+                if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
                 {
                     try
                     {

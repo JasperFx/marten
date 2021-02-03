@@ -141,7 +141,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<User>().DatabaseSchemaName("other");
 
                 _.Events.DatabaseSchemaName = "event_store";
-                _.Events.EventMappingFor<MembersJoined>();
+                _.EventGraph.EventMappingFor<MembersJoined>();
 
                 _.Connection(ConnectionSource.ConnectionString);
             }))

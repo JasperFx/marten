@@ -80,13 +80,15 @@ namespace Marten
 
         public StoreOptions()
         {
-            Events = new EventGraph(this);
+            EventGraph = new EventGraph(this);
             Schema = new MartenRegistry(this);
             Transforms = new Transforms.Transforms(this);
             Storage = new StorageFeatures(this);
 
             Providers = new ProviderGraph(this);
         }
+
+        internal EventGraph EventGraph { get; }
 
         /// <summary>
         ///     Sets the database default schema name used to store the documents.
@@ -123,7 +125,7 @@ namespace Marten
         /// <summary>
         ///     Configuration of event streams and projections
         /// </summary>
-        public EventGraph Events { get; }
+        public IEventStoreOptions Events => EventGraph;
 
         /// <summary>
         ///     Extension point to add custom Linq query parsers
