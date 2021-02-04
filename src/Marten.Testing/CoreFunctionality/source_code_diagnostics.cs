@@ -4,6 +4,7 @@ using System.Reflection;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -30,7 +31,7 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void can_access_the_source_code_for_a_document_type()
         {
-            theSourceCode.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(theSourceCode);
         }
 
         public static IEnumerable<object[]> Properties()
@@ -46,9 +47,17 @@ namespace Marten.Testing.CoreFunctionality
         public void can_retrieve_source_code_for_generated_type(PropertyInfo property)
         {
             var code = (string)property.GetValue(theSourceCode);
-            code.ShouldNotBeNull();
+            SpecificationExtensions.ShouldNotBeNull(code);
 
-            theSourceCode.AllSourceCode().ShouldContain(code);
+            SpecificationExtensions.ShouldContain(theSourceCode.AllSourceCode(), code);
+        }
+
+        [Fact]
+        public void get_the_source_code_for_the_events()
+        {
+            var code = theStore.Advanced.SourceCodeForEventStore();
+            _output.WriteLine(code);
+            code.ShouldNotBeNull();
         }
     }
 }

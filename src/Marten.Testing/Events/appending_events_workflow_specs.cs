@@ -66,7 +66,7 @@ namespace Marten.Testing.Events
             @case.StartNewStream(new TestOutputMartenLogger(_output));
             using var query = @case.Store.QuerySession();
 
-            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var handler = builder.QueryForStream(@case.ToEventStream());
 
             var state = await query.As<QuerySession>().ExecuteHandlerAsync(handler, CancellationToken.None);
@@ -81,7 +81,7 @@ namespace Marten.Testing.Events
             @case.StartNewStream();
             using var query = @case.Store.QuerySession();
 
-            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var handler = builder.QueryForStream(@case.ToEventStream());
 
             var state = query.As<QuerySession>().ExecuteHandler(handler);
@@ -97,7 +97,7 @@ namespace Marten.Testing.Events
             @case.StartNewStream();
 
             var stream = @case.CreateNewStream();
-            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var op = builder.InsertStream(stream);
 
             using var session = @case.Store.LightweightSession();
@@ -116,7 +116,7 @@ namespace Marten.Testing.Events
             stream.ExpectedVersionOnServer = 4;
             stream.Version = 10;
 
-            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var op = builder.UpdateStreamVersion(stream);
 
             using var session = @case.Store.LightweightSession();
@@ -141,7 +141,7 @@ namespace Marten.Testing.Events
             stream.ExpectedVersionOnServer = 3; // it's actually 4, so this should fail
             stream.Version = 10;
 
-            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var op = builder.UpdateStreamVersion(stream);
 
             using var session = @case.Store.LightweightSession();

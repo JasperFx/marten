@@ -158,6 +158,16 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             return loader.Load(_store.Options.Providers);
         }
 
+        /// <summary>
+        /// See the code that Marten generates for the current configuration of the
+        /// Event Store
+        /// </summary>
+        /// <returns></returns>
+        public string SourceCodeForEventStore()
+        {
+            return _store.Options.Providers.StorageFor<IEvent>().SourceCode;
+        }
+
         internal interface IDocumentSourceCodeLoader
         {
             IDocumentSourceCode Load(IProviderGraph providers);

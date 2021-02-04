@@ -31,13 +31,14 @@ namespace Marten.Internal
 
             if (documentType == typeof(IEvent))
             {
-                var storage = EventDocumentStorageGenerator.GenerateStorage(_options);
+                var (storage, code) = EventDocumentStorageGenerator.GenerateStorage(_options);
                 var slot = new DocumentProvider<IEvent>
                 {
                     DirtyTracking = storage,
                     Lightweight = storage,
                     IdentityMap = storage,
-                    QueryOnly = storage
+                    QueryOnly = storage,
+                    SourceCode = code
                 };
 
                 _storage = _storage.AddOrUpdate(documentType, slot);

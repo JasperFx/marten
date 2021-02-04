@@ -65,5 +65,6 @@ namespace Marten.Internal.CodeGeneration
 
         string IDocumentSourceCode.DirtyCheckingSelectorCode => Operations.DirtyCheckingSelector.SourceCode;
         public GeneratedType BulkLoaderType { get; set; }
+        public string SourceCode { get; set; }
     }
 }
