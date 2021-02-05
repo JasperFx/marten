@@ -51,8 +51,7 @@ namespace Marten.Events
         public string DotNetTypeName { get; set; }
 
 
-
-        public IDocumentMapping Root => this;
+        IDocumentMapping IDocumentMapping.Root => this;
         public Type DocumentType { get; }
         public string EventTypeName { get; set; }
         public string Alias => EventTypeName;

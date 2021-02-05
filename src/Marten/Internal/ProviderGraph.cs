@@ -48,39 +48,39 @@ namespace Marten.Internal
 
             var mapping = _options.Storage.FindMapping(documentType);
 
-            if (mapping is DocumentMapping m)
+            switch (mapping)
             {
-                var builder = new DocumentPersistenceBuilder(m, _options);
-                var slot = builder.Generate<T>();
+                case DocumentMapping m:
+                {
+                    var builder = new DocumentPersistenceBuilder(m, _options);
+                    var slot = builder.Generate<T>();
 
-                _storage = _storage.AddOrUpdate(documentType, slot);
+                    _storage = _storage.AddOrUpdate(documentType, slot);
 
-                return slot;
+                    return slot;
+                }
+                case SubClassMapping s:
+                {
+                    var loader =
+                        typeof(SubClassLoader<,,>).CloseAndBuildAs<ISubClassLoader<T>>(mapping.Root.DocumentType, documentType,
+                            mapping.IdType);
+
+                    var slot = loader.BuildPersistence(this, s);
+                    _storage = _storage.AddOrUpdate(documentType, slot);
+
+                    return slot;
+                }
+                case EventMapping em:
+                {
+                    var storage = (IDocumentStorage<T>) em;
+                    var slot = new DocumentProvider<T> {Lightweight = storage, IdentityMap = storage, DirtyTracking = storage, QueryOnly = storage};
+                    _storage = _storage.AddOrUpdate(documentType, slot);
+
+                    return slot;
+                }
+                default:
+                    throw new NotSupportedException("Unable to build document persistence handlers for " + mapping.DocumentType.FullNameInCode());
             }
-
-            if (mapping is SubClassMapping s)
-            {
-                var loader =
-                    typeof(SubClassLoader<,,>).CloseAndBuildAs<ISubClassLoader<T>>(mapping.Root.DocumentType, documentType,
-                        mapping.IdType);
-
-                var slot = loader.BuildPersistence(this, s);
-                _storage = _storage.AddOrUpdate(documentType, slot);
-
-                return slot;
-            }
-
-            if (mapping is EventMapping em)
-            {
-                var storage = (IDocumentStorage<T>) em;
-                var slot = new DocumentProvider<T> {Lightweight = storage, IdentityMap = storage, DirtyTracking = storage, QueryOnly = storage};
-                _storage = _storage.AddOrUpdate(documentType, slot);
-
-                return slot;
-            }
-
-            throw new NotSupportedException("Unable to build document persistence handlers for " + mapping.DocumentType.FullNameInCode());
-
         }
 
         private interface ISubClassLoader<T>

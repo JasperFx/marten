@@ -176,7 +176,7 @@ namespace Marten.Schema
 
         public Type IdType => IdMember?.GetMemberType();
 
-        public IDocumentMapping Root => this;
+        IDocumentMapping IDocumentMapping.Root => this;
         public Type DocumentType { get; }
 
         // TODO -- this needs to be memoized!!!
@@ -185,7 +185,7 @@ namespace Marten.Schema
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
         public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
-            Func<IDocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
+            Func<DocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
         {
             var storeOptions = new StoreOptions
             {

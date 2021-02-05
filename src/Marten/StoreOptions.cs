@@ -120,7 +120,7 @@ namespace Marten
         /// <summary>
         ///     Set the default Id strategy for the document mapping.
         /// </summary>
-        public Func<IDocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
+        public Func<DocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
 
         /// <summary>
         ///     Configuration of event streams and projections

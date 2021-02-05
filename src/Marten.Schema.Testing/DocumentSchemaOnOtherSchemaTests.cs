@@ -279,7 +279,7 @@ namespace Marten.Schema.Testing
                 _.Events.AddEventType(typeof(RaceStarted));
             });
 
-            theStore.Storage.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Storage.FindMapping(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

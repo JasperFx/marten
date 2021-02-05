@@ -4,15 +4,14 @@ using Marten.Storage;
 
 namespace Marten.Schema
 {
-    public interface IDocumentMapping
+    internal interface IDocumentMapping
     {
         IDocumentMapping Root { get; }
 
         Type DocumentType { get; }
 
-        DbObjectName TableName { get; }
-
         Type IdType { get; }
+        DbObjectName TableName { get; }
     }
 
 }
