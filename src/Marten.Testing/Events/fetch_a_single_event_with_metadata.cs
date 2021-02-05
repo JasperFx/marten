@@ -32,7 +32,7 @@ namespace Marten.Testing.Events
             // Knowing the event type
             var slayed1_2 = theSession.Events.Load<MonsterSlayed>(events[2].Id);
             slayed1_2.Version.ShouldBe(3);
-            slayed1_2.Data.Name.ShouldBe("Troll");
+            slayed1_2.GetData().Name.ShouldBe("Troll");
 
             // Not knowing the event type
             var slayed1_3 = theSession.Events.Load<MonsterSlayed>(events[2].Id).ShouldBeOfType<Event<MonsterSlayed>>();
@@ -55,7 +55,7 @@ namespace Marten.Testing.Events
             // Knowing the event type
             var slayed1_2 = await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id).ConfigureAwait(false);
             slayed1_2.Version.ShouldBe(3);
-            slayed1_2.Data.Name.ShouldBe("Troll");
+            slayed1_2.GetData().Name.ShouldBe("Troll");
 
             // Not knowing the event type
             var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id).ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>();
@@ -70,7 +70,7 @@ namespace Marten.Testing.Events
                 .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
             await theSession.SaveChangesAsync().ConfigureAwait(false);
 
-            var events = theSession.Events.FetchStream(streamId);
+            var events = await theSession.Events.FetchStreamAsync(streamId);
 
             var batch = theSession.CreateBatchQuery();
 

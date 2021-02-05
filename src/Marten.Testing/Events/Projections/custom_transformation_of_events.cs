@@ -127,10 +127,10 @@ namespace Marten.Testing.Events.Projections
             Identity<LapEvent>(x => x.LapId);
         }
 
-        public void Apply(Lap view, Event<LapStarted> eventData) =>
+        public void Apply(Lap view, IEvent<LapStarted> eventData) =>
             view.Start = eventData.Timestamp;
 
-        public void Apply(Lap view, Event<LapFinished> eventData) =>
+        public void Apply(Lap view, IEvent<LapFinished> eventData) =>
             view.End = eventData.Timestamp;
     }
 

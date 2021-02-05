@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
@@ -34,8 +35,14 @@ namespace Marten.Events.CodeGeneration
         {
             _aggregate = parent.Aggregate;
 
-            // Replace any arguments to Event<T>
-            Maybe.TrySetArgument(parent.SpecificEvent);
+            // Replace any arguments to IEvent<T>
+
+            if (Maybe.Method.GetParameters().Any(x => x.ParameterType == parent.SpecificEvent.VariableType))
+            {
+                // TODO -- there's a LamarCodeGeneration bug here. It's using CanCastTo(), but should be using an exact match,
+                // or looser find of the argument
+                Maybe.TrySetArgument(parent.SpecificEvent);
+            }
 
             // Replace any arguments to the specific T event type
             Maybe.TrySetArgument(parent.DataOnly);

@@ -311,7 +311,7 @@ namespace Marten.Events
             return _session.Query<IEvent>();
         }
 
-        public Event<T> Load<T>(Guid id) where T : class
+        public IEvent<T> Load<T>(Guid id) where T : class
         {
             _tenant.EnsureStorageExists(typeof(StreamAction));
 
@@ -320,7 +320,7 @@ namespace Marten.Events
             return Load(id).As<Event<T>>();
         }
 
-        public async Task<Event<T>> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class
+        public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class
         {
             _tenant.EnsureStorageExists(typeof(StreamAction));
 

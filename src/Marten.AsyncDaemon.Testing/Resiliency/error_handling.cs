@@ -228,7 +228,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 _exceptions = new Queue<Exception>(exceptions);
             }
 
-            public void Process(Event<Travel> travel)
+            public void Process(IEvent<Travel> travel)
             {
                 if (travel.Sequence >= _sequence && _exceptions.Any())
                 {
@@ -238,7 +238,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
         }
 
 
-        public void Project(Event<Travel> e, IDocumentOperations operations)
+        public void Project(IEvent<Travel> e, IDocumentOperations operations)
         {
             foreach (var thrower in _throwers)
             {
@@ -248,7 +248,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
         public interface IMaybeThrower
         {
-            void Process(Event<Travel> travel);
+            void Process(IEvent<Travel> travel);
         }
 
         public class SystematicFailure: IMaybeThrower
@@ -262,7 +262,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 _func = func;
             }
 
-            public void Process(Event<Travel> travel)
+            public void Process(IEvent<Travel> travel)
             {
                 if (travel.Sequence % _number == 0)
                 {

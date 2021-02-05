@@ -210,19 +210,19 @@ namespace Marten.Testing.Events.Aggregation
 
     public class UsingMetadata : AggregateProjection<MyAggregate>
     {
-        public MyAggregate Create(Event<CreateEvent> @event)
+        public MyAggregate Create(CreateEvent create, IEvent e)
         {
             return new MyAggregate
             {
-                ACount = @event.Data.A,
-                BCount = @event.Data.B,
-                CCount = @event.Data.C,
-                DCount = @event.Data.D,
-                Id = @event.StreamId
+                ACount = create.A,
+                BCount = create.B,
+                CCount = create.C,
+                DCount = create.D,
+                Id = e.StreamId
             };
         }
 
-        public void Apply(Event<AEvent> @event, MyAggregate aggregate)
+        public void Apply(IEvent<AEvent> @event, MyAggregate aggregate)
         {
             aggregate.EventId = @event.Id;
             aggregate.ACount++;

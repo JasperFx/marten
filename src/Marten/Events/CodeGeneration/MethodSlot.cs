@@ -106,10 +106,11 @@ namespace Marten.Events.CodeGeneration
 
         private void validateArguments(MethodCollection collection)
         {
-            var possibleTypes = new List<Type>(collection.ValidArgumentTypes) {EventType};
+            var possibleTypes = new List<Type>(collection.ValidArgumentTypes) {EventType, typeof(IEvent)};
+
             if (EventType != null)
             {
-                possibleTypes.Add(typeof(Event<>).MakeGenericType(EventType));
+                possibleTypes.Add(typeof(IEvent<>).MakeGenericType(EventType));
             }
             if (collection.AggregateType != null)
             {

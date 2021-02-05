@@ -157,9 +157,9 @@ namespace Marten.AsyncDaemon.Testing
             ProjectionName = "Distance";
         }
 
-        public Distance Create(Event<Travel> travel)
+        public Distance Create(Travel travel, IEvent e)
         {
-            return new Distance {Id = travel.Id, Day = travel.Data.Day, Total = travel.Data.TotalDistance()};
+            return new Distance {Id = e.Id, Day = travel.Day, Total = travel.TotalDistance()};
         }
     }
 }

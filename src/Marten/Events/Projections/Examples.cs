@@ -43,7 +43,7 @@ namespace Marten.Events.Projections
             return new SomeDocument1();
         }
 
-        public SomeDocument2 Create(Event<SomeEvent2> @event)
+        public SomeDocument2 Create(IEvent<SomeEvent2> @event)
         {
             return new SomeDocument2();
         }

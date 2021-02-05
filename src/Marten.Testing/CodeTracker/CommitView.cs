@@ -23,16 +23,16 @@ namespace Marten.Testing.CodeTracker
 
     public class CommitViewTransform: EventProjection
     {
-        public CommitView Transform(Event<Commit> input)
+        public CommitView Transform(IEvent input, Commit data)
         {
             return new CommitView
             {
-                Sha = input.Data.Sha,
-                Message = input.Data.Message,
+                Sha = data.Sha,
+                Message = data.Message,
                 ProjectId = input.StreamId,
-                Additions = input.Data.Additions,
-                Deletions = input.Data.Deletions,
-                Timestamp = input.Data.Timestamp
+                Additions = data.Additions,
+                Deletions = data.Deletions,
+                Timestamp = data.Timestamp
             };
         }
     }

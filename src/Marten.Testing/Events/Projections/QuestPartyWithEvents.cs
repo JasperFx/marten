@@ -26,19 +26,19 @@ namespace Marten.Testing.Events.Projections
 
         public IList<string> Slayed { get; } = new List<string>();
 
-        public void Apply(Event<MembersJoined> joined)
+        public void Apply(MembersJoined joined)
         {
-            _members.Fill(joined.Data.Members);
+            _members.Fill(joined.Members);
         }
 
-        public void Apply(Event<MembersDeparted> departed)
+        public void Apply(MembersDeparted departed)
         {
-            _members.RemoveAll(x => departed.Data.Members.Contains(x));
+            _members.RemoveAll(x => departed.Members.Contains(x));
         }
 
-        public void Apply(Event<QuestStarted> started)
+        public void Apply(QuestStarted started)
         {
-            Name = started.Data.Name;
+            Name = started.Name;
         }
 
         public string Name { get; set; }

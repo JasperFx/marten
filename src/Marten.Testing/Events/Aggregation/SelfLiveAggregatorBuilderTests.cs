@@ -34,9 +34,9 @@ namespace Marten.Testing.Events.Aggregation
         public Guid Id { get; set; }
 
         public void Apply(EventA @event){}
-        public void Apply(Event<EventB> @event){}
+        public void Apply(IEvent<EventB> @event){}
 
-        public FakeAggregate Apply(Event<EventC> @event)
+        public FakeAggregate Apply(IEvent<EventC> @event)
         {
             return this;
         }
@@ -46,7 +46,7 @@ namespace Marten.Testing.Events.Aggregation
             return Task.FromResult(this);
         }
 
-        public Task<FakeAggregate> Apply(Event<SelfLiveAggregatorBuilderTests.EventE> @event, IQuerySession session)
+        public Task<FakeAggregate> Apply(IEvent<SelfLiveAggregatorBuilderTests.EventE> @event, IQuerySession session)
         {
             return Task.FromResult(this);
         }

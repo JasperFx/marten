@@ -137,7 +137,7 @@ namespace Marten.Testing.Events.Aggregation
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors
-                .ShouldContain("Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate, Marten.Testing.Events.Aggregation.AEvent, Marten.Events.Event<Marten.Testing.Events.Aggregation.AEvent>");
+                .ShouldContain("Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate, Marten.Testing.Events.Aggregation.AEvent, Marten.Events.IEvent, Marten.Events.IEvent<Marten.Testing.Events.Aggregation.AEvent>");
         }
 
         [Fact]
@@ -163,7 +163,7 @@ namespace Marten.Testing.Events.Aggregation
             var ex = Should.Throw<InvalidProjectionException>(() => projection.AssertValidity());
             ex.InvalidMethods.Single()
                 .Errors.ShouldContain(
-                    "Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate, Marten.Testing.Events.Aggregation.AEvent, Marten.Events.Event<Marten.Testing.Events.Aggregation.AEvent>", "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
+                    "Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate, Marten.Testing.Events.Aggregation.AEvent, Marten.Events.IEvent, Marten.Events.IEvent<Marten.Testing.Events.Aggregation.AEvent>", "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
         }
 
         [Fact]

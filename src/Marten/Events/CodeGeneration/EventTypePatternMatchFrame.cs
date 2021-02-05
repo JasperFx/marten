@@ -19,12 +19,15 @@ namespace Marten.Events.CodeGeneration
 
         public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
         {
-            writer.Write($"BLOCK:switch ({_event.Usage})");
-            foreach (var frame in _inner)
+            if (_inner.Any())
             {
-                frame.GenerateCode(method, writer);
+                writer.Write($"BLOCK:switch ({_event.Usage})");
+                foreach (var frame in _inner)
+                {
+                    frame.GenerateCode(method, writer);
+                }
+                writer.FinishBlock();
             }
-            writer.FinishBlock();
 
             Next?.GenerateCode(method, writer);
         }

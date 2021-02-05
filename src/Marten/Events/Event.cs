@@ -70,11 +70,21 @@ namespace Marten.Events
 
     // ENDSAMPLE
 
-    public class Event<T>: IEvent
+    public interface IEvent<out T> : IEvent
+    {
+        T GetData();
+    }
+
+    internal class Event<T>: IEvent<T>
     {
         public Event(T data)
         {
             Data = data;
+        }
+
+        public T GetData()
+        {
+            return Data;
         }
 
         /// <summary>

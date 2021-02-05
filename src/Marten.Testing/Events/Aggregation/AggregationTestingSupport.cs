@@ -20,17 +20,17 @@ namespace Marten.Testing.Events.Aggregation
 
         public bool IsNew { get; set; }
 
-        public Event<AEvent> A() => Add<AEvent>();
+        internal Event<AEvent> A() => Add<AEvent>();
 
-        public Event<BEvent> B() => Add<BEvent>();
+        internal Event<BEvent> B() => Add<BEvent>();
 
-        public Event<CEvent> C() => Add<CEvent>();
+        internal Event<CEvent> C() => Add<CEvent>();
 
-        public Event<DEvent> D() => Add<DEvent>();
+        internal Event<DEvent> D() => Add<DEvent>();
 
-        public Event<EEvent> E() => Add<EEvent>();
+        internal Event<EEvent> E() => Add<EEvent>();
 
-        public Event<T> Add<T>() where T : new()
+        internal Event<T> Add<T>() where T : new()
         {
             var @event = new Event<T>(new T());
             AddEvent(@event);
@@ -62,10 +62,42 @@ namespace Marten.Testing.Events.Aggregation
         public Guid EventId { get; set; }
     }
 
-    public class AEvent {}
-    public class BEvent {}
-    public class CEvent {}
-    public class DEvent {}
+    public interface ITabulator
+    {
+        void Apply(MyAggregate aggregate);
+    }
+
+    public class AEvent : ITabulator
+    {
+        public void Apply(MyAggregate aggregate)
+        {
+            aggregate.ACount++;
+        }
+    }
+
+    public class BEvent : ITabulator
+    {
+        public void Apply(MyAggregate aggregate)
+        {
+            aggregate.BCount++;
+        }
+    }
+
+    public class CEvent : ITabulator
+    {
+        public void Apply(MyAggregate aggregate)
+        {
+            aggregate.CCount++;
+        }
+    }
+
+    public class DEvent : ITabulator
+    {
+        public void Apply(MyAggregate aggregate)
+        {
+            aggregate.DCount++;
+        }
+    }
     public class EEvent {}
 
     public class CreateEvent

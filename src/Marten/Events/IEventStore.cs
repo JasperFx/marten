@@ -340,7 +340,7 @@ namespace Marten.Events
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        Event<T> Load<T>(Guid id) where T : class;
+        IEvent<T> Load<T>(Guid id) where T : class;
 
         /// <summary>
         /// Load a single event by its id knowing the event type upfront
@@ -349,7 +349,7 @@ namespace Marten.Events
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<Event<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class;
+        Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Load a single event by its id

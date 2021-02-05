@@ -122,12 +122,12 @@ namespace Marten.Testing.Events.Projections
     // SAMPLE: MonsterDefeatedTransform
     public class MonsterDefeatedTransform: EventProjection
     {
-        public MonsterDefeated Transform(Event<MonsterSlayed> input)
+        public MonsterDefeated Transform(IEvent<MonsterSlayed> input)
         {
             return new MonsterDefeated
             {
                 Id = input.Id,
-                Monster = input.Data.Name
+                Monster = input.GetData().Name
             };
         }
     }

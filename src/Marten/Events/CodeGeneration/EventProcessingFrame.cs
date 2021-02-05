@@ -20,6 +20,7 @@ namespace Marten.Events.CodeGeneration
     /// </summary>
     internal class EventProcessingFrame : Frame
     {
+        private static int Counter;
         private Variable _event;
         private readonly IList<Frame> _inner = new List<Frame>();
 
@@ -32,9 +33,8 @@ namespace Marten.Events.CodeGeneration
             EventType = eventType;
             AggregateType = aggregateType;
 
-            // TODO -- watch the naming here.
-            SpecificEvent = new Variable(typeof(Event<>).MakeGenericType(eventType), "event_" + eventType.Name);
-            DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(Event<string>.Data)}");
+            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name + ++Counter);
+            DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(IEvent<string>.GetData)}()");
         }
 
         public EventProcessingFrame(Type aggregateType, IEventHandlingFrame inner)
