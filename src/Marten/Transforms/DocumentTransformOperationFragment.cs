@@ -1,4 +1,5 @@
 using Marten.Internal.Operations;
+using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -8,12 +9,12 @@ namespace Marten.Transforms
 {
     internal class DocumentTransformOperationFragment : IOperationFragment
     {
-        private readonly IDocumentMapping _mapping;
+        private readonly IDocumentStorage _storage;
         private readonly TransformFunction _function;
 
-        public DocumentTransformOperationFragment(IDocumentMapping mapping, TransformFunction function)
+        public DocumentTransformOperationFragment(IDocumentStorage storage, TransformFunction function)
         {
-            _mapping = mapping;
+            _storage = storage;
             _function = function;
         }
 
@@ -22,7 +23,7 @@ namespace Marten.Transforms
             var version = CombGuidIdGeneration.NewGuid();
 
             sql.Append("update ");
-            sql.Append(_mapping.TableName.QualifiedName);
+            sql.Append(_storage.TableName.QualifiedName);
             sql.Append(" as d set data = ");
             sql.Append(_function.Identifier.QualifiedName);
             sql.Append("(data), ");
