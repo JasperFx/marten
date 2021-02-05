@@ -45,7 +45,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            var mapping = theStore.Tenancy.Default.MappingFor(typeof(BaseballTeam)).ShouldBeOfType<SubClassMapping>();
+            var mapping = theStore.Storage.MappingFor(typeof(BaseballTeam)).ShouldBeOfType<SubClassMapping>();
 
             mapping.DocumentType.ShouldBe(typeof(BaseballTeam));
 
@@ -336,7 +336,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.Tenancy.Default.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Storage.MappingFor(typeof(RaceStarted)).ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

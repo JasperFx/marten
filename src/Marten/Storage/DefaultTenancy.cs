@@ -58,11 +58,6 @@ namespace Marten.Storage
             return _inner.StorageFor<T>();
         }
 
-        public IDocumentMapping MappingFor(Type documentType)
-        {
-            return _inner.MappingFor(documentType);
-        }
-
         void ITenantStorage.MarkAllFeaturesAsChecked()
         {
             _inner.MarkAllFeaturesAsChecked();

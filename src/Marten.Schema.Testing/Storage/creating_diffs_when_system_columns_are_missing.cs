@@ -14,7 +14,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void can_fill_in_the_version_column()
         {
-            var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
+            var mapping = theStore.Storage.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
             table.RemoveColumn(SchemaConstants.VersionColumn);
 
@@ -38,7 +38,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void can_fill_in_the_dotnettype_column()
         {
-            var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
+            var mapping = theStore.Storage.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
             table.RemoveColumn(SchemaConstants.DotNetTypeColumn);
 
@@ -62,7 +62,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void can_fill_in_the_lastmodified_column()
         {
-            var mapping = theStore.Tenancy.Default.MappingFor(typeof(User));
+            var mapping = theStore.Storage.MappingFor(typeof(User));
             var table = new DocumentTable(mapping.As<DocumentMapping>());
             table.RemoveColumn(SchemaConstants.LastModifiedColumn);
 
