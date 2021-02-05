@@ -75,12 +75,6 @@ namespace Marten.Storage
 
         public ISequences Sequences => _inner.Sequences;
 
-
-        public IdAssignment<T> IdAssignmentFor<T>()
-        {
-            return _inner.IdAssignmentFor<T>();
-        }
-
         public TransformFunction TransformFor(string name)
         {
             return _inner.TransformFor(name);

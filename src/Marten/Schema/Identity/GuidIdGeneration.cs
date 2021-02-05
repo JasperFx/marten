@@ -9,11 +9,6 @@ namespace Marten.Schema.Identity
     {
         public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(Guid) };
 
-        public IIdGenerator<T> Build<T>()
-        {
-            return (IIdGenerator<T>)new GuidIdGenerator(Guid.NewGuid);
-        }
-
         public bool RequiresSequences { get; } = false;
         public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
         {

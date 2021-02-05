@@ -15,16 +15,5 @@ namespace Marten.Schema.Testing.Identity
             generator.KeyTypes.ShouldHaveTheSameElementsAs(typeof(int), typeof(long), typeof(string), typeof(Guid));
         }
 
-        [Fact]
-        public void never_assign_anything()
-        {
-            var generator = new NoOpIdGeneration();
-            var ids = generator.Build<int>();
-
-            bool assigned = true;
-            ids.Assign(null, 5, out assigned).ShouldBe(5);
-
-            assigned.ShouldBeFalse();
-        }
     }
 }

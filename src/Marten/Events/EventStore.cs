@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Querying;
 using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Identity;
@@ -236,8 +237,8 @@ namespace Marten.Events
 
             var aggregate = aggregator.Build(events, _session, state);
 
-            var assignment = _tenant.IdAssignmentFor<T>();
-            assignment.Assign(_tenant, aggregate, streamId);
+            var storage = _session.StorageFor<T>();
+            if (storage is IDocumentStorage<T, Guid> s) s.SetIdentity(aggregate, streamId);
 
             return aggregate;
         }
@@ -253,8 +254,8 @@ namespace Marten.Events
 
             if (aggregate == null) return null;
 
-            var assignment = _tenant.IdAssignmentFor<T>();
-            assignment.Assign(_tenant, aggregate, streamId);
+            var storage = _session.StorageFor<T>();
+            if (storage is IDocumentStorage<T, Guid> s) s.SetIdentity(aggregate, streamId);
 
             return aggregate;
         }
@@ -270,8 +271,8 @@ namespace Marten.Events
             var aggregator = _store.Events.Projections.AggregatorFor<T>();
             var aggregate = aggregator.Build(events, _session, state);
 
-            var assignment = _tenant.IdAssignmentFor<T>();
-            assignment.Assign(_tenant, aggregate, streamKey);
+            var storage = _session.StorageFor<T>();
+            if (storage is IDocumentStorage<T, string> s) s.SetIdentity(aggregate, streamKey);
 
             return aggregate;
         }
@@ -289,8 +290,8 @@ namespace Marten.Events
 
             var aggregate = await aggregator.BuildAsync(events, _session, state, token);
 
-            var assignment = _tenant.IdAssignmentFor<T>();
-            assignment.Assign(_tenant, aggregate, streamKey);
+            var storage = _session.StorageFor<T>();
+            if (storage is IDocumentStorage<T, string> s) s.SetIdentity(aggregate, streamKey);
 
             return aggregate;
         }

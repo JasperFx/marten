@@ -55,12 +55,6 @@ namespace Marten.Schema
                 $"delete from {Parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{Alias}'");
         }
 
-        [Obsolete("Goes away in v4 eventually")]
-        public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
-        {
-            return Parent.ToIdAssignment<T>(tenant);
-        }
-
         public Type IdType => Parent.IdType;
 
 

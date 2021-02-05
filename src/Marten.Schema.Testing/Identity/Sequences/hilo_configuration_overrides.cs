@@ -52,12 +52,6 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 opts.DatabaseSchemaName = "sequences";
             });
 
-            var mapping = store.Storage.MappingFor(typeof (IntDoc));
-
-            mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
-                .As<IdAssigner<IntDoc, int>>().Generator
-                .ShouldBeOfType<IntHiloGenerator>();
-
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(defaults.MaxLo);
         }
@@ -73,12 +67,6 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 _.DatabaseSchemaName = "sequences";
             });
             // ENDSAMPLE
-
-            var mapping = store.Storage.MappingFor(typeof(IntDoc));
-
-            var idStrategy = mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
-                .As<IdAssigner<IntDoc, int>>().Generator
-                .ShouldBeOfType<IntHiloGenerator>();
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(55);
@@ -100,12 +88,6 @@ namespace Marten.Schema.Testing.Identity.Sequences
             });
             // ENDSAMPLE
 
-            var mapping = store.Storage.MappingFor(typeof(IntDoc));
-
-            mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
-                .As<IdAssigner<IntDoc, int>>().Generator
-                .ShouldBeOfType<IntHiloGenerator>();
-
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(66);
             store.Tenancy.Default.Sequences
@@ -123,23 +105,11 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 _.DatabaseSchemaName = "sequences";
             });
 
-            var mapping = store.Storage.MappingFor(typeof(IntDoc));
-
-            mapping.ToIdAssignment<IntDoc>(store.Tenancy.Default)
-                .As<IdAssigner<IntDoc, int>>().Generator
-                .ShouldBeOfType<IntHiloGenerator>();
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(33);
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("IntDoc");
-
-
-            mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
-
-            mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
-                .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
-                .ShouldBeOfType<IntHiloGenerator>();
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(66);
@@ -165,12 +135,6 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("ID");
-
-            mapping = store.Storage.MappingFor(typeof(OverriddenHiloDoc));
-
-            mapping.ToIdAssignment<OverriddenHiloDoc>(store.Tenancy.Default)
-                .As<IdAssigner<OverriddenHiloDoc, int>>().Generator
-                .ShouldBeOfType<IntHiloGenerator>();
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(66);

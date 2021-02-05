@@ -16,11 +16,6 @@ namespace Marten.Schema.Testing.Identity.Sequences
     {
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
-        public IIdGenerator<T> Build<T>()
-        {
-            return (IIdGenerator<T>) new CustomIdGenerator();
-        }
-
         public bool RequiresSequences { get; } = false;
         public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
         {
@@ -29,14 +24,6 @@ namespace Marten.Schema.Testing.Identity.Sequences
             assign.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
         }
 
-        public class CustomIdGenerator : IIdGenerator<string>
-        {
-            public string Assign(ITenant tenant, string existing, out bool assigned)
-            {
-                assigned = true;
-                return "newId";
-            }
-        }
     }
     // ENDSAMPLE
 

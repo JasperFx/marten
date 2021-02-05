@@ -14,8 +14,6 @@ namespace Marten.Schema
 
         void DeleteAllDocuments(ITenant factory);
 
-        IdAssignment<T> ToIdAssignment<T>(ITenant tenant);
-
         Type IdType { get; }
     }
 

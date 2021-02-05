@@ -63,9 +63,6 @@ namespace Marten.Storage
         /// </summary>
         ISequences Sequences { get; }
 
-        [Obsolete("Goes away in v4")]
-        IdAssignment<T> IdAssignmentFor<T>();
-
         TransformFunction TransformFor(string name);
 
 

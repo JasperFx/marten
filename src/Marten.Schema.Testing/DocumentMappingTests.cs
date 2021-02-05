@@ -109,11 +109,6 @@ namespace Marten.Schema.Testing
         {
             public IEnumerable<Type> KeyTypes { get; }
 
-            public IIdGenerator<T> Build<T>()
-            {
-                throw new NotImplementedException();
-            }
-
             public bool RequiresSequences { get; } = false;
             public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
             {
