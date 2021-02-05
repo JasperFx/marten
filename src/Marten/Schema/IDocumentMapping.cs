@@ -12,8 +12,6 @@ namespace Marten.Schema
 
         DbObjectName TableName { get; }
 
-        void DeleteAllDocuments(ITenant factory);
-
         Type IdType { get; }
     }
 

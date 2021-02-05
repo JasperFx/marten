@@ -39,6 +39,12 @@ namespace Marten.Internal.Storage
             _fields = _parent.SelectFields();
         }
 
+        public void TruncateDocumentStorage(ITenant tenant)
+        {
+            tenant.RunSql(
+                $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
+        }
+
         public TenancyStyle TenancyStyle => _parent.TenancyStyle;
 
         object IDocumentStorage<T>.IdentityFor(T document)

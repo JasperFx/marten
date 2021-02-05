@@ -174,12 +174,6 @@ namespace Marten.Schema
 
         public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
-        void IDocumentMapping.DeleteAllDocuments(ITenant factory)
-        {
-            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
-            factory.RunSql(sql);
-        }
-
         public Type IdType => IdMember?.GetMemberType();
 
         public IDocumentMapping Root => this;

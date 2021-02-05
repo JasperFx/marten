@@ -81,6 +81,12 @@ namespace Marten.Internal.Storage
             DuplicatedFields = _mapping.DuplicatedFields;
         }
 
+        public void TruncateDocumentStorage(ITenant tenant)
+        {
+            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
+            tenant.RunSql(sql);
+        }
+
         public void SetIdentity(T document, TId identity)
         {
             _setter(document, identity);

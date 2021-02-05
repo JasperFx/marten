@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baseline;
+using Marten.Internal;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
@@ -60,9 +61,8 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
 
         public void DeleteDocumentsFor(Type documentType)
         {
-            var mapping = _options.Storage.FindMapping(documentType);
-            _options.Tenancy.Default.EnsureStorageExists(documentType);
-            mapping.DeleteAllDocuments(_tenant);
+            var storage = _options.Tenancy.Default.Providers.StorageFor(documentType);
+            storage.TruncateDocumentStorage(_tenant);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
@@ -70,7 +70,8 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
             var documentMappings = _options.Storage.AllDocumentMappings.Where(x => !documentTypes.Contains(x.DocumentType));
             foreach (var mapping in documentMappings)
             {
-                mapping.As<IDocumentMapping>().DeleteAllDocuments(_tenant);
+                var storage = _options.Tenancy.Default.Providers.StorageFor(mapping.DocumentType);
+                storage.TruncateDocumentStorage(_tenant);
             }
         }
 
