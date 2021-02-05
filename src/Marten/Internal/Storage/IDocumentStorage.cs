@@ -14,6 +14,8 @@ namespace Marten.Internal.Storage
 {
     public interface IDocumentStorage : ISelectClause
     {
+        void TruncateDocumentStorage(ITenant tenant);
+
         Type SourceType { get; }
 
         Type IdType { get; }

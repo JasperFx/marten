@@ -60,6 +60,11 @@ namespace Marten.Events
             _selectClause = $"select {_fields.Join(", ")} from {Events.DatabaseSchemaName}.mt_events as d";
         }
 
+        public void TruncateDocumentStorage(ITenant tenant)
+        {
+            tenant.RunSql($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
+        }
+
         public EventGraph Events { get; }
 
         public TenancyStyle TenancyStyle { get; }

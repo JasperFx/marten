@@ -49,12 +49,6 @@ namespace Marten.Schema
 
         public DbObjectName TableName => Parent.TableName;
 
-        public void DeleteAllDocuments(ITenant factory)
-        {
-            factory.RunSql(
-                $"delete from {Parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{Alias}'");
-        }
-
         public Type IdType => Parent.IdType;
 
 

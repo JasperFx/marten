@@ -197,13 +197,13 @@ namespace Marten.Testing.Events.SchemaChange
         }
 
 
-        public class Task : AggregateBase
+        public class TaskAggregate : AggregateBase
         {
             public string Description { get; private set; }
 
-            private Task() {}
+            private TaskAggregate() {}
 
-            public Task(Guid id, string description)
+            public TaskAggregate(Guid id, string description)
             {
                 var @event = new TaskCreated(id, description);
                 EnqueueEvent(@event);
@@ -263,7 +263,7 @@ namespace Marten.Testing.Events.SchemaChange
             {
                 using (var session = store.OpenSession())
                 {
-                    var taskNew = await session.Events.AggregateStreamAsync<New.Task>(taskId);
+                    var taskNew = await session.Events.AggregateStreamAsync<New.TaskAggregate>(taskId);
 
                     taskNew.Id.ShouldBe(taskId);
                     taskNew.Description.ShouldBe(task.Description);

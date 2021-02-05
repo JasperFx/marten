@@ -103,11 +103,6 @@ namespace Marten.Events
             return new WhereFragment($"d.type = '{EventTypeName}'");
         }
 
-        public void DeleteAllDocuments(ITenant factory)
-        {
-            factory.RunSql($"delete from mt_events where type = '{Alias}'");
-        }
-
         public abstract IEvent Wrap(object data);
     }
 
@@ -122,6 +117,11 @@ namespace Marten.Events
             _tableName = schemaName == StoreOptions.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
 
             _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+        }
+
+        public void TruncateDocumentStorage(ITenant tenant)
+        {
+            tenant.RunSql($"delete from table {_tableName} where type = '{Alias}'");
         }
 
         public bool UseOptimisticConcurrency { get; } = false;
