@@ -8,9 +8,9 @@ namespace Marten.Events.CodeGeneration
 {
     internal class ForEachEventFrame: Frame
     {
-        private readonly IReadOnlyList<Frame> _inner;
+        private readonly EventTypePatternMatchFrame _inner;
 
-        public ForEachEventFrame(IReadOnlyList<Frame> inner) : base(inner.Any(x => x.IsAsync))
+        public ForEachEventFrame(EventTypePatternMatchFrame inner) : base(inner.IsAsync)
         {
             _inner = inner;
             Event = new Variable(typeof(IEvent), "@event");
@@ -22,16 +22,13 @@ namespace Marten.Events.CodeGeneration
 
         public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
         {
-            return _inner.SelectMany(x => x.FindVariables(chain));
+            return _inner.FindVariables(chain);
         }
 
         public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
         {
             writer.Write($"BLOCK:foreach (var @event in {EventIteration})");
-            foreach (var frame in _inner)
-            {
-                frame.GenerateCode(method, writer);
-            }
+            _inner.GenerateCode(method, writer);
             writer.FinishBlock();
 
             Next?.GenerateCode(method, writer);

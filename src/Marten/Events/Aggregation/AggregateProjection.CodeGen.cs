@@ -215,7 +215,7 @@ namespace Marten.Events.Aggregation
             method.Frames.Add(new MethodCall(_storageType, "SetIdentity"));
 
             var handlers = MethodCollection.AddEventHandling(typeof(T), _aggregateMapping, _applyMethods, _shouldDeleteMethods);
-            var iterate = new ForEachEventFrame((IReadOnlyList<Frame>) handlers);
+            var iterate = new ForEachEventFrame(handlers);
             method.Frames.Add(iterate);
             return method;
         }

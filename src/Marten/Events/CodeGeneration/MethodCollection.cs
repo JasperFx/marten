@@ -125,17 +125,12 @@ namespace Marten.Events.CodeGeneration
 
         public bool IsAsync { get; private set; }
 
-        public static IList<Frame> AddEventHandling(Type aggregateType, DocumentMapping mapping,
+        public static EventTypePatternMatchFrame AddEventHandling(Type aggregateType, DocumentMapping mapping,
             params MethodCollection[] collections)
         {
             var byType = new Dictionary<Type, EventProcessingFrame>();
 
-            // TODO -- later we'll worry about abstract/interface applications
-            // of events
-
-            var frames = new List<Frame>();
-
-            var ifStyle = IfStyle.If;
+            var frames = new List<EventProcessingFrame>();
 
             foreach (var collection in collections)
             {
@@ -148,12 +143,7 @@ namespace Marten.Events.CodeGeneration
                     }
                     else
                     {
-                        container = new EventProcessingFrame(aggregateType, frame)
-                        {
-                            IfStyle = ifStyle
-                        };
-
-                        ifStyle = IfStyle.ElseIf;
+                        container = new EventProcessingFrame(aggregateType, frame);
 
                         byType.Add(frame.EventType, container);
 
@@ -163,7 +153,7 @@ namespace Marten.Events.CodeGeneration
                 }
             }
 
-            return frames;
+            return new EventTypePatternMatchFrame(frames);
         }
 
 

@@ -244,8 +244,8 @@ namespace Marten.Events.Projections
             var method = _inlineType.MethodFor("ApplyEvent");
             method.DerivedVariables.Add(new Variable(GetType(), "Projection"));
 
-            var handlers = MethodCollection.AddEventHandling(null, null, _createMethods, _projectMethods);
-            method.Frames.AddRange(handlers);
+            var eventHandling = MethodCollection.AddEventHandling(null, null, _createMethods, _projectMethods);
+            method.Frames.Add(eventHandling);
 
             var assemblyGenerator = new AssemblyGenerator();
 

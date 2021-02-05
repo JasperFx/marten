@@ -61,8 +61,8 @@ namespace Marten.Events.CodeGeneration
             var method = new GeneratedMethod(MethodName, returnType, args);
             generatedType.AddMethod(method);
 
-            var frames = AddEventHandling(AggregateType, aggregateMapping, this);
-            method.Frames.AddRange(frames);
+            var eventHandling = AddEventHandling(AggregateType, aggregateMapping, this);
+            method.Frames.Add(eventHandling);
 
 
             method.Frames.Code("return {0};", new Use(AggregateType));

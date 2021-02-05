@@ -14,6 +14,7 @@ namespace Marten.Events.CodeGeneration
         Type EventType { get; }
     }
 
+
     /// <summary>
     /// Calls an AggregatedProjection.Apply() method
     /// </summary>
@@ -54,9 +55,6 @@ namespace Marten.Events.CodeGeneration
             _inner.Add(inner);
         }
 
-
-        public IfStyle IfStyle { get; set; } = IfStyle.If;
-
         public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
         {
             if (AggregateType != null)
@@ -86,14 +84,17 @@ namespace Marten.Events.CodeGeneration
 
         public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
         {
-            IfStyle.Open(writer, $"{_event.Usage} is {SpecificEvent.VariableType.FullNameInCode()} {SpecificEvent.Usage}");
+            writer.Write($"case {SpecificEvent.VariableType.FullNameInCode()} {SpecificEvent.Usage}:");
+            // TODO -- fix this with LamarCodeGeneration
+            writer.As<SourceWriter>().IndentionLevel++;
 
             foreach (var frame in _inner)
             {
                 frame.GenerateCode(method, writer);
             }
 
-            IfStyle.Close(writer);
+            writer.Write("break;");
+            writer.As<SourceWriter>().IndentionLevel--;
 
             Next?.GenerateCode(method, writer);
         }
