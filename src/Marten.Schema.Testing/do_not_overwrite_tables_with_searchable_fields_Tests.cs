@@ -22,7 +22,7 @@ namespace Marten.Schema.Testing
 
             var existing = theStore.TableSchema(typeof (Target));
 
-            var configured = new DocumentTable(theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>());
+            var configured = new DocumentTable(theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>());
 
             if (!existing.Equals(configured))
             {

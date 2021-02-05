@@ -11,7 +11,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         [Fact]
         public void uses_no_id_generation_for_non_public_id()
         {
-            theStore.Tenancy.Default.MappingFor(typeof(DocumentWithNonPublicId)).As<DocumentMapping>().IdStrategy
+            theStore.Storage.MappingFor(typeof(DocumentWithNonPublicId)).As<DocumentMapping>().IdStrategy
                 .ShouldBeOfType<CombGuidIdGeneration>();
         }
 
@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         [Fact]
         public void uses_no_id_generation_without_id_setter()
         {
-            theStore.Tenancy.Default.MappingFor(typeof(DocumentWithoutIdSetter)).As<DocumentMapping>().IdStrategy
+            theStore.Storage.MappingFor(typeof(DocumentWithoutIdSetter)).As<DocumentMapping>().IdStrategy
                 .ShouldBeOfType<NoOpIdGeneration>();
         }
 

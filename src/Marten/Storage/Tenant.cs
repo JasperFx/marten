@@ -163,12 +163,6 @@ namespace Marten.Storage
             return Providers.StorageFor<T>().QueryOnly;
         }
 
-        public IDocumentMapping MappingFor(Type documentType)
-        {
-            EnsureStorageExists(documentType);
-            return _features.FindMapping(documentType);
-        }
-
         public ISequences Sequences => _sequences.Value;
 
         private readonly ConcurrentDictionary<Type, object> _identityAssignments =

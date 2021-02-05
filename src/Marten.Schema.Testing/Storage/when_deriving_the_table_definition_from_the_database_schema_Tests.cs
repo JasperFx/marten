@@ -20,7 +20,7 @@ namespace Marten.Schema.Testing.Storage
         {
             _schema = theStore.Schema;
 
-            theMapping = theStore.Tenancy.Default.MappingFor(typeof(User)).As<DocumentMapping>();
+            theMapping = theStore.Storage.MappingFor(typeof(User));
             theMapping.DuplicateField("UserName");
 
 

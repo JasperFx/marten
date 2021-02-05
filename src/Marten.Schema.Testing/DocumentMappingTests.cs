@@ -343,7 +343,7 @@ namespace Marten.Schema.Testing
             {
                 store.Advanced.Clean.CompletelyRemove(typeof(User));
 
-                var mapping = store.Tenancy.Default.MappingFor(typeof(User)).As<DocumentMapping>();
+                var mapping = store.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
                 mapping.DuplicateField(nameof(User.FirstName));
 
                 store.Tenancy.Default.EnsureStorageExists(typeof(User));

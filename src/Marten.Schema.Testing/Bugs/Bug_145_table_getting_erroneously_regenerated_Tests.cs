@@ -26,7 +26,7 @@ namespace Marten.Schema.Testing.Bugs
         {
             var existing = theStore.TableSchema(typeof(Login));
 
-            var mapping = theStore.Tenancy.Default.MappingFor(typeof(Login));
+            var mapping = theStore.Storage.MappingFor(typeof(Login));
             var configured = new DocumentTable(mapping.As<DocumentMapping>());
 
             if (!existing.Equals(configured))

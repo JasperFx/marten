@@ -7,8 +7,8 @@ namespace Marten.Schema.Testing
     {
         internal static DocumentTable TableSchema(this DocumentStore store, Type documentType)
         {
-            var mapping = store.Tenancy.Default.MappingFor(documentType);
-            return new DocumentTable((DocumentMapping)mapping);
+            var mapping = store.Storage.MappingFor(documentType);
+            return new DocumentTable(mapping);
         }
     }
 }

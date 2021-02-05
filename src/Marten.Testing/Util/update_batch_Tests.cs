@@ -20,7 +20,7 @@ namespace Marten.Testing.Util
 
         public update_batch_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
-            theMapping = theStore.Tenancy.Default.MappingFor(typeof (Target)).As<DocumentMapping>();
+            theMapping = theStore.Storage.MappingFor(typeof (Target)).As<DocumentMapping>();
         }
 
         [Fact]

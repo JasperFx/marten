@@ -67,7 +67,7 @@ namespace Marten.Schema.Testing
             theSession.SaveChanges();
             theSession.Dispose();
 
-            var tableName = theStore.Tenancy.Default.MappingFor(typeof(Target)).TableName;
+            var tableName = theStore.Storage.MappingFor(typeof(Target)).TableName;
 
             theStore.Tenancy.Default.DbObjects.DocumentTables().Contains(tableName)
                 .ShouldBeTrue();
@@ -88,7 +88,7 @@ namespace Marten.Schema.Testing
 
             var dbObjects = theStore.Tenancy.Default.DbObjects;
 
-            var upsertName = theStore.Tenancy.Default.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
+            var upsertName = theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
             dbObjects.Functions().ShouldContain(upsertName);
 

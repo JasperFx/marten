@@ -50,15 +50,6 @@ namespace Marten.Storage
         IDocumentStorage<T> StorageFor<T>();
 
         /// <summary>
-        /// Finds or creates the IDocumentMapping for a document type
-        /// that governs how that document type is persisted and queried
-        /// </summary>
-        /// <param name="documentType"></param>
-        /// <returns></returns>
-        [Obsolete("Goes away in v4")]
-        IDocumentMapping MappingFor(Type documentType);
-
-        /// <summary>
         /// Used to create new Hilo sequences
         /// </summary>
         ISequences Sequences { get; }
