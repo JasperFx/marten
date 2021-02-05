@@ -351,36 +351,6 @@ namespace Marten.Schema.Testing
 
     }
 
-    public class building_id_assignment_for_document_types : IntegrationContext
-    {
-
-
-
-        [Fact]
-        public void can_build_with_guid_property()
-        {
-            theStore.Tenancy.Default.IdAssignmentFor<User>().ShouldNotBeNull();
-        }
-
-        [Fact]
-        public void can_build_for_int_and_long_id()
-        {
-            theStore.Tenancy.Default.IdAssignmentFor<IntDoc>().ShouldNotBeNull();
-            theStore.Tenancy.Default.IdAssignmentFor<LongDoc>().ShouldNotBeNull();
-        }
-
-        [Fact]
-        public void can_build_for_a_field()
-        {
-            theStore.Tenancy.Default.IdAssignmentFor<StringFieldGuy>().ShouldNotBeNull();
-        }
-
-        public class StringFieldGuy
-        {
-            public string Id;
-        }
-
-    }
 
     [Collection("DefaultSchema")]
     public class DocumentSchemaWithOverridenSchemaTests : IntegrationContext
@@ -427,56 +397,56 @@ namespace Marten.Schema.Testing
         [Fact]
         public void include_the_hilo_table_by_default()
         {
-            SpecificationExtensions.ShouldContain(_sql, "public.mt_hilo");
+            _sql.ShouldContain("public.mt_hilo");
         }
 
         [Fact]
         public void do_not_write_event_sql_if_the_event_graph_is_not_active()
         {
             theStore.Events.IsActive(null).ShouldBeFalse();
-            SpecificationExtensions.ShouldNotContain(_sql, "public.mt_streams");
+            _sql.ShouldNotContain("public.mt_streams");
         }
 
         [Fact]
         public void then_the_hilo_function_should_be_generated_in_the_default_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
         }
 
         [Fact]
         public void then_the_user_function_should_be_generated_in_the_default_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION other.mt_upsert_user");
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
         }
 
         [Fact]
         public void then_the_issue_function_should_be_generated_in_the_overriden_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION overriden.mt_upsert_issue");
         }
 
         [Fact]
         public void then_the_company_function_should_be_generated_in_the_default_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_company");
+            _sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_company");
         }
 
         [Fact]
         public void then_the_user_table_should_be_generated_in_the_other_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE other.mt_doc_user");
+            _sql.ShouldContain("CREATE TABLE other.mt_doc_user");
         }
 
         [Fact]
         public void then_the_issue_table_should_be_generated_in_the_overriden_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE overriden.mt_doc_issue");
+            _sql.ShouldContain("CREATE TABLE overriden.mt_doc_issue");
         }
 
         [Fact]
         public void then_company_table_should_be_generated_in_the_default()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE public.mt_doc_company");
+            _sql.ShouldContain("CREATE TABLE public.mt_doc_company");
         }
 
         [Fact]

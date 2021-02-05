@@ -174,16 +174,6 @@ namespace Marten.Storage
         private readonly ConcurrentDictionary<Type, object> _identityAssignments =
              new ConcurrentDictionary<Type, object>();
 
-        public IdAssignment<T> IdAssignmentFor<T>()
-        {
-            EnsureStorageExists(typeof(T));
-            return _identityAssignments.GetOrAdd(typeof(T), _ =>
-            {
-                var mapping = MappingFor(typeof(T));
-                return mapping.ToIdAssignment<T>(this);
-            }).As<IdAssignment<T>>();
-        }
-
         public TransformFunction TransformFor(string name)
         {
             EnsureStorageExists(typeof(Transforms.Transforms));
@@ -231,8 +221,6 @@ namespace Marten.Storage
         /// <param name="floor"></param>
         public void ResetHiloSequenceFloor<T>(long floor)
         {
-            // Make sure that the sequence is built for this one
-            IdAssignmentFor<T>();
             var sequence = Sequences.SequenceFor(typeof(T));
             sequence.SetFloor(floor);
         }

@@ -180,17 +180,6 @@ namespace Marten.Schema
             factory.RunSql(sql);
         }
 
-        // TODO -- see if you can eliminate the tenant argument here
-        [Obsolete("Will be removed in v4 after ViewProjection is rewritten")]
-        public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
-        {
-            var idType = IdMember.GetMemberType();
-
-            var assignerType = typeof(IdAssigner<,>).MakeGenericType(typeof(T), idType);
-
-            return (IdAssignment<T>)Activator.CreateInstance(assignerType, IdMember, IdStrategy);
-        }
-
         public Type IdType => IdMember?.GetMemberType();
 
         public IDocumentMapping Root => this;

@@ -8,9 +8,6 @@ namespace Marten.Schema.Identity
     {
         IEnumerable<Type> KeyTypes { get; }
 
-        [Obsolete("Goes away in v4")]
-        IIdGenerator<T> Build<T>();
-
         bool RequiresSequences { get; }
         void GenerateCode(GeneratedMethod method, DocumentMapping mapping);
     }

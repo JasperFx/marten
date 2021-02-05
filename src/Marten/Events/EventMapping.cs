@@ -108,12 +108,6 @@ namespace Marten.Events
             factory.RunSql($"delete from mt_events where type = '{Alias}'");
         }
 
-        public IdAssignment<T> ToIdAssignment<T>(ITenant tenant)
-        {
-            throw new NotSupportedException();
-        }
-
-
         public abstract IEvent Wrap(object data);
     }
 
