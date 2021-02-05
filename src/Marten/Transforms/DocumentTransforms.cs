@@ -30,11 +30,11 @@ namespace Marten.Transforms
         public void All<T>(string transformName)
         {
             var transform = _tenant.TransformFor(transformName);
-            var mapping = _tenant.MappingFor(typeof(T));
+            var storage = _tenant.StorageFor<T>();
 
             using var session = (DocumentSessionBase)_store.LightweightSession();
-            var operation = new DocumentTransformOperationFragment(mapping, transform);
-            var statement = new StatementOperation(session.StorageFor<T>(), operation);
+            var operation = new DocumentTransformOperationFragment(storage, transform);
+            var statement = new StatementOperation(storage, operation);
 
             // To bake in the default document filtering here
             statement.CompileLocal(session);
@@ -55,11 +55,14 @@ namespace Marten.Transforms
         public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
         {
             var transform = _tenant.TransformFor(transformName);
-            var mapping = _tenant.MappingFor(typeof(T));
+
 
             using var session = (DocumentSessionBase)_store.LightweightSession();
-            var operation = new DocumentTransformOperationFragment(mapping, transform);
-            var statement = new StatementOperation(session.StorageFor<T>(), operation);
+
+            var storage = session.StorageFor<T>();
+            var operation = new DocumentTransformOperationFragment(storage, transform);
+
+            var statement = new StatementOperation(storage, operation);
             statement.ApplyFiltering(session, @where);
             session.WorkTracker.Add(statement);
             session.SaveChanges();
@@ -74,14 +77,14 @@ namespace Marten.Transforms
         private void transformOne<T>(string transformName, ISqlFragment filter)
         {
             var transform = _tenant.TransformFor(transformName);
-            var mapping = _tenant.MappingFor(typeof(T));
 
             using var session = (DocumentSessionBase)_store.LightweightSession();
-            var operation = new DocumentTransformOperationFragment(mapping, transform);
-            var statement = new StatementOperation(session.StorageFor<T>(), operation);
+            var storage = session.StorageFor<T>();
+            var operation = new DocumentTransformOperationFragment(storage, transform);
+
+            var statement = new StatementOperation(storage, operation) {Where = filter};
 
             // To bake in the default document filtering here
-            statement.Where = filter;
             statement.CompileLocal(session);
             session.WorkTracker.Add(statement);
             session.SaveChanges();
