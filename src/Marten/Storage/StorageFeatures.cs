@@ -140,7 +140,6 @@ namespace Marten.Storage
             return value;
         }
 
-        [Obsolete("Can we eliminate this in v4?")]
         internal IDocumentMapping FindMapping(Type documentType)
         {
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
@@ -159,7 +158,6 @@ namespace Marten.Storage
             return value;
         }
 
-        [Obsolete("Might be able to eliminate this")]
         internal void AddMapping(IDocumentMapping mapping)
         {
             _mappings.Swap(d => d.AddOrUpdate(mapping.DocumentType, mapping));

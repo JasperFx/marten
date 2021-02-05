@@ -42,7 +42,7 @@ namespace Marten.Schema
 
         public DeleteStyle DeleteStyle => Parent.DeleteStyle;
 
-        public IDocumentMapping Root => Parent;
+        IDocumentMapping IDocumentMapping.Root => Parent;
         public Type DocumentType { get; }
 
         public DbObjectName TableName => Parent.TableName;
