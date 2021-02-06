@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -211,32 +212,27 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
-            public T FromJson<T>(Stream stream)
+            public T FromJson<T>(DbDataReader reader, int index)
             {
                 throw new NotImplementedException();
             }
 
-            public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+            public ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }
 
-            public object FromJson(Type type, Stream stream)
+            public object FromJson(Type type, DbDataReader reader, int index)
             {
                 throw new NotImplementedException();
             }
 
-            public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+            public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }
 
             public string ToCleanJson(object document)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void ToJson(object document, Stream stream)
             {
                 throw new NotImplementedException();
             }

@@ -7,6 +7,7 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Testing.Services;
+using Marten.Util;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
@@ -34,11 +35,13 @@ namespace Marten.Testing.CoreFunctionality
             theSession.SaveChanges();
 
             using var runner = theStore.Tenancy.Default.OpenConnection();
-            var json = runner.QueryScalar<string>("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
+            var command =
+                runner.Connection.CreateCommand("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
 
-            json.ShouldNotBeNull();
+            var reader = runner.ExecuteReader(command);
+            reader.Read();
 
-            var loadedUser = new JsonNetSerializer().FromJson<User>(Marten.Util.StreamExtensions.GetMemoryStreamFromString(json));
+            var loadedUser = new JsonNetSerializer().FromJson<User>(reader, 0);
 
             user.ShouldNotBeSameAs(loadedUser);
             loadedUser.FirstName.ShouldBe(user.FirstName);

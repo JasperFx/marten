@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,36 +14,31 @@ namespace Marten.Testing
         private readonly Options _options
             = new Options(dateFormat: DateTimeFormat.ISO8601, includeInherited:true);
 
-        public void ToJson(object document, Stream stream)
-        {
-            using var writer = new StreamWriter(stream);
-            JSON.Serialize(document, writer, _options);
-            writer.Flush();
-        }
-
         public string ToJson(object document)
         {
             return JSON.Serialize(document, _options);
         }
 
-        public T FromJson<T>(Stream stream)
+        public T FromJson<T>(DbDataReader reader, int index)
         {
+            var stream = reader.GetStream(index);
             return JSON.Deserialize<T>(new StreamReader(stream), _options);
         }
 
-        public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+        public ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
-            return new (FromJson<T>(stream));
+            return new (FromJson<T>(reader, index));
         }
 
-        public object FromJson(Type type, Stream stream)
+        public object FromJson(Type type, DbDataReader reader, int index)
         {
+            var stream = reader.GetStream(index);
             return JSON.Deserialize(new StreamReader(stream), type, _options);
         }
 
-        public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+        public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
-            return new (FromJson(type, stream));
+            return new (FromJson(type, reader, index));
         }
 
         public string ToCleanJson(object document)

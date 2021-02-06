@@ -15,11 +15,5 @@ namespace Marten.Testing
         {
             SerializerFactory.DefaultSerializerType = TestsSettings.SerializerType;
         }
-
-        public new void Dispose()
-        {
-            // Place tear down code here
-            base.Dispose();
-        }
     }
 }

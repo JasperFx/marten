@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,11 +10,6 @@ namespace Marten
     public interface ISerializer
     {
         /// <summary>
-        /// Serialize the document object into <paramref name="stream"/>.
-        /// </summary>
-        void ToJson(object document, Stream stream);
-
-        /// <summary>
         /// Serialize the document object into a JSON string
         /// </summary>
         /// <param name="document"></param>
@@ -23,24 +19,24 @@ namespace Marten
         /// <summary>
         /// Deserialize a JSON string into an object of type T
         /// </summary>
-        T FromJson<T>(Stream stream);
+        T FromJson<T>(DbDataReader reader, int index);
 
 
         /// <summary>
         /// Deserialize a JSON string into an object of type T
         /// </summary>
-        ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default);
+        ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
         /// </summary>
-        object FromJson(Type type, Stream stream);
+        object FromJson(Type type, DbDataReader reader, int index);
 
 
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
         /// </summary>
-        ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
+        ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Serialize a document without any extra

@@ -32,8 +32,7 @@ namespace Marten.Storage.Metadata
                 return;
             }
 
-            var json = reader.GetStream(index);
-            metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(json);
+            metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(reader, index, token);
         }
 
         public override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
@@ -45,7 +44,7 @@ namespace Marten.Storage.Metadata
             }
 
             var json = reader.GetStream(index);
-            metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(json);
+            metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(reader, index);
         }
 
         public override void RegisterForLinqSearching(DocumentMapping mapping)

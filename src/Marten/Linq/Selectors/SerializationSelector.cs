@@ -15,14 +15,12 @@ namespace Marten.Linq.Selectors
 
         public T Resolve(DbDataReader reader)
         {
-            using var json = reader.GetStream(0);
-            return _serializer.FromJson<T>(json);
+            return _serializer.FromJson<T>(reader, 0);
         }
 
         public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            using var json = reader.GetStream(0);
-            return await _serializer.FromJsonAsync<T>(json);
+            return await _serializer.FromJsonAsync<T>(reader, 0, token);
         }
     }
 }

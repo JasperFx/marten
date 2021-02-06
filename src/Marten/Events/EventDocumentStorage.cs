@@ -18,7 +18,6 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
-using Npgsql;
 using Remotion.Linq;
 
 namespace Marten.Events
@@ -212,8 +211,7 @@ namespace Marten.Events
                 mapping = Events.EventMappingFor(type);
             }
 
-            var dataJson = reader.GetStream(0);
-            var data = _serializer.FromJson(mapping.DocumentType, dataJson).As<object>();
+            var data = _serializer.FromJson(mapping.DocumentType, reader, 0).As<object>();
 
             var @event = mapping.Wrap(data);
 
@@ -247,8 +245,7 @@ namespace Marten.Events
                 mapping = Events.EventMappingFor(type);
             }
 
-            var dataJson = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
-            var data = await _serializer.FromJsonAsync(mapping.DocumentType, dataJson, token);
+            var data = await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token);
 
             var @event = mapping.Wrap(data);
 

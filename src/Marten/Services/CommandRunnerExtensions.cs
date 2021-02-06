@@ -25,7 +25,7 @@ namespace Marten.Services
 
             using var reader = runner.ExecuteReader(cmd);
 
-            var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader.GetStream(0)) : null;
+            var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader, 0) : null;
             var planToReturn = queryPlans?[0].Plan;
 
             if (planToReturn == null)

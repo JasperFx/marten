@@ -37,9 +37,7 @@ namespace Marten.Internal.CodeGeneration
                 {
                     frames.Code($@"
 {documentType.FullNameInCode()} document;
-BLOCK:using (var json = reader.GetStream({index}))
-    document = _serializer.FromJson<{documentType.FullNameInCode()}>(json);
-END
+document = _serializer.FromJson<{documentType.FullNameInCode()}>(reader, {index});
 ").Creates(document);
                 }
                 else
@@ -48,9 +46,7 @@ END
                     frames.Code($@"
 {documentType.FullNameInCode()} document;
 var typeAlias = reader.GetFieldValue<string>({index + 1});
-BLOCK:using (var json = reader.GetStream({index}))
-    document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), json);
-END
+document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), reader, {index});
 ").Creates(document);
                 }
             }
@@ -70,9 +66,7 @@ END
             {
                 frames.Code($@"
 {documentType.FullNameInCode()} document;
-BLOCK:using (var json = reader.GetStream({index}))
-document = _serializer.FromJson<{documentType.FullNameInCode()}>(json);
-END
+document = _serializer.FromJson<{documentType.FullNameInCode()}>(reader, {index});
 ").Creates(document);
             }
             else
@@ -80,9 +74,7 @@ END
                 frames.CodeAsync($@"
 {documentType.FullNameInCode()} document;
 var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}}).ConfigureAwait(false);
-BLOCK:using (var json = reader.GetStream({index}))
-document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), json);
-END
+document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), reader, {index});
 ", Use.Type<CancellationToken>()).Creates(document);
             }
 

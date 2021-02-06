@@ -1,10 +1,10 @@
 <!--Title: Storing & reading back non-uniform JSON documents via dynamic -->
 
-This scenario demonstrates how to store and query non-uniform JSON documents via the help of [`dynamic`](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/types/using-type-dynamic).
+This scenario demonstrates how to store and query non-uniform documents via the help of [`dynamic`](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/types/using-type-dynamic).
 
 ## Scenario
 
-Let us assume we have a document with non-uniform JSON records, presenting temperature sensor data whereby individual records are identified either via the field _detector_ or _sensor_.
+Let us assume we have a document with non-uniform records, presenting temperature sensor data whereby individual records are identified either via the field _detector_ or _sensor_.
 
 <[sample:sample-scenarios-dynamic-records]>
 

@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -45,40 +46,36 @@ namespace Marten.Services
             configure(_withTypes);
         }
 
-        public void ToJson(object document, Stream stream)
-        {
-            using var writer = new Utf8JsonWriter(stream);
-            JsonSerializer.Serialize(writer, document, _options);
-        }
-
         public string ToJson(object document)
         {
             return JsonSerializer.Serialize(document, document.GetType(), _options);
         }
 
-        public T FromJson<T>(Stream stream)
+        public T FromJson<T>(DbDataReader reader, int index)
         {
             using (NoSynchronizationContextScope.Enter())
             {
-                return FromJsonAsync<T>(stream).GetAwaiter().GetResult();
+                return FromJsonAsync<T>(reader, index).GetAwaiter().GetResult();
             }
         }
 
-        public async ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+        public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
+            using var stream = reader.GetStream(index);
             return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(cancellationToken), _optionsDeserialize, cancellationToken);
         }
 
-        public object FromJson(Type type, Stream stream)
+        public object FromJson(Type type, DbDataReader reader, int index)
         {
             using (NoSynchronizationContextScope.Enter())
             {
-                return FromJsonAsync(type, stream).GetAwaiter().GetResult();
+                return FromJsonAsync(type, reader, index).GetAwaiter().GetResult();
             }
         }
 
-        public async ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+        public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
+            using var stream = reader.GetStream(index);
             return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(cancellationToken), type, _optionsDeserialize, cancellationToken);
         }
 
