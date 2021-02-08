@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
@@ -50,7 +51,7 @@ namespace Marten.Internal.CodeGeneration
             }
             else
             {
-                async.Frames.Code("return Task.FromResult(document);");
+                async.Frames.Code($"return {typeof(Task).FullNameInCode()}.FromResult(document);");
             }
 
             return type;
