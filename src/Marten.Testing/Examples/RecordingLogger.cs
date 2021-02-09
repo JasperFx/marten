@@ -23,5 +23,10 @@ namespace Marten.Testing.Examples
         {
             // do nothing
         }
+
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+
+        }
     }
 }

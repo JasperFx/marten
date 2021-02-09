@@ -55,6 +55,11 @@ namespace Marten.Testing.Harness
                 $"Persisted {lastCommit.Updated.Count()} updates, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
         }
 
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+
+        }
+
         private class NoopTestOutputHelper : ITestOutputHelper
         {
             public void WriteLine(string message)

@@ -47,6 +47,7 @@ namespace Marten.Testing.Services
                     await connection.ExecuteAsync(new NpgsqlCommand("select foo from nonexistent"));
                 });
 
+                logger.OnBeforeExecuted.ShouldBe(1);
 
                 logger.LastCommand.CommandText.ShouldBe("select foo from nonexistent");
                 logger.LastException.ShouldBe(ex.InnerException);
@@ -140,6 +141,13 @@ namespace Marten.Testing.Services
         {
             throw new NotImplementedException();
         }
+
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+            OnBeforeExecuted++;
+        }
+
+        public int OnBeforeExecuted { get; set; }
 
         public void LogSuccess(NpgsqlCommand command)
         {

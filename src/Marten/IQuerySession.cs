@@ -332,6 +332,18 @@ namespace Marten
         IJsonLoader Json { get; }
 
         /// <summary>
+        /// Optional metadata describing the causation id for this
+        /// unit of work
+        /// </summary>
+        string CausationId { get; set; }
+
+        /// <summary>
+        /// Optional metadata describing the correlation id for this
+        /// unit of work
+        /// </summary>
+        string CorrelationId { get; set; }
+
+        /// <summary>
         /// Retrieve the current known version of the given document
         /// according to this session. Will return null if the document is
         /// not part of this session

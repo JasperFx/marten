@@ -262,6 +262,8 @@ namespace Marten.Services
 
             _connection.Apply(command);
 
+            Logger.OnBeforeExecute(command);
+
             RequestCount++;
 
             try
@@ -286,6 +288,8 @@ namespace Marten.Services
             RequestCount++;
 
             _connection.Apply(command);
+
+            Logger.OnBeforeExecute(command);
 
             try
             {

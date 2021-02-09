@@ -4,6 +4,8 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten
 {
@@ -33,8 +35,13 @@ namespace Marten
         /// <returns></returns>
         public static MartenConfigurationExpression AddMarten(this IServiceCollection services, StoreOptions options)
         {
-            services.AddSingleton(options);
-            services.AddSingleton<IDocumentStore, DocumentStore>();
+            services.AddSingleton<IDocumentStore>(s =>
+            {
+                var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
+                options.Logger(new DefaultMartenLogger(logger));
+
+                return new DocumentStore(options);
+            });
 
             // This can be overridden by the expression following
             services.AddSingleton<ISessionFactory, DefaultSessionFactory>();

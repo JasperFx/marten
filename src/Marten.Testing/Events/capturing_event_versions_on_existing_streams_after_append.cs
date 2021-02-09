@@ -27,6 +27,11 @@ namespace Marten.Testing.Events
                 LastCommit = commit.Clone();
             }
 
+            public void OnBeforeExecute(NpgsqlCommand command)
+            {
+
+            }
+
             public IChangeSet LastCommit { get; set; }
         }
 

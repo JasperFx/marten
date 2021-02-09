@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
 using Npgsql;
@@ -50,6 +51,16 @@ namespace Marten
         /// <param name="session"></param>
         /// <param name="commit"></param>
         void RecordSavedChanges(IDocumentSession session, IChangeSet commit);
+
+
+        /// <summary>
+        /// Called just before a command is to be executed. Use this to create
+        /// performance logging of Marten operations
+        /// </summary>
+        /// <param name="command"></param>
+        public void OnBeforeExecute(NpgsqlCommand command);
+
+
     }
 
     // ENDSAMPLE
@@ -57,6 +68,8 @@ namespace Marten
     // SAMPLE: ConsoleMartenLogger
     public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
+        private Stopwatch _stopwatch;
+
         public IMartenSessionLogger StartSession(IQuerySession session)
         {
             return this;
@@ -80,6 +93,8 @@ namespace Marten
 
         public void LogFailure(NpgsqlCommand command, Exception ex)
         {
+            _stopwatch?.Stop();
+
             Console.WriteLine("Postgresql command failed!");
             Console.WriteLine(command.CommandText);
             foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
@@ -91,9 +106,17 @@ namespace Marten
 
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
+            _stopwatch?.Stop();
+
             var lastCommit = commit;
             Console.WriteLine(
-                $"Persisted {lastCommit.Updated.Count()} updates, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
+                $"Persisted {lastCommit.Updated.Count()} updates in {_stopwatch?.ElapsedMilliseconds ?? 0} ms, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
+        }
+
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+            _stopwatch = new Stopwatch();
+            _stopwatch.Start();
         }
     }
 

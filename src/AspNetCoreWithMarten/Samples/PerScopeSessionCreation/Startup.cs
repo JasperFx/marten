@@ -43,6 +43,11 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
         {
             // Do some kind of logging using the correlation id of the ISession
         }
+
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+
+        }
     }
     // ENDSAMPLE
 

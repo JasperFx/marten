@@ -66,6 +66,11 @@ namespace Marten.Testing.CoreFunctionality
             Commits.Add(commit);
         }
 
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+
+        }
+
         public IChangeSet LastCommit { get; set; }
 
         public IDocumentSession LastSession { get; set; }
