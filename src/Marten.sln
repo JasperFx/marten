@@ -35,6 +35,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StorytellerRunner", "Storyt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.AsyncDaemon.Testing", "Marten.AsyncDaemon.Testing\Marten.AsyncDaemon.Testing.csproj", "{5F7D1952-24BB-4A60-8C45-DF1911097A4F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourceWorker", "EventSourceWorker\EventSourceWorker.csproj", "{3688AF80-FB24-4C3C-95FD-A2AB4680CD67}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,10 @@ Global
 		{5F7D1952-24BB-4A60-8C45-DF1911097A4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F7D1952-24BB-4A60-8C45-DF1911097A4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F7D1952-24BB-4A60-8C45-DF1911097A4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3688AF80-FB24-4C3C-95FD-A2AB4680CD67}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3688AF80-FB24-4C3C-95FD-A2AB4680CD67}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3688AF80-FB24-4C3C-95FD-A2AB4680CD67}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3688AF80-FB24-4C3C-95FD-A2AB4680CD67}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Events.Daemon.Resiliency;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -16,10 +17,12 @@ namespace AspNetCoreWithMarten
     public class Startup
     {
         public IConfiguration Configuration { get; }
+        public IHostEnvironment Environment { get; }
 
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -28,7 +31,18 @@ namespace AspNetCoreWithMarten
         {
             // This is the absolute, simplest way to integrate Marten into your
             // .Net Core application with Marten's default configuration
-            services.AddMarten(Configuration.GetConnectionString("Marten"));
+            services.AddMarten(options =>
+            {
+                // Establish the connection string to your Marten database
+                options.Connection(Configuration.GetConnectionString("Marten"));
+
+                // If we're running in development mode, let Marten just take care
+                // of all necessary schema building and patching behind the scenes
+                if (Environment.IsDevelopment())
+                {
+                    options.AutoCreateSchemaObjects = AutoCreate.All;
+                }
+            });
         }
 
         // and other methods we don't care about right now...

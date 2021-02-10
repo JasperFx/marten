@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -160,6 +161,29 @@ namespace Marten.AsyncDaemon.Testing
         public Distance Create(Travel travel, IEvent e)
         {
             return new Distance {Id = e.Id, Day = travel.Day, Total = travel.TotalDistance()};
+        }
+    }
+
+    public class DistanceProjection2: SyncProjectionBase
+    {
+        public override void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+        {
+            foreach (var @event in streams.SelectMany(x => x.Events))
+            {
+                switch (@event.Data)
+                {
+                    case IEvent<Travel> e:
+                        var travel = e.GetData();
+                        var distance = new Distance
+                        {
+                            Id = e.Id,
+                            Day = travel.Day,
+                            Total = travel.TotalDistance()
+                        };
+                        operations.Store(distance);
+                        break;
+                }
+            }
         }
     }
 }

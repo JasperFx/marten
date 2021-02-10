@@ -1,16 +1,18 @@
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport
 {
     public class TripAggregation: AggregateProjection<Trip>
     {
-        // TODO -- need to do something to create
-
         public TripAggregation()
         {
             DeleteEvent<TripAborted>();
 
             ProjectionName = "Trip";
+
+            // Now let's change the lifecycle to inline
+            Lifecycle = ProjectionLifecycle.Inline;
         }
 
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;

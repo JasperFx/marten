@@ -104,8 +104,15 @@ namespace Marten.AsyncDaemon.Testing
     public class Day
     {
         public int Id { get; set; }
+
+        // how many trips started on this day?
         public int Started { get; set; }
+
+        // how many trips ended on this day?
         public int Ended { get; set; }
+
+        // how many miles did the active trips
+        // drive in which direction on this day?
         public double North { get; set; }
         public double East { get; set; }
         public double West { get; set; }
@@ -116,8 +123,15 @@ namespace Marten.AsyncDaemon.Testing
     {
         public DayProjection()
         {
+            // Tell the projection how to group the events
+            // by Day document
             Identity<IDayEvent>(x => x.Day);
+
+            // This just lets the projection work independently
+            // on each Movement child of the Travel event
+            // as if it were its own event
             FanOut<Travel, Movement>(x => x.Movements);
+
             ProjectionName = "Day";
         }
 
