@@ -13,13 +13,14 @@ namespace Marten.Linq.QueryHandlers
     public class ListQueryHandler<T> : IQueryHandler<IReadOnlyList<T>>, IQueryHandler<IEnumerable<T>>, IMaybeStatefulHandler
     {
         private readonly Statement _statement;
-        private readonly ISelector<T> _selector;
 
         public ListQueryHandler(Statement statement, ISelector<T> selector)
         {
             _statement = statement;
-            _selector = selector;
+            Selector = selector;
         }
+
+        public ISelector<T> Selector { get; }
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
@@ -32,7 +33,7 @@ namespace Marten.Linq.QueryHandlers
 
             while (reader.Read())
             {
-                var item = _selector.Resolve(reader);
+                var item = Selector.Resolve(reader);
                 list.Add(item);
             }
 
@@ -56,7 +57,7 @@ namespace Marten.Linq.QueryHandlers
 
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                var item = await Selector.ResolveAsync(reader, token).ConfigureAwait(false);
                 list.Add(item);
             }
 
@@ -67,7 +68,7 @@ namespace Marten.Linq.QueryHandlers
         {
             // There will be from dynamic codegen
             // ReSharper disable once SuspiciousTypeConversion.Global
-            return _selector is IDocumentSelector;
+            return Selector is IDocumentSelector;
         }
 
         public IQueryHandler CloneForSession(IMartenSession session, QueryStatistics statistics)

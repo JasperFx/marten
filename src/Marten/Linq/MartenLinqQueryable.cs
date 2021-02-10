@@ -62,6 +62,11 @@ namespace Marten.Linq
             return _provider.ExecuteAsync<IReadOnlyList<TResult>>(Expression, token);
         }
 
+        public IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default)
+        {
+            return _provider.ExecuteAsyncEnumerable<T>(Expression, token);
+        }
+
         public Task<bool> AnyAsync(CancellationToken token)
         {
             return _provider.ExecuteAsync<bool>(Expression, token, LinqConstants.AnyOperator);

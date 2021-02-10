@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
 using Marten.Util;
 using Remotion.Linq.Clauses;
 
@@ -86,5 +88,21 @@ namespace Marten.Linq
         }
 
 
+        public async IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(Expression expression, CancellationToken token)
+        {
+            var builder = new LinqHandlerBuilder(_session, expression);
+            builder.BuildDatabaseStatement(null);
+
+            var selector = (ISelector<T>)builder.CurrentStatement.SelectClause.BuildSelector(_session);
+            var statement = builder.TopStatement;
+
+            var cmd = _session.BuildCommand(statement);
+
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
+            while (await reader.ReadAsync(token))
+            {
+                yield return await selector.ResolveAsync(reader, token);
+            }
+        }
     }
 }

@@ -77,5 +77,14 @@ namespace Marten.Linq
 
         IMartenQueryable<T> Stats(out QueryStatistics stats);
 
+        /// <summary>
+        /// Execute this query to an IAsyncEnumerable. This is valuable for reading
+        /// and processing large result sets without having to keep the entire
+        /// result set in memory
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default);
+
     }
 }
