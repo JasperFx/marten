@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -135,7 +136,7 @@ namespace Marten
         /// <returns></returns>
         public static bool AnyTenant<T>(this T variable)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(AnyTenant)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -147,7 +148,7 @@ namespace Marten
         /// <returns></returns>
         public static bool TenantIsOneOf<T>(this T variable, params string[] tenantIds)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(TenantIsOneOf)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -159,7 +160,7 @@ namespace Marten
         /// </remarks>
         public static bool Search<T>(this T variable, string searchTerm)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(Search)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -172,7 +173,7 @@ namespace Marten
         /// </remarks>
         public static bool Search<T>(this T variable, string searchTerm, string regConfig)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(Search)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -184,7 +185,7 @@ namespace Marten
         /// </remarks>
         public static bool PlainTextSearch<T>(this T variable, string searchTerm)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(PlainTextSearch)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -197,7 +198,7 @@ namespace Marten
         /// </remarks>
         public static bool PlainTextSearch<T>(this T variable, string searchTerm, string regConfig)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(PlainTextSearch)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -209,7 +210,7 @@ namespace Marten
         /// </remarks>
         public static bool PhraseSearch<T>(this T variable, string searchTerm)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(PhraseSearch)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -222,7 +223,7 @@ namespace Marten
         /// </remarks>
         public static bool PhraseSearch<T>(this T variable, string searchTerm, string regConfig)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(PhraseSearch)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -235,7 +236,7 @@ namespace Marten
         /// </remarks>
         public static bool WebStyleSearch<T>(this T variable, string searchTerm)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(WebStyleSearch)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -249,7 +250,7 @@ namespace Marten
         /// </remarks>
         public static bool WebStyleSearch<T>(this T variable, string searchTerm, string regConfig)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(WebStyleSearch)} extension method can only be used in Marten Linq queries.");
         }
     }
 }
