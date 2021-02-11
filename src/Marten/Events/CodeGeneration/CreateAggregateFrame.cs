@@ -41,6 +41,17 @@ namespace Marten.Events.CodeGeneration
 
             // Replace any arguments to the specific T event type
             TrySetArgument(parent.DataOnly);
+
+            if (parent.Aggregate != null)
+            {
+                AssignResultTo(parent.Aggregate);
+            }
+            else
+            {
+                ReturnAction = ReturnAction.Return;
+            }
+
+
         }
     }
 }

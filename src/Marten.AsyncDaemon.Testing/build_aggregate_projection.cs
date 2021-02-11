@@ -74,7 +74,7 @@ namespace Marten.AsyncDaemon.Testing
                 x.Events.TenancyStyle = TenancyStyle.Conjoined;
                 x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                 x.Schema.For<Trip>().MultiTenanted();
-                x.Logger(new TestOutputMartenLogger(_output));
+                //x.Logger(new TestOutputMartenLogger(_output));
             }, true);
 
             UseMixOfTenants(10);
@@ -84,7 +84,7 @@ namespace Marten.AsyncDaemon.Testing
             var agent = await StartDaemon();
 
             var shard = theStore.Events.Projections.AllShards().Single();
-            var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
+            var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
 
             await PublishSingleThreaded();
 

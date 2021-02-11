@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using ImTools;
+using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -29,8 +31,34 @@ namespace Marten.Events.Aggregation
             _store = store;
         }
 
-        public abstract Task<IStorageOperation> DetermineOperation(DocumentSessionBase session,
-            EventSlice<TDoc, TId> slice, CancellationToken cancellation);
+        public async Task<IStorageOperation> DetermineOperation(DocumentSessionBase session,
+            EventSlice<TDoc, TId> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+        {
+            var aggregate = slice.Aggregate;
+
+            if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
+            {
+                aggregate = await Storage.LoadAsync(slice.Id, session, cancellation);
+            }
+
+            foreach (var @event in slice.Events)
+            {
+                aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation);
+            }
+
+            if (aggregate != null)
+            {
+                Storage.SetIdentity(aggregate, slice.Id);
+            }
+
+            return aggregate == null
+                ? Storage.DeleteForId(slice.Id)
+                : Storage.Upsert(aggregate, session, slice.Tenant);
+        }
+
+        public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
+            IEvent evt, TDoc aggregate,
+            CancellationToken cancellationToken);
 
         public Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups,
             CancellationToken token)
@@ -64,6 +92,8 @@ namespace Marten.Events.Aggregation
             {
 
                 IStorageOperation operation = null;
+
+                // TODO -- this can only apply to the last event
                 if (Projection.MatchesAnyDeleteType(slice))
                 {
                     operation = Storage.DeleteForId(slice.Id, slice.Tenant);

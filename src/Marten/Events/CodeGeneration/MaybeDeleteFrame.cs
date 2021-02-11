@@ -13,16 +13,10 @@ namespace Marten.Events.CodeGeneration
 {
     internal class MaybeDeleteFrame: Frame, IEventHandlingFrame
     {
-        private readonly Type _aggregateType;
-        private readonly Type _identityType;
         private Variable _aggregate;
-        private Variable _storage;
-        private Variable _tenant;
 
-        public MaybeDeleteFrame(Type aggregateType, Type identityType, MethodSlot slot) : base(slot.Method.As<MethodInfo>().IsAsync())
+        public MaybeDeleteFrame(MethodSlot slot) : base(slot.Method.As<MethodInfo>().IsAsync())
         {
-            _aggregateType = aggregateType;
-            _identityType = identityType;
             EventType = slot.EventType;
             Maybe = new MethodCall(slot.HandlerType, (MethodInfo) slot.Method) {Target = slot.Setter};
         }
@@ -52,14 +46,6 @@ namespace Marten.Events.CodeGeneration
         {
             yield return _aggregate;
 
-            _tenant = chain.FindVariable(typeof(ITenant));
-            yield return _tenant;
-
-            var storageType = typeof(IDocumentStorage<,>).MakeGenericType(_aggregateType, _identityType);
-
-            _storage = chain.FindVariable(storageType);
-            yield return _storage;
-
             foreach (var variable in Maybe.FindVariables(chain))
             {
                 yield return variable;
@@ -71,7 +57,7 @@ namespace Marten.Events.CodeGeneration
             Maybe.GenerateCode(method, writer);
             writer.Write($"BLOCK:if ({Maybe.ReturnVariable.Usage})");
 
-            writer.WriteLine($"return {_storage.Usage}.DeleteForDocument({_aggregate.Usage}, {_tenant.Usage});");
+            writer.WriteLine($"return null;");
 
             writer.FinishBlock();
         }

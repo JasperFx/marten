@@ -7,15 +7,6 @@ using LamarCodeGeneration.Model;
 
 namespace Marten.Events.CodeGeneration
 {
-    public enum CreateAggregateAction
-    {
-        Initialize,
-        Assign,
-        NullCoalesce // TODO -- this should be in Lamar itself
-    }
-
-
-
     // TODO -- LamarCodeGeneration needs a "call generated method" Frame
     internal class CallCreateAggregateFrame: Frame
     {

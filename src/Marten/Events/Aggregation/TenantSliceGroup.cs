@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
+using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Storage;
@@ -16,7 +17,6 @@ namespace Marten.Events.Aggregation
     {
         public ITenant Tenant { get; }
         public readonly IReadOnlyList<EventSlice<TDoc, TId>> Slices;
-        private DocumentSessionBase _session;
         private TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
         private Task<Task> _application;
 
@@ -29,15 +29,15 @@ namespace Marten.Events.Aggregation
         internal void Start(ActionBlock<IStorageOperation> queue, AggregationRuntime<TDoc, TId> runtime,
             IDocumentStore store, CancellationToken token)
         {
-            _session = (DocumentSessionBase)store.LightweightSession(Tenant.TenantId);
-
             _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice =>
             {
                 if (token.IsCancellationRequested) return null;
 
+                using var session = store.LightweightSession(slice.Tenant.TenantId);
+
                 try
                 {
-                    return runtime.DetermineOperation(_session, slice, token);
+                    return runtime.DetermineOperation((DocumentSessionBase) session, slice, token, ProjectionLifecycle.Async);
                 }
                 catch (Exception e)
                 {
@@ -64,12 +64,7 @@ namespace Marten.Events.Aggregation
                         break;
                     }
 
-                    if (runtime.Projection.MatchesAnyDeleteType(slice))
-                    {
-                        var deletion = runtime.Storage.DeleteForId(slice.Id, Tenant);
-                        queue.Post(deletion);
-                    }
-                    else if (runtime.IsNew(slice))
+                    if (runtime.IsNew(slice))
                     {
                         _builder.Post(slice);
                     }
@@ -82,8 +77,13 @@ namespace Marten.Events.Aggregation
                 if (token.IsCancellationRequested) return;
 
                 var ids = beingFetched.Select(x => x.Id).ToArray();
-                var aggregates = await runtime.Storage
-                    .LoadManyAsync(ids, _session, token);
+
+                IReadOnlyList<TDoc> aggregates = null;
+                using (var session = (IMartenSession)store.LightweightSession(Tenant.TenantId))
+                {
+                    aggregates = await runtime.Storage
+                        .LoadManyAsync(ids, session, token);
+                }
 
                 if (token.IsCancellationRequested) return;
 
@@ -110,7 +110,6 @@ namespace Marten.Events.Aggregation
 
         public void Dispose()
         {
-            _session?.Dispose();
         }
 
         internal void ApplyFanOutRules(IReadOnlyList<IFanOutRule> rules)
@@ -123,7 +122,6 @@ namespace Marten.Events.Aggregation
 
         public void Reset()
         {
-            _session?.Dispose();
             _builder?.Complete();
             _builder = null;
         }

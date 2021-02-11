@@ -13,7 +13,6 @@ namespace Marten.Testing.Events.Aggregation
         [Fact]
         public void try_existing_QuestParty()
         {
-
             var aggregator = new AggregateProjection<QuestParty>().Build(new StoreOptions());
             aggregator.ShouldNotBeNull();
         }

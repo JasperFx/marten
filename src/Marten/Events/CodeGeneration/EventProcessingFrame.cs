@@ -16,13 +16,14 @@ namespace Marten.Events.CodeGeneration
 
 
     /// <summary>
-    /// Calls an AggregatedProjection.Apply() method
+    /// Organizes a single Event type within a pattern
+    /// matching switch statement
     /// </summary>
     internal class EventProcessingFrame : Frame
     {
         private static int Counter;
         private Variable _event;
-        private readonly IList<Frame> _inner = new List<Frame>();
+        protected readonly IList<Frame> _inner = new List<Frame>();
 
         public Type AggregateType { get; }
 
@@ -85,8 +86,8 @@ namespace Marten.Events.CodeGeneration
         public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
         {
             writer.Write($"case {SpecificEvent.VariableType.FullNameInCode()} {SpecificEvent.Usage}:");
-            // TODO -- fix this with LamarCodeGeneration
-            writer.As<SourceWriter>().IndentionLevel++;
+
+            writer.IndentionLevel++;
 
             foreach (var frame in _inner)
             {
@@ -94,7 +95,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             writer.Write("break;");
-            writer.As<SourceWriter>().IndentionLevel--;
+            writer.IndentionLevel--;
 
             Next?.GenerateCode(method, writer);
         }

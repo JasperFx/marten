@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -178,25 +180,16 @@ namespace Marten.Events.Aggregation
 
             _inlineType.AllInjectedFields.Add(new InjectedField(GetType()));
 
-            var method = buildDetermineOperationMethod();
-
-            var upsertMethod = typeof(IDocumentStorage<>).MakeGenericType(typeof(T)).GetMethod("Upsert");
-
-            var upsert = new MethodCall(_storageType, upsertMethod)
-            {
-                ReturnAction = ReturnAction.Return
-            };
-
-            method.Frames.Add(upsert);
+            buildApplyEventMethod();
 
             _inlineType.Setters.AddRange(_applyMethods.Setters());
             _inlineType.Setters.AddRange(_createMethods.Setters());
             _inlineType.Setters.AddRange(_shouldDeleteMethods.Setters());
         }
 
-        private GeneratedMethod buildDetermineOperationMethod()
+        private GeneratedMethod buildApplyEventMethod()
         {
-            var method = _inlineType.MethodFor(nameof(AggregationRuntime<string, string>.DetermineOperation));
+            var method = _inlineType.MethodFor(nameof(AggregationRuntime<string, string>.ApplyEvent));
 
             // This gets you the EventSlice aggregate Id
 
@@ -209,14 +202,37 @@ namespace Marten.Events.Aggregation
             method.DerivedVariables.Add(
                 Variable.For<IAggregateProjection>(nameof(AggregationRuntime<string, string>.Projection)));
 
-            var createFrame = new CallCreateAggregateFrame(_createMethods);
-            method.Frames.Add(new InitializeLiveAggregateFrame(typeof(T), _aggregateMapping.IdType, createFrame));
 
-            method.Frames.Add(new MethodCall(_storageType, "SetIdentity"));
+            var eventHandlers = new LightweightCache<Type, AggregateEventProcessingFrame>(
+                eventType => new AggregateEventProcessingFrame(typeof(T), eventType));
 
-            var handlers = MethodCollection.AddEventHandling(typeof(T), _aggregateMapping, _applyMethods, _shouldDeleteMethods);
-            var iterate = new ForEachEventFrame(handlers);
-            method.Frames.Add(iterate);
+            foreach (var deleteEvent in DeleteEvents)
+            {
+                eventHandlers[deleteEvent].AlwaysDeletes = true;
+            }
+
+            foreach (var slot in _applyMethods.Methods)
+            {
+                eventHandlers[slot.EventType].Apply = new ApplyMethodCall(slot);
+            }
+
+            foreach (var slot in _createMethods.Methods)
+            {
+                eventHandlers[slot.EventType].CreationFrame = slot.Method is ConstructorInfo
+                    ? new AggregateConstructorFrame(slot)
+                    : new CreateAggregateFrame(slot);
+            }
+
+            foreach (var slot in _shouldDeleteMethods.Methods)
+            {
+                eventHandlers[slot.EventType].Deletion = new MaybeDeleteFrame(slot);
+            }
+
+            var patternMatching = new EventTypePatternMatchFrame(eventHandlers.OfType<EventProcessingFrame>().ToList());
+            method.Frames.Add(patternMatching);
+
+            method.Frames.Code($"return aggregate;");
+
             return method;
         }
 
@@ -238,6 +254,10 @@ namespace Marten.Events.Aggregation
             buildMethod.DerivedVariables.Add(Variable.For<IQuerySession>("(IQuerySession)session"));
 
             buildMethod.Frames.Code("if (!events.Any()) return null;");
+
+            buildMethod.Frames.Add(new DeclareAggregateFrame(typeof(T)));
+
+
             var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
 
             // This is the existing snapshot passed into the LiveAggregator
