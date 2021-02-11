@@ -62,12 +62,6 @@ namespace Marten.Testing.Events.Projections
             subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
             subscription.ShouldBeNull();
 
-            // This no longer works in the current model. See
-            // var newsletterOpenedAfterUnsubscribe = new NewsletterOpened(subscriptionId, DateTime.Now);
-            // theSession.Events.Append(subscriptionId, newsletterOpenedAfterUnsubscribe);
-            // await theSession.SaveChangesAsync();
-            // subscription = await theSession.LoadAsync<NewsletterSubscription>(subscriptionId);
-            // subscription.ShouldBeNull();
         }
 
 

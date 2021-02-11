@@ -153,6 +153,38 @@ namespace Marten.Util
             return parameter;
         }
 
+        public static NpgsqlCommand With(this NpgsqlCommand command, string name, Guid value)
+        {
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
+            parameter.Value = value;
+
+            command.Parameters.Add(parameter);
+
+            return command;
+        }
+
+        public static NpgsqlCommand With(this NpgsqlCommand command, string name, string value)
+        {
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+
+            if (value == null)
+            {
+                parameter.Value = DBNull.Value;
+            }
+            else
+            {
+                parameter.Value = value;
+            }
+
+            command.Parameters.Add(parameter);
+
+            return command;
+        }
+
         public static NpgsqlCommand With(this NpgsqlCommand command, string name, object value)
         {
             var parameter = command.CreateParameter();

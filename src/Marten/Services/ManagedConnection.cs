@@ -1,13 +1,14 @@
 using System;
-using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Transactions;
 using Baseline;
 using Marten.Exceptions;
 using Marten.Schema.Arguments;
 using Marten.Util;
 using Npgsql;
+using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten.Services
 {
@@ -168,6 +169,8 @@ namespace Marten.Services
 
         public void BeginTransaction()
         {
+            if (InTransaction()) return;
+
             buildConnection();
 
             _connection.BeginTransaction();
@@ -175,6 +178,8 @@ namespace Marten.Services
 
         public async Task BeginTransactionAsync(CancellationToken token)
         {
+            if (InTransaction()) return;
+
             await buildConnectionAsync(token).ConfigureAwait(false);
 
             _connection.BeginTransaction();

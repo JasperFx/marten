@@ -47,15 +47,6 @@ namespace Marten.Events
         TenancyStyle TenancyStyle { get; set; }
 
         /// <summary>
-        ///     Whether a "for update" (row exclusive lock) should be used when selecting out the event version to use from the streams table
-        /// </summary>
-        /// <remarks>
-        ///     Not using this can result in race conditions in a concurrent environment that lead to
-        ///       event version mismatches between the event and stream version numbers
-        /// </remarks>
-        bool UseAppendEventForUpdateLock { get; set; }
-
-        /// <summary>
         /// Override the database schema name for event related tables. By default this
         /// is the same schema as the document storage
         /// </summary>

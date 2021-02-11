@@ -395,5 +395,90 @@ namespace Marten.Events
         /// <param name="token"></param>
         /// <returns></returns>
         Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = default);
+
+
+
+        /// <summary>
+        /// Append events to an existing stream with optimistic concurrency checks against the
+        /// existing version of the stream
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="token"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendOptimistic(string streamKey, CancellationToken token, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with optimistic concurrency checks against the
+        /// existing version of the stream
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendOptimistic(string streamKey, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with optimistic concurrency checks against the
+        /// existing version of the stream
+        /// </summary>
+        /// <param name="streamId"></param>
+        /// <param name="token"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendOptimistic(Guid streamId, CancellationToken token, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with optimistic concurrency checks against the
+        /// existing version of the stream
+        /// </summary>
+        /// <param name="streamId"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendOptimistic(Guid streamId, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with an exclusive lock against the
+        /// stream until this session is saved
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="token"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendExclusive(string streamKey, CancellationToken token, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with an exclusive lock against the
+        /// stream until this session is saved
+        /// </summary>
+        /// <param name="streamKey"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendExclusive(string streamKey, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with an exclusive lock against the
+        /// stream until this session is saved
+        /// </summary>
+        /// <param name="streamId"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendExclusive(Guid streamId, CancellationToken token, params object[] events);
+
+        /// <summary>
+        /// Append events to an existing stream with an exclusive lock against the
+        /// stream until this session is saved
+        /// </summary>
+        /// <param name="streamId"></param>
+        /// <param name="events"></param>
+        /// <exception cref="NonExistentStreamException"></exception>
+        /// <returns></returns>
+        Task AppendExclusive(Guid streamId, params object[] events);
     }
 }

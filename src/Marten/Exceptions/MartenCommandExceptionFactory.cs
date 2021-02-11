@@ -20,6 +20,8 @@ namespace Marten.Exceptions
                 return notSupportedException;
             }
 
+
+
             return new MartenCommandException(command, innerException);
         }
 

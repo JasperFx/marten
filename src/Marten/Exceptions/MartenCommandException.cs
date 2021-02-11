@@ -8,22 +8,37 @@ namespace Marten.Exceptions
     /// </summary>
     public class MartenCommandException: Exception
     {
+        public const string MaybeLockedRowsMessage = "Postgresql timed out while trying to read data. This may be caused by trying to read locked rows";
+
         /// <summary>
         /// Failed Postgres command
         /// </summary>
         public NpgsqlCommand Command { get; }
 
-        protected static string ToMessage(
-            NpgsqlCommand command,
-            string prefix = null
-        )
+        protected static string ToMessage(NpgsqlCommand command,
+            Exception innerException,
+            string prefix = null)
         {
             if (prefix != null)
             {
                 prefix = $"{prefix}${Environment.NewLine}";
             }
 
-            return $"Marten Command Failure:${Environment.NewLine}{prefix}{command.CommandText}${Environment.NewLine}${Environment.NewLine}";
+            var explanation = "";
+            if (innerException is NpgsqlException pgex)
+            {
+                if (pgex.InnerException is TimeoutException toex)
+                {
+                    if (toex.Message == "Timeout during reading attempt")
+                    {
+                        explanation = Environment.NewLine +
+                                      MaybeLockedRowsMessage + Environment.NewLine;
+                    }
+                }
+            }
+
+
+            return $"Marten Command Failure:${Environment.NewLine}{prefix}{explanation}{command.CommandText}${Environment.NewLine}${Environment.NewLine}";
         }
 
         /// <summary>
@@ -32,7 +47,7 @@ namespace Marten.Exceptions
         /// <param name="command">failed Postgres command</param>
         /// <param name="innerException">internal exception details</param>
         public MartenCommandException(NpgsqlCommand command, Exception innerException)
-            : base(ToMessage(command) + innerException.Message, innerException)
+            : base(ToMessage(command, innerException) + innerException.Message, innerException)
         {
             Command = command;
         }
@@ -47,7 +62,7 @@ namespace Marten.Exceptions
             NpgsqlCommand command,
             Exception innerException,
             string prefix
-        ) : base(ToMessage(command, prefix) + innerException.Message, innerException)
+        ) : base(ToMessage(command, innerException, prefix) + innerException.Message, innerException)
         {
             Command = command;
         }

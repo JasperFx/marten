@@ -6,12 +6,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events.Querying;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema.Identity;
 using Marten.Storage;
+using Marten.Util;
+using Npgsql;
 
 namespace Marten.Events
 {
@@ -366,6 +369,112 @@ namespace Marten.Events
         {
             var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant));
             return _session.ExecuteHandlerAsync(handler, token);
+        }
+
+        public async Task AppendOptimistic(string streamKey, CancellationToken token, params object[] events)
+        {
+            _store.Events.EnsureAsStringStorage(_session);
+
+            // TODO memoize this
+            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                .With("id", streamKey);
+
+            var version = await readVersionFromExistingStream(streamKey, token, cmd);
+
+            var action = Append(streamKey, events);
+            action.ExpectedVersionOnServer = version;
+        }
+
+        private async Task<long> readVersionFromExistingStream(object streamId, CancellationToken token, NpgsqlCommand cmd)
+        {
+            long version = 0;
+            try
+            {
+                using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
+                if (await reader.ReadAsync(token))
+                {
+                    version = await reader.GetFieldValueAsync<long>(0, token);
+                }
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
+                {
+                    throw new StreamLockedException(streamId, e.InnerException);
+                }
+
+                throw;
+            }
+
+            if (version == 0)
+            {
+                throw new NonExistentStreamException(streamId);
+            }
+
+            return version;
+        }
+
+        public Task AppendOptimistic(string streamKey, params object[] events)
+        {
+            return AppendOptimistic(streamKey, CancellationToken.None, events);
+        }
+
+        public async Task AppendOptimistic(Guid streamId, CancellationToken token, params object[] events)
+        {
+            _store.Events.EnsureAsGuidStorage(_session);
+
+            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
+                .With("id", streamId);
+
+            var version = await readVersionFromExistingStream(streamId, token, cmd);
+
+            var action = Append(streamId, events);
+            action.ExpectedVersionOnServer = version;
+        }
+
+        public Task AppendOptimistic(Guid streamId, params object[] events)
+        {
+            return AppendOptimistic(streamId, CancellationToken.None, events);
+        }
+
+        public async Task AppendExclusive(string streamKey, CancellationToken token, params object[] events)
+        {
+            _store.Events.EnsureAsStringStorage(_session);
+
+            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
+                .With("id", streamKey);
+
+            await _session.Database.BeginTransactionAsync(token);
+
+            var version = await readVersionFromExistingStream(streamKey, token, cmd);
+
+            var action = Append(streamKey, events);
+            action.ExpectedVersionOnServer = version;
+        }
+
+        public Task AppendExclusive(string streamKey, params object[] events)
+        {
+            return AppendExclusive(streamKey, CancellationToken.None, events);
+        }
+
+        public async Task AppendExclusive(Guid streamId, CancellationToken token, params object[] events)
+        {
+            _store.Events.EnsureAsGuidStorage(_session);
+
+            var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
+                .With("id", streamId);
+
+            await _session.Database.BeginTransactionAsync(token);
+
+            var version = await readVersionFromExistingStream(streamId, token, cmd);
+
+            var action = Append(streamId, events);
+            action.ExpectedVersionOnServer = version;
+        }
+
+        public Task AppendExclusive(Guid streamId, params object[] events)
+        {
+            return AppendExclusive(streamId, CancellationToken.None, events);
         }
     }
 }
