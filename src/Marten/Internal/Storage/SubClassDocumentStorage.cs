@@ -16,6 +16,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 using Remotion.Linq;
 
 namespace Marten.Internal.Storage
@@ -272,6 +273,16 @@ namespace Marten.Internal.Storage
         public IDeletion HardDeleteForId(TId id, ITenant tenant)
         {
             return _parent.HardDeleteForId(id, tenant);
+        }
+
+        public NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant)
+        {
+            return _parent.BuildLoadCommand(id, tenant);
+        }
+
+        public NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant)
+        {
+            return _parent.BuildLoadManyCommand(ids, tenant);
         }
 
         public void EjectById(IMartenSession session, object id)

@@ -49,7 +49,7 @@ namespace Marten.Internal.Sessions
         public void HardDelete<T>(long id)
         {
             assertNotDisposed();
-            var deletion = storageFor<T, long>().HardDeleteForId(id);
+            var deletion = StorageFor<T, long>().HardDeleteForId(id);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -58,7 +58,7 @@ namespace Marten.Internal.Sessions
         public void HardDelete<T>(Guid id)
         {
             assertNotDisposed();
-            var deletion = storageFor<T, Guid>().HardDeleteForId(id);
+            var deletion = StorageFor<T, Guid>().HardDeleteForId(id);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -68,7 +68,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var deletion = storageFor<T, string>().HardDeleteForId(id);
+            var deletion = StorageFor<T, string>().HardDeleteForId(id);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);

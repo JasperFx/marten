@@ -12,6 +12,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
+
     public class JsonSelectClause: ISelectClause
     {
         private readonly Type _sourceType;

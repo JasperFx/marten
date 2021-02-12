@@ -8,6 +8,7 @@ using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Npgsql;
 using Remotion.Linq;
 
 namespace Marten.Internal.Storage
@@ -90,6 +91,8 @@ namespace Marten.Internal.Storage
         ISqlFragment ByIdFilter(TId id);
         IDeletion HardDeleteForId(TId id);
         IDeletion HardDeleteForId(TId id, ITenant tenant);
+        NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant);
+        NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant);
     }
 
 }
