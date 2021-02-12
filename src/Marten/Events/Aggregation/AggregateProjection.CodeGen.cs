@@ -219,7 +219,7 @@ namespace Marten.Events.Aggregation
             foreach (var slot in _createMethods.Methods)
             {
                 eventHandlers[slot.EventType].CreationFrame = slot.Method is ConstructorInfo
-                    ? new AggregateConstructorFrame(slot)
+                    ? (Frame)new AggregateConstructorFrame(slot)
                     : new CreateAggregateFrame(slot);
             }
 
