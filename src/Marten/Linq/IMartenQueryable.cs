@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -85,6 +86,24 @@ namespace Marten.Linq
         /// <param name="token"></param>
         /// <returns></returns>
         IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default);
+
+
+        /// <summary>
+        /// Write the raw persisted JSON for the Linq query directly to the destination stream
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task StreamManyAsync(Stream destination, CancellationToken token);
+
+        /// <summary>
+        /// Write the raw persisted JSON directly to the destination stream. Uses "FirstOrDefault()"
+        /// rules. Returns true if there is at least one record.
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<bool> StreamOne(Stream destination, CancellationToken token);
 
     }
 }

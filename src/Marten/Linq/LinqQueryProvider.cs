@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -8,6 +9,8 @@ using Marten.Internal;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
+using Marten.Services;
 using Marten.Util;
 using Remotion.Linq.Clauses;
 
@@ -103,6 +106,28 @@ namespace Marten.Linq
             {
                 yield return await selector.ResolveAsync(reader, token);
             }
+        }
+
+        public Task StreamMany(Expression expression, Stream destination, CancellationToken token)
+        {
+            var builder = new LinqHandlerBuilder(_session, expression);
+            builder.BuildDatabaseStatement(null);
+
+            var command = builder.TopStatement.BuildCommand();
+
+            return _session.Database.StreamMany(command, destination, token);
+        }
+
+        public Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)
+        {
+            var builder = new LinqHandlerBuilder(_session, expression);
+            builder.BuildDatabaseStatement(null);
+
+            var statement = builder.TopStatement;
+            statement.Current().Limit = 1;
+            var command = statement.BuildCommand();
+
+            return _session.Database.StreamOne(command, destination, token);
         }
     }
 }

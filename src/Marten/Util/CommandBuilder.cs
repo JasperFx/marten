@@ -13,9 +13,19 @@ namespace Marten.Util
         // TEMP -- will shift this to being pooled later
         private readonly StringBuilder _sql = new StringBuilder();
 
+        public CommandBuilder() : this(new NpgsqlCommand())
+        {
+        }
+
         public CommandBuilder(NpgsqlCommand command)
         {
             _command = command;
+        }
+
+        public NpgsqlCommand Compile()
+        {
+            _command.CommandText = _sql.ToString();
+            return _command;
         }
 
         public void Dispose()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -349,6 +350,43 @@ namespace Marten
         internal static T IncludePlan<T>(this T target, IIncludePlan include)
         {
             return target;
+        }
+
+        /// <summary>
+        /// Execute this query to an IAsyncEnumerable. This is valuable for reading
+        /// and processing large result sets without having to keep the entire
+        /// result set in memory
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IQueryable<T> queryable,
+            CancellationToken token = default)
+        {
+            return queryable.As<IMartenQueryable<T>>().ToAsyncEnumerable(token);
+        }
+
+
+        /// <summary>
+        /// Write the raw persisted JSON for the Linq query directly to the destination stream
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static Task StreamMany<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        {
+            return queryable.As<IMartenQueryable<T>>().StreamManyAsync(destination, token);
+        }
+
+        /// <summary>
+        /// Write the raw persisted JSON directly to the destination stream. Uses "FirstOrDefault()"
+        /// rules. Returns true if there is at least one record.
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static Task<bool> StreamOne<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        {
+            return queryable.As<IMartenQueryable<T>>().StreamOne(destination, token);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -65,6 +66,16 @@ namespace Marten.Linq
         public IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default)
         {
             return _provider.ExecuteAsyncEnumerable<T>(Expression, token);
+        }
+
+        public Task StreamManyAsync(Stream destination, CancellationToken token)
+        {
+            return _provider.StreamMany(Expression, destination, token);
+        }
+
+        public Task<bool> StreamOne(Stream destination, CancellationToken token)
+        {
+            return _provider.StreamOne(Expression, destination, token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)

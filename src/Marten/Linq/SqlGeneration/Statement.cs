@@ -6,6 +6,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Util;
+using Npgsql;
 using Remotion.Linq.Clauses;
 
 namespace Marten.Linq.SqlGeneration
@@ -175,6 +176,14 @@ namespace Marten.Linq.SqlGeneration
             if (suffix.IsNotEmpty()) sql.Append(suffix);
 
             sql.Append("\n)\n");
+        }
+
+        public NpgsqlCommand BuildCommand()
+        {
+            var builder = new CommandBuilder();
+            Configure(builder);
+
+            return builder.Compile();
         }
     }
 }
