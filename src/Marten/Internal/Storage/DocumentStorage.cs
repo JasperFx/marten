@@ -346,25 +346,17 @@ namespace Marten.Internal.Storage
         protected T load(TId id, IMartenSession session)
         {
             var command = BuildLoadCommand(id, session.Tenant);
-            using (var reader = session.Database.ExecuteReader(command))
-            {
-                if (!reader.Read()) return default(T);
+            var selector = (ISelector<T>)BuildSelector(session);
 
-                var selector = (ISelector<T>)BuildSelector(session);
-                return selector.Resolve(reader);
-            }
+            return session.Database.LoadOne(command, selector);
         }
 
-        protected async Task<T> loadAsync(TId id, IMartenSession session, CancellationToken token)
+        protected Task<T> loadAsync(TId id, IMartenSession session, CancellationToken token)
         {
             var command = BuildLoadCommand(id, session.Tenant);
-            using (var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false))
-            {
-                if (!(await reader.ReadAsync(token).ConfigureAwait(false))) return default(T);
+            var selector = (ISelector<T>)BuildSelector(session);
 
-                var selector = (ISelector<T>)BuildSelector(session);
-                return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
-            }
+            return session.Database.LoadOneAsync(command, selector, token);
         }
 
         public abstract IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
