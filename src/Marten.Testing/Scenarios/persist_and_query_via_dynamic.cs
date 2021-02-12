@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace Marten.Testing.Scenarios
         }
         // ENDSAMPLE
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void CanPersistAndQueryDynamic()
         {
             // SAMPLE: sample-scenarios-dynamic-records

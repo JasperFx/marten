@@ -11,29 +11,29 @@ namespace Marten.Testing.Harness
     /// Allows targeting test at specified serializer type
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
-    [XunitTestCaseDiscoverer("Marten.Testing.Harness.SerializerTargetedFactDiscoverer", "Marten.Testing")]
-    public sealed class SerializerTypeTargetedFact: FactAttribute
+    [XunitTestCaseDiscoverer("Marten.Testing.Harness.SerializerTargetedTheoryDiscoverer", "Marten.Testing")]
+    public sealed class SerializerTypeTargetedTheory: TheoryAttribute
     {
         public SerializerType RunFor { get; set; }
     }
 
-    public sealed class SerializerTargetedFactDiscoverer: FactDiscoverer
+    public sealed class SerializerTargetedTheoryDiscoverer: TheoryDiscoverer
     {
         private readonly SerializerType serializerType;
 
-        static SerializerTargetedFactDiscoverer()
+        static SerializerTargetedTheoryDiscoverer()
         {
         }
 
-        public SerializerTargetedFactDiscoverer(IMessageSink diagnosticMessageSink): base(diagnosticMessageSink)
+        public SerializerTargetedTheoryDiscoverer(IMessageSink diagnosticMessageSink): base(diagnosticMessageSink)
         {
             serializerType = TestsSettings.SerializerType;
         }
 
         public override IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod,
-            IAttributeInfo factAttribute)
+            IAttributeInfo theoryAttribute)
         {
-            var runForSerializer = factAttribute.GetNamedArgument<SerializerType?>(nameof(SerializerTypeTargetedFact.RunFor));
+            var runForSerializer = theoryAttribute.GetNamedArgument<SerializerType?>(nameof(SerializerTypeTargetedTheory.RunFor));
 
             if (runForSerializer != null && runForSerializer != serializerType)
             {
@@ -41,7 +41,10 @@ namespace Marten.Testing.Harness
                 yield break;
             }
 
-            yield return CreateTestCase(discoveryOptions, testMethod, factAttribute);
+            foreach (var xunitTestCase in CreateTestCasesForTheory(discoveryOptions, testMethod, theoryAttribute))
+            {
+                yield return xunitTestCase;
+            }
         }
 
         internal sealed class TestCaseSkippedDueToSerializerSupport: XunitTestCase

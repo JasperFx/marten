@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -27,7 +28,8 @@ namespace Marten.Testing.Linq
         }
 
         // SAMPLE: get_distinct_numbers
-        [Fact]
+
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void get_distinct_numbers()
         {
             theSession.Store(new Target {Number = 1, Decimal = 1.0M});

@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 
 namespace Marten.Util
 {
@@ -9,24 +8,22 @@ namespace Marten.Util
     {
         public static async Task<Stream> SkipSOHAsync(this Stream stream, CancellationToken token = default)
         {
+            // This could be optimised with some delegated stream to not need to load whole stream at once
+            // unfortunately sometimes (probably for bigger JSON) stream starts with SOH (0x01)
+            // we need to skip it to be able to deserialize it.
+            // Stream returned by Npgsql even if it's marked as seekable - it's not, so we need to get it to memory
+            // It's not a big issue, as we always have to load it fully, but it could use less memory at once
+            var output = new MemoryStream();
+            await stream.CopyToAsync(output, 4096, token);
+            output.Position = 0;
+
             var arr = new byte[1];
-            var currentPosition = stream.Position;
-            var firstByte = await stream.ReadAsync(arr, 0, 1, token);
-            if (firstByte != 1)
-                stream.Seek(currentPosition - 1, SeekOrigin.Begin);
 
-            return stream;
-        }
+            await output.ReadAsync(arr, 0, 1, token);
+            if (arr[0] != 1)
+                output.Seek(0, SeekOrigin.Begin);
 
-        public static Stream SkipSOH(this Stream stream)
-        {
-            var arr = new byte[1];
-            var currentPosition = stream.Position;
-            var firstByte = stream.Read(arr, 0, 1);
-            if (firstByte != 1)
-                stream.Seek(currentPosition - 1, SeekOrigin.Begin);
-
-            return stream;
+            return output;
         }
 
         public static StreamReader GetStreamReader(this Stream stream)
@@ -40,16 +37,6 @@ namespace Marten.Util
             }
 
             return streamReader;
-        }
-
-        public static Stream GetMemoryStreamFromString(string s)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream);
-            writer.Write(s);
-            writer.Flush();
-            stream.Position = 0;
-            return stream;
         }
     }
 }

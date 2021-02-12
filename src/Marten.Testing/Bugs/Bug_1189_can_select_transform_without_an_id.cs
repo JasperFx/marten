@@ -1,4 +1,5 @@
 using System.Linq;
+using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
@@ -17,7 +18,8 @@ namespace Marten.Testing.Bugs
             public int Number { get; set; }
         }
 
-        [Fact]
+
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void can_select()
         {
             var targets = Target.GenerateRandomData(100).ToArray();

@@ -1,8 +1,10 @@
 using System;
 using System.Data.Common;
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -26,6 +28,12 @@ namespace Marten.Services
 
         public SystemTextJsonSerializer()
         {
+            var encoderSettings = new TextEncoderSettings();
+            encoderSettings.AllowCharacters('\u0001');
+            encoderSettings.AllowRange(UnicodeRanges.BasicLatin);
+
+            _optionsDeserialize.Encoder = JavaScriptEncoder.Create(encoderSettings);
+
             _optionsDeserialize.Converters.Add(new SystemObjectNewtonsoftCompatibleConverter());
             _optionsDeserialize.PropertyNamingPolicy =
                 _options.PropertyNamingPolicy
