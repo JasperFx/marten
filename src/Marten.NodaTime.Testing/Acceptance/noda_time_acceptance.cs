@@ -212,7 +212,17 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
+            public T FromJson<T>(Stream stream)
+            {
+                throw new NotImplementedException();
+            }
+
             public T FromJson<T>(DbDataReader reader, int index)
+            {
+                throw new NotImplementedException();
+            }
+
+            public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }
@@ -222,7 +232,17 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
+            public object FromJson(Type type, Stream stream)
+            {
+                throw new NotImplementedException();
+            }
+
             public object FromJson(Type type, DbDataReader reader, int index)
+            {
+                throw new NotImplementedException();
+            }
+
+            public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
             {
                 throw new NotImplementedException();
             }

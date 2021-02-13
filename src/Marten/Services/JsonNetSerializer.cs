@@ -6,9 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services.Json;
+using Marten.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using StreamExtensions = Marten.Util.StreamExtensions;
+using ConstructorHandling = Newtonsoft.Json.ConstructorHandling;
 
 namespace Marten.Services
 {
@@ -80,10 +81,20 @@ namespace Marten.Services
                 AutoCompleteOnClose = false
             };
 
-
             _serializer.Serialize(jsonWriter, document);
 
             writer.Flush();
+        }
+
+        public T FromJson<T>(Stream stream)
+        {
+            using var jsonReader = new JsonTextReader(stream.GetStreamReader())
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
+
+            return _serializer.Deserialize<T>(jsonReader);
         }
 
         public T FromJson<T>(DbDataReader reader, int index)
@@ -98,9 +109,25 @@ namespace Marten.Services
             return _serializer.Deserialize<T>(jsonReader);
         }
 
+        public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+        {
+            return new(FromJson<T>(stream));
+        }
+
         public ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
             return new(FromJson<T>(reader, index));
+        }
+
+        public object FromJson(Type type, Stream stream)
+        {
+            using var jsonReader = new JsonTextReader(stream.GetStreamReader())
+            {
+                ArrayPool = _jsonArrayPool,
+                CloseInput = false
+            };
+
+            return _serializer.Deserialize(jsonReader, type);
         }
 
         public object FromJson(Type type, DbDataReader reader, int index)
@@ -113,6 +140,11 @@ namespace Marten.Services
             };
 
             return _serializer.Deserialize(jsonReader, type);
+        }
+
+        public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+        {
+            return new (FromJson(type, stream));
         }
 
         public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)

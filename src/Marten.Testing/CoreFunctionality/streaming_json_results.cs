@@ -17,13 +17,11 @@ namespace Marten.Testing.CoreFunctionality
         {
         }
 
-        private T deserialize<T>(MemoryStream stream)
+        private T deserialize<T>(Stream stream)
         {
             stream.Position = 0;
 
-            var json = stream.ReadAllText();
-
-            return theStore.Serializer.FromJson<T>(new StringReader(json));
+            return theStore.Serializer.FromJson<T>(stream);
         }
 
         [Fact]

@@ -17,10 +17,19 @@ namespace Marten
         string ToJson(object document);
 
         /// <summary>
+        /// Deserialize a JSON string stream into an object of type T
+        /// </summary>
+        T FromJson<T>(Stream stream);
+
+        /// <summary>
         /// Deserialize a JSON string into an object of type T
         /// </summary>
         T FromJson<T>(DbDataReader reader, int index);
 
+        /// <summary>
+        /// Deserialize a JSON string stream into an object of type T
+        /// </summary>
+        ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deserialize a JSON string into an object of type T
@@ -28,10 +37,19 @@ namespace Marten
         ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Deserialize a JSON string stream into an object of type T
+        /// </summary>
+        object FromJson(Type type, Stream stream);
+
+        /// <summary>
         /// Deserialize a JSON string into the supplied Type
         /// </summary>
         object FromJson(Type type, DbDataReader reader, int index);
 
+        /// <summary>
+        /// Deserialize a JSON string stream into an object of type T
+        /// </summary>
+        ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deserialize a JSON string into the supplied Type
