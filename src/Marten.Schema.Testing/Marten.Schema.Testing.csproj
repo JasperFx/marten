@@ -21,6 +21,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
+      <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
       <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 

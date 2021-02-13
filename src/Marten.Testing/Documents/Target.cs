@@ -120,7 +120,7 @@ namespace Marten.Testing.Documents
 
         public bool Flag { get; set; }
 
-        [JsonInclude]
+        [JsonInclude] // this is needed to make System.Text.Json happy
         public string StringField;
 
         public double Double { get; set; }
@@ -128,7 +128,8 @@ namespace Marten.Testing.Documents
         public DateTime Date { get; set; }
         public DateTimeOffset DateOffset { get; set; }
 
-        public float Float { get; set; }
+        [JsonInclude] // this is needed to make System.Text.Json happy
+        public float Float;
 
         public int[] NumberArray { get; set; }
 
