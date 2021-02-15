@@ -33,7 +33,7 @@ namespace Marten.Schema.Testing
             {
                 storeOptions.Connection(dbToCreateConnectionString);
                 storeOptions.PLV8Enabled = false;
-                // SAMPLE: marten_create_database
+                #region sample_marten_create_database
                 storeOptions.CreateDatabasesForTenants(c =>
                 {
                     // Specify a db to which to connect in case database needs to be created.
@@ -49,7 +49,7 @@ namespace Marten.Schema.Testing
                             dbCreated = true;
                         });
                 });
-                // ENDSAMPLE
+                #endregion sample_marten_create_database
             }))
             {
                 store.Schema.ApplyAllConfiguredChangesToDatabase();

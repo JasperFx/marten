@@ -282,7 +282,7 @@ namespace Marten.Testing.Acceptance
             userIsMarkedAsDeleted(session, user3.Id);
         }
 
-        // SAMPLE: query_soft_deleted_docs
+        #region sample_query_soft_deleted_docs
         [Fact]
         public void query_soft_deleted_docs()
         {
@@ -310,9 +310,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_soft_deleted_docs
 
-        // SAMPLE: query_maybe_soft_deleted_docs
+        #region sample_query_maybe_soft_deleted_docs
         [Fact]
         public void query_maybe_soft_deleted_docs()
         {
@@ -342,9 +342,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_maybe_soft_deleted_docs
 
-        // SAMPLE: query_is_soft_deleted_docs
+        #region sample_query_is_soft_deleted_docs
         [Fact]
         public void query_is_soft_deleted_docs()
         {
@@ -374,9 +374,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_is_soft_deleted_docs
 
-        // SAMPLE: query_soft_deleted_since
+        #region sample_query_soft_deleted_since
         [Fact]
         public void query_is_soft_deleted_since_docs()
         {
@@ -402,7 +402,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_soft_deleted_since
 
         [Fact]
         public void query_is_soft_deleted_before_docs()

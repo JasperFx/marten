@@ -4,7 +4,7 @@ using Marten.Services;
 
 namespace Marten
 {
-    // SAMPLE: IDocumentSessionListener
+    #region sample_IDocumentSessionListener
     /// <summary>
     /// Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
     /// operation
@@ -55,7 +55,7 @@ namespace Marten
         void DocumentAddedForStorage(object id, object document);
     }
 
-    // ENDSAMPLE
+    #endregion sample_IDocumentSessionListener
 
     /// <summary>
     /// Base class to help create custom IDocumentSessionListener classes

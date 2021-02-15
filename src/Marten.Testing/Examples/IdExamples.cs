@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Testing.Examples
 {
-    // SAMPLE: id_samples
+    #region sample_id_samples
     public class Division
     {
         // String property as Id
@@ -22,5 +22,5 @@ namespace Marten.Testing.Examples
         public int id { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_id_samples
 }

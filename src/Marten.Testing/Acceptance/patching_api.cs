@@ -47,7 +47,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: set_an_immediate_property_by_id
+        #region sample_set_an_immediate_property_by_id
 
         [Fact]
         public void set_an_immediate_property_by_id()
@@ -67,7 +67,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_set_an_immediate_property_by_id
 
         [Fact]
         public void initialise_a_new_property_by_expression()
@@ -75,7 +75,7 @@ namespace Marten.Testing.Acceptance
             theSession.Store(Target.Random(), Target.Random(), Target.Random());
             theSession.SaveChanges();
 
-            // SAMPLE: initialise_a_new_property_by_expression
+            #region sample_initialise_a_new_property_by_expression
             const string where = "where (data ->> 'UpdatedAt') is null";
             theSession.Query<Target>(where).Count.ShouldBe(3);
             theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
@@ -85,7 +85,7 @@ namespace Marten.Testing.Acceptance
             {
                 query.Query<Target>(where).Count.ShouldBe(0);
             }
-            // ENDSAMPLE
+            #endregion sample_initialise_a_new_property_by_expression
         }
 
         [Fact]
@@ -119,10 +119,10 @@ namespace Marten.Testing.Acceptance
             theSession.Store(target1, target2, target3, target4, target5, target6);
             theSession.SaveChanges();
 
-            // SAMPLE: set_an_immediate_property_by_where_clause
+            #region sample_set_an_immediate_property_by_where_clause
             // Change every Target document where the Color is Blue
             theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
-            // ENDSAMPLE
+            #endregion sample_set_an_immediate_property_by_where_clause
 
             theSession.SaveChanges();
 
@@ -143,7 +143,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void duplicate_to_new_field()
         {
-            // SAMPLE: duplicate_to_new_field
+            #region sample_duplicate_to_new_field
             var target = Target.Random();
             target.AnotherString = null;
             theSession.Store(target);
@@ -157,7 +157,7 @@ namespace Marten.Testing.Acceptance
                 var result = query.Load<Target>(target.Id);
                 result.AnotherString.ShouldBe(target.String);
             }
-            // ENDSAMPLE
+            #endregion sample_duplicate_to_new_field
         }
 
         [Fact]
@@ -169,12 +169,12 @@ namespace Marten.Testing.Acceptance
             theSession.Store(target);
             theSession.SaveChanges();
 
-            // SAMPLE: duplicate_to_multiple_new_fields
+            #region sample_duplicate_to_multiple_new_fields
             theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
                 t => t.StringField,
                 t => t.Inner.String,
                 t => t.Inner.AnotherString);
-            // ENDSAMPLE
+            #endregion sample_duplicate_to_multiple_new_fields
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -188,7 +188,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: increment_for_int
+        #region sample_increment_for_int
         [Fact]
         public void increment_for_int()
         {
@@ -207,9 +207,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_increment_for_int
 
-        // SAMPLE: increment_for_int_with_explicit_increment
+        #region sample_increment_for_int_with_explicit_increment
         [Fact]
         public void increment_for_int_with_explicit_increment()
         {
@@ -228,7 +228,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_increment_for_int_with_explicit_increment
 
         [Fact]
         public void increment_for_long()
@@ -331,7 +331,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: append_complex_element
+        #region sample_append_complex_element
         [Fact]
         public void append_complex_element()
         {
@@ -355,7 +355,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_append_complex_element
 
         [Fact]
         public void append_if_not_exists_complex_element()
@@ -487,7 +487,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: insert_first_complex_element
+        #region sample_insert_first_complex_element
         [Fact]
         public void insert_first_complex_element()
         {
@@ -511,7 +511,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_insert_first_complex_element
 
         public void insert_if_not_exists_first_complex_element()
         {
@@ -578,7 +578,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: rename_deep_prop
+        #region sample_rename_deep_prop
         [Fact]
         public void rename_deep_prop()
         {
@@ -600,9 +600,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_rename_deep_prop
 
-        // SAMPLE: remove_primitive_element
+        #region sample_remove_primitive_element
         [Fact]
         public void remove_primitive_element()
         {
@@ -627,9 +627,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_remove_primitive_element
 
-        // SAMPLE: remove_repeated_primitive_element
+        #region sample_remove_repeated_primitive_element
         [Fact]
         public void remove_repeated_primitive_elements()
         {
@@ -661,9 +661,9 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_remove_repeated_primitive_element
 
-        // SAMPLE: remove_complex_element
+        #region sample_remove_complex_element
         [Fact]
         public void remove_complex_element()
         {
@@ -688,7 +688,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_remove_complex_element
 
         [Fact]
         public void delete_redundant_property()
@@ -697,9 +697,9 @@ namespace Marten.Testing.Acceptance
             theSession.Store(target);
             theSession.SaveChanges();
 
-            // SAMPLE: delete_redundant_property
+            #region sample_delete_redundant_property
             theSession.Patch<Target>(target.Id).Delete("String");
-            // ENDSAMPLE
+            #endregion sample_delete_redundant_property
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -717,9 +717,9 @@ namespace Marten.Testing.Acceptance
             theSession.Store(target);
             theSession.SaveChanges();
 
-            // SAMPLE: delete_redundant_nested_property
+            #region sample_delete_redundant_nested_property
             theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
-            // ENDSAMPLE
+            #endregion sample_delete_redundant_nested_property
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -737,9 +737,9 @@ namespace Marten.Testing.Acceptance
             theSession.Store(target);
             theSession.SaveChanges();
 
-            // SAMPLE: delete_existing_property
+            #region sample_delete_existing_property
             theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
-            // ENDSAMPLE
+            #endregion sample_delete_existing_property
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -759,7 +759,7 @@ namespace Marten.Testing.Acceptance
             }
             theSession.SaveChanges();
 
-            // SAMPLE: delete_property_from_many_documents
+            #region sample_delete_property_from_many_documents
             const string where = "(data ->> 'String') is not null";
             theSession.Query<Target>(where).Count.ShouldBe(15);
             theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
@@ -769,7 +769,7 @@ namespace Marten.Testing.Acceptance
             {
                 query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
             }
-            // ENDSAMPLE
+            #endregion sample_delete_property_from_many_documents
         }
 
         [Fact]

@@ -24,10 +24,10 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void negated_contains()
         {
-            // SAMPLE: negated-contains
+            #region sample_negated-contains
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
-            // ENDSAMPLE
+            #endregion sample_negated-contains
         }
 
         [Fact]
@@ -64,10 +64,10 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void negated_contains()
         {
-            // SAMPLE: negated-contains
+            #region sample_negated-contains
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
-            // ENDSAMPLE
+            #endregion sample_negated-contains
         }
 
         [Fact]

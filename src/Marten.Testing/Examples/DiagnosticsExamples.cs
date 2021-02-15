@@ -9,7 +9,7 @@ using Shouldly;
 
 namespace Marten.Testing.Examples
 {
-    // SAMPLE: trade_document_type
+    #region sample_trade_document_type
     public class Trade
     {
         public int Id { get; set; }
@@ -18,7 +18,7 @@ namespace Marten.Testing.Examples
         public double Value { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_trade_document_type
 
     public class DiagnosticsExamples: IntegrationContext
     {
@@ -27,15 +27,15 @@ namespace Marten.Testing.Examples
             // Marten is NOT coupled to StructureMap, but we
             // use it in our test suite for convenience
 
-            // SAMPLE: preview_linq_command
+            #region sample_preview_linq_command
             // store is the active IDocumentStore
             var queryable = theStore.QuerySession().Query<Trade>().Where(x => x.Value > 2000);
             var cmd = queryable.ToCommand(FetchType.FetchMany);
 
             Debug.WriteLine(cmd.CommandText);
-            // ENDSAMPLE
+            #endregion sample_preview_linq_command
 
-            // SAMPLE: preview_linq_explain_plan
+            #region sample_preview_linq_explain_plan
             // Explain() is an extension method off of IQueryable<T>
             var plan = queryable.Explain();
             Console.WriteLine($"NodeType: {plan.NodeType}");
@@ -45,12 +45,12 @@ namespace Marten.Testing.Examples
             Console.WriteLine($"TotalCost: {plan.TotalCost}");
             Console.WriteLine($"PlanRows: {plan.PlanRows}");
             Console.WriteLine($"PlanWidth: {plan.PlanWidth}");
-            // ENDSAMPLE
+            #endregion sample_preview_linq_explain_plan
         }
 
         public void use_request_count()
         {
-            // SAMPLE: using_request_count
+            #region sample_using_request_count
             using (var session = theStore.QuerySession())
             {
                 var users = session.Query<User>().ToList();
@@ -59,7 +59,7 @@ namespace Marten.Testing.Examples
 
                 session.RequestCount.ShouldBe(3);
             }
-            // ENDSAMPLE
+            #endregion sample_using_request_count
         }
 
         public DiagnosticsExamples(DefaultStoreFixture fixture) : base(fixture)

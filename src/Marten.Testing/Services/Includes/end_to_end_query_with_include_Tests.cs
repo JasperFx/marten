@@ -43,14 +43,14 @@ namespace Marten.Testing.Services.Includes
                 var list = new List<User>();
                 var dict = new Dictionary<Guid, User>();
 
-                // SAMPLE: batch_include
+                #region sample_batch_include
                 var batch = query.CreateBatchQuery();
 
                 var found = batch.Query<Issue>()
                     .Include<User>(x => x.AssigneeId, x => included = x)
                     .Where(x => x.Title == issue1.Title)
                     .Single();
-                // ENDSAMPLE
+                #endregion sample_batch_include
 
                 var toList = batch.Query<Issue>()
                     .Include<User>(x => x.AssigneeId, list).ToList();
@@ -81,7 +81,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
-        // SAMPLE: simple_include
+        #region sample_simple_include
         [Fact]
         public void simple_include_for_a_single_document()
         {
@@ -105,7 +105,7 @@ namespace Marten.Testing.Services.Includes
                 SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
-        // ENDSAMPLE
+        #endregion sample_simple_include
 
         [Fact]
         public void include_with_containment_where_for_a_single_document()
@@ -485,7 +485,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
-        // SAMPLE: dictionary_include
+        #region sample_dictionary_include
         [Fact]
         public void include_to_dictionary()
         {
@@ -511,7 +511,7 @@ namespace Marten.Testing.Services.Includes
                 dict.ContainsKey(user2.Id).ShouldBeTrue();
             }
         }
-        // ENDSAMPLE
+        #endregion sample_dictionary_include
 
         [Fact]
         public void include_to_dictionary_using_inner_join()
@@ -708,7 +708,7 @@ namespace Marten.Testing.Services.Includes
             dict.ContainsKey(user2.Id).ShouldBeTrue();
         }
 
-        // SAMPLE: multiple_include
+        #region sample_multiple_include
         [Fact]
         public void multiple_includes()
         {
@@ -738,7 +738,7 @@ namespace Marten.Testing.Services.Includes
 
             }
         }
-        // ENDSAMPLE
+        #endregion sample_multiple_include
 
         public class Group
         {

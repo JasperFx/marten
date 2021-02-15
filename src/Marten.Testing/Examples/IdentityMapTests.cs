@@ -5,7 +5,7 @@ namespace Marten.Testing.Examples
 {
     public class IdentityMapTests: IntegrationContext
     {
-        // SAMPLE: using-identity-map
+        #region sample_using-identity-map
         public void using_identity_map()
         {
             var user = new User { FirstName = "Tamba", LastName = "Hali" };
@@ -19,7 +19,7 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_using-identity-map
         public IdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
         {
         }

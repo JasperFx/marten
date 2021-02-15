@@ -63,7 +63,7 @@ namespace Marten.Schema.Testing
         }
     }
 
-    // SAMPLE: configure_template_with_configure_marten
+#region sample_configure_template_with_configure_marten
 public class BlueDoc
 {
     public static void ConfigureMarten(DocumentMapping mapping)
@@ -73,13 +73,13 @@ public class BlueDoc
 
     public Guid id;
 }
-    // ENDSAMPLE
+#endregion sample_configure_template_with_configure_marten
 
-    // SAMPLE: configure_template_with_attribute
+#region sample_configure_template_with_attribute
 [DdlTemplate("ReadOnly")]
 public class ReadOnlyDoc
 {
     public Guid id;
 }
-    // ENDSAMPLE
+#endregion sample_configure_template_with_attribute
 }

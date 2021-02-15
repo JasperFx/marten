@@ -17,7 +17,7 @@ namespace Marten.Testing.Linq
     {
         private readonly ITestOutputHelper _output;
 
-        // SAMPLE: can_do_simple_select_many_against_simple_array
+        #region sample_can_do_simple_select_many_against_simple_array
         [Fact]
         public void can_do_simple_select_many_against_simple_array()
         {
@@ -42,7 +42,7 @@ namespace Marten.Testing.Linq
                     .Count().ShouldBe(9);
             }
         }
-        // ENDSAMPLE
+        #endregion sample_can_do_simple_select_many_against_simple_array
 
         [Fact]
         public void distinct_and_count()
@@ -391,7 +391,7 @@ namespace Marten.Testing.Linq
 
                 expected.Any().ShouldBeTrue();
 
-                // SAMPLE: using-select-many
+                #region sample_using-select-many
                 var results = query.Query<Target>()
                     .SelectMany(x => x.Children)
                     .Where(x => x.Flag)
@@ -399,7 +399,7 @@ namespace Marten.Testing.Linq
                     .Skip(20)
                     .Take(15)
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_using-select-many
 
                 results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
             }

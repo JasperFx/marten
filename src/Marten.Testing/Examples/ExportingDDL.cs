@@ -5,7 +5,7 @@ namespace Marten.Testing.Examples
 {
     public class ExportingDDL
     {
-        // SAMPLE: export-ddl
+        #region sample_export-ddl
         public void export_ddl()
         {
             var store = DocumentStore.For(_ =>
@@ -33,6 +33,6 @@ namespace Marten.Testing.Examples
             Debug.WriteLine(sql);
         }
 
-        // ENDSAMPLE
+        #endregion sample_export-ddl
     }
 }

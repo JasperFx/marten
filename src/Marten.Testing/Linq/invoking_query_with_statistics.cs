@@ -19,7 +19,7 @@ namespace Marten.Testing.Linq
             theStore.BulkInsert(Target.GenerateRandomData(100).ToArray());
         }
 
-        // SAMPLE: compiled-query-statistics
+        #region sample_compiled-query-statistics
         public class TargetPaginationQuery: ICompiledListQuery<Target>
         {
             public TargetPaginationQuery(int pageNumber, int pageSize)
@@ -42,7 +42,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_compiled-query-statistics
 
         [Fact]
         public void can_get_the_total_from_a_compiled_query()
@@ -140,7 +140,7 @@ namespace Marten.Testing.Linq
             stats.TotalResults.ShouldBe(count);
         }
 
-        // SAMPLE: using-query-statistics
+        #region sample_using-query-statistics
         [Fact]
         public void can_get_the_total_in_results()
         {
@@ -166,7 +166,7 @@ namespace Marten.Testing.Linq
             stats.TotalResults.ShouldBe(count);
         }
 
-        // ENDSAMPLE
+        #endregion sample_using-query-statistics
 
         [Fact]
         public async Task can_get_the_total_in_results_async()
@@ -183,7 +183,5 @@ namespace Marten.Testing.Linq
 
             stats.TotalResults.ShouldBe(count);
         }
-
-        // ENDSAMPLE
     }
 }

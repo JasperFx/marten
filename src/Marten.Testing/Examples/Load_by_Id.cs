@@ -5,7 +5,7 @@ namespace Marten.Testing.Examples
 {
     public class Load_by_Id
     {
-        // SAMPLE: load_by_id
+        #region sample_load_by_id
         public void load_by_id(IDocumentSession session)
         {
             var userId = Guid.NewGuid();
@@ -28,6 +28,6 @@ namespace Marten.Testing.Examples
             var users2 = session.LoadMany<User>(ids);
         }
 
-        // ENDSAMPLE
+        #endregion sample_load_by_id
     }
 }

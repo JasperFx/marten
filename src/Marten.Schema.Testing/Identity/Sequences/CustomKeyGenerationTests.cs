@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing.Identity.Sequences
 {
-    // SAMPLE: custom-id-generation
+    #region sample_custom-id-generation
     public class CustomdIdGeneration : IIdGeneration
     {
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         }
 
     }
-    // ENDSAMPLE
+    #endregion sample_custom-id-generation
 
     public class CustomKeyGenerationTests : IntegrationContext
     {
@@ -34,12 +34,12 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             StoreOptions(options =>
             {
-                // SAMPLE: configuring-global-custom
+                #region sample_configuring-global-custom
                 options.DefaultIdStrategy = (mapping, storeOptions) => new CustomdIdGeneration();
-                // ENDSAMPLE
+                #endregion sample_configuring-global-custom
             });
 
-            // SAMPLE: configuring-global-custom-test
+            #region sample_configuring-global-custom-test
             using (var session = theStore.OpenSession())
             {
                 session.Store(new UserWithString { LastName = "last" });
@@ -51,7 +51,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 var users = session1.Query<UserWithString>().ToArray<UserWithString>();
                 users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
             }
-            // ENDSAMPLE
+            #endregion sample_configuring-global-custom-test
         }
 
         [Fact]
@@ -59,9 +59,9 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             StoreOptions(options =>
             {
-                // SAMPLE: configuring-mapping-specific-custom
+                #region sample_configuring-mapping-specific-custom
                 options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration());
-                // ENDSAMPLE
+                #endregion sample_configuring-mapping-specific-custom
             });
 
             theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();

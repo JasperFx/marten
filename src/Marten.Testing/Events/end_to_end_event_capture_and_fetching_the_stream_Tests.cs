@@ -50,13 +50,13 @@ namespace Marten.Testing.Events
             {
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: start-stream-with-aggregate-type
+                    #region sample_start-stream-with-aggregate-type
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     session.SaveChanges();
-                    // ENDSAMPLE
+                    #endregion sample_start-stream-with-aggregate-type
 
                     var streamEvents = session.Events.FetchStream(id);
 
@@ -81,13 +81,13 @@ namespace Marten.Testing.Events
             {
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: start-stream-with-aggregate-type
+                    #region sample_start-stream-with-aggregate-type
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     await session.SaveChangesAsync();
-                    // ENDSAMPLE
+                    #endregion sample_start-stream-with-aggregate-type
 
                     var streamEvents = await session.Events.FetchStreamAsync(id);
 
@@ -112,13 +112,13 @@ namespace Marten.Testing.Events
             {
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: start-stream-with-aggregate-type
+                    #region sample_start-stream-with-aggregate-type
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     await session.SaveChangesAsync();
-                    // ENDSAMPLE
+                    #endregion sample_start-stream-with-aggregate-type
 
                     var streamEvents = await session.Events.QueryAllRawEvents()
                         .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
@@ -144,13 +144,13 @@ namespace Marten.Testing.Events
             {
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: start-stream-with-aggregate-type
+                    #region sample_start-stream-with-aggregate-type
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     session.SaveChanges();
-                    // ENDSAMPLE
+                    #endregion sample_start-stream-with-aggregate-type
 
                     var streamEvents = session.Events.QueryAllRawEvents()
                         .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
@@ -353,14 +353,14 @@ namespace Marten.Testing.Events
             {
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: start-stream-with-existing-guid
+                    #region sample_start-stream-with-existing-guid
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                     var id = Guid.NewGuid();
                     session.Events.StartStream<Quest>(id, joined, departed);
                     session.SaveChanges();
-                    // ENDSAMPLE
+                    #endregion sample_start-stream-with-existing-guid
 
                     var streamEvents = session.Events.FetchStream(id);
 
@@ -558,14 +558,14 @@ namespace Marten.Testing.Events
 
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: append-events
+                    #region sample_append-events
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                     session.Events.Append(id, joined, departed);
 
                     session.SaveChanges();
-                    // ENDSAMPLE
+                    #endregion sample_append-events
 
                     var streamEvents = session.Events.FetchStream(id);
 
@@ -597,7 +597,7 @@ namespace Marten.Testing.Events
 
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
-                    // SAMPLE: append-events-assert-on-eventid
+                    #region sample_append-events-assert-on-eventid
                     session.Events.StartStream<Quest>(id, started);
                     session.SaveChanges();
 
@@ -609,7 +609,7 @@ namespace Marten.Testing.Events
                     session.Events.Append(id, 3, joined, departed);
 
                     session.SaveChanges();
-                    // ENDSAMPLE
+                    #endregion sample_append-events-assert-on-eventid
                 }
             }).ShouldThrowIf(
                 (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace AspNetCoreWithMarten.Samples.ByStoreOptions
 {
-    // SAMPLE: AddMartenByStoreOptions
+    #region sample_AddMartenByStoreOptions
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -44,7 +44,7 @@ namespace AspNetCoreWithMarten.Samples.ByStoreOptions
 
         // And other methods we don't care about here...
     }
-    // ENDSAMPLE
+    #endregion sample_AddMartenByStoreOptions
 
 
 }

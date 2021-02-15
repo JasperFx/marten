@@ -63,7 +63,7 @@ namespace Marten.Schema.Testing
                 .ShouldContain(x => x.ColumnName == "foo_id");
         }
 
-        // SAMPLE: issue-with-fk-attribute
+        #region sample_issue-with-fk-attribute
         public class Issue
         {
             public Issue()
@@ -79,7 +79,7 @@ namespace Marten.Schema.Testing
             public Guid? OtherUserId { get; set; }
         }
 
-        // ENDSAMPLE
+        #endregion sample_issue-with-fk-attribute
 
 
         public class Employee

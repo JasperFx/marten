@@ -9,7 +9,7 @@ namespace Marten.Testing.Events
         public Guid Id { get; set; }
     }
 
-    // SAMPLE: sample-events
+    #region sample_sample-events
     public class ArrivedAtLocation
     {
         public int Day { get; set; }
@@ -141,7 +141,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_sample-events
 
     public class Issue
     {

@@ -10,14 +10,14 @@ using Npgsql;
 
 namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
 {
-    // SAMPLE: CorrelationIdWithISession
+    #region sample_CorrelationIdWithISession
     public interface ISession
     {
         Guid CorrelationId { get; set; }
     }
-    // ENDSAMPLE
+    #endregion sample_CorrelationIdWithISession
 
-    // SAMPLE: CorrelatedMartenLogger
+    #region sample_CorrelatedMartenLogger
     public class CorrelatedMartenLogger: IMartenSessionLogger
     {
         private readonly ILogger<IDocumentSession> _logger;
@@ -49,10 +49,10 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
 
         }
     }
-    // ENDSAMPLE
+    #endregion sample_CorrelatedMartenLogger
 
 
-    // SAMPLE: CustomSessionFactoryByScope
+    #region sample_CustomSessionFactoryByScope
     public class ScopedSessionFactory: ISessionFactory
     {
         private readonly IDocumentStore _store;
@@ -84,9 +84,9 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
             return session;
         }
     }
-    // ENDSAMPLE
+    #endregion sample_CustomSessionFactoryByScope
 
-    // SAMPLE: AddMartenWithCustomSessionCreationByScope
+    #region sample_AddMartenWithCustomSessionCreationByScope
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -120,5 +120,5 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
 
         // And other methods we don't care about here...
     }
-    // ENDSAMPLE
+    #endregion sample_AddMartenWithCustomSessionCreationByScope
 }

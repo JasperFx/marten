@@ -16,10 +16,10 @@ namespace Marten.Testing.Events
         {
             StoreOptions(storeOptions =>
             {
-                // SAMPLE: eventstore-configure-stream-identity
+                #region sample_eventstore-configure-stream-identity
                 storeOptions.Events.StreamIdentity = StreamIdentity.AsString;
                 storeOptions.Events.Projections.SelfAggregate<QuestPartyWithStringIdentifier>(ProjectionLifecycle.Async);
-                // ENDSAMPLE
+                #endregion sample_eventstore-configure-stream-identity
             });
         }
 

@@ -6,7 +6,7 @@ namespace Marten.Testing.Examples
     {
         public void configuration()
         {
-            // SAMPLE: configure-foreign-key
+            #region sample_configure-foreign-key
             var store = DocumentStore
                 .For(_ =>
                      {
@@ -16,7 +16,7 @@ namespace Marten.Testing.Examples
                          // up a foreign key relationship to the User document
                          _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
                      });
-            // ENDSAMPLE
+            #endregion sample_configure-foreign-key
 
             //var sql = store.Schema.ToDDL();
             //Console.WriteLine(sql);
@@ -24,7 +24,7 @@ namespace Marten.Testing.Examples
 
         public void external_fkey()
         {
-            // SAMPLE: configure-external-foreign-key
+            #region sample_configure-external-foreign-key
             var store = DocumentStore
                 .For(_ =>
                      {
@@ -34,12 +34,12 @@ namespace Marten.Testing.Examples
                          // created or managed by marten
                          _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "id");
                      });
-            // ENDSAMPLE
+            #endregion sample_configure-external-foreign-key
         }
 
         public void cascade_deletes_with_config_func()
         {
-            // SAMPLE: cascade_deletes_with_config_func
+            #region sample_cascade_deletes_with_config_func
             var store = DocumentStore
                 .For(_ =>
                      {
@@ -47,7 +47,7 @@ namespace Marten.Testing.Examples
 
                          _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
                      });
-            // ENDSAMPLE
+            #endregion sample_cascade_deletes_with_config_func
         }
     }
 }

@@ -25,11 +25,11 @@ namespace Marten.Testing.CoreFunctionality
 
             var initialCount = theSession.Query<Target>().Where(x => x.Double == 578).Count();
 
-            // SAMPLE: DeleteWhere
+            #region sample_DeleteWhere
             theSession.DeleteWhere<Target>(x => x.Double == 578);
 
             theSession.SaveChanges();
-            // ENDSAMPLE
+            #endregion sample_DeleteWhere
 
             theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
 
@@ -105,7 +105,6 @@ namespace Marten.Testing.CoreFunctionality
             theSession.DeleteWhere<FailureInLife>(x => x.Id == id && x.What == what);
 
             theSession.SaveChanges();
-            // ENDSAMPLE
 
             theSession.Query<FailureInLife>().Count().ShouldBe(0);
 

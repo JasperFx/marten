@@ -21,16 +21,16 @@ namespace Marten.Testing.Examples
                 // by a tenantid column
                 storeOptions.Connection(ConnectionSource.ConnectionString);
 
-                // SAMPLE: tenancy-configure-through-policy
+                #region sample_tenancy-configure-through-policy
                 storeOptions.Policies.AllDocumentsAreMultiTenanted();
                 // Shorthand for
                 // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
-                // ENDSAMPLE
+                #endregion sample_tenancy-configure-through-policy
             });
 
             store.Advanced.Clean.CompletelyRemoveAll();
 
-            // SAMPLE: tenancy-scoping-session-write
+            #region sample_tenancy-scoping-session-write
             // Write some User documents to tenant "tenant1"
             using (var session = store.OpenSession("tenant1"))
             {
@@ -38,7 +38,7 @@ namespace Marten.Testing.Examples
                 session.Store(new User { UserName = "Lindsey" });
                 session.SaveChanges();
             }
-            // ENDSAMPLE
+            #endregion sample_tenancy-scoping-session-write
 
             // Write some User documents to tenant "tenant2"
             using (var session = store.OpenSession("tenant2"))
@@ -48,7 +48,7 @@ namespace Marten.Testing.Examples
                 session.SaveChanges();
             }
 
-            // SAMPLE: tenancy-scoping-session-read
+            #region sample_tenancy-scoping-session-read
             // When you query for data from the "tenant1" tenant,
             // you only get data for that tenant
             using (var query = store.QuerySession("tenant1"))
@@ -58,7 +58,7 @@ namespace Marten.Testing.Examples
                     .ToList()
                     .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
             }
-            // ENDSAMPLE
+            #endregion sample_tenancy-scoping-session-read
 
             using (var query = store.QuerySession("tenant2"))
             {

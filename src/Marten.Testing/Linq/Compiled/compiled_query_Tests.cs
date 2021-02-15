@@ -78,7 +78,7 @@ namespace Marten.Testing.Linq.Compiled
             theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" }).ShouldBeNull();
         }
 
-        // SAMPLE: FindJsonUserByUsername
+        #region sample_FindJsonUserByUsername
         [Fact]
         public void a_single_item_compiled_query_AsJson()
         {
@@ -88,9 +88,9 @@ namespace Marten.Testing.Linq.Compiled
             user.ShouldBe(_user1.ToJson());
         }
 
-        // ENDSAMPLE
+        #endregion sample_FindJsonUserByUsername
 
-        // SAMPLE: FindJsonOrderedUsersByUsername
+        #region sample_FindJsonOrderedUsersByUsername
         [Fact]
         public void a_sorted_list_compiled_query_AsJson()
         {
@@ -100,7 +100,7 @@ namespace Marten.Testing.Linq.Compiled
             user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
         }
 
-        // ENDSAMPLE
+        #endregion sample_FindJsonOrderedUsersByUsername
 
         [Fact]
         public void a_filtered_list_compiled_query_AsJson()
@@ -239,7 +239,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // SAMPLE: FindUserByAllTheThings
+    #region sample_FindUserByAllTheThings
     public class FindUserByAllTheThings: ICompiledQuery<User>
     {
         public string Username { get; set; }
@@ -255,9 +255,9 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_FindUserByAllTheThings
 
-    // SAMPLE: CompiledAsJson
+    #region sample_CompiledAsJson
     public class FindJsonUserByUsername: ICompiledQuery<User, string>
     {
         public string Username { get; set; }
@@ -270,9 +270,9 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_CompiledAsJson
 
-    // SAMPLE: CompiledToJsonArray
+    #region sample_CompiledToJsonArray
     public class FindJsonOrderedUsersByUsername: ICompiledQuery<User, string>
     {
         public string FirstName { get; set; }
@@ -286,7 +286,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_CompiledToJsonArray
 
     public class FindJsonUsersByUsername: ICompiledQuery<User, string>
     {
@@ -360,7 +360,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // SAMPLE: UsersByFirstName-Query
+    #region sample_UsersByFirstName-Query
     public class UsersByFirstName: ICompiledListQuery<User>
     {
         public static int Count;
@@ -372,7 +372,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_UsersByFirstName-Query
 
     public class UsersByFirstNameWithFields: ICompiledListQuery<User>
     {
@@ -384,7 +384,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    // SAMPLE: UserNamesForFirstName
+    #region sample_UserNamesForFirstName
     public class UserNamesForFirstName: ICompiledListQuery<User, string>
     {
         public Expression<Func<IMartenQueryable<User>, IEnumerable<string>>> QueryIs()
@@ -397,7 +397,7 @@ namespace Marten.Testing.Linq.Compiled
         public string FirstName { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_UserNamesForFirstName
 
     public class CompiledQuery1 : ICompiledQuery<Target, bool>
     {

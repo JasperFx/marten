@@ -14,7 +14,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         [Fact]
         public void can_establish_the_hilo_starting_point()
         {
-            // SAMPLE: ResetHiloSequenceFloor
+            #region sample_ResetHiloSequenceFloor
             var store = DocumentStore.For(opts =>
             {
                 opts.Connection(ConnectionSource.ConnectionString);
@@ -24,7 +24,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
             store.Tenancy.Default.ResetHiloSequenceFloor<IntDoc>(2500);
-            // ENDSAMPLE
+            #endregion sample_ResetHiloSequenceFloor
 
             using (var session = store.OpenSession())
             {
@@ -59,14 +59,14 @@ namespace Marten.Schema.Testing.Identity.Sequences
         [Fact]
         public void override_the_global_settings()
         {
-            // SAMPLE: configuring-global-hilo-defaults
+            #region sample_configuring-global-hilo-defaults
             var store = DocumentStore.For(_ =>
             {
                 _.HiloSequenceDefaults.MaxLo = 55;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = "sequences";
             });
-            // ENDSAMPLE
+            #endregion sample_configuring-global-hilo-defaults
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(55);
@@ -75,7 +75,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         [Fact]
         public void override_by_document_on_marten_registry()
         {
-            // SAMPLE: overriding-hilo-with-marten-registry
+            #region sample_overriding-hilo-with-marten-registry
             var store = DocumentStore.For(_ =>
             {
                 // Overriding the Hilo settings for the document type "IntDoc"
@@ -86,7 +86,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
                 _.DatabaseSchemaName = "sequences";
             });
-            // ENDSAMPLE
+            #endregion sample_overriding-hilo-with-marten-registry
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(66);
@@ -145,7 +145,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         [Fact]
         public void create_docs_with_global_id()
         {
-            // SAMPLE: configuring-global-hilo-defaults-sequencename
+            #region sample_configuring-global-hilo-defaults-sequencename
             var store = DocumentStore.For(_ =>
             {
                 _.HiloSequenceDefaults.SequenceName = "Entity";
@@ -153,7 +153,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
                 _.DatabaseSchemaName = "sequences";
             });
-            // ENDSAMPLE
+            #endregion sample_configuring-global-hilo-defaults-sequencename
             using (var session = store.OpenSession())
             {
                 var doc1 = new IntDoc();
@@ -183,11 +183,11 @@ namespace Marten.Schema.Testing.Identity.Sequences
     }
 
 
-    // SAMPLE: overriding-hilo-with-attribute
+    #region sample_overriding-hilo-with-attribute
     [HiloSequence(MaxLo = 66, SequenceName = "Entity")]
     public class OverriddenHiloDoc
     {
         public int Id { get; set; }
     }
-    // ENDSAMPLE
+    #endregion sample_overriding-hilo-with-attribute
 }

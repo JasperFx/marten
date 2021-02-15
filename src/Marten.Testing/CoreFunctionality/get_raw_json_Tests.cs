@@ -9,7 +9,7 @@ namespace Marten.Testing.CoreFunctionality
 {
     public class get_raw_json_Tests : IntegrationContext
     {
-        // SAMPLE: get-raw-json
+        #region sample_get-raw-json
         //[Fact]
         public void when_get_json_then_raw_json_should_be_returned()
         {
@@ -26,9 +26,9 @@ namespace Marten.Testing.CoreFunctionality
             json = theSession.Query<Issue>().AsJson().Single();
             json = theSession.Query<Issue>().AsJson().SingleOrDefault();
         }
-        // ENDSAMPLE
+        #endregion sample_get-raw-json
 
-        // SAMPLE: get-raw-json-async
+        #region sample_get-raw-json-async
         //[Fact]
         public async Task when_get_json_then_raw_json_should_be_returned_async()
         {
@@ -45,7 +45,7 @@ namespace Marten.Testing.CoreFunctionality
             json = await theSession.Query<Issue>().AsJson().SingleAsync().ConfigureAwait(false);
             json = await theSession.Query<Issue>().AsJson().SingleOrDefaultAsync().ConfigureAwait(false);
         }
-        // ENDSAMPLE
+        #endregion sample_get-raw-json-async
         public get_raw_json_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }

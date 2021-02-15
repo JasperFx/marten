@@ -12,7 +12,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void initial_data_should_populate_db()
         {
-            // SAMPLE: configuring-initial-data
+            #region sample_configuring-initial-data
             var store = DocumentStore.For(_ =>
             {
                 _.DatabaseSchemaName = "Bug962";
@@ -23,7 +23,7 @@ namespace Marten.Testing.Bugs
                 _.InitialData.Add(new InitialData(InitialDatasets.Companies));
                 _.InitialData.Add(new InitialData(InitialDatasets.Users));
             });
-            // ENDSAMPLE
+            #endregion sample_configuring-initial-data
 
             using (var session = store.QuerySession())
             {
@@ -45,7 +45,7 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    // SAMPLE: initial-data
+    #region sample_initial-data
     public class InitialData: IInitialData
     {
         private readonly object[] _initialData;
@@ -81,5 +81,5 @@ namespace Marten.Testing.Bugs
         };
     }
 
-    // ENDSAMPLE
+    #endregion sample_initial-data
 }

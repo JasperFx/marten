@@ -89,7 +89,7 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public async Task load_with_small_batch()
         {
-            // SAMPLE: using_bulk_insert_async
+            #region sample_using_bulk_insert_async
             // This is just creating some randomized
             // document data
             var data = Target.GenerateRandomData(100).ToArray();
@@ -99,7 +99,7 @@ namespace Marten.Testing.CoreFunctionality
 
             // And just checking that the data is actually there;)
             theSession.Query<Target>().Count().ShouldBe(data.Length);
-            // ENDSAMPLE
+            #endregion sample_using_bulk_insert_async
 
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
         }
@@ -142,11 +142,11 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public async Task load_with_small_batch_and_ignore_duplicates_smoke_test()
         {
-            // SAMPLE: bulk_insert_async_with_IgnoreDuplicates
+            #region sample_bulk_insert_async_with_IgnoreDuplicates
             var data = Target.GenerateRandomData(100).ToArray();
 
             await theStore.BulkInsertAsync(data, BulkInsertMode.IgnoreDuplicates);
-            // ENDSAMPLE
+            #endregion sample_bulk_insert_async_with_IgnoreDuplicates
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -162,11 +162,11 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public async Task load_with_small_batch_and_overwrites_smoke_test()
         {
-            // SAMPLE: bulk_insert_async_with_OverwriteExisting
+            #region sample_bulk_insert_async_with_OverwriteExisting
             var data = Target.GenerateRandomData(100).ToArray();
 
             await theStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting);
-            // ENDSAMPLE
+            #endregion sample_bulk_insert_async_with_OverwriteExisting
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
 

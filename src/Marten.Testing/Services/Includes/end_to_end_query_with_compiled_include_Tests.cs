@@ -21,7 +21,7 @@ namespace Marten.Testing.Services.Includes
     {
         private readonly ITestOutputHelper _output;
 
-        // SAMPLE: compiled_include
+        #region sample_compiled_include
         [Fact]
         public void simple_compiled_include_for_a_single_document()
         {
@@ -55,10 +55,10 @@ namespace Marten.Testing.Services.Includes
                     .Single(x => x.Title == Title);
             }
         }
-        // ENDSAMPLE
+        #endregion sample_compiled_include
 
 
-        // SAMPLE: compiled_include_list
+        #region sample_compiled_include_list
         public class IssueWithUsers : ICompiledListQuery<Issue>
         {
             public List<User> Users { get; set; } = new List<User>();
@@ -98,9 +98,9 @@ namespace Marten.Testing.Services.Includes
                 query.Users.Any(x => x.Id == user2.Id);
             }
         }
-        // ENDSAMPLE
+        #endregion sample_compiled_include_list
 
-        // SAMPLE: compiled_include_dictionary
+        #region sample_compiled_include_dictionary
         public class IssueWithUsersById : ICompiledListQuery<Issue>
         {
             public IDictionary<Guid,User> UsersById { get; set; } = new Dictionary<Guid, User>();
@@ -140,7 +140,7 @@ namespace Marten.Testing.Services.Includes
                 query.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
             }
         }
-        // ENDSAMPLE
+        #endregion sample_compiled_include_dictionary
         public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;

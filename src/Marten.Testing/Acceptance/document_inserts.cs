@@ -78,13 +78,13 @@ namespace Marten.Testing.Acceptance
         {
             var target = Target.Random();
 
-            // SAMPLE: sample-document-insertonly
+            #region sample_sample-document-insertonly
             using (var session = theStore.OpenSession())
             {
                 session.Insert(target);
                 session.SaveChanges();
             }
-            // ENDSAMPLE
+            #endregion sample_sample-document-insertonly
 
             using (var session = theStore.OpenSession())
             {

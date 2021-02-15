@@ -28,7 +28,7 @@ namespace Marten.Testing.Events
         {
             var invoice = CreateInvoice();
 
-            // SAMPLE: scenario-aggregate-storeandreadinvoice
+            #region sample_scenario-aggregate-storeandreadinvoice
             var repository = new AggregateRepository(theStore);
 
             repository.Store(invoice);
@@ -37,7 +37,7 @@ namespace Marten.Testing.Events
 
             Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());
             Assert.Equal(invoice.Total, invoiceFromRepository.Total);
-            // ENDSAMPLE
+            #endregion sample_scenario-aggregate-storeandreadinvoice
         }
 
         [Fact]
@@ -49,11 +49,11 @@ namespace Marten.Testing.Events
 
             repository.Store(invoice);
 
-            // SAMPLE: scenario-aggregate-versionedload
+            #region sample_scenario-aggregate-versionedload
             var invoiceFromRepository = repository.Load<Invoice>(invoice.Id, 2);
 
             Assert.Equal(124, invoiceFromRepository.Total);
-            // ENDSAMPLE
+            #endregion sample_scenario-aggregate-versionedload
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Marten.Testing.Events
         {
             var repository = new AggregateRepository(theStore);
 
-            // SAMPLE: scenario-aggregate-conflict
+            #region sample_scenario-aggregate-conflict
             var invoice = CreateInvoice();
             var invoiceWithSameIdentity = CreateInvoice();
 
@@ -71,7 +71,7 @@ namespace Marten.Testing.Events
             {
                 repository.Store(invoiceWithSameIdentity);
             });
-            // ENDSAMPLE
+            #endregion sample_scenario-aggregate-conflict
         }
 
         [Fact]
@@ -98,18 +98,18 @@ namespace Marten.Testing.Events
 
         private static Invoice CreateInvoice()
         {
-            // SAMPLE: scenario-aggregate-createinvoice
+            #region sample_scenario-aggregate-createinvoice
             var invoice = new Invoice(42);
 
             invoice.AddLine(100, 24, "Joo Janta 200 Super-Chromatic Peril Sensitive Sunglasses");
             invoice.AddLine(200, 16, "Happy Vertical People Transporter");
-            // ENDSAMPLE
+            #endregion sample_scenario-aggregate-createinvoice
 
             return invoice;
         }
     }
 
-    // SAMPLE: scenario-aggregate-invoice
+    #region sample_scenario-aggregate-invoice
     public sealed class Invoice: AggregateBase
     {
         public Invoice(int invoiceNumber)
@@ -181,9 +181,9 @@ namespace Marten.Testing.Events
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_scenario-aggregate-invoice
 
-    // SAMPLE: scenario-aggregate-events
+    #region sample_scenario-aggregate-events
     public sealed class InvoiceCreated
     {
         public int InvoiceNumber { get; }
@@ -208,9 +208,9 @@ namespace Marten.Testing.Events
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_scenario-aggregate-events
 
-    // SAMPLE: scenario-aggregate-base
+    #region sample_scenario-aggregate-base
     // Infrastructure to capture modifications to state in events
     public abstract class AggregateBase
     {
@@ -244,9 +244,9 @@ namespace Marten.Testing.Events
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_scenario-aggregate-base
 
-    // SAMPLE: scenario-aggregate-repository
+    #region sample_scenario-aggregate-repository
     public sealed class AggregateRepository
     {
         private readonly IDocumentStore store;
@@ -279,5 +279,5 @@ namespace Marten.Testing.Events
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_scenario-aggregate-repository
 }

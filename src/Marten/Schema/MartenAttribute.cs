@@ -7,7 +7,7 @@ namespace Marten.Schema
     /// Base type of an Attribute that can be extended to add per field/property
     /// or per document type customization to the document storage
     /// </summary>
-    // SAMPLE: MartenAttribute
+    #region sample_MartenAttribute
     public abstract class MartenAttribute: Attribute
     {
         /// <summary>
@@ -24,5 +24,5 @@ namespace Marten.Schema
         public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
     }
 
-    // ENDSAMPLE
+    #endregion sample_MartenAttribute
 }

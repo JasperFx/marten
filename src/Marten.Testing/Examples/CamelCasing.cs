@@ -8,12 +8,12 @@ namespace Marten.Testing.Examples
         [Fact]
         public void SerializeToCamelCase()
         {
-            // SAMPLE: sample-serialize-to-camelcase
+            #region sample_sample-serialize-to-camelcase
             var store = DocumentStore.For(storeOptions =>
             {
                 // Change default casing to CamelCase
                 storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);
-                // ENDSAMPLE
+            #endregion sample_sample-serialize-to-camelcase
                 storeOptions.Connection("");
             });
 

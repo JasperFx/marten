@@ -7,7 +7,7 @@ namespace Marten.Testing.Examples
 {
     public class Searching_Within_Child_Collections
     {
-        // SAMPLE: searching_within_child_collections
+        #region sample_searching_within_child_collections
         public class ClassWithChildCollections
         {
             public Guid Id;
@@ -50,6 +50,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_searching_within_child_collections
     }
 }

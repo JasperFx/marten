@@ -20,24 +20,24 @@ namespace Marten.Schema.Testing
         [Fact]
         public void document_alias_can_be_overridden_with_the_marten_registry()
         {
-            // SAMPLE: marten-registry-to-override-document-alias
+            #region sample_marten-registry-to-override-document-alias
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.Schema.For<User>().DocumentAlias("folks");
             });
-            // ENDSAMPLE
+            #endregion sample_marten-registry-to-override-document-alias
 
             store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
         }
 
-        // SAMPLE: using-document-alias-attribute
+        #region sample_using-document-alias-attribute
         [DocumentAlias("johndeere")]
         public class Tractor
         {
             public string id;
         }
-        // ENDSAMPLE
+        #endregion sample_using-document-alias-attribute
     }
 }

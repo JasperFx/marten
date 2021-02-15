@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Marten
 {
-    // SAMPLE: ISerializer
+    #region sample_ISerializer
     public interface ISerializer
     {
         /// <summary>
@@ -75,7 +75,7 @@ namespace Marten
         string ToJsonWithTypes(object document);
     }
 
-    // ENDSAMPLE
+    #endregion sample_ISerializer
 
     /// <summary>
     /// Governs how .Net Enum types are persisted

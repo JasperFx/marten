@@ -11,7 +11,7 @@ namespace Marten.Testing.Linq
     [SingleStoryteller]
     public class invoking_queryable_through_single_Tests : IntegrationContext
     {
-        // SAMPLE: single_and_single_or_default
+        #region sample_single_and_single_or_default
         [Fact]
         public void single_hit_with_only_one_document()
         {
@@ -35,7 +35,7 @@ namespace Marten.Testing.Linq
 
             SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().SingleOrDefault(x => x.Number == 3));
         }
-        // ENDSAMPLE
+        #endregion sample_single_and_single_or_default
 
         [Fact]
         public void single_or_default_miss()

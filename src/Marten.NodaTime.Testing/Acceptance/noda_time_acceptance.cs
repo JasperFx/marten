@@ -17,7 +17,7 @@ namespace Marten.NodaTime.Testing.Acceptance
     {
         public void noda_time_default_setup()
         {
-            // SAMPLE: noda_time_default_setup
+            #region sample_noda_time_default_setup
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -25,12 +25,12 @@ namespace Marten.NodaTime.Testing.Acceptance
                 // sets up NodaTime handling
                 _.UseNodaTime();
             });
-            // ENDSAMPLE
+            #endregion sample_noda_time_default_setup
         }
 
         public void noda_time_setup_without_json_net_serializer_configuration()
         {
-            // SAMPLE: noda_time_setup_without_json_net_serializer_configuration
+            #region sample_noda_time_setup_without_json_net_serializer_configuration
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -40,7 +40,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 // sets up NodaTime handling
                 _.UseNodaTime(shouldConfigureJsonNetSerializer: false);
             });
-            // ENDSAMPLE
+            #endregion sample_noda_time_setup_without_json_net_serializer_configuration
         }
 
         [Fact]

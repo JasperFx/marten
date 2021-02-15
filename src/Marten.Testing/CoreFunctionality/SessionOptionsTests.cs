@@ -11,17 +11,17 @@ namespace Marten.Testing.CoreFunctionality
 {
     public class SessionOptionsTests : IntegrationContext
     {
-        // SAMPLE: ConfigureCommandTimeout
-public void ConfigureCommandTimeout(IDocumentStore store)
-{
-    // Sets the command timeout for this session to 60 seconds
-    // The default is 30
-    using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))
-    {
+        #region sample_ConfigureCommandTimeout
+        public void ConfigureCommandTimeout(IDocumentStore store)
+        {
+            // Sets the command timeout for this session to 60 seconds
+            // The default is 30
+            using (var session = store.OpenSession(new SessionOptions {Timeout = 60}))
+            {
 
-    }
-}
-        // ENDSAMPLE
+            }
+        }
+        #endregion sample_ConfigureCommandTimeout
 
 
         [Fact]

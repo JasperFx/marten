@@ -8,7 +8,7 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    // SAMPLE: IFeatureSchema
+    #region sample_IFeatureSchema
     /// <summary>
     /// Defines the database objects for a named feature within your
     /// Marten application
@@ -55,7 +55,7 @@ namespace Marten.Storage
         void WritePermissions(DdlRules rules, StringWriter writer);
     }
 
-    // ENDSAMPLE
+    #endregion sample_IFeatureSchema
 
     /// <summary>
     /// Base class for easier creation of custom IFeatureSchema objects

@@ -84,7 +84,7 @@ namespace Marten.Testing.Events.Projections
     }
 
 
-    // SAMPLE: viewprojection-from-class-with-eventdata
+    #region sample_viewprojection-from-class-with-eventdata
 
     public class Lap
     {
@@ -128,9 +128,9 @@ namespace Marten.Testing.Events.Projections
             view.End = eventData.Timestamp;
     }
 
-    // ENDSAMPLE
+    #endregion sample_viewprojection-from-class-with-eventdata
 
-    // SAMPLE: viewprojection-with-update-only
+    #region sample_viewprojection-with-update-only
 
     public abstract class SubscriptionEvent
     {
@@ -211,7 +211,7 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_viewprojection-with-update-only
 
     public class Project
     {

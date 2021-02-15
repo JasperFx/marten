@@ -22,7 +22,7 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void call_listener_events_on_synchronous_session_saves()
         {
-            // SAMPLE: registering-a-document-session-listener
+            #region sample_registering-a-document-session-listener
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
@@ -34,7 +34,7 @@ namespace Marten.Testing.CoreFunctionality
                 _.Listeners.Add(stub1);
                 _.Listeners.Add(stub2);
             }))
-            // ENDSAMPLE
+            #endregion sample_registering-a-document-session-listener
             {
                 store.Advanced.Clean.CompletelyRemoveAll();
 

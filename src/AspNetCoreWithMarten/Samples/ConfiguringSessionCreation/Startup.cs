@@ -11,7 +11,7 @@ using Npgsql;
 namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
 {
 
-    // SAMPLE: CustomSessionFactory
+    #region sample_CustomSessionFactory
     public class CustomSessionFactory: ISessionFactory
     {
         private readonly IDocumentStore _store;
@@ -37,9 +37,9 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
             return _store.LightweightSession(IsolationLevel.Serializable);
         }
     }
-    // ENDSAMPLE
+    #endregion sample_CustomSessionFactory
 
-    // SAMPLE: AddMartenWithCustomSessionCreation
+    #region sample_AddMartenWithCustomSessionCreation
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -74,5 +74,5 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
 
         // And other methods we don't care about here...
     }
-    // ENDSAMPLE
+    #endregion sample_AddMartenWithCustomSessionCreation
 }

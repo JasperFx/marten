@@ -8,7 +8,7 @@ namespace Marten.Schema.Testing.Storage
 {
     public class ScenarioUsingSequenceForUniqueId : IntegrationContext
     {
-        // SAMPLE: scenario-usingsequenceforuniqueid-setup
+        #region sample_scenario-usingsequenceforuniqueid-setup
         // We introduce a new feature schema, making use of Marten's schema management facilities.
         public class MatterId: FeatureSchemaBase
         {
@@ -27,23 +27,23 @@ namespace Marten.Schema.Testing.Storage
                 yield return new Sequence(new DbObjectName(_schema, $"mt_{nameof(MatterId).ToLowerInvariant()}"), _startFrom);
             }
         }
-        // ENDSAMPLE
+        #endregion sample_scenario-usingsequenceforuniqueid-setup
 
         [Fact]
         public void ScenarioUsingSequenceForUniqueIdScenario()
         {
             StoreOptions(storeOptions =>
             {
-                // SAMPLE: scenario-usingsequenceforuniqueid-storesetup-1
+                #region sample_scenario-usingsequenceforuniqueid-storesetup-1
                 storeOptions.Storage.Add(new MatterId(storeOptions, 10000));
-                // ENDSAMPLE
+                #endregion sample_scenario-usingsequenceforuniqueid-storesetup-1
             });
 
-            // SAMPLE: scenario-usingsequenceforuniqueid-storesetup-2
+            #region sample_scenario-usingsequenceforuniqueid-storesetup-2
             theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            // ENDSAMPLE
+            #endregion sample_scenario-usingsequenceforuniqueid-storesetup-2
 
-            // SAMPLE: scenario-usingsequenceforuniqueid-querymatter
+            #region sample_scenario-usingsequenceforuniqueid-querymatter
             var matter = theStore.Storage.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
             using (var session = theStore.OpenSession())
@@ -68,10 +68,10 @@ namespace Marten.Schema.Testing.Storage
 
                 session.SaveChanges();
             }
-            // ENDSAMPLE
+            #endregion sample_scenario-usingsequenceforuniqueid-querymatter
         }
 
-        // SAMPLE: scenario-usingsequenceforuniqueid-setup-types
+        #region sample_scenario-usingsequenceforuniqueid-setup-types
         public class Contract
         {
             public Guid Id { get; set; }
@@ -84,10 +84,10 @@ namespace Marten.Schema.Testing.Storage
             public int Matter { get; set; }
             // Other fields...
         }
-        // ENDSAMPLE
+        #endregion sample_scenario-usingsequenceforuniqueid-setup-types
 
     }
-    // SAMPLE: scenario-usingsequenceforuniqueid-setup-extensions
+    #region sample_scenario-usingsequenceforuniqueid-setup-extensions
     public static class SessionExtensions
     {
         // A shorthand for generating the required SQL statement for a sequence value query
@@ -96,5 +96,5 @@ namespace Marten.Schema.Testing.Storage
             return session.Query<int>("select nextval(?)", sequence.Identifier.QualifiedName).First();
         }
     }
-    // ENDSAMPLE
+    #endregion sample_scenario-usingsequenceforuniqueid-setup-extensions
 }

@@ -238,13 +238,13 @@ namespace Marten.Events
                 var eventsTable = new EventsTable(this);
                 var streamsTable = new StreamsTable(this);
 
-                // SAMPLE: using-sequence
+                #region sample_using-sequence
                 var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
                 {
                     Owner = eventsTable.Identifier,
                     OwnerColumn = "seq_id"
                 };
-                // ENDSAMPLE
+                #endregion sample_using-sequence
 
                 // compute the args for mt_append_event function
                 var streamIdTypeArg = StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";

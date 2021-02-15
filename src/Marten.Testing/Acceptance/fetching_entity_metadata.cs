@@ -19,7 +19,7 @@ namespace Marten.Testing.Acceptance
 
         }
 
-        // SAMPLE: resolving_metadata
+        #region sample_resolving_metadata
         [Fact]
         public void hit_returns_values()
         {
@@ -47,7 +47,7 @@ namespace Marten.Testing.Acceptance
 
         }
 
-        // ENDSAMPLE
+        #endregion sample_resolving_metadata
 
         [Fact]
         public async Task async_hit_returns_values()

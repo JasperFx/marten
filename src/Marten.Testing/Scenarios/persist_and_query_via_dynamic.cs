@@ -8,18 +8,18 @@ namespace Marten.Testing.Scenarios
 {
     public class persist_and_query_via_dynamic: IntegrationContext
     {
-        // SAMPLE: sample-scenarios-dynamic-type
+        #region sample_sample-scenarios-dynamic-type
         public class TemperatureData
         {
             public int Id { get; set; }
             public dynamic Values { get; set; }
         }
-        // ENDSAMPLE
+        #endregion sample_sample-scenarios-dynamic-type
 
         [Fact]
         public void CanPersistAndQueryDynamic()
         {
-            // SAMPLE: sample-scenarios-dynamic-records
+            #region sample_sample-scenarios-dynamic-records
             // Our documents with non-uniform structure
             var jsonRecords = @"
 [{
@@ -48,9 +48,9 @@ namespace Marten.Testing.Scenarios
         'temperature': -1.0
     }
 ]";
-            // ENDSAMPLE
+            #endregion sample_sample-scenarios-dynamic-records
 
-            // SAMPLE: sample-scenarios-dynamic-insertandquery
+            #region sample_sample-scenarios-dynamic-insertandquery
             using (var reader = new StringReader(jsonRecords))
             {
                 // Deserialize our document
@@ -72,7 +72,7 @@ namespace Marten.Testing.Scenarios
                     Assert.Equal(4, tempsFromDb.Length);
                 }
             }
-            // ENDSAMPLE
+            #endregion sample_sample-scenarios-dynamic-insertandquery
         }
 
         public persist_and_query_via_dynamic(DefaultStoreFixture fixture) : base(fixture)

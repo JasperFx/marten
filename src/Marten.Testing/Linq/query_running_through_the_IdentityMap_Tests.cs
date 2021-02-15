@@ -21,14 +21,14 @@ namespace Marten.Testing.Linq
         {
             DocumentTracking = DocumentTracking.IdentityOnly;
 
-            // SAMPLE: using-store-with-multiple-docs
+            #region sample_using-store-with-multiple-docs
             user1 = new User {FirstName = "Jeremy"};
             user2 = new User {FirstName = "Jens"};
             user3 = new User {FirstName = "Jeff"};
             user4 = new User {FirstName = "Corey"};
 
             theSession.Store(user1, user2, user3, user4);
-            // ENDSAMPLE
+            #endregion sample_using-store-with-multiple-docs
 
             theSession.SaveChanges();
 

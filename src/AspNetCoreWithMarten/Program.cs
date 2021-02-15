@@ -10,7 +10,7 @@ using Oakton.AspNetCore;
 
 namespace AspNetCoreWithMarten
 {
-    // SAMPLE: SampleConsoleApp
+    #region sample_SampleConsoleApp
     public class Program
     {
         // It's actually important to return Task<int>
@@ -32,5 +32,5 @@ namespace AspNetCoreWithMarten
                     webBuilder.UseStartup<Startup>();
                 });
     }
-    // ENDSAMPLE
+    #endregion sample_SampleConsoleApp
 }

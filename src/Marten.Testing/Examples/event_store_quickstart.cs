@@ -13,7 +13,7 @@ namespace Marten.Testing.Examples
     {
         public void capture_events()
         {
-            // SAMPLE: event-store-quickstart
+            #region sample_event-store-quickstart
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -39,10 +39,10 @@ namespace Marten.Testing.Examples
                 session.Events.Append(questId, joined2, joined3, arrived);
                 session.SaveChanges();
             }
-            // ENDSAMPLE
+            #endregion sample_event-store-quickstart
 
 
-            // SAMPLE: event-store-start-stream-with-explicit-type
+            #region sample_event-store-start-stream-with-explicit-type
             using (var session = store.OpenSession())
             {
                 var started = new QuestStarted { Name = "Destroy the One Ring" };
@@ -52,8 +52,9 @@ namespace Marten.Testing.Examples
                 // part of a transaction
                 session.Events.StartStream(typeof(Quest), questId, started, joined1);
             }
+            #endregion sample_event-store-start-stream-with-explicit-type
 
-            // SAMPLE: event-store-start-stream-with-no-type
+            #region sample_event-store-start-stream-with-no-type
             using (var session = store.OpenSession())
             {
                 var started = new QuestStarted { Name = "Destroy the One Ring" };
@@ -64,9 +65,9 @@ namespace Marten.Testing.Examples
                 // no stream type will be stored in database
                 session.Events.StartStream(questId, started, joined1);
             }
-            // ENDSAMPLE
+            #endregion sample_event-store-start-stream-with-no-type
 
-            // SAMPLE: events-fetching-stream
+            #region sample_events-fetching-stream
             using (var session = store.OpenSession())
             {
                 var events = session.Events.FetchStream(questId);
@@ -75,9 +76,9 @@ namespace Marten.Testing.Examples
                     Console.WriteLine($"{evt.Version}.) {evt.Data}");
                 });
             }
-            // ENDSAMPLE
+            #endregion sample_events-fetching-stream
 
-            // SAMPLE: events-aggregate-on-the-fly
+            #region sample_events-aggregate-on-the-fly
             using (var session = store.OpenSession())
             {
                 // questId is the id of the stream
@@ -90,7 +91,7 @@ namespace Marten.Testing.Examples
                 var party_yesterday = session.Events
                     .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
             }
-            // ENDSAMPLE
+            #endregion sample_events-aggregate-on-the-fly
 
             using (var session = store.OpenSession())
             {
@@ -99,7 +100,7 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // SAMPLE: using-fetch-stream
+        #region sample_using-fetch-stream
         public void load_event_stream(IDocumentSession session, Guid streamId)
         {
             // Fetch *all* of the events for this stream
@@ -126,9 +127,9 @@ namespace Marten.Testing.Examples
                         .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
         }
 
-        // ENDSAMPLE
+        #endregion sample_using-fetch-stream
 
-        // SAMPLE: load-a-single-event
+        #region sample_load-a-single-event
         public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
         {
             // If you know what the event type is already
@@ -149,9 +150,9 @@ namespace Marten.Testing.Examples
                 .ConfigureAwait(false);
         }
 
-        // ENDSAMPLE
+        #endregion sample_load-a-single-event
 
-        // SAMPLE: using_live_transformed_events
+        #region sample_using_live_transformed_events
         public void using_live_transformed_events(IDocumentSession session)
         {
             var started = new QuestStarted { Name = "Find the Orb" };
@@ -171,6 +172,6 @@ namespace Marten.Testing.Examples
                 .ShouldBe(2);
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_live_transformed_events
     }
 }

@@ -29,7 +29,7 @@ namespace Marten.Services
             ContractResolver = new JsonNetContractResolver()
         };
 
-        // SAMPLE: newtonsoft-configuration
+        #region sample_newtonsoft-configuration
         private readonly JsonSerializer _serializer = new JsonSerializer
         {
             TypeNameHandling = TypeNameHandling.Auto,
@@ -40,7 +40,7 @@ namespace Marten.Services
             ContractResolver = new JsonNetContractResolver()
         };
 
-        // ENDSAMPLE
+        #endregion sample_newtonsoft-configuration
 
         public JsonNetSerializer()
         {

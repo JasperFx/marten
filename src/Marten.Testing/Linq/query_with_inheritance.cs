@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    // SAMPLE: smurfs-hierarchy
+    #region sample_smurfs-hierarchy
     public interface ISmurf
     {
         string Ability { get; set; }
@@ -25,7 +25,7 @@ namespace Marten.Testing.Linq
     public class PapaSmurf : Smurf, IPapaSmurf{}
     public class PapySmurf : Smurf, IPapaSmurf{}
     public class BrainySmurf : PapaSmurf{ }
-    // ENDSAMPLE
+    #endregion sample_smurfs-hierarchy
 
     public class query_with_inheritance_and_aliases : IntegrationContext
     {
@@ -33,7 +33,7 @@ namespace Marten.Testing.Linq
         {
             StoreOptions(_ =>
             {
-                // SAMPLE: add-subclass-hierarchy-with-aliases
+                #region sample_add-subclass-hierarchy-with-aliases
                 _.Schema.For<ISmurf>()
                     .AddSubClassHierarchy(
                         typeof(Smurf),
@@ -42,7 +42,7 @@ namespace Marten.Testing.Linq
                         typeof(IPapaSmurf),
                         typeof(BrainySmurf)
                     );
-                // ENDSAMPLE
+                #endregion sample_add-subclass-hierarchy-with-aliases
 
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -67,7 +67,7 @@ namespace Marten.Testing.Linq
 
     public class query_with_inheritance : IntegrationContext
     {
-        // SAMPLE: add-subclass-hierarchy
+        #region sample_add-subclass-hierarchy
         public query_with_inheritance(DefaultStoreFixture fixture) : base(fixture)
         {
             StoreOptions(_ =>
@@ -88,9 +88,9 @@ namespace Marten.Testing.Linq
                 _.Schema.For<ISmurf>().GinIndexJsonData();
             });
         }
-        // ENDSAMPLE
+        #endregion sample_add-subclass-hierarchy
 
-        // SAMPLE: query-subclass-hierarchy
+        #region sample_query-subclass-hierarchy
         [Fact]
         public void get_all_subclasses_of_a_subclass()
         {
@@ -177,7 +177,7 @@ namespace Marten.Testing.Linq
 
             theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
         }
-        // ENDSAMPLE
+        #endregion sample_query-subclass-hierarchy
 
         [Fact]
         public void get_all_subclasses_of_an_interface_and_instantiate_them()

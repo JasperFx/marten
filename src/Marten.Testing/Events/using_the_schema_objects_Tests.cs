@@ -29,7 +29,7 @@ namespace Marten.Testing.Events
                 }
             }
 
-            // SAMPLE: registering-event-types
+            #region sample_registering-event-types
             var store2 = DocumentStore.For(_ =>
             {
                 _.DatabaseSchemaName = "samples";
@@ -39,7 +39,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(QuestStarted));
                 _.Events.AddEventType(typeof(MonsterSlayed));
             });
-            // ENDSAMPLE
+            #endregion sample_registering-event-types
 
             using (var session = store2.OpenSession())
             {
@@ -54,9 +54,9 @@ namespace Marten.Testing.Events
         {
             var store = StoreOptions(_ =>
             {
-                // SAMPLE: override_schema_name_event_store
+                #region sample_override_schema_name_event_store
                 _.Events.DatabaseSchemaName = "event_store";
-                // ENDSAMPLE
+                #endregion sample_override_schema_name_event_store
             });
 
             store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));

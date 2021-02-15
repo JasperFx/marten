@@ -73,20 +73,20 @@ namespace Marten.Testing.CoreFunctionality
 
         public void using_console_logger()
         {
-            // SAMPLE: plugging-in-marten-logger
+            #region sample_plugging-in-marten-logger
             var store = DocumentStore.For(_ =>
             {
                 _.Logger(new ConsoleMartenLogger());
             });
-            // ENDSAMPLE
+            #endregion sample_plugging-in-marten-logger
 
-            // SAMPLE: plugging-in-session-logger
+            #region sample_plugging-in-session-logger
             using (var session = store.OpenSession())
             {
                 // Replace the logger for only this one session
                 session.Logger = new RecordingLogger();
             }
-            // ENDSAMPLE
+            #endregion sample_plugging-in-session-logger
         }
 
         [Fact]
@@ -274,14 +274,14 @@ namespace Marten.Testing.CoreFunctionality
 
         public void set_the_maximum_name_length()
         {
-            // SAMPLE: setting-name-data-length
+            #region sample_setting-name-data-length
             var store = DocumentStore.For(_ =>
             {
                 // If you have overridden NAMEDATALEN in your
                 // Postgresql database to 100
                 _.NameDataLength = 100;
             });
-            // ENDSAMPLE
+            #endregion sample_setting-name-data-length
         }
     }
 }

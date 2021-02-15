@@ -100,7 +100,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        // SAMPLE: using_count
+        #region sample_using_count
         public void count_with_a_where_clause()
         {
             // theSession is an IDocumentSession in this test
@@ -115,7 +115,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Count(x => x.Number > 3).ShouldBe(3);
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_count
         public invoking_queryable_count_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }

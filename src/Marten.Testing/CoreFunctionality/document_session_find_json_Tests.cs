@@ -9,7 +9,7 @@ namespace Marten.Testing.CoreFunctionality
 {
     public class document_session_find_json_Tests: IntegrationContext
     {
-        // SAMPLE: find-json-by-id
+        #region sample_find-json-by-id
         [Fact]
         public void when_find_then_a_json_should_be_returned()
         {
@@ -22,7 +22,7 @@ namespace Marten.Testing.CoreFunctionality
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
 
-        // ENDSAMPLE
+        #endregion sample_find-json-by-id
 
         [Fact]
         public void when_find_then_a_null_should_be_returned()

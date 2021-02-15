@@ -11,7 +11,7 @@ namespace Marten.Testing.Examples
     // in Marten.Testing.Documents
     /*
 
-    // SAMPLE: user_document
+    #region sample_user_document
     public class User
     {
         public Guid Id { get; set; }
@@ -22,7 +22,7 @@ namespace Marten.Testing.Examples
         public string Department { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_user_document
     */
 
 
@@ -30,20 +30,20 @@ namespace Marten.Testing.Examples
     {
         public void start_a_basic_store()
         {
-            // SAMPLE: start_a_store
+            #region sample_start_a_store
             var store = DocumentStore
                 .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
-            // ENDSAMPLE
+            #endregion sample_start_a_store
 
-            // SAMPLE: start_a_query_session
+            #region sample_start_a_query_session
             using (var session = store.QuerySession())
             {
                 var internalUsers = session
                     .Query<User>().Where(x => x.Internal).ToArray();
             }
-            // ENDSAMPLE
+            #endregion sample_start_a_query_session
 
-            // SAMPLE: opening_sessions
+            #region sample_opening_sessions
             // Open a session for querying, loading, and
             // updating documents
             using (var session = store.LightweightSession())
@@ -70,12 +70,12 @@ namespace Marten.Testing.Examples
             using (var session = store.DirtyTrackedSession())
             {
             }
-            // ENDSAMPLE
+            #endregion sample_opening_sessions
         }
 
         public void start_a_complex_store()
         {
-            // SAMPLE: start_a_complex_store
+            #region sample_start_a_complex_store
             var store = DocumentStore.For(_ =>
             {
                 // Turn this off in production
@@ -87,12 +87,12 @@ namespace Marten.Testing.Examples
                 // Override the JSON Serialization
                 _.Serializer<TestsSerializer>();
             });
-            // ENDSAMPLE
+            #endregion sample_start_a_complex_store
         }
 
         public void customize_json_net_serialization()
         {
-            // SAMPLE: customize_json_net_serialization
+            #region sample_customize_json_net_serialization
             var serializer = new Marten.Services.JsonNetSerializer();
 
             // To change the enum storage policy to store Enum's as strings:
@@ -114,12 +114,12 @@ namespace Marten.Testing.Examples
                 // above
                 _.Serializer(serializer);
             });
-            // ENDSAMPLE
+            #endregion sample_customize_json_net_serialization
         }
 
         public void customize_json_net_enum_storage_serialization()
         {
-            // SAMPLE: customize_json_net_enum_storage_serialization
+            #region sample_customize_json_net_enum_storage_serialization
 
             var store = DocumentStore.For(_ =>
             {
@@ -129,12 +129,12 @@ namespace Marten.Testing.Examples
                 // with storing them as string
                 _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);
             });
-            // ENDSAMPLE
+            #endregion sample_customize_json_net_enum_storage_serialization
         }
 
         public void customize_json_net_camelcase_casing_serialization()
         {
-            // SAMPLE: customize_json_net_camelcase_casing_serialization
+            #region sample_customize_json_net_camelcase_casing_serialization
 
             var store = DocumentStore.For(_ =>
             {
@@ -144,12 +144,12 @@ namespace Marten.Testing.Examples
                 // with camelCase formatting
                 _.UseDefaultSerialization(casing: Casing.CamelCase);
             });
-            // ENDSAMPLE
+            #endregion sample_customize_json_net_camelcase_casing_serialization
         }
 
         public void customize_json_net_snakecase_casing_serialization()
         {
-            // SAMPLE: customize_json_net_snakecase_casing_serialization
+            #region sample_customize_json_net_snakecase_casing_serialization
 
             var store = DocumentStore.For(_ =>
             {
@@ -159,12 +159,12 @@ namespace Marten.Testing.Examples
                 // with snake_case formatting
                 _.UseDefaultSerialization(casing: Casing.SnakeCase);
             });
-            // ENDSAMPLE
+            #endregion sample_customize_json_net_snakecase_casing_serialization
         }
 
         public void customize_json_net_snakecase_collectionstorage()
         {
-            // SAMPLE: customize_json_net_snakecase_collectionstorage
+            #region sample_customize_json_net_snakecase_collectionstorage
 
             var store = DocumentStore.For(_ =>
             {
@@ -174,12 +174,12 @@ namespace Marten.Testing.Examples
                 // with JSON array formatting
                 _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
             });
-            // ENDSAMPLE
+            #endregion sample_customize_json_net_snakecase_collectionstorage
         }
 
         public void customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters()
         {
-            // SAMPLE: customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters
+            #region sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters
 
             var store = DocumentStore.For(_ =>
             {
@@ -189,12 +189,12 @@ namespace Marten.Testing.Examples
                 // with allowing to also deserialize using non-public setters
                 _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
             });
-            // ENDSAMPLE
+            #endregion sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters
         }
 
         public void setting_event_schema()
         {
-            // SAMPLE: setting_event_schema
+            #region sample_setting_event_schema
             var store = DocumentStore.For(_ =>
             {
                 _.Connection("some connection string");
@@ -203,10 +203,10 @@ namespace Marten.Testing.Examples
                 // into the "events" schema
                 _.Events.DatabaseSchemaName = "events";
             });
-            // ENDSAMPLE
+            #endregion sample_setting_event_schema
         }
 
-        // SAMPLE: custom-store-options
+        #region sample_custom-store-options
         public class MyStoreOptions: StoreOptions
         {
             public static IDocumentStore ToStore()
@@ -224,6 +224,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_custom-store-options
     }
 }

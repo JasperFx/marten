@@ -13,13 +13,13 @@ namespace Marten.Testing.Linq
     {
         public void is_superset_of_example()
         {
-            // SAMPLE: is_superset_of
+            #region sample_is_superset_of
             // Finds all Posts whose Tags is superset of
             // c#, json, or postgres
             var posts = theSession.Query<Post>()
                 .Where(x => x.Tags.IsSupersetOf("c#", "json", "postgres"));
 
-            // ENDSAMPLE
+            #endregion sample_is_superset_of
         }
 
         private readonly Target[] _allTargets;

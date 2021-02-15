@@ -12,7 +12,7 @@ namespace Marten.Testing.Linq
 {
     public class invoking_query_with_select_Tests: IntegrationContext
     {
-        // SAMPLE: one_field_projection
+        #region sample_one_field_projection
         [Fact]
         public void use_select_in_query_for_one_field()
         {
@@ -27,7 +27,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-        // ENDSAMPLE
+        #endregion sample_one_field_projection
 
         [Fact]
         public void use_select_in_query_for_one_field_and_first()
@@ -85,7 +85,7 @@ namespace Marten.Testing.Linq
 
             // Postgres sticks some extra spaces into the JSON string
 
-            // SAMPLE: AsJson-plus-Select-1
+            #region sample_AsJson-plus-Select-1
             theSession
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
@@ -95,10 +95,10 @@ namespace Marten.Testing.Linq
                 .AsJson()
                 .First()
                 .ShouldBe("{\"Name\": \"Bill\"}");
-            // ENDSAMPLE
+            #endregion sample_AsJson-plus-Select-1
         }
 
-        // SAMPLE: get_first_projection
+        #region sample_get_first_projection
         [Fact]
         public void use_select_to_another_type_with_first()
         {
@@ -114,7 +114,7 @@ namespace Marten.Testing.Linq
                 ?.Name.ShouldBe("Bill");
         }
 
-        // ENDSAMPLE
+        #endregion sample_get_first_projection
 
         [Fact]
         public void use_select_to_anonymous_type_with_first_as_json()
@@ -126,7 +126,7 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-            // SAMPLE:AsJson-plus-Select-2
+            #region sample_AsJson-plus-Select-2
             theSession
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
@@ -138,7 +138,7 @@ namespace Marten.Testing.Linq
                 .AsJson()
                 .FirstOrDefault()
                 .ShouldBe("{\"Name\": \"Bill\"}");
-            // ENDSAMPLE
+            #endregion sample_AsJson-plus-Select-2
         }
 
         [Fact]
@@ -195,7 +195,7 @@ namespace Marten.Testing.Linq
             users.ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
         }
 
-        // SAMPLE: anonymous_type_projection
+        #region sample_anonymous_type_projection
         [Fact]
         public void use_select_to_transform_to_an_anonymous_type()
         {
@@ -212,7 +212,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-        // ENDSAMPLE
+        #endregion sample_anonymous_type_projection
 
         [Fact]
         public void use_select_with_multiple_fields_in_anonymous()
@@ -235,7 +235,7 @@ namespace Marten.Testing.Linq
             });
         }
 
-        // SAMPLE: other_type_projection
+        #region sample_other_type_projection
         [Fact]
         public void use_select_with_multiple_fields_to_other_type()
         {
@@ -257,7 +257,7 @@ namespace Marten.Testing.Linq
             });
         }
 
-        // ENDSAMPLE
+        #endregion sample_other_type_projection
 
         public class User2
         {
@@ -346,7 +346,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-        // SAMPLE: deep_properties_projection
+        #region sample_deep_properties_projection
         [Fact]
         public void transform_with_deep_properties()
         {
@@ -361,7 +361,7 @@ namespace Marten.Testing.Linq
             actual.ShouldHaveTheSameElementsAs(expected);
         }
 
-        // ENDSAMPLE
+        #endregion sample_deep_properties_projection
 
         [Fact]
         public void transform_with_deep_properties_to_anonymous_type()

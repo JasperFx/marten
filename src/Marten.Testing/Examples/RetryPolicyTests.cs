@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Marten.Testing.Examples
 {
-    // SAMPLE: retrypolicy-samplepolicy
+    #region sample_retrypolicy-samplepolicy
     // Implement IRetryPolicy interface
     public sealed class ExceptionFilteringRetryPolicy: IRetryPolicy
     {
@@ -87,7 +87,7 @@ namespace Marten.Testing.Examples
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_retrypolicy-samplepolicy
 
     public sealed class RetryPolicyTests: IntegrationContext
     {
@@ -97,18 +97,18 @@ namespace Marten.Testing.Examples
             var m = new List<string>();
             StoreOptions(c =>
             {
-                // SAMPLE: retrypolicy-samplepolicy-pluggingin
+                #region sample_retrypolicy-samplepolicy-pluggingin
                 // Plug in our custom retry policy via StoreOptions
                 // We retry operations twice if they yield and NpgsqlException that is transient
                 c.RetryPolicy(ExceptionFilteringRetryPolicy.Twice(e => e is NpgsqlException ne && ne.IsTransient));
-                // ENDSAMPLE
+                #endregion sample_retrypolicy-samplepolicy-pluggingin
 
-                // SAMPLE: retrypolicy-samplepolicy-default
+                #region sample_retrypolicy-samplepolicy-default
                 // Use DefaultRetryPolicy which handles Postgres's transient errors by default with sane defaults
                 // We retry operations twice if they yield and NpgsqlException that is transient
                 // Each error will cause sleep of N seconds where N is the current retry number
                 c.RetryPolicy(DefaultRetryPolicy.Twice());
-                // ENDSAMPLE
+                #endregion sample_retrypolicy-samplepolicy-default
 
                 // For unit test, use one that checks that exception is not transient
                 c.RetryPolicy(ExceptionFilteringRetryPolicy.Twice(e => e is NpgsqlException ne && !ne.IsTransient));

@@ -48,7 +48,7 @@ namespace Marten.Testing.Pagination
         [Fact]
         public void can_return_paged_result()
         {
-            // SAMPLE: to_paged_list
+            #region sample_to_paged_list
             var pageNumber = 2;
             var pageSize = 10;
 
@@ -63,7 +63,7 @@ namespace Marten.Testing.Pagination
             var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
             var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
             var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
-            // ENDSAMPLE
+            #endregion sample_to_paged_list
 
             pagedList.Count.ShouldBe(pageSize);
 
@@ -72,13 +72,13 @@ namespace Marten.Testing.Pagination
         [Fact]
         public async Task can_return_paged_result_async()
         {
-            // SAMPLE: to_paged_list_async
+            #region sample_to_paged_list_async
             var pageNumber = 2;
             var pageSize = 10;
 
             var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize)
                 .ConfigureAwait(false);
-            // ENDSAMPLE
+            #endregion sample_to_paged_list_async
 
             pagedList.Count.ShouldBe(pageSize);
         }

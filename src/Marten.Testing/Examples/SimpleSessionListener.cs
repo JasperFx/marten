@@ -6,7 +6,7 @@ using Marten.Testing.Documents;
 namespace Marten.Testing.Examples
 
 {
-    // SAMPLE: writing_custom_session_listener
+    #region sample_writing_custom_session_listener
     // DocumentSessionListenerBase is a helper abstract class in Marten
     // with empty implementations of each method you may find helpful
     public class SimpleSessionListener: DocumentSessionListenerBase
@@ -47,5 +47,5 @@ namespace Marten.Testing.Examples
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_writing_custom_session_listener
 }
