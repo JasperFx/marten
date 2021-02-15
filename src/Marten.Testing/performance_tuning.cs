@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Testing
 {
-    // SAMPLE: JilSerializer
+    #region sample_JilSerializer
     public class JilSerializer : ISerializer
     {
         private readonly Options _options
@@ -74,7 +74,7 @@ namespace Marten.Testing
             throw new NotSupportedException();
         }
     }
-    // ENDSAMPLE
+    #endregion sample_JilSerializer
 
     public class TestsSerializer : JsonNetSerializer
     {
@@ -85,7 +85,7 @@ namespace Marten.Testing
     {
         public static void Build_With_Jil()
         {
-            // SAMPLE: replacing_serializer_with_jil
+            #region sample_replacing_serializer_with_jil
             var store = DocumentStore.For(_ =>
             {
                 _.Connection("the connection string");
@@ -93,7 +93,7 @@ namespace Marten.Testing
                 // Replace the ISerializer w/ the TestsSerializer
                 _.Serializer<TestsSerializer>();
             });
-            // ENDSAMPLE
+            #endregion sample_replacing_serializer_with_jil
         }
 
     }

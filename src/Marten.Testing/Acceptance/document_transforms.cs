@@ -30,7 +30,7 @@ namespace Marten.Testing.Acceptance
 
         public void example()
         {
-            // SAMPLE: loading_js_transform_files
+            #region sample_loading_js_transform_files
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -41,14 +41,14 @@ namespace Marten.Testing.Acceptance
                 // Explicitly define the transform name yourself
                 _.Transforms.LoadFile("default_username.js", "set_default_username");
             });
-            // ENDSAMPLE
+            #endregion sample_loading_js_transform_files
 
             transform_example(store);
 
             store.Dispose();
         }
 
-        // SAMPLE: transform_example
+        #region sample_transform_example
         private static void transform_example(IDocumentStore store)
         {
             // Transform User documents with a filter
@@ -67,7 +67,7 @@ namespace Marten.Testing.Acceptance
             store.Transform.Tenants<User>("default_username", "tenant1", "tenant2");
         }
 
-        // ENDSAMPLE
+        #endregion sample_transform_example
 
         [Fact] //-- Unreliable on CI
         public void use_transform_in_production_mode()

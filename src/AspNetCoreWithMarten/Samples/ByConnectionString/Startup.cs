@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AspNetCoreWithMarten.Samples.ByConnectionString
 {
-    // SAMPLE: AddMartenByConnectionString
+    #region sample_AddMartenByConnectionString
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -26,5 +26,5 @@ namespace AspNetCoreWithMarten.Samples.ByConnectionString
 
         // And other methods we don't care about here...
     }
-    // ENDSAMPLE
+    #endregion sample_AddMartenByConnectionString
 }

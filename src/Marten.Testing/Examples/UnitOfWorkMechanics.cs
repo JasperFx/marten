@@ -6,7 +6,7 @@ namespace Marten.Testing.Examples
 {
     public class UnitOfWorkMechanics
     {
-        // SAMPLE: lightweight_document_session_uow
+        #region sample_lightweight_document_session_uow
         public void lightweight_document_session(IDocumentStore store)
         {
             using (var session = store.LightweightSession())
@@ -30,9 +30,9 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_lightweight_document_session_uow
 
-        // SAMPLE: tracking_document_session_uow
+        #region sample_tracking_document_session_uow
         public void tracking_document_session(IDocumentStore store)
         {
             using (var session = store.DirtyTrackedSession())
@@ -53,6 +53,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_tracking_document_session_uow
     }
 }

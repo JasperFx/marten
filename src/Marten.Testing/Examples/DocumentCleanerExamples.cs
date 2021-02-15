@@ -4,7 +4,7 @@ namespace Marten.Testing.Examples
 {
     public class DocumentCleanerExamples
     {
-        // SAMPLE: clean_out_documents
+        #region sample_clean_out_documents
         public void clean_out_documents(IDocumentStore store)
         {
             // Completely remove all the database schema objects related
@@ -27,6 +27,6 @@ namespace Marten.Testing.Examples
             store.Advanced.Clean.DeleteDocumentsExcept(typeof(Company), typeof(User));
         }
 
-        // ENDSAMPLE
+        #endregion sample_clean_out_documents
     }
 }

@@ -19,7 +19,7 @@ namespace Marten.Testing.Acceptance
         }
 
 
-        // SAMPLE: transform_to_json_in_compiled_query
+        #region sample_transform_to_json_in_compiled_query
         public class JsonQuery: ICompiledQuery<User, string>
         {
             public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
@@ -31,7 +31,7 @@ namespace Marten.Testing.Acceptance
             public string FirstName { get; set; }
         }
 
-        // ENDSAMPLE
+        #endregion sample_transform_to_json_in_compiled_query
 
         [Fact]
         public void transform_to_json_in_compiled_query()
@@ -49,7 +49,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: using_transform_to_json
+        #region sample_using_transform_to_json
 
         [Fact]
         public void can_select_a_string_field_in_compiled_query()
@@ -86,7 +86,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_transform_to_json
 
         [Fact]
         public async Task can_transform_to_json_async()
@@ -106,7 +106,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: transform_to_another_type
+        #region sample_transform_to_another_type
         public class FullNameView
         {
             public string fullname { get; set; }
@@ -130,7 +130,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_transform_to_another_type
 
         [Fact]
         public async Task can_transform_to_another_doc_async()

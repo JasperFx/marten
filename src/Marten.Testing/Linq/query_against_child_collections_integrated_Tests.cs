@@ -73,11 +73,11 @@ namespace Marten.Testing.Linq
         {
             buildUpTargetData();
 
-            // SAMPLE: any-query-through-child-collections
+            #region sample_any-query-through-child-collections
             var results = theSession.Query<Target>()
                 .Where(x => x.Children.Any(_ => _.Number == 6))
                 .ToArray();
-            // ENDSAMPLE
+            #endregion sample_any-query-through-child-collections
 
             results
                 .Select(x => x.Id)
@@ -90,12 +90,12 @@ namespace Marten.Testing.Linq
         {
             buildUpTargetData();
 
-            // SAMPLE: any-query-through-child-collection-with-and
+            #region sample_any-query-through-child-collection-with-and
             var results = theSession
                 .Query<Target>()
                 .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
                 .ToArray();
-            // ENDSAMPLE
+            #endregion sample_any-query-through-child-collection-with-and
 
             results
                 .Select(x => x.Id)
@@ -457,7 +457,7 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        // SAMPLE: query_against_string_array
+        #region sample_query_against_string_array
         public void query_against_string_array()
         {
             var doc1 = new DocWithArrays { Strings = new [] { "a", "b", "c" } };
@@ -474,7 +474,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_against_string_array
 
         [Fact]
         public void query_against_string_array_with_Any()
@@ -561,7 +561,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
 
-        // SAMPLE: query_any_string_array
+        #region sample_query_any_string_array
         [Fact]
         public void query_against_number_list_with_any()
         {
@@ -582,9 +582,9 @@ namespace Marten.Testing.Linq
                 .Count(x => x.Numbers.Any()).ShouldBe(3);
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_any_string_array
 
-        // SAMPLE: query_against_number_list_with_count_method
+        #region sample_query_against_number_list_with_count_method
         [Fact]
         public void query_against_number_list_with_count_method()
         {
@@ -602,7 +602,7 @@ namespace Marten.Testing.Linq
                 .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_against_number_list_with_count_method
 
         [Fact]
         public void query_against_number_list_with_count_property()

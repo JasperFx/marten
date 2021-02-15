@@ -52,14 +52,14 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession())
             {
-                // SAMPLE: start-stream-with-aggregate-type
+                #region sample_start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = "Second";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
-                // ENDSAMPLE
+                #endregion sample_start-stream-with-aggregate-type
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
@@ -80,14 +80,14 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession())
             {
-                // SAMPLE: start-stream-with-aggregate-type
+                #region sample_start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = "Third";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
-                // ENDSAMPLE
+                #endregion sample_start-stream-with-aggregate-type
 
                 var streamEvents = await session.Events.QueryAllRawEvents()
                                                 .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToListAsync();
@@ -109,14 +109,14 @@ namespace Marten.Testing.Events
 
             using (var session = store.OpenSession())
             {
-                // SAMPLE: start-stream-with-aggregate-type
+                #region sample_start-stream-with-aggregate-type
                 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = "Fourth";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
-                // ENDSAMPLE
+                #endregion sample_start-stream-with-aggregate-type
 
                 var streamEvents = session.Events.QueryAllRawEvents()
                                           .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToList();

@@ -7,7 +7,7 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_113_same_named_class_different_namespaces: BugIntegrationContext
     {
-        // SAMPLE: can_select_from_the_same_table
+        #region sample_can_select_from_the_same_table
         [Fact]
         public void can_select_from_the_same_table()
         {
@@ -23,11 +23,11 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_can_select_from_the_same_table
 
     }
 
-    // SAMPLE: structural_typing_classes
+    #region sample_structural_typing_classes
     namespace Area1
     {
         public class Product
@@ -51,5 +51,5 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_structural_typing_classes
 }

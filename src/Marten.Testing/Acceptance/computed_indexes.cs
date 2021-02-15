@@ -16,7 +16,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void example()
         {
-            // SAMPLE: using-a-simple-calculated-index
+            #region sample_using-a-simple-calculated-index
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -35,7 +35,7 @@ namespace Marten.Testing.Acceptance
                     .Query<User>()
                     .FirstOrDefault(x => x.UserName == "somebody");
             }
-            // ENDSAMPLE
+            #endregion sample_using-a-simple-calculated-index
 
             store.Dispose();
         }
@@ -64,20 +64,20 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void specify_a_deep_index()
         {
-            // SAMPLE: deep-calculated-index
+            #region sample_deep-calculated-index
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.Schema.For<Target>().Index(x => x.Inner.Color);
             });
-            // ENDSAMPLE
+            #endregion sample_deep-calculated-index
         }
 
         [Fact]
         public void specify_a_different_mechanism_to_customize_the_index()
         {
-            // SAMPLE: customizing-calculated-index
+            #region sample_customizing-calculated-index
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -120,7 +120,7 @@ namespace Marten.Testing.Acceptance
                             x.SortOrder = SortOrder.Desc;
                         });
             });
-            // ENDSAMPLE
+            #endregion sample_customizing-calculated-index
         }
 
         [Fact]

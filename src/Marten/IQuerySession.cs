@@ -81,7 +81,7 @@ namespace Marten
         /// <returns></returns>
         Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken));
 
-        // SAMPLE: querying_with_linq
+        #region sample_querying_with_linq
         /// <summary>
         /// Use Linq operators to query the documents
         /// stored in Postgresql
@@ -90,7 +90,7 @@ namespace Marten
         /// <returns></returns>
         IMartenQueryable<T> Query<T>();
 
-        // ENDSAMPLE
+        #endregion sample_querying_with_linq
 
         /// <summary>
         /// Queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.

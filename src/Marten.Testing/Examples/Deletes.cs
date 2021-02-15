@@ -4,7 +4,7 @@ namespace Marten.Testing.Examples
 {
     public class Deletes
     {
-        // SAMPLE: deletes
+        #region sample_deletes
         public void delete_documents(IDocumentSession session)
         {
             var user = new User();
@@ -18,6 +18,6 @@ namespace Marten.Testing.Examples
             session.SaveChanges();
         }
 
-        // ENDSAMPLE
+        #endregion sample_deletes
     }
 }

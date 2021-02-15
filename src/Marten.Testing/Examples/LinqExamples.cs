@@ -7,16 +7,16 @@ namespace Marten.Testing.Examples
 {
     public class LinqExamples
     {
-        // SAMPLE: query_for_all
+        #region sample_query_for_all
         public void get_all_documents_of_a_type(IDocumentSession session)
         {
             // Calling ToArray() just forces the query to be executed
             var targets = session.Query<Target>().ToArray();
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_for_all
 
-        // SAMPLE: query_by_basic_operators
+        #region sample_query_by_basic_operators
         public void basic_operators(IDocumentSession session)
         {
             // Field equals a value
@@ -32,9 +32,9 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Number <= 5);
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_by_basic_operators
 
-        // SAMPLE: querying_with_and_or_or
+        #region sample_querying_with_and_or_or
         public void and_or(IDocumentSession session)
         {
             // AND queries
@@ -44,17 +44,17 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Number == 5 || x.Date == DateTime.Today);
         }
 
-        // ENDSAMPLE
+        #endregion sample_querying_with_and_or_or
 
-        // SAMPLE: deep_nested_properties
+        #region sample_deep_nested_properties
         public void deep_queries(IDocumentSession session)
         {
             session.Query<Target>().Where(x => x.Inner.Number == 3);
         }
 
-        // ENDSAMPLE
+        #endregion sample_deep_nested_properties
 
-        // SAMPLE: searching_within_string_fields
+        #region sample_searching_within_string_fields
         public void string_fields(IDocumentSession session)
         {
             session.Query<Target>().Where(x => x.String.StartsWith("A"));
@@ -64,9 +64,9 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.Equals("The same thing"));
         }
 
-        // ENDSAMPLE
+        #endregion sample_searching_within_string_fields
 
-        // SAMPLE: searching_within_case_insensitive_string_fields
+        #region sample_searching_within_case_insensitive_string_fields
         public void case_insensitive_string_fields(IDocumentSession session)
         {
             session.Query<Target>().Where(x => x.String.StartsWith("A", StringComparison.OrdinalIgnoreCase));
@@ -78,9 +78,9 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.Equals("ThE SaMe ThInG", StringComparison.OrdinalIgnoreCase));
         }
 
-        // ENDSAMPLE
+        #endregion sample_searching_within_case_insensitive_string_fields
 
-        // SAMPLE: ordering-in-linq
+        #region sample_ordering-in-linq
         public void order_by(IDocumentSession session)
         {
             // Sort in ascending order
@@ -93,18 +93,18 @@ namespace Marten.Testing.Examples
             session.Query<Target>().OrderBy(x => x.Date).ThenBy(x => x.Number);
         }
 
-        // ENDSAMPLE
+        #endregion sample_ordering-in-linq
 
-        // SAMPLE: using_take_and_skip
+        #region sample_using_take_and_skip
         public void using_take_and_skip(IDocumentSession session)
         {
             // gets records 11-20 from the database
             session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToArray();
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_take_and_skip
 
-        // SAMPLE: select_a_single_value
+        #region sample_select_a_single_value
         public void select_a_single_value(IDocumentSession session)
         {
             // Single()/SingleOrDefault() will throw exceptions if more than
@@ -122,9 +122,9 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Single(x => x.Number == 5);
         }
 
-        // ENDSAMPLE
+        #endregion sample_select_a_single_value
 
-        // SAMPLE: boolean_queries
+        #region sample_boolean_queries
         public void query_by_booleans(IDocumentSession session)
         {
             // Flag is a boolean property.
@@ -140,9 +140,9 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Flag == false).ToArray();
         }
 
-        // ENDSAMPLE
+        #endregion sample_boolean_queries
 
-        // SAMPLE: query_by_nullable_types
+        #region sample_query_by_nullable_types
         public void query_by_nullable_type_nulls(IDocumentSession session)
         {
             // You can use Nullable<T>.HasValue in Linq queries
@@ -153,6 +153,6 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Inner == null);
         }
 
-        // ENDSAMPLE
+        #endregion sample_query_by_nullable_types
     }
 }

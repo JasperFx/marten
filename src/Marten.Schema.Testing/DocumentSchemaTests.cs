@@ -362,7 +362,7 @@ namespace Marten.Schema.Testing
 
         public DocumentSchemaWithOverridenSchemaTests()
         {
-            // SAMPLE: override_schema_per_table
+            #region sample_override_schema_per_table
             StoreOptions(_ =>
             {
                 _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "other";
@@ -373,7 +373,7 @@ namespace Marten.Schema.Testing
                 // this will tell marten to use the default 'public' schema name.
                 _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
             });
-            // ENDSAMPLE
+            #endregion sample_override_schema_per_table
 
             _schema = theStore.Schema;
             _sql = _schema.ToDDL();
@@ -524,9 +524,9 @@ namespace Marten.Schema.Testing
         {
             StoreOptions(_ =>
             {
-                // SAMPLE: override_schema_name
+                #region sample_override_schema_name
                 _.DatabaseSchemaName = "other";
-                // ENDSAMPLE
+                #endregion sample_override_schema_name
                 _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "yet_another";
                 _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
                 _.Storage.MappingFor(typeof(Company));

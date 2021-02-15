@@ -9,7 +9,7 @@ namespace Marten.Testing.Linq
 {
     public class query_for_sum_Tests: IntegrationContext
     {
-        // SAMPLE: using_sum
+        #region sample_using_sum
         [Fact]
         public void get_sum_of_integers()
         {
@@ -23,7 +23,7 @@ namespace Marten.Testing.Linq
                 .ShouldBe(10);
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_sum
 
         [Fact]
         public void get_sum_of_decimals()

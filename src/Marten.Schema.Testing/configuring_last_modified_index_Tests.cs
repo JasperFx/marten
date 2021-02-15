@@ -15,11 +15,11 @@ namespace Marten.Schema.Testing
             indexDefinition.Method.ShouldBe(IndexMethod.btree);
         }
 
-        // SAMPLE: index-last-modified-via-attribute
+        #region sample_index-last-modified-via-attribute
         [IndexedLastModified]
         public class Customer
         {
         }
-        // ENDSAMPLE
+        #endregion sample_index-last-modified-via-attribute
     }
 }

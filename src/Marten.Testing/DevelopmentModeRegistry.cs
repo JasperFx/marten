@@ -5,7 +5,7 @@ namespace Marten.Testing
 {
 
 
-    // SAMPLE: MartenServices
+    #region sample_MartenServices
     public class MartenServices : ServiceRegistry
     {
         public MartenServices()
@@ -32,5 +32,5 @@ namespace Marten.Testing
                 .Scoped();
         }
     }
-    // ENDSAMPLE
+    #endregion sample_MartenServices
 }

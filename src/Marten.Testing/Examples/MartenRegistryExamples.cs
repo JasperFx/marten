@@ -7,23 +7,23 @@ namespace Marten.Testing.Examples
     {
         public MartenRegistryExamples()
         {
-            // SAMPLE: using_marten_registry_to_bootstrap_document_store
+            #region sample_using_marten_registry_to_bootstrap_document_store
             var store = DocumentStore.For(_ =>
             {
                 _.Connection("your connection string");
             });
-            // ENDSAMPLE
+            #endregion sample_using_marten_registry_to_bootstrap_document_store
 
-            // SAMPLE: index-last-modified-via-fi
+            #region sample_index-last-modified-via-fi
             DocumentStore.For(_ =>
             {
                 _.Schema.For<User>().IndexLastModified();
             });
-            // ENDSAMPLE
+            #endregion sample_index-last-modified-via-fi
         }
     }
 
-    // SAMPLE: using_attributes_on_document
+    #region sample_using_attributes_on_document
     [PropertySearching(PropertySearching.ContainmentOperator)]
     public class Employee
     {
@@ -40,14 +40,14 @@ namespace Marten.Testing.Examples
         public string Department;
     }
 
-    // ENDSAMPLE
+    #endregion sample_using_attributes_on_document
 
 
     public static class IndexExamples
     {
         public static void Configure()
         {
-            // SAMPLE: IndexExamples
+            #region sample_IndexExamples
             var store = DocumentStore.For(options =>
             {
                 // Add a gin index to the User document type
@@ -83,7 +83,7 @@ namespace Marten.Testing.Examples
                     idx.SortOrder = SortOrder.Desc;
                 });
             });
-            // ENDSAMPLE
+            #endregion sample_IndexExamples
         }
     }
 

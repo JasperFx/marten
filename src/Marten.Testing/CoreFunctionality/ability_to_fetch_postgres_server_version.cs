@@ -8,9 +8,9 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void can_fetch_postgres_server_version()
         {
-            // SAMPLE: get_postgres_version
+            #region sample_get_postgres_version
             var pgVersion = theStore.Diagnostics.GetPostgresVersion();
-            // ENDSAMPLE
+            #endregion sample_get_postgres_version
             pgVersion.ShouldNotBeNull();
         }
 

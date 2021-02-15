@@ -8,7 +8,7 @@ namespace Marten.Testing.Examples
     {
         public void Example()
         {
-            // SAMPLE: multi-property-calculated-index
+            #region sample_multi-property-calculated-index
             var store = DocumentStore.For(_ =>
             {
                 var columns = new Expression<Func<User, object>>[]
@@ -18,7 +18,7 @@ namespace Marten.Testing.Examples
                 };
                 _.Schema.For<User>().Index(columns);
             });
-            // ENDSAMPLE
+            #endregion sample_multi-property-calculated-index
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Marten.Events
 {
     // TODO -- make the properties on the interface all be get only?
 
-    // SAMPLE: IEvent
+    #region sample_IEvent
     public interface IEvent
     {
         /// <summary>
@@ -68,7 +68,7 @@ namespace Marten.Events
 
     }
 
-    // ENDSAMPLE
+    #endregion sample_IEvent
 
     public interface IEvent<out T> : IEvent
     {
@@ -92,7 +92,7 @@ namespace Marten.Events
         /// </summary>
         public T Data { get; set; }
 
-        // SAMPLE: event_metadata
+        #region sample_event_metadata
         /// <summary>
         ///     A reference to the stream that contains
         ///     this event
@@ -127,7 +127,7 @@ namespace Marten.Events
         public DateTimeOffset Timestamp { get; set; }
 
         public string TenantId { get; set; }
-        // ENDSAMPLE
+        #endregion sample_event_metadata
 
         object IEvent.Data => Data;
 
@@ -157,6 +157,4 @@ namespace Marten.Events
             return Id.GetHashCode();
         }
     }
-
-    // ENDSAMPLE
 }

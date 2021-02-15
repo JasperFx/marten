@@ -191,7 +191,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             DocumentTracking = tracking;
 
-            // SAMPLE: saving-changes-async
+            #region sample_saving-changes-async
             var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
             var user2 = new User { FirstName = "James", LastName = "Worthy" };
             var user3 = new User { FirstName = "Michael", LastName = "Cooper" };
@@ -205,17 +205,17 @@ namespace Marten.Testing.CoreFunctionality
             theSession.Store(user5);
 
             await theSession.SaveChangesAsync().ConfigureAwait(false);
-            // ENDSAMPLE
+            #endregion sample_saving-changes-async
 
             var store = theStore;
 
-            // SAMPLE: load_by_id_array_async
+            #region sample_load_by_id_array_async
             using (var session = store.OpenSession())
             {
                 var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id).ConfigureAwait(false);
                 users.Count().ShouldBe(3);
             }
-            // ENDSAMPLE
+            #endregion sample_load_by_id_array_async
         }
     }
 }

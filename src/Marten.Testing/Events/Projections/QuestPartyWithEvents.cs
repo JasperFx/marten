@@ -6,7 +6,7 @@ using Marten.Events;
 
 namespace Marten.Testing.Events.Projections
 {
-    // SAMPLE: QuestPartyWithEvents
+    #region sample_QuestPartyWithEvents
     public class QuestPartyWithEvents
     {
         private readonly IList<string> _members = new List<string>();
@@ -51,5 +51,5 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_QuestPartyWithEvents
 }

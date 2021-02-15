@@ -28,13 +28,13 @@ namespace Marten.Testing.Linq
 
         public void is_subset_of_example()
         {
-            // SAMPLE: is_subset_of
+            #region sample_is_subset_of
             // Finds all Posts whose Tags is subset of
             // c#, json, or postgres
             var posts = theSession.Query<Post>()
                 .Where(x => x.Tags.IsSubsetOf("c#", "json", "postgres"));
 
-            // ENDSAMPLE
+            #endregion sample_is_subset_of
         }
 
         private readonly Target[] _allTargets;

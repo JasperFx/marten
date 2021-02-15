@@ -259,7 +259,7 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void can_query_on_multi_tenanted_and_non_tenanted_documents()
         {
-            // SAMPLE: tenancy-mixed-tenancy-non-tenancy-sample
+            #region sample_tenancy-mixed-tenancy-non-tenancy-sample
             using var store = DocumentStore.For(opts =>
             {
                 opts.DatabaseSchemaName = "mixed_multi_tenants";
@@ -325,7 +325,7 @@ namespace Marten.Testing.Acceptance
                 session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
             }
 
-            // ENDSAMPLE
+            #endregion sample_tenancy-mixed-tenancy-non-tenancy-sample
         }
 
 
@@ -347,11 +347,11 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                // SAMPLE: any_tenant
+                #region sample_any_tenant
                 // query data across all tenants
                 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
                     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
-                // ENDSAMPLE
+                #endregion sample_any_tenant
 
                 actual.ShouldHaveTheSameElementsAs(expected);
             }
@@ -375,11 +375,11 @@ namespace Marten.Testing.Acceptance
 
             using (var query = theStore.QuerySession())
             {
-                // SAMPLE: tenant_is_one_of
+                #region sample_tenant_is_one_of
                 // query data for a selected list of tenants
                 var actual = query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
                     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
-                // ENDSAMPLE
+                #endregion sample_tenant_is_one_of
 
                 actual.ShouldHaveTheSameElementsAs(expected);
             }

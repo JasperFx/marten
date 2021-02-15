@@ -5,7 +5,7 @@ using Baseline;
 
 namespace Marten.Testing.Events.Projections
 {
-    // SAMPLE: QuestParty
+    #region sample_QuestParty
     public class QuestParty
     {
         public List<string> Members { get; set; } = new();
@@ -63,5 +63,5 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_QuestParty
 }

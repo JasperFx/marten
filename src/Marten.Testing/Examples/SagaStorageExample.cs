@@ -5,7 +5,7 @@ namespace Marten.Testing.Examples
 {
     public class SagaStorageExample
     {
-        // SAMPLE: serializable-saga-transaction
+        #region sample_serializable-saga-transaction
         public class MySagaState
         {
             public Guid Id;
@@ -25,6 +25,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_serializable-saga-transaction
     }
 }

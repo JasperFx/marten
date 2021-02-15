@@ -81,7 +81,7 @@ namespace Marten.Testing.Events
         public void Apply(FooEvent e){}
     }
 
-    // SAMPLE: fetching_stream_state
+    #region sample_fetching_stream_state
     public class fetching_stream_state: IntegrationContext
     {
         private Guid theStreamId;
@@ -151,5 +151,5 @@ namespace Marten.Testing.Events
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_fetching_stream_state
 }

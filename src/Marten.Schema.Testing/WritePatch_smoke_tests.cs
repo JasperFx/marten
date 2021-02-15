@@ -11,7 +11,7 @@ namespace Marten.Schema.Testing
     {
         private void configure()
         {
-            // SAMPLE: configure-document-types-upfront
+            #region sample_configure-document-types-upfront
             var store = DocumentStore.For(_ =>
             {
                 // This is enough to tell Marten that the User
@@ -24,19 +24,19 @@ namespace Marten.Schema.Testing
                 // Tell Marten about all the javascript functions
                 _.Transforms.LoadFile("default_username.js");
             });
-            // ENDSAMPLE
+            #endregion sample_configure-document-types-upfront
 
-            // SAMPLE: WritePatch
+            #region sample_WritePatch
             store.Schema.WritePatch("1.initial.sql");
-            // ENDSAMPLE
+            #endregion sample_WritePatch
 
-            // SAMPLE: ApplyAllConfiguredChangesToDatabase
+            #region sample_ApplyAllConfiguredChangesToDatabase
             store.Schema.ApplyAllConfiguredChangesToDatabase();
-            // ENDSAMPLE
+            #endregion sample_ApplyAllConfiguredChangesToDatabase
 
-            // SAMPLE: AssertDatabaseMatchesConfiguration
+            #region sample_AssertDatabaseMatchesConfiguration
             store.Schema.AssertDatabaseMatchesConfiguration();
-            // ENDSAMPLE
+            #endregion sample_AssertDatabaseMatchesConfiguration
             store.Dispose();
         }
 
@@ -163,10 +163,10 @@ namespace Marten.Schema.Testing
             fileSystem.DeleteDirectory(directory);
             fileSystem.CreateDirectory(directory);
 
-            // SAMPLE: write-patch
+            #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
             theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"));
-            // ENDSAMPLE
+            #endregion sample_write-patch
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
             fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));
@@ -187,10 +187,10 @@ namespace Marten.Schema.Testing
             fileSystem.DeleteDirectory(directory);
             fileSystem.CreateDirectory(directory);
 
-            // SAMPLE: write-patch
+            #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
             theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"));
-            // ENDSAMPLE
+            #endregion sample_write-patch
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
             fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));

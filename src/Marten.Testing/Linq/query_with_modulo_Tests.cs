@@ -9,7 +9,7 @@ namespace Marten.Testing.Linq
     [ControlledQueryStoryteller]
     public class query_with_modulo_Tests : IntegrationContext
     {
-        // SAMPLE: querying-with-modulo
+        #region sample_querying-with-modulo
         [Fact]
         public void use_modulo()
         {
@@ -26,7 +26,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(2, 4);
         }
-        // ENDSAMPLE
+        #endregion sample_querying-with-modulo
 
         [Fact]
         public void use_modulo_operands_reversed()

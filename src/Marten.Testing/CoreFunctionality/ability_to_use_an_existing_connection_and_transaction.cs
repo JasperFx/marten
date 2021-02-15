@@ -23,7 +23,7 @@ namespace Marten.Testing.CoreFunctionality
 
 
 
-        // SAMPLE: passing-in-existing-connections-and-transactions
+        #region sample_passing-in-existing-connections-and-transactions
         public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
             // Use an existing connection, but Marten still controls the transaction lifecycle
@@ -61,7 +61,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_passing-in-existing-connections-and-transactions
 
 
         [Fact]

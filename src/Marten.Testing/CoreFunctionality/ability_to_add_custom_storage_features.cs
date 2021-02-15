@@ -25,7 +25,7 @@ namespace Marten.Testing.CoreFunctionality
 
         public void using_custom_feature_schema()
         {
-            // SAMPLE: adding-schema-feature
+            #region sample_adding-schema-feature
             var store = DocumentStore.For(_ =>
             {
                 // Creates a new instance of FakeStorage and
@@ -36,7 +36,7 @@ namespace Marten.Testing.CoreFunctionality
 
                 _.Storage.Add(new FakeStorage(_));
             });
-            // ENDSAMPLE
+            #endregion sample_adding-schema-feature
         }
 
         public ability_to_add_custom_storage_features(DefaultStoreFixture fixture) : base(fixture)
@@ -44,7 +44,7 @@ namespace Marten.Testing.CoreFunctionality
         }
     }
 
-    // SAMPLE: creating-a-fake-schema-feature
+    #region sample_creating-a-fake-schema-feature
     public class FakeStorage : FeatureSchemaBase
     {
         public FakeStorage(StoreOptions options) : base("fake", options)
@@ -60,5 +60,5 @@ namespace Marten.Testing.CoreFunctionality
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_creating-a-fake-schema-feature
 }

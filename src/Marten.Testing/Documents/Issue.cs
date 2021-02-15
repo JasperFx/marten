@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Testing.Documents
 {
-    // SAMPLE: Issue
+    #region sample_Issue
     public class Issue
     {
         public Issue()
@@ -25,9 +25,9 @@ namespace Marten.Testing.Documents
         public Guid? BugId { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_Issue
 
-    // SAMPLE: Bug
+    #region sample_Bug
     public class Bug
     {
         public Bug()
@@ -44,5 +44,5 @@ namespace Marten.Testing.Documents
         public int IssueTrackerId { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_Bug
 }

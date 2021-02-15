@@ -18,13 +18,13 @@ namespace Marten.Testing.Acceptance
     {
         public void example_configuration()
         {
-            // SAMPLE: configuring-optimistic-concurrency
+            #region sample_configuring-optimistic-concurrency
             var store = DocumentStore.For(_ =>
             {
                 // Adds optimistic concurrency checking to Issue
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             });
-            // ENDSAMPLE
+            #endregion sample_configuring-optimistic-concurrency
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: update_with_stale_version_standard
+        #region sample_update_with_stale_version_standard
         [Fact]
         public void update_with_stale_version_standard()
         {
@@ -171,7 +171,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_update_with_stale_version_standard
 
         [Fact]
         public void overwrite_with_stale_version_standard()
@@ -182,13 +182,13 @@ namespace Marten.Testing.Acceptance
                 session.Store(doc1);
                 session.SaveChanges();
             }
-            // SAMPLE: sample-override-optimistic-concurrency
+            #region sample_sample-override-optimistic-concurrency
             var session1 = theStore.OpenSession(new SessionOptions
             {
                 ConcurrencyChecks = ConcurrencyChecks.Disabled,
                 Tracking = DocumentTracking.DirtyTracking
             });
-            // ENDSAMPLE
+            #endregion sample_sample-override-optimistic-concurrency
 
             var session2 = theStore.DirtyTrackedSession();
 
@@ -450,7 +450,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // SAMPLE: store_with_the_right_version
+        #region sample_store_with_the_right_version
         [Fact]
         public void store_with_the_right_version()
         {
@@ -482,7 +482,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_store_with_the_right_version
 
         [Fact]
         public async Task store_with_the_right_version_async()
@@ -638,7 +638,7 @@ namespace Marten.Testing.Acceptance
         public Guid Id { get; set; } = Guid.NewGuid();
     }
 
-    // SAMPLE: UseOptimisticConcurrencyAttribute
+    #region sample_UseOptimisticConcurrencyAttribute
     [UseOptimisticConcurrency]
     public class CoffeeShop: Shop
     {
@@ -648,7 +648,7 @@ namespace Marten.Testing.Acceptance
         public ICollection<Guid> Employees { get; set; } = new List<Guid>();
     }
 
-    // ENDSAMPLE
+    #endregion sample_UseOptimisticConcurrencyAttribute
 
     [SoftDeleted]
     [UseOptimisticConcurrency]

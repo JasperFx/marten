@@ -9,7 +9,7 @@ namespace Marten.Schema.Testing
         public Guid Id { get; set; }
     }
 
-    // SAMPLE: sample-events
+    #region sample_sample-events
     public class ArrivedAtLocation
     {
         public int Day { get; set; }
@@ -141,7 +141,7 @@ namespace Marten.Schema.Testing
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_sample-events
 
 
     public class IssueCreated

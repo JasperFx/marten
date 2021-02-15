@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    // SAMPLE: using_a_full_text_index_through_attribute_on_class_with_default
+    #region sample_using_a_full_text_index_through_attribute_on_class_with_default
     [FullTextIndex]
     public class Book
     {
@@ -23,9 +23,9 @@ namespace Marten.Testing.Acceptance
         public string Information { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_using_a_full_text_index_through_attribute_on_class_with_default
 
-    // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_default
+    #region sample_using_a_single_property_full_text_index_through_attribute_with_default
     public class UserProfile
     {
         public Guid Id { get; set; }
@@ -34,9 +34,9 @@ namespace Marten.Testing.Acceptance
         public string Information { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_using_a_single_property_full_text_index_through_attribute_with_default
 
-    // SAMPLE: using_a_single_property_full_text_index_through_attribute_with_custom_settings
+    #region sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings
     public class UserDetails
     {
         private const string FullTextIndexName = "mt_custom_user_details_fts_idx";
@@ -47,9 +47,9 @@ namespace Marten.Testing.Acceptance
         public string Details { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings
 
-    // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_default
+    #region sample_using_multiple_properties_full_text_index_through_attribute_with_default
     public class Article
     {
         public Guid Id { get; set; }
@@ -61,9 +61,9 @@ namespace Marten.Testing.Acceptance
         public string Text { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_using_multiple_properties_full_text_index_through_attribute_with_default
 
-    // SAMPLE: using_multiple_properties_full_text_index_through_attribute_with_custom_settings
+    #region sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings
     public class BlogPost
     {
         public Guid Id { get; set; }
@@ -80,7 +80,7 @@ namespace Marten.Testing.Acceptance
         public string FrenchText { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings
 
     [Collection("fulltext")]
     public class full_text_index: OneOffConfigurationsContext
@@ -91,7 +91,7 @@ namespace Marten.Testing.Acceptance
 
         public void using_whole_document_full_text_index_through_store_options_with_default()
         {
-            // SAMPLE: using_whole_document_full_text_index_through_store_options_with_default
+            #region sample_using_whole_document_full_text_index_through_store_options_with_default
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -99,12 +99,12 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().FullTextIndex();
             });
-            // ENDSAMPLE
+            #endregion sample_using_whole_document_full_text_index_through_store_options_with_default
         }
 
         public void using_a_single_property_full_text_index_through_store_options_with_default()
         {
-            // SAMPLE: using_a_single_property_full_text_index_through_store_options_with_default
+            #region sample_using_a_single_property_full_text_index_through_store_options_with_default
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -112,12 +112,12 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().FullTextIndex(d => d.FirstName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_a_single_property_full_text_index_through_store_options_with_default
         }
 
         public void using_a_single_property_full_text_index_through_store_options_with_custom_settings()
         {
-            // SAMPLE: using_a_single_property_full_text_index_through_store_options_with_custom_settings
+            #region sample_using_a_single_property_full_text_index_through_store_options_with_custom_settings
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -131,12 +131,12 @@ namespace Marten.Testing.Acceptance
                     },
                     d => d.FirstName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_a_single_property_full_text_index_through_store_options_with_custom_settings
         }
 
         public void using_multiple_properties_full_text_index_through_store_options_with_default()
         {
-            // SAMPLE: using_multiple_properties_full_text_index_through_store_options_with_default
+            #region sample_using_multiple_properties_full_text_index_through_store_options_with_default
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -144,12 +144,12 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_multiple_properties_full_text_index_through_store_options_with_default
         }
 
         public void using_multiple_properties_full_text_index_through_store_options_with_custom_settings()
         {
-            // SAMPLE: using_multiple_properties_full_text_index_through_store_options_with_custom_settings
+            #region sample_using_multiple_properties_full_text_index_through_store_options_with_custom_settings
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -163,12 +163,12 @@ namespace Marten.Testing.Acceptance
                     },
                     d => d.FirstName, d => d.LastName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_multiple_properties_full_text_index_through_store_options_with_custom_settings
         }
 
         public void using_more_than_one_full_text_index_through_store_options_with_different_reg_config()
         {
-            // SAMPLE: using_more_than_one_full_text_index_through_store_options_with_different_reg_config
+            #region sample_using_more_than_one_full_text_index_through_store_options_with_different_reg_config
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -178,13 +178,13 @@ namespace Marten.Testing.Acceptance
                     .FullTextIndex(d => d.FirstName) //by default it will use "english"
                     .FullTextIndex("italian", d => d.LastName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_more_than_one_full_text_index_through_store_options_with_different_reg_config
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_full_text_query_through_query_session()
         {
-            // SAMPLE: using_full_text_query_through_query_session
+            #region sample_using_full_text_query_through_query_session
             var store = DocumentStore.For(_ =>
                                           {
                                               _.Connection(ConnectionSource.ConnectionString);
@@ -210,7 +210,7 @@ namespace Marten.Testing.Acceptance
 
             store.Dispose();
 
-            // ENDSAMPLE
+            #endregion sample_using_full_text_query_through_query_session
 
             result.Count().ShouldBe(1);
         }
@@ -231,11 +231,11 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: search_in_query_sample
+                #region sample_search_in_query_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.Search("somefilter"))
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_search_in_query_sample
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -258,11 +258,11 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: plain_search_in_query_sample
+                #region sample_plain_search_in_query_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.PlainTextSearch("somefilter"))
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_plain_search_in_query_sample
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -285,11 +285,11 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: phrase_search_in_query_sample
+                #region sample_phrase_search_in_query_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.PhraseSearch("somefilter"))
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_phrase_search_in_query_sample
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -312,11 +312,11 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: web_search_in_query_sample
+                #region sample_web_search_in_query_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.WebStyleSearch("somefilter"))
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_web_search_in_query_sample
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -340,12 +340,12 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: text_search_combined_with_other_query_sample
+                #region sample_text_search_combined_with_other_query_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.Category == "LifeStyle")
                     .Where(x => x.PhraseSearch("somefilter"))
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_text_search_combined_with_other_query_sample
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -368,11 +368,11 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                // SAMPLE: text_search_with_non_default_regConfig_sample
+                #region sample_text_search_with_non_default_regConfig_sample
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.PhraseSearch("somefilter", "italian"))
                     .ToList();
-                // ENDSAMPLE
+                #endregion sample_text_search_with_non_default_regConfig_sample
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);

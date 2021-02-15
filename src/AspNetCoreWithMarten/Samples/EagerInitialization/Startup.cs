@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AspNetCoreWithMarten.Samples.EagerInitialization
 {
-    // SAMPLE: AddMartenWithEagerInitialization
+    #region sample_AddMartenWithEagerInitialization
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -29,5 +29,5 @@ namespace AspNetCoreWithMarten.Samples.EagerInitialization
 
         // And other methods we don't care about here...
     }
-    // ENDSAMPLE
+    #endregion sample_AddMartenWithEagerInitialization
 }

@@ -6,7 +6,7 @@ using Marten.Storage.Metadata;
 
 namespace Marten.Events.Schema
 {
-    // SAMPLE: EventsTable
+    #region sample_EventsTable
     internal class EventsTable: Table
     {
         public EventsTable(EventGraph events): base(new DbObjectName(events.DatabaseSchemaName, "mt_events"))
@@ -60,5 +60,5 @@ namespace Marten.Events.Schema
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_EventsTable
 }

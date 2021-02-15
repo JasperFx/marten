@@ -21,7 +21,7 @@ namespace Marten.Testing.CoreFunctionality
 		[Fact]
 		public void SampleCopyAndTransformStream()
 		{
-			// SAMPLE: scenario-copyandtransformstream-setup
+			#region sample_scenario-copyandtransformstream-setup
 			var started = new QuestStarted { Name = "Find the Orb" };
 			var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
 			var slayed1 = new MonsterSlayed { Name = "Troll" };
@@ -32,9 +32,9 @@ namespace Marten.Testing.CoreFunctionality
 				session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
 				session.SaveChanges();
 			}
-			// ENDSAMPLE
+			#endregion sample_scenario-copyandtransformstream-setup
 
-			// SAMPLE: scenario-copyandtransformstream-transform
+			#region sample_scenario-copyandtransformstream-transform
 			using (var session = theStore.OpenSession())
 			{
 				var events = session.Events.FetchStream(started.Name);
@@ -70,10 +70,10 @@ namespace Marten.Testing.CoreFunctionality
 				// Transactionally update the streams.
 				session.SaveChanges();
 			}
-			// ENDSAMPLE
+			#endregion sample_scenario-copyandtransformstream-transform
 		}
 
-		// SAMPLE: scenario-copyandtransformstream-newevent
+		#region sample_scenario-copyandtransformstream-newevent
 		public class MemberJoined
 		{
 			public int Day { get; set; }
@@ -96,13 +96,13 @@ namespace Marten.Testing.CoreFunctionality
 				return @event.Members.Select(x => new MemberJoined(@event.Day, @event.Location, x)).ToArray();
 			}
 		}
-		// ENDSAMPLE
+		#endregion sample_scenario-copyandtransformstream-newevent
 
-		// SAMPLE: scenario-copyandtransformstream-streammoved
+		#region sample_scenario-copyandtransformstream-streammoved
 		public class StreamMovedTo
 		{
 			public string To { get; set; }
 		}
-		// ENDSAMPLE
+		#endregion sample_scenario-copyandtransformstream-streammoved
 	}
 }

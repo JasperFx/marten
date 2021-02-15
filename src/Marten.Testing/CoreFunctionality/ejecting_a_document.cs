@@ -8,7 +8,7 @@ namespace Marten.Testing.CoreFunctionality
 {
     public class ejecting_a_document : IntegrationContext
     {
-        // SAMPLE: ejecting_a_document
+        #region sample_ejecting_a_document
         [Fact]
         public void demonstrate_eject()
         {
@@ -39,7 +39,7 @@ namespace Marten.Testing.CoreFunctionality
                 SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
             }
         }
-        // ENDSAMPLE
+        #endregion sample_ejecting_a_document
 
         [Fact]
         public void eject_a_document_clears_it_from_the_identity_map_regular()

@@ -20,7 +20,7 @@ namespace Marten.Testing.Linq
 
     public class using_custom_Linq_parser_plugins_Tests
     {
-        // SAMPLE: using_custom_linq_parser
+        #region sample_using_custom_linq_parser
         [Fact]
         public void query_with_custom_parser()
         {
@@ -61,7 +61,7 @@ namespace Marten.Testing.Linq
                 }
             }
         }
-        // ENDSAMPLE
+        #endregion sample_using_custom_linq_parser
 
     }
 
@@ -73,15 +73,15 @@ namespace Marten.Testing.Linq
 
     public static class CustomExtensions
     {
-        // SAMPLE: custom-extension-for-linq
+        #region sample_custom-extension-for-linq
         public static bool IsBlue(this ColorTarget target)
         {
             return target.Color == "Blue";
         }
-        // ENDSAMPLE
+        #endregion sample_custom-extension-for-linq
     }
 
-    // SAMPLE: IsBlue
+    #region sample_IsBlue
     public class IsBlue : IMethodCallParser
     {
         private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
@@ -98,5 +98,5 @@ namespace Marten.Testing.Linq
             return new WhereFragment($"{locator} = 'Blue'");
         }
     }
-    // ENDSAMPLE
+    #endregion sample_IsBlue
 }

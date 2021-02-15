@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace AspNetCoreWithMarten.Samples.ByNestedClosure
 {
-    // SAMPLE: AddMartenByNestedClosure
+    #region sample_AddMartenByNestedClosure
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -36,5 +36,5 @@ namespace AspNetCoreWithMarten.Samples.ByNestedClosure
 
         // And other methods we don't care about here...
     }
-    // ENDSAMPLE
+    #endregion sample_AddMartenByNestedClosure
 }

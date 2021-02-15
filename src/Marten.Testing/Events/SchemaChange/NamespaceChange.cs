@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marten.Testing.Events.SchemaChange
 {
-    // SAMPLE: old_event_namespace
+    #region sample_old_event_namespace
     namespace OldEventNamespace
     {
         public class OrderStatusChanged
@@ -26,9 +26,9 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
     }
-    // ENDSAMPLE
+    #endregion sample_old_event_namespace
 
-    // SAMPLE: new_event_namespace
+    #region sample_new_event_namespace
     namespace NewEventNamespace
     {
         public class OrderStatusChanged
@@ -43,10 +43,10 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
     }
-    // ENDSAMPLE
+    #endregion sample_new_event_namespace
 
 
-    // SAMPLE: new_event_type_name
+    #region sample_new_event_type_name
     namespace OldEventNamespace
     {
         public class ConfirmedOrderStatusChanged
@@ -61,31 +61,31 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
     }
-    // ENDSAMPLE
+    #endregion sample_new_event_type_name
 
     public static class SampleEventsSchemaMigration
     {
         public static void SampleAddEventsRegistration()
         {
-            // SAMPLE: event_namespace_migration_options
+            #region sample_event_namespace_migration_options
             var options = new StoreOptions();
 
             options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
 
             var store = new DocumentStore(options);
-            // ENDSAMPLE
+            #endregion sample_event_namespace_migration_options
         }
 
         public static void SampleEventMappingRegistration()
         {
-            // SAMPLE: event_type_name_migration_options
+            #region sample_event_type_name_migration_options
             var options = new StoreOptions();
 
             var orderStatusChangedMapping = options.EventGraph.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
             orderStatusChangedMapping.EventTypeName = "order_status_changed";
 
             var store = new DocumentStore(options);
-            // ENDSAMPLE
+            #endregion sample_event_type_name_migration_options
         }
     }
 

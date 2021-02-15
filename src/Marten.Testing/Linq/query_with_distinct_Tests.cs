@@ -27,8 +27,7 @@ namespace Marten.Testing.Linq
             queryable.ToList().Count.ShouldBe(3);
         }
 
-        // SAMPLE: get_distinct_numbers
-
+        #region sample_get_distinct_numbers
         [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void get_distinct_numbers()
         {
@@ -49,9 +48,9 @@ namespace Marten.Testing.Linq
 
             queryable.ToList().Count.ShouldBe(4);
         }
-        // ENDSAMPLE
+        #endregion sample_get_distinct_numbers
 
-        // SAMPLE: get_distinct_strings
+        #region sample_get_distinct_strings
         [Fact]
         public void get_distinct_string()
         {
@@ -69,7 +68,7 @@ namespace Marten.Testing.Linq
             queryable.ToList().Count.ShouldBe(3);
         }
 
-        // ENDSAMPLE
+        #endregion sample_get_distinct_strings
 
         [Fact]
         public void get_distinct_strings()

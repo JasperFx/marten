@@ -12,7 +12,7 @@ namespace Marten.Testing.Linq
     [MatchingStoryteller]
     public class invoking_queryable_through_to_list_async_Tests : IntegrationContext
     {
-        // SAMPLE: using-to-list-async
+        #region sample_using-to-list-async
         [Fact]
         public async Task use_to_list_async_in_query()
         {
@@ -30,7 +30,7 @@ namespace Marten.Testing.Linq
 
             users.Single().FirstName.ShouldBe("Sam");
         }
-        // ENDSAMPLE
+        #endregion sample_using-to-list-async
 
         [Fact]
         public async Task should_return_empty_list()

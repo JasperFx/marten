@@ -20,10 +20,10 @@ namespace Marten.Testing.CoreFunctionality
 
 			using (var session = theStore.OpenSession())
 			{
-                // SAMPLE: sample-query-type-parameter-overload
+                #region sample_sample-query-type-parameter-overload
                 dynamic userFromDb = session.Query(user.GetType(), "where id = ?", user.Id).First();
                 dynamic companyFromDb = (await session.QueryAsync(typeof(Company), "where id = ?", CancellationToken.None, company.Id)).First();
-                // ENDSAMPLE
+                #endregion sample_sample-query-type-parameter-overload
 
 				Assert.Equal(user.Id, userFromDb.Id);
 				Assert.Equal(company.Name, companyFromDb.Name);

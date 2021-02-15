@@ -9,7 +9,7 @@ namespace Marten.Testing.Acceptance
 {
     public class unique_indexes: IntegrationContext
     {
-        // SAMPLE: using_a_single_property_computed_unique_index_through_attribute
+        #region sample_using_a_single_property_computed_unique_index_through_attribute
         public class Account
         {
             public Guid Id { get; set; }
@@ -18,9 +18,9 @@ namespace Marten.Testing.Acceptance
             public string Number { get; set; }
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_a_single_property_computed_unique_index_through_attribute
 
-        // SAMPLE: using_a_single_property_duplicate_field_unique_index_through_store_attribute
+        #region sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute
         public class Client
         {
             public Guid Id { get; set; }
@@ -29,9 +29,9 @@ namespace Marten.Testing.Acceptance
             public string Name { get; set; }
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute
 
-        // SAMPLE: using_a_multiple_properties_computed_unique_index_through_store_attribute
+        #region sample_using_a_multiple_properties_computed_unique_index_through_store_attribute
         public class Address
         {
             private const string UniqueIndexName = "sample_uidx_person";
@@ -45,9 +45,9 @@ namespace Marten.Testing.Acceptance
             public string Number { get; set; }
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_a_multiple_properties_computed_unique_index_through_store_attribute
 
-        // SAMPLE: using_a_multiple_properties_duplicate_field_unique_index_through_attribute
+        #region sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute
         public class Person
         {
             private const string UniqueIndexName = "sample_uidx_person";
@@ -61,12 +61,12 @@ namespace Marten.Testing.Acceptance
             public string SecondName { get; set; }
         }
 
-        // ENDSAMPLE
+        #endregion sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute
 
         [Fact]
         public void example_using_a_single_property_computed_unique_index()
         {
-            // SAMPLE: using_a_single_property_computed_unique_index_through_store_options
+            #region sample_using_a_single_property_computed_unique_index_through_store_options
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -75,13 +75,13 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.UserName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_a_single_property_computed_unique_index_through_store_options
         }
 
         [Fact]
         public void example_using_a_single_property_duplicate_field_unique_index()
         {
-            // SAMPLE: using_a_single_property_duplicate_field_unique_index_through_store_options
+            #region sample_using_a_single_property_duplicate_field_unique_index_through_store_options
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -90,13 +90,13 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.UserName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_a_single_property_duplicate_field_unique_index_through_store_options
         }
 
         [Fact]
         public void example_using_a_multiple_properties_computed_unique_index()
         {
-            // SAMPLE: using_a_multiple_properties_computed_unique_index_through_store_options
+            #region sample_using_a_multiple_properties_computed_unique_index_through_store_options
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -105,13 +105,13 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.FirstName, x => x.FullName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_a_multiple_properties_computed_unique_index_through_store_options
         }
 
         [Fact]
         public void example_using_a_multiple_properties_duplicate_field_unique_index()
         {
-            // SAMPLE: using_a_multiple_properties_duplicate_field_unique_index_through_store_options
+            #region sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -120,13 +120,13 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.FirstName, x => x.FullName);
             });
-            // ENDSAMPLE
+            #endregion sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options
         }
 
         [Fact]
         public void example_using_a_per_tenant_scoped_unique_index()
         {
-            // SAMPLE: per-tenant-unique-index
+            #region sample_per-tenant-unique-index
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -138,7 +138,7 @@ namespace Marten.Testing.Acceptance
                 // This creates a computed unique index on client name and tenant_id
                 _.Schema.For<Client>().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name);
             });
-            // ENDSAMPLE
+            #endregion sample_per-tenant-unique-index
         }
 
         public unique_indexes(DefaultStoreFixture fixture) : base(fixture)

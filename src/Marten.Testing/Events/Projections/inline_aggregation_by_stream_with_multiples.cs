@@ -20,7 +20,7 @@ namespace Marten.Testing.Events.Projections
         [InlineData(TenancyStyle.Conjoined)]
         public void run_multiple_aggregates_sync(TenancyStyle tenancyStyle)
         {
-            // SAMPLE: registering-quest-party
+            #region sample_registering-quest-party
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -35,7 +35,7 @@ namespace Marten.Testing.Events.Projections
                 // view
                 _.Events.Projections.SelfAggregate<QuestParty>();
             });
-            // ENDSAMPLE
+            #endregion sample_registering-quest-party
 
             StoreOptions(_ =>
             {

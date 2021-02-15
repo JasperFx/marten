@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace Marten
 {
-    // SAMPLE: IMartenLogger
+    #region sample_IMartenLogger
     /// <summary>
     /// Records command usage, schema changes, and sessions within Marten
     /// </summary>
@@ -63,9 +63,9 @@ namespace Marten
 
     }
 
-    // ENDSAMPLE
+    #endregion sample_IMartenLogger
 
-    // SAMPLE: ConsoleMartenLogger
+    #region sample_ConsoleMartenLogger
     public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         private Stopwatch _stopwatch;
@@ -120,5 +120,5 @@ namespace Marten
         }
     }
 
-    // ENDSAMPLE
+    #endregion sample_ConsoleMartenLogger
 }

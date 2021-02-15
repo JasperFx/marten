@@ -13,7 +13,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace AspNetCoreWithMarten
 {
-    // SAMPLE: StartupConfigureServices
+    #region sample_StartupConfigureServices
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -46,7 +46,7 @@ namespace AspNetCoreWithMarten
         }
 
         // and other methods we don't care about right now...
-        // ENDSAMPLE
+        #endregion sample_StartupConfigureServices
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

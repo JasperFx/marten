@@ -16,19 +16,19 @@ namespace Marten.Testing.Examples
         [Fact]
         public void SetTenancyThroughPolicy()
         {
-            // SAMPLE: sample-policy-configure
+            #region sample_sample-policy-configure
             var store = DocumentStore.For(storeOptions =>
             {
                 // Apply custom policy
                 storeOptions.Policies.OnDocuments<TenancyPolicy>();
-                // ENDSAMPLE
+                #endregion sample_sample-policy-configure
                 storeOptions.Connection("");
             });
 
             Assert.Equal(TenancyStyle.Conjoined, store.Storage.MappingFor(typeof(MultiTenantType)).TenancyStyle);
         }
 
-        // SAMPLE: sample-policy-implementation
+        #region sample_sample-policy-implementation
         public interface IRequireMultiTenancy
         {
         }
@@ -44,6 +44,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_sample-policy-implementation
     }
 }

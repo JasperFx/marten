@@ -8,18 +8,18 @@ namespace Marten.Testing.Examples
     {
         public void in_example(IDocumentSession session)
         {
-            // SAMPLE: in
+            #region sample_in
             // Finds all SuperUser's whose role is either
             // Admin, Supervisor, or Director
             var users = session.Query<SuperUser>()
                 .Where(x => x.Role.In("Admin", "Supervisor", "Director"));
 
-            // ENDSAMPLE
+            #endregion sample_in
         }
 
         public void in_list_example(IDocumentSession session)
         {
-            // SAMPLE: in_list
+            #region sample_in_list
             // Finds all SuperUser's whose role is either
             // Admin, Supervisor, or Director
             var listOfRoles = new List<string> {"Admin", "Supervisor", "Director"};
@@ -27,12 +27,12 @@ namespace Marten.Testing.Examples
             var users = session.Query<SuperUser>()
                 .Where(x => x.Role.In(listOfRoles));
 
-            // ENDSAMPLE
+            #endregion sample_in_list
         }
 
         public void in_array_example(IDocumentSession session)
         {
-            // SAMPLE: in_array
+            #region sample_in_array
             // Finds all UserWithNicknames's whose nicknames matches either "Melinder" or "Norrland"
 
             var nickNames = new[] {"Melinder", "Norrland"};
@@ -40,7 +40,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<UserWithNicknames>()
                 .Where(x => x.Nicknames.In(nickNames));
 
-            // ENDSAMPLE
+            #endregion sample_in_array
         }
     }
 }

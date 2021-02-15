@@ -39,9 +39,9 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             StoreOptions(options =>
             {
-                // SAMPLE: configuring-global-sequentialguid
+                #region sample_configuring-global-sequentialguid
                 options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration();
-                // ENDSAMPLE
+                #endregion sample_configuring-global-sequentialguid
             });
 
 
@@ -66,9 +66,9 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             StoreOptions(options =>
             {
-                // SAMPLE: configuring-mapping-specific-sequentialguid
+                #region sample_configuring-mapping-specific-sequentialguid
                 options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
-                // ENDSAMPLE
+                #endregion sample_configuring-mapping-specific-sequentialguid
             });
 
             theStore.Storage.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();

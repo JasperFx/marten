@@ -116,7 +116,7 @@ namespace Marten.Schema.Testing
             }
         }
 
-        // SAMPLE: ConfigureMarten-generic
+        #region sample_ConfigureMarten-generic
         public class ConfiguresItself
         {
             public Guid Id;
@@ -127,9 +127,9 @@ namespace Marten.Schema.Testing
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_ConfigureMarten-generic
 
-        // SAMPLE: ConfigureMarten-specifically
+        #region sample_ConfigureMarten-specifically
         public class ConfiguresItselfSpecifically
         {
             public Guid Id;
@@ -141,7 +141,7 @@ namespace Marten.Schema.Testing
             }
         }
 
-        // ENDSAMPLE
+        #endregion sample_ConfigureMarten-specifically
 
         [Fact]
         public void can_replace_hilo_def_settings()
@@ -718,16 +718,12 @@ namespace Marten.Schema.Testing
             mapping.IdStrategy.ShouldBeOfType<StringIdGeneration>();
         }
 
-        // ENDSAMPLE
-
         [Fact]
         public void uses_ConfigureMarten_method_to_alter_mapping_upon_construction()
         {
             var mapping = DocumentMapping.For<ConfiguresItself>();
             mapping.Alias.ShouldBe("different");
         }
-
-        // ENDSAMPLE
 
         [Fact]
         public void uses_ConfigureMarten_method_to_alter_mapping_upon_construction_with_the_generic_signature()

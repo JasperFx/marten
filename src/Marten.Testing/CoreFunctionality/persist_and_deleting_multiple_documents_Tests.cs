@@ -15,7 +15,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             DocumentTracking = tracking;
 
-            // SAMPLE: mixed-docs-to-store
+            #region sample_mixed-docs-to-store
             var user1 = new User {FirstName = "Jeremy", LastName = "Miller"};
             var issue1 = new Issue {Title = "TV won't turn on"}; // unfortunately true as I write this...
             var company1 = new Company{Name = "Widgets, inc."};
@@ -23,7 +23,7 @@ namespace Marten.Testing.CoreFunctionality
             var company3 = new Company{Name = "SmallCo"};
 
             theSession.Store<object>(user1, issue1, company1, company2, company3);
-            // ENDSAMPLE
+            #endregion sample_mixed-docs-to-store
 
             theSession.SaveChanges();
 

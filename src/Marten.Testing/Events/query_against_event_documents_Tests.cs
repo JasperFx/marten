@@ -18,7 +18,7 @@ namespace Marten.Testing.Events
         private MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
         private MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
 
-        // SAMPLE: query-against-event-data
+        #region sample_query-against-event-data
         [Fact]
         public void can_query_against_event_type()
         {
@@ -36,7 +36,7 @@ namespace Marten.Testing.Events
                 .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
         }
 
-        // ENDSAMPLE
+        #endregion sample_query-against-event-data
 
         [Fact]
         public void can_query_against_event_type_with_camel_casing()
@@ -153,7 +153,7 @@ namespace Marten.Testing.Events
             results.Count.ShouldBe(4);
         }
 
-        // SAMPLE: example_of_querying_for_event_data
+        #region sample_example_of_querying_for_event_data
         public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
         {
             var events = session.Events.QueryAllRawEvents()
@@ -162,7 +162,7 @@ namespace Marten.Testing.Events
                 .ToList();
         }
 
-        // ENDSAMPLE
+        #endregion sample_example_of_querying_for_event_data
 
         [Fact]
         public void can_fetch_all_events_after_now()

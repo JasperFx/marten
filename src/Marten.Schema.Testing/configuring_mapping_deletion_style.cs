@@ -18,13 +18,13 @@ namespace Marten.Schema.Testing
                 .DeleteStyle.ShouldBe(DeleteStyle.Remove);
         }
 
-        // SAMPLE: SoftDeletedAttribute
+        #region sample_SoftDeletedAttribute
         [SoftDeleted]
         public class SoftDeletedDoc
         {
             public Guid Id;
         }
-        // ENDSAMPLE
+        #endregion sample_SoftDeletedAttribute
 
         [Fact]
         public void can_be_configured_by_attribute()
@@ -42,29 +42,30 @@ namespace Marten.Schema.Testing
                 .ShouldBe(1);
         }
 
-        // SAMPLE: SoftDeletedWithIndexAttribute
+        #region sample_SoftDeletedWithIndexAttribute
         [SoftDeleted(Indexed = true)]
         public class IndexedSoftDeletedDoc
         {
             public Guid Id;
         }
-        // ENDSAMPLE
+        #endregion sample_SoftDeletedWithIndexAttribute
 
         [Fact(Skip = "sample usage code")]
         public void example_of_using_fi_to_configure()
         {
-            // SAMPLE: soft-delete-configuration-via-fi
+            #region sample_soft-delete-configuration-via-fi
             DocumentStore.For(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
             });
-            // ENDSAMPLE
-            // SAMPLE: soft-delete-with-index-configuration-via-fi
+            #endregion sample_soft-delete-configuration-via-fi
+
+            #region sample_soft-delete-with-index-configuration-via-fi
             DocumentStore.For(_ =>
             {
                 _.Schema.For<User>().SoftDeletedWithIndex();
             });
-            // ENDSAMPLE
+            #endregion sample_soft-delete-with-index-configuration-via-fi
         }
 
         [Fact]

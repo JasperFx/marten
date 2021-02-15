@@ -79,7 +79,7 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public async Task async_projection_of_events()
         {
-            // SAMPLE: applying-monster-defeated
+            #region sample_applying-monster-defeated
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
@@ -87,7 +87,7 @@ namespace Marten.Testing.Events.Projections
 
                 _.Events.Projections.Add(new MonsterDefeatedTransform());
             });
-            // ENDSAMPLE
+            #endregion sample_applying-monster-defeated
 
             // The code below is just customizing the document store
             // used in the tests
@@ -119,7 +119,7 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    // SAMPLE: MonsterDefeatedTransform
+    #region sample_MonsterDefeatedTransform
     public class MonsterDefeatedTransform: EventProjection
     {
         public MonsterDefeated Transform(IEvent<MonsterSlayed> input)
@@ -138,5 +138,5 @@ namespace Marten.Testing.Events.Projections
         public string Monster { get; set; }
     }
 
-    // ENDSAMPLE
+    #endregion sample_MonsterDefeatedTransform
 }
