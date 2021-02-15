@@ -13,9 +13,9 @@ namespace Marten.Testing.Linq.MatchesSql
         [Fact]
         public void Throws_NotSupportedException_when_called_directly()
         {
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(
+            Should.Throw<NotSupportedException>(
                 () => new object().MatchesSql("d.data ->> 'UserName' = ? or d.data ->> 'UserName' = ?", "baz", "jack"));
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(
+            Should.Throw<NotSupportedException>(
                 () => new object().MatchesSql(new WhereFragment("d.data ->> 'UserName' != ?", "baz")));
         }
 

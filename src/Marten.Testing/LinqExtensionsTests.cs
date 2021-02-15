@@ -76,35 +76,35 @@ namespace Marten.Testing
         [Fact]
         public void TenantIsOneOf_throws_NotSupportedException_when_called_directly()
         {
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().TenantIsOneOf("a", "b"));
+            Should.Throw<NotSupportedException>(() => new object().TenantIsOneOf("a", "b"));
         }
 
         [Fact]
         public void Search_throws_NotSupportedException_when_called_directly()
         {
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().Search("search term"));
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().Search("search term", "reg conf"));
+            Should.Throw<NotSupportedException>(() => new object().Search("search term"));
+            Should.Throw<NotSupportedException>(() => new object().Search("search term", "reg conf"));
         }
 
         [Fact]
         public void PlainTextSearch_throws_NotSupportedException_when_called_directly()
         {
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().PlainTextSearch("search term"));
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().PlainTextSearch("search term", "reg conf"));
+            Should.Throw<NotSupportedException>(() => new object().PlainTextSearch("search term"));
+            Should.Throw<NotSupportedException>(() => new object().PlainTextSearch("search term", "reg conf"));
         }
 
         [Fact]
         public void PhraseSearch_throws_NotSupportedException_when_called_directly()
         {
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().PhraseSearch("search term"));
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().PhraseSearch("search term", "reg conf"));
+            Should.Throw<NotSupportedException>(() => new object().PhraseSearch("search term"));
+            Should.Throw<NotSupportedException>(() => new object().PhraseSearch("search term", "reg conf"));
         }
 
         [Fact]
         public void WebStyleSearch_throws_NotSupportedException_when_called_directly()
         {
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().WebStyleSearch("search term"));
-            ShouldThrowExtensions.ShouldThrow<NotSupportedException>(() => new object().WebStyleSearch("search term", "reg conf"));
+            Should.Throw<NotSupportedException>(() => new object().WebStyleSearch("search term"));
+            Should.Throw<NotSupportedException>(() => new object().WebStyleSearch("search term", "reg conf"));
         }
     }
 }
