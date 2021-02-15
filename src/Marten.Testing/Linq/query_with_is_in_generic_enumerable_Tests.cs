@@ -51,8 +51,8 @@ namespace Marten.Testing.Linq
 
         public class DocWithNumber
         {
-            public Guid Id;
-            public int Number;
+            public Guid Id { get; set; }
+            public int Number { get; set; }
         }
 
         public query_with_is_in_generic_enumerable_Tests(DefaultStoreFixture fixture) : base(fixture)

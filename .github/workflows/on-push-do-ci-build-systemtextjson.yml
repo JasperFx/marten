@@ -1,0 +1,72 @@
+name: build_net3.1 pg12 System.Text.Json
+
+on:
+  push:
+    paths-ignore:
+      - 'documentation/**'
+  pull_request:
+    paths-ignore:
+      - 'documentation/**'
+
+env:
+  config: Release
+  disable_test_parallelization: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  dotnet_core_version: 3.1.x
+  node_version: 10.x
+  pg_db: marten_testing
+  pg_user: postgres
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: oskardudycz/postgres-plv8:12-2
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: ${{ env.pg_db }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ env.dotnet_core_version }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.node_version }}
+
+      - name: Check and install plv8 extension
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME psql -U ${{ env.pg_user }} -d ${{ env.pg_db }} -c "CREATE EXTENSION IF NOT EXISTS plv8;"
+          docker exec $PG_CONTAINER_NAME psql -U ${{env.pg_user}} -d ${{ env.pg_db }} -c "DO 'plv8.elog(NOTICE, plv8.version);' LANGUAGE plv8;"
+        shell: bash
+
+      - name: Optimize database for running tests faster
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker container restart $PG_CONTAINER_NAME
+        shell: bash
+
+      - name: Build
+        env:
+          DEFAULT_SERIALIZER: "SystemTextJson"
+          marten_testing_database: "Host=localhost;Port=5432;Database=${{ env.pg_db }};Username=${{ env.pg_user }}"
+        run: ./build.sh ci
+        shell: bash

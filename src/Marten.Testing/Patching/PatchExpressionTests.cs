@@ -6,6 +6,7 @@ using Marten.Linq.Filters;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -442,10 +443,10 @@ namespace Marten.Testing.Patching
         public class ItemGroup
         {
             public Guid Id { get; set; }
-            public List<Item> Items = new List<Item>();
+            public List<Item> Items { get; set; } = new List<Item>();
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void can_append_with_sub_types_in_collection()
         {
             var group = new ItemGroup();
@@ -471,7 +472,7 @@ namespace Marten.Testing.Patching
             }
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void can_append_if_not_exists_with_sub_types_in_collection()
         {
             var group = new ItemGroup();
@@ -497,7 +498,7 @@ namespace Marten.Testing.Patching
             }
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void can_insert_if_not_exists_with_sub_types_in_collection()
         {
             var group = new ItemGroup

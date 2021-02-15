@@ -87,12 +87,12 @@ namespace Marten.Testing.Bugs
 
     public class DocWithArrays
     {
-        public Guid Id;
+        public Guid Id { get; set; }
 
-        public int[] Numbers;
+        public int[] Numbers { get; set; }
 
-        public string[] Strings;
+        public string[] Strings { get; set; }
 
-        public DateTime[] Dates;
+        public DateTime[] Dates { get; set; }
     }
 }

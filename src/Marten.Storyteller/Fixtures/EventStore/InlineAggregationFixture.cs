@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Baseline;
 using Marten.Testing;
@@ -74,7 +75,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         }
 
         [FormatAs("Members should be {Members}")]
-        public string[] Members()
+        public List<string> Members()
         {
             return CurrentObject.As<QuestParty>().Members;
         }

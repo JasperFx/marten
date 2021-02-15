@@ -11,9 +11,9 @@ namespace Marten.Testing.Bugs
     {
         public class DocWithLists
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public IList<string> Names = new List<string>();
+            public IList<string> Names { get; set; } = new List<string>();
         }
 
         [Fact]

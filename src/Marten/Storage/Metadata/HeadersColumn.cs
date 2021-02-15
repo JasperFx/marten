@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
@@ -9,8 +8,6 @@ using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
-using Marten.Linq.Fields;
-using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using NpgsqlTypes;
@@ -35,8 +32,7 @@ namespace Marten.Storage.Metadata
                 return;
             }
 
-            var json = reader.GetTextReader(index);
-            metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(json);
+            metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(reader, index, token);
         }
 
         public override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
@@ -47,8 +43,8 @@ namespace Marten.Storage.Metadata
                 return;
             }
 
-            var json = reader.GetTextReader(index);
-            metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(json);
+            var json = reader.GetStream(index);
+            metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(reader, index);
         }
 
         public override void RegisterForLinqSearching(DocumentMapping mapping)

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -104,7 +105,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void overwrite_behavior()
         {
             Guid originalVerion = Guid.Empty;
@@ -155,7 +156,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void overwrite_behavior_with_props()
         {
             Guid originalVerion = Guid.Empty;
@@ -206,7 +207,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public async Task overwrite_behavior_async()
         {
             Guid originalVerion = Guid.Empty;

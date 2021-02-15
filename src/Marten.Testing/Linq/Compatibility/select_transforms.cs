@@ -1,5 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Services.Json;
+using Marten.Testing.Harness;
 using Marten.Testing.Linq.Compatibility.Support;
 using Xunit;
 
@@ -16,7 +18,7 @@ namespace Marten.Testing.Linq.Compatibility
             selectInOrder(docs => docs.OrderBy(x => x.Id).Take(10).Select(x => new Person { Name = x.String, Number = x.Number }));
         }
 
-        [Theory]
+        [SerializerTypeTargetedTheory(RunFor = SerializerType.Newtonsoft)]
         [MemberData(nameof(GetDescriptions))]
         public Task run_query(string description)
         {

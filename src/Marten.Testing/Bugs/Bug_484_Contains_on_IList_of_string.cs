@@ -11,31 +11,32 @@ namespace Marten.Testing.Bugs
     {
         public class DocWithLists
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public IList<string> Names = new List<string>();
+            public IList<string> Names { get; set; } = new List<string>();
         }
 
         public class DocWithLists2
         {
-            public Guid Id;
+            public Guid Id { get; set; }
 
-            public IReadOnlyList<string> Names = new List<string>();
+            public IReadOnlyList<string> Names { get; set; } = new List<string>();
         }
 
         [Fact]
         public void can_do_contains_against_IList()
         {
-            var doc1 = new DocWithLists { Names = new List<string> { "Jeremy", "Josh", "Corey" } };
-            var doc2 = new DocWithLists { Names = new List<string> { "Jeremy", "Lindsey", "Max" } };
-            var doc3 = new DocWithLists { Names = new List<string> { "Jack", "Lindsey", "Max" } };
+            var doc1 = new DocWithLists {Names = new List<string> {"Jeremy", "Josh", "Corey"}};
+            var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
+            var doc3 = new DocWithLists {Names = new List<string> {"Jack", "Lindsey", "Max"}};
 
             using (var session = theStore.OpenSession())
             {
                 session.Store(doc1, doc2, doc3);
                 session.SaveChanges();
 
-                var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id).ToList();
+                var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
+                    .ToList();
 
                 ids.Count.ShouldBe(2);
                 ids.ShouldContain(doc1.Id);
@@ -48,22 +49,22 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
 
-            var doc1 = new DocWithLists { Names = new List<string> { "Jeremy", "Josh", "Corey" } };
-            var doc2 = new DocWithLists { Names = new List<string> { "Jeremy", "Lindsey", "Max" } };
-            var doc3 = new DocWithLists { Names = new List<string> { "Jack", "Lindsey", "Max" } };
+            var doc1 = new DocWithLists {Names = new List<string> {"Jeremy", "Josh", "Corey"}};
+            var doc2 = new DocWithLists {Names = new List<string> {"Jeremy", "Lindsey", "Max"}};
+            var doc3 = new DocWithLists {Names = new List<string> {"Jack", "Lindsey", "Max"}};
 
             using (var session = theStore.OpenSession())
             {
                 session.Store(doc1, doc2, doc3);
                 session.SaveChanges();
 
-                var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id).ToList();
+                var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
+                    .ToList();
 
                 ids.Count.ShouldBe(2);
                 ids.ShouldContain(doc1.Id);
                 ids.ShouldContain(doc2.Id);
             }
         }
-
     }
 }

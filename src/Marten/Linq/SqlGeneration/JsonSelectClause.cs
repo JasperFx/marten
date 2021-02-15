@@ -4,11 +4,12 @@ using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using LamarCodeGeneration.Util;
+using Baseline;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Util;
+using TypeExtensions = LamarCodeGeneration.Util.TypeExtensions;
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -104,15 +105,16 @@ namespace Marten.Linq.SqlGeneration
 
             if (reader.Read())
             {
-                using var text = reader.GetTextReader(0);
-                builder.Write(text.ReadToEnd());
+                using var text = reader.GetStream(0);
+
+                builder.Write(text.GetStreamReader().ReadToEnd());
             }
 
             while (reader.Read())
             {
-                using var text = reader.GetTextReader(0);
+                using var text = reader.GetStream(0);
                 builder.Write(',');
-                builder.Write(text.ReadToEnd());
+                builder.Write(text.GetStreamReader().ReadToEnd());
             }
 
             builder.Write(_arraySuffix);
@@ -153,15 +155,16 @@ namespace Marten.Linq.SqlGeneration
 
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                using var text = reader.GetTextReader(0);
-                await builder.WriteAsync(await text.ReadToEndAsync().ConfigureAwait(false));
+                using var text = reader.GetStream(0);
+
+                await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync().ConfigureAwait(false));
             }
 
             while (await reader.ReadAsync(token))
             {
-                using var text = reader.GetTextReader(0);
+                using var text = reader.GetStream(0);
                 await builder.WriteAsync(',');
-                await builder.WriteAsync(await text.ReadToEndAsync().ConfigureAwait(false));
+                await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync().ConfigureAwait(false));
             }
 
             await builder.WriteAsync(_arraySuffix);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
+using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Transforms;
@@ -523,8 +524,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void select_many_with_select_transformation()
         {
             var targets = Target.GenerateRandomData(100).ToArray();

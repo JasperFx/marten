@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -25,7 +26,7 @@ namespace Marten.Testing.Bugs
             public Dictionary<int, int> Numbers = new Dictionary<int, int>();
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void can_order_by_string_string_dictionaries()
         {
             var car1 = new Car {Attributes = {{"one", "5"},{"anumber", "5"},{"color", "red"}}};

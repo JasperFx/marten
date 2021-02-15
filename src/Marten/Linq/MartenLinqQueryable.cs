@@ -153,7 +153,7 @@ namespace Marten.Linq
         {
             var command = ToPreviewCommand(fetchType);
 
-            return _session.Database.ExplainQuery(command, configureExplain);
+            return _session.Database.ExplainQuery(_session.Serializer, command, configureExplain);
         }
 
         public IQueryable<TDoc> TransformTo<TDoc>(string transformName)

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
+using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -236,7 +237,7 @@ namespace Marten.Testing.Linq
         }
 
         #region sample_other_type_projection
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void use_select_with_multiple_fields_to_other_type()
         {
             theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
@@ -265,7 +266,8 @@ namespace Marten.Testing.Linq
             public string Last;
         }
 
-        [Fact]
+
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void use_select_with_multiple_fields_to_other_type_using_constructor()
         {
             theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
@@ -288,7 +290,7 @@ namespace Marten.Testing.Linq
             });
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void use_select_with_multiple_fields_to_other_type_using_constructor_and_properties()
         {
             theSession.Store(new User { FirstName = "Hank", LastName = "Aaron", Age = 20 });
@@ -363,7 +365,8 @@ namespace Marten.Testing.Linq
 
         #endregion sample_deep_properties_projection
 
-        [Fact]
+
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void transform_with_deep_properties_to_anonymous_type()
         {
             var target = Target.Random(true);
@@ -381,7 +384,7 @@ namespace Marten.Testing.Linq
             actual.InnerNumber.ShouldBe(target.Inner.Number);
         }
 
-        [Fact]
+        [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void transform_with_deep_properties_to_type_using_constructor()
         {
             var target = Target.Random(true);

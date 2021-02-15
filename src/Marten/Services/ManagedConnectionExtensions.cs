@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.Selectors;
+using Marten.Util;
 using Npgsql;
 
 namespace Marten.Services
@@ -30,17 +31,6 @@ namespace Marten.Services
             }
         }
 
-        internal static Task CopyDataWithInitialTrim(this Stream source, Stream destination, CancellationToken token)
-        {
-            source.ReadByte();
-#if NET5_0
-
-            return source.CopyToAsync(destination, token);
-#else
-            return source.CopyToAsync(destination);
-#endif
-        }
-
         internal static async Task<bool> StreamOne(this IManagedConnection connection, NpgsqlCommand command, Stream stream, CancellationToken token)
         {
             using (var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token))
@@ -50,7 +40,7 @@ namespace Marten.Services
                 var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
                 var source = await reader.GetStreamAsync(ordinal, token);
-                await source.CopyDataWithInitialTrim(stream, token);
+                await source.CopyStreamSkippingSOHAsync(stream, token);
 
                 return true;
             }
@@ -84,7 +74,7 @@ namespace Marten.Services
                 if (await reader.ReadAsync(token))
                 {
                     var source = await reader.GetStreamAsync(ordinal, token);
-                    await source.CopyDataWithInitialTrim(stream, token);
+                    await source.CopyStreamSkippingSOHAsync(stream, token);
                 }
 
                 while (await reader.ReadAsync(token))
@@ -92,7 +82,7 @@ namespace Marten.Services
                     await stream.WriteBytes(Comma, token);
 
                     var source = await reader.GetStreamAsync(ordinal, token);
-                    await source.CopyDataWithInitialTrim(stream, token);
+                    await source.CopyStreamSkippingSOHAsync(stream, token);
                 }
 
                 await stream.WriteBytes(RightBracket, token);
