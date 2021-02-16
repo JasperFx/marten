@@ -1,0 +1,96 @@
+# Customizing Document Storage
+
+::: warning
+To enable Marten's built in schema comparison and data migration tools to work properly, all indexes must
+start with the "mt_" prefix. This limitation may be removed in the future, but for now, Marten will throw
+an exception if you leave off the required prefix in index definitions.
+:::
+
+While you can certainly write your own [DDL](https://en.wikipedia.org/wiki/Data_definition_language)
+and SQL queries for optimizing data fetching, Marten gives you a couple options for speeding up queries --
+which all come at the cost of slower inserts because it's an imperfect world. Marten supports the ability to configure:
+
+* Indexes on the JSONB data field itself
+* Duplicate properties into separate database fields with a matching index for optimized querying
+* Choose how Postgresql will search within JSONB documents
+* DDL generation rules
+* How documents will be deleted
+
+My own personal bias is to avoid adding persistence concerns directly to the document types, but other developers
+will prefer to use either attributes or the new embedded configuration option with the thinking that it's
+better to keep the persistence configuration on the document type itself for easier traceability. Either way,
+Marten has you covered with the various configuration options shown here.
+
+## Postgres Limits on Naming
+
+Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
+Postgresql database by [setting the NAMEDATALEN property](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
+
+This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
+truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the `NAMEDATALEN` value,
+but you do need to tell Marten about any non-default length limit like so:
+
+<<< @/../src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#sample_setting-name-data-length
+
+## Custom StoreOptions
+
+It's perfectly valid to create your own subclass of `StoreOptions` that configures itself, as shown below.
+
+<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_custom-store-options
+
+This strategy might be beneficial if you need to share Marten configuration across different applications
+or testing harnesses or custom migration tooling.
+
+## MartenRegistry
+
+While there are some limited abilities to configure storage with attributes, the most complete option right now
+is a fluent interface implemented by the `MartenRegistry`. To configure a Marten document store, first write
+your own subclass of `MartenRegistry` and place declarations in the constructor function like this example:
+
+<[sample:MyMartenRegistry]>
+
+To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
+
+<<< @/../src/Marten.Testing/Examples/MartenRegistryExamples.cs#sample_using_marten_registry_to_bootstrap_document_store
+
+Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
+
+If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.
+
+## Custom Indexes
+
+If you intend to write your own indexes against Marten document tables, just ensure that the index names are **not** prefixed with "mt_" so
+that Marten will ignore your manual indexes when calculating schema differences.
+
+## Custom Attributes
+
+If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
+you're still in luck. If you write a subclass of the `MartenAttribute` shown below:
+
+<<< @/../src/Marten/Schema/MartenAttribute.cs#sample_MartenAttribute
+
+And decorate either classes or individual field or properties on a document type, your custom attribute will be
+picked up and used by Marten to configure the underlying `DocumentMapping` model for that document type. The
+`MartenRegistry` is just a fluent interface over the top of this same `DocumentMapping` model.
+
+As an example, an attribute to add a gin index to the JSONB storage for more efficient adhoc querying of a document
+would look like this:
+
+<<< @/../src/Marten/Schema/GinIndexedAttribute.cs#sample_GinIndexedAttribute
+
+## Embedding Configuration in Document Types
+
+Lastly, Marten can examine the document types themselves for a `public static ConfigureMarten()` method
+and invoke that to let the document type make its own customizations for its storage. Here's an example from
+the unit tests:
+
+<<< @/../src/Marten.Schema.Testing/DocumentMappingTests.cs#sample_ConfigureMarten-generic
+
+The `DocumentMapping` type is the core configuration class representing how a document type is persisted or
+queried from within a Marten application. All the other configuration options end up writing to a
+`DocumentMapping` object.
+
+You can optionally take in the more specific `DocumentMapping<T>` for your document type to get at
+some convenience methods for indexing or duplicating fields that depend on .Net Expression's:
+
+<<< @/../src/Marten.Schema.Testing/DocumentMappingTests.cs#sample_ConfigureMarten-specifically
