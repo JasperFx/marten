@@ -65,7 +65,7 @@ Now, for your first document type, let's represent the users in our system:
 
 <<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_user_document
 
-_For more information on document id's, see <[linkto:documentation/documents/identity]>._
+_For more information on document id's, see [identity](/guide/documents/identity)._
 
 And now that we've got a PostgreSQL schema and an `IDocumentStore`, let's start persisting and loading user documents:
 
