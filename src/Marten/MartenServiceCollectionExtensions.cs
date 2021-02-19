@@ -57,14 +57,16 @@ namespace Marten
                 case DaemonMode.Solo:
                     services.AddSingleton<INodeCoordinator, SoloCoordinator>();
                     services.AddSingleton(x=>
-                        x.GetRequiredService<IDocumentStore>().BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
+                        x.GetRequiredService<IDocumentStore>()
+                            .BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
                     services.AddHostedService<AsyncProjectionHostedService>();
                     break;
 
                 case DaemonMode.HotCold:
                     services.AddSingleton<INodeCoordinator, HotColdCoordinator>();
                     services.AddSingleton(x =>
-                        x.GetRequiredService<IDocumentStore>().BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
+                        x.GetRequiredService<IDocumentStore>()
+                            .BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
                     services.AddHostedService<AsyncProjectionHostedService>();
                     break;
 
