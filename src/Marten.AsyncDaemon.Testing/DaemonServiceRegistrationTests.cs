@@ -3,7 +3,10 @@ using Lamar;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using Xunit;
 
@@ -35,6 +38,10 @@ namespace Marten.AsyncDaemon.Testing
             // No Node coordinator
             container.Model.For<INodeCoordinator>().Instances.Any()
                 .ShouldBeFalse();
+
+            // No projection daemon
+            container.Model.For<IProjectionDaemon>().Instances.Any()
+                .ShouldBeFalse();
         }
 
         [Fact]
@@ -44,8 +51,10 @@ namespace Marten.AsyncDaemon.Testing
             {
                 x.AddMarten(opts =>
                 {
+                    opts.Connection("fake-connection-string");
                     opts.Events.Daemon.Mode = DaemonMode.Solo;
                 });
+                x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             });
 
             // Hosted service
@@ -57,9 +66,10 @@ namespace Marten.AsyncDaemon.Testing
                 .ImplementationType.ShouldBe(typeof(SoloCoordinator));
 
             // Projection Daemon
-            container.Model.For<IProjectionDaemon>().Instances.Single()
-                .ServiceType.ShouldBe(typeof(IProjectionDaemon));
+            container.GetInstance<IProjectionDaemon>().ShouldBeOfType<ProjectionDaemon>();
 
+            // Ensure resolution
+            container.GetInstance<AsyncProjectionHostedService>().ShouldNotBeNull();
         }
 
         [Fact]
@@ -69,8 +79,10 @@ namespace Marten.AsyncDaemon.Testing
             {
                 x.AddMarten(opts =>
                 {
+                    opts.Connection("fake-connection-string");
                     opts.Events.Daemon.Mode = DaemonMode.HotCold;
                 });
+                x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             });
 
             // hosted service
@@ -82,8 +94,10 @@ namespace Marten.AsyncDaemon.Testing
                 .ImplementationType.ShouldBe(typeof(HotColdCoordinator));
 
             // Projection Daemon
-            container.Model.For<IProjectionDaemon>().Instances.Single()
-                .ServiceType.ShouldBe(typeof(IProjectionDaemon));
+            container.GetInstance<IProjectionDaemon>().ShouldBeOfType<ProjectionDaemon>();
+
+            // Ensure resolution
+            container.GetInstance<AsyncProjectionHostedService>().ShouldNotBeNull();
         }
 
     }

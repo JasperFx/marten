@@ -1,8 +1,6 @@
 using System;
-using System.Data;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
-using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -58,16 +56,15 @@ namespace Marten
 
                 case DaemonMode.Solo:
                     services.AddSingleton<INodeCoordinator, SoloCoordinator>();
-                    // Projection Daemon takes an ILogger instead of ILogger<T>, so factory wire-up is required for compatibility.
-                    services.AddSingleton<IProjectionDaemon, ProjectionDaemon>(x=>
-                        new ProjectionDaemon(x.GetRequiredService<DocumentStore>(), x.GetRequiredService<ILogger<ProjectionDaemon>>()));
+                    services.AddSingleton(x=>
+                        x.GetRequiredService<IDocumentStore>().BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
                     services.AddHostedService<AsyncProjectionHostedService>();
                     break;
 
                 case DaemonMode.HotCold:
                     services.AddSingleton<INodeCoordinator, HotColdCoordinator>();
-                    services.AddSingleton<IProjectionDaemon, ProjectionDaemon>(x =>
-                        new ProjectionDaemon(x.GetRequiredService<DocumentStore>(), x.GetRequiredService<ILogger<ProjectionDaemon>>()));
+                    services.AddSingleton(x =>
+                        x.GetRequiredService<IDocumentStore>().BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
                     services.AddHostedService<AsyncProjectionHostedService>();
                     break;
 
