@@ -48,13 +48,18 @@ namespace Marten.AsyncDaemon.Testing
                 });
             });
 
-            // No hosted service
+            // Hosted service
             container.Model.For<IHostedService>().Instances
                 .ShouldContain(x => x.ImplementationType == typeof(AsyncProjectionHostedService));
 
-            // No Node coordinator
+            // Node coordinator
             container.Model.For<INodeCoordinator>().Instances.Single()
                 .ImplementationType.ShouldBe(typeof(SoloCoordinator));
+
+            // Projection Daemon
+            container.Model.For<IProjectionDaemon>().Instances.Single()
+                .ServiceType.ShouldBe(typeof(IProjectionDaemon));
+
         }
 
         [Fact]
@@ -68,13 +73,17 @@ namespace Marten.AsyncDaemon.Testing
                 });
             });
 
-            // No hosted service
+            // hosted service
             container.Model.For<IHostedService>().Instances
                 .ShouldContain(x => x.ImplementationType == typeof(AsyncProjectionHostedService));
 
-            // No Node coordinator
+            // Node coordinator
             container.Model.For<INodeCoordinator>().Instances.Single()
                 .ImplementationType.ShouldBe(typeof(HotColdCoordinator));
+
+            // Projection Daemon
+            container.Model.For<IProjectionDaemon>().Instances.Single()
+                .ServiceType.ShouldBe(typeof(IProjectionDaemon));
         }
 
     }
