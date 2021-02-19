@@ -209,7 +209,7 @@ namespace Marten.Internal.Storage
 
         public void SetIdentity(T document, TId identity)
         {
-            throw new NotSupportedException();
+            _parent.SetIdentity(document, identity);
         }
 
         public IDeletion DeleteForId(TId id)
