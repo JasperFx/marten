@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Services.Json;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Services
 {
@@ -79,7 +80,7 @@ namespace Marten.Services
 
         public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
-            using var stream = reader.GetStream(index);
+            using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken);
             return await FromJsonAsync<T>(stream, cancellationToken);
         }
 
@@ -106,7 +107,7 @@ namespace Marten.Services
 
         public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
-            using var stream = reader.GetStream(index);
+            using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken);
             return await FromJsonAsync(type, stream, cancellationToken);
         }
 

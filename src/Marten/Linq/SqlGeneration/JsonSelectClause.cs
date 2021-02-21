@@ -9,6 +9,7 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Util;
+using Npgsql;
 using TypeExtensions = LamarCodeGeneration.Util.TypeExtensions;
 
 namespace Marten.Linq.SqlGeneration
@@ -155,14 +156,14 @@ namespace Marten.Linq.SqlGeneration
 
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                using var text = reader.GetStream(0);
+                using var text = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
 
                 await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync().ConfigureAwait(false));
             }
 
             while (await reader.ReadAsync(token))
             {
-                using var text = reader.GetStream(0);
+                using var text = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
                 await builder.WriteAsync(',');
                 await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync().ConfigureAwait(false));
             }
