@@ -1,3 +1,5 @@
+using System;
+
 namespace Marten.Linq.MatchesSql
 {
     public static class MatchesSqlExtensions
@@ -10,7 +12,7 @@ namespace Marten.Linq.MatchesSql
         /// <returns></returns>
         public static bool MatchesSql(this object doc, IWhereFragment whereFragment)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(MatchesSql)} extension method can only be used in Marten Linq queries.");
         }
 
         /// <summary>
@@ -22,7 +24,7 @@ namespace Marten.Linq.MatchesSql
         /// <returns></returns>
         public static bool MatchesSql(this object doc, string sql, params object[] parameters)
         {
-            return true;
+            throw new NotSupportedException($"{nameof(MatchesSql)} extension method can only be used in Marten Linq queries.");
         }
     }
 }
