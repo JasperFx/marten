@@ -5,6 +5,7 @@ using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Internal.CodeGeneration;
 
 namespace Marten.Events.CodeGeneration
 {
@@ -34,7 +35,7 @@ namespace Marten.Events.CodeGeneration
             EventType = eventType;
             AggregateType = aggregateType;
 
-            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name + ++Counter);
+            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name.Sanitize() + ++Counter);
             DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(IEvent<string>.GetData)}()");
         }
 

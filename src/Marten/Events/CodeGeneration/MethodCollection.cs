@@ -105,6 +105,11 @@ namespace Marten.Events.CodeGeneration
         {
             if (eventType == null) throw new ArgumentNullException(nameof(eventType));
 
+            if (eventType.IsGenericType && eventType.Closes(typeof(IEvent<>)))
+            {
+                eventType = eventType.GetGenericArguments().Single();
+            }
+
             var name = LambdaName + (++_lambdaNumber).ToString();
             var method = lambda.GetType().GetMethod("Invoke");
             var setter = new Setter(typeof(T), name){InitialValue = lambda};
