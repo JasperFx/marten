@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Oakton;
-using Oakton.AspNetCore;
 
 [assembly: OaktonCommandAssembly]
 
