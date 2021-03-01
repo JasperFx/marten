@@ -15,7 +15,7 @@ namespace Marten.CommandLine.Commands.Projection
 
         public ProjectionWatcher(Task completion, IList<IAsyncProjectionShard> shards)
         {
-            var nameLength = shards.Select(x => x.Name.Identity.Length).Max() + 2;
+            var nameLength = shards.Select(x => x.Name.Identity.Length).Concat(new int[]{ShardState.HighWaterMark.Length}).Max() + 2;
             _shards.OnMissing = name => new ProjectionStatus(name, completion, nameLength);
 
             _shards[ShardState.HighWaterMark].Update(new ShardState(ShardState.HighWaterMark, 0));

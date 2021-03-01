@@ -60,5 +60,28 @@ namespace Marten.CommandLine.Commands.Projection
                 .AsyncProjectionShards(store)
                 .ToList();
         }
+
+        public IList<ProjectionSource> SelectProjections(DocumentStore store)
+        {
+            var projections = store
+                .Options
+                .Events
+                .Projections
+                .Projections;
+
+            if (ProjectionFlag.IsNotEmpty())
+            {
+                var list = new List<ProjectionSource>();
+                var projection = projections.FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(ProjectionFlag));
+                if (projection != null)
+                {
+                    list.Add(projection);
+                }
+
+                return list;
+            }
+
+            return projections;
+        }
     }
 }

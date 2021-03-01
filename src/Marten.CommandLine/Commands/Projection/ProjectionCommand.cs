@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
@@ -17,6 +19,7 @@ namespace Marten.CommandLine.Commands.Projection
     public class ProjectionsCommand: OaktonAsyncCommand<ProjectionInput>
     {
         private TaskCompletionSource<bool> _completion = new TaskCompletionSource<bool>();
+        private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
 
         public override async Task<bool> Execute(ProjectionInput input)
         {
@@ -31,6 +34,46 @@ namespace Marten.CommandLine.Commands.Projection
                 return true;
             }
 
+            if (input.RebuildFlag)
+            {
+                return await Rebuild(input, store);
+            }
+
+            return await RunContinuously(input, store);
+        }
+
+        private async Task<bool> Rebuild(ProjectionInput input, DocumentStore store)
+        {
+            var projections = input.SelectProjections(store);
+            if (!projections.Any())
+            {
+                Console.WriteLine("No projections to rebuild.");
+                return true;
+            }
+
+            var daemon = store.BuildProjectionDaemon();
+            await daemon.StartDaemon();
+
+            var highWater = daemon.Tracker.HighWaterMark;
+            var watcher = new RebuildWatcher(highWater, _completion.Task);
+            using var unsubscribe = daemon.Tracker.Subscribe(watcher);
+
+            var tasks = projections
+                .Select(x => Task.Run(async () => await daemon.RebuildProjection(x.ProjectionName, _cancellation.Token)))
+                .ToArray();
+
+            await Task.WhenAll(tasks);
+
+            _completion.SetResult(true);
+
+            Console.WriteLine("Projection Rebuild complete!");
+
+            return true;
+
+        }
+
+        private async Task<bool> RunContinuously(ProjectionInput input, DocumentStore store)
+        {
             var shards = input.BuildShards(store);
             if (!shards.Any())
             {
@@ -42,7 +85,6 @@ namespace Marten.CommandLine.Commands.Projection
                 WriteProjectionTable(store);
 
                 return true;
-
             }
 
             var assembly = Assembly.GetEntryAssembly();
@@ -61,16 +103,19 @@ namespace Marten.CommandLine.Commands.Projection
             var daemon = store.BuildProjectionDaemon();
             daemon.Tracker.Subscribe(new ProjectionWatcher(_completion.Task, shards));
 
-            await daemon.StartAll();
+            foreach (var shard in shards)
+            {
+                await daemon.StartShard(shard, _cancellation.Token);
+            }
 
 
             await _completion.Task;
-
-            return true;
+            return false;
         }
 
         public void Shutdown()
         {
+            _cancellation.Cancel();
             _completion.TrySetResult(true);
         }
 

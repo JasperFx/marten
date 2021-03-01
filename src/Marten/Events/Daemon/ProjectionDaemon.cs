@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,7 +43,7 @@ namespace Marten.Events.Daemon
 
         public ShardStateTracker Tracker { get; }
 
-        public async Task StartNode()
+        public async Task StartDaemon()
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
             await _highWater.Start();
@@ -53,7 +54,7 @@ namespace Marten.Events.Daemon
         {
             if (!_hasStarted)
             {
-                await StartNode();
+                await StartDaemon();
             }
 
             var shards = _store.Events.Projections.AllShards();
@@ -78,7 +79,7 @@ namespace Marten.Events.Daemon
         {
             if (!_hasStarted)
             {
-                await StartNode();
+                await StartDaemon();
             }
 
             // Don't duplicate the shard
@@ -205,7 +206,7 @@ namespace Marten.Events.Daemon
             {
                 await StartShard(x, token);
                 return Tracker.WaitForShardState(x.Name, Tracker.HighWaterMark, 5.Minutes());
-            });
+            }).Select(x => x.Unwrap()).ToArray();
 
             await waitForAllShardsToComplete(token, waiters);
 
@@ -215,7 +216,7 @@ namespace Marten.Events.Daemon
             }
         }
 
-        private static async Task waitForAllShardsToComplete(CancellationToken token, IEnumerable<Task<Task<ShardState>>> waiters)
+        private static async Task waitForAllShardsToComplete(CancellationToken token, Task[] waiters)
         {
             var completion = Task.WhenAll(waiters);
             var tcs = new TaskCompletionSource<bool>();

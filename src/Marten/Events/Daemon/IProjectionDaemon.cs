@@ -57,5 +57,13 @@ namespace Marten.Events.Daemon
         /// Observable tracking of projection shard events
         /// </summary>
         ShardStateTracker Tracker { get; }
+
+        /// <summary>
+        /// Starts the daemon high water detection. This is called
+        /// automatically by any of the Start***() or Rebuild****()
+        /// methods
+        /// </summary>
+        /// <returns></returns>
+        Task StartDaemon();
     }
 }
