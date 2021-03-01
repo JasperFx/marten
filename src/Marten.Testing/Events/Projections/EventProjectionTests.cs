@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baseline;
+using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
@@ -105,6 +106,34 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
+        public void use_event_metadata()
+        {
+            UseProjection<SimpleTransformProjectionUsingMetadata>();
+
+            var stream = Guid.NewGuid();
+            theSession.Events.Append(stream, new UserCreated {UserName = "one"},
+                new UserCreated {UserName = "two"});
+
+            theSession.SaveChanges();
+
+        }
+
+        [Fact]
+        public void use_event_metadata_with_string_stream_identity()
+        {
+            StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
+
+            UseProjection<SimpleTransformProjectionUsingMetadata>();
+
+            var stream = Guid.NewGuid();
+            theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
+                new UserCreated {UserName = "two"});
+
+            theSession.SaveChanges();
+
+        }
+
+        [Fact]
         public void synchronous_with_transform_method()
         {
             UseProjection<SimpleTransformProjection>();
@@ -157,6 +186,22 @@ namespace Marten.Testing.Events.Projections
     {
         public User Transform(UserCreated @event) =>
             new User{UserName = @event.UserName};
+
+        public void Project(UserDeleted @event, IDocumentOperations operations) =>
+            operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
+    }
+
+    public class SimpleTransformProjectionUsingMetadata : EventProjection
+    {
+        public User Transform(IEvent<UserCreated> @event)
+        {
+            if (@event.StreamId == Guid.Empty && @event.StreamKey.IsEmpty())
+            {
+                throw new Exception("StreamKey and StreamId are both missing");
+            }
+
+            return new User {UserName = @event.GetData().UserName};
+        }
 
         public void Project(UserDeleted @event, IDocumentOperations operations) =>
             operations.DeleteWhere<User>(x => x.UserName == @event.UserName);

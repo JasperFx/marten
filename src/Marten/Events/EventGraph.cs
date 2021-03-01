@@ -316,6 +316,9 @@ namespace Marten.Events
         {
             EnsureAsGuidStorage(session);
 
+            if (stream == Guid.Empty)
+                throw new ArgumentOutOfRangeException(nameof(stream), "Cannot use an empty Guid as the stream id");
+
             var wrapped = events.Select(BuildEvent).ToArray();
 
             if (session.WorkTracker.TryFindStream(stream, out var eventStream))
@@ -334,6 +337,9 @@ namespace Marten.Events
         internal StreamAction Append(DocumentSessionBase session, string stream, params object[] events)
         {
             EnsureAsStringStorage(session);
+
+            if (stream.IsEmpty())
+                throw new ArgumentOutOfRangeException(nameof(stream), "The stream key cannot be null or empty");
 
             var wrapped = events.Select(BuildEvent).ToArray();
 
@@ -354,6 +360,10 @@ namespace Marten.Events
         {
             EnsureAsGuidStorage(session);
 
+            if (id == Guid.Empty)
+                throw new ArgumentOutOfRangeException(nameof(id), "Cannot use an empty Guid as the stream id");
+
+
             var stream = StreamAction.Start(this, id, events);
             session.WorkTracker.Streams.Add(stream);
 
@@ -363,6 +373,10 @@ namespace Marten.Events
         internal StreamAction StartStream(DocumentSessionBase session, string streamKey, params object[] events)
         {
             EnsureAsStringStorage(session);
+
+            if (streamKey.IsEmpty())
+                throw new ArgumentOutOfRangeException(nameof(streamKey), "The stream key cannot be null or empty");
+
 
             var stream = StreamAction.Start(this, streamKey, events);
 
