@@ -93,6 +93,22 @@ namespace Marten.CommandLine.Commands.Projection
         private async Task<bool> RunContinuously(ProjectionInput input, DocumentStore store)
         {
             var shards = input.BuildShards(store);
+
+            if (input.InteractiveFlag)
+            {
+                var all = store.Options.Events.Projections.Projections.SelectMany(x => x.AsyncProjectionShards(store))
+                    .Select(x => x.Name.Identity).ToArray();
+
+                var prompt = new MultiSelectionPrompt<string>()
+                    .Title("Choose projection shards to run continuously")
+                    .AddChoices(all);
+
+                var selections = AnsiConsole.Prompt(prompt);
+                shards = store.Options.Events.Projections.Projections.SelectMany(x => x.AsyncProjectionShards(store))
+                    .Where(x => selections.Contains(x.Name.Identity)).ToList();
+            }
+
+
             if (!shards.Any())
             {
                 Console.WriteLine(input.ProjectionFlag.IsEmpty()
