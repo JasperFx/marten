@@ -6,7 +6,7 @@ using Oakton;
 namespace Marten.CommandLine.Commands.Patch
 {
     [Description(
-         "Evaluates the current configuration against the database and writes a patch and drop file if there are any differences"
+         "Evaluates the current configuration against the database and writes a patch and drop file if there are any differences", Name = "marten-patch"
      )]
     public class PatchCommand: MartenCommand<PatchInput>
     {

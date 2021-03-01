@@ -5,7 +5,7 @@ using Oakton;
 
 namespace Marten.CommandLine.Commands
 {
-    [Description("Assert that the existing database matches the current Marten configuration")]
+    [Description("Assert that the existing database matches the current Marten configuration", Name = "marten-assert")]
     public class AssertCommand: MartenCommand<MartenInput>
     {
         protected override bool execute(IDocumentStore store, MartenInput input)

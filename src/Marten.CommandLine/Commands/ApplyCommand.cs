@@ -3,7 +3,7 @@ using Oakton;
 
 namespace Marten.CommandLine.Commands
 {
-    [Description("Applies all outstanding changes to the database based on the current configuration")]
+    [Description("Applies all outstanding changes to the database based on the current configuration", Name = "marten-apply")]
     public class ApplyCommand: MartenCommand<MartenInput>
     {
         protected override bool execute(IDocumentStore store, MartenInput input)

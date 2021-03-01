@@ -5,7 +5,7 @@ using Oakton;
 
 namespace Marten.CommandLine.Commands.Dump
 {
-    [Description("Dumps the entire DDL for the configured Marten database")]
+    [Description("Dumps the entire DDL for the configured Marten database", Name = "marten-dump")]
     public class DumpCommand: MartenCommand<DumpInput>
     {
         public DumpCommand()
