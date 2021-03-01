@@ -153,11 +153,14 @@ namespace Marten.Events.Projections
 
         internal class CreateMethodFrame: MethodCall, IEventHandlingFrame
         {
+            private static int _counter = 0;
+
             private Variable _operations;
 
             public CreateMethodFrame(MethodSlot slot) : base(slot.HandlerType, (MethodInfo) slot.Method)
             {
                 EventType = Method.GetEventType(null);
+                ReturnVariable.OverrideName(ReturnVariable.Usage + ++_counter);
             }
 
             public Type EventType { get; }
@@ -205,8 +208,6 @@ namespace Marten.Events.Projections
             {
                 Compile();
             }
-
-            Debug.WriteLine(_inlineType.SourceCode);
 
             var inline = (IProjection)Activator.CreateInstance(_inlineType.CompiledType, this);
             _inlineType.ApplySetterValues(inline);

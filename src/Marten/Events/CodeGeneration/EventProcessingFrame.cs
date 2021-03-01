@@ -22,7 +22,7 @@ namespace Marten.Events.CodeGeneration
     /// </summary>
     internal class EventProcessingFrame : Frame
     {
-        private static int Counter;
+        private static int _counter;
         private Variable _event;
         protected readonly IList<Frame> _inner = new List<Frame>();
 
@@ -35,7 +35,7 @@ namespace Marten.Events.CodeGeneration
             EventType = eventType;
             AggregateType = aggregateType;
 
-            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name.Sanitize() + ++Counter);
+            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name.Sanitize() + ++_counter);
             DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(IEvent<string>.GetData)}()");
         }
 

@@ -191,9 +191,24 @@ namespace Marten.Testing.Events.Projections
             operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
     }
 
+    public class OtherCreationEvent : UserCreated
+    {
+
+    }
+
     public class SimpleTransformProjectionUsingMetadata : EventProjection
     {
         public User Transform(IEvent<UserCreated> @event)
+        {
+            if (@event.StreamId == Guid.Empty && @event.StreamKey.IsEmpty())
+            {
+                throw new Exception("StreamKey and StreamId are both missing");
+            }
+
+            return new User {UserName = @event.GetData().UserName};
+        }
+
+        public User Transform(IEvent<OtherCreationEvent> @event)
         {
             if (@event.StreamId == Guid.Empty && @event.StreamKey.IsEmpty())
             {

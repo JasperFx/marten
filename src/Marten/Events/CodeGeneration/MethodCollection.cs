@@ -158,7 +158,21 @@ namespace Marten.Events.CodeGeneration
                 }
             }
 
+            frames.Sort(new EventTypeComparer());
+
             return new EventTypePatternMatchFrame(frames);
+        }
+
+        private class EventTypeComparer: IComparer<EventProcessingFrame>
+        {
+            public int Compare(EventProcessingFrame? x, EventProcessingFrame? y)
+            {
+                if (x.EventType.CanBeCastTo(y.EventType)) return -1;
+
+                if (y.EventType.CanBeCastTo(x.EventType)) return 1;
+
+                return 0;
+            }
         }
 
 
