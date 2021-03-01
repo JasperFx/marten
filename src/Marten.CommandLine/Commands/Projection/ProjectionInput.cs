@@ -1,3 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
+using Baseline;
+using Marten.Events.Daemon;
+using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 using Oakton;
 
@@ -21,5 +26,39 @@ namespace Marten.CommandLine.Commands.Projection
 
         [Description("If specified, just list the registered projections")]
         public bool ListFlag { get; set; }
+
+        public IList<IAsyncProjectionShard> BuildShards(DocumentStore store)
+        {
+            var projections = store
+                .Options
+                .Events
+                .Projections
+                .Projections;
+
+            if (ProjectionFlag.IsEmpty())
+            {
+                return projections
+                    .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
+                    .SelectMany(x => x.AsyncProjectionShards(store))
+                    .ToList();
+            }
+
+            if (ProjectionFlag.Contains(":"))
+            {
+                return projections
+                    .SelectMany(x => x.AsyncProjectionShards(store))
+                    .Where(shard => shard.Name.Identity.EqualsIgnoreCase(ProjectionFlag))
+                    .ToList();
+            }
+
+            var projectionSource = projections
+                .FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(ProjectionFlag));
+
+            if (projectionSource == null) return new List<IAsyncProjectionShard>();
+
+            return projectionSource
+                .AsyncProjectionShards(store)
+                .ToList();
+        }
     }
 }

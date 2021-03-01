@@ -31,7 +31,19 @@ namespace Marten.CommandLine.Commands.Projection
                 return true;
             }
 
+            var shards = input.BuildShards(store);
+            if (!shards.Any())
+            {
+                Console.WriteLine(input.ProjectionFlag.IsEmpty()
+                    ? "No projections are registered with an asynchronous life cycle."
+                    : $"No projection or projection shards match the requested filter '{input.ProjectionFlag}'");
 
+                Console.WriteLine();
+                WriteProjectionTable(store);
+
+                return true;
+
+            }
 
             var assembly = Assembly.GetEntryAssembly();
             AssemblyLoadContext.GetLoadContext(assembly).Unloading += context => Shutdown();
@@ -47,7 +59,8 @@ namespace Marten.CommandLine.Commands.Projection
 
 
             var daemon = store.BuildProjectionDaemon();
-            daemon.Tracker.Subscribe(new ProjectionWatcher(_completion.Task));
+            daemon.Tracker.Subscribe(new ProjectionWatcher(_completion.Task, shards));
+
             await daemon.StartAll();
 
 
@@ -80,4 +93,6 @@ namespace Marten.CommandLine.Commands.Projection
             AnsiConsole.Render(table);
         }
     }
+
+
 }
