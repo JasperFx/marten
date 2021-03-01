@@ -25,7 +25,10 @@ namespace Marten
 
         public void SchemaChange(string sql)
         {
-            _logger.LogInformation("Executed schema update SQL:\n{SQL}", sql);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Executed schema update SQL:\n{SQL}", sql);
+            }
         }
 
         public void LogSuccess(NpgsqlCommand command)

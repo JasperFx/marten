@@ -354,7 +354,6 @@ namespace Marten
         {
             var message = $"{logLevel}: {formatter(state, exception)}";
             Debug.WriteLine(message);
-            Console.WriteLine(message);
         }
 
         public bool IsEnabled(LogLevel logLevel)

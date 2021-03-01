@@ -3,6 +3,7 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,6 +32,27 @@ namespace Marten.AsyncDaemon.Testing
             agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
 
             await agent.StopAll();
+        }
+
+        [Fact]
+        public async Task detect_correctly_after_restarting_with_previous_state()
+        {
+            NumberOfStreams = 10;
+
+            await PublishSingleThreaded();
+
+            using var agent = await StartDaemon();
+
+            await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
+
+            agent.Tracker.HighWaterMark.ShouldBe(NumberOfEvents);
+
+            await agent.StopAll();
+
+            using var agent2 = new ProjectionDaemon(theStore, new NulloLogger());
+            await agent2.StartNode();
+            await agent2.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
+
         }
 
         [Fact]

@@ -20,6 +20,31 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
+        public async Task start_stop_and_restart_a_new_daemon()
+        {
+            StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
+
+            using var daemon = await StartDaemon();
+            await daemon.StartAll();
+
+            NumberOfStreams = 10;
+            await PublishSingleThreaded();
+
+            await daemon.Tracker.WaitForHighWaterMark(NumberOfEvents);
+
+            await daemon.StopAll();
+
+
+            using var daemon2 = await StartDaemon();
+            await daemon2.Tracker.WaitForHighWaterMark(NumberOfEvents);
+
+            await daemon2.StartAll();
+
+
+
+        }
+
+        [Fact]
         public async Task start_and_stop_a_projection()
         {
             StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));

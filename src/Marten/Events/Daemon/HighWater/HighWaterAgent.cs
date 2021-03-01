@@ -33,8 +33,11 @@ namespace Marten.Events.Daemon.HighWater
             _timer.Elapsed += TimerOnElapsed;
         }
 
-        public void Start()
+        public async Task Start()
         {
+            _current = await _detector.Detect(_token);
+
+            _tracker.Publish(new ShardState(ShardState.HighWaterMark, _current.CurrentMark){Action = ShardAction.Started});
 
             _loop = Task.Factory.StartNew(DetectChanges, TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent);
 
@@ -129,11 +132,11 @@ namespace Marten.Events.Daemon.HighWater
                 try
                 {
                     _loop.Dispose();
-                    Start();
+                    Start().GetAwaiter().GetResult();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-
+                    _logger.LogError(ex, "Error trying to restart the HighWaterAgent");
                 }
             }
 

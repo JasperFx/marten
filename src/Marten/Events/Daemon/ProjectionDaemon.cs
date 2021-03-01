@@ -42,16 +42,20 @@ namespace Marten.Events.Daemon
 
         public ShardStateTracker Tracker { get; }
 
-        public void StartNode()
+        public async Task StartNode()
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
-            _highWater.Start();
+            await _highWater.Start();
             _hasStarted = true;
         }
 
         public async Task StartAll()
         {
-            if (!_hasStarted) StartNode();
+            if (!_hasStarted)
+            {
+                await StartNode();
+            }
+
             var shards = _store.Events.Projections.AllShards();
             foreach (var shard in shards)
             {
@@ -72,7 +76,10 @@ namespace Marten.Events.Daemon
 
         public async Task StartShard(IAsyncProjectionShard shard, CancellationToken cancellationToken)
         {
-            if (!_hasStarted) StartNode();
+            if (!_hasStarted)
+            {
+                await StartNode();
+            }
 
             // Don't duplicate the shard
             if (_agents.ContainsKey(shard.Name.Identity)) return;

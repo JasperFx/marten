@@ -162,6 +162,13 @@ select last_seq_id, last_updated, transaction_timestamp() as timestamp from {gra
                 return await reader.GetFieldValueAsync<long>(0, token);
             }
 
+            // This happens when the agent is restarted with persisted
+            // state, and has no previous current mark.
+            if (statistics.CurrentMark == 0 && statistics.LastMark > 0)
+            {
+                return statistics.LastMark;
+            }
+
             return statistics.CurrentMark;
         }
 
