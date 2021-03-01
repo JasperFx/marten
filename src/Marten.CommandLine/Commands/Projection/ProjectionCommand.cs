@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +33,7 @@ namespace Marten.CommandLine.Commands.Projection
                 return true;
             }
 
+
             if (input.RebuildFlag)
             {
                 return await Rebuild(input, store);
@@ -45,6 +45,24 @@ namespace Marten.CommandLine.Commands.Projection
         private async Task<bool> Rebuild(ProjectionInput input, DocumentStore store)
         {
             var projections = input.SelectProjections(store);
+
+            if (input.InteractiveFlag)
+            {
+                var projectionNames = store.Events.Projections.Projections.Select(x => x.ProjectionName).ToArray();
+                var names = AnsiConsole.Prompt(new MultiSelectionPrompt<string>()
+                    .Title("Choose projections to rebuild")
+                    .AddChoices(projectionNames));
+
+                projections = store
+                    .Options
+                    .Events
+                    .Projections
+                    .Projections
+                    .Where(x => names.Contains(x.ProjectionName))
+                    .ToList();
+            }
+
+
             if (!projections.Any())
             {
                 Console.WriteLine("No projections to rebuild.");
