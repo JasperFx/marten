@@ -32,7 +32,7 @@ namespace Marten.Testing.Examples
         // ENDSAMPLE
 
         // SAMPLE: async_load_by_id
-        public Task LoadByIdAsync(IQuerySession session, CancellationToken token = default (CancellationToken))
+        public async Task LoadByIdAsync(IQuerySession session, CancellationToken token = default (CancellationToken))
         {
             var userId = Guid.NewGuid();
 
