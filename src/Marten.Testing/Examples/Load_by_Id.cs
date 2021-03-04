@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
