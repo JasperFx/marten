@@ -313,7 +313,7 @@ namespace Marten
             documentTypes.Each(RegisterDocumentType);
         }
 
-        public void AssertValidIdentifier(string name)
+        internal void AssertValidIdentifier(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new PostgresqlIdentifierInvalidException(name);
