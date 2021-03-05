@@ -21,7 +21,7 @@ namespace Marten.Schema.Testing
 
             StoreOptions(_ =>
             {
-                _.DdlRules.ReadTemplates(directory);
+                _.Advanced.DdlRules.ReadTemplates(directory);
 
                 _.Schema.For<User>();
                 _.Schema.For<BlueDoc>();

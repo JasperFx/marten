@@ -105,8 +105,8 @@ namespace Marten.Testing.CoreFunctionality
         {
             var options = new StoreOptions();
 
-            options.DdlRules.TableCreation.ShouldBe(CreationStyle.DropThenCreate);
-            options.DdlRules.UpsertRights.ShouldBe(SecurityRights.Invoker);
+            options.Advanced.DdlRules.TableCreation.ShouldBe(CreationStyle.DropThenCreate);
+            options.Advanced.DdlRules.UpsertRights.ShouldBe(SecurityRights.Invoker);
         }
 
         [Fact]

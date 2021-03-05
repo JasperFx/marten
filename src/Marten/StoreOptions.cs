@@ -121,12 +121,6 @@ namespace Marten
         public ITransforms Transforms { get; }
 
         /// <summary>
-        ///     Allows you to modify how the DDL for document tables and upsert functions is
-        ///     written
-        /// </summary>
-        public DdlRules DdlRules { get; } = new DdlRules();
-
-        /// <summary>
         ///     Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
         ///     Marten getting confused when comparing database schemas against the configuration. See
         ///     https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html
@@ -517,5 +511,13 @@ namespace Marten
         /// Option to enable or disable usage of default tenant when using multi-tenanted documents
         /// </summary>
         public bool DefaultTenantUsageEnabled { get; set; } = true;
+
+
+        /// <summary>
+        ///     Allows you to modify how the DDL for document tables and upsert functions is
+        ///     written
+        /// </summary>
+        public DdlRules DdlRules { get; } = new DdlRules();
+
     }
 }

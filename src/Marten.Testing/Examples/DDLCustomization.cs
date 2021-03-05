@@ -9,11 +9,11 @@ namespace Marten.Testing.Examples
             #region sample_customizing_table_creation
             var store = DocumentStore.For(_ =>
             {
-                _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+                _.Advanced.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
 
                 // or the default
 
-                _.DdlRules.TableCreation = CreationStyle.DropThenCreate;
+                _.Advanced.DdlRules.TableCreation = CreationStyle.DropThenCreate;
             });
             #endregion sample_customizing_table_creation
         }
@@ -24,10 +24,10 @@ namespace Marten.Testing.Examples
             var store = DocumentStore.For(_ =>
             {
                 // Opt into SECURITY DEFINER permissions
-                _.DdlRules.UpsertRights = SecurityRights.Definer;
+                _.Advanced.DdlRules.UpsertRights = SecurityRights.Definer;
 
                 // The default SECURITY INVOKER permissions
-                _.DdlRules.UpsertRights = SecurityRights.Invoker;
+                _.Advanced.DdlRules.UpsertRights = SecurityRights.Invoker;
             });
             #endregion sample_customizing_upsert_rights
         }
@@ -37,7 +37,7 @@ namespace Marten.Testing.Examples
             #region sample_customizing_role
             var store = DocumentStore.For(_ =>
             {
-                _.DdlRules.Role = "ROLE1";
+                _.Advanced.DdlRules.Role = "ROLE1";
             });
 
             #endregion sample_customizing_role
@@ -51,10 +51,10 @@ namespace Marten.Testing.Examples
                 // let's say that you have template files in a
                 // "templates" directory under the root of your
                 // application
-                _.DdlRules.ReadTemplates("templates");
+                _.Advanced.DdlRules.ReadTemplates("templates");
 
                 // Or just sweep the base directory of your application
-                _.DdlRules.ReadTemplates();
+                _.Advanced.DdlRules.ReadTemplates();
             });
             #endregion sample_using_ddl_templates
         }

@@ -13,7 +13,7 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+                _.Advanced.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
                 _.Schema.For<Bug1043.Thing>().Index(x => x.Name, x =>
                 {
                     x.IndexName = "Test_Index";

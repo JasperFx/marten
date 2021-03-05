@@ -122,7 +122,7 @@ namespace Marten.Storage
                 {
                     conn.Open();
 
-                    var patch = new SchemaPatch(_options.DdlRules);
+                    var patch = new SchemaPatch(_options.Advanced.DdlRules);
                     patch.Apply(conn, _options.AutoCreateSchemaObjects, schemaObjects);
                     patch.AssertPatchingIsValid(_options.AutoCreateSchemaObjects);
 

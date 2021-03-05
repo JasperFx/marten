@@ -17,7 +17,7 @@ namespace Marten.Storage
             _features = options.Storage;
             _tenant = tenant;
             StoreOptions = options;
-            DdlRules = options.DdlRules;
+            DdlRules = options.Advanced.DdlRules;
         }
 
         public StoreOptions StoreOptions { get; }
@@ -43,11 +43,11 @@ namespace Marten.Storage
             foreach (var feature in features)
             {
                 var writer = new StringWriter();
-                feature.Write(StoreOptions.DdlRules, writer);
+                feature.Write(DdlRules, writer);
 
                 var file = directory.AppendPath(feature.Identifier + ".sql");
 
-                new SchemaPatch(StoreOptions.DdlRules).WriteFile(file, writer.ToString(), transactionalScript);
+                new SchemaPatch(DdlRules).WriteFile(file, writer.ToString(), transactionalScript);
             }
         }
 
@@ -76,7 +76,7 @@ namespace Marten.Storage
 
         private SchemaPatch ToPatch(bool withSchemas, AutoCreate withAutoCreate)
         {
-            var patch = new SchemaPatch(StoreOptions.DdlRules);
+            var patch = new SchemaPatch(DdlRules);
 
             if (withSchemas)
             {
@@ -100,14 +100,14 @@ namespace Marten.Storage
         {
             var writer = new StringWriter();
 
-            new SchemaPatch(StoreOptions.DdlRules).WriteScript(writer, w =>
+            new SchemaPatch(DdlRules).WriteScript(writer, w =>
             {
                 var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
 
                 foreach (var feature in _features.AllActiveFeatures(_tenant))
                 {
-                    feature.Write(StoreOptions.DdlRules, writer);
+                    feature.Write(DdlRules, writer);
                 }
             }, transactionalScript);
 
@@ -172,7 +172,7 @@ namespace Marten.Storage
         {
             var mapping = _features.MappingFor(documentType);
 
-            var patch = new SchemaPatch(StoreOptions.DdlRules);
+            var patch = new SchemaPatch(DdlRules);
 
             using (var conn = _tenant.CreateConnection())
             {
@@ -200,7 +200,7 @@ namespace Marten.Storage
 
                 foreach (var feature in features)
                 {
-                    var patch = new SchemaPatch(StoreOptions.DdlRules);
+                    var patch = new SchemaPatch(DdlRules);
                     patch.Apply(conn, AutoCreate.CreateOrUpdate, feature.Objects);
 
                     if (patch.UpdateDDL.IsNotEmpty())

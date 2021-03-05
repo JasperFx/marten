@@ -10,7 +10,7 @@ namespace Marten.Schema.Testing.Storage
         {
             StoreOptions(_ =>
             {
-                _.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+                _.Advanced.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
             });
 
             // Would blow up if it doesn't work;)
