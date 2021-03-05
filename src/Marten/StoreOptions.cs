@@ -366,7 +366,6 @@ namespace Marten
         public PoliciesExpression Policies => new PoliciesExpression(this);
 
         public bool PLV8Enabled { get; set; } = true;
-        public IList<IFieldSource> FieldSources { get; } = new List<IFieldSource>();
 
         /// <summary>
         /// Option to enable or disable usage of default tenant when using multi-tenanted documents

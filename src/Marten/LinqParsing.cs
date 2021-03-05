@@ -24,6 +24,13 @@ namespace Marten
 
         }
 
+        /// <summary>
+        /// Register extensions to the Marten Linq support for special handling of
+        /// specific .Net types
+        /// </summary>
+        public IList<IFieldSource> FieldSources { get; } = new List<IFieldSource>();
+
+
         // The out of the box method call parsers
         private static readonly IList<IMethodCallParser> _parsers = new List<IMethodCallParser>
         {

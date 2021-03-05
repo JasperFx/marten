@@ -103,7 +103,7 @@ using Baseline;
                 throw new ArgumentOutOfRangeException(nameof(members),"No members found in this Expression");
             }
 
-            foreach (var source in _options.FieldSources)
+            foreach (var source in _options.Linq.FieldSources)
             {
                 if (source.TryResolve(_dataLocator, _options, _serializer, _documentType, members, out var field))
                 {
