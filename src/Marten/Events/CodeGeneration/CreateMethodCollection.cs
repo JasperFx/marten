@@ -40,7 +40,7 @@ namespace Marten.Events.CodeGeneration
 
         protected override BindingFlags flags()
         {
-            return BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+            return BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic;
         }
 
         public void BuildCreateMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)

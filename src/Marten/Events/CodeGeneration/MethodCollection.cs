@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -13,6 +16,30 @@ namespace Marten.Events.CodeGeneration
 {
     internal abstract class MethodCollection
     {
+        private static Dictionary<int, Type> _funcBaseTypes = new Dictionary<int, Type>
+        {
+            {1, typeof(Func<>)},
+            {2, typeof(Func<,>)},
+            {3, typeof(Func<,,>)},
+            {4, typeof(Func<,,,>)},
+            {5, typeof(Func<,,,,>)},
+            {6, typeof(Func<,,,,,>)},
+            {7, typeof(Func<,,,,,,>)},
+            {8, typeof(Func<,,,,,,,>)},
+        };
+
+        private static Dictionary<int, Type> _actionBaseTypes = new Dictionary<int, Type>
+        {
+            {1, typeof(Action<>)},
+            {2, typeof(Action<,>)},
+            {3, typeof(Action<,,>)},
+            {4, typeof(Action<,,,>)},
+            {5, typeof(Action<,,,,>)},
+            {6, typeof(Action<,,,,,>)},
+            {7, typeof(Action<,,,,,,>)},
+            {8, typeof(Action<,,,,,,,>)},
+        };
+
         private int _lambdaNumber = 0;
 
         internal IEnumerable<Assembly> ReferencedAssemblies()
@@ -22,7 +49,7 @@ namespace Marten.Events.CodeGeneration
                 .Distinct();
         }
 
-        protected virtual BindingFlags flags() => BindingFlags.Instance | BindingFlags.Public;
+        protected virtual BindingFlags flags() => BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         public Type ProjectionType { get; }
 
@@ -47,32 +74,26 @@ namespace Marten.Events.CodeGeneration
 
             ProjectionType = projectionType;
 
-            Methods = projectionType.GetMethods(flags())
+            AggregateType = aggregateType;
+
+            projectionType.GetMethods(flags())
                 .Where(x => MethodNames.Contains(x.Name))
                 .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
-                .Select(x => new MethodSlot(x, aggregateType){HandlerType = projectionType}).ToList();
+                .Each(method => addMethodSlot(method, false));
 
-            AggregateType = aggregateType;
+
 
             if (aggregateType != null)
             {
-                var aggregateSlots = aggregateType.GetMethods(flags())
+                aggregateType.GetMethods(flags())
                     .Where(x => MethodNames.Contains(x.Name))
                     .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
-                    .Select(x => new MethodSlot(x, aggregateType)
-                    {
-                        HandlerType = aggregateType,
-                        DeclaredByAggregate = true
-                    });
-
-                Methods.AddRange(aggregateSlots);
+                    .Each(method => addMethodSlot(method, true));
             }
 
 
             IsAsync = Methods.Select(x => x.Method).OfType<MethodInfo>().Any(x => x.IsAsync());
             LambdaName = methodNames.First();
-
-
         }
 
         internal static Type[] AllEventTypes(params MethodCollection[] methods)
@@ -94,7 +115,7 @@ namespace Marten.Events.CodeGeneration
         public List<string> MethodNames { get; } = new List<string>();
 
 
-        public string LambdaName { get; protected set; }
+        public string LambdaName { get; protected set; } = "Lambda";
 
         public IEnumerable<Setter> Setters()
         {
@@ -123,10 +144,85 @@ namespace Marten.Events.CodeGeneration
             }
         }
 
+        private void addMethodSlot(MethodInfo method, bool declaredByAggregate)
+        {
+            if (method.IsPublic)
+            {
+                var slot = new MethodSlot(method, AggregateType)
+                {
+                    HandlerType = declaredByAggregate ? AggregateType : ProjectionType,
+                    DeclaredByAggregate = declaredByAggregate
+                };
+                Methods.Add(slot);
+            }
+            else
+            {
+                var parameterTypes = new List<Type>();
+                if (declaredByAggregate)
+                {
+                    parameterTypes.Add(AggregateType);
+                }
+                else
+                {
+                    parameterTypes.Add(ProjectionType);
+                }
+
+                parameterTypes.AddRange(method.GetParameters().Select(x => x.ParameterType));
+
+                var parameters = parameterTypes.Select(Expression.Parameter).ToArray();
+
+
+                Type baseType = null;
+                if (method.ReturnType == typeof(void))
+                {
+                    baseType = _actionBaseTypes[parameterTypes.Count];
+
+                }
+                else
+                {
+                    parameterTypes.Add(method.ReturnType);
+                    baseType = _funcBaseTypes[parameterTypes.Count];
+                }
+
+
+                var lambdaType = baseType.MakeGenericType(parameterTypes.ToArray());
+                var loaderType = typeof(LambdaLoader<>).MakeGenericType(lambdaType);
+                var loader = (ILambdaLoader)Activator.CreateInstance(loaderType);
+                loader.Add(this, method, AggregateType, parameters);
+            }
+
+
+
+
+        }
+
+        private interface ILambdaLoader
+        {
+            void Add(MethodCollection methods, MethodInfo method, Type aggregateType,
+                IList<ParameterExpression> parameters);
+        }
+
+        private class LambdaLoader<T> : ILambdaLoader
+        {
+            public void Add(MethodCollection methods, MethodInfo method, Type aggregateType, IList<ParameterExpression> parameters)
+            {
+                Expression body = Expression.Call(parameters[0], method, parameters.OfType<Expression>().Skip(1).ToArray());
+                var expression = Expression.Lambda<T>(body, parameters);
+                var lambda =  expression.Compile(); // TODO -- use FastExpressionCompiler here!
+
+                var eventType = method.GetEventType(aggregateType);
+
+                methods.AddLambda(lambda, eventType);
+            }
+        }
+
+
+
+
         public abstract IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot);
 
-        public List<MethodSlot> Methods { get; }
+        public List<MethodSlot> Methods { get; } = new List<MethodSlot>();
 
         public bool IsAsync { get; private set; }
 
