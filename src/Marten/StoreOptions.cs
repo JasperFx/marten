@@ -77,7 +77,7 @@ namespace Marten
 
         public Action<IDatabaseCreationExpressions> CreateDatabases { get; set; }
 
-        public IProviderGraph Providers { get; }
+        internal IProviderGraph Providers { get; }
 
         public StoreOptions()
         {
