@@ -184,12 +184,11 @@ namespace Marten.Schema
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
-        public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName,
-            Func<DocumentMapping, StoreOptions, IIdGeneration> idGeneration = null)
+        public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName)
         {
             var storeOptions = new StoreOptions
             {
-                DatabaseSchemaName = databaseSchemaName, DefaultIdStrategy = idGeneration
+                DatabaseSchemaName = databaseSchemaName
             };
 
             return new DocumentMapping<T>(storeOptions);
@@ -362,9 +361,6 @@ namespace Marten.Schema
         private IIdGeneration defineIdStrategy(Type documentType, StoreOptions options)
         {
             if (!idMemberIsSettable()) return new NoOpIdGeneration();
-
-            var strategy = options.DefaultIdStrategy?.Invoke(this, options);
-            if (strategy != null) return strategy;
 
             var idType = IdMember.GetMemberType();
             if (idType == typeof(string)) return new StringIdGeneration();

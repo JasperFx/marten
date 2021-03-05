@@ -35,7 +35,13 @@ namespace Marten.Schema.Testing.Identity.Sequences
             StoreOptions(options =>
             {
                 #region sample_configuring-global-custom
-                options.DefaultIdStrategy = (mapping, storeOptions) => new CustomdIdGeneration();
+                options.Policies.ForAllDocuments(m =>
+                {
+                    if (m.IdType == typeof(Guid))
+                    {
+                        m.IdStrategy = new CustomdIdGeneration();
+                    }
+                });
                 #endregion sample_configuring-global-custom
             });
 

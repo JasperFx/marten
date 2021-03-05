@@ -104,11 +104,6 @@ namespace Marten
         }
 
         /// <summary>
-        ///     Set the default Id strategy for the document mapping.
-        /// </summary>
-        public Func<DocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }
-
-        /// <summary>
         ///     Configuration of event streams and projections
         /// </summary>
         public IEventStoreOptions Events => EventGraph;

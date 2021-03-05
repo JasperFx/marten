@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Baseline;
 using Marten.Schema.Identity;
+using Marten.Testing.Acceptance;
 using Shouldly;
 using Xunit;
 
@@ -40,7 +41,13 @@ namespace Marten.Schema.Testing.Identity.Sequences
             StoreOptions(options =>
             {
                 #region sample_configuring-global-sequentialguid
-                options.DefaultIdStrategy = (mapping, storeOptions) => new CombGuidIdGeneration();
+                options.Policies.ForAllDocuments(m =>
+                {
+                    if (m.IdType == typeof(Guid))
+                    {
+                        m.IdStrategy = new CombGuidIdGeneration();
+                    }
+                });
                 #endregion sample_configuring-global-sequentialguid
             });
 
