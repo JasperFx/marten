@@ -191,7 +191,7 @@ namespace Marten
         {
             var tenant = Tenancy[options.TenantId];
 
-            if (!Options.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            if (!Options.Advanced.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
                 throw new DefaultTenantUsageDisabledException();
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly, _retryPolicy);
@@ -213,7 +213,7 @@ namespace Marten
         {
             var tenant = Tenancy[tenantId];
 
-            if (!Options.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            if (!Options.Advanced.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
                 throw new DefaultTenantUsageDisabledException();
 
 
@@ -278,7 +278,7 @@ namespace Marten
         {
             var tenant = Tenancy[options.TenantId];
 
-            if (!Options.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            if (!Options.Advanced.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
                 throw new DefaultTenantUsageDisabledException();
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);

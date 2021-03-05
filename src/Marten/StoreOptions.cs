@@ -345,10 +345,6 @@ namespace Marten
 
         public bool PLV8Enabled { get; set; } = true;
 
-        /// <summary>
-        /// Option to enable or disable usage of default tenant when using multi-tenanted documents
-        /// </summary>
-        public bool DefaultTenantUsageEnabled { get; set; } = true;
 
         private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
 
@@ -517,5 +513,9 @@ namespace Marten
 
 
 
+        /// <summary>
+        /// Option to enable or disable usage of default tenant when using multi-tenanted documents
+        /// </summary>
+        public bool DefaultTenantUsageEnabled { get; set; } = true;
     }
 }

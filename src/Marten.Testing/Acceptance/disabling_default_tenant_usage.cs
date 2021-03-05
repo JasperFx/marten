@@ -15,7 +15,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.DefaultTenantUsageEnabled = false;
+                _.Advanced.DefaultTenantUsageEnabled = false;
             });
 
             Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
@@ -29,7 +29,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.DefaultTenantUsageEnabled = false;
+                _.Advanced.DefaultTenantUsageEnabled = false;
             });
 
             Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
@@ -43,7 +43,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.DefaultTenantUsageEnabled = false;
+                _.Advanced.DefaultTenantUsageEnabled = false;
             });
 
             Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
@@ -57,7 +57,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.DefaultTenantUsageEnabled = false;
+                _.Advanced.DefaultTenantUsageEnabled = false;
             });
 
             Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
@@ -71,7 +71,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.DefaultTenantUsageEnabled = false;
+                _.Advanced.DefaultTenantUsageEnabled = false;
             });
 
             Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
@@ -86,7 +86,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(_ =>
             {
-                _.DefaultTenantUsageEnabled = false;
+                _.Advanced.DefaultTenantUsageEnabled = false;
             });
 
             Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
