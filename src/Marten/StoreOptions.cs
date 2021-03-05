@@ -75,7 +75,7 @@ namespace Marten
             CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));
         }
 
-        public Action<IDatabaseCreationExpressions> CreateDatabases { get; set; }
+        internal Action<IDatabaseCreationExpressions> CreateDatabases { get; set; }
 
         internal IProviderGraph Providers { get; }
 
