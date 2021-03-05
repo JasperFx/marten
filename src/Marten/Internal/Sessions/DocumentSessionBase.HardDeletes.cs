@@ -16,7 +16,7 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
             var documentStorage = StorageFor<T>();
 
-            var deletion = documentStorage.HardDeleteForDocument(entity);
+            var deletion = documentStorage.HardDeleteForDocument(entity, Tenant);
             _workTracker.Add(deletion);
 
             documentStorage.Eject(this, entity);
@@ -30,13 +30,13 @@ namespace Marten.Internal.Sessions
 
             if (storage is IDocumentStorage<T, int> i)
             {
-                _workTracker.Add(i.HardDeleteForId(id));
+                _workTracker.Add(i.HardDeleteForId(id, Tenant));
 
                 ejectById<T>(id);
             }
             else if (storage is IDocumentStorage<T, long> l)
             {
-                _workTracker.Add(l.HardDeleteForId(id));
+                _workTracker.Add(l.HardDeleteForId(id, Tenant));
 
                 ejectById<T>((long)id);
             }
@@ -49,7 +49,7 @@ namespace Marten.Internal.Sessions
         public void HardDelete<T>(long id)
         {
             assertNotDisposed();
-            var deletion = StorageFor<T, long>().HardDeleteForId(id);
+            var deletion = StorageFor<T, long>().HardDeleteForId(id, Tenant);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -58,7 +58,7 @@ namespace Marten.Internal.Sessions
         public void HardDelete<T>(Guid id)
         {
             assertNotDisposed();
-            var deletion = StorageFor<T, Guid>().HardDeleteForId(id);
+            var deletion = StorageFor<T, Guid>().HardDeleteForId(id, Tenant);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -68,7 +68,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var deletion = StorageFor<T, string>().HardDeleteForId(id);
+            var deletion = StorageFor<T, string>().HardDeleteForId(id, Tenant);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -123,83 +123,5 @@ namespace Marten.Internal.Sessions
             _workTracker.Add(deletion);
         }
 
-        public void HardDeleteInTenant<T>(string tenantId, T document)
-        {
-            assertNotDisposed();
-            var tenant = Tenancy[tenantId];
-            var documentStorage = selectStorage(tenant.Providers.StorageFor<T>());
-
-
-            var deletion = documentStorage.HardDeleteForDocument(document, tenant);
-            _workTracker.Add(deletion);
-
-            documentStorage.Eject(this, document);
-        }
-
-        public void HardDeleteByIdInTenant<T>(string tenantId, Guid id)
-        {
-            assertNotDisposed();
-
-            var tenant = Tenancy[tenantId];
-            var storage = (IDocumentStorage<T, Guid>)selectStorage(tenant.Providers.StorageFor<T>());
-
-            var deletion = storage.HardDeleteForId(id, tenant);
-            _workTracker.Add(deletion);
-
-            ejectById<T>(id);
-        }
-
-        public void HardDeleteByIdInTenant<T>(string tenantId, int id)
-        {
-            assertNotDisposed();
-
-            var tenant = Tenancy[tenantId];
-            var storage = selectStorage(tenant.Providers.StorageFor<T>());
-
-            if (storage is IDocumentStorage<T, int> i)
-            {
-                _workTracker.Add(i.HardDeleteForId(id, tenant));
-
-                ejectById<T>(id);
-            }
-            else if (storage is IDocumentStorage<T, long> l)
-            {
-                _workTracker.Add(l.HardDeleteForId(id, tenant));
-
-                ejectById<T>((long)id);
-            }
-            else
-            {
-                throw new DocumentIdTypeMismatchException(storage, typeof(int));
-            }
-        }
-
-        public void HardDeleteByIdInTenant<T>(string tenantId, string id)
-        {
-            assertNotDisposed();
-
-            var tenant = Tenancy[tenantId];
-            var storage = (IDocumentStorage<T, string>)selectStorage(tenant.Providers.StorageFor<T>());
-
-
-            var deletion = storage.HardDeleteForId(id, tenant);
-            _workTracker.Add(deletion);
-
-            ejectById<T>(id);
-        }
-
-        public void HardDeleteByIdInTenant<T>(string tenantId, long id)
-        {
-            assertNotDisposed();
-
-            var tenant = Tenancy[tenantId];
-            var storage = (IDocumentStorage<T, long>)selectStorage(tenant.Providers.StorageFor<T>());
-
-
-            var deletion = storage.HardDeleteForId(id, tenant);
-            _workTracker.Add(deletion);
-
-            ejectById<T>(id);
-        }
     }
 }

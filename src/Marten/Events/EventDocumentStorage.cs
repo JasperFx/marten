@@ -83,11 +83,6 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IDeletion HardDeleteForDocument(IEvent document)
-        {
-            throw new NotImplementedException();
-        }
-
         public IDeletion HardDeleteForDocument(IEvent document, ITenant tenant)
         {
             throw new NotImplementedException();
@@ -181,11 +176,6 @@ namespace Marten.Events
         }
 
         public IStorageOperation Overwrite(IEvent document, IMartenSession session, ITenant tenant)
-        {
-            throw new NotSupportedException();
-        }
-
-        public IDeletion DeleteForDocument(IEvent document)
         {
             throw new NotSupportedException();
         }

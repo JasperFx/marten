@@ -26,45 +26,6 @@ namespace Marten
         Task SaveChangesAsync(CancellationToken token = default);
 
         /// <summary>
-        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
-        /// Will throw an exception if the document already exists
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void Insert<T>(IEnumerable<T> entities);
-
-        /// <summary>
-        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
-        /// Will throw an exception if the document already exists
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void Insert<T>(params T[] entities);
-
-        /// <summary>
-        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
-        /// Will throw an exception if the document does not already exists
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void Update<T>(IEnumerable<T> entities);
-
-        /// <summary>
-        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
-        /// Will throw an exception if the document does not already exists
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void Update<T>(params T[] entities);
-
-        /// <summary>
-        /// Insert an enumerable of potentially mixed documents. Will throw exceptions
-        /// if a document overwrite is detected
-        /// </summary>
-        /// <param name="documents"></param>
-        void InsertObjects(IEnumerable<object> documents);
-
-        /// <summary>
         /// List of all the pending changes to this IDocumentSession
         /// </summary>
         IUnitOfWork PendingChanges { get; }
@@ -118,109 +79,13 @@ namespace Marten
         /// <returns></returns>
         object GetHeader(string key);
 
-
         /// <summary>
-        /// Mark this entity for a "hard" deletion upon the next call to SaveChanges()
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void HardDelete<T>(T entity);
-
-        /// <summary>
-        /// Mark an entity of type T with either a numeric or Guid id for "hard" deletion upon the next call to SaveChanges()
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        void HardDelete<T>(int id);
-
-        /// <summary>
-        /// Mark an entity of type T with either a numeric or Guid id for hard deletion upon the next call to SaveChanges()
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        void HardDelete<T>(long id);
-
-        /// <summary>
-        /// Mark an entity of type T with either a numeric or Guid id for hard deletion upon the next call to SaveChanges()
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        void HardDelete<T>(Guid id);
-
-        /// <summary>
-        /// Mark an entity of type T with a string id for hard deletion upon the next call to SaveChanges()
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        void HardDelete<T>(string id);
-
-        /// <summary>
-        /// Bulk hard delete all documents of type T matching the expression condition
-        /// that will delete the underlying database rows
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="expression"></param>
-        void HardDeleteWhere<T>(Expression<Func<T, bool>> expression);
-
-        /// <summary>
-        /// Hard delete a supplied document in the named tenant id
-        /// that will delete the underlying database row
+        /// Access data from another tenant and apply document or event updates to this
+        /// IDocumentSession for a separate tenant
         /// </summary>
         /// <param name="tenantId"></param>
-        /// <param name="document"></param>
-        /// <typeparam name="T"></typeparam>
-        void HardDeleteInTenant<T>(string tenantId, T document);
-
-        /// <summary>
-        /// Hard delete a supplied document id and type in the named tenant id
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void HardDeleteByIdInTenant<T>(string tenantId, Guid id);
-
-        /// <summary>
-        /// Hard delete a supplied document id and type in the named tenant id
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void HardDeleteByIdInTenant<T>(string tenantId, int id);
-
-        /// <summary>
-        /// Hard delete a supplied document id and type in the named tenant id
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void HardDeleteByIdInTenant<T>(string tenantId, string id);
-
-        /// <summary>
-        /// Hard delete a supplied document id and type in the named tenant id
-        /// that will delete the underlying database row
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void HardDeleteByIdInTenant<T>(string tenantId, long id);
-
-
-        /// <summary>
-        /// For soft-deleted document types, this is a one sized fits all mechanism to reverse the
-        /// soft deletion tracking
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <exception cref="InvalidOperationException"></exception>
-        void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression);
+        /// <returns></returns>
+        ITenantOperations ForTenant(string tenantId);
     }
 
     public interface ILoadByKeys<TDoc>

@@ -15,12 +15,12 @@ namespace Marten.Internal.Sessions
         {
         }
 
-        protected override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
+        protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
         {
             return provider.DirtyTracking;
         }
 
-        protected override void processChangeTrackers()
+        protected internal override void processChangeTrackers()
         {
             foreach (var tracker in ChangeTrackers)
             {
@@ -31,7 +31,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        protected override void resetDirtyChecking()
+        protected internal override void resetDirtyChecking()
         {
             foreach (var tracker in ChangeTrackers)
             {
@@ -59,28 +59,28 @@ namespace Marten.Internal.Sessions
 
         // NEED TO REMOVE TRACKER TOO!
 
-        protected override void ejectById<T>(long id)
+        protected internal override void ejectById<T>(long id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);
             documentStorage.RemoveDirtyTracker(this, id);
         }
 
-        protected override void ejectById<T>(int id)
+        protected internal override void ejectById<T>(int id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);
             documentStorage.RemoveDirtyTracker(this, id);
         }
 
-        protected override void ejectById<T>(Guid id)
+        protected internal override void ejectById<T>(Guid id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);
             documentStorage.RemoveDirtyTracker(this, id);
         }
 
-        protected override void ejectById<T>(string id)
+        protected internal override void ejectById<T>(string id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);

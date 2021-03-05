@@ -12,7 +12,7 @@ namespace Marten.Internal.Sessions
         {
         }
 
-        protected override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
+        protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
         {
             return provider.Lightweight;
         }
@@ -27,22 +27,22 @@ namespace Marten.Internal.Sessions
             // Nothing
         }
 
-        protected override void ejectById<T>(long id)
+        protected internal override void ejectById<T>(long id)
         {
             // Nothing
         }
 
-        protected override void ejectById<T>(int id)
+        protected internal override void ejectById<T>(int id)
         {
             // Nothing
         }
 
-        protected override void ejectById<T>(Guid id)
+        protected internal override void ejectById<T>(Guid id)
         {
             // Nothing
         }
 
-        protected override void ejectById<T>(string id)
+        protected internal override void ejectById<T>(string id)
         {
             // Nothing
         }

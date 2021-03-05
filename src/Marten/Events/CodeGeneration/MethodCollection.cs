@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Baseline;
+using Baseline.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
-using LamarCodeGeneration.Util;
 using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration

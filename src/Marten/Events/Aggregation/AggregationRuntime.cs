@@ -52,7 +52,7 @@ namespace Marten.Events.Aggregation
             }
 
             return aggregate == null
-                ? Storage.DeleteForId(slice.Id)
+                ? Storage.DeleteForId(slice.Id, slice.Tenant)
                 : Storage.Upsert(aggregate, session, slice.Tenant);
         }
 

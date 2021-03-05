@@ -16,22 +16,22 @@ namespace Marten.Events.Daemon
         {
         }
 
-        protected override void ejectById<T>(long id)
+        protected internal override void ejectById<T>(long id)
         {
             // nothing
         }
 
-        protected override void ejectById<T>(int id)
+        protected internal override void ejectById<T>(int id)
         {
             // nothing
         }
 
-        protected override void ejectById<T>(Guid id)
+        protected internal override void ejectById<T>(Guid id)
         {
             // nothing
         }
 
-        protected override void ejectById<T>(string id)
+        protected internal override void ejectById<T>(string id)
         {
             // nothing
         }

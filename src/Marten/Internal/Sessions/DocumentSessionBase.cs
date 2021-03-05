@@ -63,35 +63,6 @@ namespace Marten.Internal.Sessions
             store(entities);
         }
 
-
-        public void Store<T>(string tenantId, IEnumerable<T> entities)
-        {
-            Store(tenantId, entities?.ToArray());
-        }
-
-        public void Store<T>(string tenantId, params T[] entities)
-        {
-            assertNotDisposed();
-
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
-
-            if (typeof(T).IsGenericEnumerable())
-                throw new ArgumentOutOfRangeException(typeof(T).Name,
-                    "Do not use IEnumerable<T> here as the document type. Cast entities to an array or use the IEnumerable<T> Store() overload instead.");
-
-            var tenant = Tenancy[tenantId];
-
-            var storage = tenant.StorageFor<T>();
-
-            foreach (var entity in entities)
-            {
-                var op = storage.Upsert(entity, this, tenant);
-                storage.Store(this, entity);
-
-                _workTracker.Add(op);
-            }
-        }
-
         public void Store<T>(T entity, Guid version)
         {
             assertNotDisposed();
@@ -263,17 +234,44 @@ namespace Marten.Internal.Sessions
             return Headers?[key];
         }
 
-        protected abstract void ejectById<T>(long id);
-        protected abstract void ejectById<T>(int id);
-        protected abstract void ejectById<T>(Guid id);
-        protected abstract void ejectById<T>(string id);
+        private Dictionary<string, NestedTenantSession> _byTenant;
 
-        protected virtual void processChangeTrackers()
+        /// <summary>
+        /// Access data from another tenant and apply document or event updates to this
+        /// IDocumentSession for a separate tenant
+        /// </summary>
+        /// <param name="tenantId"></param>
+        /// <returns></returns>
+        public ITenantOperations ForTenant(string tenantId)
+        {
+            if (_byTenant == null)
+            {
+                _byTenant = new Dictionary<string, NestedTenantSession>();
+            }
+
+            if (_byTenant.TryGetValue(tenantId, out var tenantSession))
+            {
+                return tenantSession;
+            }
+
+            var tenant = Options.Tenancy[tenantId];
+            tenantSession = new NestedTenantSession(this, tenant);
+            _byTenant[tenantId] = tenantSession;
+
+            return tenantSession;
+        }
+
+        protected internal abstract void ejectById<T>(long id);
+        protected internal abstract void ejectById<T>(int id);
+        protected internal abstract void ejectById<T>(Guid id);
+        protected internal abstract void ejectById<T>(string id);
+
+        protected internal virtual void processChangeTrackers()
         {
             // Nothing
         }
 
-        protected virtual void resetDirtyChecking()
+        protected internal virtual void resetDirtyChecking()
         {
             // Nothing
         }

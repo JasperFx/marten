@@ -178,7 +178,7 @@ namespace Marten.Testing.Acceptance
                 var target = Target.Random();
                 target.Id = guid;
                 target.String = "123";
-                session.Store("123", target);
+                session.ForTenant("123").Store(target);
                 session.SaveChanges();
             }
 
@@ -187,7 +187,7 @@ namespace Marten.Testing.Acceptance
                 var target = Target.Random();
                 target.Id = guid;
                 target.String = "abc";
-                session.Store("abc", target);
+                session.ForTenant("abc").Store(target);
                 session.SaveChanges();
             }
 
@@ -542,9 +542,9 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                session.Store("Red", reds.AsEnumerable());
-                session.Store("Green", greens.AsEnumerable());
-                session.Store("Blue", blues.AsEnumerable());
+                session.ForTenant("Red").Store(reds.AsEnumerable());
+                session.ForTenant("Green").Store(greens.AsEnumerable());
+                session.ForTenant("Blue").Store(blues.AsEnumerable());
 
                 session.SaveChanges();
             }
@@ -577,9 +577,9 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.OpenSession())
             {
-                session.Store("Red", reds);
-                session.Store("Green", greens);
-                session.Store("Blue", blues);
+                session.ForTenant("Red").Store(reds);
+                session.ForTenant("Green").Store( greens);
+                session.ForTenant("Blue").Store(blues);
 
                 session.SaveChanges();
             }
@@ -625,7 +625,7 @@ namespace Marten.Testing.Acceptance
 
             using (var session = theStore.LightweightSession())
             {
-                session.DeleteInTenant("Blue", target);
+                session.ForTenant("Blue").Delete(target);
                 await session.SaveChangesAsync();
             }
 
@@ -656,15 +656,15 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.LightweightSession())
             {
                 session.Logger = new TestOutputMartenLogger(_output);
-                session.DeleteByIdInTenant<Target>("Blue", target.Id);
+                session.ForTenant("Blue").Delete<Target>(target.Id);
                 await session.SaveChangesAsync();
             }
 
-            var red = theStore.QuerySession("Blue");
-            (await red.LoadAsync<Target>(target.Id)).ShouldBeNull();
+            var blue = theStore.QuerySession("Blue");
+            (await blue.LoadAsync<Target>(target.Id)).ShouldBeNull();
 
-            var blue = theStore.QuerySession("Red");
-            (await blue.LoadAsync<Target>(target.Id)).ShouldNotBeNull();
+            var red = theStore.QuerySession("Red");
+            (await red.LoadAsync<Target>(target.Id)).ShouldNotBeNull();
         }
 
 
@@ -688,7 +688,7 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.LightweightSession())
             {
                 session.Logger = new TestOutputMartenLogger(_output);
-                session.DeleteByIdInTenant<IntDoc>("Blue", target.Id);
+                session.ForTenant("Blue").Delete<IntDoc>(target.Id);
                 await session.SaveChangesAsync();
             }
 
@@ -719,7 +719,7 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.LightweightSession())
             {
                 session.Logger = new TestOutputMartenLogger(_output);
-                session.DeleteByIdInTenant<LongDoc>("Blue", target.Id);
+                session.ForTenant("Blue").Delete<LongDoc>(target.Id);
                 await session.SaveChangesAsync();
             }
 
@@ -750,7 +750,7 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.LightweightSession())
             {
                 session.Logger = new TestOutputMartenLogger(_output);
-                session.DeleteByIdInTenant<StringDoc>("Blue", target.Id);
+                session.ForTenant("Blue").Delete<StringDoc>(target.Id);
                 await session.SaveChangesAsync();
             }
 

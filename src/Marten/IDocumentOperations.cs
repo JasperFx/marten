@@ -55,46 +55,6 @@ namespace Marten
         void DeleteWhere<T>(Expression<Func<T, bool>> expression);
 
         /// <summary>
-        /// Delete a supplied document in the named tenant id
-        /// </summary>
-        /// <param name="tenantId"></param>
-        /// <param name="document"></param>
-        /// <typeparam name="T"></typeparam>
-        void DeleteInTenant<T>(string tenantId, T document);
-
-        /// <summary>
-        /// Delete a supplied document id and type in the named tenant id
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void DeleteByIdInTenant<T>(string tenantId, Guid id);
-
-        /// <summary>
-        /// Delete a supplied document id and type in the named tenant id
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void DeleteByIdInTenant<T>(string tenantId, int id);
-
-        /// <summary>
-        /// Delete a supplied document id and type in the named tenant id
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void DeleteByIdInTenant<T>(string tenantId, string id);
-
-        /// <summary>
-        /// Delete a supplied document id and type in the named tenant id
-        /// </summary>
-        /// <param name="tenantId">The tenant id name</param>
-        /// <param name="id">The document id</param>
-        /// <typeparam name="T">The document type</typeparam>
-        void DeleteByIdInTenant<T>(string tenantId, long id);
-
-        /// <summary>
         /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -107,22 +67,6 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         void Store<T>(params T[] entities);
-
-        /// <summary>
-        /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
-        /// to a specific tenant
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void Store<T>(string tenantId, IEnumerable<T> entities);
-
-        /// <summary>
-        /// Explicitly marks one or more documents as needing to be inserted or updated upon the next call to SaveChanges()
-        /// to a specific tenant
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        void Store<T>(string tenantId, params T[] entities);
 
         /// <summary>
         /// Explicitly marks a document as needing to be updated and supplies the
@@ -194,5 +138,101 @@ namespace Marten
         /// </summary>
         /// <param name="storageOperation"></param>
         void QueueOperation(IStorageOperation storageOperation);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
+        /// Will throw an exception if the document already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Insert<T>(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
+        /// Will throw an exception if the document already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Insert<T>(params T[] entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
+        /// Will throw an exception if the document does not already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Update<T>(IEnumerable<T> entities);
+
+        /// <summary>
+        /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
+        /// Will throw an exception if the document does not already exists
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void Update<T>(params T[] entities);
+
+        /// <summary>
+        /// Insert an enumerable of potentially mixed documents. Will throw exceptions
+        /// if a document overwrite is detected
+        /// </summary>
+        /// <param name="documents"></param>
+        void InsertObjects(IEnumerable<object> documents);
+
+        /// <summary>
+        /// Mark this entity for a "hard" deletion upon the next call to SaveChanges()
+        /// that will delete the underlying database row
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        void HardDelete<T>(T entity);
+
+        /// <summary>
+        /// Mark an entity of type T with either a numeric or Guid id for "hard" deletion upon the next call to SaveChanges()
+        /// that will delete the underlying database row
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        void HardDelete<T>(int id);
+
+        /// <summary>
+        /// Mark an entity of type T with either a numeric or Guid id for hard deletion upon the next call to SaveChanges()
+        /// that will delete the underlying database row
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        void HardDelete<T>(long id);
+
+        /// <summary>
+        /// Mark an entity of type T with either a numeric or Guid id for hard deletion upon the next call to SaveChanges()
+        /// that will delete the underlying database row
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        void HardDelete<T>(Guid id);
+
+        /// <summary>
+        /// Mark an entity of type T with a string id for hard deletion upon the next call to SaveChanges()
+        /// that will delete the underlying database row
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="id"></param>
+        void HardDelete<T>(string id);
+
+        /// <summary>
+        /// Bulk hard delete all documents of type T matching the expression condition
+        /// that will delete the underlying database rows
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expression"></param>
+        void HardDeleteWhere<T>(Expression<Func<T, bool>> expression);
+
+        /// <summary>
+        /// For soft-deleted document types, this is a one sized fits all mechanism to reverse the
+        /// soft deletion tracking
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <exception cref="InvalidOperationException"></exception>
+        void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression);
     }
 }

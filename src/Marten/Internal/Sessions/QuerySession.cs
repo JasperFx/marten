@@ -27,10 +27,10 @@ namespace Marten.Internal.Sessions
     {
         private readonly IProviderGraph _providers;
         private bool _disposed;
-        public VersionTracker Versions { get; } = new VersionTracker();
+        public VersionTracker Versions { get; internal set; } = new VersionTracker();
         public IManagedConnection Database { get; }
         public ISerializer Serializer { get; }
-        public Dictionary<Type, object> ItemMap { get; } = new Dictionary<Type, object>();
+        public Dictionary<Type, object> ItemMap { get; internal set; } = new Dictionary<Type, object>();
         public ITenant Tenant { get; }
         public StoreOptions Options { get; }
 
@@ -57,10 +57,14 @@ namespace Marten.Internal.Sessions
 
         public IList<IDocumentSessionListener> Listeners { get; } = new List<IDocumentSessionListener>();
 
+        internal SessionOptions SessionOptions { get; }
+
         public QuerySession(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
             ITenant tenant)
         {
             DocumentStore = store;
+
+            SessionOptions = sessionOptions;
 
             Listeners.AddRange(store.Options.Listeners);
             if (sessionOptions != null)
@@ -81,7 +85,7 @@ namespace Marten.Internal.Sessions
             Options = store.Options;
         }
 
-        protected virtual IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
+        protected internal virtual IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
         {
             return provider.QueryOnly;
         }

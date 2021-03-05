@@ -580,12 +580,12 @@ namespace Marten.Testing.Acceptance
         {
             var doc1 = new StringDoc{Id = "big"};
 
-            theSession.Store("red", doc1);
-            theSession.Store("blue", doc1);
+            theSession.ForTenant("read").Store(doc1);
+            theSession.ForTenant("blue").Store(doc1);
 
             await theSession.SaveChangesAsync();
 
-            theSession.HardDeleteInTenant("red", doc1);
+            theSession.ForTenant("red").HardDelete(doc1);
 
             using var query = theStore.QuerySession();
 
@@ -605,12 +605,12 @@ namespace Marten.Testing.Acceptance
         {
             var doc1 = new IntDoc{Id = 5000};
 
-            theSession.Store("red", doc1);
-            theSession.Store("blue", doc1);
+            theSession.ForTenant("red").Store(doc1);
+            theSession.ForTenant("blue").Store(doc1);
 
             await theSession.SaveChangesAsync();
 
-            theSession.HardDeleteInTenant("red", doc1);
+            theSession.ForTenant("red").HardDelete(doc1);
 
             using var query = theStore.QuerySession();
 
@@ -630,12 +630,12 @@ namespace Marten.Testing.Acceptance
         {
             var doc1 = new LongDoc{Id = 5000};
 
-            theSession.Store("red", doc1);
-            theSession.Store("blue", doc1);
+            theSession.ForTenant("red").Store(doc1);
+            theSession.ForTenant("blue").Store(doc1);
 
             await theSession.SaveChangesAsync();
 
-            theSession.HardDeleteInTenant("red", doc1);
+            theSession.ForTenant("red").HardDelete(doc1);
 
             using var query = theStore.QuerySession();
 
@@ -655,12 +655,13 @@ namespace Marten.Testing.Acceptance
         {
             var doc1 = new GuidDoc{Id = Guid.NewGuid()};
 
-            theSession.Store("red", doc1);
-            theSession.Store("blue", doc1);
+
+            theSession.ForTenant("red").Store(doc1);
+            theSession.ForTenant("blue").Store(doc1);
 
             await theSession.SaveChangesAsync();
 
-            theSession.HardDeleteInTenant("red", doc1);
+            theSession.ForTenant("red").HardDelete(doc1);
 
             using var query = theStore.QuerySession();
 

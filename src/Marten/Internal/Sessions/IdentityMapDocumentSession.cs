@@ -12,27 +12,27 @@ namespace Marten.Internal.Sessions
         {
         }
 
-        protected override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
+        protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
         {
             return provider.IdentityMap;
         }
 
-        protected override void ejectById<T>(long id)
+        protected internal override void ejectById<T>(long id)
         {
             StorageFor<T>().EjectById(this, id);
         }
 
-        protected override void ejectById<T>(int id)
+        protected internal override void ejectById<T>(int id)
         {
             StorageFor<T>().EjectById(this, id);
         }
 
-        protected override void ejectById<T>(Guid id)
+        protected internal override void ejectById<T>(Guid id)
         {
             StorageFor<T>().EjectById(this, id);
         }
 
-        protected override void ejectById<T>(string id)
+        protected internal override void ejectById<T>(string id)
         {
             StorageFor<T>().EjectById(this, id);
         }

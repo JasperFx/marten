@@ -143,24 +143,6 @@ namespace Marten.Internal.Storage
             return new ByIdFilter<TId>(id, _idType);
         }
 
-        public IDeletion HardDeleteForId(TId id)
-        {
-            if (TenancyStyle == TenancyStyle.Conjoined)
-            {
-                return new Deletion(this, HardDeleteFragment)
-                {
-                    Where = new CompoundWhereFragment("and", CurrentTenantFilter.Instance, ByIdFilter(id)),
-                    Id = id
-                };
-            }
-
-            return new Deletion(this, HardDeleteFragment)
-            {
-                Where = ByIdFilter(id),
-                Id = id
-            };
-        }
-
         public IDeletion HardDeleteForId(TId id, ITenant tenant)
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
@@ -200,16 +182,6 @@ namespace Marten.Internal.Storage
 
                 return false;
             });
-        }
-
-        public IDeletion HardDeleteForDocument(T document)
-        {
-            var id = Identity(document);
-
-            var deletion = HardDeleteForId(id);
-            deletion.Document = document;
-
-            return deletion;
         }
 
         public IDeletion HardDeleteForDocument(T document, ITenant tenant)
@@ -257,16 +229,6 @@ namespace Marten.Internal.Storage
 
         public abstract IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant);
 
-        public IDeletion DeleteForDocument(T document)
-        {
-            var id = Identity(document);
-
-            var deletion = DeleteForId(id);
-            deletion.Document = document;
-
-            return deletion;
-        }
-
         public IDeletion DeleteForDocument(T document, ITenant tenant)
         {
             var id = Identity(document);
@@ -276,25 +238,6 @@ namespace Marten.Internal.Storage
 
             return deletion;
         }
-
-        public IDeletion DeleteForId(TId id)
-        {
-            if (TenancyStyle == TenancyStyle.Conjoined)
-            {
-                return new Deletion(this, DeleteFragment)
-                {
-                    Where = new CompoundWhereFragment("and", CurrentTenantFilter.Instance, ByIdFilter(id)),
-                    Id = id
-                };
-            }
-
-            return new Deletion(this, DeleteFragment)
-            {
-                Where = ByIdFilter(id),
-                Id = id
-            };
-        }
-
 
         public IDeletion DeleteForId(TId id, ITenant tenant)
         {

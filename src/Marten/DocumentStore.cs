@@ -22,7 +22,7 @@ namespace Marten
     /// <summary>
     ///     The main entry way to using Marten
     /// </summary>
-    public class DocumentStore: IDocumentStore
+    public class  DocumentStore: IDocumentStore
     {
         private readonly IMartenLogger _logger;
         private readonly IRetryPolicy _retryPolicy;

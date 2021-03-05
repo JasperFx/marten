@@ -197,11 +197,6 @@ namespace Marten.Internal.Storage
             return _parent.Overwrite(document, session, tenant);
         }
 
-        public IDeletion DeleteForDocument(T document)
-        {
-            return _parent.DeleteForDocument(document);
-        }
-
         public IDeletion DeleteForDocument(T document, ITenant tenant)
         {
             return _parent.DeleteForDocument(document, tenant);
@@ -210,11 +205,6 @@ namespace Marten.Internal.Storage
         public void SetIdentity(T document, TId identity)
         {
             _parent.SetIdentity(document, identity);
-        }
-
-        public IDeletion DeleteForId(TId id)
-        {
-            return _parent.DeleteForId(id);
         }
 
         public IDeletion DeleteForId(TId id, ITenant tenant)
@@ -265,11 +255,6 @@ namespace Marten.Internal.Storage
             return _parent.ByIdFilter(id);
         }
 
-        public IDeletion HardDeleteForId(TId id)
-        {
-            return _parent.HardDeleteForId(id);
-        }
-
         public IDeletion HardDeleteForId(TId id, ITenant tenant)
         {
             return _parent.HardDeleteForId(id, tenant);
@@ -293,11 +278,6 @@ namespace Marten.Internal.Storage
         public void RemoveDirtyTracker(IMartenSession session, object id)
         {
             _parent.RemoveDirtyTracker(session, id);
-        }
-
-        public IDeletion HardDeleteForDocument(T document)
-        {
-            return _parent.HardDeleteForDocument(document);
         }
 
         public IDeletion HardDeleteForDocument(T document, ITenant tenant)

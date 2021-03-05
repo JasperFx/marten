@@ -227,11 +227,6 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        IDeletion IDocumentStorage<T>.DeleteForDocument(T document)
-        {
-            throw new NotSupportedException();
-        }
-
         public IDeletion DeleteForDocument(T document, ITenant tenant)
         {
             throw new NotSupportedException();
@@ -245,11 +240,6 @@ namespace Marten.Events
         void IDocumentStorage<T>.RemoveDirtyTracker(IMartenSession session, object id)
         {
             // Nothing
-        }
-
-        public IDeletion HardDeleteForDocument(T document)
-        {
-            throw new NotImplementedException();
         }
 
         public IDeletion HardDeleteForDocument(T document, ITenant tenant)

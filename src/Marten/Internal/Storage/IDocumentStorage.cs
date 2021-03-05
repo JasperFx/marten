@@ -55,15 +55,11 @@ namespace Marten.Internal.Storage
 
         IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant);
 
-
-        IDeletion DeleteForDocument(T document);
-
         IDeletion DeleteForDocument(T document, ITenant tenant);
 
 
         void EjectById(IMartenSession session, object id);
         void RemoveDirtyTracker(IMartenSession session, object id);
-        IDeletion HardDeleteForDocument(T document);
         IDeletion HardDeleteForDocument(T document, ITenant tenant);
     }
 
@@ -76,7 +72,6 @@ namespace Marten.Internal.Storage
         /// <param name="identity"></param>
         void SetIdentity(T document, TId identity);
 
-        IDeletion DeleteForId(TId id);
         IDeletion DeleteForId(TId id, ITenant tenant);
 
         T Load(TId id, IMartenSession session);
@@ -89,7 +84,6 @@ namespace Marten.Internal.Storage
         TId AssignIdentity(T document, ITenant tenant);
         TId Identity(T document);
         ISqlFragment ByIdFilter(TId id);
-        IDeletion HardDeleteForId(TId id);
         IDeletion HardDeleteForId(TId id, ITenant tenant);
         NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant);
         NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant);
