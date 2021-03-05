@@ -113,12 +113,6 @@ namespace Marten
         public int UpdateBatchSize { get; set; } = 500;
 
         /// <summary>
-        ///     Configures the store to use char buffer pooling, greatly reducing allocations for serializing documents and events.
-        ///     The default is true.
-        /// </summary>
-        public bool UseCharBufferPooling { get; set; } = true;
-
-        /// <summary>
         ///     Set the default Id strategy for the document mapping.
         /// </summary>
         public Func<DocumentMapping, StoreOptions, IIdGeneration> DefaultIdStrategy { get; set; }

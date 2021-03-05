@@ -74,33 +74,6 @@ namespace Marten.Testing.CoreFunctionality
 
         [Theory]
         [SessionTypes]
-        public void persist_and_reload_a_document_using_buffers(DocumentTracking tracking)
-        {
-            DocumentTracking = tracking;
-
-            var user = new User { FirstName = "James", LastName = "Worthy" };
-
-            StoreOptions(_ => { _.UseCharBufferPooling = true; });
-
-            using (var session1 = theStore.OpenSession())
-            {
-                session1.Store(user);
-                session1.SaveChanges();
-            }
-
-            using (var session2 = theStore.OpenSession())
-            {
-                var user2 = session2.Load<User>(user.Id);
-
-                user.ShouldNotBeSameAs(user2);
-                user2.FirstName.ShouldBe(user.FirstName);
-                user2.LastName.ShouldBe(user.LastName);
-            }
-
-        }
-
-        [Theory]
-        [SessionTypes]
         public async Task persist_and_reload_a_document_async(DocumentTracking tracking)
         {
             DocumentTracking = tracking;
@@ -115,34 +88,6 @@ namespace Marten.Testing.CoreFunctionality
             {
                 session2.ShouldNotBeSameAs(theSession);
 
-                var user2 = await session2.LoadAsync<User>(user.Id).ConfigureAwait(false);
-
-                user.ShouldNotBeSameAs(user2);
-                user2.FirstName.ShouldBe(user.FirstName);
-                user2.LastName.ShouldBe(user.LastName);
-            }
-        }
-
-        [Theory]
-        [SessionTypes]
-        public async Task persist_and_reload_a_document_async_using_buffers(DocumentTracking tracking)
-        {
-            DocumentTracking = tracking;
-
-            var user = new User { FirstName = "James", LastName = "Worthy" };
-
-            StoreOptions(_ => { _.UseCharBufferPooling = true; });
-
-            var store = theStore;
-
-            using (var session1 = store.OpenSession())
-            {
-                session1.Store(user);
-                await session1.SaveChangesAsync().ConfigureAwait(false);
-            }
-
-            using (var session2 = store.OpenSession())
-            {
                 var user2 = await session2.LoadAsync<User>(user.Id).ConfigureAwait(false);
 
                 user.ShouldNotBeSameAs(user2);
