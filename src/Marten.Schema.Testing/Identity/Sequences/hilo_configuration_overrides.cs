@@ -62,7 +62,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             #region sample_configuring-global-hilo-defaults
             var store = DocumentStore.For(_ =>
             {
-                _.HiloSequenceDefaults.MaxLo = 55;
+                _.Advanced.HiloSequenceDefaults.MaxLo = 55;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = "sequences";
             });
@@ -99,7 +99,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             var store = DocumentStore.For(_ =>
             {
-                _.HiloSequenceDefaults.MaxLo = 33;
+                _.Advanced.HiloSequenceDefaults.MaxLo = 33;
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.DatabaseSchemaName = "sequences";
@@ -122,8 +122,8 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             var store = DocumentStore.For(_ =>
             {
-                _.HiloSequenceDefaults.MaxLo = 33;
-                _.HiloSequenceDefaults.SequenceName = "ID";
+                _.Advanced.HiloSequenceDefaults.MaxLo = 33;
+                _.Advanced.HiloSequenceDefaults.SequenceName = "ID";
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.DatabaseSchemaName = "sequences";
@@ -148,7 +148,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             #region sample_configuring-global-hilo-defaults-sequencename
             var store = DocumentStore.For(_ =>
             {
-                _.HiloSequenceDefaults.SequenceName = "Entity";
+                _.Advanced.HiloSequenceDefaults.SequenceName = "Entity";
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.DatabaseSchemaName = "sequences";

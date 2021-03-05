@@ -296,7 +296,7 @@ namespace Marten.Schema.Testing
         public void duplicated_field_enum_storage_should_be_taken_from_store_options_duplicated_field_enum_storage_when_it_was_changed(EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
         {
             var storeOptions = new StoreOptions();
-            storeOptions.DuplicatedFieldEnumStorage = enumStorage;
+            storeOptions.Advanced.DuplicatedFieldEnumStorage = enumStorage;
 
             var mapping = new DocumentMapping<Target>(storeOptions);
 
@@ -310,7 +310,7 @@ namespace Marten.Schema.Testing
         public void duplicated_field_date_time_db_type_should_be_taken_from_store_options_useTimestampWithoutTimeZoneForDateTime(bool useTimestampWithoutTimeZoneForDateTime, NpgsqlDbType expectedNpgsqlDbType)
         {
             var storeOptions = new StoreOptions();
-            storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
+            storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
 
             var mapping = new DocumentMapping<Target>(storeOptions);
 

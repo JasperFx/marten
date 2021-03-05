@@ -370,7 +370,7 @@ namespace Marten.Schema
             if (idType == typeof(string)) return new StringIdGeneration();
             if (idType == typeof(Guid)) return new CombGuidIdGeneration();
             if (idType == typeof(int) || idType == typeof(long))
-                return new HiloIdGeneration(documentType, options.HiloSequenceDefaults);
+                return new HiloIdGeneration(documentType, options.Advanced.HiloSequenceDefaults);
 
             throw new ArgumentOutOfRangeException(nameof(documentType),
                 $"Marten cannot use the type {idType.FullName} as the Id for a persisted document. Use int, long, Guid, or string");
@@ -408,8 +408,8 @@ namespace Marten.Schema
         {
             var field = FieldFor(memberName);
 
-            var duplicate = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field,
-                _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicate = new DuplicatedField(_storeOptions.Advanced.DuplicatedFieldEnumStorage, field,
+                _storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
 
             if (pgType.IsNotEmpty()) duplicate.PgType = pgType;
 
@@ -424,8 +424,8 @@ namespace Marten.Schema
             var field = FieldFor(members);
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions.DuplicatedFieldEnumStorage, field,
-                _storeOptions.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicatedField = new DuplicatedField(_storeOptions.Advanced.DuplicatedFieldEnumStorage, field,
+                _storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
 
             if (pgType.IsNotEmpty()) duplicatedField.PgType = pgType;
 

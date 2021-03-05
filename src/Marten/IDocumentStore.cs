@@ -26,7 +26,7 @@ namespace Marten
         /// <summary>
         ///     Infrequently used operations like document cleaning and the initial store configuration
         /// </summary>
-        AdvancedOptions Advanced { get; }
+        AdvancedOperations Advanced { get; }
 
         /// <summary>
         ///     Access to Marten's diagnostics for trouble shooting

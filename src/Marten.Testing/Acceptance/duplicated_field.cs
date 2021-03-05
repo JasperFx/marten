@@ -15,7 +15,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(options =>
             {
-                options.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+                options.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
 
                 options.Storage.MappingFor(typeof(Target))
                     .DuplicateField(nameof(Target.Color));
@@ -44,7 +44,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(options =>
             {
-                options.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+                options.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
 
                 options.Storage.MappingFor(typeof(NonNullableDuplicateFieldTestDoc))
                     .DuplicateField(nameof(NonNullableDuplicateFieldTestDoc.NonNullableDuplicateField), notNull: true);
@@ -78,7 +78,7 @@ namespace Marten.Testing.Acceptance
         {
             StoreOptions(options =>
             {
-                options.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+                options.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
 
                 // Note: Even though notNull is false by default, setting it to false for the unit test
                 options.Storage.MappingFor(typeof(NullableDuplicateFieldTestDoc))

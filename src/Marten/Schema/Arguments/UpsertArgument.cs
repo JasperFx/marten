@@ -132,7 +132,7 @@ END
         private void writeEnumerationValues(GeneratedMethod method, int i, Argument parameters, StoreOptions options,
             string memberPath)
         {
-            if (options.DuplicatedFieldEnumStorage == EnumStorage.AsInteger)
+            if (options.Advanced.DuplicatedFieldEnumStorage == EnumStorage.AsInteger)
             {
                 if (DotNetType.IsNullable())
                 {

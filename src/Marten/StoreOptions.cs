@@ -56,7 +56,7 @@ namespace Marten
 
         private IMartenLogger _logger = new NulloMartenLogger();
         private ISerializer _serializer;
-        private EnumStorage? _duplicatedFieldEnumStorage;
+
 
         private IRetryPolicy _retryPolicy = new NulloRetryPolicy();
 
@@ -87,7 +87,10 @@ namespace Marten
             Storage = new StorageFeatures(this);
 
             Providers = new ProviderGraph(this);
+            Advanced = new AdvancedOptions(this);
         }
+
+        public AdvancedOptions Advanced { get; }
 
         internal EventGraph EventGraph { get; }
 
@@ -99,18 +102,6 @@ namespace Marten
             get { return _databaseSchemaName; }
             set { _databaseSchemaName = value?.ToLowerInvariant(); }
         }
-
-        /// <summary>
-        ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
-        ///     type as well
-        /// </summary>
-        public HiloSettings HiloSequenceDefaults { get; } = new();
-
-        /// <summary>
-        ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
-        ///     IUnitOfWork.ApplyChanges()
-        /// </summary>
-        public int UpdateBatchSize { get; set; } = 500;
 
         /// <summary>
         ///     Set the default Id strategy for the document mapping.
@@ -144,30 +135,10 @@ namespace Marten
         public int NameDataLength { get; set; } = 64;
 
         /// <summary>
-        ///     Gets Enum values stored as either integers or strings
+        /// Gets Enum values stored as either integers or strings. This is configured on your ISerializer
         /// </summary>
         public EnumStorage EnumStorage => Serializer().EnumStorage;
 
-        /// <summary>
-        ///     Sets Enum values stored as either integers or strings for DuplicatedField.
-        ///     Please use only for migration from Marten 2.*. It might be removed in the next major version.
-        /// </summary>
-        [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next major version.")]
-        public EnumStorage DuplicatedFieldEnumStorage
-        {
-            get { return _duplicatedFieldEnumStorage ?? EnumStorage; }
-            set
-            {
-                _duplicatedFieldEnumStorage = value;
-            }
-        }
-
-        /// <summary>
-        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
-        ///     Please use only for migration from Marten 2.*. It might be removed in the next major version.
-        /// </summary>
-        [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next major versions")]
-        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
 
         internal void CreatePatching()
         {
@@ -214,6 +185,13 @@ namespace Marten
         {
             Tenancy = new DefaultTenancy(new LambdaConnectionFactory(source), this);
         }
+
+
+        /// <summary>
+        ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
+        ///     IUnitOfWork.ApplyChanges()
+        /// </summary>
+        public int UpdateBatchSize { get; set; } = 500;
 
         /// <summary>
         ///     Override the JSON serialization by ISerializer type
@@ -501,5 +479,43 @@ namespace Marten
         {
             _modify(mapping);
         }
+    }
+
+    public class AdvancedOptions
+    {
+        private readonly StoreOptions _storeOptions;
+        private EnumStorage? _duplicatedFieldEnumStorage;
+
+        internal AdvancedOptions(StoreOptions storeOptions)
+        {
+            _storeOptions = storeOptions;
+        }
+
+        /// <summary>
+        /// Sets Enum values stored as either integers or strings for DuplicatedField.
+        /// </summary>
+        public EnumStorage DuplicatedFieldEnumStorage
+        {
+            get { return _duplicatedFieldEnumStorage ?? _storeOptions.EnumStorage; }
+            set
+            {
+                _duplicatedFieldEnumStorage = value;
+            }
+        }
+
+        /// <summary>
+        /// Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
+        /// </summary>
+        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
+
+
+        /// <summary>
+        ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
+        ///     type as well
+        /// </summary>
+        public HiloSettings HiloSequenceDefaults { get; } = new();
+
+
+
     }
 }

@@ -17,11 +17,11 @@ namespace Marten
     /// <summary>
     /// Access to advanced, rarely used features of IDocumentStore
     /// </summary>
-    public class AdvancedOptions
+    public class AdvancedOperations
     {
         private readonly DocumentStore _store;
 
-        internal AdvancedOptions(DocumentStore store)
+        internal AdvancedOperations(DocumentStore store)
         {
             _store = store;
         }

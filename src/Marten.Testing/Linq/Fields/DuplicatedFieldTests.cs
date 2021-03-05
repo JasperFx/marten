@@ -12,8 +12,16 @@ namespace Marten.Testing.Linq.Fields
 {
     public class DuplicatedFieldTests
     {
-        private DuplicatedField theField =
-            DuplicatedField.For<User>(new StoreOptions{DuplicatedFieldEnumStorage = EnumStorage.AsInteger}, x => x.FirstName);
+        private DuplicatedField theField;
+
+        public DuplicatedFieldTests()
+        {
+            var storeOptions = new StoreOptions{};
+            storeOptions.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
+
+            theField =
+                DuplicatedField.For<User>(storeOptions, x => x.FirstName);
+        }
 
         [Fact]
         public void create_table_column_for_non_indexed_search()

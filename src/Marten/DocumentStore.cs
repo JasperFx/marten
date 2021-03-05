@@ -55,7 +55,7 @@ namespace Marten
             Storage.PostProcessConfiguration();
             Events.AssertValidity(this);
 
-            Advanced = new AdvancedOptions(this);
+            Advanced = new AdvancedOperations(this);
 
             Diagnostics = new Diagnostics(this);
 
@@ -79,7 +79,7 @@ namespace Marten
         }
 
         public IDocumentSchema Schema { get; }
-        public AdvancedOptions Advanced { get; }
+        public AdvancedOperations Advanced { get; }
 
         public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)

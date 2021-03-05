@@ -14,6 +14,7 @@ namespace Marten.Schema.Identity.Sequences
         private readonly StoreOptions _options;
         private readonly string _entityName;
         private readonly object _lock = new object();
+        private HiloSettings _settings;
 
         private DbObjectName GetNextFunction => new DbObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
@@ -25,6 +26,8 @@ namespace Marten.Schema.Identity.Sequences
             CurrentHi = -1;
             CurrentLo = 1;
             MaxLo = settings.MaxLo;
+
+            _settings = settings;
         }
 
         public string EntityName => _entityName;
@@ -95,7 +98,7 @@ namespace Marten.Schema.Identity.Sequences
 
                         CurrentHi = Convert.ToInt64(raw);
 
-                    } while (CurrentHi < 0 && attempts < _options.HiloSequenceDefaults.MaxAdvanceToNextHiAttempts);
+                    } while (CurrentHi < 0 && attempts < _settings.MaxAdvanceToNextHiAttempts);
 
                     // if CurrentHi is still less than 0 at this point, then throw exception
                     if (CurrentHi < 0)

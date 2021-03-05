@@ -55,7 +55,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public ISequence SequenceFor(Type documentType)
         {
-            return Hilo(documentType, _options.Storage.MappingFor(documentType).HiloSettings ?? _options.HiloSequenceDefaults);
+            return Hilo(documentType, _options.Storage.MappingFor(documentType).HiloSettings ?? _options.Advanced.HiloSequenceDefaults);
         }
 
         public ISequence Hilo(Type documentType, HiloSettings settings)

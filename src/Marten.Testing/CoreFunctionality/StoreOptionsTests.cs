@@ -209,7 +209,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             var storeOptions = new StoreOptions();
 
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
         }
 
         [Theory]
@@ -220,7 +220,7 @@ namespace Marten.Testing.CoreFunctionality
             var storeOptions = new StoreOptions();
             storeOptions.UseDefaultSerialization(enumStorage);
 
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
         }
 
         [Fact]
@@ -229,13 +229,13 @@ namespace Marten.Testing.CoreFunctionality
             var storeOptions = new StoreOptions();
             storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
 
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
             //update EnumStorage
             storeOptions.UseDefaultSerialization(EnumStorage.AsString);
 
             storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
         }
 
         [Fact]
@@ -244,13 +244,13 @@ namespace Marten.Testing.CoreFunctionality
             var storeOptions = new StoreOptions();
             storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
 
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
             //set DuplicatedFieldEnumStorage
-            storeOptions.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+            storeOptions.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
 
             storeOptions.EnumStorage.ShouldBe(EnumStorage.AsInteger);
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsString);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsString);
         }
 
         [Fact]
@@ -259,17 +259,17 @@ namespace Marten.Testing.CoreFunctionality
             var storeOptions = new StoreOptions();
             storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
 
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
             //set DuplicatedFieldEnumStorage
-            storeOptions.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
+            storeOptions.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
 
             //update EnumStorage
             storeOptions.UseDefaultSerialization(EnumStorage.AsString);
 
             storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
-            storeOptions.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);
-            storeOptions.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsInteger);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);
+            storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsInteger);
         }
 
         public void set_the_maximum_name_length()
