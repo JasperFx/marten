@@ -37,7 +37,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 #region sample_configuring-global-custom
                 options.Policies.ForAllDocuments(m =>
                 {
-                    if (m.IdType == typeof(Guid))
+                    if (m.IdType == typeof(string))
                     {
                         m.IdStrategy = new CustomdIdGeneration();
                     }

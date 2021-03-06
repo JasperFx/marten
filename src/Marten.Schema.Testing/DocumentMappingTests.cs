@@ -675,13 +675,6 @@ namespace Marten.Schema.Testing
         }
 
         [Fact]
-        public void use_custom_default_id_generation_for_long_id()
-        {
-            DocumentMapping.For<LongId>()
-                .IdStrategy.ShouldBeOfType<CustomIdGeneration>();
-        }
-
-        [Fact]
         public void use_custom_id_generation_on_mapping_shoudl_be_settable()
         {
             var mapping = DocumentMapping.For<LongId>();
