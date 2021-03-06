@@ -17,8 +17,6 @@ namespace Marten.AsyncDaemon.Testing
 {
     public class event_projections_end_to_end : DaemonContext
     {
-        private readonly ITestOutputHelper _output;
-
         public event_projections_end_to_end(ITestOutputHelper output) : base(output)
         {
             _output = output;

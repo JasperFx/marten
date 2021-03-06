@@ -151,6 +151,8 @@ namespace Marten.Events.Daemon
         }
 
 
+        public Task RebuildProjection<TView>(CancellationToken token) => RebuildProjection(typeof(TView).Name, token);
+
         public Task RebuildProjection(string projectionName, CancellationToken token)
         {
             if (!_store.Events.Projections.TryFindProjection(projectionName, out var projection))

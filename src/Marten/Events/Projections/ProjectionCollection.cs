@@ -114,6 +114,27 @@ namespace Marten.Events.Projections
             return expression;
         }
 
+
+
+        /// <summary>
+        /// Register an aggregate projection that should be evaluated inline
+        /// </summary>
+        /// <typeparam name="TProjection">Projection type</typeparam>
+        /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
+        /// <returns>The extended storage configuration for document T</returns>
+        public void Add<TProjection>(ProjectionLifecycle? lifecycle = null) where TProjection: ProjectionSource, new()
+        {
+            var projection = new TProjection();
+            if (lifecycle.HasValue)
+            {
+                projection.Lifecycle = lifecycle.Value;
+            }
+
+            projection.AssertValidity();
+
+            Projections.Add(projection);
+        }
+
         /// <summary>
         /// Register an aggregate projection that should be evaluated inline
         /// </summary>

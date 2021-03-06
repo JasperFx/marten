@@ -17,6 +17,15 @@ namespace Marten.Events.Daemon
         /// <returns></returns>
         Task RebuildProjection(string projectionName, CancellationToken token);
 
+
+        /// <summary>
+        /// Rebuilds a single projection by projection type inline
+        /// </summary>
+        /// <typeparam name="TView">Projection view type</typeparam>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task RebuildProjection<TView>(CancellationToken token);
+
         /// <summary>
         /// Starts a single projection shard by name
         /// </summary>

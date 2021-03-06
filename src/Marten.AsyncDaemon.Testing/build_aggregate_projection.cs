@@ -43,7 +43,7 @@ namespace Marten.AsyncDaemon.Testing
         {
             NumberOfStreams = 10;
 
-            Logger.LogDebug($"The expected number of events is " + NumberOfEvents);
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
             StoreOptions(x =>
             {
@@ -74,12 +74,11 @@ namespace Marten.AsyncDaemon.Testing
                 x.Events.TenancyStyle = TenancyStyle.Conjoined;
                 x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                 x.Schema.For<Trip>().MultiTenanted();
-                //x.Logger(new TestOutputMartenLogger(_output));
             }, true);
 
             UseMixOfTenants(10);
 
-            Logger.LogDebug($"The expected number of events is " + NumberOfEvents);
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
             var agent = await StartDaemon();
 
@@ -100,14 +99,13 @@ namespace Marten.AsyncDaemon.Testing
         {
             NumberOfStreams = 10;
 
-            Logger.LogDebug($"The expected number of events is " + NumberOfEvents);
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
             StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async), true);
 
             var agent = await StartDaemon();
 
             await PublishSingleThreaded();
-
 
             var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
 
@@ -118,6 +116,26 @@ namespace Marten.AsyncDaemon.Testing
             await CheckAllExpectedAggregatesAgainstActuals();
         }
 
+        [Fact]
+        public async Task rebuild_the_projection_without_custom_name()
+        {
+            NumberOfStreams = 10;
 
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+            StoreOptions(x => x.Events.Projections.Add<TripAggregationWithoutCustomName>(ProjectionLifecycle.Async), true);
+
+            var agent = await StartDaemon();
+
+            await PublishSingleThreaded();
+
+            var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+
+            await waiter;
+            Logger.LogDebug("About to rebuild Trip:All");
+            await agent.RebuildProjection<Trip>(CancellationToken.None);
+            Logger.LogDebug("Done rebuilding Trip:All");
+            await CheckAllExpectedAggregatesAgainstActuals();
+        }
     }
 }
