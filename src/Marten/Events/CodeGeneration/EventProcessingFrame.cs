@@ -36,7 +36,7 @@ namespace Marten.Events.CodeGeneration
             AggregateType = aggregateType;
 
             SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name.Sanitize() + ++_counter);
-            DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(IEvent<string>.GetData)}()");
+            DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(IEvent<string>.Data)}");
         }
 
         public EventProcessingFrame(Type aggregateType, IEventHandlingFrame inner)
