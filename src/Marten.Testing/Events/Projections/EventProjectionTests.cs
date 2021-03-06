@@ -205,7 +205,7 @@ namespace Marten.Testing.Events.Projections
                 throw new Exception("StreamKey and StreamId are both missing");
             }
 
-            return new User {UserName = @event.GetData().UserName};
+            return new User {UserName = @event.Data.UserName};
         }
 
         public User Transform(IEvent<OtherCreationEvent> @event)
@@ -215,7 +215,7 @@ namespace Marten.Testing.Events.Projections
                 throw new Exception("StreamKey and StreamId are both missing");
             }
 
-            return new User {UserName = @event.GetData().UserName};
+            return new User {UserName = @event.Data.UserName};
         }
 
         public void Project(UserDeleted @event, IDocumentOperations operations) =>

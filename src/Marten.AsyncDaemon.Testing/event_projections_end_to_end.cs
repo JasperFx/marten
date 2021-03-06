@@ -171,7 +171,7 @@ namespace Marten.AsyncDaemon.Testing
                 switch (@event.Data)
                 {
                     case IEvent<Travel> e:
-                        var travel = e.GetData();
+                        var travel = e.Data;
                         var distance = new Distance
                         {
                             Id = e.Id,

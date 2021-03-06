@@ -127,7 +127,7 @@ namespace Marten.Testing.Events.Projections
             return new MonsterDefeated
             {
                 Id = input.Id,
-                Monster = input.GetData().Name
+                Monster = input.Data.Name
             };
         }
     }

@@ -72,7 +72,7 @@ namespace Marten.Events
 
     public interface IEvent<out T> : IEvent
     {
-        T GetData();
+        new T Data { get; }
     }
 
     internal class Event<T>: IEvent<T>
@@ -80,11 +80,6 @@ namespace Marten.Events
         public Event(T data)
         {
             Data = data;
-        }
-
-        public T GetData()
-        {
-            return Data;
         }
 
         /// <summary>
@@ -134,7 +129,6 @@ namespace Marten.Events
         public Type EventType => typeof(T);
         public string EventTypeName { get; set; }
         public string DotNetTypeName { get; set; }
-
 
         protected bool Equals(Event<T> other)
         {
