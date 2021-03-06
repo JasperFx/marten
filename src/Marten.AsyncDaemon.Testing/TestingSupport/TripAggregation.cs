@@ -3,13 +3,19 @@ using Marten.Events.Projections;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport
 {
-    public class TripAggregation: AggregateProjection<Trip>
+    public class TripAggregation: TripAggregationWithoutCustomName
     {
         public TripAggregation()
         {
-            DeleteEvent<TripAborted>();
-
             ProjectionName = "Trip";
+        }
+    }
+
+    public class TripAggregationWithoutCustomName: AggregateProjection<Trip>
+    {
+        public TripAggregationWithoutCustomName()
+        {
+            DeleteEvent<TripAborted>();
 
             // Now let's change the lifecycle to inline
             Lifecycle = ProjectionLifecycle.Inline;
