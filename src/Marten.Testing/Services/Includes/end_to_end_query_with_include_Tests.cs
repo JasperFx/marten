@@ -866,6 +866,28 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
+        [Fact]
+        public void Bug_1752_simple_include_for_a_single_document()
+        {
+            var user = new User();
+            var issue = new Issue {AssigneeId = user.Id, Title = "Garage Door is busted"};
+
+            theSession.Store<object>(user, issue);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                User included = null;
+                var issue2 = query
+                    .Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => included = x)
+                    .SingleOrDefault(x => x.Title == "Garage Door is not busted");
+
+                included.ShouldBeNull();
+                issue2.ShouldBeNull();
+            }
+        }
+
         public end_to_end_query_with_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;
