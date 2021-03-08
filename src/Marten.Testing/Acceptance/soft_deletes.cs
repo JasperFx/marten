@@ -552,27 +552,26 @@ namespace Marten.Testing.Acceptance
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Tenancy.Default.EnsureStorageExists(typeof(File));
 
-            using (var session = theStore.OpenSession())
-            {
-                var user = new User();
-                session.Store(user);
-                var file1 = new File() { UserId = user.Id };
-                session.Store(file1);
-                var file2 = new File() { UserId = user.Id };
-                session.Store(file2);
-                session.SaveChanges();
-                session.Delete(file2);
-                session.SaveChanges();
+            using var session = theStore.OpenSession();
 
-                var users = new List<User>();
-                var files = session.Query<File>().Include(u => u.UserId, users).ToList();
-                files.Count.ShouldBe(1);
-                users.Count.ShouldBe(1);
-                files = session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToList();
-                files.Count.ShouldBe(2);
-                files = session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToList();
-                files.Count.ShouldBe(1);
-            }
+            var user = new User();
+            session.Store(user);
+            var file1 = new File() { UserId = user.Id };
+            session.Store(file1);
+            var file2 = new File() { UserId = user.Id };
+            session.Store(file2);
+            session.SaveChanges();
+            session.Delete(file2);
+            session.SaveChanges();
+
+            var users = new List<User>();
+            var files = session.Query<File>().Include(u => u.UserId, users).ToList();
+            files.Count.ShouldBe(1);
+            users.Count.ShouldBe(1);
+            files = session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToList();
+            files.Count.ShouldBe(2);
+            files = session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToList();
+            files.Count.ShouldBe(1);
         }
 
         [Fact]
