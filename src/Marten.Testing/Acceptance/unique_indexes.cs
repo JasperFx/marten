@@ -3,6 +3,7 @@ using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -139,6 +140,21 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Client>().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name);
             });
             #endregion sample_per-tenant-unique-index
+        }
+
+        [Fact]
+        public void unique_index_without_any_property_should_not_add_unique_index()
+        {
+            Should.Throw<InvalidOperationException>(() =>
+            {
+                var store = DocumentStore.For(_ =>
+                {
+                    _.Connection(ConnectionSource.ConnectionString);
+                    _.DatabaseSchemaName = "unique_text";
+                    // unique index without any property
+                    _.Schema.For<User>().UniqueIndex();
+                });
+            }).Message.ShouldBe($"Unique index on {typeof(User)} requires at least one property/field");
         }
 
         public unique_indexes(DefaultStoreFixture fixture) : base(fixture)

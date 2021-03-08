@@ -586,10 +586,22 @@ namespace Marten.Schema
         public void UniqueIndex(UniqueIndexType indexType, string indexName,
             TenancyScope tenancyScope = TenancyScope.Global, params Expression<Func<T, object>>[] expressions)
         {
+            var members = expressions
+                .Select(e =>
+                {
+                    var visitor = new FindMembers();
+                    visitor.Visit(e);
+                    return visitor.Members.ToArray();
+                })
+                .ToArray();
+
+            if (members.Length == 0)
+            {
+                throw new InvalidOperationException($"Unique index on {typeof(T)} requires at least one property/field");
+            }
+
             AddUniqueIndex(
-                expressions
-                    .Select(FindMembers.Determine)
-                    .ToArray(),
+                members,
                 indexType,
                 indexName,
                 IndexMethod.btree,
