@@ -228,3 +228,5 @@ BenchmarkDotNet.Artifacts
 stresults.htm
 
 *.ncrunch*
+
+docs/.vitepress/dist
