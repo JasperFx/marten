@@ -139,7 +139,6 @@ namespace Marten.Internal.CompiledQueries
             var statistics = plan.GetStatisticsIfAny(query);
             var builder = BuildDatabaseCommand(session, queryTemplate, statistics, out var command);
 
-            // TODO -- this needs to be parsed out of the expression
             plan.IncludePlans.AddRange(new List<IIncludePlan>());
             var handler = builder.BuildHandler<TOut>();
             if (handler is IIncludeQueryHandler<TOut> i) handler = i.Inner;
@@ -159,8 +158,7 @@ namespace Marten.Internal.CompiledQueries
             Expression expression = queryTemplate.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            // TODO -- parse the includes out to find includes
-            var builder = new LinqHandlerBuilder(new MartenLinqQueryProvider(session), session, invocation, forCompiled: true);
+            var builder = new LinqHandlerBuilder(new MartenLinqQueryProvider(session){Statistics = statistics}, session, invocation, forCompiled: true);
 
             command = builder.BuildDatabaseCommand(statistics);
 
