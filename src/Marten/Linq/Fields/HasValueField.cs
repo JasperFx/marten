@@ -13,7 +13,7 @@ namespace Marten.Linq.Fields
             _field = field;
         }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             var hasValue = (bool)value.Value;
             return hasValue

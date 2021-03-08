@@ -28,7 +28,7 @@ namespace Marten.Linq.SqlGeneration
 
         public CommandParameter Value { get; private set; }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             Value = new CommandParameter(value);
             Operator = op;

@@ -33,7 +33,7 @@ namespace Marten.Linq.Parsing
                 switch (expression)
                 {
                     case ConstantExpression c:
-                        return new BinarySide
+                        return new BinarySide(expression)
                         {
                             Constant = c
                         };
@@ -47,23 +47,24 @@ namespace Marten.Linq.Parsing
                     {
                         var parser = new SubQueryFilterParser(_parent, subQuery);
 
-                        return new BinarySide
+                        return new BinarySide(expression)
                         {
                             Comparable = parser.BuildCountComparisonStatement()
                         };
                     }
                     case QuerySourceReferenceExpression source:
-                        return new BinarySide
+                        return new BinarySide(expression)
                         {
                             Field = new SimpleDataField(source.Type)
                         };
-                    case BinaryExpression binary when binary.NodeType == ExpressionType.Modulo:
-                        return new BinarySide{Comparable = new ModuloFragment(binary, _parent._statement.Fields)};
-                    case BinaryExpression ne when ne.NodeType == ExpressionType.NotEqual:
+                    case BinaryExpression {NodeType: ExpressionType.Modulo} binary:
+                        return new BinarySide(expression){Comparable = new ModuloFragment(binary, _parent._statement.Fields)};
+
+                    case BinaryExpression {NodeType: ExpressionType.NotEqual} ne:
                         if (ne.Right is ConstantExpression v && v.Value == null)
                         {
                             var field = _parent._statement.Fields.FieldFor(ne.Left);
-                            return new BinarySide
+                            return new BinarySide(expression)
                             {
                                 Comparable = new HasValueField(field)
                             };
@@ -73,9 +74,9 @@ namespace Marten.Linq.Parsing
                     case BinaryExpression binary:
                         throw new BadLinqExpressionException($"Unsupported nested operator '{binary.NodeType}' as an operand in a binary expression");
                     case UnaryExpression u when u.NodeType == ExpressionType.Not:
-                        return new BinarySide{Comparable = new NotField(_parent._statement.Fields.FieldFor(u.Operand))};
+                        return new BinarySide(expression){Comparable = new NotField(_parent._statement.Fields.FieldFor(u.Operand))};
                     default:
-                        return new BinarySide{Field = _parent._statement.Fields.FieldFor(expression)};
+                        return new BinarySide(expression){Field = _parent._statement.Fields.FieldFor(expression)};
                 }
             }
         }

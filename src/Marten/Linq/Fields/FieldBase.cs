@@ -38,7 +38,7 @@ namespace Marten.Linq.Fields
             JSONBLocator = $"CAST({RawLocator} as jsonb)";
         }
 
-        public virtual ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public virtual ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             if (value.Value == null)
             {

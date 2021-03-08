@@ -30,7 +30,7 @@ namespace Marten.Linq.Parsing
             }
         }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             _op = " " + op + " ";
             _value = new CommandParameter(value);
