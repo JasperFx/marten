@@ -298,8 +298,7 @@ namespace Marten
             Expression<Func<T, object>> idSource,
             Action<TInclude> callback)
         {
-            var martenLinqQueryable = queryable.As<MartenLinqQueryable<T>>();
-            return martenLinqQueryable.Include<T, TInclude>(idSource, callback);
+            return queryable.As<MartenLinqQueryable<T>>().Include(idSource, callback);
         }
 
         /// <summary>
@@ -316,8 +315,7 @@ namespace Marten
             Expression<Func<T, object>> idSource,
             IList<TInclude> list)
         {
-            return queryable.As<MartenLinqQueryable<T>>()
-                .Include<T, TInclude>(idSource, list);
+            return queryable.As<MartenLinqQueryable<T>>().Include(idSource, list);
         }
 
         /// <summary>
@@ -336,7 +334,7 @@ namespace Marten
             IDictionary<TKey, TInclude> dictionary)
         {
             return queryable.As<MartenLinqQueryable<T>>()
-                .Include<T, TKey, TInclude>(idSource, dictionary);
+                .Include(idSource, dictionary);
         }
 
         /// <summary>
