@@ -138,8 +138,10 @@ namespace Marten.Internal.CompiledQueries
 
             var statistics = plan.GetStatisticsIfAny(query);
             var builder = BuildDatabaseCommand(session, queryTemplate, statistics, out var command);
-            plan.IncludePlans.AddRange(builder.AllIncludes);
-            var handler = builder.BuildHandler<TOut>(statistics);
+
+            // TODO -- this needs to be parsed out of the expression
+            plan.IncludePlans.AddRange(new List<IIncludePlan>());
+            var handler = builder.BuildHandler<TOut>();
             if (handler is IIncludeQueryHandler<TOut> i) handler = i.Inner;
 
             plan.HandlerPrototype = handler;
@@ -149,7 +151,7 @@ namespace Marten.Internal.CompiledQueries
             return plan;
         }
 
-        public static LinqHandlerBuilder BuildDatabaseCommand<TDoc, TOut>(IMartenSession session,
+        internal static LinqHandlerBuilder BuildDatabaseCommand<TDoc, TOut>(IMartenSession session,
             ICompiledQuery<TDoc, TOut> queryTemplate,
             QueryStatistics statistics,
             out NpgsqlCommand command)
@@ -157,7 +159,8 @@ namespace Marten.Internal.CompiledQueries
             Expression expression = queryTemplate.QueryIs();
             var invocation = Expression.Invoke(expression, Expression.Parameter(typeof(IMartenQueryable<TDoc>)));
 
-            var builder = new LinqHandlerBuilder(session, invocation, forCompiled: true);
+            // TODO -- parse the includes out to find includes
+            var builder = new LinqHandlerBuilder(new MartenLinqQueryProvider(session), session, invocation, forCompiled: true);
 
             command = builder.BuildDatabaseCommand(statistics);
 

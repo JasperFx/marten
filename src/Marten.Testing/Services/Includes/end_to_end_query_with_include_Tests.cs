@@ -793,6 +793,79 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
+        [Fact]
+        public void Bug_1751_Include_with_select()
+        {
+            var user = new User();
+            var issue = new Issue {AssigneeId = user.Id, Title = "Garage Door is busted"};
+
+            theSession.Store<object>(user, issue);
+            theSession.SaveChanges();
+
+            using (var query = theStore.QuerySession())
+            {
+                User included = null;
+                var issue2 = query
+                    .Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => included = x)
+                    .Where(x => x.Title == issue.Title)
+                    .Select(x => new IssueDTO {Id = x.Id, AssigneeId = x.AssigneeId})
+                    .Single();
+
+                included.ShouldNotBeNull();
+                included.Id.ShouldBe(user.Id);
+
+                issue2.ShouldNotBeNull();
+            }
+        }
+
+        public class IssueDTO
+        {
+            public Guid Id { get; set; }
+
+            public Guid? AssigneeId { get; set; }
+            public string AssigneeFullName { get; set; }
+        }
+
+        [Fact]
+        public async Task Bug_1715_simple_include_for_a_single_document_async()
+        {
+            theSession.Logger = new TestOutputMartenLogger(_output);
+
+            var user = new User();
+            var bug = new Bug();
+
+            theSession.Store(user);
+            theSession.Store(bug);
+
+            var issue = new Issue
+            {
+                AssigneeId = user.Id, Title = "Garage Door is busted", BugId = bug.Id
+            };
+
+            theSession.Store(issue);
+
+            await theSession.SaveChangesAsync();
+
+            using (var query = theStore.QuerySession())
+            {
+                User includedUser = null;
+                Bug includedBug = null;
+                var issue2 = await query.Query<Issue>()
+                    .Include<User>(x => x.AssigneeId, x => includedUser = x)
+                    .Include<Bug>(x => x.BugId, x => includedBug = x)
+                    .Where(x => x.Title == issue.Title)
+                    .SingleAsync();
+
+                includedUser.ShouldNotBeNull();
+                includedBug.ShouldNotBeNull();
+                includedUser.Id.ShouldBe(user.Id);
+                includedBug.Id.ShouldBe(bug.Id);
+
+                issue2.ShouldNotBeNull();
+            }
+        }
+
         public end_to_end_query_with_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;

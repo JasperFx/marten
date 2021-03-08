@@ -295,7 +295,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
             var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
-            var provider = new LinqQueryProvider(this);
+            var provider = new MartenLinqQueryProvider(this);
             return provider.ExecuteHandler(handler);
         }
 
@@ -303,7 +303,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
             var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
-            var provider = new LinqQueryProvider(this);
+            var provider = new MartenLinqQueryProvider(this);
             return provider.ExecuteHandlerAsync(handler, token);
         }
 

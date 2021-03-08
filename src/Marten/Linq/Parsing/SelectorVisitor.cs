@@ -4,7 +4,7 @@ using LamarCodeGeneration;
 
 namespace Marten.Linq.Parsing
 {
-    public partial class LinqHandlerBuilder
+    internal partial class LinqHandlerBuilder
     {
         public class SelectorVisitor: ExpressionVisitor
         {
@@ -41,15 +41,12 @@ namespace Marten.Linq.Parsing
 
             protected override Expression VisitMethodCall(MethodCallExpression node)
             {
-                // Ignore Includes here
-                if (node.Method.Name == nameof(QueryableExtensions.IncludePlan)) return null;
-
                 bool matched = false;
                 foreach (var matcher in _methodMatchers)
                 {
                     if (matcher.TryMatch(node, this, out var op))
                     {
-                        _parent.AddResultOperator(op);
+                        _parent.AddResultOperator(op, null); // SHOULD be impossible to get an Include operator here.
                         matched = true;
                         break;
                     }
