@@ -55,6 +55,9 @@ namespace Marten.Linq.SqlGeneration
                 Orderings = Orderings,
                 Mode = StatementMode.Select,
                 ExportName = ExportName,
+                SingleValue = SingleValue,
+                CanBeMultiples = CanBeMultiples,
+                ReturnDefaultWhenEmpty = ReturnDefaultWhenEmpty
 
             };
 
