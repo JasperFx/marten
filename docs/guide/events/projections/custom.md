@@ -32,9 +32,12 @@ Projection class needs to have **Id** property with public getter or property ma
 It comes of the way how Marten handles projection mechanism:
 
 1. Try to find document that has the same **Id** as the value of the property selected from event (so eg. for **UserCreated** event it will be **UserId**).
-1. If no such document exists, then new record needs to be created. Marten by default tries to use the **default constructor*
+1. If no such document exists, then new record needs to be created. Marten by default tries to use the **default constructor**
+
     The default constructor doesn't have to be public, it can also be private or protected.
-    If the class does not have a default constructor then it creates an uninitialized object (see [here](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8) for more info).
+
+    If the class does not have a default constructor then it creates an uninitialized object (see <https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8> for more info).
+
     Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
 1. If a document with such **Id** was found then it's being loaded from database.
 1. Document is updated with the logic defined in the **ViewProjection** (using expression from second **ProjectEvent** parameter).
