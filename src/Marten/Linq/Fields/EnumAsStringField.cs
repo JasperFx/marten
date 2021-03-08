@@ -34,7 +34,7 @@ namespace Marten.Linq.Fields
             return RawLocator.Replace("d.", "");
         }
 
-        public override ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public override ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             var stringValue = Enum.GetName(FieldType, value.Value) ;
             return new ComparisonFilter(this, new CommandParameter(stringValue, NpgsqlDbType.Varchar), op);

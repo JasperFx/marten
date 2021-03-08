@@ -14,7 +14,7 @@ namespace Marten.Linq.SqlGeneration
         public CommandParameter(ConstantExpression expression)
         {
             Value = expression.Value;
-            DbType = TypeMappings.ToDbType(expression.Type);
+            DbType = TypeMappings.ToDbType(expression.Type == typeof(object) ? expression.Value.GetType() : expression.Type);
         }
 
         public CommandParameter(object value)

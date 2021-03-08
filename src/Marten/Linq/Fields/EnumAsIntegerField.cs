@@ -21,7 +21,7 @@ namespace Marten.Linq.Fields
             return $"CAST({RawLocator.Replace("d.", "")} as {PgType})";
         }
 
-        public override ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public override ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             var integer = (int)value.Value;
             return new ComparisonFilter(this, new CommandParameter(integer, NpgsqlDbType.Integer), op);

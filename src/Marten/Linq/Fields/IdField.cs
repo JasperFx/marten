@@ -45,7 +45,7 @@ namespace Marten.Linq.Fields
             throw new NotSupportedException();
         }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             return new ComparisonFilter(this, new CommandParameter(value), op);
         }

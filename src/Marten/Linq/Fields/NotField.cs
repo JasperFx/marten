@@ -13,10 +13,10 @@ namespace Marten.Linq.Fields
             _inner = inner;
         }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             var opposite = WhereClauseParser.NotOperators[op];
-            return _inner.CreateComparison(opposite, value);
+            return _inner.CreateComparison(opposite, value, memberExpression);
         }
     }
 }

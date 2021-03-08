@@ -52,7 +52,7 @@ namespace Marten.Linq.Fields
             return InnerField.SelectorForDuplication(pgType);
         }
 
-        public ISqlFragment CreateComparison(string op, ConstantExpression value)
+        public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
             if (value.Value == null)
             {
@@ -71,7 +71,7 @@ namespace Marten.Linq.Fields
                 }
             }
 
-            return InnerField.CreateComparison(op, value);
+            return InnerField.CreateComparison(op, value, memberExpression);
         }
 
         void ISqlFragment.Apply(CommandBuilder builder)
