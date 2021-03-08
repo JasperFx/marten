@@ -24,7 +24,7 @@ using Remotion.Linq.Clauses.ResultOperators;
 
 namespace Marten.Linq.Parsing
 {
-    public partial class LinqHandlerBuilder
+    internal partial class LinqHandlerBuilder
     {
         private readonly IMartenSession _session;
 
@@ -36,9 +36,13 @@ namespace Marten.Linq.Parsing
             new TransformToOtherMatcher()
         };
 
-        public LinqHandlerBuilder(IMartenSession session, Expression expression, ResultOperatorBase additionalOperator = null, bool forCompiled = false)
+        private MartenLinqQueryProvider _provider;
+
+        internal LinqHandlerBuilder(MartenLinqQueryProvider provider, IMartenSession session,
+            Expression expression, ResultOperatorBase additionalOperator = null, bool forCompiled = false)
         {
             _session = session;
+            _provider = provider;
             Model = forCompiled
                 ? MartenQueryParser.TransformQueryFlyweight.GetParsedQuery(expression)
                 : MartenQueryParser.Flyweight.GetParsedQuery(expression);
@@ -60,15 +64,13 @@ namespace Marten.Linq.Parsing
                 readQueryModel(Model, storage, true, storage.Fields);
             }
 
-
+            wrapIncludes(_provider.AllIncludes);
         }
-
-        public IList<IIncludePlan> AllIncludes { get; } = new List<IIncludePlan>();
 
         private void readQueryModel(QueryModel queryModel, IDocumentStorage storage, bool considerSelectors,
             IFieldMapping fields)
         {
-            var includes = readBodyClauses(queryModel, storage);
+            readBodyClauses(queryModel, storage);
 
 
             if (considerSelectors && !(Model.SelectClause.Selector is QuerySourceReferenceExpression))
@@ -79,33 +81,14 @@ namespace Marten.Linq.Parsing
 
             foreach (var resultOperator in queryModel.ResultOperators)
             {
-                if (resultOperator is IncludeResultOperator include)
-                {
-                    includes.Add(include.BuildInclude(_session, fields));
-                }
-                else
-                {
-                    AddResultOperator(resultOperator);
-                }
+                AddResultOperator(resultOperator, fields);
             }
 
-            if (includes.Any())
-            {
-                AllIncludes.AddRange(includes);
-                wrapIncludes(includes);
-            }
 
         }
 
-        private IList<IIncludePlan> readBodyClauses(QueryModel queryModel, IDocumentStorage storage)
+        private void readBodyClauses(QueryModel queryModel, IDocumentStorage storage)
         {
-            var includes = new List<IIncludePlan>();
-            if (!(Model.SelectClause.Selector is QuerySourceReferenceExpression))
-            {
-                var visitor = new IncludeVisitor(includes);
-                visitor.Visit(Model.SelectClause.Selector);
-            }
-
             for (var i = 0; i < queryModel.BodyClauses.Count; i++)
             {
                 var clause = queryModel.BodyClauses[i];
@@ -118,7 +101,7 @@ namespace Marten.Linq.Parsing
                         CurrentStatement.Orderings.AddRange(orderBy.Orderings);
                         break;
                     case AdditionalFromClause additional:
-                        var isComplex = queryModel.BodyClauses.Count > i + 1 || queryModel.ResultOperators.Any() || includes.Any();
+                        var isComplex = queryModel.BodyClauses.Count > i + 1 || queryModel.ResultOperators.Any() || _provider.AllIncludes.Any();
                         var elementType = additional.ItemType;
                         var collectionField = storage.Fields.FieldFor(additional.FromExpression);
 
@@ -132,7 +115,6 @@ namespace Marten.Linq.Parsing
                 }
             }
 
-            return includes;
         }
 
 
@@ -143,7 +125,7 @@ namespace Marten.Linq.Parsing
 
         public QueryModel Model { get; }
 
-        private void AddResultOperator(ResultOperatorBase resultOperator)
+        private void AddResultOperator(ResultOperatorBase resultOperator, IFieldMapping fields)
         {
             switch (resultOperator)
             {
@@ -222,10 +204,6 @@ namespace Marten.Linq.Parsing
                     CurrentStatement.ApplyAggregateOperator("MAX");
                     break;
 
-                case IncludeResultOperator _:
-                    // TODO -- ignoring this for now, but should do something with it later maybe?
-                    break;
-
                 case ToJsonArrayResultOperator _:
                     CurrentStatement.ToJsonSelector();
                     break;
@@ -233,21 +211,26 @@ namespace Marten.Linq.Parsing
                 case LastResultOperator _:
                     throw new InvalidOperationException("Marten does not support Last() or LastOrDefault() queries. Please reverse the ordering and use First()/FirstOrDefault() instead");
 
+                case IncludeResultOperator includeOp:
+                    var include = includeOp.BuildInclude(_session, fields);
+                    _provider.AllIncludes.Add(include);
+                    break;
+
                 default:
                     throw new NotSupportedException("Don't yet know how to deal with " + resultOperator);
             }
         }
 
-        public IQueryHandler<TResult> BuildHandler<TResult>(QueryStatistics statistics)
+        public IQueryHandler<TResult> BuildHandler<TResult>()
         {
             try
             {
-                BuildDatabaseStatement(statistics);
+                BuildDatabaseStatement();
 
                 var handler = buildHandlerForCurrentStatement<TResult>();
 
-                return AllIncludes.Any()
-                    ? new IncludeQueryHandler<TResult>(handler, AllIncludes.Select(x => x.BuildReader(_session)).ToArray())
+                return _provider.AllIncludes.Any()
+                    ? new IncludeQueryHandler<TResult>(handler, _provider.AllIncludes.Select(x => x.BuildReader(_session)).ToArray())
                     : handler;
             }
             catch (NotSupportedException e)
@@ -261,11 +244,11 @@ namespace Marten.Linq.Parsing
             }
         }
 
-        public void BuildDatabaseStatement(QueryStatistics statistics)
+        public void BuildDatabaseStatement()
         {
-            if (statistics != null)
+            if (_provider.Statistics != null)
             {
-                CurrentStatement.UseStatistics(statistics);
+                CurrentStatement.UseStatistics(_provider.Statistics);
             }
 
             var topStatement = TopStatement;
@@ -276,6 +259,8 @@ namespace Marten.Linq.Parsing
 
         private void wrapIncludes(IList<IIncludePlan> includes)
         {
+            if (!includes.Any()) return;
+
             // Just need to guarantee that each include has an index
             for (var i = 0; i < includes.Count; i++)
             {
@@ -335,7 +320,7 @@ namespace Marten.Linq.Parsing
 
         public NpgsqlCommand BuildDatabaseCommand(QueryStatistics statistics)
         {
-            BuildDatabaseStatement(statistics);
+            BuildDatabaseStatement();
 
             return _session.BuildCommand(TopStatement);
         }

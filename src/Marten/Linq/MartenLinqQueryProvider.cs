@@ -6,26 +6,28 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
+using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
-using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Marten.Util;
 using Remotion.Linq.Clauses;
 
 namespace Marten.Linq
 {
-    internal class LinqQueryProvider: IQueryProvider
+    internal class MartenLinqQueryProvider: IQueryProvider
     {
         private readonly IMartenSession _session;
 
-        public LinqQueryProvider(IMartenSession session)
+        public MartenLinqQueryProvider(IMartenSession session)
         {
             _session = session;
         }
 
         internal QueryStatistics Statistics { get; set; }
+
+        internal IList<IIncludePlan> AllIncludes { get; } = new List<IIncludePlan>();
 
         public IQueryable CreateQuery(Expression expression)
         {
@@ -44,32 +46,32 @@ namespace Marten.Linq
 
         public TResult Execute<TResult>(Expression expression)
         {
-            var builder = new LinqHandlerBuilder(_session, expression);
-            var handler = builder.BuildHandler<TResult>(Statistics);
+            var builder = new LinqHandlerBuilder(this, _session, expression);
+            var handler = builder.BuildHandler<TResult>();
 
             return ExecuteHandler(handler);
         }
 
         public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token)
         {
-            var builder = new LinqHandlerBuilder(_session, expression);
-            var handler = builder.BuildHandler<TResult>(Statistics);
+            var builder = new LinqHandlerBuilder(this, _session, expression);
+            var handler = builder.BuildHandler<TResult>();
 
             return ExecuteHandlerAsync(handler, token);
         }
 
         public TResult Execute<TResult>(Expression expression, ResultOperatorBase op)
         {
-            var builder = new LinqHandlerBuilder(_session, expression, op);
-            var handler = builder.BuildHandler<TResult>(Statistics);
+            var builder = new LinqHandlerBuilder(this, _session, expression, op);
+            var handler = builder.BuildHandler<TResult>();
 
             return ExecuteHandler(handler);
         }
 
         public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token, ResultOperatorBase op)
         {
-            var builder = new LinqHandlerBuilder(_session, expression, op);
-            var handler = builder.BuildHandler<TResult>(Statistics);
+            var builder = new LinqHandlerBuilder(this, _session, expression, op);
+            var handler = builder.BuildHandler<TResult>();
 
             return ExecuteHandlerAsync(handler, token);
         }
@@ -93,8 +95,8 @@ namespace Marten.Linq
 
         public async IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(Expression expression, CancellationToken token)
         {
-            var builder = new LinqHandlerBuilder(_session, expression);
-            builder.BuildDatabaseStatement(null);
+            var builder = new LinqHandlerBuilder(this, _session, expression);
+            builder.BuildDatabaseStatement();
 
             var selector = (ISelector<T>)builder.CurrentStatement.SelectClause.BuildSelector(_session);
             var statement = builder.TopStatement;
@@ -110,8 +112,8 @@ namespace Marten.Linq
 
         public Task StreamMany(Expression expression, Stream destination, CancellationToken token)
         {
-            var builder = new LinqHandlerBuilder(_session, expression);
-            builder.BuildDatabaseStatement(null);
+            var builder = new LinqHandlerBuilder(this, _session, expression);
+            builder.BuildDatabaseStatement();
 
             var command = builder.TopStatement.BuildCommand();
 
@@ -120,8 +122,8 @@ namespace Marten.Linq
 
         public Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)
         {
-            var builder = new LinqHandlerBuilder(_session, expression);
-            builder.BuildDatabaseStatement(null);
+            var builder = new LinqHandlerBuilder(this, _session, expression);
+            builder.BuildDatabaseStatement();
 
             var statement = builder.TopStatement;
             statement.Current().Limit = 1;

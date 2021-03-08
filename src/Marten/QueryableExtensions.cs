@@ -298,8 +298,8 @@ namespace Marten
             Expression<Func<T, object>> idSource,
             Action<TInclude> callback)
         {
-            var include = queryable.As<MartenLinqQueryable<T>>().BuildInclude(idSource,callback);
-            return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
+            var martenLinqQueryable = queryable.As<MartenLinqQueryable<T>>();
+            return martenLinqQueryable.Include<T, TInclude>(idSource, callback);
         }
 
         /// <summary>
@@ -316,8 +316,8 @@ namespace Marten
             Expression<Func<T, object>> idSource,
             IList<TInclude> list)
         {
-            var include = queryable.As<MartenLinqQueryable<T>>().BuildInclude(idSource,(Action<TInclude>) list.Add);
-            return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
+            return queryable.As<MartenLinqQueryable<T>>()
+                .Include<T, TInclude>(idSource, list);
         }
 
         /// <summary>
@@ -335,21 +335,8 @@ namespace Marten
             Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary)
         {
-            var include = queryable.As<MartenLinqQueryable<T>>().BuildInclude(idSource, dictionary);
-            return queryable.Select(x => x.IncludePlan(include)).As<IMartenQueryable<T>>();
-        }
-
-
-        /// <summary>
-        /// This is only here to sneak an IInclude into a Linq expression
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="include"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        internal static T IncludePlan<T>(this T target, IIncludePlan include)
-        {
-            return target;
+            return queryable.As<MartenLinqQueryable<T>>()
+                .Include<T, TKey, TInclude>(idSource, dictionary);
         }
 
         /// <summary>

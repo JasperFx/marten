@@ -44,11 +44,15 @@ namespace Marten.Linq.Includes
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            foreach (var includeReader in _readers) await includeReader.ReadAsync(reader, token).ConfigureAwait(false);
+            // TODO -- watch this. May be extra temp tables
 
-            // Advance to the last reader for the actual query results
-            await reader.NextResultAsync(token).ConfigureAwait(false);
-            return await Inner.HandleAsync(reader, session, token).ConfigureAwait(false);
+            foreach (var includeReader in _readers)
+            {
+                await includeReader.ReadAsync(reader, token);
+                await reader.NextResultAsync(token);
+            }
+
+            return await Inner.HandleAsync(reader, session, token);
         }
     }
 }
