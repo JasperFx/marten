@@ -48,7 +48,7 @@ namespace Marten.Events.Aggregation
                 }
             }, new ExecutionDataflowBlockOptions
             {
-                CancellationToken = token
+                CancellationToken = token,
             });
 
             _builder.LinkTo(queue, x => x != null);

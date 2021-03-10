@@ -41,6 +41,8 @@ namespace Marten.Events.Aggregation
                 aggregate = await Storage.LoadAsync(slice.Id, session, cancellation);
             }
 
+            var exists = aggregate != null;
+
             foreach (var @event in slice.Events)
             {
                 aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation);
@@ -51,9 +53,12 @@ namespace Marten.Events.Aggregation
                 Storage.SetIdentity(aggregate, slice.Id);
             }
 
-            return aggregate == null
-                ? Storage.DeleteForId(slice.Id, slice.Tenant)
-                : Storage.Upsert(aggregate, session, slice.Tenant);
+            if (aggregate == null)
+            {
+                return exists ? Storage.DeleteForId(slice.Id, slice.Tenant) : null;
+            }
+
+            return Storage.Upsert(aggregate, session, slice.Tenant);
         }
 
         public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
@@ -103,7 +108,7 @@ namespace Marten.Events.Aggregation
                     operation = await DetermineOperation(martenSession, slice, cancellation);
                 }
 
-                operations.QueueOperation(operation);
+                if (operation != null) operations.QueueOperation(operation);
             }
         }
 
