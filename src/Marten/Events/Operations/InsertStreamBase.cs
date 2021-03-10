@@ -18,6 +18,11 @@ namespace Marten.Events.Operations
             Stream = stream;
         }
 
+        public override string ToString()
+        {
+            return $"InsertStream: {Stream.Key ?? Stream.Id.ToString()}";
+        }
+
         public StreamAction Stream { get; }
 
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);

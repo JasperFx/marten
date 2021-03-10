@@ -20,6 +20,11 @@ namespace Marten.Events.Operations
             Event = e;
         }
 
+        public override string ToString()
+        {
+            return $"Insert Event to Stream {Stream.Key ?? Stream.Id.ToString()}, Version {Event.Version}";
+        }
+
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
 
         public Type DocumentType => typeof(IEvent);

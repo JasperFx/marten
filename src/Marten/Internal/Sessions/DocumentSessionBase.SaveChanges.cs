@@ -16,10 +16,9 @@ namespace Marten.Internal.Sessions
 
             Database.BeginTransaction();
 
-            Options.EventGraph.ProcessEvents(this);
-
+            // This is important, don't let the sorting work on the event operations
             _workTracker.Sort(Options);
-
+            Options.EventGraph.ProcessEvents(this);
 
             foreach (var listener in Listeners) listener.BeforeSaveChanges(this);
 
@@ -73,9 +72,9 @@ namespace Marten.Internal.Sessions
 
             await Database.BeginTransactionAsync(token).ConfigureAwait(false);
 
-            await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
-
+            // This is important, don't let the sorting work on the event operations
             _workTracker.Sort(Options);
+            await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
 
             foreach (var listener in Listeners)
                 await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
