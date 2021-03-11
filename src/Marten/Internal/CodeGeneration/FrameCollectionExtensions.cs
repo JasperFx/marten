@@ -73,8 +73,8 @@ document = _serializer.FromJson<{documentType.FullNameInCode()}>(reader, {index}
             {
                 frames.CodeAsync($@"
 {documentType.FullNameInCode()} document;
-var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}}).ConfigureAwait(false);
-document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeFor(typeAlias), reader, {index});
+var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}});
+document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_mapping.TypeFor(typeAlias), reader, {index}, {{0}}));
 ", Use.Type<CancellationToken>()).Creates(document);
             }
 
