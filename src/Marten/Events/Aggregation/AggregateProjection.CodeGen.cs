@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -36,6 +37,8 @@ namespace Marten.Events.Aggregation
         private GeneratedAssembly _assembly;
         private Type _storageType;
 
+        private readonly Lazy<Type[]> _allEventTypes;
+
         public AggregateProjection() : base(typeof(T).NameInCode())
         {
             _createMethods = new CreateMethodCollection(GetType(), typeof(T));
@@ -45,7 +48,21 @@ namespace Marten.Events.Aggregation
             ProjectionName = typeof(T).Name;
 
             Options.DeleteViewTypeOnTeardown<T>();
+
+            _allEventTypes = new Lazy<Type[]>(() =>
+            {
+                return _createMethods.Methods.Concat(_applyMethods.Methods).Concat(_shouldDeleteMethods.Methods)
+                    .Select(x => x.EventType).Concat(DeleteEvents).Distinct().ToArray();
+            });
         }
+
+        public bool AppliesTo(IEnumerable<Type> eventTypes)
+        {
+            return eventTypes
+                .Intersect(AllEventTypes).Any() || eventTypes.Any(type => AllEventTypes.Any(type.CanBeCastTo));
+        }
+
+        public Type[] AllEventTypes => _allEventTypes.Value;
 
         Type IAggregateProjection.AggregateType => typeof(T);
 

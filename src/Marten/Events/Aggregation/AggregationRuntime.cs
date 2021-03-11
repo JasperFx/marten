@@ -90,12 +90,17 @@ namespace Marten.Events.Aggregation
         public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
             CancellationToken cancellation)
         {
-            var slices = Slicer.Slice(streams, Tenancy);
+            // Doing the filtering here to prevent unnecessary network round trips by allowing
+            // an aggregate projection to "work" on a stream with no matching events
+            var filteredStreams = streams
+                .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
+                .ToArray();
+
+            var slices = Slicer.Slice(filteredStreams, Tenancy);
 
             var martenSession = (DocumentSessionBase)operations;
             foreach (var slice in slices)
             {
-
                 IStorageOperation operation = null;
 
                 // TODO -- this can only apply to the last event
