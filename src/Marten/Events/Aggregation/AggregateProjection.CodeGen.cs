@@ -56,6 +56,8 @@ namespace Marten.Events.Aggregation
             });
         }
 
+        public override Type ProjectionType => GetType();
+
         public bool AppliesTo(IEnumerable<Type> eventTypes)
         {
             return eventTypes

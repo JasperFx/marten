@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
@@ -11,9 +12,7 @@ using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Metadata;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
-using Marten.Services;
 using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Transforms;
@@ -27,7 +26,7 @@ namespace Marten
     ///     necessary to customize and bootstrap a working
     ///     DocumentStore
     /// </summary>
-    public class StoreOptions
+    public class StoreOptions: IReadOnlyStoreOptions
     {
         /// <summary>
         ///     The default database schema used 'public'.
@@ -91,6 +90,8 @@ namespace Marten
         }
 
         public AdvancedOptions Advanced { get; }
+
+        IReadOnlyAdvancedOptions IReadOnlyStoreOptions.Advanced => Advanced;
 
         internal EventGraph EventGraph { get; }
 
@@ -246,6 +247,16 @@ namespace Marten
         public IRetryPolicy RetryPolicy()
         {
             return _retryPolicy ?? new NulloRetryPolicy();
+        }
+
+        IReadOnlyList<IDocumentType> IReadOnlyStoreOptions.AllKnownDocumentTypes()
+        {
+            return Storage.AllDocumentMappings.OfType<IDocumentType>().ToList();
+        }
+
+        public IDocumentType FindOrResolveDocumentType(Type documentType)
+        {
+            return Storage.FindMapping(documentType).Root as IDocumentType;
         }
 
         public void RetryPolicy(IRetryPolicy retryPolicy)
@@ -444,6 +455,15 @@ namespace Marten
 
             return source;
         }
+
+        IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
+
+        IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
+
+        IReadOnlyList<TransformFunction> IReadOnlyStoreOptions.Transforms()
+        {
+            return Transforms.AllFunctions().ToList();
+        }
     }
 
     public interface IDocumentPolicy
@@ -466,7 +486,31 @@ namespace Marten
         }
     }
 
-    public class AdvancedOptions
+    public interface IReadOnlyAdvancedOptions
+    {
+        /// <summary>
+        /// Sets Enum values stored as either integers or strings for DuplicatedField.
+        /// </summary>
+        EnumStorage DuplicatedFieldEnumStorage { get;  }
+
+        /// <summary>
+        /// Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
+        /// </summary>
+        bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; }
+
+        /// <summary>
+        ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
+        ///     type as well
+        /// </summary>
+        IReadOnlyHiloSettings HiloSequenceDefaults { get; }
+
+        /// <summary>
+        /// Option to enable or disable usage of default tenant when using multi-tenanted documents
+        /// </summary>
+        bool DefaultTenantUsageEnabled { get; }
+    }
+
+    public class AdvancedOptions: IReadOnlyAdvancedOptions
     {
         private readonly StoreOptions _storeOptions;
         private EnumStorage? _duplicatedFieldEnumStorage;
@@ -500,6 +544,7 @@ namespace Marten
         /// </summary>
         public HiloSettings HiloSequenceDefaults { get; } = new();
 
+        IReadOnlyHiloSettings IReadOnlyAdvancedOptions.HiloSequenceDefaults => HiloSequenceDefaults;
 
 
         /// <summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Marten.Events.Daemon;
 using Marten.Storage;
@@ -11,7 +12,14 @@ namespace Marten.Events.Projections
         Live
     }
 
-    public abstract class ProjectionSource
+    public interface IProjectionSource
+    {
+        string ProjectionName { get; }
+        ProjectionLifecycle Lifecycle { get; }
+        Type ProjectionType { get; }
+    }
+
+    public abstract class ProjectionSource: IProjectionSource
     {
         public string ProjectionName { get; protected internal set; }
 
@@ -19,6 +27,8 @@ namespace Marten.Events.Projections
         {
             ProjectionName = projectionName;
         }
+
+        public abstract Type ProjectionType { get;}
 
         public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Inline;
 

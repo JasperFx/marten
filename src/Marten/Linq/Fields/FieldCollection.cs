@@ -19,7 +19,7 @@ using Baseline;
         IField FieldFor(Expression expression);
         IField FieldFor(IEnumerable<MemberInfo> members);
         IField FieldFor(MemberInfo member);
-        IField FieldFor(string memberName);
+        public IField FieldFor(string memberName);
         PropertySearching PropertySearching { get; }
         DeleteStyle DeleteStyle { get; }
     }

@@ -17,12 +17,30 @@ using Marten.Util;
 
 namespace Marten
 {
-    public class LinqParsing
+    public interface IReadOnlyLinqParsing
+    {
+        /// <summary>
+        /// Registered extensions to the Marten Linq support for special handling of
+        /// specific .Net types
+        /// </summary>
+        public IReadOnlyList<IFieldSource> FieldSources { get; }
+
+        /// <summary>
+        /// Custom Linq expression parsers for your own methods
+        /// </summary>
+        public IReadOnlyList<IMethodCallParser> MethodCallParsers { get; }
+    }
+
+    public class LinqParsing : IReadOnlyLinqParsing
     {
         internal LinqParsing()
         {
 
         }
+
+        IReadOnlyList<IFieldSource> IReadOnlyLinqParsing.FieldSources => _fieldSources;
+
+        IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _methodCallParsers;
 
         /// <summary>
         /// Register extensions to the Marten Linq support for special handling of
@@ -123,7 +141,7 @@ namespace Marten
         }
 
         private ImHashMap<Type, ImHashMap<string, IMethodCallParser>> _methodParsing = ImHashMap<Type, ImHashMap<string, IMethodCallParser>>.Empty;
-
-
+        private IReadOnlyList<IFieldSource> _fieldSources;
+        private IReadOnlyList<IMethodCallParser> _methodCallParsers;
     }
 }

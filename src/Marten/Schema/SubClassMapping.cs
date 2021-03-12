@@ -64,5 +64,7 @@ namespace Marten.Schema
                        .Replace(" ", "_")
                        .ToLowerInvariant();
         }
+
+
     }
 }

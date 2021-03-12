@@ -9,7 +9,41 @@ using Npgsql;
 
 namespace Marten.Events.Daemon
 {
-    public class DaemonSettings
+    public interface IReadOnlyDaemonSettings
+    {
+        /// <summary>
+        /// If the projection daemon detects a "stale" event sequence that is probably cause
+        /// by sequence numbers being reserved, but never committed, this is the threshold to say
+        /// "just look for the highest contiguous sequence number newer than X amount of time" to trigger
+        /// the daemon to continue advancing. The default is 3 seconds.
+        /// </summary>
+        TimeSpan StaleSequenceThreshold { get; }
+
+        /// <summary>
+        /// Polling time between looking for a new high water sequence mark
+        /// if the daemon detects low activity. The default is 1 second.
+        /// </summary>
+        TimeSpan SlowPollingTime { get; }
+
+        /// <summary>
+        /// Polling time between looking for a new high water sequence mark
+        /// if the daemon detects high activity. The default is 250ms
+        /// </summary>
+        TimeSpan FastPollingTime { get; }
+
+        /// <summary>
+        /// Polling time for the running projection daemon to determine the health
+        /// of its activities and try to restart anything that is not currently running
+        /// </summary>
+        TimeSpan HealthCheckPollingTime { get; }
+
+        /// <summary>
+        /// Projection Daemon mode. The default is Disabled
+        /// </summary>
+        DaemonMode Mode { get; }
+    }
+
+    public class DaemonSettings: IReadOnlyDaemonSettings
     {
         public DaemonSettings()
         {

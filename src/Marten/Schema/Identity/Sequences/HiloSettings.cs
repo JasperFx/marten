@@ -1,9 +1,16 @@
 namespace Marten.Schema.Identity.Sequences
 {
-    public class HiloSettings
+    public interface IReadOnlyHiloSettings
     {
-        public int MaxLo = 1000;
-        public string SequenceName = null;
-        public int MaxAdvanceToNextHiAttempts = 30;
+        int MaxLo { get; }
+        string SequenceName { get; }
+        int MaxAdvanceToNextHiAttempts { get; }
+    }
+
+    public class HiloSettings: IReadOnlyHiloSettings
+    {
+        public int MaxLo { get; set; } = 1000;
+        public string SequenceName { get; set; } = null;
+        public int MaxAdvanceToNextHiAttempts { get; set; } = 30;
     }
 }

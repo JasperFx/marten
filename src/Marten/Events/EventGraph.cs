@@ -5,9 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Progress;
 using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
@@ -15,7 +13,6 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Storage;
@@ -23,58 +20,7 @@ using Marten.Util;
 
 namespace Marten.Events
 {
-    public enum StreamIdentity
-    {
-        AsGuid,
-        AsString
-    }
-
-    public interface IEventStoreOptions
-    {
-        /// <summary>
-        /// Advanced configuration for the asynchronous projection execution
-        /// </summary>
-        DaemonSettings Daemon { get; }
-
-        /// <summary>
-        /// Configure whether event streams are identified with Guid or strings
-        /// </summary>
-        StreamIdentity StreamIdentity { get; set; }
-
-        /// <summary>
-        /// Configure the event sourcing storage for multi-tenancy
-        /// </summary>
-        TenancyStyle TenancyStyle { get; set; }
-
-        /// <summary>
-        /// Override the database schema name for event related tables. By default this
-        /// is the same schema as the document storage
-        /// </summary>
-        string DatabaseSchemaName { get; set; }
-
-        /// <summary>
-        /// Configuration for all event store projections
-        /// </summary>
-        ProjectionCollection Projections { get; }
-
-        /// <summary>
-        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
-        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        /// the event type
-        /// </summary>
-        /// <param name="eventType"></param>
-        void AddEventType(Type eventType);
-
-        /// <summary>
-        /// Register an event type with Marten. This isn't strictly necessary for normal usage,
-        /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
-        /// the event type
-        /// </summary>
-        /// <param name="types"></param>
-        void AddEventTypes(IEnumerable<Type> types);
-    }
-
-    public class EventGraph: IFeatureSchema, IEventStoreOptions
+    public class EventGraph: IFeatureSchema, IEventStoreOptions, IReadOnlyEventStoreOptions
     {
 
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
@@ -113,6 +59,18 @@ namespace Marten.Events
             Projections = new ProjectionCollection(options);
 
             _aggregateTypeByName = new Cache<string, Type>(name => findAggregateType(name));
+        }
+
+        IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => Daemon;
+
+        IReadOnlyList<IProjectionSource> IReadOnlyEventStoreOptions.Projections()
+        {
+            return Projections.Projections.OfType<IProjectionSource>().ToList();
+        }
+
+        public IReadOnlyList<IEventType> AllKnownEventTypes()
+        {
+            return _events.OfType<IEventType>().ToList();
         }
 
         private Type findAggregateType(string name)

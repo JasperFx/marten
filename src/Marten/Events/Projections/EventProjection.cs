@@ -39,6 +39,8 @@ namespace Marten.Events.Projections
             ProjectionName = GetType().FullNameInCode();
         }
 
+        public override Type ProjectionType => GetType();
+
         internal override void AssertValidity()
         {
             if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())

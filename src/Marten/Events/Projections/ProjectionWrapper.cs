@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
@@ -15,6 +16,8 @@ namespace Marten.Events.Projections
             _projection = projection;
             Lifecycle = lifecycle;
         }
+
+        public override Type ProjectionType => _projection.GetType();
 
         internal override IProjection Build(DocumentStore store)
         {

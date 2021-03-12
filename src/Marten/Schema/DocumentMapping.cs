@@ -22,7 +22,45 @@ using Remotion.Linq;
 
 namespace Marten.Schema
 {
-    public class DocumentMapping: FieldMapping, IDocumentMapping
+    public interface IDocumentType
+    {
+        IDocumentType Root { get; }
+
+        Type DocumentType { get; }
+
+        Type IdType { get; }
+        DbObjectName TableName { get; }
+
+        DocumentMetadataCollection Metadata { get; }
+        bool UseOptimisticConcurrency { get;}
+        IList<IIndexDefinition> Indexes { get; }
+        IList<ForeignKeyDefinition> ForeignKeys { get; }
+        SubClasses SubClasses { get; }
+        DbObjectName UpsertFunction { get; }
+        DbObjectName InsertFunction { get; }
+        DbObjectName UpdateFunction { get; }
+        DbObjectName OverwriteFunction { get; }
+        string DatabaseSchemaName { get; set; }
+        EnumStorage EnumStorage { get; }
+        Casing Casing { get; }
+        string Alias { get; set; }
+        IIdGeneration IdStrategy { get;}
+        MemberInfo IdMember { get; }
+        bool StructuralTyped { get; }
+        string DdlTemplate { get; }
+        IReadOnlyHiloSettings HiloSettings { get; }
+        TenancyStyle TenancyStyle { get; }
+        DuplicatedField[] DuplicatedFields { get; }
+        bool IsHierarchy();
+        IEnumerable<IndexDefinition> IndexesFor(string column);
+        string AliasFor(Type subclassType);
+        Type TypeFor(string alias);
+        IField FieldFor(string memberName);
+
+
+    }
+
+    public class DocumentMapping: FieldMapping, IDocumentMapping, IDocumentType
     {
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
 
@@ -153,6 +191,7 @@ namespace Marten.Schema
         public bool StructuralTyped { get; set; }
 
         public string DdlTemplate { get; set; }
+        IReadOnlyHiloSettings IDocumentType.HiloSettings { get; }
 
         public HiloSettings HiloSettings
         {
@@ -177,6 +216,9 @@ namespace Marten.Schema
         public Type IdType => IdMember?.GetMemberType();
 
         IDocumentMapping IDocumentMapping.Root => this;
+
+        IDocumentType IDocumentType.Root => this;
+
         public Type DocumentType { get; }
 
         // TODO -- this needs to be memoized!!!

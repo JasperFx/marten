@@ -28,7 +28,15 @@ using Remotion.Linq;
 
 namespace Marten.Events
 {
-    public abstract class EventMapping: IDocumentMapping
+    public interface IEventType
+    {
+        Type EventType { get; }
+        string DotNetTypeName { get; set; }
+        string EventTypeName { get; set; }
+        string Alias { get; }
+    }
+
+    public abstract class EventMapping: IDocumentMapping, IEventType
     {
         protected readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
@@ -47,6 +55,8 @@ namespace Marten.Events
 
             DotNetTypeName = $"{eventType.FullName}, {eventType.Assembly.GetName().Name}";
         }
+
+        Type IEventType.EventType => DocumentType;
 
         public string DotNetTypeName { get; set; }
 

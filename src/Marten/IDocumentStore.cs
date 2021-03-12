@@ -19,6 +19,11 @@ namespace Marten
     public interface IDocumentStore: IDisposable
     {
         /// <summary>
+        /// Information about the current configuration of this IDocumentStore
+        /// </summary>
+        IReadOnlyStoreOptions Options { get; }
+
+        /// <summary>
         ///     Information about the document and event storage
         /// </summary>
         IDocumentSchema Schema { get; }

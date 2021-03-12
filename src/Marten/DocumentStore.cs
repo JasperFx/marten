@@ -64,6 +64,8 @@ namespace Marten
             options.InitialData.Each(x => x.Populate(this));
         }
 
+        IReadOnlyStoreOptions IDocumentStore.Options => Options;
+
         public ITenancy Tenancy => Options.Tenancy;
 
         public EventGraph Events => Options.EventGraph;
