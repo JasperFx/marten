@@ -26,7 +26,6 @@ namespace Marten.Events.CodeGeneration
             _validReturnTypes.Fill(aggregateType);
             _validReturnTypes.Add(typeof(Task<>).MakeGenericType(aggregateType));
 
-
             var constructors = aggregateType
                 .GetConstructors()
                 .Where(x => x.GetParameters().Length == 1);
@@ -66,7 +65,6 @@ namespace Marten.Events.CodeGeneration
                 {IfStyle = IfStyle.None});
 
         }
-
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot)

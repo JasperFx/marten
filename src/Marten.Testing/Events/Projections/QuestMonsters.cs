@@ -82,6 +82,35 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
+    public class QuestMonstersWithPrivateConstructor: IMonstersView
+    {
+        public Guid Id { get; protected set; }
+
+        private readonly IList<string> _monsters = new List<string>();
+
+        private QuestMonstersWithPrivateConstructor()
+        {
+
+        }
+
+        public static QuestMonstersWithPrivateConstructor Init() => new QuestMonstersWithPrivateConstructor();
+
+        public void Apply(MonsterSlayed slayed)
+        {
+            _monsters.Fill(slayed.Name);
+        }
+
+        public string[] Monsters
+        {
+            get { return _monsters.ToArray(); }
+            set
+            {
+                _monsters.Clear();
+                _monsters.AddRange(value);
+            }
+        }
+    }
+
     public class QuestMonstersWithBaseClass: Root, IMonstersView
     {
         private readonly IList<string> _monsters = new List<string>();
