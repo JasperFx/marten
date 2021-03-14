@@ -79,14 +79,20 @@ namespace Marten.Events.CodeGeneration
 
             if (Apply != null)
             {
-                var defaultConstructor = AggregateType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic).SingleOrDefault(x => !x.GetParameters().Any());
-                if (defaultConstructor?.IsPublic == true)
+                if (CreationFrame == null)
                 {
-                    writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
-                }
-                else if (defaultConstructor?.IsPublic == false)
-                {
-                    writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
+                    var defaultConstructor = AggregateType.GetConstructor(
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes,
+                        null);
+
+                    if (defaultConstructor?.IsPublic == true)
+                    {
+                        writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
+                    }
+                    else if (defaultConstructor?.IsPublic == false)
+                    {
+                        writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
+                    }
                 }
 
                 Apply.GenerateCode(method, writer);
