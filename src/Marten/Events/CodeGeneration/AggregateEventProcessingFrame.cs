@@ -74,15 +74,18 @@ namespace Marten.Events.CodeGeneration
                 writer.Write("return null;");
             }
 
-            CreationFrame?.GenerateCode(method, writer);
+
+            if (CreationFrame != null)
+            {
+                CreationFrame.GenerateCode(method, writer);
+            }
+            else
+            {
+                writer.Write($"{Aggregate.Usage} ??= Create({SpecificEvent.Usage}, session);");
+            }
 
             if (Apply != null)
             {
-                if (AggregateType.GetConstructors().Any(x => !x.GetParameters().Any()))
-                {
-                    writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
-                }
-
                 Apply.GenerateCode(method, writer);
             }
 
