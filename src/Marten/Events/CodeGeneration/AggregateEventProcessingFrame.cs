@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using Marten.Util;
@@ -74,18 +75,20 @@ namespace Marten.Events.CodeGeneration
                 writer.Write("return null;");
             }
 
-
-            if (CreationFrame != null)
-            {
-                CreationFrame.GenerateCode(method, writer);
-            }
-            else
-            {
-                writer.Write($"{Aggregate.Usage} ??= Create({SpecificEvent.Usage}, session);");
-            }
+            CreationFrame?.GenerateCode(method, writer);
 
             if (Apply != null)
             {
+                var defaultConstructor = AggregateType.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic).SingleOrDefault(x => !x.GetParameters().Any());
+                if (defaultConstructor?.IsPublic == true)
+                {
+                    writer.Write($"{Aggregate.Usage} ??= new {AggregateType.FullNameInCode()}();");
+                }
+                else if (defaultConstructor?.IsPublic == false)
+                {
+                    writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
+                }
+
                 Apply.GenerateCode(method, writer);
             }
 
