@@ -93,6 +93,12 @@ namespace Marten.Events.CodeGeneration
                     {
                         writer.Write($"{Aggregate.Usage} ??= AggregateBuilder();");
                     }
+                    else
+                    {
+                        var errorMessage = $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullName}, or {AggregateType.FullName} should have a Default Constructor.";
+
+                        writer.Write($"if({Aggregate.Usage} == default) throw new ArgumentException(\"{errorMessage}\");");
+                    }
                 }
 
                 Apply.GenerateCode(method, writer);
