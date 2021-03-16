@@ -9,7 +9,7 @@ namespace Marten.Events.Daemon
 {
     internal abstract class AsyncProjectionShardBase<T> : IAsyncProjectionShard where T : class, IEventRangeGroup
     {
-        private IProjectionUpdater _updater;
+        private IProjectionAgent _agent;
         private ILogger _logger;
         private CancellationToken _token;
         private TransformBlock<EventRange,T> _slicing;
@@ -29,10 +29,10 @@ namespace Marten.Events.Daemon
         public ShardName Name { get; }
         public AsyncOptions Options { get; }
 
-        public ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger logger, CancellationToken token)
+        public ITargetBlock<EventRange> Start(IProjectionAgent agent, ILogger logger, CancellationToken token)
         {
             _token = token;
-            _updater = updater;
+            _agent = agent;
             _logger = logger;
 
             var singleFileOptions = new ExecutionDataflowBlockOptions
@@ -63,7 +63,7 @@ namespace Marten.Events.Daemon
         {
             if (_token.IsCancellationRequested) return;
 
-            await _updater.TryAction(async () =>
+            await _agent.TryAction(async () =>
             {
                 try
                 {
@@ -76,9 +76,9 @@ namespace Marten.Events.Daemon
 
                     if (_token.IsCancellationRequested) return;
 
-                    var batch = _updater.StartNewBatch(@group.Range, _token);
+                    var batch = _agent.StartNewBatch(@group.Range, _token);
 
-                    await configureUpdateBatch(batch, group, _token);
+                    await configureUpdateBatch(_agent, batch, group, _token);
 
                     if (_token.IsCancellationRequested) return;
 
@@ -87,7 +87,7 @@ namespace Marten.Events.Daemon
 
                     if (_token.IsCancellationRequested) return;
 
-                    await _updater.ExecuteBatch(batch);
+                    await _agent.ExecuteBatch(batch);
 
                     if (_logger.IsEnabled(LogLevel.Debug))
                     {
@@ -107,7 +107,8 @@ namespace Marten.Events.Daemon
             }, _token);
         }
 
-        protected abstract Task configureUpdateBatch(ProjectionUpdateBatch batch, T group, CancellationToken token);
+        protected abstract Task configureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch,
+            T @group, CancellationToken token);
 
         private async Task<T> groupEventRange(EventRange range)
         {
@@ -115,7 +116,7 @@ namespace Marten.Events.Daemon
 
             T group = null;
 
-            await _updater.TryAction(() =>
+            await _agent.TryAction(() =>
             {
                 try
                 {

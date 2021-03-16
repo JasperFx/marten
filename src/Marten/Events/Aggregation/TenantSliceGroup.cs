@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -26,26 +27,24 @@ namespace Marten.Events.Aggregation
             Slices = new List<EventSlice<TDoc, TId>>(slices);
         }
 
-        internal void Start(ActionBlock<IStorageOperation> queue, AggregationRuntime<TDoc, TId> runtime,
+        internal void Start(IProjectionAgent projectionAgent, ActionBlock<IStorageOperation> queue,
+            AggregationRuntime<TDoc, TId> runtime,
             IDocumentStore store, CancellationToken token)
         {
-            _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(slice =>
+            _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(async slice =>
             {
                 if (token.IsCancellationRequested) return null;
 
-                using var session = store.LightweightSession(slice.Tenant.TenantId);
+                IStorageOperation operation = null;
 
-                try
+                await projectionAgent.TryAction(async () =>
                 {
-                    return runtime.DetermineOperation((DocumentSessionBase) session, slice, token, ProjectionLifecycle.Async);
-                }
-                catch (Exception e)
-                {
-                    // TODO -- throw a specific error so you can capture the event information
-                    // to detect poison pill messages
-                    Debug.WriteLine(e);
-                    throw;
-                }
+                    using var session = (DocumentSessionBase) store.LightweightSession(slice.Tenant.TenantId);
+
+                    operation = await runtime.DetermineOperation(session, slice, token, ProjectionLifecycle.Async);
+                }, token);
+
+                return operation;
             }, new ExecutionDataflowBlockOptions
             {
                 CancellationToken = token,
@@ -53,52 +52,62 @@ namespace Marten.Events.Aggregation
 
             _builder.LinkTo(queue, x => x != null);
 
-            _application = Task.Factory.StartNew(async () =>
-            {
-                var beingFetched = new List<EventSlice<TDoc, TId>>();
-                foreach (var slice in Slices)
-                {
-                    if (token.IsCancellationRequested)
-                    {
-                        _builder.Complete();
-                        break;
-                    }
+            _application = Task.Factory.StartNew(() =>
+                processEventSlices(projectionAgent, runtime, store, token)
+                , token);
 
-                    if (runtime.IsNew(slice))
-                    {
-                        _builder.Post(slice);
-                    }
-                    else
-                    {
-                        beingFetched.Add(slice);
-                    }
+        }
+
+        private async Task processEventSlices(IProjectionAgent projectionAgent, AggregationRuntime<TDoc, TId> runtime,
+            IDocumentStore store, CancellationToken token)
+        {
+            var beingFetched = new List<EventSlice<TDoc, TId>>();
+            foreach (var slice in Slices)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    _builder.Complete();
+                    break;
                 }
 
-                if (token.IsCancellationRequested) return;
+                if (runtime.IsNew(slice))
+                {
+                    _builder.Post(slice);
+                }
+                else
+                {
+                    beingFetched.Add(slice);
+                }
+            }
 
-                var ids = beingFetched.Select(x => x.Id).ToArray();
+            if (token.IsCancellationRequested) return;
 
-                IReadOnlyList<TDoc> aggregates = null;
-                using (var session = (IMartenSession)store.LightweightSession(Tenant.TenantId))
+            var ids = beingFetched.Select(x => x.Id).ToArray();
+
+            IReadOnlyList<TDoc> aggregates = null;
+
+            await projectionAgent.TryAction(async () =>
+            {
+                using (var session = (IMartenSession) store.LightweightSession(Tenant.TenantId))
                 {
                     aggregates = await runtime.Storage
                         .LoadManyAsync(ids, session, token);
                 }
-
-                if (token.IsCancellationRequested) return;
-
-                var dict = aggregates.ToDictionary(x => runtime.Storage.Identity(x));
-
-                foreach (var slice in Slices)
-                {
-                    if (dict.TryGetValue(slice.Id, out var aggregate))
-                    {
-                        slice.Aggregate = aggregate;
-                    }
-
-                    _builder.Post(slice);
-                }
             }, token);
+
+            if (token.IsCancellationRequested || aggregates == null) return;
+
+            var dict = aggregates.ToDictionary(x => runtime.Storage.Identity(x));
+
+            foreach (var slice in Slices)
+            {
+                if (dict.TryGetValue(slice.Id, out var aggregate))
+                {
+                    slice.Aggregate = aggregate;
+                }
+
+                _builder.Post(slice);
+            }
         }
 
         internal async Task Complete()

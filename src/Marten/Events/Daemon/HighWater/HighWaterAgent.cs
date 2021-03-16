@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using Baseline;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
@@ -147,7 +148,7 @@ namespace Marten.Events.Daemon.HighWater
         {
             _timer?.Stop();
             _timer?.Dispose();
-            _loop?.Dispose();
+            _loop?.SafeDispose();
         }
 
         public async Task CheckNow()

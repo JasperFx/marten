@@ -12,7 +12,7 @@ namespace Marten.Events.Daemon
     /// <summary>
     /// Responsible for running a single async projection shard at runtime. Equivalent to V3 ProjectionTrack
     /// </summary>
-    internal class ProjectionAgent : IProjectionUpdater, IObserver<ShardState>
+    internal class ProjectionAgent : IProjectionAgent, IObserver<ShardState>
     {
         private readonly DocumentStore _store;
         private readonly IAsyncProjectionShard _projectionShard;
@@ -168,7 +168,7 @@ namespace Marten.Events.Daemon
 
             _logger.LogInformation("Stopped projection shard '{ShardName}'", _projectionShard.Name);
 
-            _tracker.Publish(new ShardState(_projectionShard.Name, Position){Action = ShardAction.Stopped, Exception = null});
+            _tracker.Publish(new ShardState(_projectionShard.Name, Position){Action = ShardAction.Stopped, Exception = ex});
         }
 
         public async Task Pause(TimeSpan timeout)

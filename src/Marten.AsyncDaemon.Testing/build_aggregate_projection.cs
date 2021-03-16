@@ -76,7 +76,7 @@ namespace Marten.AsyncDaemon.Testing
                 x.Schema.For<Trip>().MultiTenanted();
             }, true);
 
-            UseMixOfTenants(10);
+            UseMixOfTenants(5);
 
             Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 

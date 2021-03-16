@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -5,11 +6,14 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using ImTools;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;
+using Npgsql;
 
 namespace Marten.Events.Aggregation
 {
@@ -45,7 +49,22 @@ namespace Marten.Events.Aggregation
 
             foreach (var @event in slice.Events)
             {
-                aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation);
+                try
+                {
+                    aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation);
+                }
+                catch (MartenCommandException)
+                {
+                    throw;
+                }
+                catch (NpgsqlException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    throw new ApplyEventException(@event, e);
+                }
             }
 
             if (aggregate != null)
@@ -65,12 +84,13 @@ namespace Marten.Events.Aggregation
             IEvent evt, TDoc aggregate,
             CancellationToken cancellationToken);
 
-        public Task Configure(ActionBlock<IStorageOperation> queue, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups,
+        public Task Configure(IProjectionAgent projectionAgent, ActionBlock<IStorageOperation> queue,
+            IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups,
             CancellationToken token)
         {
             foreach (var @group in groups)
             {
-                @group.Start(queue, this, _store, token);
+                @group.Start(projectionAgent, queue, this, _store, token);
             }
 
             return Task.WhenAll(groups.Select(x => x.Complete()).ToArray());

@@ -18,10 +18,18 @@ namespace Marten.Events.Daemon
             _projection = projection;
         }
 
-        protected override Task configureUpdateBatch(ProjectionUpdateBatch batch, TenantedEventRange group,
+        protected override Task configureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch,
+            TenantedEventRange @group,
             CancellationToken token)
         {
-            var tasks = group.Groups.Select(x => x.ApplyEvents(batch, _projection, Store, token)).ToArray();
+            var tasks = group.Groups.Select(tenantGroup =>
+            {
+                return projectionAgent.TryAction(async () =>
+                {
+                    await tenantGroup.ApplyEvents(batch, _projection, Store, token);
+                }, token);
+            }).ToArray();
+
             return Task.WhenAll(tasks);
         }
 
