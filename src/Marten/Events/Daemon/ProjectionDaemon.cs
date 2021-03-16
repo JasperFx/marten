@@ -288,6 +288,8 @@ namespace Marten.Events.Daemon
                         await Task.WhenAll(tasks2);
                         break;
 
+                    case SkipEvent skip:
+
                     case DoNothing:
                         // Don't do anything.
                         break;

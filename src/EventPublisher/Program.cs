@@ -37,7 +37,6 @@ namespace EventPublisher
         public class Publisher
         {
             private readonly IDocumentStore _store;
-            private Timer _timer;
 
             public Publisher(IDocumentStore store)
             {

@@ -5,7 +5,12 @@ using Remotion.Linq.Parsing.ExpressionVisitors.Transformation.PredefinedTransfor
 
 namespace Marten.Events.Daemon.Resiliency
 {
-    public class ExceptionPolicy : IHandlerDefinition, IThenExpression
+    internal interface IExceptionPolicy
+    {
+        bool TryMatch(Exception ex, int attemptCount, out IContinuation continuation);
+    }
+
+    public class ExceptionPolicy : IHandlerDefinition, IThenExpression, IExceptionPolicy
     {
         private readonly DaemonSettings _parent;
         private readonly List<Func<Exception, bool>> _filters = new List<Func<Exception, bool>>();
@@ -110,6 +115,21 @@ namespace Marten.Events.Daemon.Resiliency
         public void DoNothing()
         {
             Continuations.Add(new DoNothing());
+        }
+
+        bool IExceptionPolicy.TryMatch(Exception ex, int attemptCount, out IContinuation continuation)
+        {
+            if (Matches(ex))
+            {
+                continuation = Continuations.Count > attemptCount
+                    ? Continuations[attemptCount]
+                    : new StopProjection();
+
+                return true;
+            }
+
+            continuation = null;
+            return false;
         }
     }
 

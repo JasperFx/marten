@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using ImTools;
-using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
