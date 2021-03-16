@@ -46,6 +46,9 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
         [Fact]
         public async Task projections_can_continue_with_handled_exceptions_after_a_pause()
         {
+            // WARNING -- this test doesn't consistently pass if it's running with other tests,
+            // but should succeed running by itself.
+
             var projection1 = new SometimesFailingProjection("one");
             projection1.StartThrowingExceptionsAtSequence(10, new ArithmeticException(), new ArithmeticException(), new ArithmeticException());
 

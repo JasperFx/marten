@@ -96,9 +96,9 @@ namespace Marten.Events.Daemon
         /// </summary>
         public DaemonMode Mode { get; set; } = DaemonMode.Disabled;
 
-        internal IList<ExceptionPolicy> Policies { get; } = new List<ExceptionPolicy>();
+        internal IList<IExceptionPolicy> Policies { get; } = new List<IExceptionPolicy>();
 
-        internal IList<ExceptionPolicy> BaselinePolicies { get; } = new List<ExceptionPolicy>();
+        internal IList<IExceptionPolicy> BaselinePolicies { get; } = new List<IExceptionPolicy>();
 
         /// <summary>
         ///     Specifies the type of exception that this policy can handle.
@@ -160,12 +160,16 @@ namespace Marten.Events.Daemon
 
         internal IContinuation DetermineContinuation(Exception exception, int attempts)
         {
-            var handler = Policies.Concat(BaselinePolicies).FirstOrDefault(x => x.Matches(exception));
-            if (handler == null) return new StopProjection();
-            // attempts are zero based in this case
-            return handler.Continuations.Count > attempts
-                ? handler.Continuations[attempts]
-                : new StopProjection();
+            var policies = Policies.Concat(BaselinePolicies);
+            foreach (var policy in policies)
+            {
+                if (policy.TryMatch(exception, attempts, out var continuation))
+                {
+                    return continuation;
+                }
+            }
+
+            return new StopProjection();
         }
     }
 }

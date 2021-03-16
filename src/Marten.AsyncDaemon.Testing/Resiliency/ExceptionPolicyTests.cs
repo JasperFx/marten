@@ -26,7 +26,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var settings = new DaemonSettings();
             settings.OnException<NpgsqlException>();
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.Matches(new NpgsqlException()).ShouldBeTrue();
             policy.Matches(new DivideByZeroException()).ShouldBeFalse();
@@ -38,7 +38,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var settings = new DaemonSettings();
             settings.OnExceptionOfType(typeof(NpgsqlException));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.Matches(new NpgsqlException()).ShouldBeTrue();
             policy.Matches(new DivideByZeroException()).ShouldBeFalse();
@@ -50,7 +50,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var settings = new DaemonSettings();
             settings.OnException<CustomException>(x => x.ErrorCode == 200);
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.Matches(new NpgsqlException()).ShouldBeFalse();
             policy.Matches(new CustomException(200)).ShouldBeTrue();
@@ -64,7 +64,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner<CustomException>();
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.Matches(new InvalidCastException()).ShouldBeFalse();
             policy.Matches(new InvalidOperationException()).ShouldBeFalse();
@@ -80,7 +80,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner<CustomException>(x => x.ErrorCode == 500);
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.Matches(new InvalidCastException()).ShouldBeFalse();
             policy.Matches(new InvalidOperationException()).ShouldBeFalse();
@@ -97,7 +97,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.Matches(new InvalidCastException()).ShouldBeFalse();
             policy.Matches(new InvalidOperationException()).ShouldBeFalse();
@@ -114,7 +114,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.RetryLater(1.Seconds(), 3.Seconds(), 5.Seconds());
 
@@ -131,7 +131,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
 
             policy.RetryLater(1.Seconds(), 3.Seconds(), 5.Seconds())
                 .Then.Pause(1.Minutes());
@@ -152,7 +152,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.Pause(3.Seconds());
 
             policy.Continuations.Single().ShouldBe(new PauseProjection(3.Seconds()));
@@ -165,7 +165,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.PauseAll(3.Seconds());
 
             policy.Continuations.Single().ShouldBe(new PauseAllProjections(3.Seconds()));
@@ -178,7 +178,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.Stop();
 
             policy.Continuations.Single().ShouldBeOfType<StopProjection>();
@@ -191,7 +191,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             settings.OnException<InvalidOperationException>()
                 .AndInner(x => (x is CustomException {ErrorCode: 500}));
 
-            var policy = settings.Policies.Single();
+            var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.StopAll();
 
             policy.Continuations.Single().ShouldBeOfType<StopAllProjections>();
