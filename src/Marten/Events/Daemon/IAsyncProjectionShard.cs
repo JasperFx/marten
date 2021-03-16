@@ -31,11 +31,11 @@ namespace Marten.Events.Daemon
         /// <summary>
         /// Incorporate this projection shard into a running projection daemon
         /// </summary>
-        /// <param name="updater"></param>
+        /// <param name="agent"></param>
         /// <param name="logger"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        ITargetBlock<EventRange> Start(IProjectionUpdater updater, ILogger logger,
+        ITargetBlock<EventRange> Start(IProjectionAgent agent, ILogger logger,
             CancellationToken token);
 
         /// <summary>

@@ -8,6 +8,7 @@ using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -59,7 +60,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             var waiter = node.Tracker.WaitForShardCondition(
                 state => state.ShardName.EqualsIgnoreCase("one:All") && state.Action == ShardAction.Paused,
-                "one:All is Paused", 1.Minutes());
+                "one:All is Paused", 2.Minutes());
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();
@@ -67,7 +68,13 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             await waiter;
             await node.Tracker.WaitForShardState("one:All", NumberOfEvents);
 
-            node.StatusFor("one:All").ShouldBe(AgentStatus.Running);
+            if (node.StatusFor("one:All") != AgentStatus.Running)
+            {
+                await Task.Delay(250.Milliseconds());
+                node.StatusFor("one:All").ShouldBe(AgentStatus.Running);
+            }
+
+
         }
 
         [Fact]
@@ -102,6 +109,11 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             await waiter1;
             await waiter2;
             await node.Tracker.WaitForShardState("one:All", NumberOfEvents);
+
+            if (node.StatusFor("one:All") != AgentStatus.Running)
+            {
+                await Task.Delay(250.Milliseconds());
+            }
 
             node.StatusFor("one:All").ShouldBe(AgentStatus.Running);
             node.StatusFor("two:All").ShouldBe(AgentStatus.Running);

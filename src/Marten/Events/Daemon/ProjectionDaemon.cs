@@ -246,6 +246,8 @@ namespace Marten.Events.Daemon
             {
                 if (token.IsCancellationRequested) return;
 
+                _logger.LogError(ex, "Error in Async Projection '{ShardName}' / '{Message}'", projection.ShardName.Identity, ex.Message);
+
                 var continuation = Settings.DetermineContinuation(ex, attempts);
                 switch (continuation)
                 {

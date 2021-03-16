@@ -8,23 +8,23 @@ namespace Marten.AsyncDaemon.Testing
     public class ProjectionControllerTests
     {
         private AsyncOptions theOptions = new AsyncOptions {BatchSize = 500, MaximumHopperSize = 5000};
-        private IProjectionUpdater theUpdater = Substitute.For<IProjectionUpdater>();
+        private IProjectionAgent _theAgent = Substitute.For<IProjectionAgent>();
         private ProjectionController theController;
 
         public ProjectionControllerTests()
         {
-            theController = new ProjectionController(new ShardName("the projection"), theUpdater, theOptions);
+            theController = new ProjectionController(new ShardName("the projection"), _theAgent, theOptions);
         }
 
         private void assertNoRangeWasEnqueued()
         {
-            theUpdater.DidNotReceiveWithAnyArgs().StartRange(null);
+            _theAgent.DidNotReceiveWithAnyArgs().StartRange(null);
         }
 
         private void assertRangeWasEnqueued(long floor, long ceiling)
         {
             var range = new EventRange(new ShardName("the projection"), floor, ceiling);
-            theUpdater.Received().StartRange(range);
+            _theAgent.Received().StartRange(range);
         }
 
         [Fact]

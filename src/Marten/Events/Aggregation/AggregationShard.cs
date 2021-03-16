@@ -25,10 +25,10 @@ namespace Marten.Events.Aggregation
             Store.Tenancy.Default.EnsureStorageExists(typeof(TDoc));
         }
 
-        protected override Task configureUpdateBatch(ProjectionUpdateBatch batch,
+        protected override Task configureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch,
             TenantSliceRange<TDoc, TId> sliceGroup, CancellationToken token)
         {
-            return _runtime.Configure(batch.Queue, sliceGroup.Groups, token);
+            return _runtime.Configure(projectionAgent, batch.Queue, sliceGroup.Groups, token);
         }
 
         protected override TenantSliceRange<TDoc, TId> applyGrouping(EventRange range)

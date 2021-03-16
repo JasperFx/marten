@@ -10,16 +10,16 @@ namespace Marten.Events.Daemon
     internal class ProjectionController
     {
         private readonly ShardName _shardName;
-        private readonly IProjectionUpdater _updater;
+        private readonly IProjectionAgent _agent;
         private readonly AsyncOptions _options;
 
         private readonly Queue<EventRange> _inFlight = new Queue<EventRange>();
 
 
-        public ProjectionController(ShardName shardName, IProjectionUpdater updater, AsyncOptions options)
+        public ProjectionController(ShardName shardName, IProjectionAgent agent, AsyncOptions options)
         {
             _shardName = shardName;
-            _updater = updater;
+            _agent = agent;
             _options = options ?? new AsyncOptions();
         }
 
@@ -76,7 +76,7 @@ namespace Marten.Events.Daemon
             var range = new EventRange(_shardName, floor, ceiling);
             LastEnqueued = range.SequenceCeiling;
             _inFlight.Enqueue(range);
-            _updater.StartRange(range);
+            _agent.StartRange(range);
         }
 
         public long LastEnqueued { get; private set; }
