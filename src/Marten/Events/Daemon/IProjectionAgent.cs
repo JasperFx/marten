@@ -10,7 +10,7 @@ namespace Marten.Events.Daemon
     // This is public because it's used by the generated code
     public interface IProjectionAgent
     {
-        ProjectionUpdateBatch StartNewBatch(EventRange range, CancellationToken token);
+        ProjectionUpdateBatch StartNewBatch(EventRangeGroup group);
         Task ExecuteBatch(ProjectionUpdateBatch batch);
 
         void StartRange(EventRange range);

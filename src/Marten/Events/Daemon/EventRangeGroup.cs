@@ -3,14 +3,15 @@ using System.Threading;
 
 namespace Marten.Events.Daemon
 {
-    internal abstract class EventRangeGroup: IDisposable
+    public abstract class EventRangeGroup: IDisposable
     {
+        private readonly CancellationToken _parent;
         private CancellationTokenSource _cancellationTokenSource;
 
-        protected EventRangeGroup(EventRange range)
+        protected EventRangeGroup(EventRange range, CancellationToken parent)
         {
+            _parent = parent;
             Range = range;
-
         }
 
         public EventRange Range { get; }
@@ -24,6 +25,9 @@ namespace Marten.Events.Daemon
             Attempts++;
             WasAborted = false;
             _cancellationTokenSource = new CancellationTokenSource();
+
+            Cancellation =
+                CancellationTokenSource.CreateLinkedTokenSource(_parent, _cancellationTokenSource.Token).Token;
             reset();
         }
 
@@ -35,7 +39,7 @@ namespace Marten.Events.Daemon
 
         public bool WasAborted { get; private set; }
 
-        public CancellationToken GroupCancellation => _cancellationTokenSource.Token;
+        public CancellationToken Cancellation { get; private set; }
         public int Attempts { get; private set; } = -1;
 
         protected abstract void reset();

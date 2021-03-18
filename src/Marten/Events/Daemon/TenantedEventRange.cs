@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Marten.Storage;
 
 namespace Marten.Events.Daemon
 {
     internal class TenantedEventRange: EventRangeGroup
     {
-        public TenantedEventRange(EventGraph graph, ITenancy tenancy, EventRange range) : base(range)
+        public TenantedEventRange(EventGraph graph, ITenancy tenancy, EventRange range, CancellationToken shardCancellation) : base(range, shardCancellation)
         {
             var byTenant = range.Events.GroupBy(x => x.TenantId);
             foreach (var group in byTenant)

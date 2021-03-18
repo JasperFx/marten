@@ -1,3 +1,4 @@
+using System.Threading;
 using Marten.Events.Daemon;
 using Shouldly;
 using Xunit;
@@ -20,7 +21,7 @@ namespace Marten.AsyncDaemon.Testing
         {
             theGroup.Reset();
             theGroup.WasAborted.ShouldBeFalse();
-            theGroup.GroupCancellation.IsCancellationRequested.ShouldBeFalse();
+            theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
             theGroup.Attempts.ShouldBe(0);
         }
 
@@ -31,7 +32,7 @@ namespace Marten.AsyncDaemon.Testing
             theGroup.Abort();
 
             theGroup.WasAborted.ShouldBeTrue();
-            theGroup.GroupCancellation.IsCancellationRequested.ShouldBeTrue();
+            theGroup.Cancellation.IsCancellationRequested.ShouldBeTrue();
         }
 
         [Fact]
@@ -42,14 +43,14 @@ namespace Marten.AsyncDaemon.Testing
             theGroup.Reset();
 
             theGroup.WasAborted.ShouldBeFalse();
-            theGroup.GroupCancellation.IsCancellationRequested.ShouldBeFalse();
+            theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
             theGroup.Attempts.ShouldBe(1); // increment
         }
     }
 
     internal class TestEventRangeGroup: EventRangeGroup
     {
-        public TestEventRangeGroup(EventRange range) : base(range)
+        public TestEventRangeGroup(EventRange range) : base(range, CancellationToken.None)
         {
         }
 

@@ -232,10 +232,10 @@ namespace Marten.Events.Daemon
 
         public ShardName ShardName => _projectionShard.Name;
 
-        public ProjectionUpdateBatch StartNewBatch(EventRange range, CancellationToken token)
+        public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
         {
             var session = _store.LightweightSession();
-            return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, range, token);
+            return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, group.Range, group.Cancellation);
         }
 
         public async Task ExecuteBatch(ProjectionUpdateBatch batch)

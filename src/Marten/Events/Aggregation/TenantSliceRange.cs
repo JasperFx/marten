@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Threading;
 using Marten.Events.Daemon;
 
 namespace Marten.Events.Aggregation
 {
     internal class TenantSliceRange<TDoc, TId>: EventRangeGroup
     {
-        public TenantSliceRange(EventRange range, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups) : base(range)
+        public TenantSliceRange(EventRange range, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups, CancellationToken projectionCancellation) : base(range, projectionCancellation)
         {
             Groups = groups;
         }

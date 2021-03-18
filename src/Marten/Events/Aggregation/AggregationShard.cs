@@ -25,15 +25,15 @@ namespace Marten.Events.Aggregation
         }
 
         protected override Task configureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch,
-            TenantSliceRange<TDoc, TId> sliceGroup, CancellationToken token)
+            TenantSliceRange<TDoc, TId> sliceGroup)
         {
-            return _runtime.Configure(projectionAgent, batch.Queue, sliceGroup.Groups, token);
+            return _runtime.Configure(projectionAgent, batch.Queue, sliceGroup.Groups, sliceGroup.Cancellation);
         }
 
         protected override TenantSliceRange<TDoc, TId> applyGrouping(EventRange range)
         {
             var groups = _runtime.Slicer.Slice(range.Events, _tenancy);
-            return new TenantSliceRange<TDoc, TId>(range, groups);
+            return new TenantSliceRange<TDoc, TId>(range, groups, Cancellation);
         }
     }
 }
