@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    internal abstract class AsyncProjectionShardBase<T> : IAsyncProjectionShard where T : class, IEventRangeGroup
+    internal abstract class AsyncProjectionShardBase<T> : IAsyncProjectionShard where T : EventRangeGroup
     {
         private IProjectionAgent _agent;
         private ILogger _logger;
@@ -63,29 +63,33 @@ namespace Marten.Events.Daemon
         {
             if (_token.IsCancellationRequested) return;
 
+
+
+            // TODO -- this can be retried much more granually
             await _agent.TryAction(async () =>
             {
                 try
                 {
                     group.Reset();
+                    var combined = CancellationTokenSource.CreateLinkedTokenSource(_token, group.GroupCancellation).Token;
 
                     if (_logger.IsEnabled(LogLevel.Debug))
                     {
                         _logger.LogDebug("Shard '{ShardName}': Starting to build an update batch for {Group}", Name, group);
                     }
 
-                    if (_token.IsCancellationRequested) return;
+                    if (combined.IsCancellationRequested) return;
 
-                    var batch = _agent.StartNewBatch(@group.Range, _token);
+                    using var batch = _agent.StartNewBatch(@group.Range, combined);
 
-                    await configureUpdateBatch(_agent, batch, group, _token);
+                    await configureUpdateBatch(_agent, batch, group, combined);
 
-                    if (_token.IsCancellationRequested) return;
+                    if (combined.IsCancellationRequested) return;
 
                     batch.Queue.Complete();
                     await batch.Queue.Completion;
 
-                    if (_token.IsCancellationRequested) return;
+                    if (combined.IsCancellationRequested) return;
 
                     await _agent.ExecuteBatch(batch);
 

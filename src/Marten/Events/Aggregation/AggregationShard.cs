@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
@@ -35,34 +34,6 @@ namespace Marten.Events.Aggregation
         {
             var groups = _runtime.Slicer.Slice(range.Events, _tenancy);
             return new TenantSliceRange<TDoc, TId>(range, groups);
-        }
-    }
-
-    internal class TenantSliceRange<TDoc, TId>: IEventRangeGroup
-    {
-        public TenantSliceRange(EventRange range, IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups)
-        {
-            Range = range;
-            Groups = groups;
-        }
-
-        public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Groups { get; }
-
-        public EventRange Range { get; }
-
-        public void Reset()
-        {
-            foreach (var group in Groups) group.Reset();
-        }
-
-        public void Dispose()
-        {
-            foreach (var group in Groups) group.Dispose();
-        }
-
-        public override string ToString()
-        {
-            return $"Aggregate for {Range}, {Groups.Count} slices";
         }
     }
 }

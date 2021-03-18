@@ -38,9 +38,9 @@ namespace Marten
 
         }
 
-        IReadOnlyList<IFieldSource> IReadOnlyLinqParsing.FieldSources => _fieldSources;
+        IReadOnlyList<IFieldSource> IReadOnlyLinqParsing.FieldSources => FieldSources.ToList();
 
-        IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _methodCallParsers;
+        IReadOnlyList<IMethodCallParser> IReadOnlyLinqParsing.MethodCallParsers => _parsers.ToList();
 
         /// <summary>
         /// Register extensions to the Marten Linq support for special handling of
@@ -142,6 +142,5 @@ namespace Marten
 
         private ImHashMap<Type, ImHashMap<string, IMethodCallParser>> _methodParsing = ImHashMap<Type, ImHashMap<string, IMethodCallParser>>.Empty;
         private IReadOnlyList<IFieldSource> _fieldSources;
-        private IReadOnlyList<IMethodCallParser> _methodCallParsers;
     }
 }
