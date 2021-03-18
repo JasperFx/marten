@@ -82,18 +82,6 @@ namespace Marten.Events.Aggregation
             IEvent evt, TDoc aggregate,
             CancellationToken cancellationToken);
 
-        public Task Configure(IProjectionAgent projectionAgent, ActionBlock<IStorageOperation> queue,
-            IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups,
-            CancellationToken token)
-        {
-            foreach (var @group in groups)
-            {
-                @group.Start(projectionAgent, queue, this, _store, token);
-            }
-
-            return Task.WhenAll(groups.Select(x => x.Complete()).ToArray());
-        }
-
 
         public virtual bool IsNew(EventSlice<TDoc, TId> slice)
         {

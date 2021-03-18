@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten.Events.Daemon
 {
@@ -45,5 +46,7 @@ namespace Marten.Events.Daemon
         protected abstract void reset();
 
         public abstract void Dispose();
+
+        public abstract Task ConfigureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch);
     }
 }
