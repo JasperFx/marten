@@ -39,49 +39,6 @@ namespace Marten.Events.Daemon
         }
     }
 
-    internal class TenantedEventRange: IEventRangeGroup
-    {
-        public TenantedEventRange(EventGraph graph, ITenancy tenancy, EventRange range)
-        {
-            Range = range;
-
-            var byTenant = range.Events.GroupBy(x => x.TenantId);
-            foreach (var group in byTenant)
-            {
-                var tenant = tenancy[group.Key];
-
-                var actions = graph.StreamIdentity switch
-                {
-                    StreamIdentity.AsGuid => group.GroupBy(x => x.StreamId)
-                        .Select(events => StreamAction.For(events.Key, events.ToList())),
-
-                    StreamIdentity.AsString => group.GroupBy(x => x.StreamKey)
-                        .Select(events => StreamAction.For(events.Key, events.ToList())),
-
-                    _ => null
-                };
-
-                Groups.Add(new TenantActionGroup(tenant, actions));
-            }
-        }
-
-        public IList<TenantActionGroup> Groups { get; } = new List<TenantActionGroup>();
-        public EventRange Range { get; }
-        public void Reset()
-        {
-
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public override string ToString()
-        {
-            return $"Tenant Group Range for: {Range}";
-        }
-    }
-
     internal class TenantActionGroup
     {
         private readonly List<StreamAction> _actions;
