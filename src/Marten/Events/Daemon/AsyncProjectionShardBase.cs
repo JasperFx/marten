@@ -7,13 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    internal abstract class AsyncProjectionShardBase<T> : IAsyncProjectionShard where T : EventRangeGroup
+    internal abstract class AsyncProjectionShardBase : IAsyncProjectionShard
     {
         private IProjectionAgent _agent;
         private ILogger _logger;
         private CancellationToken _cancellation;
-        private TransformBlock<EventRange,T> _slicing;
-        private ActionBlock<T> _building;
+        private TransformBlock<EventRange,EventRangeGroup> _slicing;
+        private ActionBlock<EventRangeGroup> _building;
 
         protected AsyncProjectionShardBase(ShardName identifier, ISqlFragment[] eventFilters, DocumentStore store, AsyncOptions options)
         {
@@ -44,10 +44,10 @@ namespace Marten.Events.Daemon
                 CancellationToken = token
             };
 
-            _slicing = new TransformBlock<EventRange, T>(x => groupEventRange(x), singleFileOptions);
+            _slicing = new TransformBlock<EventRange, EventRangeGroup>(x => groupEventRange(x), singleFileOptions);
 
 
-            _building = new ActionBlock<T>(processRange, singleFileOptions);
+            _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
 
             _slicing.LinkTo(_building);
 
@@ -62,7 +62,7 @@ namespace Marten.Events.Daemon
         }
 
 
-        private async Task processRange(T group)
+        private async Task processRange(EventRangeGroup group)
         {
             if (_cancellation.IsCancellationRequested) return;
 
@@ -76,8 +76,6 @@ namespace Marten.Events.Daemon
             {
                 try
                 {
-
-
                     if (group.Cancellation.IsCancellationRequested) return;
 
                     var batch = await buildUpdateBatch(@group);
@@ -104,7 +102,7 @@ namespace Marten.Events.Daemon
             }, _cancellation);
         }
 
-        private async Task<ProjectionUpdateBatch> buildUpdateBatch(T @group)
+        private async Task<ProjectionUpdateBatch> buildUpdateBatch(EventRangeGroup @group)
         {
             group.Reset();
             using var batch = _agent.StartNewBatch(group);
@@ -119,11 +117,11 @@ namespace Marten.Events.Daemon
             return batch;
         }
 
-        private async Task<T> groupEventRange(EventRange range)
+        private async Task<EventRangeGroup> groupEventRange(EventRange range)
         {
             if (_cancellation.IsCancellationRequested) return null;
 
-            T group = null;
+            EventRangeGroup group = null;
 
             await _agent.TryAction(() =>
             {
@@ -154,7 +152,7 @@ namespace Marten.Events.Daemon
             return group;
         }
 
-        protected abstract T applyGrouping(EventRange range);
+        protected abstract EventRangeGroup applyGrouping(EventRange range);
 
         public Task Stop()
         {
