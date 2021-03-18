@@ -1,4 +1,5 @@
 using System.Threading;
+using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Shouldly;
 using Xunit;
@@ -64,6 +65,11 @@ namespace Marten.AsyncDaemon.Testing
         public override void Dispose()
         {
             // nothing
+        }
+
+        public override Task ConfigureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

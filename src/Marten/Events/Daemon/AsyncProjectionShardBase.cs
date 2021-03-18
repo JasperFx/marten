@@ -76,7 +76,7 @@ namespace Marten.Events.Daemon
             {
                 try
                 {
-                    group.Reset();
+
 
                     if (group.Cancellation.IsCancellationRequested) return;
 
@@ -106,9 +106,10 @@ namespace Marten.Events.Daemon
 
         private async Task<ProjectionUpdateBatch> buildUpdateBatch(T @group)
         {
+            group.Reset();
             using var batch = _agent.StartNewBatch(group);
 
-            await configureUpdateBatch(_agent, batch, @group);
+            await group.ConfigureUpdateBatch(_agent, batch);
 
             if (group.Cancellation.IsCancellationRequested) return batch; // get out of here early instead of letting it linger
 
@@ -117,9 +118,6 @@ namespace Marten.Events.Daemon
 
             return batch;
         }
-
-        protected abstract Task configureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch,
-            T @group);
 
         private async Task<T> groupEventRange(EventRange range)
         {
