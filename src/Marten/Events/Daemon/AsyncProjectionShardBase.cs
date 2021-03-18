@@ -11,7 +11,7 @@ namespace Marten.Events.Daemon
     {
         private IProjectionAgent _agent;
         private ILogger _logger;
-        private CancellationToken _token;
+        private CancellationToken _cancellation;
         private TransformBlock<EventRange,T> _slicing;
         private ActionBlock<T> _building;
 
@@ -23,6 +23,8 @@ namespace Marten.Events.Daemon
             Options = options;
         }
 
+        public CancellationToken Cancellation => _cancellation;
+
         public DocumentStore Store { get; }
 
         public ISqlFragment[] EventFilters { get; }
@@ -31,7 +33,7 @@ namespace Marten.Events.Daemon
 
         public ITargetBlock<EventRange> Start(IProjectionAgent agent, ILogger logger, CancellationToken token)
         {
-            _token = token;
+            _cancellation = token;
             _agent = agent;
             _logger = logger;
 
@@ -59,11 +61,15 @@ namespace Marten.Events.Daemon
             // Nothing
         }
 
+
         private async Task processRange(T group)
         {
-            if (_token.IsCancellationRequested) return;
+            if (_cancellation.IsCancellationRequested) return;
 
-
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Shard '{ShardName}': Starting to process events for {Group}", Name, group);
+            }
 
             // TODO -- this can be retried much more granually
             await _agent.TryAction(async () =>
@@ -71,25 +77,12 @@ namespace Marten.Events.Daemon
                 try
                 {
                     group.Reset();
-                    var combined = CancellationTokenSource.CreateLinkedTokenSource(_token, group.GroupCancellation).Token;
 
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Shard '{ShardName}': Starting to build an update batch for {Group}", Name, group);
-                    }
+                    if (group.Cancellation.IsCancellationRequested) return;
 
-                    if (combined.IsCancellationRequested) return;
+                    var batch = await buildUpdateBatch(@group);
 
-                    using var batch = _agent.StartNewBatch(@group.Range, combined);
-
-                    await configureUpdateBatch(_agent, batch, group, combined);
-
-                    if (combined.IsCancellationRequested) return;
-
-                    batch.Queue.Complete();
-                    await batch.Queue.Completion;
-
-                    if (combined.IsCancellationRequested) return;
+                    if (group.Cancellation.IsCancellationRequested) return;
 
                     await _agent.ExecuteBatch(batch);
 
@@ -102,21 +95,35 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception e)
                 {
-                    if (!_token.IsCancellationRequested)
+                    if (!_cancellation.IsCancellationRequested)
                     {
                         _logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
                         throw;
                     }
                 }
-            }, _token);
+            }, _cancellation);
+        }
+
+        private async Task<ProjectionUpdateBatch> buildUpdateBatch(T @group)
+        {
+            using var batch = _agent.StartNewBatch(group);
+
+            await configureUpdateBatch(_agent, batch, @group);
+
+            if (group.Cancellation.IsCancellationRequested) return batch; // get out of here early instead of letting it linger
+
+            batch.Queue.Complete();
+            await batch.Queue.Completion;
+
+            return batch;
         }
 
         protected abstract Task configureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch,
-            T @group, CancellationToken token);
+            T @group);
 
         private async Task<T> groupEventRange(EventRange range)
         {
-            if (_token.IsCancellationRequested) return null;
+            if (_cancellation.IsCancellationRequested) return null;
 
             T group = null;
 
@@ -142,7 +149,7 @@ namespace Marten.Events.Daemon
                     _logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
                     throw;
                 }
-            }, _token);
+            }, _cancellation);
 
 
 
