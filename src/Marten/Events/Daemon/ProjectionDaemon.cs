@@ -75,7 +75,7 @@ namespace Marten.Events.Daemon
             }
         }
 
-        public async Task StartShard(IAsyncProjectionShard shard, CancellationToken cancellationToken)
+        public async Task StartShard(AsyncProjectionShard shard, CancellationToken cancellationToken)
         {
             if (!_hasStarted)
             {

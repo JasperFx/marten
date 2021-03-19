@@ -42,6 +42,7 @@ namespace Marten.Events.Daemon
         public void DeleteViewTypeOnTeardown(Type type)
         {
             _actions.Add(x => x.QueueOperation(new TruncateTable(type)));
+            StorageTypes.Add(type);
         }
 
         private readonly IList<Action<IDocumentOperations>> _actions = new List<Action<IDocumentOperations>>();
@@ -54,6 +55,13 @@ namespace Marten.Events.Daemon
                 action(operations);
             }
         }
+
+        /// <summary>
+        /// Optional list of stored document or feature types that this projection
+        /// writes. This is used by Marten to help build out schema objects if the
+        /// async daemon is started before the rest of the application.
+        /// </summary>
+        public IList<Type> StorageTypes { get; } = new List<Type>();
     }
 
 

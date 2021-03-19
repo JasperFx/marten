@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +16,7 @@ namespace Marten.Events.Daemon
     internal class ShardAgent : IShardAgent, IObserver<ShardState>
     {
         private readonly DocumentStore _store;
-        private readonly IAsyncProjectionShard _projectionShard;
+        private readonly AsyncProjectionShard _projectionShard;
         private readonly ILogger _logger;
         private CancellationToken _cancellation;
         private TransformBlock<EventRange, EventRangeGroup> _grouping;
@@ -28,8 +29,9 @@ namespace Marten.Events.Daemon
         private ProjectionDaemon _daemon;
         private CancellationTokenSource _cancellationSource;
         private ActionBlock<EventRangeGroup> _building;
+        private ProjectionSource _source;
 
-        public ShardAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
+        public ShardAgent(DocumentStore store, AsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
         {
             if (cancellation == CancellationToken.None)
             {
@@ -44,8 +46,10 @@ namespace Marten.Events.Daemon
             _logger = logger;
             _cancellation = cancellation;
 
+            _source = projectionShard.Source;
+
             _controller =
-                new ProjectionController(projectionShard.Name, this, projectionShard.Options);
+                new ProjectionController(projectionShard.Name, this, projectionShard.Source.Options);
         }
 
         public ShardName Name { get; }
@@ -130,8 +134,11 @@ namespace Marten.Events.Daemon
 
             var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation);
 
-            // TODO -- do something here!!!!
-            //_projectionShard.EnsureStorageExists();
+            foreach (var storageType in _source.Options.StorageTypes)
+            {
+                // TODO -- this will have to get fancier when we do multi-tenancy by database
+                _store.Tenancy.Default.EnsureStorageExists(storageType);
+            }
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
 
@@ -187,6 +194,8 @@ namespace Marten.Events.Daemon
 
         private async Task<ProjectionUpdateBatch> buildUpdateBatch(EventRangeGroup @group)
         {
+            if (group.Cancellation.IsCancellationRequested) return null; // get out of here early instead of letting it linger
+
             group.Reset();
             using var batch = StartNewBatch(group);
 
@@ -215,7 +224,7 @@ namespace Marten.Events.Daemon
                         _logger.LogDebug("Shard '{ShardName}':Starting to slice {Range}", Name, range);
                     }
 
-                    group = _projectionShard.GroupEvents(_store, _store.Tenancy, range, _cancellation);
+                    group = _source.GroupEvents(_store, range, _cancellation);
                     if (_logger.IsEnabled(LogLevel.Debug))
                     {
                         _logger.LogDebug("Shard '{ShardName}': successfully slice {Range}", Name, range);
@@ -235,23 +244,16 @@ namespace Marten.Events.Daemon
             return group;
         }
 
-        public async Task Stop(Exception ex = null)
+        public Task Stop(Exception ex = null)
         {
             _logger.LogInformation("Stopping projection shard '{ShardName}'", _projectionShard.Name);
 
             _cancellationSource?.Cancel();
 
             _commandBlock.Complete();
-            await _commandBlock.Completion;
-
             _loader.Complete();
-            await _loader.Completion;
-
             _grouping.Complete();
-            await _grouping.Completion;
-
             _building.Complete();
-            await _building.Completion;
 
             _subscription.Dispose();
 
@@ -267,6 +269,8 @@ namespace Marten.Events.Daemon
             _logger.LogInformation("Stopped projection shard '{ShardName}'", _projectionShard.Name);
 
             _tracker.Publish(new ShardState(_projectionShard.Name, Position){Action = ShardAction.Stopped, Exception = ex});
+
+            return Task.CompletedTask;
         }
 
         public async Task Pause(TimeSpan timeout)

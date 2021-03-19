@@ -18,7 +18,7 @@ namespace Marten.Events.Projections
         private readonly Dictionary<Type, object> _liveAggregateSources = new Dictionary<Type, object>();
         private ImHashMap<Type, object> _liveAggregators = ImHashMap<Type, object>.Empty;
 
-        private Lazy<Dictionary<string, IAsyncProjectionShard>> _asyncShards;
+        private Lazy<Dictionary<string, AsyncProjectionShard>> _asyncShards;
 
         internal ProjectionCollection(StoreOptions options)
         {
@@ -27,7 +27,7 @@ namespace Marten.Events.Projections
 
         internal IList<ProjectionSource> Projections { get; } = new List<ProjectionSource>();
 
-        internal IList<IAsyncProjectionShard> BuildAllShards(DocumentStore store)
+        internal IList<AsyncProjectionShard> BuildAllShards(DocumentStore store)
         {
             return Projections.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
         }
@@ -202,7 +202,7 @@ namespace Marten.Events.Projections
                 .SelectMany(x => x.ValidateConfiguration(_options))
                 .ToArray();
 
-            _asyncShards = new Lazy<Dictionary<string, IAsyncProjectionShard>>(() =>
+            _asyncShards = new Lazy<Dictionary<string, AsyncProjectionShard>>(() =>
             {
                 return Projections
                     .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
@@ -217,12 +217,12 @@ namespace Marten.Events.Projections
             }
         }
 
-        internal IReadOnlyList<IAsyncProjectionShard> AllShards()
+        internal IReadOnlyList<AsyncProjectionShard> AllShards()
         {
             return _asyncShards.Value.Values.ToList();
         }
 
-        internal bool TryFindAsyncShard(string projectionOrShardName, out IAsyncProjectionShard shard)
+        internal bool TryFindAsyncShard(string projectionOrShardName, out AsyncProjectionShard shard)
         {
             return _asyncShards.Value.TryGetValue(projectionOrShardName, out shard);
         }

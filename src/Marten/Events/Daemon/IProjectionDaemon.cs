@@ -40,7 +40,7 @@ namespace Marten.Events.Daemon
         /// <param name="shard"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task StartShard(IAsyncProjectionShard shard, CancellationToken token);
+        Task StartShard(AsyncProjectionShard shard, CancellationToken token);
 
         /// <summary>
         /// Stops a single projection shard by name

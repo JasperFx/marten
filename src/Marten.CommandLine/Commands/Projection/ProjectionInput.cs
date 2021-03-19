@@ -27,7 +27,7 @@ namespace Marten.CommandLine.Commands.Projection
         [Description("If specified, just list the registered projections")]
         public bool ListFlag { get; set; }
 
-        public IList<IAsyncProjectionShard> BuildShards(DocumentStore store)
+        public IList<AsyncProjectionShard> BuildShards(DocumentStore store)
         {
             var projections = store
                 .Options
@@ -54,7 +54,7 @@ namespace Marten.CommandLine.Commands.Projection
             var projectionSource = projections
                 .FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(ProjectionFlag));
 
-            if (projectionSource == null) return new List<IAsyncProjectionShard>();
+            if (projectionSource == null) return new List<AsyncProjectionShard>();
 
             return projectionSource
                 .AsyncProjectionShards(store)

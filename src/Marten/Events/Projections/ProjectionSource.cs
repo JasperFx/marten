@@ -61,7 +61,7 @@ namespace Marten.Events.Projections
         public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Inline;
 
         internal abstract IProjection Build(DocumentStore store);
-        internal abstract IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(DocumentStore store);
+        internal abstract IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store);
 
         public AsyncOptions Options { get; } = new AsyncOptions();
 
@@ -76,12 +76,16 @@ namespace Marten.Events.Projections
             yield break;
         }
 
+        private IProjection _projection;
+
         internal virtual EventRangeGroup GroupEvents(
             DocumentStore store,
             EventRange range,
             CancellationToken cancellationToken)
         {
-            return new TenantedEventRange(store, store.Tenancy, Build(store), range, cancellationToken);
+            _projection ??= Build(store);
+
+            return new TenantedEventRange(store, store.Tenancy, _projection, range, cancellationToken);
         }
     }
 }
