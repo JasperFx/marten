@@ -8,7 +8,7 @@ namespace Marten.AsyncDaemon.Testing
     public class ProjectionControllerTests
     {
         private AsyncOptions theOptions = new AsyncOptions {BatchSize = 500, MaximumHopperSize = 5000};
-        private IProjectionAgent _theAgent = Substitute.For<IProjectionAgent>();
+        private IShardAgent _theAgent = Substitute.For<IShardAgent>();
         private ProjectionController theController;
 
         public ProjectionControllerTests()

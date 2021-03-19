@@ -27,7 +27,7 @@ namespace Marten.Events.Aggregation
             Slices = new List<EventSlice<TDoc, TId>>(slices);
         }
 
-        internal void Start(IProjectionAgent projectionAgent, ActionBlock<IStorageOperation> queue,
+        internal void Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,
             AggregationRuntime<TDoc, TId> runtime,
             IDocumentStore store, CancellationToken token)
         {
@@ -37,7 +37,7 @@ namespace Marten.Events.Aggregation
 
                 IStorageOperation operation = null;
 
-                await projectionAgent.TryAction(async () =>
+                await shardAgent.TryAction(async () =>
                 {
                     using var session = (DocumentSessionBase) store.LightweightSession(slice.Tenant.TenantId);
 
@@ -53,12 +53,12 @@ namespace Marten.Events.Aggregation
             _builder.LinkTo(queue, x => x != null);
 
             _application = Task.Factory.StartNew(() =>
-                processEventSlices(projectionAgent, runtime, store, token)
+                processEventSlices(shardAgent, runtime, store, token)
                 , token);
 
         }
 
-        private async Task processEventSlices(IProjectionAgent projectionAgent, AggregationRuntime<TDoc, TId> runtime,
+        private async Task processEventSlices(IShardAgent shardAgent, AggregationRuntime<TDoc, TId> runtime,
             IDocumentStore store, CancellationToken token)
         {
             var beingFetched = new List<EventSlice<TDoc, TId>>();
@@ -86,7 +86,7 @@ namespace Marten.Events.Aggregation
 
             IReadOnlyList<TDoc> aggregates = null;
 
-            await projectionAgent.TryAction(async () =>
+            await shardAgent.TryAction(async () =>
             {
                 using (var session = (IMartenSession) store.LightweightSession(Tenant.TenantId))
                 {

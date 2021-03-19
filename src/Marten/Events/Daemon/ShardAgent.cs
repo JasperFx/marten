@@ -12,13 +12,13 @@ namespace Marten.Events.Daemon
     /// <summary>
     /// Responsible for running a single async projection shard at runtime. Equivalent to V3 ProjectionTrack
     /// </summary>
-    internal class ProjectionAgent : IProjectionAgent, IObserver<ShardState>
+    internal class ShardAgent : IShardAgent, IObserver<ShardState>
     {
         private readonly DocumentStore _store;
         private readonly IAsyncProjectionShard _projectionShard;
         private readonly ILogger _logger;
         private CancellationToken _cancellation;
-        private ITargetBlock<EventRange> _hopper;
+        private TransformBlock<EventRange, EventRangeGroup> _grouping;
         private readonly ProjectionController _controller;
         private ActionBlock<Command> _commandBlock;
         private TransformBlock<EventRange, EventRange> _loader;
@@ -27,14 +27,17 @@ namespace Marten.Events.Daemon
         private IDisposable _subscription;
         private ProjectionDaemon _daemon;
         private CancellationTokenSource _cancellationSource;
+        private ActionBlock<EventRangeGroup> _building;
 
-        public ProjectionAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
+        public ShardAgent(DocumentStore store, IAsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
         {
             if (cancellation == CancellationToken.None)
             {
                 _cancellationSource = new CancellationTokenSource();
                 _cancellation = _cancellationSource.Token;
             }
+
+            Name = projectionShard.Name;
 
             _store = store;
             _projectionShard = projectionShard;
@@ -44,6 +47,8 @@ namespace Marten.Events.Daemon
             _controller =
                 new ProjectionController(projectionShard.Name, this, projectionShard.Options);
         }
+
+        public ShardName Name { get; }
 
 
         private async Task<EventRange> loadEvents(EventRange range)
@@ -100,25 +105,33 @@ namespace Marten.Events.Daemon
         {
             _logger.LogInformation("Starting projection agent for '{ShardName}'", _projectionShard.Name);
 
-            var singleFile = new ExecutionDataflowBlockOptions
+            var singleFileOptions = new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
                 MaxDegreeOfParallelism = 1,
                 CancellationToken = _cancellation,
             };
 
-            _commandBlock = new ActionBlock<Command>(processCommand, singleFile);
-            _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFile);
+            _commandBlock = new ActionBlock<Command>(processCommand, singleFileOptions);
+            _loader = new TransformBlock<EventRange, EventRange>(loadEvents, singleFileOptions);
 
             _tracker = daemon.Tracker;
             _daemon = daemon;
 
 
             _fetcher = new EventFetcher(_store, _projectionShard.EventFilters);
-            _hopper = _projectionShard.Start(this, _logger, _cancellation);
-            _loader.LinkTo(_hopper, e => e.Events.Any());
+            _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
+
+
+            _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
+
+            _grouping.LinkTo(_building);
+            _loader.LinkTo(_grouping, e => e.Events.Any());
 
             var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation);
+
+            // TODO -- do something here!!!!
+            //_projectionShard.EnsureStorageExists();
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
 
@@ -130,6 +143,96 @@ namespace Marten.Events.Daemon
 
             Position = lastCommitted;
             return lastCommitted;
+        }
+
+        private async Task processRange(EventRangeGroup group)
+        {
+            if (_cancellation.IsCancellationRequested) return;
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Shard '{ShardName}': Starting to process events for {Group}", Name, group);
+            }
+
+            // TODO -- this can be retried much more granually
+            await TryAction(async () =>
+            {
+                try
+                {
+                    if (group.Cancellation.IsCancellationRequested) return;
+
+                    var batch = await buildUpdateBatch(@group);
+
+                    if (group.Cancellation.IsCancellationRequested) return;
+
+                    await ExecuteBatch(batch);
+
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, group);
+                    }
+
+                    group.Dispose();
+                }
+                catch (Exception e)
+                {
+                    if (!_cancellation.IsCancellationRequested)
+                    {
+                        _logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
+                        throw;
+                    }
+                }
+            }, _cancellation);
+        }
+
+        private async Task<ProjectionUpdateBatch> buildUpdateBatch(EventRangeGroup @group)
+        {
+            group.Reset();
+            using var batch = StartNewBatch(group);
+
+            await group.ConfigureUpdateBatch(this, batch);
+
+            if (group.Cancellation.IsCancellationRequested) return batch; // get out of here early instead of letting it linger
+
+            batch.Queue.Complete();
+            await batch.Queue.Completion;
+
+            return batch;
+        }
+
+        private async Task<EventRangeGroup> groupEventRange(EventRange range)
+        {
+            if (_cancellation.IsCancellationRequested) return null;
+
+            EventRangeGroup group = null;
+
+            await TryAction(() =>
+            {
+                try
+                {
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}':Starting to slice {Range}", Name, range);
+                    }
+
+                    group = _projectionShard.GroupEvents(_store, _store.Tenancy, range, _cancellation);
+                    if (_logger.IsEnabled(LogLevel.Debug))
+                    {
+                        _logger.LogDebug("Shard '{ShardName}': successfully slice {Range}", Name, range);
+                    }
+
+                    return Task.CompletedTask;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
+                    throw;
+                }
+            }, _cancellation);
+
+
+
+            return group;
         }
 
         public async Task Stop(Exception ex = null)
@@ -144,17 +247,11 @@ namespace Marten.Events.Daemon
             _loader.Complete();
             await _loader.Completion;
 
-            _hopper.Complete();
-            await _hopper.Completion;
+            _grouping.Complete();
+            await _grouping.Completion;
 
-            try
-            {
-                await _projectionShard.Stop();
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error trying to stop shard '{ShardName}'", _projectionShard.Name);
-            }
+            _building.Complete();
+            await _building.Completion;
 
             _subscription.Dispose();
 
@@ -163,8 +260,9 @@ namespace Marten.Events.Daemon
             _subscription = null;
             _fetcher = null;
             _commandBlock = null;
-            _hopper = null;
+            _grouping = null;
             _loader = null;
+            _building = null;
 
             _logger.LogInformation("Stopped projection shard '{ShardName}'", _projectionShard.Name);
 

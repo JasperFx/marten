@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Linq.SqlGeneration;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
@@ -28,20 +29,7 @@ namespace Marten.Events.Daemon
         /// </summary>
         AsyncOptions Options { get; }
 
-        /// <summary>
-        /// Incorporate this projection shard into a running projection daemon
-        /// </summary>
-        /// <param name="agent"></param>
-        /// <param name="logger"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        ITargetBlock<EventRange> Start(IProjectionAgent agent, ILogger logger,
-            CancellationToken token);
-
-        /// <summary>
-        /// Stop any work happening inside the projection shard
-        /// </summary>
-        /// <returns></returns>
-        Task Stop();
+        EventRangeGroup GroupEvents(IDocumentStore documentStore, ITenancy storeTenancy, EventRange range,
+            CancellationToken cancellationToken);
     }
 }

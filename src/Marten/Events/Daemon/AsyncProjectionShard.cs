@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Threading;
 using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
+using Marten.Storage;
 
 namespace Marten.Events.Daemon
 {
@@ -9,14 +11,16 @@ namespace Marten.Events.Daemon
         private readonly IProjection _projection;
 
         public AsyncProjectionShard(ShardName identifier, IProjection projection, ISqlFragment[] eventFilters, DocumentStore store,
-            AsyncOptions options): base(identifier, eventFilters, store, options)
+            AsyncOptions options): base(identifier, eventFilters, options)
         {
             _projection = projection;
         }
 
-        protected override EventRangeGroup applyGrouping(EventRange range)
+        public override EventRangeGroup GroupEvents(IDocumentStore documentStore, ITenancy storeTenancy,
+            EventRange range,
+            CancellationToken cancellationToken)
         {
-            return new TenantedEventRange(Store, _projection, range, Cancellation);
+            return new TenantedEventRange(documentStore, storeTenancy, _projection, range, cancellationToken);
         }
     }
 }

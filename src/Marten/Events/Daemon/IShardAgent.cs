@@ -8,7 +8,7 @@ namespace Marten.Events.Daemon
     /// Used internally by asynchronous projections.
     /// </summary>
     // This is public because it's used by the generated code
-    public interface IProjectionAgent
+    public interface IShardAgent
     {
         ProjectionUpdateBatch StartNewBatch(EventRangeGroup group);
         Task ExecuteBatch(ProjectionUpdateBatch batch);
