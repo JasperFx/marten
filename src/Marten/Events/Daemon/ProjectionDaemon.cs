@@ -108,6 +108,8 @@ namespace Marten.Events.Daemon
         {
             if (_agents.TryGetValue(shardName, out var agent))
             {
+                if (agent.IsStopping()) return;
+
                 await TryAction(agent, async () =>
                 {
                     try
@@ -130,6 +132,8 @@ namespace Marten.Events.Daemon
             {
                 try
                 {
+                    if (agent.IsStopping()) continue;
+
                     await agent.Stop();
                 }
                 catch (Exception e)
