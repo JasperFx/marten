@@ -9,19 +9,19 @@ namespace Marten.Events.Daemon
 {
     internal class TenantedEventRange: EventRangeGroup
     {
-        private DocumentStore _store;
+        private readonly DocumentStore _store;
         private readonly IProjection _projection;
 
-        public TenantedEventRange(DocumentStore store, IProjection projection, EventRange range,
+        public TenantedEventRange(IDocumentStore store, ITenancy storeTenancy, IProjection projection, EventRange range,
             CancellationToken shardCancellation) : base(range, shardCancellation)
         {
-            _store = store;
+            _store = (DocumentStore)store;
             _projection = projection;
 
             var byTenant = range.Events.GroupBy(x => x.TenantId);
             foreach (var group in byTenant)
             {
-                var tenant = _store.Tenancy[group.Key];
+                var tenant = storeTenancy[group.Key];
 
                 var actions = _store.Events.StreamIdentity switch
                 {
@@ -55,11 +55,11 @@ namespace Marten.Events.Daemon
             return $"Tenant Group Range for: {Range}";
         }
 
-        public override Task ConfigureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch)
+        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
         {
             var tasks = Groups.Select(tenantGroup =>
             {
-                return projectionAgent.TryAction(async () =>
+                return shardAgent.TryAction(async () =>
                 {
                     await tenantGroup.ApplyEvents(batch, _projection, _store, Cancellation);
                 }, Cancellation);

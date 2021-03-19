@@ -10,13 +10,13 @@ namespace Marten.Events.Daemon
     internal class ProjectionController
     {
         private readonly ShardName _shardName;
-        private readonly IProjectionAgent _agent;
+        private readonly IShardAgent _agent;
         private readonly AsyncOptions _options;
 
         private readonly Queue<EventRange> _inFlight = new Queue<EventRange>();
 
 
-        public ProjectionController(ShardName shardName, IProjectionAgent agent, AsyncOptions options)
+        public ProjectionController(ShardName shardName, IShardAgent agent, AsyncOptions options)
         {
             _shardName = shardName;
             _agent = agent;

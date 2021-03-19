@@ -381,7 +381,7 @@ namespace Marten.Events.Aggregation
             var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
 
 
-            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), baseFilters, runtime, store, Options);
+            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), baseFilters, runtime, Options);
 
             return new List<IAsyncProjectionShard> {shard};
         }

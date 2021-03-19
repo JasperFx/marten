@@ -67,7 +67,7 @@ namespace Marten.AsyncDaemon.Testing
             // nothing
         }
 
-        public override Task ConfigureUpdateBatch(IProjectionAgent projectionAgent, ProjectionUpdateBatch batch)
+        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
         {
             throw new System.NotImplementedException();
         }

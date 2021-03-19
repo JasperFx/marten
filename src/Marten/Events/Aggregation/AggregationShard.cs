@@ -1,3 +1,4 @@
+using System.Threading;
 using Marten.Events.Daemon;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
@@ -7,27 +8,20 @@ namespace Marten.Events.Aggregation
     internal class AggregationShard<TDoc, TId>: AsyncProjectionShardBase
     {
         private readonly AggregationRuntime<TDoc, TId> _runtime;
-        private readonly ITenancy _tenancy;
-        private readonly DocumentStore _store;
 
         public AggregationShard(ShardName identifier, ISqlFragment[] eventFilters,
-            AggregationRuntime<TDoc, TId> runtime, DocumentStore store, AsyncOptions options): base(identifier,
-            eventFilters, store, options)
+            AggregationRuntime<TDoc, TId> runtime, AsyncOptions options): base(identifier,
+            eventFilters, options)
         {
             _runtime = runtime;
-            _tenancy = store.Tenancy;
-            _store = store;
         }
 
-        protected override void ensureStorageExists()
+        public override EventRangeGroup GroupEvents(IDocumentStore documentStore, ITenancy storeTenancy,
+            EventRange range,
+            CancellationToken cancellationToken)
         {
-            Store.Tenancy.Default.EnsureStorageExists(typeof(TDoc));
-        }
-
-        protected override EventRangeGroup applyGrouping(EventRange range)
-        {
-            var groups = _runtime.Slicer.Slice(range.Events, _tenancy);
-            return new TenantSliceRange<TDoc, TId>(_store, _runtime, range, groups, Cancellation);
+            var groups = _runtime.Slicer.Slice(range.Events, storeTenancy);
+            return new TenantSliceRange<TDoc, TId>(documentStore, _runtime, range, groups, cancellationToken);
         }
     }
 }
