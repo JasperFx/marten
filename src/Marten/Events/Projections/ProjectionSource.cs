@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Marten.Events.Daemon;
 using Marten.Storage;
 
@@ -7,15 +8,42 @@ namespace Marten.Events.Projections
 {
     public enum ProjectionLifecycle
     {
+        /// <summary>
+        /// The projection will be updated in the same transaction as
+        /// the events being captured
+        /// </summary>
         Inline,
+
+        /// <summary>
+        /// The projection will only execute within the Async Daemon
+        /// </summary>
         Async,
+
+        /// <summary>
+        /// The projection is only executed on demand
+        /// </summary>
         Live
     }
 
+    /// <summary>
+    /// Read-only diagnostic view of a registered projection
+    /// </summary>
     public interface IProjectionSource
     {
+        /// <summary>
+        /// The configured projection name used within the Async Daemon
+        /// progress tracking
+        /// </summary>
         string ProjectionName { get; }
+
+        /// <summary>
+        /// When is this projection executed?
+        /// </summary>
         ProjectionLifecycle Lifecycle { get; }
+
+        /// <summary>
+        /// The concrete .Net type implementing this projection
+        /// </summary>
         Type ProjectionType { get; }
     }
 
@@ -46,6 +74,14 @@ namespace Marten.Events.Projections
         {
             // Nothing
             yield break;
+        }
+
+        internal virtual EventRangeGroup GroupEvents(
+            DocumentStore store,
+            EventRange range,
+            CancellationToken cancellationToken)
+        {
+            return new TenantedEventRange(store, store.Tenancy, Build(store), range, cancellationToken);
         }
     }
 }

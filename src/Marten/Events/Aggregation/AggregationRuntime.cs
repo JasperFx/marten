@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -15,7 +14,12 @@ using Npgsql;
 
 namespace Marten.Events.Aggregation
 {
-    public abstract class AggregationRuntime<TDoc, TId> : IProjection
+    public interface IAggregationRuntime : IProjection
+    {
+        EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
+    }
+
+    public abstract class AggregationRuntime<TDoc, TId> : IAggregationRuntime
     {
         private readonly IDocumentStore _store;
         public IDocumentStorage<TDoc, TId> Storage { get; }
@@ -123,6 +127,10 @@ namespace Marten.Events.Aggregation
             }
         }
 
-
+        public EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
+        {
+            var groups = Slicer.Slice(range.Events, store.Tenancy);
+            return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
+        }
     }
 }
