@@ -217,15 +217,8 @@ namespace Marten.Events.Projections
             return inline;
         }
 
-        internal override IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
+        internal override IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
         {
-            if (_inlineType == null)
-            {
-                Compile();
-            }
-
-            var projection = Build((DocumentStore) store);
-
             // TODO -- sharding behavior
             var baseFilters = new ISqlFragment[0];
             var eventTypes = MethodCollection.AllEventTypes(_createMethods, _projectMethods);
@@ -234,10 +227,7 @@ namespace Marten.Events.Projections
                 baseFilters = new ISqlFragment[] {new Marten.Events.Daemon.EventTypeFilter(store.Events, eventTypes)};
             }
 
-            var shard = new AsyncProjectionShard(new ShardName(ProjectionName), projection, baseFilters, store,
-                Options);
-
-            return new List<IAsyncProjectionShard> {shard};
+            return new List<AsyncProjectionShard> {new(this, baseFilters)};
         }
 
         internal void Compile()

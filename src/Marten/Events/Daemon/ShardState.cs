@@ -23,12 +23,12 @@ namespace Marten.Events.Daemon
         }
 
 
-        public ShardState(IAsyncProjectionShard shard, long sequenceNumber) : this(shard.Name, sequenceNumber)
+        public ShardState(AsyncProjectionShard shard, long sequenceNumber) : this(shard.Name, sequenceNumber)
         {
 
         }
 
-        public ShardState(IAsyncProjectionShard shard, ShardAction action) : this(shard.Name, 0)
+        public ShardState(AsyncProjectionShard shard, ShardAction action) : this(shard.Name, 0)
         {
             Action = action;
         }

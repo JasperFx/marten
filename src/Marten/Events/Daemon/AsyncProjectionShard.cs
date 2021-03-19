@@ -1,26 +1,44 @@
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
-    internal class AsyncProjectionShard: AsyncProjectionShardBase
+    /// <summary>
+    /// Definition of a single projection shard to be executed asynchronously
+    /// </summary>
+    public class AsyncProjectionShard
     {
-        private readonly IProjection _projection;
-
-        public AsyncProjectionShard(ShardName identifier, IProjection projection, ISqlFragment[] eventFilters, DocumentStore store,
-            AsyncOptions options): base(identifier, eventFilters, options)
+        public AsyncProjectionShard(string shardName, ProjectionSource source, ISqlFragment[] filters)
         {
-            _projection = projection;
+            Name = new ShardName(source.ProjectionName, shardName);
+            EventFilters = filters;
+            Source = source;
         }
 
-        public override EventRangeGroup GroupEvents(IDocumentStore documentStore, ITenancy storeTenancy,
-            EventRange range,
-            CancellationToken cancellationToken)
+        public AsyncProjectionShard(ProjectionSource source, ISqlFragment[] filters)
         {
-            return new TenantedEventRange(documentStore, storeTenancy, _projection, range, cancellationToken);
+            Name = new ShardName(source.ProjectionName);
+            EventFilters = filters;
+            Source = source;
         }
+
+        public ProjectionSource Source { get;}
+
+        /// <summary>
+        /// WHERE clause fragments used to filter the events
+        /// to be applied to this projection shard
+        /// </summary>
+        public ISqlFragment[] EventFilters { get; }
+
+        /// <summary>
+        /// The identity of this projection shard
+        /// </summary>
+        public ShardName Name { get; }
+
     }
 }

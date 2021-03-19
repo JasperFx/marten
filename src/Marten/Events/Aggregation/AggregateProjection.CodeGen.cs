@@ -56,6 +56,8 @@ namespace Marten.Events.Aggregation
                 return _createMethods.Methods.Concat(_applyMethods.Methods).Concat(_shouldDeleteMethods.Methods)
                     .Select(x => x.EventType).Concat(DeleteEvents).Distinct().ToArray();
             });
+
+
         }
 
         public override Type ProjectionType => GetType();
@@ -366,7 +368,7 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        internal override IReadOnlyList<IAsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
+        internal override IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
         {
             // TODO -- support sharding
 
@@ -380,12 +382,7 @@ namespace Marten.Events.Aggregation
                 baseFilters = new ISqlFragment[] {new Marten.Events.Daemon.EventTypeFilter(store.Events, eventTypes)};
             }
 
-            var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
-
-
-            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), baseFilters, _runtime, Options);
-
-            return new List<IAsyncProjectionShard> {shard};
+            return new List<AsyncProjectionShard> {new(this, baseFilters)};
         }
 
         protected virtual Type[] determineEventTypes()
