@@ -29,7 +29,8 @@ namespace Marten.Events.Daemon
         private ProjectionDaemon _daemon;
         private CancellationTokenSource _cancellationSource;
         private ActionBlock<EventRangeGroup> _building;
-        private ProjectionSource _source;
+        private readonly ProjectionSource _source;
+        private bool _isStopping = false;
 
         public ShardAgent(DocumentStore store, AsyncProjectionShard projectionShard, ILogger logger, CancellationToken cancellation)
         {
@@ -103,6 +104,11 @@ namespace Marten.Events.Daemon
         public Task TryAction(Func<Task> action, CancellationToken token)
         {
             return _daemon.TryAction(this, action, token);
+        }
+
+        public bool IsStopping()
+        {
+            return _isStopping;
         }
 
         public async Task<long> Start(ProjectionDaemon daemon)
@@ -246,6 +252,8 @@ namespace Marten.Events.Daemon
 
         public Task Stop(Exception ex = null)
         {
+            _isStopping = true;
+
             _logger.LogInformation("Stopping projection shard '{ShardName}'", _projectionShard.Name);
 
             _cancellationSource?.Cancel();
@@ -268,7 +276,13 @@ namespace Marten.Events.Daemon
 
             _logger.LogInformation("Stopped projection shard '{ShardName}'", _projectionShard.Name);
 
-            _tracker.Publish(new ShardState(_projectionShard.Name, Position){Action = ShardAction.Stopped, Exception = ex});
+            _tracker.Publish(new ShardState(_projectionShard.Name, Position)
+            {
+                Action = ShardAction.Stopped,
+                Exception = ex
+            });
+
+            _isStopping = false;
 
             return Task.CompletedTask;
         }
