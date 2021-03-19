@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Baseline;
@@ -38,6 +39,7 @@ namespace Marten.Events.Aggregation
         private Type _storageType;
 
         private readonly Lazy<Type[]> _allEventTypes;
+        private IAggregationRuntime _runtime;
 
         public AggregateProjection() : base(typeof(T).NameInCode())
         {
@@ -89,7 +91,7 @@ namespace Marten.Events.Aggregation
             return aggregator;
         }
 
-        internal IProjection BuildRuntime(DocumentStore store)
+        internal IAggregationRuntime BuildRuntime(DocumentStore store)
         {
             if (_liveType == null)
             {
@@ -105,7 +107,7 @@ namespace Marten.Events.Aggregation
                 Debug.WriteLine(parameter.ParameterType.NameInCode());
             }
 
-            var inline = (IProjection)Activator.CreateInstance(_inlineType.CompiledType, store, this, slicer, store.Options.Tenancy, storage, this);
+            var inline = (IAggregationRuntime)Activator.CreateInstance(_inlineType.CompiledType, store, this, slicer, store.Options.Tenancy, storage, this);
             _inlineType.ApplySetterValues(inline);
 
             return inline;
@@ -368,7 +370,7 @@ namespace Marten.Events.Aggregation
         {
             // TODO -- support sharding
 
-            var runtime = BuildRuntime(store);
+            _runtime = BuildRuntime(store);
 
             var eventTypes = determineEventTypes();
 
@@ -381,7 +383,7 @@ namespace Marten.Events.Aggregation
             var shardType = typeof(AggregationShard<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
 
 
-            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), baseFilters, runtime, Options);
+            var shard = (IAsyncProjectionShard)Activator.CreateInstance(shardType, new ShardName(ProjectionName), baseFilters, _runtime, Options);
 
             return new List<IAsyncProjectionShard> {shard};
         }
@@ -391,6 +393,13 @@ namespace Marten.Events.Aggregation
             var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
                 .Concat(DeleteEvents).Distinct().ToArray();
             return eventTypes;
+        }
+
+        internal override EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
+        {
+            _runtime ??= BuildRuntime(store);
+
+            return _runtime.GroupEvents(store, range, cancellationToken);
         }
     }
 }
