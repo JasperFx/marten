@@ -109,8 +109,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(?);";
 
         public void DeleteAllEventData()
         {
-
-
             using var connection = _tenant.OpenConnection(CommandRunnerMode.Transactional);
             connection.Execute($@"
 DO $$ BEGIN
@@ -124,6 +122,9 @@ THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_streams CASCADE; END
 IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_mark_event_progression' AND table_schema = '{_options.Events.DatabaseSchemaName}')
 THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_mark_event_progression CASCADE; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = 'mt_dead_letter_events' AND table_schema = '{_options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {_options.Events.DatabaseSchemaName}.mt_dead_letter_events CASCADE; END IF;
 
 END; $$;
 ");

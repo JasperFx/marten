@@ -212,6 +212,7 @@ namespace Marten.Events
                 {
                     streamsTable,
                     eventsTable,
+                    new DeadLetterEventsTable(this),
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
