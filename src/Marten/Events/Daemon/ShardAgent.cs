@@ -58,28 +58,18 @@ namespace Marten.Events.Daemon
 
         private async Task<EventRange> loadEvents(EventRange range)
         {
-            if (_cancellation.IsCancellationRequested) return null;
-
             await _daemon.TryAction(this, async () =>
             {
-                try
-                {
-                    await _fetcher.Load(range, _cancellation);
-                }
-                catch (Exception e)
-                {
-                    if (!_cancellation.IsCancellationRequested)
-                    {
-                        _logger.LogError(e, "Error loading events for {Range}", range);
-                        throw new EventFetcherException(_projectionShard.Name, e);
-                    }
-                }
+                await _fetcher.Load(_projectionShard.Name, range, _cancellation);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
                     _logger.LogDebug("Loaded events for {Range}", range);
                 }
-            }, _cancellation);
+            }, _cancellation, logException:(logger, e) =>
+            {
+                logger.LogError(e, "Error loading events for {Range}", range);
+            });
 
             return range;
         }
@@ -101,9 +91,9 @@ namespace Marten.Events.Daemon
             _loader.Post(range);
         }
 
-        public Task TryAction(Func<Task> action, CancellationToken token)
+        public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null)
         {
-            return _daemon.TryAction(this, action, token);
+            return _daemon.TryAction(this, action, token, logException:logException, group:group);
         }
 
         public bool IsStopping()
@@ -167,35 +157,31 @@ namespace Marten.Events.Daemon
                 _logger.LogDebug("Shard '{ShardName}': Starting to process events for {Group}", Name, group);
             }
 
-            // TODO -- this can be retried much more granually
+            ProjectionUpdateBatch batch = null;
+
+            // Building the ProjectionUpdateBatch
             await TryAction(async () =>
             {
-                try
+                batch = await buildUpdateBatch(@group);
+                group.Dispose();
+            }, group.Cancellation, (logger, e) =>
+            {
+                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
+            }, group:group);
+
+            // Executing the SQL commands for the ProjectionUpdateBatch
+            await TryAction(async () =>
+            {
+                await ExecuteBatch(batch);
+
+                if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    if (group.Cancellation.IsCancellationRequested) return;
-
-                    var batch = await buildUpdateBatch(@group);
-
-                    if (group.Cancellation.IsCancellationRequested) return;
-
-                    await ExecuteBatch(batch);
-
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, group);
-                    }
-
-                    group.Dispose();
+                    _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, group);
                 }
-                catch (Exception e)
-                {
-                    if (!_cancellation.IsCancellationRequested)
-                    {
-                        _logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
-                        throw;
-                    }
-                }
-            }, _cancellation);
+            }, _cancellation, (logger, e) =>
+            {
+                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
+            });
         }
 
         private async Task<ProjectionUpdateBatch> buildUpdateBatch(EventRangeGroup @group)
@@ -223,27 +209,24 @@ namespace Marten.Events.Daemon
 
             await TryAction(() =>
             {
-                try
+                if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Shard '{ShardName}':Starting to slice {Range}", Name, range);
-                    }
-
-                    group = _source.GroupEvents(_store, range, _cancellation);
-                    if (_logger.IsEnabled(LogLevel.Debug))
-                    {
-                        _logger.LogDebug("Shard '{ShardName}': successfully slice {Range}", Name, range);
-                    }
-
-                    return Task.CompletedTask;
+                    _logger.LogDebug("Shard '{ShardName}':Starting to group {Range}", Name, range);
                 }
-                catch (Exception e)
+
+                group = _source.GroupEvents(_store, range, _cancellation);
+
+                if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
-                    throw;
+                    _logger.LogDebug("Shard '{ShardName}': successfully grouped {Range}", Name, range);
                 }
-            }, _cancellation);
+
+                return Task.CompletedTask;
+
+            }, _cancellation, (logger, e) =>
+            {
+                logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
+            });
 
 
 

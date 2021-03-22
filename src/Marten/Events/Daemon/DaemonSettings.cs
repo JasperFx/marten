@@ -126,6 +126,16 @@ namespace Marten.Events.Daemon
         }
 
         /// <summary>
+        /// Specify an exception handling policy for failures due to a specific event
+        /// within a projection shard
+        /// </summary>
+        /// <returns></returns>
+        public ExceptionPolicy OnApplyEventException()
+        {
+            return OnException<ApplyEventException>();
+        }
+
+        /// <summary>
         ///     Specifies the type of exception that this policy can handle with additional filters on this exception type.
         /// </summary>
         /// <param name="policies"></param>
@@ -169,7 +179,7 @@ namespace Marten.Events.Daemon
                 }
             }
 
-            return new StopProjection();
+            return new StopShard();
         }
     }
 }

@@ -140,7 +140,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             policy.Continuations[0].ShouldBe(new RetryLater(1.Seconds()));
             policy.Continuations[1].ShouldBe(new RetryLater(3.Seconds()));
             policy.Continuations[2].ShouldBe(new RetryLater(5.Seconds()));
-            policy.Continuations[3].ShouldBe(new PauseProjection(1.Minutes()));
+            policy.Continuations[3].ShouldBe(new PauseShard(1.Minutes()));
         }
 
 
@@ -155,7 +155,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.Pause(3.Seconds());
 
-            policy.Continuations.Single().ShouldBe(new PauseProjection(3.Seconds()));
+            policy.Continuations.Single().ShouldBe(new PauseShard(3.Seconds()));
         }
 
         [Fact]
@@ -168,7 +168,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.PauseAll(3.Seconds());
 
-            policy.Continuations.Single().ShouldBe(new PauseAllProjections(3.Seconds()));
+            policy.Continuations.Single().ShouldBe(new PauseAllShards(3.Seconds()));
         }
 
         [Fact]
@@ -181,7 +181,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.Stop();
 
-            policy.Continuations.Single().ShouldBeOfType<StopProjection>();
+            policy.Continuations.Single().ShouldBeOfType<StopShard>();
         }
 
         [Fact]
@@ -194,7 +194,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var policy = (ExceptionPolicy)settings.Policies.Single();
             policy.StopAll();
 
-            policy.Continuations.Single().ShouldBeOfType<StopAllProjections>();
+            policy.Continuations.Single().ShouldBeOfType<StopAllShards>();
         }
 
 

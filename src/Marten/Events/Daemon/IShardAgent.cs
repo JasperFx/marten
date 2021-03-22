@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
@@ -15,7 +16,7 @@ namespace Marten.Events.Daemon
 
         void StartRange(EventRange range);
 
-        Task TryAction(Func<Task> action, CancellationToken token);
+        Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null);
 
         bool IsStopping();
     }

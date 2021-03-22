@@ -12,23 +12,28 @@ namespace Marten.Events.Daemon
         private readonly DocumentStore _store;
         private readonly IProjection _projection;
 
-        public TenantedEventRange(IDocumentStore store, ITenancy storeTenancy, IProjection projection, EventRange range,
+        public TenantedEventRange(IDocumentStore store, IProjection projection, EventRange range,
             CancellationToken shardCancellation) : base(range, shardCancellation)
         {
             _store = (DocumentStore)store;
             _projection = projection;
 
-            var byTenant = range.Events.GroupBy(x => x.TenantId);
+            buildGroups();
+        }
+
+        private void buildGroups()
+        {
+            var byTenant = Range.Events.GroupBy(x => x.TenantId);
             foreach (var group in byTenant)
             {
-                var tenant = storeTenancy[group.Key];
+                var tenant = _store.Tenancy[@group.Key];
 
                 var actions = _store.Events.StreamIdentity switch
                 {
-                    StreamIdentity.AsGuid => group.GroupBy(x => x.StreamId)
+                    StreamIdentity.AsGuid => @group.GroupBy(x => x.StreamId)
                         .Select(events => StreamAction.For(events.Key, events.ToList())),
 
-                    StreamIdentity.AsString => group.GroupBy(x => x.StreamKey)
+                    StreamIdentity.AsString => @group.GroupBy(x => x.StreamKey)
                         .Select(events => StreamAction.For(events.Key, events.ToList())),
 
                     _ => null
@@ -36,6 +41,13 @@ namespace Marten.Events.Daemon
 
                 Groups.Add(new TenantActionGroup(tenant, actions));
             }
+        }
+
+        public override void SkipEventSequence(long eventSequence)
+        {
+            Range.SkipEventSequence(eventSequence);
+            Groups.Clear();
+            buildGroups();
         }
 
         public IList<TenantActionGroup> Groups { get; } = new List<TenantActionGroup>();

@@ -48,5 +48,6 @@ namespace Marten.Events.Daemon
         public abstract void Dispose();
 
         public abstract Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch);
+        public abstract void SkipEventSequence(long eventSequence);
     }
 }

@@ -55,7 +55,7 @@ namespace Marten.Events.Daemon
             teardown();
         }
 
-        public async Task Load(EventRange range, CancellationToken token)
+        public async Task Load(ShardName projectionShardName, EventRange range, CancellationToken token)
         {
             if (_session == null)
             {
@@ -68,7 +68,14 @@ namespace Marten.Events.Daemon
             // and never at the same time on the same instance
             _statement.Range = range;
 
-            range.Events = await _session.ExecuteHandlerAsync(_handler, token);
+            try
+            {
+                range.Events = await _session.ExecuteHandlerAsync(_handler, token);
+            }
+            catch (Exception e)
+            {
+                throw new EventFetcherException(projectionShardName, e);
+            }
         }
     }
 }

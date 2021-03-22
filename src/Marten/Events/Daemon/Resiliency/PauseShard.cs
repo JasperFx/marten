@@ -3,16 +3,16 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Daemon.Resiliency
 {
-    internal class PauseProjection: IContinuation
+    internal class PauseShard: IContinuation
     {
         public TimeSpan Delay { get; }
 
-        public PauseProjection(TimeSpan delay)
+        public PauseShard(TimeSpan delay)
         {
             Delay = delay;
         }
 
-        protected bool Equals(PauseProjection other)
+        protected bool Equals(PauseShard other)
         {
             return Delay.Equals(other.Delay);
         }
@@ -22,7 +22,7 @@ namespace Marten.Events.Daemon.Resiliency
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((PauseProjection) obj);
+            return Equals((PauseShard) obj);
         }
 
         public override int GetHashCode()
