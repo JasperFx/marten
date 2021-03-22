@@ -1,7 +1,10 @@
 using System;
 using Baseline.Dates;
+using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Exceptions;
+using Marten.Testing.Events.Aggregation;
 using Npgsql;
 using Shouldly;
 using Xunit;
@@ -18,7 +21,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 .RetryLater(1.Seconds(), 2.Seconds(), 3.Seconds());
 
             settings.DetermineContinuation(new DivideByZeroException(), 0)
-                .ShouldBeOfType<StopProjection>();
+                .ShouldBeOfType<StopShard>();
 
         }
 
@@ -36,7 +39,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 .ShouldBeOfType<RetryLater>();
 
             settings.DetermineContinuation(new NpgsqlException(), 3)
-                .ShouldBeOfType<PauseProjection>();
+                .ShouldBeOfType<PauseShard>();
         }
 
         [Fact]
@@ -56,7 +59,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 .ShouldBe(new RetryLater(3.Seconds()));
 
             settings.DetermineContinuation(new BadImageFormatException(), 3)
-                .ShouldBeOfType<StopProjection>();
+                .ShouldBeOfType<StopShard>();
 
         }
 
@@ -78,8 +81,31 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 .ShouldBe(new RetryLater(3.Seconds()));
 
             settings.DetermineContinuation(new BadImageFormatException(), 3)
-                .ShouldBe(new PauseProjection(5.Seconds()));
+                .ShouldBe(new PauseShard(5.Seconds()));
 
+        }
+
+        [Fact]
+        public void determine_continuation_for_skip_falls_back_to_stop_if_not_apply_event_exception()
+        {
+            var settings = new DaemonSettings();
+            settings.OnException<BadImageFormatException>().SkipEvent();
+
+            settings.DetermineContinuation(new BadImageFormatException(), 0)
+                .ShouldBeOfType<StopShard>();
+        }
+
+        [Fact]
+        public void determine_continuation_on_skip_with_apply_event_exception()
+        {
+            var settings = new DaemonSettings();
+            settings.OnApplyEventException().SkipEvent();
+
+            var @event = new Event<AEvent>(new AEvent()) {Sequence = 55};
+
+            settings.DetermineContinuation(new ApplyEventException(@event, new ArithmeticException()), 0)
+                .ShouldBeOfType<SkipEvent>()
+                .Event.Sequence.ShouldBe(@event.Sequence);
         }
     }
 }

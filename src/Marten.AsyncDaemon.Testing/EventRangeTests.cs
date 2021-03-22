@@ -33,5 +33,31 @@ namespace Marten.AsyncDaemon.Testing
 
             range.Size.ShouldBe(5);
         }
+
+        [Fact]
+        public void skip_event_sequence()
+        {
+            var range = new EventRange(new ShardName("name"), 0, 100)
+            {
+                Events = new List<IEvent>
+                {
+                    new Event<AEvent>(new AEvent()),
+                    new Event<AEvent>(new AEvent()),
+                    new Event<AEvent>(new AEvent()),
+                    new Event<AEvent>(new AEvent()),
+                    new Event<AEvent>(new AEvent()),
+                }
+            };
+
+            var sequence = 111;
+            foreach (var @event in range.Events)
+            {
+                @event.Sequence = sequence++;
+            }
+
+            range.SkipEventSequence(114);
+
+            range.Events.Count.ShouldBe(4);
+        }
     }
 }

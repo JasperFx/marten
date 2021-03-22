@@ -8,10 +8,10 @@ namespace Marten.Events.Aggregation
 {
     internal class TenantSliceRange<TDoc, TId>: EventRangeGroup
     {
-        private readonly IDocumentStore _store;
+        private readonly DocumentStore _store;
         private readonly AggregationRuntime<TDoc, TId> _runtime;
 
-        public TenantSliceRange(IDocumentStore store, AggregationRuntime<TDoc, TId> runtime, EventRange range,
+        public TenantSliceRange(DocumentStore store, AggregationRuntime<TDoc, TId> runtime, EventRange range,
             IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups, CancellationToken projectionCancellation) : base(range, projectionCancellation)
         {
             _store = store;
@@ -19,7 +19,7 @@ namespace Marten.Events.Aggregation
             Groups = groups;
         }
 
-        public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Groups { get; }
+        public IReadOnlyList<TenantSliceGroup<TDoc, TId>> Groups { get; private set; }
 
 
         protected override void reset()
@@ -45,6 +45,12 @@ namespace Marten.Events.Aggregation
             }
 
             return Task.WhenAll(Groups.Select(x => x.Complete()).ToArray());
+        }
+
+        public override void SkipEventSequence(long eventSequence)
+        {
+            Range.SkipEventSequence(eventSequence);
+            Groups = _runtime.Slicer.Slice(Range.Events, _store.Tenancy);
         }
     }
 }

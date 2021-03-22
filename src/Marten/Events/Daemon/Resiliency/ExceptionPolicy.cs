@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Exceptions;
 using Remotion.Linq.Parsing.ExpressionVisitors.Transformation.PredefinedTransformations;
 
 namespace Marten.Events.Daemon.Resiliency
@@ -72,7 +73,7 @@ namespace Marten.Events.Daemon.Resiliency
         /// <param name="timeSpan"></param>
         public void Pause(TimeSpan timeSpan)
         {
-            Continuations.Add(new PauseProjection(timeSpan));
+            Continuations.Add(new PauseShard(timeSpan));
         }
 
         /// <summary>
@@ -82,7 +83,7 @@ namespace Marten.Events.Daemon.Resiliency
         /// <param name="timeSpan"></param>
         public void PauseAll(TimeSpan timeSpan)
         {
-            Continuations.Add(new PauseAllProjections(timeSpan));
+            Continuations.Add(new PauseAllShards(timeSpan));
         }
 
         /// <summary>
@@ -90,7 +91,7 @@ namespace Marten.Events.Daemon.Resiliency
         /// </summary>
         public void Stop()
         {
-            Continuations.Add(new StopProjection());
+            Continuations.Add(new StopShard());
         }
 
         /// <summary>
@@ -98,7 +99,7 @@ namespace Marten.Events.Daemon.Resiliency
         /// </summary>
         public void StopAll()
         {
-            Continuations.Add(new StopAllProjections());
+            Continuations.Add(new StopAllShards());
         }
 
         public IThenExpression RetryLater(params TimeSpan[] timeSpans)
@@ -117,13 +118,32 @@ namespace Marten.Events.Daemon.Resiliency
             Continuations.Add(new DoNothing());
         }
 
+        public void SkipEvent()
+        {
+            Continuations.Add(new SkipEvent());
+        }
+
         bool IExceptionPolicy.TryMatch(Exception ex, int attemptCount, out IContinuation continuation)
         {
             if (Matches(ex))
             {
                 continuation = Continuations.Count > attemptCount
                     ? Continuations[attemptCount]
-                    : new StopProjection();
+                    : new StopShard();
+
+                if (continuation is not Resiliency.SkipEvent) return true;
+
+                if (ex is ApplyEventException apply)
+                {
+                    continuation = new SkipEvent
+                    {
+                        Event = apply.Event
+                    };
+                }
+                else
+                {
+                    continuation = new StopShard();
+                }
 
                 return true;
             }
@@ -163,6 +183,14 @@ namespace Marten.Events.Daemon.Resiliency
         /// Ignore the exception and do nothing
         /// </summary>
         void DoNothing();
+
+        /// <summary>
+        /// Make the async projection daemon re-run the current page of events,
+        /// but skip the event that caused the ApplyEventException. If the event
+        /// that caused the exception cannot be determined, the current projection
+        /// shard will be stopped.
+        /// </summary>
+        void SkipEvent();
     }
 
     public interface IThenExpression

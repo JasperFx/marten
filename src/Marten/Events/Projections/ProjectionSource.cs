@@ -85,7 +85,7 @@ namespace Marten.Events.Projections
         {
             _projection ??= Build(store);
 
-            return new TenantedEventRange(store, store.Tenancy, _projection, range, cancellationToken);
+            return new TenantedEventRange(store, _projection, range, cancellationToken);
         }
     }
 }

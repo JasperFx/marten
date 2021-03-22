@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
 
@@ -84,6 +85,13 @@ namespace Marten.Events.Daemon
             if (SequenceFloor == 0) return new InsertProjectionProgress(events, this);
 
             return new UpdateProjectionProgress(events, this);
+        }
+
+        public void SkipEventSequence(long eventSequence)
+        {
+            var events = Events.ToList();
+            events.RemoveAll(e => e.Sequence == eventSequence);
+            Events = events;
         }
     }
 }
