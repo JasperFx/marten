@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
+using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
@@ -305,6 +306,8 @@ namespace Marten
         internal void ApplyConfiguration()
         {
             Storage.BuildAllMappings();
+
+            Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName);
 
             foreach (var mapping in Storage.AllDocumentMappings)
             {

@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using Marten.Exceptions;
+using Npgsql;
 
 namespace Marten.Events.Projections
 {
@@ -10,7 +13,22 @@ namespace Marten.Events.Projections
             {
                 foreach (var @event in stream.Events)
                 {
-                    ApplyEvent(operations, stream, @event);
+                    try
+                    {
+                        ApplyEvent(operations, stream, @event);
+                    }
+                    catch (NpgsqlException)
+                    {
+                        throw;
+                    }
+                    catch (MartenCommandException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ApplyEventException(@event, ex);
+                    }
                 }
             }
         }

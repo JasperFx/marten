@@ -5,12 +5,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation
 {
@@ -29,7 +31,7 @@ namespace Marten.Events.Aggregation
 
         internal void Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,
             AggregationRuntime<TDoc, TId> runtime,
-            IDocumentStore store, CancellationToken token)
+            IDocumentStore store, EventRangeGroup parent, CancellationToken token)
         {
             _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(async slice =>
             {
@@ -42,7 +44,10 @@ namespace Marten.Events.Aggregation
                     using var session = (DocumentSessionBase) store.LightweightSession(slice.Tenant.TenantId);
 
                     operation = await runtime.DetermineOperation(session, slice, token, ProjectionLifecycle.Async);
-                }, token);
+                }, token, group:parent, logException: (l, e) =>
+                {
+                    l.LogError(e, "Failure trying to build a storage operation to update {DocumentType} with {Id}", typeof(TDoc).FullNameInCode(), slice.Id);
+                });
 
                 return operation;
             }, new ExecutionDataflowBlockOptions

@@ -37,11 +37,12 @@ namespace Marten.Events.Aggregation
             return $"Aggregate for {Range}, {Groups.Count} slices";
         }
 
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
+            EventRangeGroup eventRangeGroup)
         {
             foreach (var @group in Groups)
             {
-                @group.Start(shardAgent, batch.Queue, _runtime, _store, Cancellation);
+                @group.Start(shardAgent, batch.Queue, _runtime, _store, this, Cancellation);
             }
 
             return Task.WhenAll(Groups.Select(x => x.Complete()).ToArray());
@@ -49,6 +50,7 @@ namespace Marten.Events.Aggregation
 
         public override void SkipEventSequence(long eventSequence)
         {
+            reset();
             Range.SkipEventSequence(eventSequence);
             Groups = _runtime.Slicer.Slice(Range.Events, _store.Tenancy);
         }
