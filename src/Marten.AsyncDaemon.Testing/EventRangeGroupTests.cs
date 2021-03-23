@@ -1,6 +1,8 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -46,6 +48,20 @@ namespace Marten.AsyncDaemon.Testing
             theGroup.WasAborted.ShouldBeFalse();
             theGroup.Cancellation.IsCancellationRequested.ShouldBeFalse();
             theGroup.Attempts.ShouldBe(1); // increment
+        }
+
+        [Fact]
+        public void reset_and_abort_and_reset_again_with_exception()
+        {
+            theGroup.Reset();
+            var exception = new DivideByZeroException();
+            theGroup.Abort(exception);
+
+            theGroup.Exception.ShouldBe(exception);
+
+            theGroup.Reset();
+
+            theGroup.Exception.ShouldBeNull();
         }
     }
 

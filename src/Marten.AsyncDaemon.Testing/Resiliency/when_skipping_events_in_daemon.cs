@@ -10,6 +10,7 @@ using Marten.Linq;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Marten.Util;
+using Npgsql;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -46,11 +47,9 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 opts.Events.Projections.Add<CollateNames>(ProjectionLifecycle.Async);
 
                 opts.Events.Daemon.OnApplyEventException().SkipEvent();
+                opts.Events.Daemon.OnException<NpgsqlException>().RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
+                    .Then.Stop();
             });
-
-            //_output.WriteLine(theStore.Advanced.SourceCodeForEventStore());
-
-            //_output.WriteLine(theStore.Advanced.SourceCodeForDocumentType(typeof(NamedDocument)).LightweightStorageCode);
         }
 
 
@@ -117,7 +116,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             var jNames = await theSession.LoadAsync<NamesByLetter>("J");
 
             jNames.Names.OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("Jack", "Jane", "Jill", "Jeremy");
+                .ShouldHaveTheSameElementsAs("Jack", "Jane", "Jeremy", "Jill");
         }
 
         [Fact]
@@ -125,15 +124,18 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
         {
             await PublishTheEvents();
 
+            theSession.Logger = new TestOutputMartenLogger(_output);
             var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
 
-            skipped.Where(x => x.ProjectionName == "foo" && x.ShardName == "All")
-                .Select(x => x.EventSequence).OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs(3, 4, 5);
 
-            skipped.Where(x => x.ProjectionName == "foo" && x.ShardName == "All")
+
+            skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
                 .Select(x => x.EventSequence).OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs(3, 4, 5);
+                .ShouldHaveTheSameElementsAs(4, 5, 6, 7);
+
+            skipped.Where(x => x.ProjectionName == "NamedDocuments" && x.ShardName == "All")
+                .Select(x => x.EventSequence).OrderBy(x => x)
+                .ShouldHaveTheSameElementsAs(4, 5, 6, 7, 11, 14);
 
         }
     }

@@ -8,6 +8,7 @@ using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
@@ -55,15 +56,18 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             StoreOptions(opts =>
             {
                 opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
-                opts.Events.Daemon.OnException<ArithmeticException>()
-                    .RetryLater(50.Milliseconds(), 50.Milliseconds()).Then.Pause(50.Milliseconds());
+                opts.Events.Daemon
+                    .OnException<ApplyEventException>()
+                    .AndInner<ArithmeticException>()
+                    .RetryLater(50.Milliseconds(), 50.Milliseconds())
+                    .Then.Pause(50.Milliseconds());
             });
 
             using var node = await StartDaemon();
 
             var waiter = node.Tracker.WaitForShardCondition(
                 state => state.ShardName.EqualsIgnoreCase("one:All") && state.Action == ShardAction.Paused,
-                "one:All is Paused", 2.Minutes());
+                "one:All is Paused", 5.Minutes());
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();
@@ -92,7 +96,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             {
                 opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
                 opts.Events.Projections.Add(projection2, ProjectionLifecycle.Async);
-                opts.Events.Daemon.OnException<ArithmeticException>()
+                opts.Events.Daemon.OnException<ApplyEventException>().AndInner<ArithmeticException>()
                     .RetryLater(50.Milliseconds(), 50.Milliseconds()).Then.PauseAll(50.Milliseconds());
             });
 
@@ -187,7 +191,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             {
                 opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
                 opts.Events.Projections.Add(projection2, ProjectionLifecycle.Async);
-                opts.Events.Daemon.OnException<DivideByZeroException>().StopAll();
+                opts.Events.Daemon.OnException<ApplyEventException>().AndInner<DivideByZeroException>().StopAll();
             });
 
             using var node = await StartDaemon();
