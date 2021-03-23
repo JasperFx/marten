@@ -36,6 +36,7 @@ namespace Marten.Events.Daemon
         {
             WasAborted = true;
             _cancellationTokenSource.Cancel();
+            reset();
         }
 
         public bool WasAborted { get; private set; }
@@ -47,7 +48,8 @@ namespace Marten.Events.Daemon
 
         public abstract void Dispose();
 
-        public abstract Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch);
+        public abstract Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
+            EventRangeGroup eventRangeGroup);
         public abstract void SkipEventSequence(long eventSequence);
     }
 }

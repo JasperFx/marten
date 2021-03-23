@@ -67,15 +67,11 @@ namespace Marten.Events.Daemon
             return $"Tenant Group Range for: {Range}";
         }
 
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch)
+        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
+            EventRangeGroup eventRangeGroup)
         {
-            var tasks = Groups.Select(tenantGroup =>
-            {
-                return shardAgent.TryAction(async () =>
-                {
-                    await tenantGroup.ApplyEvents(batch, _projection, _store, Cancellation);
-                }, Cancellation);
-            }).ToArray();
+            var tasks = Groups
+                .Select(tenantGroup => tenantGroup.ApplyEvents(batch, _projection, _store, Cancellation)).ToArray();
 
             return Task.WhenAll(tasks);
         }

@@ -55,10 +55,12 @@ namespace Marten.Events.Daemon
 
         public ShardName Name { get; }
 
+        public CancellationToken Cancellation => _cancellation;
+
 
         private async Task<EventRange> loadEvents(EventRange range)
         {
-            await _daemon.TryAction(this, async () =>
+            var parameters = new ActionParameters(this, async () =>
             {
                 await _fetcher.Load(_projectionShard.Name, range, _cancellation);
 
@@ -66,10 +68,16 @@ namespace Marten.Events.Daemon
                 {
                     _logger.LogDebug("Loaded events for {Range}", range);
                 }
-            }, _cancellation, logException:(logger, e) =>
+            })
             {
-                logger.LogError(e, "Error loading events for {Range}", range);
-            });
+                LogAction = (logger, e) =>
+                {
+                    logger.LogError(e, "Error loading events for {Range}", range);
+                }
+            };
+
+
+            await _daemon.TryAction(parameters);
 
             return range;
         }
@@ -93,7 +101,11 @@ namespace Marten.Events.Daemon
 
         public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null)
         {
-            return _daemon.TryAction(this, action, token, logException:logException, group:group);
+            var parameters = new ActionParameters(this, action, token == default ? _cancellation : token);
+            parameters.LogAction = logException ?? parameters.LogAction;
+            parameters.Group = group;
+
+            return _daemon.TryAction(parameters);
         }
 
         public bool IsStopping()
@@ -157,6 +169,9 @@ namespace Marten.Events.Daemon
                 _logger.LogDebug("Shard '{ShardName}': Starting to process events for {Group}", Name, group);
             }
 
+            // This should be done *once* here before going to the TryAction()
+            group.Reset();
+
             ProjectionUpdateBatch batch = null;
 
             // Building the ProjectionUpdateBatch
@@ -188,10 +203,9 @@ namespace Marten.Events.Daemon
         {
             if (group.Cancellation.IsCancellationRequested) return null; // get out of here early instead of letting it linger
 
-            group.Reset();
             using var batch = StartNewBatch(group);
 
-            await group.ConfigureUpdateBatch(this, batch);
+            await group.ConfigureUpdateBatch(this, batch, group);
 
             if (group.Cancellation.IsCancellationRequested) return batch; // get out of here early instead of letting it linger
 
@@ -287,7 +301,7 @@ namespace Marten.Events.Daemon
                 _cancellationSource = new CancellationTokenSource();
                 _cancellation = _cancellationSource.Token;
 
-                await _daemon.TryAction(this, async () =>
+                var parameters = new ActionParameters(this, async () =>
                 {
                     try
                     {
@@ -295,12 +309,17 @@ namespace Marten.Events.Daemon
                     }
                     catch (Exception e)
                     {
-                        _logger.LogError(e, "Error trying to start shard '{ShardName}' after pausing", _projectionShard.Name);
                         throw new ShardStartException(_projectionShard.Name, e);
                     }
-                }, _cancellation);
+                });
 
+                parameters.LogAction = (l, e) =>
+                {
+                    l.LogError(e, "Error trying to start shard '{ShardName}' after pausing",
+                        _projectionShard.Name);
+                };
 
+                await _daemon.TryAction(parameters);
             });
         }
 
