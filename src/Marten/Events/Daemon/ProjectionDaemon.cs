@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -242,10 +243,24 @@ namespace Marten.Events.Daemon
             {
                 // Get out of here and do nothing if this is just a result of a Task being
                 // cancelled
-                if (ex is TaskCanceledException) return;
+                if (ex is TaskCanceledException)
+                {
+                    // Unless this is a parent action of a group action that failed and bailed out w/ a
+                    // TaskCanceledException that is
+                    if (parameters.Group?.Exception is ApplyEventException apply && parameters.GroupActionMode == GroupActionMode.Parent)
+                    {
+                        ex = apply;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
 
-                if (parameters.Cancellation.IsCancellationRequested) return;
-                parameters.Group?.Abort();
+                // IF you're using a group, you're using the group's cancellation, and it's going to be
+                // cancelled already
+                if (parameters.Group == null && parameters.Cancellation.IsCancellationRequested) return;
+                parameters.Group?.Abort(ex);
 
                 parameters.LogAction(_logger, ex);
 
@@ -254,6 +269,10 @@ namespace Marten.Events.Daemon
                 {
                     case RetryLater r:
                         parameters.IncrementAttempts(r.Delay);
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                        {
+                            _logger.LogDebug("Retrying in {Milliseconds}", r.Delay.TotalMilliseconds);
+                        }
                         await TryAction(parameters);
                         break;
                     case Resiliency.StopShard:
@@ -292,6 +311,13 @@ namespace Marten.Events.Daemon
                         break;
 
                     case SkipEvent skip:
+                        if (parameters.GroupActionMode == GroupActionMode.Child)
+                        {
+                            // Don't do anything, this has to be retried from the parent
+                            // task
+                            return;
+                        }
+
                         parameters.ApplySkip(skip);
 
                         _logger.LogInformation("Skipping event #{Sequence} ({EventType}) in shard '{ShardName}'",

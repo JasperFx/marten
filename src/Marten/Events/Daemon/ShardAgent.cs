@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -99,9 +100,13 @@ namespace Marten.Events.Daemon
             _loader.Post(range);
         }
 
-        public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null)
+        public Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null, GroupActionMode actionMode = GroupActionMode.Parent)
         {
-            var parameters = new ActionParameters(this, action, token == default ? _cancellation : token);
+            var parameters = new ActionParameters(this, action, token == default ? _cancellation : token)
+            {
+                GroupActionMode = actionMode
+            };
+
             parameters.LogAction = logException ?? parameters.LogAction;
             parameters.Group = group;
 
@@ -178,8 +183,11 @@ namespace Marten.Events.Daemon
             await TryAction(async () =>
             {
                 batch = await buildUpdateBatch(@group);
+
+
+
                 group.Dispose();
-            }, group.Cancellation, (logger, e) =>
+            }, _cancellation, (logger, e) =>
             {
                 logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
             }, group:group);
@@ -207,10 +215,23 @@ namespace Marten.Events.Daemon
 
             await group.ConfigureUpdateBatch(this, batch, group);
 
-            if (group.Cancellation.IsCancellationRequested) return batch; // get out of here early instead of letting it linger
+            if (group.Cancellation.IsCancellationRequested)
+            {
+                if (group.Exception != null)
+                {
+                    ExceptionDispatchInfo.Capture(group.Exception).Throw();
+                }
+
+                return batch; // get out of here early instead of letting it linger
+            }
 
             batch.Queue.Complete();
             await batch.Queue.Completion;
+
+            if (group.Exception != null)
+            {
+                ExceptionDispatchInfo.Capture(group.Exception).Throw();
+            }
 
             return batch;
         }

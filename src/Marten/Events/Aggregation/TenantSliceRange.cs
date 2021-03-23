@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
@@ -37,15 +38,20 @@ namespace Marten.Events.Aggregation
             return $"Aggregate for {Range}, {Groups.Count} slices";
         }
 
-        public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
+        public override async Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
             EventRangeGroup eventRangeGroup)
         {
             foreach (var @group in Groups)
             {
-                @group.Start(shardAgent, batch.Queue, _runtime, _store, this, Cancellation);
+                @group.Start(shardAgent, batch.Queue, _runtime, _store, this);
             }
 
-            return Task.WhenAll(Groups.Select(x => x.Complete()).ToArray());
+            await Task.WhenAll(Groups.Select(x => x.Complete()).ToArray());
+
+            if (Exception != null)
+            {
+                ExceptionDispatchInfo.Capture(Exception).Throw();
+            }
         }
 
         public override void SkipEventSequence(long eventSequence)

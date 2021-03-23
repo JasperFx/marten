@@ -16,7 +16,7 @@ namespace Marten.Events.Daemon
 
         void StartRange(EventRange range);
 
-        Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null);
+        Task TryAction(Func<Task> action, CancellationToken token, Action<ILogger, Exception> logException = null, EventRangeGroup group = null, GroupActionMode actionMode = GroupActionMode.Parent);
 
         bool IsStopping();
     }

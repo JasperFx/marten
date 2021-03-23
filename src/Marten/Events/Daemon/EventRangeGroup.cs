@@ -23,6 +23,8 @@ namespace Marten.Events.Daemon
         /// </summary>
         public void Reset()
         {
+            Exception = null;
+
             Attempts++;
             WasAborted = false;
             _cancellationTokenSource = new CancellationTokenSource();
@@ -32,12 +34,16 @@ namespace Marten.Events.Daemon
             reset();
         }
 
-        public void Abort()
+        public void Abort(Exception ex = null)
         {
             WasAborted = true;
             _cancellationTokenSource.Cancel();
             reset();
+
+            Exception = ex;
         }
+
+        public Exception Exception { get; private set; }
 
         public bool WasAborted { get; private set; }
 

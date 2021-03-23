@@ -31,11 +31,11 @@ namespace Marten.Events.Aggregation
 
         internal void Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,
             AggregationRuntime<TDoc, TId> runtime,
-            IDocumentStore store, EventRangeGroup parent, CancellationToken token)
+            IDocumentStore store, EventRangeGroup parent)
         {
             _builder = new TransformBlock<EventSlice<TDoc, TId>, IStorageOperation>(async slice =>
             {
-                if (token.IsCancellationRequested) return null;
+                if (parent.Cancellation.IsCancellationRequested) return null;
 
                 IStorageOperation operation = null;
 
@@ -43,23 +43,23 @@ namespace Marten.Events.Aggregation
                 {
                     using var session = (DocumentSessionBase) store.LightweightSession(slice.Tenant.TenantId);
 
-                    operation = await runtime.DetermineOperation(session, slice, token, ProjectionLifecycle.Async);
-                }, token, group:parent, logException: (l, e) =>
+                    operation = await runtime.DetermineOperation(session, slice, parent.Cancellation, ProjectionLifecycle.Async);
+                }, parent.Cancellation, group:parent, logException: (l, e) =>
                 {
                     l.LogError(e, "Failure trying to build a storage operation to update {DocumentType} with {Id}", typeof(TDoc).FullNameInCode(), slice.Id);
-                });
+                }, actionMode:GroupActionMode.Child);
 
                 return operation;
             }, new ExecutionDataflowBlockOptions
             {
-                CancellationToken = token,
+                CancellationToken = parent.Cancellation,
             });
 
             _builder.LinkTo(queue, x => x != null);
 
             _application = Task.Factory.StartNew(() =>
-                processEventSlices(shardAgent, runtime, store, token)
-                , token);
+                processEventSlices(shardAgent, runtime, store, parent.Cancellation)
+                , parent.Cancellation);
 
         }
 
@@ -117,9 +117,14 @@ namespace Marten.Events.Aggregation
 
         internal async Task Complete()
         {
-            await _application;
-            _builder.Complete();
-            await _builder.Completion;
+            if (_application != null) await _application;
+
+            // This can happen if one group fails early
+            if (_builder != null)
+            {
+                _builder.Complete();
+                await _builder.Completion;
+            }
         }
 
         public void Dispose()
