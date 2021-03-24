@@ -154,7 +154,7 @@ namespace Marten.Testing.CodeTracker
                         }
                     }
 
-                    await session.SaveChangesAsync().ConfigureAwait(false);
+                    await session.SaveChangesAsync();
                 }
 
                 index += 10;

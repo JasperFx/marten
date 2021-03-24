@@ -82,13 +82,13 @@ namespace Marten.Testing.CoreFunctionality
 
             // theSession is Marten's IDocumentSession service
             theSession.Store(user);
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             using (var session2 = theStore.OpenSession())
             {
                 session2.ShouldNotBeSameAs(theSession);
 
-                var user2 = await session2.LoadAsync<User>(user.Id).ConfigureAwait(false);
+                var user2 = await session2.LoadAsync<User>(user.Id);
 
                 user.ShouldNotBeSameAs(user2);
                 user2.FirstName.ShouldBe(user.FirstName);
@@ -149,7 +149,7 @@ namespace Marten.Testing.CoreFunctionality
             theSession.Store(user4);
             theSession.Store(user5);
 
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
             #endregion sample_saving-changes-async
 
             var store = theStore;
@@ -157,7 +157,7 @@ namespace Marten.Testing.CoreFunctionality
             #region sample_load_by_id_array_async
             using (var session = store.OpenSession())
             {
-                var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id).ConfigureAwait(false);
+                var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
             #endregion sample_load_by_id_array_async

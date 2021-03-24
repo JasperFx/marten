@@ -270,8 +270,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
                 var users =
                     await
                         session.QueryAsync<User>(
-                                   "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
-                               .ConfigureAwait(false);
+                                   "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
                 var user = users.Single();
                 #endregion sample_using-queryasync
 

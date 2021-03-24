@@ -76,12 +76,12 @@ namespace Marten.Testing.Linq
         public async Task single_runs_through_the_identity_map_async()
         {
             var u1 = await theSession.Query<User>().Where(x => x.FirstName == "Jeremy")
-                .SingleAsync().ConfigureAwait(false);
+                .SingleAsync();
 
             u1.ShouldBeTheSameAs(user1);
 
             var u2 = await theSession.Query<User>().Where(x => x.FirstName == user4.FirstName)
-                .SingleOrDefaultAsync().ConfigureAwait(false);
+                .SingleOrDefaultAsync();
 
             u2.ShouldBeTheSameAs(user4);
 
@@ -94,13 +94,13 @@ namespace Marten.Testing.Linq
         public async Task first_runs_through_the_identity_map_async()
         {
             var u1 = await theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-                .FirstAsync().ConfigureAwait(false);
+                .FirstAsync();
 
             u1.ShouldBeTheSameAs(user3);
 
 
             var u2 = await theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-                .FirstOrDefaultAsync().ConfigureAwait(false);
+                .FirstOrDefaultAsync();
 
             u2.ShouldBeTheSameAs(user3);
 
@@ -111,7 +111,7 @@ namespace Marten.Testing.Linq
         public async Task query_runs_through_identity_map_async()
         {
             var users = await theSession.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync();
 
             users[0].ShouldBeTheSameAs(user3);
             users[1].ShouldBeTheSameAs(user2);

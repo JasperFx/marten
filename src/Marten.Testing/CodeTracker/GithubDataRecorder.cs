@@ -18,11 +18,11 @@ namespace Marten.Testing.CodeTracker
         {
             Debug.WriteLine($"Starting to fetch {organization}/{projectName}");
 
-            var repository = await _client.Repository.Get(organization, projectName).ConfigureAwait(false);
+            var repository = await _client.Repository.Get(organization, projectName);
 
             var project = new GithubProject(organization, projectName, repository.CreatedAt);
 
-            var issues = await _client.Issue.GetAllForRepository(organization, projectName).ConfigureAwait(false);
+            var issues = await _client.Issue.GetAllForRepository(organization, projectName);
 
             foreach (var issue in issues)
             {
@@ -31,12 +31,12 @@ namespace Marten.Testing.CodeTracker
 
             Debug.WriteLine($"Done with issues for {organization}/{projectName}");
 
-            var commits = await _client.Repository.Commit.GetAll(organization, projectName, new ApiOptions {PageSize = 100, PageCount = 10}).ConfigureAwait(false);
+            var commits = await _client.Repository.Commit.GetAll(organization, projectName, new ApiOptions {PageSize = 100, PageCount = 10});
 
             foreach (var commit in commits)
             {
                 var full =
-                    await _client.Repository.Commit.Get(organization, projectName, commit.Sha).ConfigureAwait(false);
+                    await _client.Repository.Commit.Get(organization, projectName, commit.Sha);
 
                 project.RecordCommit(commit, full.Stats);
             }

@@ -49,9 +49,9 @@ namespace Marten.Testing.Util
             using (var session = theStore.LightweightSession())
             {
                 session.Store(targets);
-                await session.SaveChangesAsync().ConfigureAwait(false);
+                await session.SaveChangesAsync();
 
-                var t = await session.Query<Target>().CountAsync().ConfigureAwait(false);
+                var t = await session.Query<Target>().CountAsync();
                 t.ShouldBe(100);
             }
         }
@@ -85,9 +85,9 @@ namespace Marten.Testing.Util
                 session.DeleteWhere<Target>(x => x.Id != Guid.Empty);
                 targets.Each(x => session.Store(x));
 
-                await session.SaveChangesAsync().ConfigureAwait(false);
+                await session.SaveChangesAsync();
 
-                var t = await session.Query<Target>().CountAsync().ConfigureAwait(false);
+                var t = await session.Query<Target>().CountAsync();
                 t.ShouldBe(100);
             }
         }

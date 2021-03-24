@@ -37,13 +37,13 @@ namespace Marten.Testing.CoreFunctionality
             theSession.Store(issue);
             theSession.SaveChanges();
 
-            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArrayAsync().ConfigureAwait(false);
+            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArrayAsync();
             json.ShouldBe($"[{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}]");
-            json = await theSession.Query<Issue>().AsJson().FirstAsync().ConfigureAwait(false);
+            json = await theSession.Query<Issue>().AsJson().FirstAsync();
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}");
-            json = await theSession.Query<Issue>().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
-            json = await theSession.Query<Issue>().AsJson().SingleAsync().ConfigureAwait(false);
-            json = await theSession.Query<Issue>().AsJson().SingleOrDefaultAsync().ConfigureAwait(false);
+            json = await theSession.Query<Issue>().AsJson().FirstOrDefaultAsync();
+            json = await theSession.Query<Issue>().AsJson().SingleAsync();
+            json = await theSession.Query<Issue>().AsJson().SingleOrDefaultAsync();
         }
         #endregion sample_get-raw-json-async
         public get_raw_json_Tests(DefaultStoreFixture fixture) : base(fixture)

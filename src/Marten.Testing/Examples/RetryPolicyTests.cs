@@ -63,7 +63,7 @@ namespace Marten.Testing.Examples
             {
                 try
                 {
-                    await operation().ConfigureAwait(false);
+                    await operation();
                     return;
                 }
                 catch (Exception e) when (++tries < maxTries && filter(e))
@@ -78,7 +78,7 @@ namespace Marten.Testing.Examples
             {
                 try
                 {
-                    return await operation().ConfigureAwait(false);
+                    return await operation();
                 }
                 catch (Exception e) when (++tries < maxTries && filter(e))
                 {

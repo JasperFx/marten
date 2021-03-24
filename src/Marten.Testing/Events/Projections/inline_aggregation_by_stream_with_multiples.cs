@@ -67,11 +67,11 @@ namespace Marten.Testing.Events.Projections
 
             var streamId = theSession.Events
                 .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
-            (await theSession.LoadAsync<QuestMonsters>(streamId).ConfigureAwait(false)).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
+            (await theSession.LoadAsync<QuestMonsters>(streamId)).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-            (await theSession.LoadAsync<QuestParty>(streamId).ConfigureAwait(false)).Members
+            (await theSession.LoadAsync<QuestParty>(streamId)).Members
                 .ShouldHaveTheSameElementsAs("Garion", "Polgara", "Belgarath", "Silk", "Barak");
         }
 

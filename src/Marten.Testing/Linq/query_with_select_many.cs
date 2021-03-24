@@ -324,7 +324,7 @@ namespace Marten.Testing.Linq
                 // Some Target docs w/ no children
                 session.Store(Target.Random(), Target.Random(), Target.Random());
 
-                await session.SaveChangesAsync().ConfigureAwait(false);
+                await session.SaveChangesAsync();
             }
 
             using (var query = theStore.QuerySession())

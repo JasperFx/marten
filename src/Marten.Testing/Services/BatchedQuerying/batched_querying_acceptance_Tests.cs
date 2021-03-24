@@ -22,7 +22,7 @@ namespace Marten.Testing.Services.BatchedQuerying
         public async Task can_run_aggregate_functions()
         {
             theSession.Store(new IntDoc(1), new IntDoc(3), new IntDoc(5), new IntDoc(6));
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             var batch = theSession.CreateBatchQuery();
 
@@ -31,7 +31,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var sum = batch.Query<IntDoc>().Sum(x => x.Id);
             var average = batch.Query<IntDoc>().Average(x => x.Id);
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await min).ShouldBe(1);
             (await max).ShouldBe(6);
@@ -152,7 +152,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var justin = batch.Query(new FindByFirstName {FirstName = "Justin"});
             var tamba = batch.Query(new FindByFirstName {FirstName = "Tamba"});
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await justin).Id.ShouldBe(user1.Id);
             (await tamba).Id.ShouldBe(user2.Id);
@@ -181,7 +181,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             #region sample_using-compiled-query
             var justin = theSession.Query(new FindByFirstName {FirstName = "Justin"});
 
-            var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"}).ConfigureAwait(false);
+            var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"});
             #endregion sample_using-compiled-query
         }
 
@@ -193,7 +193,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var justin = batch.Query<User>("where first_name = ?", "Justin");
             var tamba = batch.Query<User>("where first_name = ? and last_name = ?", "Tamba", "Hali");
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await justin).Single().Id.ShouldBe(user1.Id);
             (await tamba).Single().Id.ShouldBe(user2.Id);
@@ -207,7 +207,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var firstUser = batch.Query<User>().OrderBy(_ => _.FirstName).First();
             var firstAdmin = batch.Query<SuperUser>().OrderBy(_ => _.FirstName).First();
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await firstUser).UserName.ShouldBe("A2");
             (await firstAdmin).UserName.ShouldBe("A3");
@@ -222,7 +222,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var firstAdmin = batch.Query<SuperUser>().OrderBy(_ => _.FirstName).FirstOrDefault();
             var noneUser = batch.Query<User>().FirstOrDefault(_ => _.FirstName == "not me");
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await firstUser).UserName.ShouldBe("A2");
             (await firstAdmin).UserName.ShouldBe("A3");
@@ -239,7 +239,7 @@ namespace Marten.Testing.Services.BatchedQuerying
 
             var noneUser = batch.Query<User>().SingleOrDefault(_ => _.FirstName == "not me");
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await tamba).FirstName.ShouldBe("Tamba");
             (await justin).FirstName.ShouldBe("Justin");
@@ -258,7 +258,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var aUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("A")).ToList();
             var cUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("C")).ToList();
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await anyUsers).OrderBy(x => x.FirstName).Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
@@ -285,7 +285,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var aUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("A")).ToList();
             var cUsers = batch.Query<User>().Where(_ => _.UserName.StartsWith("C")).ToList();
 
-            batch.Execute().ConfigureAwait(false);
+            batch.Execute();
 
             anyUsers.Result.OrderBy(x => x.FirstName).Select(x => x.Id)
                 .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
@@ -313,7 +313,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var aUsers = batch.Query<User>().Any(_ => _.UserName.StartsWith("A"));
             var cUsers = batch.Query<User>().Any(_ => _.UserName.StartsWith("C"));
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await anyUsers).ShouldBeTrue();
             (await anyAdmins).ShouldBeTrue();
@@ -333,7 +333,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var aUsers = batch.Query<User>().Count(_ => _.UserName.StartsWith("A"));
             var cUsers = batch.Query<User>().Count(_ => _.UserName.StartsWith("C"));
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             (await anyUsers).ShouldBe(6);
             (await anyAdmins).ShouldBe(2);
@@ -349,7 +349,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var task1 = batch.Load<Target>(target1.Id);
             var task3 = batch.Load<Target>(target3.Id);
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
             SpecificationExtensions.ShouldNotBeNull((await task1).ShouldBeOfType<Target>());
             SpecificationExtensions.ShouldNotBeNull((await task3).ShouldBeOfType<Target>());
@@ -364,7 +364,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var task1 = batch1.Load<Target>(target1.Id);
             var task3 = batch1.Load<Target>(target3.Id);
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             var batch2 = theSession.CreateBatchQuery();
             var task21 = batch2.Load<Target>(target1.Id);
@@ -382,7 +382,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var batch1 = theSession.CreateBatchQuery();
             var task = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             var list = await task;
 
@@ -399,7 +399,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var batch1 = theSession.CreateBatchQuery();
             var task1 = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             var batch2 = theSession.CreateBatchQuery();
             var task2 = batch2.LoadMany<Target>().ById(target1.Id, target3.Id);
@@ -415,7 +415,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var batch1 = theSession.CreateBatchQuery();
             var task = batch1.LoadMany<Target>().ByIdList(new List<Guid> {target1.Id, target3.Id});
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             var list = await task;
 
@@ -432,7 +432,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var batch1 = theSession.CreateBatchQuery();
             var task1 = batch1.LoadMany<Target>().ByIdList(new List<Guid> {target1.Id, target3.Id});
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             var batch2 = theSession.CreateBatchQuery();
             var task2 = batch2.LoadMany<Target>().ByIdList(new List<Guid> {target1.Id, target3.Id});
@@ -460,7 +460,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var singleOrDefault =
                 batch1.Query<User>().Where(x => x.FirstName == "nobody").Select(x => x.FirstName).SingleOrDefault();
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             (await toList).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
             (await first).ShouldBe("Derrick");
@@ -490,7 +490,7 @@ namespace Marten.Testing.Services.BatchedQuerying
                     .Select(x => new {Name = x.FirstName})
                     .SingleOrDefault();
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             (await toList).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
@@ -527,7 +527,7 @@ namespace Marten.Testing.Services.BatchedQuerying
                     .Select(x => new UserName {Name = x.FirstName})
                     .SingleOrDefault();
 
-            await batch1.Execute().ConfigureAwait(false);
+            await batch1.Execute();
 
             (await toList).Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");

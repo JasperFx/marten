@@ -104,7 +104,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync().ConfigureAwait(false);
+            var listJson = await theSession.Query<SimpleUser>().Where(x=>x.Number>=5).ToJsonArrayAsync();
             listJson.ShouldBeSemanticallySameJsonAs($@"[{user1.ToJson()},{user2.ToJson()}]");
         }
 
@@ -221,7 +221,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
 
-            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync().ConfigureAwait(false);
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstAsync();
             userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
@@ -252,7 +252,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstAsync().ConfigureAwait(false);
+            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstAsync();
             userJson.ShouldBeSemanticallySameJsonAs($@"{user0.ToJson()}");
         }
 
@@ -277,7 +277,7 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
 
             var ex = await Exception<InvalidOperationException>.ShouldBeThrownByAsync(() =>
-                theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().FirstAsync()).ConfigureAwait(false);
+                theSession.Query<SimpleUser>().Where(x => x.Number != 5).AsJson().FirstAsync());
             ex.Message.ShouldBe("Sequence contains no elements");
         }
 
@@ -370,7 +370,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
+            var userJson = await theSession.Query<SimpleUser>().Where(x => x.Number == 5).AsJson().FirstOrDefaultAsync();
             userJson.ShouldBeSemanticallySameJsonAs($@"{user1.ToJson()}");
         }
 
@@ -401,7 +401,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user0,user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
+            var userJson = await theSession.Query<SimpleUser>().AsJson().FirstOrDefaultAsync();
             userJson.ShouldBeSemanticallySameJsonAs($@"{user0.ToJson()}");
         }
 
@@ -449,7 +449,7 @@ namespace Marten.Testing.Linq
             theSession.Store(user1,user2);
             theSession.SaveChanges();
 
-            var userJson = await theSession.Query<SimpleUser>().Where(x=>x.Number != 5).AsJson().FirstOrDefaultAsync().ConfigureAwait(false);
+            var userJson = await theSession.Query<SimpleUser>().Where(x=>x.Number != 5).AsJson().FirstOrDefaultAsync();
             SpecificationExtensions.ShouldBeNull(userJson);
         }
 

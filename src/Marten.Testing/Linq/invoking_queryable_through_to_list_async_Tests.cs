@@ -21,12 +21,12 @@ namespace Marten.Testing.Linq
             theSession.Store(new User { FirstName = "Sam" });
             theSession.Store(new User { FirstName = "Tom" });
 
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             var users = await theSession
                 .Query<User>()
                 .Where(x => x.FirstName == "Sam")
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync();
 
             users.Single().FirstName.ShouldBe("Sam");
         }
@@ -38,7 +38,7 @@ namespace Marten.Testing.Linq
             var users = await theSession
                 .Query<User>()
                 .Where(x => x.FirstName == "Sam")
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync();
             users.ShouldBeEmpty();
         }
 

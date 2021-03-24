@@ -45,20 +45,20 @@ namespace Marten.Testing.Events
         {
             var streamId = theSession.Events
                 .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             var events = await theSession.Events.FetchStreamAsync(streamId);
 
-            SpecificationExtensions.ShouldBeNull((await theSession.Events.LoadAsync(Guid.NewGuid()).ConfigureAwait(false)));
-            SpecificationExtensions.ShouldBeNull((await theSession.Events.LoadAsync<MonsterSlayed>(Guid.NewGuid()).ConfigureAwait(false)));
+            SpecificationExtensions.ShouldBeNull((await theSession.Events.LoadAsync(Guid.NewGuid())));
+            SpecificationExtensions.ShouldBeNull((await theSession.Events.LoadAsync<MonsterSlayed>(Guid.NewGuid())));
 
             // Knowing the event type
-            var slayed1_2 = await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id).ConfigureAwait(false);
+            var slayed1_2 = await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id);
             slayed1_2.Version.ShouldBe(3);
             slayed1_2.Data.Name.ShouldBe("Troll");
 
             // Not knowing the event type
-            var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id).ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>();
+            var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id)).ShouldBeOfType<Event<MonsterSlayed>>();
             slayed1_3.Version.ShouldBe(3);
             slayed1_3.Data.Name.ShouldBe("Troll");
         }
@@ -68,7 +68,7 @@ namespace Marten.Testing.Events
         {
             var streamId = theSession.Events
                 .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             var events = await theSession.Events.FetchStreamAsync(streamId);
 
@@ -80,13 +80,13 @@ namespace Marten.Testing.Events
 
             await batch.Execute();
 
-            (await slayed1_2.ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>()
+            (await slayed1_2).ShouldBeOfType<Event<MonsterSlayed>>()
                 .Data.Name.ShouldBe("Troll");
 
-            (await slayed2_2.ConfigureAwait(false)).ShouldBeOfType<Event<MonsterSlayed>>()
+            (await slayed2_2).ShouldBeOfType<Event<MonsterSlayed>>()
                 .Data.Name.ShouldBe("Dragon");
 
-            SpecificationExtensions.ShouldBeNull((await missing.ConfigureAwait(false)));
+            SpecificationExtensions.ShouldBeNull((await missing));
         }
 
         public fetch_a_single_event_with_metadata(DefaultStoreFixture fixture) : base(fixture)

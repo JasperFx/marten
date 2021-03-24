@@ -54,7 +54,7 @@ namespace Marten.Testing.Linq
 
             theSession.SaveChanges();
 
-            var names = await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync().ConfigureAwait(false);
+            var names = await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync();
             names.ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
@@ -171,7 +171,7 @@ namespace Marten.Testing.Linq
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
                 .Select(x => new UserName { Name = x.FirstName })
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync();
 
             users.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
@@ -341,7 +341,7 @@ namespace Marten.Testing.Linq
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
                 .Select(x => new { Name = x.FirstName })
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync();
 
             users
                 .Select(x => x.Name)

@@ -204,9 +204,9 @@ namespace Marten.Testing.Linq
             var brainy = new BrainySmurf { Ability = "Invent" };
             theSession.Store(smurf, papa, brainy, papy);
 
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
-            var list = await theSession.Query<IPapaSmurf>().ToListAsync().ConfigureAwait(false);
+            var list = await theSession.Query<IPapaSmurf>().ToListAsync();
             list.Count().ShouldBe(3);
             list.Count(s => s.Ability == "Invent").ShouldBe(1);
         }

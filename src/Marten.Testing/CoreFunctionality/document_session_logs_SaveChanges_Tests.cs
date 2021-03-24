@@ -35,7 +35,7 @@ namespace Marten.Testing.CoreFunctionality
 
             theSession.Store(Target.Random());
 
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             logger.LastSession.ShouldBe(theSession);
         }

@@ -63,7 +63,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch()
         {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
+            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
             SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             var query = new TargetPaginationQuery(2, 5);
@@ -72,9 +72,9 @@ namespace Marten.Testing.Linq
 
             var targets = batch.Query(query);
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
-            (await targets.ConfigureAwait(false))
+            (await targets)
                 .Any().ShouldBeTrue();
 
             query.Stats.TotalResults.ShouldBe(count);
@@ -103,7 +103,7 @@ namespace Marten.Testing.Linq
         [Fact]
         public async Task can_get_the_total_in_batch_query()
         {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
+            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
             SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             QueryStatistics stats = null;
@@ -113,9 +113,9 @@ namespace Marten.Testing.Linq
             var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
                 .ToList();
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
-            (await list.ConfigureAwait(false)).Any().ShouldBeTrue();
+            (await list).Any().ShouldBeTrue();
 
             stats.TotalResults.ShouldBe(count);
         }
@@ -171,13 +171,13 @@ namespace Marten.Testing.Linq
         [Fact]
         public async Task can_get_the_total_in_results_async()
         {
-            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync().ConfigureAwait(false);
+            var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
             SpecificationExtensions.ShouldBeGreaterThan(count, 0);
 
             QueryStatistics stats = null;
 
             var list = await theSession.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-                .ToListAsync().ConfigureAwait(false);
+                .ToListAsync();
 
             list.Any().ShouldBeTrue();
 
