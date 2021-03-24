@@ -36,7 +36,7 @@ namespace Marten.Testing.Bugs
 
             theSession.Store(targets);
 
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             QueryStatistics stats;
 
@@ -60,7 +60,7 @@ namespace Marten.Testing.Bugs
 
             theSession.Store(targets);
 
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
             QueryStatistics stats;
 

@@ -17,16 +17,16 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 2 });
             theSession.Store(new Target { Number = 3 });
             theSession.Store(new Target { Number = 4 });
-            await theSession.SaveChangesAsync().ConfigureAwait(false);
+            await theSession.SaveChangesAsync();
 
-            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 11).ConfigureAwait(false);
+            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 11);
             result.ShouldBeFalse();
         }
 
         [Fact]
         public async Task naked_any_miss()
         {
-            var result = await theSession.Query<Target>().AnyAsync().ConfigureAwait(false);
+            var result = await theSession.Query<Target>().AnyAsync();
             result.ShouldBeFalse();
         }
 
@@ -39,7 +39,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            var result = await theSession.Query<Target>().AnyAsync().ConfigureAwait(false);
+            var result = await theSession.Query<Target>().AnyAsync();
             result.ShouldBeTrue();
         }
 
@@ -52,7 +52,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 3).ConfigureAwait(false);
+            var result = await theSession.Query<Target>().AnyAsync(x => x.Number == 3);
             result.ShouldBeTrue();
         }
 
@@ -65,7 +65,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new Target { Number = 4 });
             theSession.SaveChanges();
 
-            var result = await theSession.Query<Target>().Where(x => x.Number == 2).AnyAsync().ConfigureAwait(false);
+            var result = await theSession.Query<Target>().Where(x => x.Number == 2).AnyAsync();
             result.ShouldBeTrue();
         }
 

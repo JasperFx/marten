@@ -114,7 +114,7 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public async Task a_filtered_list_compiled_query_AsJson_async()
         {
-            var user = await theSession.QueryAsync(new FindJsonUsersByUsername() { FirstName = "Jeremy" }).ConfigureAwait(false);
+            var user = await theSession.QueryAsync(new FindJsonUsersByUsername() { FirstName = "Jeremy" });
 
             SpecificationExtensions.ShouldNotBeNull(user);
             user.ShouldNotBeEmpty();
@@ -134,7 +134,7 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public async Task a_single_item_compiled_query_async()
         {
-            var user = await theSession.QueryAsync(new UserByUsername { UserName = "myusername" }).ConfigureAwait(false);
+            var user = await theSession.QueryAsync(new UserByUsername { UserName = "myusername" });
             SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = await theSession.QueryAsync(new UserByUsername { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
@@ -166,7 +166,7 @@ namespace Marten.Testing.Linq.Compiled
         [Fact]
         public async Task a_list_query_compiled_async()
         {
-            var users = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" }).ConfigureAwait(false);
+            var users = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" });
             users.Count().ShouldBe(2);
             users.ElementAt(0).UserName.ShouldBe("jdm");
             users.ElementAt(1).UserName.ShouldBe("shadetreedev");

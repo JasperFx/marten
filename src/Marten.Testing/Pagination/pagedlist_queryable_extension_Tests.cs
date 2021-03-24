@@ -76,8 +76,7 @@ namespace Marten.Testing.Pagination
             var pageNumber = 2;
             var pageSize = 10;
 
-            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize)
-                .ConfigureAwait(false);
+            var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize);
             #endregion sample_to_paged_list_async
 
             pagedList.Count.ShouldBe(pageSize);

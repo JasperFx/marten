@@ -142,12 +142,10 @@ namespace Marten.Testing.Examples
         public async Task load_a_single_event_asynchronously(IDocumentSession session, Guid eventId)
         {
             // If you know what the event type is already
-            var event1 = await session.Events.LoadAsync<MembersJoined>(eventId)
-                .ConfigureAwait(false);
+            var event1 = await session.Events.LoadAsync<MembersJoined>(eventId);
 
             // If you do not know what the event type is
-            var event2 = await session.Events.LoadAsync(eventId)
-                .ConfigureAwait(false);
+            var event2 = await session.Events.LoadAsync(eventId);
         }
 
         #endregion sample_load-a-single-event

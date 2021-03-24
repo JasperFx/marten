@@ -110,7 +110,7 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task can_fetch_the_stream_version_and_aggregate_type_async()
         {
-            var state = await theSession.Events.FetchStreamStateAsync(theStreamId).ConfigureAwait(false);
+            var state = await theSession.Events.FetchStreamStateAsync(theStreamId);
 
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
@@ -126,9 +126,9 @@ namespace Marten.Testing.Events
 
             var stateTask = batch.Events.FetchStreamState(theStreamId);
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
-            var state = await stateTask.ConfigureAwait(false);
+            var state = await stateTask;
 
             state.Id.ShouldBe(theStreamId);
             state.Version.ShouldBe(2);
@@ -143,9 +143,9 @@ namespace Marten.Testing.Events
 
             var eventsTask = batch.Events.FetchStream(theStreamId);
 
-            await batch.Execute().ConfigureAwait(false);
+            await batch.Execute();
 
-            var events = await eventsTask.ConfigureAwait(false);
+            var events = await eventsTask;
 
             events.Count.ShouldBe(2);
         }

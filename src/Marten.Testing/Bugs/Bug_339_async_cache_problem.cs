@@ -21,8 +21,8 @@ namespace Marten.Testing.Bugs
 
             using (var session2 = theStore.DirtyTrackedSession())
             {
-                var user12 = await session2.LoadAsync<User>(user1.Id).ConfigureAwait(false);
-                var breakThings = await session2.LoadAsync<User>(user1.Id).ConfigureAwait(false);
+                var user12 = await session2.LoadAsync<User>(user1.Id);
+                var breakThings = await session2.LoadAsync<User>(user1.Id);
             }
         }
 
