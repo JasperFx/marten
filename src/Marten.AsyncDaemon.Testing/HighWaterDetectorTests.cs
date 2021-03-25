@@ -5,6 +5,7 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
+using Marten.Services;
 using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
@@ -20,7 +21,7 @@ namespace Marten.AsyncDaemon.Testing
         public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
-            theDetector = new HighWaterDetector(theStore.Tenancy.Default, theStore.Events);
+            theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default), theStore.Events);
         }
 
         [Fact]

@@ -29,13 +29,14 @@ namespace Marten.Services
             return await handler.HandleAsync(reader, cancellation);
         }
 
-        public Task SingleCommit(DbCommand command, CancellationToken cancellation)
+        public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
         {
             using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync(cancellation);
 
             command.Connection = conn;
 
-            return command.ExecuteNonQueryAsync(cancellation);
+            await command.ExecuteNonQueryAsync(cancellation);
         }
     }
 }

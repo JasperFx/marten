@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
-using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 
@@ -10,23 +9,19 @@ namespace Marten.Events.Daemon.HighWater
 {
     internal class HighWaterDetector: IHighWaterDetector
     {
-        private readonly ITenant _tenant;
-        private AutoOpenSingleQueryRunner _runner;
+        private readonly ISingleQueryRunner _runner;
         private readonly NpgsqlCommand _updateStatus;
         private readonly NpgsqlParameter _newSeq;
-        private GapDetector _gapDetector;
-        private SafeSequenceFinder _safeSequenceFinder;
-        private HighWaterStatisticsDetector _highWaterStatisticsDetector;
+        private readonly GapDetector _gapDetector;
+        private readonly SafeSequenceFinder _safeSequenceFinder;
+        private readonly HighWaterStatisticsDetector _highWaterStatisticsDetector;
 
-        public HighWaterDetector(ITenant tenant, EventGraph graph)
+        public HighWaterDetector(ISingleQueryRunner runner, EventGraph graph)
         {
-            // TODO -- this will need to be injected later.
-            _runner = new AutoOpenSingleQueryRunner(tenant);
+            _runner = runner;
             _gapDetector = new GapDetector(graph);
             _safeSequenceFinder = new SafeSequenceFinder(graph);
             _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
-
-            _tenant = tenant;
 
             _updateStatus =
                 new NpgsqlCommand($"select {graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);");
@@ -36,9 +31,7 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task<HighWaterStatistics> DetectInSafeZone(DateTimeOffset safeTimestamp, CancellationToken token)
         {
-            await using var conn = _tenant.OpenConnection();
-
-            var statistics = await loadCurrentStatistics(conn, token);
+            var statistics = await loadCurrentStatistics(token);
 
             _safeSequenceFinder.SafeTimestamp = safeTimestamp;
             var safeSequence = await _runner.Query(_safeSequenceFinder, token);
@@ -47,7 +40,7 @@ namespace Marten.Events.Daemon.HighWater
                 statistics.SafeStartMark = safeSequence.Value;
             }
 
-            await calculateHighWaterMark(token, statistics, conn);
+            await calculateHighWaterMark(statistics, token);
 
             return statistics;
         }
@@ -55,18 +48,15 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task<HighWaterStatistics> Detect(CancellationToken token)
         {
-            await using var conn = _tenant.OpenConnection();
-
-            var statistics = await loadCurrentStatistics(conn, token);
+            var statistics = await loadCurrentStatistics(token);
 
 
-            await calculateHighWaterMark(token, statistics, conn);
+            await calculateHighWaterMark(statistics, token);
 
             return statistics;
         }
 
-        private async Task calculateHighWaterMark(CancellationToken token, HighWaterStatistics statistics,
-            IManagedConnection conn)
+        private async Task calculateHighWaterMark(HighWaterStatistics statistics, CancellationToken token)
         {
             // If the last high water mark is the same as the highest number
             // assigned from the sequence, then the high water mark cannot
@@ -81,30 +71,28 @@ namespace Marten.Events.Daemon.HighWater
             }
             else
             {
-                statistics.CurrentMark = await findCurrentMark(statistics, conn, token);
+                statistics.CurrentMark = await findCurrentMark(statistics, token);
             }
 
             if (statistics.HasChanged)
             {
-                await conn.BeginTransactionAsync(token);
                 _newSeq.Value = statistics.CurrentMark;
-                await conn.ExecuteAsync(_updateStatus, token);
-                await conn.CommitAsync(token);
+                await _runner.SingleCommit(_updateStatus, token);
 
                 if (!statistics.LastUpdated.HasValue)
                 {
-                    var current = await loadCurrentStatistics(conn, token);
+                    var current = await loadCurrentStatistics(token);
                     statistics.LastUpdated = current.LastUpdated;
                 }
             }
         }
 
-        private async Task<HighWaterStatistics> loadCurrentStatistics(IManagedConnection conn, CancellationToken token)
+        private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)
         {
             return await _runner.Query(_highWaterStatisticsDetector, token);
         }
 
-        private async Task<long> findCurrentMark(HighWaterStatistics statistics, IManagedConnection conn, CancellationToken token)
+        private async Task<long> findCurrentMark(HighWaterStatistics statistics, CancellationToken token)
         {
             // look for the current mark
             _gapDetector.Start = statistics.SafeStartMark;

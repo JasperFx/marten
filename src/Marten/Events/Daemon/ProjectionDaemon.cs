@@ -10,6 +10,7 @@ using Marten.Events.Daemon.Progress;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
@@ -30,7 +31,9 @@ namespace Marten.Events.Daemon
             _cancellation = new CancellationTokenSource();
             _store = store;
             _logger = logger;
-            var detector = new HighWaterDetector(store.Tenancy.Default, store.Events);
+
+            // The AutoOpenSingleQueryRunner
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events);
 
             Tracker = new ShardStateTracker(logger);
             _highWater = new HighWaterAgent(detector, Tracker, logger, store.Events.Daemon, _cancellation.Token);
