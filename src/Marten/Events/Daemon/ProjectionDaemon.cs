@@ -44,7 +44,7 @@ namespace Marten.Events.Daemon
 
         public ShardStateTracker Tracker { get; }
 
-        public async Task StartDaemon()
+        public async Task StartHighWaterDetection()
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
             await _highWater.Start();
@@ -90,7 +90,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartAll()
         {
-            if (!_hasStarted) await StartDaemon();
+            if (!_hasStarted) await StartHighWaterDetection();
 
             var shards = _store.Events.Projections.AllShards();
             foreach (var shard in shards) await StartShard(shard, CancellationToken.None);
@@ -106,7 +106,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartShard(AsyncProjectionShard shard, CancellationToken cancellationToken)
         {
-            if (!_hasStarted) await StartDaemon();
+            if (!_hasStarted) await StartHighWaterDetection();
 
             // Don't duplicate the shard
             if (_agents.ContainsKey(shard.Name.Identity)) return;
