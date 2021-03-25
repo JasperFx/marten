@@ -11,41 +11,22 @@ namespace Marten.Events.Daemon.HighWater
     internal class HighWaterDetector: IHighWaterDetector
     {
         private readonly ITenant _tenant;
-        private readonly NpgsqlCommand _gapDetection;
-        private readonly NpgsqlCommand _stateDetection;
-        private readonly NpgsqlParameter _start;
+        private AutoOpenSingleQueryRunner _runner;
         private readonly NpgsqlCommand _updateStatus;
         private readonly NpgsqlParameter _newSeq;
-        private readonly NpgsqlCommand _findSafeSequence;
-        private readonly NpgsqlParameter _safeTimestamp;
+        private GapDetector _gapDetector;
+        private SafeSequenceFinder _safeSequenceFinder;
+        private HighWaterStatisticsDetector _highWaterStatisticsDetector;
 
         public HighWaterDetector(ITenant tenant, EventGraph graph)
         {
+            // TODO -- this will need to be injected later.
+            _runner = new AutoOpenSingleQueryRunner(tenant);
+            _gapDetector = new GapDetector(graph);
+            _safeSequenceFinder = new SafeSequenceFinder(graph);
+            _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
+
             _tenant = tenant;
-
-            _findSafeSequence = new NpgsqlCommand($@"select min(seq_id) from {graph.DatabaseSchemaName}.mt_events where mt_events.timestamp >= :timestamp");
-            _safeTimestamp = _findSafeSequence.AddNamedParameter("timestamp", DateTimeOffset.MinValue);
-
-            _gapDetection = new NpgsqlCommand($@"
-select seq_id
-from   (select
-               seq_id,
-               lead(seq_id)
-               over (order by seq_id) as no
-        from
-               {graph.DatabaseSchemaName}.mt_events where seq_id > :start) ct
-where  no is not null
-  and    no - seq_id > 1
-LIMIT 1;
-select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id > :start;
-".Trim());
-
-            _start = _gapDetection.AddNamedParameter("start", 0L);
-
-            _stateDetection = new NpgsqlCommand($@"
-select last_value from {graph.DatabaseSchemaName}.mt_events_sequence;
-select last_seq_id, last_updated, transaction_timestamp() as timestamp from {graph.DatabaseSchemaName}.mt_event_progression where name = '{ShardState.HighWaterMark}';
-".Trim());
 
             _updateStatus =
                 new NpgsqlCommand($"select {graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);");
@@ -59,13 +40,11 @@ select last_seq_id, last_updated, transaction_timestamp() as timestamp from {gra
 
             var statistics = await loadCurrentStatistics(conn, token);
 
-            _safeTimestamp.Value = safeTimestamp;
-            using (var reader = await conn.ExecuteReaderAsync(_findSafeSequence, token))
+            _safeSequenceFinder.SafeTimestamp = safeTimestamp;
+            var safeSequence = await _runner.Query(_safeSequenceFinder, token);
+            if (safeSequence.HasValue)
             {
-                if (await reader.ReadAsync(token))
-                {
-                    statistics.SafeStartMark = await reader.GetFieldValueAsync<long>(0, token);
-                }
+                statistics.SafeStartMark = safeSequence.Value;
             }
 
             await calculateHighWaterMark(token, statistics, conn);
@@ -122,45 +101,16 @@ select last_seq_id, last_updated, transaction_timestamp() as timestamp from {gra
 
         private async Task<HighWaterStatistics> loadCurrentStatistics(IManagedConnection conn, CancellationToken token)
         {
-            var statistics = new HighWaterStatistics();
-
-            using var reader = await conn.ExecuteReaderAsync(_stateDetection, token);
-            if (await reader.ReadAsync(token))
-            {
-                statistics.HighestSequence = await reader.GetFieldValueAsync<long>(0, token);
-            }
-
-            await reader.NextResultAsync(token);
-
-            if (!await reader.ReadAsync(token)) return statistics;
-
-            statistics.LastMark = statistics.SafeStartMark = await reader.GetFieldValueAsync<long>(0, token);
-            statistics.LastUpdated = await reader.GetFieldValueAsync<DateTimeOffset>(1, token);
-            statistics.Timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(2, token);
-
-            return statistics;
+            return await _runner.Query(_highWaterStatisticsDetector, token);
         }
 
         private async Task<long> findCurrentMark(HighWaterStatistics statistics, IManagedConnection conn, CancellationToken token)
         {
             // look for the current mark
-            _start.Value = statistics.SafeStartMark;
-            using var reader = await conn.ExecuteReaderAsync(_gapDetection, token);
+            _gapDetector.Start = statistics.SafeStartMark;
+            var current = await _runner.Query(_gapDetector, token);
 
-            // If there is a row, this tells us the first sequence gap
-            if (await reader.ReadAsync(token))
-            {
-                return await reader.GetFieldValueAsync<long>(0, token);
-            }
-
-            // use the latest sequence in the event table
-            await reader.NextResultAsync(token);
-            if (!await reader.ReadAsync(token)) return statistics.CurrentMark;
-
-            if (!(await reader.IsDBNullAsync(0, token)))
-            {
-                return await reader.GetFieldValueAsync<long>(0, token);
-            }
+            if (current.HasValue) return current.Value;
 
             // This happens when the agent is restarted with persisted
             // state, and has no previous current mark.
