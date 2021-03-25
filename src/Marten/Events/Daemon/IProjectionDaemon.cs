@@ -54,7 +54,7 @@ namespace Marten.Events.Daemon
         /// Starts all known projections shards
         /// </summary>
         /// <returns></returns>
-        Task StartAll();
+        Task StartAllShards();
 
         /// <summary>
         /// Stops all known projection shards

@@ -15,7 +15,7 @@ namespace Marten.AsyncDaemon.Testing
             var coordinator = new SoloCoordinator();
             await coordinator.Start(agent, CancellationToken.None);
 
-            await agent.Received().StartAll();
+            await agent.Received().StartAllShards();
         }
     }
 }
