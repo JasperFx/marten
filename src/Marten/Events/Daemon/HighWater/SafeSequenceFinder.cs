@@ -36,6 +36,11 @@ namespace Marten.Events.Daemon.HighWater
         {
             if (await reader.ReadAsync(token))
             {
+                if (await reader.IsDBNullAsync(0, token))
+                {
+                    return null;
+                }
+
                 return await reader.GetFieldValueAsync<long>(0, token);
             }
 
