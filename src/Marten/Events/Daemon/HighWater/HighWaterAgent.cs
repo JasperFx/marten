@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Baseline;
-using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
 
@@ -36,6 +35,8 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task Start()
         {
+            IsRunning = true;
+
             _current = await _detector.Detect(_token);
 
             _tracker.Publish(new ShardState(ShardState.HighWaterMark, _current.CurrentMark){Action = ShardAction.Started});
@@ -46,6 +47,8 @@ namespace Marten.Events.Daemon.HighWater
 
             _logger.LogInformation("Started HighWaterAgent");
         }
+
+        public bool IsRunning { get; private set; }
 
 
         private async Task DetectChanges()

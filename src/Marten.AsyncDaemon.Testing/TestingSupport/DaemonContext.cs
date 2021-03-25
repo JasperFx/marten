@@ -34,7 +34,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         {
             var agent = new ProjectionDaemon(theStore, Logger);
 
-            await agent.StartAll();
+            await agent.StartAllShards();
 
             _agent = agent;
 

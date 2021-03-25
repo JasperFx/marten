@@ -25,7 +25,7 @@ namespace Marten.AsyncDaemon.Testing
             StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
 
             using var daemon = await StartDaemon();
-            await daemon.StartAll();
+            await daemon.StartAllShards();
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();
@@ -38,7 +38,7 @@ namespace Marten.AsyncDaemon.Testing
             using var daemon2 = await StartDaemon();
             await daemon2.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
-            await daemon2.StartAll();
+            await daemon2.StartAllShards();
 
 
 
@@ -50,7 +50,7 @@ namespace Marten.AsyncDaemon.Testing
             StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
 
             using var daemon = await StartDaemon();
-            await daemon.StartAll();
+            await daemon.StartAllShards();
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();
