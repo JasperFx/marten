@@ -1,6 +1,10 @@
 # set version as running build number for CI build use
 version: Build {build}
 
+branches:
+  only:
+    - 3.13
+
 configuration: Release
 
 os: Visual Studio 2019
