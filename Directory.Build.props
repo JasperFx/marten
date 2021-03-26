@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
-    <VersionPrefix>4.0.0-alpha.8</VersionPrefix>
+    <VersionPrefix>4.0.0-alpha.9</VersionPrefix>
     <LangVersion>9.0</LangVersion>
     <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
     <PackageIconUrl>http://jasperfx.github.io/marten/content/images/emblem.png</PackageIconUrl>
