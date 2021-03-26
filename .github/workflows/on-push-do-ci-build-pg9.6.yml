@@ -2,9 +2,13 @@ name: build_net3.1 pg9.6
 
 on:
   push:
+    branches:
+      - master
     paths-ignore:
       - 'documentation/**'
   pull_request:
+    branches:
+      - master
     paths-ignore:
       - 'documentation/**'
 
