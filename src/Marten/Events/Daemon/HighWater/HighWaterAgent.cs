@@ -159,5 +159,22 @@ namespace Marten.Events.Daemon.HighWater
             var statistics = await _detector.Detect(_token);
             _tracker.MarkHighWater(statistics.CurrentMark);
         }
+
+        public Task Stop()
+        {
+            try
+            {
+                _timer.Stop();
+                _loop.Dispose();
+
+                IsRunning = false;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Error trying to stop the HighWaterAgent", e);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

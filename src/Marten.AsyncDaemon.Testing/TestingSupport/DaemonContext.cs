@@ -8,6 +8,7 @@ using Baseline.Dates;
 using Castle.Core.Internal;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
@@ -32,13 +33,39 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         internal async Task<ProjectionDaemon> StartDaemon()
         {
-            var agent = new ProjectionDaemon(theStore, Logger);
+            var daemon = new ProjectionDaemon(theStore, Logger);
 
-            await agent.StartAllShards();
+            await daemon.StartAllShards();
 
-            _agent = agent;
+            _daemon = daemon;
 
-            return agent;
+            return daemon;
+        }
+
+        internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
+        {
+            theStore.Events.Daemon.LeadershipPollingTime = 100;
+            var coordinator = new HotColdCoordinator(theStore, theStore.Events.Daemon, Logger);
+            var daemon = new ProjectionDaemon(theStore, new HighWaterDetector(coordinator, theStore.Events), Logger);
+
+            await daemon.UseCoordinator(coordinator);
+
+            _daemon = daemon;
+
+            _disposables.Add(daemon);
+            return daemon;
+        }
+
+        internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
+        {
+            theStore.Events.Daemon.LeadershipPollingTime = 100;
+            var coordinator = new HotColdCoordinator(theStore, theStore.Events.Daemon, Logger);
+            var daemon = new ProjectionDaemon(theStore, new HighWaterDetector(coordinator, theStore.Events), Logger);
+
+            await daemon.UseCoordinator(coordinator);
+
+            _disposables.Add(daemon);
+            return daemon;
         }
 
         protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
@@ -48,7 +75,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
                 timeout = 30.Seconds();
             }
 
-            return new ShardActionWatcher(_agent.Tracker,shardName, action, timeout).Task;
+            return new ShardActionWatcher(_daemon.Tracker,shardName, action, timeout).Task;
         }
 
         public int NumberOfStreams
@@ -84,7 +111,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         public long NumberOfEvents => _streams.Sum(x => x.Events.Count);
 
         private readonly List<TripStream> _streams = new List<TripStream>();
-        private ProjectionDaemon _agent;
+        private ProjectionDaemon _daemon;
         protected ITestOutputHelper _output;
 
         protected StreamAction[] ToStreamActions()

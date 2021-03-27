@@ -21,5 +21,10 @@ namespace Marten.Events.Daemon
         {
             return _agent.StopAll();
         }
+
+        public void Dispose()
+        {
+            // Nothing
+        }
     }
 }

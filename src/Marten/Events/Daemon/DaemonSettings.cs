@@ -92,6 +92,12 @@ namespace Marten.Events.Daemon
         public TimeSpan HealthCheckPollingTime { get; set; } = 5.Seconds();
 
         /// <summary>
+        /// This is used to establish a global lock id for the async daemon and should
+        /// be unique for any applications that target the same database.
+        /// </summary>
+        public int DaemonLockId { get; set; } = 4444;
+
+        /// <summary>
         /// Projection Daemon mode. The default is Disabled
         /// </summary>
         public DaemonMode Mode { get; set; } = DaemonMode.Disabled;
@@ -99,6 +105,11 @@ namespace Marten.Events.Daemon
         internal IList<IExceptionPolicy> Policies { get; } = new List<IExceptionPolicy>();
 
         internal IList<IExceptionPolicy> BaselinePolicies { get; } = new List<IExceptionPolicy>();
+
+        /// <summary>
+        /// Time in milliseconds to poll for leadership election in the async projection daemon
+        /// </summary>
+        public double LeadershipPollingTime { get; set; } = 5000;
 
         /// <summary>
         ///     Specifies the type of exception that this policy can handle.
