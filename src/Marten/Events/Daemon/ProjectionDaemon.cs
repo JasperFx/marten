@@ -21,19 +21,17 @@ namespace Marten.Events.Daemon
     internal class ProjectionDaemon: IProjectionDaemon
     {
         private readonly Dictionary<string, ShardAgent> _agents = new();
-        private readonly CancellationTokenSource _cancellation;
+        private CancellationTokenSource _cancellation;
         private readonly HighWaterAgent _highWater;
         private readonly ILogger _logger;
         private readonly DocumentStore _store;
+        private INodeCoordinator _coordinator;
 
-        public ProjectionDaemon(DocumentStore store, ILogger logger)
+        public ProjectionDaemon(DocumentStore store, IHighWaterDetector detector, ILogger logger)
         {
             _cancellation = new CancellationTokenSource();
             _store = store;
             _logger = logger;
-
-            // The AutoOpenSingleQueryRunner
-            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events);
 
             Tracker = new ShardStateTracker(logger);
             _highWater = new HighWaterAgent(detector, Tracker, logger, store.Events.Daemon, _cancellation.Token);
@@ -41,9 +39,21 @@ namespace Marten.Events.Daemon
             Settings = store.Events.Daemon;
         }
 
+        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events), logger)
+        {
+        }
+
+        public Task UseCoordinator(INodeCoordinator coordinator)
+        {
+            _coordinator = coordinator;
+            return _coordinator.Start(this, _cancellation.Token);
+        }
+
         public DaemonSettings Settings { get; }
 
         public ShardStateTracker Tracker { get; }
+
+        public bool IsRunning => _highWater.IsRunning;
 
         public async Task StartHighWaterDetection()
         {
@@ -172,9 +182,25 @@ namespace Marten.Events.Daemon
             }
         }
 
+        private bool _isStopping = false;
+
         public async Task StopAll()
         {
+            // This avoids issues around whether it was signaled here
+            // first or through the coordinator first
+            if (_isStopping) return;
+            _isStopping = true;
+
+            if (_coordinator != null)
+            {
+                await _coordinator.Stop();
+            }
+
+            _cancellation.Cancel();
+            await _highWater.Stop();
+
             foreach (var agent in _agents.Values)
+            {
                 try
                 {
                     if (agent.IsStopping()) continue;
@@ -185,12 +211,18 @@ namespace Marten.Events.Daemon
                 {
                     _logger.LogError(e, "Error trying to stop shard '{ShardName}'", agent.ShardName.Identity);
                 }
+            }
 
             _agents.Clear();
+
+            // Need to restart this so that the daemon could
+            // be restarted later
+            _cancellation = new CancellationTokenSource();
         }
 
         public void Dispose()
         {
+            _coordinator?.Dispose();
             Tracker?.As<IDisposable>().Dispose();
             _cancellation?.Dispose();
             _highWater?.Dispose();

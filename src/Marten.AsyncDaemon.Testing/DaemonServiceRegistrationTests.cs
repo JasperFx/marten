@@ -90,8 +90,8 @@ namespace Marten.AsyncDaemon.Testing
                 .ShouldContain(x => x.ImplementationType == typeof(AsyncProjectionHostedService));
 
             // Node coordinator
-            container.Model.For<INodeCoordinator>().Instances.Single()
-                .ImplementationType.ShouldBe(typeof(HotColdCoordinator));
+            container.GetInstance<INodeCoordinator>()
+                .ShouldBeOfType<HotColdCoordinator>();
 
             // Projection Daemon
             container.GetInstance<IProjectionDaemon>().ShouldBeOfType<ProjectionDaemon>();

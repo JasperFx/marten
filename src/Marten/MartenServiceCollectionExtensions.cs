@@ -1,5 +1,6 @@
 using System;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -63,10 +64,23 @@ namespace Marten
                     break;
 
                 case DaemonMode.HotCold:
-                    services.AddSingleton<INodeCoordinator, HotColdCoordinator>();
-                    services.AddSingleton(x =>
-                        x.GetRequiredService<IDocumentStore>()
-                            .BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
+                    services.AddSingleton<INodeCoordinator>(s =>
+                    {
+                        var store = (DocumentStore)s.GetRequiredService<IDocumentStore>();
+                        var logger = s.GetRequiredService<ILogger<IProjectionDaemon>>();
+
+                        return new HotColdCoordinator(store, store.Events.Daemon, logger);
+                    });
+                    services.AddSingleton<IProjectionDaemon>(x =>
+                    {
+                        var store = (DocumentStore)x.GetRequiredService<IDocumentStore>();
+                        var logger = x.GetRequiredService<ILogger<IProjectionDaemon>>();
+                        var coordinator = (HotColdCoordinator)x.GetRequiredService<INodeCoordinator>();
+                        var detector = new HighWaterDetector(coordinator, store.Events);
+
+                        return new ProjectionDaemon(store, detector, logger);
+                    });
+
                     services.AddHostedService<AsyncProjectionHostedService>();
                     break;
 

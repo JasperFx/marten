@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.HighWater;
+using Marten.Services;
 
 namespace Marten.Events.Daemon
 {
@@ -9,7 +11,7 @@ namespace Marten.Events.Daemon
     /// responsible for starting projection shards and assigning
     /// work to the locally running IProjectionDaemon
     /// </summary>
-    public interface INodeCoordinator
+    public interface INodeCoordinator : IDisposable
     {
         /// <summary>
         /// Called at the start of the application to register the projection

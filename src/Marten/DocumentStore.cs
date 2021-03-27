@@ -8,6 +8,7 @@ using Baseline;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Schema;
@@ -235,7 +236,10 @@ namespace Marten
         {
             logger ??= new NulloLogger();
 
-            return new ProjectionDaemon(this, logger);
+            // TODO -- this will vary later
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(Tenancy.Default), Events);
+
+            return new ProjectionDaemon(this, detector, logger);
         }
 
         /// <summary>

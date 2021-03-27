@@ -16,7 +16,7 @@ namespace Marten.Testing.Harness
         private readonly string _schemaName;
         private DocumentStore _store;
         private IDocumentSession _session;
-        private readonly IList<IDisposable> _disposables = new List<IDisposable>();
+        protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
 
         public string SchemaName => _schemaName;
 
