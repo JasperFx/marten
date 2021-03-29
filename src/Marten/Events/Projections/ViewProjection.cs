@@ -722,7 +722,7 @@ namespace Marten.Events.Projections
             }
         }
 
-        void IProjection.Apply(IDocumentSession session, EventPage page)
+        public void Apply(IDocumentSession session, EventPage page)
         {
             var projections = getEventProjections(session, page);
 
