@@ -55,7 +55,7 @@ namespace Marten.Events.Daemon
 
         public bool IsRunning => _highWater.IsRunning;
 
-        public async Task StartHighWaterDetection()
+        public async Task StartDaemon()
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
             await _highWater.Start();
@@ -102,7 +102,7 @@ namespace Marten.Events.Daemon
         {
             if (!_highWater.IsRunning)
             {
-                await StartHighWaterDetection();
+                await StartDaemon();
             }
 
             var shards = _store.Events.Projections.AllShards();
@@ -113,7 +113,7 @@ namespace Marten.Events.Daemon
         {
             if (!_highWater.IsRunning)
             {
-                await StartHighWaterDetection();
+                await StartDaemon();
             }
 
             // Latch it so it doesn't double start
