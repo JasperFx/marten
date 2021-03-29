@@ -52,7 +52,7 @@ namespace Marten.AsyncDaemon.Testing
             await agent.StopAll();
 
             using var agent2 = new ProjectionDaemon(theStore, new NulloLogger());
-            await agent2.StartHighWaterDetection();
+            await agent2.StartDaemon();
             await agent2.Tracker.WaitForHighWaterMark(NumberOfEvents, 15.Seconds());
 
         }

@@ -73,7 +73,7 @@ namespace Marten.Events.TestSupport
             if (_store.Events.Projections.HasAnyAsyncProjections())
             {
                 Daemon = _store.BuildProjectionDaemon();
-                await Daemon.StartAll();
+                await Daemon.StartAllShards();
             }
 
             Session = _store.LightweightSession();
