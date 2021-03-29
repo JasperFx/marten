@@ -74,5 +74,14 @@ namespace Marten.Events.Daemon
         /// </summary>
         /// <returns></returns>
         Task StartDaemon();
+
+
+        /// <summary>
+        /// Use with caution! This will try to wait for all projections to "catch up" to the currently
+        /// known farthest known sequence of the event store
+        /// </summary>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
+        Task WaitForNonStaleData(TimeSpan timeout);
     }
 }

@@ -6,6 +6,7 @@ using Baseline;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Progress;
+using Marten.Events.TestSupport;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
@@ -180,5 +181,21 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
                 return providers.StorageFor<T>();
             }
         }
+
+
+        /// <summary>
+        /// Marten's built in test support for event projections. Only use this in testing as
+        /// it will delete existing event and projected aggregate data
+        /// </summary>
+        /// <param name="configuration"></param>
+        /// <returns></returns>
+        public Task EventProjectionScenario(Action<ProjectionScenario> configuration)
+        {
+            var scenario = new ProjectionScenario(_store);
+            configuration(scenario);
+
+            return scenario.Execute();
+        }
+
     }
 }
