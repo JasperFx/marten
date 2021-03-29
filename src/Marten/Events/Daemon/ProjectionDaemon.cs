@@ -51,6 +51,43 @@ namespace Marten.Events.Daemon
             _hasStarted = true;
         }
 
+        public Task WaitForNonStaleData(TimeSpan timeout)
+        {
+            var completion = new TaskCompletionSource<bool>();
+            var timeoutCancellation = new CancellationTokenSource(timeout);
+
+
+            Task.Run(async () =>
+            {
+                var statistics = await _store.Advanced.FetchEventStoreStatistics(timeoutCancellation.Token);
+                timeoutCancellation.Token.Register(() =>
+                {
+                    completion.TrySetException(new TimeoutException(
+                        $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time"));
+                });
+
+                if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
+                {
+                    completion.SetResult(true);
+                    return;
+                }
+
+                while (!timeoutCancellation.IsCancellationRequested)
+                {
+                    await Task.Delay(100.Milliseconds(), timeoutCancellation.Token);
+
+                    if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
+                    {
+                        completion.SetResult(true);
+                        return;
+                    }
+                }
+            }, timeoutCancellation.Token);
+
+            return completion.Task;
+
+        }
+
         public async Task StartAll()
         {
             if (!_hasStarted) await StartDaemon();

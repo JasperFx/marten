@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.TestSupport;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
@@ -562,5 +563,7 @@ namespace Marten
         /// </summary>
         public DdlRules DdlRules { get; } = new DdlRules();
 
+
     }
+
 }

@@ -7,7 +7,7 @@ using Marten.Linq;
 
 namespace Marten.Events
 {
-    public interface IEventStore
+    public interface IEventOperations
     {
         /// <summary>
         /// Append one or more events in order to an existing stream
@@ -44,15 +44,6 @@ namespace Marten.Events
         /// <param name="stream"></param>
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
-        StreamAction Append(Guid stream, long expectedVersion, IEnumerable<object> events);
-
-        /// <summary>
-        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
-        /// matches supplied expected version or transaction is aborted.
-        /// </summary>
-        /// <param name="stream"></param>
-        /// <param name="expectedVersion">Expected maximum event version after append</param>
-        /// <param name="events"></param>
         StreamAction Append(Guid stream, long expectedVersion, params object[] events);
 
         /// <summary>
@@ -72,15 +63,6 @@ namespace Marten.Events
         /// <param name="expectedVersion">Expected maximum event version after append</param>
         /// <param name="events"></param>
         StreamAction Append(string stream, long expectedVersion, params object[] events);
-
-        /// <summary>
-        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
-        /// </summary>
-        /// <typeparam name="TAggregate"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="events"></param>
-        /// <returns></returns>
-        StreamAction StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class;
 
         /// <summary>
         /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
@@ -236,6 +218,27 @@ namespace Marten.Events
         /// <param name="events"></param>
         /// <returns></returns>
         StreamAction StartStream(params object[] events);
+    }
+
+    public interface IEventStore: IEventOperations
+    {
+        /// <summary>
+        /// Append one or more events in order to an existing stream and verify that maximum event id for the stream
+        /// matches supplied expected version or transaction is aborted.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="expectedVersion">Expected maximum event version after append</param>
+        /// <param name="events"></param>
+        StreamAction Append(Guid stream, long expectedVersion, IEnumerable<object> events);
+
+        /// <summary>
+        /// Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+        /// </summary>
+        /// <typeparam name="TAggregate"></typeparam>
+        /// <param name="id"></param>
+        /// <param name="events"></param>
+        /// <returns></returns>
+        StreamAction StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class;
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
