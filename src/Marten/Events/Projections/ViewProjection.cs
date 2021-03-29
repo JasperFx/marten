@@ -20,7 +20,7 @@ namespace Marten.Events.Projections
     {
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
         private readonly List<IFanOutRule> _fanouts = new();
-        private IEventSlicer<TDoc, TId> _eventSlicer;
+        private IEventSlicer<TDoc, TId>? _eventSlicer;
 
         protected ViewProjection()
         {
