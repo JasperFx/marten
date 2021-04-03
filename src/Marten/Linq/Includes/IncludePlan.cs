@@ -27,13 +27,26 @@ namespace Marten.Linq.Includes
             set
             {
                 IdAlias = "id" + (value + 1);
+                ExpressionName = "include"+ (value + 1);
 
-                TempSelector = $"{ConnectingField.LocatorForIncludedDocumentId} as {IdAlias}";
+                TempTableSelector = RequiresLateralJoin()
+                    ? $"{ExpressionName}.{IdAlias}"
+                    : $"{ConnectingField.LocatorForIncludedDocumentId} as {IdAlias}";
             }
         }
 
+        public bool RequiresLateralJoin()
+        {
+            // TODO -- dont' think this is permanent. Or definitely shouldn't be
+            return ConnectingField is ArrayField;
+        }
+
+        public string LeftJoinExpression => $"LEFT JOIN LATERAL {ConnectingField.LocatorForIncludedDocumentId} WITH ORDINALITY as {ExpressionName}({IdAlias}) ON TRUE";
+
+        public string ExpressionName { get; private set; }
+
         public string IdAlias { get; private set; }
-        public string TempSelector { get; private set; }
+        public string TempTableSelector { get; private set; }
 
         public Statement BuildStatement(string tempTableName)
         {

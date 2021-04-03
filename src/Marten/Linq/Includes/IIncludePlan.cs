@@ -7,10 +7,12 @@ namespace Marten.Linq.Includes
     {
         IIncludeReader BuildReader(IMartenSession session);
 
-        // TODO -- something to break up the Statements
         string IdAlias { get; }
-        string TempSelector { get; }
+        string TempTableSelector { get; }
+        bool RequiresLateralJoin();
         int Index { set; }
+        string LeftJoinExpression { get; }
+        string ExpressionName { get; }
         Statement BuildStatement(string tempTableName);
     }
 }

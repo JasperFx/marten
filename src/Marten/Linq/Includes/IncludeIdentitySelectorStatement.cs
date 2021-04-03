@@ -81,16 +81,16 @@ namespace Marten.Linq.Includes
                 sql.Append("select id, ");
             }
 
-
-            sql.Append(_includes.Select(x => x.TempSelector).Join(", "));
+            sql.Append(_includes.Select(x => x.TempTableSelector).Join(", "));
             sql.Append(" from ");
             sql.Append(FromObject);
-            sql.Append(" as d");
+            sql.Append(" as d ");
+            sql.Append(_includes.Where(x => x.RequiresLateralJoin()).Select(x => x.LeftJoinExpression).Join(" "));
         }
 
         public string[] SelectFields()
         {
-            return _includes.Select(x => x.TempSelector).ToArray();
+            return _includes.Select(x => x.TempTableSelector).ToArray();
         }
 
         public ISelector BuildSelector(IMartenSession session)

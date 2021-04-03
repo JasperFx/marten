@@ -227,10 +227,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 
@@ -253,10 +253,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 
@@ -279,10 +279,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 
@@ -309,11 +309,11 @@ namespace Marten.Testing.Services.Includes
                                   .ToList();
 
                 users.Count.ShouldBe(1);
-                SpecificationExtensions.ShouldContain(users, x => x.Id == user.Id);
+                users.ShouldContain(x => x.Id == user.Id);
 
                 issues.Count.ShouldBe(2);
-                SpecificationExtensions.ShouldContain(issues, x => x.Id == issue1.Id);
-                SpecificationExtensions.ShouldContain(issues, x => x.Id == issue2.Id);
+                issues.ShouldContain(x => x.Id == issue1.Id);
+                issues.ShouldContain(x => x.Id == issue2.Id);
             }
         }
 
@@ -339,10 +339,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Tags.Any(t => t == "DIY"))
                     .Single();
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(userToCompareAgainst.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 
@@ -362,9 +362,9 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Title == issue.Title)
                     .Single();
 
-                SpecificationExtensions.ShouldBeNull(included);
+                included.ShouldBeNull();
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 
@@ -591,10 +591,10 @@ namespace Marten.Testing.Services.Includes
                     .Where(x => x.Title == issue.Title)
                     .SingleAsync();
 
-                SpecificationExtensions.ShouldNotBeNull(included);
+                included.ShouldNotBeNull();
                 included.Id.ShouldBe(user.Id);
 
-                SpecificationExtensions.ShouldNotBeNull(issue2);
+                issue2.ShouldNotBeNull();
             }
         }
 
@@ -620,8 +620,8 @@ namespace Marten.Testing.Services.Includes
 
                 list.Count.ShouldBe(2);
 
-                list.Any(x => x.Id == user1.Id);
-                list.Any(x => x.Id == user2.Id);
+                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user2.Id).ShouldBeTrue();
             }
         }
 
@@ -649,8 +649,8 @@ namespace Marten.Testing.Services.Includes
 
                 list.Count.ShouldBe(2);
 
-                list.Any(x => x.Id == user1.Id);
-                list.Any(x => x.Id == user2.Id);
+                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user2.Id).ShouldBeTrue();
             }
         }
 
@@ -678,8 +678,8 @@ namespace Marten.Testing.Services.Includes
 
                 list.Count.ShouldBe(2);
 
-                list.Any(x => x.Id == user1.Id);
-                list.Any(x => x.Id == user2.Id);
+                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user2.Id).ShouldBeTrue();
             }
         }
 
@@ -739,13 +739,6 @@ namespace Marten.Testing.Services.Includes
             }
         }
         #endregion sample_multiple_include
-
-        public class Group
-        {
-            public string Name { get; set; }
-            public Guid Id { get; set; }
-            public Guid[] Users { get; set; }
-        }
 
         [Fact]
         public void include_many_to_list()
@@ -888,11 +881,57 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
+        [Fact]
+        public void include_many_to_list_with_empty_parent_collection()
+        {
+
+            var user1 = new User { };
+            var user2 = new User { };
+            var user3 = new User { };
+
+            theStore.BulkInsert(new User[] {user1, user2, user3});
+
+            var group1 = new Group {Name = "Users", Users = new[] {user1.Id, user2.Id, user3.Id}};
+            var group2 = new Group {Name = "Empty", Users = new Guid[0]};
+
+            using (var session = theStore.OpenSession())
+            {
+                session.Store(group1, group2);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                query.Logger = new TestOutputMartenLogger(_output);
+
+                var list = new List<User>();
+
+                var groups = query.Query<Group>()
+                    .Include(x => x.Users, list)
+                    .Where(x => x.Name == "Users" || x.Name == "Empty")
+                    .ToList();
+
+                groups.Count.ShouldBe(2);
+
+                list.Count.ShouldBe(3);
+                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user2.Id).ShouldBeTrue();
+                list.Any(x => x.Id == user3.Id).ShouldBeTrue();
+            }
+        }
+
         public end_to_end_query_with_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;
 
             DocumentTracking = DocumentTracking.IdentityOnly;
         }
+    }
+
+    public class Group
+    {
+        public string Name { get; set; }
+        public Guid Id { get; set; }
+        public Guid[] Users { get; set; }
     }
 }
