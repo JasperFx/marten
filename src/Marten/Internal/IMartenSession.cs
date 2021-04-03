@@ -5,7 +5,7 @@ using Marten.Internal.DirtyTracking;
 using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Internal
 {
     public interface IMartenSession: IDisposable, IAsyncDisposable
@@ -42,23 +42,23 @@ namespace Marten.Internal
         /// Optional metadata describing the causation id for this
         /// unit of work
         /// </summary>
-        string CausationId { get; set; }
+        string? CausationId { get; set; }
 
         /// <summary>
         /// Optional metadata describing the correlation id for this
         /// unit of work
         /// </summary>
-        string CorrelationId { get; set; }
+        string? CorrelationId { get; set; }
 
         /// <summary>
         /// Optional metadata describing the user name or
         /// process name for this unit of work
         /// </summary>
-        string LastModifiedBy { get; set; }
+        string? LastModifiedBy { get; set; }
 
         /// <summary>
         /// Optional metadata values. This may be null.
         /// </summary>
-        Dictionary<string, object> Headers { get; }
+        Dictionary<string, object>? Headers { get; }
     }
 }

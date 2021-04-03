@@ -1,5 +1,5 @@
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>

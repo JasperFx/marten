@@ -7,7 +7,7 @@ using Baseline;
 using Npgsql;
 using Npgsql.TypeMapping;
 using NpgsqlTypes;
-
+#nullable enable
 namespace Marten.Util
 {
     public static class TypeMappings
@@ -55,7 +55,7 @@ namespace Marten.Util
         // Lazily retrieve the CLR type to NpgsqlDbType and PgTypeName mapping from exposed INpgsqlTypeMapper.Mappings.
         // This is lazily calculated instead of precached because it allows consuming code to register
         // custom npgsql mappings prior to execution.
-        private static string ResolvePgType(Type type)
+        private static string? ResolvePgType(Type type)
         {
             if (PgTypeMemo.Value.TryFind(type, out var value))
                 return value;
@@ -91,13 +91,13 @@ namespace Marten.Util
             return values;
         }
 
-        private static NpgsqlTypeMapping GetTypeMapping(Type type)
+        private static NpgsqlTypeMapping? GetTypeMapping(Type type)
             => NpgsqlConnection
                 .GlobalTypeMapper
                 .Mappings
                 .FirstOrDefault(mapping => mapping.ClrTypes.Contains(type));
 
-        private static NpgsqlTypeMapping GetTypeMapping(NpgsqlDbType type)
+        private static NpgsqlTypeMapping? GetTypeMapping(NpgsqlDbType type)
             => NpgsqlConnection
                 .GlobalTypeMapper
                 .Mappings
@@ -210,7 +210,7 @@ namespace Marten.Util
             throw new NotSupportedException("Can't infer NpgsqlDbType for type " + type);
         }
 
-        public static NpgsqlDbType? TryGetDbType(Type type)
+        public static NpgsqlDbType? TryGetDbType(Type? type)
         {
             if (type == null || !determineNpgsqlDbType(type, out var dbType))
                 return null;

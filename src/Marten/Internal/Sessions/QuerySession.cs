@@ -13,14 +13,13 @@ using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
-using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public class QuerySession : IMartenSession, IQuerySession
@@ -43,7 +42,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        public void MarkAsDocumentLoaded(object id, object document)
+        public void MarkAsDocumentLoaded(object id, object? document)
         {
             if (document == null) return;
 
@@ -57,9 +56,9 @@ namespace Marten.Internal.Sessions
 
         public IList<IDocumentSessionListener> Listeners { get; } = new List<IDocumentSessionListener>();
 
-        internal SessionOptions SessionOptions { get; }
+        internal SessionOptions? SessionOptions { get; }
 
-        public QuerySession(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
+        public QuerySession(DocumentStore store, SessionOptions? sessionOptions, IManagedConnection database,
             ITenant tenant)
         {
             DocumentStore = store;
@@ -151,14 +150,14 @@ namespace Marten.Internal.Sessions
             return LinqConstants.IdListTableName + ++_tableNumber;
         }
 
-        public string CausationId { get; set; }
-        public string CorrelationId { get; set; }
-        public string LastModifiedBy { get; set; }
+        public string? CausationId { get; set; }
+        public string? CorrelationId { get; set; }
+        public string? LastModifiedBy { get; set; }
 
         /// <summary>
         /// This is meant to be lazy created, and can be null
         /// </summary>
-        public Dictionary<string, object> Headers { get; protected set; }
+        public Dictionary<string, object>? Headers { get; protected set; }
 
 
         public void Dispose()
@@ -190,7 +189,7 @@ namespace Marten.Internal.Sessions
                 throw new ObjectDisposedException("This session has been disposed");
         }
 
-        public T Load<T>(string id)
+        public T? Load<T>(string id)
         {
             assertNotDisposed();
             var document = StorageFor<T, string>().Load(id, this);
@@ -198,7 +197,7 @@ namespace Marten.Internal.Sessions
             return document;
         }
 
-        public async Task<T> LoadAsync<T>(string id, CancellationToken token = default(CancellationToken))
+        public async Task<T?> LoadAsync<T>(string id, CancellationToken token = default)
         {
             assertNotDisposed();
             var document = await StorageFor<T, string>().LoadAsync(id, this, token).ConfigureAwait(false);
@@ -206,54 +205,41 @@ namespace Marten.Internal.Sessions
             return document;
         }
 
-        public T Load<T>(int id)
+        public T? Load<T>(int id)
         {
             assertNotDisposed();
 
             var storage = StorageFor<T>();
 
-            T document = default;
-            if (storage is IDocumentStorage<T, int> i)
+            var document = storage switch
             {
-                document = i.Load(id, this);
-            }
-            else if (storage is IDocumentStorage<T, long> l)
-            {
-                document = l.Load(id, this);
-            }
-            else
-            {
-                throw new DocumentIdTypeMismatchException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
-            }
+                IDocumentStorage<T, int> i => i.Load(id, this),
+                IDocumentStorage<T, long> l => l.Load(id, this),
+                _ => throw new DocumentIdTypeMismatchException(
+                    $"The identity type for document type {typeof(T).FullNameInCode()} is not numeric")
+            };
 
             return document;
         }
 
-        public async Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken))
+        public async Task<T?> LoadAsync<T>(int id, CancellationToken token = default)
         {
             assertNotDisposed();
 
             var storage = StorageFor<T>();
 
-            T document = default;
-            if (storage is IDocumentStorage<T, int> i)
+            var document = storage switch
             {
-                document = await i.LoadAsync(id, this, token).ConfigureAwait(false);
-            }
-            else if (storage is IDocumentStorage<T, long> l)
-            {
-                document = await l.LoadAsync(id, this, token).ConfigureAwait(false);
-            }
-            else
-            {
-                throw new DocumentIdTypeMismatchException($"The identity type for document type {typeof(T).FullNameInCode()} is not numeric");
-            }
-
+                IDocumentStorage<T, int> i => await i.LoadAsync(id, this, token).ConfigureAwait(false),
+                IDocumentStorage<T, long> l => await l.LoadAsync(id, this, token).ConfigureAwait(false),
+                _ => throw new DocumentIdTypeMismatchException(
+                    $"The identity type for document type {typeof(T).FullNameInCode()} is not numeric")
+            };
 
             return document;
         }
 
-        public T Load<T>(long id)
+        public T? Load<T>(long id)
         {
             assertNotDisposed();
             var document = StorageFor<T, long>().Load(id, this);
@@ -261,7 +247,7 @@ namespace Marten.Internal.Sessions
             return document;
         }
 
-        public async Task<T> LoadAsync<T>(long id, CancellationToken token = default(CancellationToken))
+        public async Task<T?> LoadAsync<T>(long id, CancellationToken token = default)
         {
             assertNotDisposed();
             var document = await StorageFor<T, long>().LoadAsync(id, this, token).ConfigureAwait(false);
@@ -269,7 +255,7 @@ namespace Marten.Internal.Sessions
             return document;
         }
 
-        public T Load<T>(Guid id)
+        public T? Load<T>(Guid id)
         {
             assertNotDisposed();
             var document = StorageFor<T, Guid>().Load(id, this);
@@ -277,7 +263,7 @@ namespace Marten.Internal.Sessions
             return document;
         }
 
-        public async Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken))
+        public async Task<T?> LoadAsync<T>(Guid id, CancellationToken token = default)
         {
             assertNotDisposed();
             var document = await StorageFor<T, Guid>().LoadAsync(id, this, token).ConfigureAwait(false);
@@ -299,7 +285,7 @@ namespace Marten.Internal.Sessions
             return provider.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters)
+        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default, params object[] parameters)
         {
             assertNotDisposed();
             var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
@@ -337,7 +323,7 @@ namespace Marten.Internal.Sessions
             return ExecuteHandler(handler);
         }
 
-        public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken))
+        public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
         {
             var source = Options.GetCompiledQuerySourceFor(query, this);
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
@@ -361,14 +347,14 @@ namespace Marten.Internal.Sessions
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids)
         {
             assertNotDisposed();
-            return StorageFor<T, string>().LoadManyAsync(ids, this, default(CancellationToken));
+            return StorageFor<T, string>().LoadManyAsync(ids, this, default);
 
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<string> ids)
         {
             assertNotDisposed();
-            return StorageFor<T, string>().LoadManyAsync(ids.ToArray(), this, default(CancellationToken));
+            return StorageFor<T, string>().LoadManyAsync(ids.ToArray(), this, default);
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids)
@@ -460,14 +446,14 @@ namespace Marten.Internal.Sessions
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params long[] ids)
         {
             assertNotDisposed();
-            return StorageFor<T, long>().LoadManyAsync(ids, this, default(CancellationToken));
+            return StorageFor<T, long>().LoadManyAsync(ids, this, default);
 
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<long> ids)
         {
             assertNotDisposed();
-            return StorageFor<T, long>().LoadManyAsync(ids.ToArray(), this, default(CancellationToken));
+            return StorageFor<T, long>().LoadManyAsync(ids.ToArray(), this, default);
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids)
@@ -501,14 +487,14 @@ namespace Marten.Internal.Sessions
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(params Guid[] ids)
         {
             assertNotDisposed();
-            return StorageFor<T, Guid>().LoadManyAsync(ids, this, default(CancellationToken));
+            return StorageFor<T, Guid>().LoadManyAsync(ids, this, default);
 
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<Guid> ids)
         {
             assertNotDisposed();
-            return StorageFor<T, Guid>().LoadManyAsync(ids.ToArray(), this, default(CancellationToken));
+            return StorageFor<T, Guid>().LoadManyAsync(ids.ToArray(), this, default);
         }
 
         public Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids)
@@ -585,7 +571,7 @@ namespace Marten.Internal.Sessions
             return ExecuteHandler(handler);
         }
 
-        public Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default(CancellationToken))
+        public Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default)
         {
             assertNotDisposed();
             if (entity == null) throw new ArgumentNullException(nameof(entity));

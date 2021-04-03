@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using Marten.Internal.Operations;
 using Marten.Linq.SqlGeneration;
 using Marten.Patching;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>

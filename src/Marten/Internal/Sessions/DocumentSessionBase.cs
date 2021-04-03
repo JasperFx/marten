@@ -13,6 +13,7 @@ using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
@@ -48,7 +49,7 @@ namespace Marten.Internal.Sessions
 
         public void Store<T>(IEnumerable<T> entities)
         {
-            Store(entities?.ToArray());
+            Store(entities?.ToArray()!);
         }
 
         public void Store<T>(params T[] entities)
@@ -229,12 +230,12 @@ namespace Marten.Internal.Sessions
             Headers[key] = value;
         }
 
-        public object GetHeader(string key)
+        public object? GetHeader(string key)
         {
             return Headers?[key];
         }
 
-        private Dictionary<string, NestedTenantSession> _byTenant;
+        private Dictionary<string, NestedTenantSession>? _byTenant;
 
         /// <summary>
         /// Access data from another tenant and apply document or event updates to this
@@ -244,10 +245,7 @@ namespace Marten.Internal.Sessions
         /// <returns></returns>
         public ITenantOperations ForTenant(string tenantId)
         {
-            if (_byTenant == null)
-            {
-                _byTenant = new Dictionary<string, NestedTenantSession>();
-            }
+            _byTenant ??= new Dictionary<string, NestedTenantSession>();
 
             if (_byTenant.TryGetValue(tenantId, out var tenantSession))
             {

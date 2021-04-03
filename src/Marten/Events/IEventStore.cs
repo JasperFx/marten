@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten.Events
 {
     public interface IEventOperations
@@ -287,7 +287,7 @@ namespace Marten.Events
         /// <param name="timestamp"></param>
         /// <param name="state">Instance of T to apply events to</param>
         /// <returns></returns>
-        T AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T state = null) where T : class;
+        T? AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T? state = null) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -299,7 +299,7 @@ namespace Marten.Events
         /// <param name="state">Instance of T to apply events to</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T state = null, CancellationToken token = default) where T : class;
+        Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T? state = null, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -310,7 +310,7 @@ namespace Marten.Events
         /// <param name="timestamp"></param>
         /// <param name="state">Instance of T to apply events to</param>
         /// <returns></returns>
-        T AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T state = null) where T : class;
+        T? AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T? state = null) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -322,7 +322,7 @@ namespace Marten.Events
         /// <param name="state">Instance of T to apply events to</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null, T state = null, CancellationToken token = default) where T : class;
+        Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null, T? state = null, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Query directly against ONLY the raw event data. Use IQuerySession.Query() for aggregated documents!

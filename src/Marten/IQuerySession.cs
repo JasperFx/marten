@@ -8,7 +8,7 @@ using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     public interface IQuerySession: IDisposable, IAsyncDisposable
@@ -19,7 +19,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(string id);
+        T? Load<T>(string id);
 
         /// <summary>
         /// Asynchronously find or load a single document of type T by a string id
@@ -28,7 +28,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(string id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(string id, CancellationToken token = default);
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -36,7 +36,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(int id);
+        T? Load<T>(int id);
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -44,7 +44,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(long id);
+        T? Load<T>(long id);
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -52,7 +52,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(Guid id);
+        T? Load<T>(Guid id);
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -61,7 +61,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(int id, CancellationToken token = default);
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -70,7 +70,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(long id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(long id, CancellationToken token = default);
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -79,7 +79,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(Guid id, CancellationToken token = default);
 
         #region sample_querying_with_linq
         /// <summary>
@@ -109,7 +109,7 @@ namespace Marten
         /// <param name="token"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
+        Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default, params object[] parameters);
 
         /// <summary>
         /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
@@ -156,7 +156,7 @@ namespace Marten
         /// <param name="query">The instance of a compiled query</param>
         /// <param name="token">A cancellation token</param>
         /// <returns>A task for a single item query result</returns>
-        Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken));
+        Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
 
         /// <summary>
         /// Load or find multiple documents by id
@@ -335,13 +335,13 @@ namespace Marten
         /// Optional metadata describing the causation id for this
         /// unit of work
         /// </summary>
-        string CausationId { get; set; }
+        string? CausationId { get; set; }
 
         /// <summary>
         /// Optional metadata describing the correlation id for this
         /// unit of work
         /// </summary>
-        string CorrelationId { get; set; }
+        string? CorrelationId { get; set; }
 
         /// <summary>
         /// Retrieve the current known version of the given document
@@ -450,6 +450,6 @@ namespace Marten
         /// <param name="token"></param>
         /// <returns></returns>
         Task<DocumentMetadata> MetadataForAsync<T>(T entity,
-            CancellationToken token = default(CancellationToken));
+            CancellationToken token = default);
     }
 }

@@ -3,14 +3,14 @@ using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     internal class NestedTenantSession : DocumentSessionBase, ITenantOperations
     {
         private readonly DocumentSessionBase _parent;
 
-        internal NestedTenantSession(DocumentSessionBase parent, ITenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions, parent.Database, tenant, parent._workTracker)
+        internal NestedTenantSession(DocumentSessionBase parent, ITenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions!, parent.Database, tenant, parent._workTracker)
         {
             Listeners.AddRange(parent.Listeners);
             _parent = parent;

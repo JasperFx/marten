@@ -6,7 +6,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public class DirtyCheckingDocumentSession: DocumentSessionBase

@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+#nullable enable
 namespace Marten.Util
 {
     public static class StreamExtensions

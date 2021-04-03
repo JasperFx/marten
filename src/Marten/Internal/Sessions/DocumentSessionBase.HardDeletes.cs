@@ -7,6 +7,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase

@@ -1,7 +1,7 @@
 using Baseline;
 using Marten.Schema;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Metadata
 {
     internal class TenancyPolicy: IDocumentPolicy

@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
         <UserSecretsId>dotnet-EventSourceWorker-01BE20B5-3C2D-434B-8822-823B56E3F401</UserSecretsId>
+        <nullable>enable</nullable>
     </PropertyGroup>
 
     <ItemGroup>

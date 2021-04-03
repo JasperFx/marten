@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten
 {
     public static class CompiledQueryExtensions

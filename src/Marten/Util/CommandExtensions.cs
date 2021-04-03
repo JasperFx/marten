@@ -11,7 +11,7 @@ using Marten.Schema;
 using Marten.Schema.Arguments;
 using Npgsql;
 using NpgsqlTypes;
-
+#nullable enable
 namespace Marten.Util
 {
     public static class CommandExtensions
@@ -105,7 +105,7 @@ namespace Marten.Util
             return list;
         }
 
-        public static void AddParameters(this NpgsqlCommand command, object parameters)
+        public static void AddParameters(this NpgsqlCommand command, object? parameters)
         {
             if (parameters == null)
                 return;
@@ -165,7 +165,7 @@ namespace Marten.Util
             return command;
         }
 
-        public static NpgsqlCommand With(this NpgsqlCommand command, string name, string value)
+        public static NpgsqlCommand With(this NpgsqlCommand command, string name, string? value)
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;

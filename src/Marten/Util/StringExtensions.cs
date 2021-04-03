@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json.Serialization;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Util
 {
     public static class StringExtensionMethods

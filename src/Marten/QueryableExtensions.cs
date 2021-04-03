@@ -7,9 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-using Marten.Linq.Includes;
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     public static class QueryableExtensions
@@ -22,7 +21,7 @@ namespace Marten
         /// <param name="configureExplain"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static QueryPlan Explain<T>(this IQueryable<T> queryable, Action<IConfigureExplainExpressions> configureExplain = null)
+        public static QueryPlan Explain<T>(this IQueryable<T> queryable, Action<IConfigureExplainExpressions>? configureExplain = null)
         {
             return queryable.As<IMartenQueryable<T>>().Explain(configureExplain: configureExplain);
         }
@@ -191,7 +190,7 @@ namespace Marten
             return source.Where(predicate).FirstAsync(token);
         }
 
-        public static Task<TSource> FirstOrDefaultAsync<TSource>(
+        public static Task<TSource?> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
@@ -201,7 +200,7 @@ namespace Marten
             return source.As<IMartenQueryable>().FirstOrDefaultAsync<TSource>(token);
         }
 
-        public static Task<TSource> FirstOrDefaultAsync<TSource>(
+        public static Task<TSource?> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))
@@ -241,7 +240,7 @@ namespace Marten
             return source.Where(predicate).SingleAsync(token);
         }
 
-        public static Task<TSource> SingleOrDefaultAsync<TSource>(
+        public static Task<TSource?> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             CancellationToken token = default(CancellationToken))
         {
@@ -251,7 +250,7 @@ namespace Marten
             return source.As<IMartenQueryable>().SingleOrDefaultAsync<TSource>(token);
         }
 
-        public static Task<TSource> SingleOrDefaultAsync<TSource>(
+        public static Task<TSource?> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
             CancellationToken token = default(CancellationToken))

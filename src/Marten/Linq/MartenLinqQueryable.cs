@@ -19,6 +19,7 @@ using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 
+#nullable enable
 namespace Marten.Linq
 {
     internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>
@@ -47,7 +48,7 @@ namespace Marten.Linq
 
         public MartenLinqQueryProvider MartenProvider { get; }
 
-        internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase op = null)
+        internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase? op = null)
         {
             var builder = new LinqHandlerBuilder(MartenProvider, _session, Expression, op);
             return builder.BuildHandler<TResult>();
@@ -99,9 +100,9 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOperator);
         }
 
-        public Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token)
+        public Task<TResult?> FirstOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOrDefaultOperator);
+            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOrDefaultOperator)!;
         }
 
         public Task<TResult> SingleAsync<TResult>(CancellationToken token)
@@ -109,9 +110,9 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOperator);
         }
 
-        public Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token)
+        public Task<TResult?> SingleOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOrDefaultOperator);
+            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOrDefaultOperator)!;
         }
 
         public Task<TResult> SumAsync<TResult>(CancellationToken token)
@@ -150,7 +151,7 @@ namespace Marten.Linq
         }
 
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany,
-            Action<IConfigureExplainExpressions> configureExplain = null)
+            Action<IConfigureExplainExpressions>? configureExplain = null)
         {
             var command = ToPreviewCommand(fetchType);
 

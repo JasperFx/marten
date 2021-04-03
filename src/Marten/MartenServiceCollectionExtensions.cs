@@ -5,7 +5,7 @@ using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
+#nullable enable
 namespace Marten
 {
     public static class MartenServiceCollectionExtensions

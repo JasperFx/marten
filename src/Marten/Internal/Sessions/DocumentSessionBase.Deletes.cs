@@ -4,6 +4,7 @@ using Marten.Exceptions;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase
