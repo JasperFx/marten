@@ -54,13 +54,13 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        public override void SkipEventSequence(long eventSequence)
+        public override async ValueTask SkipEventSequence(long eventSequence)
         {
             reset();
             Range.SkipEventSequence(eventSequence);
 
-            using var session = _store.QuerySession();
-            Groups = _runtime.Slicer.Slice(session, Range.Events, _store.Tenancy);
+            await using var session = _store.QuerySession();
+            Groups = await _runtime.Slicer.Slice(session, Range.Events, _store.Tenancy);
         }
     }
 }

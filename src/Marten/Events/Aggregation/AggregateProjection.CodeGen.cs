@@ -393,7 +393,7 @@ namespace Marten.Events.Aggregation
             return eventTypes;
         }
 
-        internal override EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
+        internal override ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
         {
             _runtime ??= BuildRuntime(store);
 

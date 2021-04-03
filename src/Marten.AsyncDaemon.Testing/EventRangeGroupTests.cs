@@ -89,7 +89,7 @@ namespace Marten.AsyncDaemon.Testing
             throw new System.NotImplementedException();
         }
 
-        public override void SkipEventSequence(long eventSequence)
+        public override ValueTask SkipEventSequence(long eventSequence)
         {
             throw new System.NotImplementedException();
         }

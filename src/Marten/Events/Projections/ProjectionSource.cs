@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Storage;
 #nullable enable
@@ -78,14 +79,14 @@ namespace Marten.Events.Projections
 
         private IProjection? _projection;
 
-        internal virtual EventRangeGroup GroupEvents(
+        internal virtual ValueTask<EventRangeGroup> GroupEvents(
             DocumentStore store,
             EventRange range,
             CancellationToken cancellationToken)
         {
             _projection ??= Build(store);
 
-            return new TenantedEventRange(store, _projection, range, cancellationToken);
+            return new ValueTask<EventRangeGroup>(new TenantedEventRange(store, _projection, range, cancellationToken));
         }
     }
 }

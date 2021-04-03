@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
@@ -15,7 +16,7 @@ namespace Marten.Events.Projections
     /// </summary>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TId"></typeparam>
-    public abstract class ViewProjection<TDoc, TId> : AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
+    public abstract class ViewProjection<TDoc, TId>: AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
     {
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
         private readonly List<IFanOutRule> _fanouts = new();
@@ -55,18 +56,22 @@ namespace Marten.Events.Projections
             _fanouts.Add(fanout);
         }
 
-        IReadOnlyList<EventSlice<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession,
+            IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return _eventSlicer != null ? _eventSlicer.Slice(querySession, streams, tenancy) : Slice(streams, tenancy).ToList();
+            return _eventSlicer?.Slice(querySession, streams, tenancy) ??
+                   new ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>>(Slice(streams, tenancy).ToList());
         }
 
-        IReadOnlyList<TenantSliceGroup<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
+        ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession,
+            IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             if (_eventSlicer != null)
                 return _eventSlicer.Slice(querySession, events, tenancy);
 
             var tenantGroups = events.GroupBy(x => x.TenantId);
-            return tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();
+            var slices = tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();
+            return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>>(slices);
         }
 
 
