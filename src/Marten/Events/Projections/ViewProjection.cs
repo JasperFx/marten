@@ -18,7 +18,8 @@ namespace Marten.Events.Projections
     public abstract class ViewProjection<TDoc, TId> : AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
     {
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
-        private readonly List<IFanOutRule> _fanouts = new List<IFanOutRule>();
+        private readonly List<IFanOutRule> _fanouts = new();
+        private IEventSlicer<TDoc, TId> _eventSlicer;
 
         protected ViewProjection()
         {
@@ -37,6 +38,8 @@ namespace Marten.Events.Projections
             _groupers.Add(grouper);
         }
 
+        public void EventSlicer(IEventSlicer<TDoc, TId> eventSlicer) => _eventSlicer = eventSlicer;
+
         protected override void specialAssertValid()
         {
             if (!_groupers.Any())
@@ -54,11 +57,14 @@ namespace Marten.Events.Projections
 
         IReadOnlyList<EventSlice<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return Slice(streams, tenancy).ToList();
+            return _eventSlicer != null ? _eventSlicer.Slice(streams, tenancy) : Slice(streams, tenancy).ToList();
         }
 
         IReadOnlyList<TenantSliceGroup<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
+            if (_eventSlicer != null)
+                return _eventSlicer.Slice(events, tenancy);
+
             var tenantGroups = events.GroupBy(x => x.TenantId);
             return tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();
         }
