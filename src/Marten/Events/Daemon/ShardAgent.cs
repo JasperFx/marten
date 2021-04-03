@@ -415,10 +415,5 @@ namespace Marten.Events.Daemon
         }
 
         public long Position { get; private set; }
-
-
-
-
-
     }
 }

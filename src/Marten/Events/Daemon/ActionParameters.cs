@@ -72,7 +72,6 @@ namespace Marten.Events.Daemon
 
         public void ApplySkip(SkipEvent skip)
         {
-
             Group?.SkipEventSequence(skip.Event.Sequence);
 
             // You have to reset the CancellationToken for the group

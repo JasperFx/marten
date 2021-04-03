@@ -58,7 +58,9 @@ namespace Marten.Events.Aggregation
         {
             reset();
             Range.SkipEventSequence(eventSequence);
-            Groups = _runtime.Slicer.Slice(Range.Events, _store.Tenancy);
+
+            using var session = _store.QuerySession();
+            Groups = _runtime.Slicer.Slice(session, Range.Events, _store.Tenancy);
         }
     }
 }
