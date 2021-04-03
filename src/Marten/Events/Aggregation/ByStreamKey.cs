@@ -7,7 +7,7 @@ namespace Marten.Events.Aggregation
 {
     internal class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
     {
-        public IReadOnlyList<EventSlice<TDoc, string>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public IReadOnlyList<EventSlice<TDoc, string>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
             return streams.Select(s =>
             {
@@ -16,7 +16,7 @@ namespace Marten.Events.Aggregation
             }).ToList();
         }
 
-        public IReadOnlyList<TenantSliceGroup<TDoc, string>> Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
+        public IReadOnlyList<TenantSliceGroup<TDoc, string>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             var list = new List<TenantSliceGroup<TDoc, string>>();
             var byTenant = events.GroupBy(x => x.TenantId);

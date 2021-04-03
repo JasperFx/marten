@@ -37,7 +37,7 @@ namespace Marten.AsyncDaemon.Testing
 
             var projection = (IEventSlicer<Day, int>)new DayProjection();
 
-            var slices = projection.Slice(allEvents, theStore.Tenancy)
+            var slices = projection.Slice(theSession, allEvents, theStore.Tenancy)
                 .SelectMany(x => x.Slices).ToArray();
 
             foreach (var slice in slices)

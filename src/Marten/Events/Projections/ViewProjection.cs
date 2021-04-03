@@ -55,15 +55,15 @@ namespace Marten.Events.Projections
             _fanouts.Add(fanout);
         }
 
-        IReadOnlyList<EventSlice<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
+        IReadOnlyList<EventSlice<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return _eventSlicer != null ? _eventSlicer.Slice(streams, tenancy) : Slice(streams, tenancy).ToList();
+            return _eventSlicer != null ? _eventSlicer.Slice(querySession, streams, tenancy) : Slice(streams, tenancy).ToList();
         }
 
-        IReadOnlyList<TenantSliceGroup<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IReadOnlyList<IEvent> events, ITenancy tenancy)
+        IReadOnlyList<TenantSliceGroup<TDoc, TId>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             if (_eventSlicer != null)
-                return _eventSlicer.Slice(events, tenancy);
+                return _eventSlicer.Slice(querySession, events, tenancy);
 
             var tenantGroups = events.GroupBy(x => x.TenantId);
             return tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();

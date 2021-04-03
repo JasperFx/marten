@@ -580,6 +580,27 @@ namespace Marten.Internal.Sessions
             return ExecuteHandlerAsync(handler, token);
         }
 
+        private Dictionary<string, NestedTenantQuerySession> _byTenant;
+
+        public ITenantQueryOperations ForTenant(string tenantId)
+        {
+            if (_byTenant == null)
+            {
+                _byTenant = new Dictionary<string, NestedTenantQuerySession>();
+            }
+
+            if (_byTenant.TryGetValue(tenantId, out var tenantSession))
+            {
+                return tenantSession;
+            }
+
+            var tenant = Options.Tenancy[tenantId];
+            tenantSession = new NestedTenantQuerySession(this, tenant);
+            _byTenant[tenantId] = tenantSession;
+
+            return tenantSession;
+        }
+
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
             var cmd = this.BuildCommand(handler);
