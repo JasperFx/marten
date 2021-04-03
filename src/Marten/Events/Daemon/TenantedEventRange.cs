@@ -43,11 +43,12 @@ namespace Marten.Events.Daemon
             }
         }
 
-        public override void SkipEventSequence(long eventSequence)
+        public override ValueTask SkipEventSequence(long eventSequence)
         {
             Range.SkipEventSequence(eventSequence);
             Groups.Clear();
             buildGroups();
+            return default;
         }
 
         public IList<TenantActionGroup> Groups { get; } = new List<TenantActionGroup>();

@@ -37,10 +37,9 @@ namespace Marten.AsyncDaemon.Testing
 
             var projection = (IEventSlicer<Day, int>)new DayProjection();
 
-            var slices = projection.Slice(theSession, allEvents, theStore.Tenancy)
-                .SelectMany(x => x.Slices).ToArray();
+            var slices = await projection.Slice(theSession, allEvents, theStore.Tenancy);
 
-            foreach (var slice in slices)
+            foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
             {
                 slice.Events.All(x => x.Data is IDayEvent || x.Data is Movement).ShouldBeTrue();
                 slice.Events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
@@ -64,8 +63,6 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task run_end_to_end()
         {
-
-
             StoreOptions(x => x.Events.Projections.Add(new DayProjection()));
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Day));

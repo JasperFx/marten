@@ -242,21 +242,19 @@ namespace Marten.Events.Daemon
 
             EventRangeGroup group = null;
 
-            await TryAction(() =>
+            await TryAction(async () =>
             {
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
                     _logger.LogDebug("Shard '{ShardName}':Starting to group {Range}", Name, range);
                 }
 
-                group = _source.GroupEvents(_store, range, _cancellation);
+                group = await _source.GroupEvents(_store, range, _cancellation);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
                     _logger.LogDebug("Shard '{ShardName}': successfully grouped {Range}", Name, range);
                 }
-
-                return Task.CompletedTask;
 
             }, _cancellation, (logger, e) =>
             {

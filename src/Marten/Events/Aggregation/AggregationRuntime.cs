@@ -19,7 +19,7 @@ namespace Marten.Events.Aggregation
     /// </summary>
     public interface IAggregationRuntime : IProjection
     {
-        EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
+        ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ namespace Marten.Events.Aggregation
                 .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
                 .ToArray();
 
-            var slices = Slicer.Slice(operations, filteredStreams, Tenancy);
+            var slices = await Slicer.Slice(operations, filteredStreams, Tenancy);
 
             var martenSession = (DocumentSessionBase)operations;
             foreach (var slice in slices)
@@ -135,13 +135,13 @@ namespace Marten.Events.Aggregation
             }
         }
 
-        public EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
+        public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
         {
             IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups;
 
             using (var session = store.QuerySession())
             {
-                groups = Slicer.Slice(session, range.Events, store.Tenancy);
+                groups = await Slicer.Slice(session, range.Events, store.Tenancy);
             }
 
             return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);

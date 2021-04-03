@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Events.Projections;
 using Marten.Storage;
 #nullable enable
@@ -7,16 +8,16 @@ namespace Marten.Events.Aggregation
 {
     internal class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
     {
-        public IReadOnlyList<EventSlice<TDoc, string>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return streams.Select(s =>
+            return new(streams.Select(s =>
             {
                 var tenant = tenancy[s.TenantId];
                 return new EventSlice<TDoc, string>(s.Key!, tenant, s.Events);
-            }).ToList();
+            }).ToList());
         }
 
-        public IReadOnlyList<TenantSliceGroup<TDoc, string>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
+        public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             var list = new List<TenantSliceGroup<TDoc, string>>();
             var byTenant = events.GroupBy(x => x.TenantId);
@@ -34,7 +35,7 @@ namespace Marten.Events.Aggregation
                 list.Add(group);
             }
 
-            return list;
+            return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>>(list);
         }
 
     }
