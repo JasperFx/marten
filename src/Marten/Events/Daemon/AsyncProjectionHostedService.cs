@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -12,22 +13,37 @@ namespace Marten.Events.Daemon
     /// </summary>
     public class AsyncProjectionHostedService : IHostedService
     {
-        private readonly IProjectionDaemon _agent;
-        private readonly INodeCoordinator _coordinator;
+        private readonly IDocumentStore _store;
         private readonly ILogger<AsyncProjectionHostedService> _logger;
 
-        public AsyncProjectionHostedService(IProjectionDaemon agent, INodeCoordinator coordinator, ILogger<AsyncProjectionHostedService> logger)
+        public AsyncProjectionHostedService(IDocumentStore store, ILogger<AsyncProjectionHostedService> logger)
         {
-            _agent = agent;
-            _coordinator = coordinator;
+            _store = store;
             _logger = logger;
         }
 
+        internal IProjectionDaemon Agent { get; private set; }
+
+        internal INodeCoordinator Coordinator { get; private set; }
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            switch (_store.Options.Events.Daemon.Mode)
+            {
+                case DaemonMode.Disabled:
+                    return;
+                case DaemonMode.Solo:
+                    Coordinator = new SoloCoordinator();
+                    break;
+                case DaemonMode.HotCold:
+                    Coordinator = new HotColdCoordinator(_store, (DaemonSettings) _store.Options.Events.Daemon, _logger);
+                    break;
+            }
+
             try
             {
-                await _coordinator.Start(_agent, cancellationToken);
+                Agent = _store.BuildProjectionDaemon(_logger);
+                await Coordinator.Start(Agent, cancellationToken);
             }
             catch (Exception e)
             {
@@ -40,8 +56,8 @@ namespace Marten.Events.Daemon
         {
             try
             {
-                await _coordinator.Stop();
-                await _agent.StopAll();
+                await Coordinator.Stop();
+                await Agent.StopAll();
             }
             catch (Exception e)
             {

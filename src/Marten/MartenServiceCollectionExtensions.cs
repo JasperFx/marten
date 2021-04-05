@@ -49,42 +49,7 @@ namespace Marten
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
 
-            switch (options.Events.Daemon.Mode)
-            {
-                case DaemonMode.Disabled:
-                    // Nothing
-                    break;
-
-                case DaemonMode.Solo:
-                    services.AddSingleton<INodeCoordinator, SoloCoordinator>();
-                    services.AddSingleton(x=>
-                        x.GetRequiredService<IDocumentStore>()
-                            .BuildProjectionDaemon(x.GetRequiredService<ILogger<IProjectionDaemon>>()));
-                    services.AddHostedService<AsyncProjectionHostedService>();
-                    break;
-
-                case DaemonMode.HotCold:
-                    services.AddSingleton<INodeCoordinator>(s =>
-                    {
-                        var store = (DocumentStore)s.GetRequiredService<IDocumentStore>();
-                        var logger = s.GetRequiredService<ILogger<IProjectionDaemon>>();
-
-                        return new HotColdCoordinator(store, store.Events.Daemon, logger);
-                    });
-                    services.AddSingleton<IProjectionDaemon>(x =>
-                    {
-                        var store = (DocumentStore)x.GetRequiredService<IDocumentStore>();
-                        var logger = x.GetRequiredService<ILogger<IProjectionDaemon>>();
-                        var coordinator = (HotColdCoordinator)x.GetRequiredService<INodeCoordinator>();
-                        var detector = new HighWaterDetector(coordinator, store.Events);
-
-                        return new ProjectionDaemon(store, detector, logger);
-                    });
-
-                    services.AddHostedService<AsyncProjectionHostedService>();
-                    break;
-
-            }
+            services.AddHostedService<AsyncProjectionHostedService>();
 
             return new MartenConfigurationExpression(services, options);
         }

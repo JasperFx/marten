@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Lamar;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
@@ -21,83 +23,67 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
-        public void when_registering_as_disabled()
+        public async Task when_registering_as_disabled()
         {
-            var container = new Container(x =>
+            using var container = new Container(x =>
             {
+                x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
                 x.AddMarten(opts =>
                 {
+                    opts.Connection(ConnectionSource.ConnectionString);
                     opts.Events.Daemon.Mode = DaemonMode.Disabled;
                 });
             });
 
-            // No hosted service
-            container.Model.For<IHostedService>().Instances.Any()
-                .ShouldBeFalse();
+            var service = container.GetInstance<AsyncProjectionHostedService>();
+            await service.StartAsync(CancellationToken.None);
 
-            // No Node coordinator
-            container.Model.For<INodeCoordinator>().Instances.Any()
-                .ShouldBeFalse();
+            service.Agent.ShouldBeNull();
 
-            // No projection daemon
-            container.Model.For<IProjectionDaemon>().Instances.Any()
-                .ShouldBeFalse();
         }
 
         [Fact]
-        public void when_registering_as_solo()
+        public async Task when_registering_as_solo()
         {
             var container = new Container(x =>
             {
                 x.AddMarten(opts =>
                 {
-                    opts.Connection("fake-connection-string");
+                    opts.Connection(ConnectionSource.ConnectionString);
                     opts.Events.Daemon.Mode = DaemonMode.Solo;
                 });
                 x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             });
 
-            // Hosted service
-            container.Model.For<IHostedService>().Instances
-                .ShouldContain(x => x.ImplementationType == typeof(AsyncProjectionHostedService));
+            var service = container.GetInstance<AsyncProjectionHostedService>();
+            await service.StartAsync(CancellationToken.None);
 
-            // Node coordinator
-            container.Model.For<INodeCoordinator>().Instances.Single()
-                .ImplementationType.ShouldBe(typeof(SoloCoordinator));
+            service.Agent.ShouldNotBeNull();
+            service.Coordinator.ShouldBeOfType<SoloCoordinator>();
 
-            // Projection Daemon
-            container.GetInstance<IProjectionDaemon>().ShouldBeOfType<ProjectionDaemon>();
-
-            // Ensure resolution
-            container.GetInstance<AsyncProjectionHostedService>().ShouldNotBeNull();
+            await service.StopAsync(CancellationToken.None);
         }
 
         [Fact]
-        public void when_registering_as_HotCold()
+        public async Task when_registering_as_HotCold()
         {
             var container = new Container(x =>
             {
                 x.AddMarten(opts =>
                 {
-                    opts.Connection("fake-connection-string");
+                    opts.Connection(ConnectionSource.ConnectionString);
                     opts.Events.Daemon.Mode = DaemonMode.HotCold;
                 });
                 x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             });
 
-            // hosted service
-            container.Model.For<IHostedService>().Instances
-                .ShouldContain(x => x.ImplementationType == typeof(AsyncProjectionHostedService));
+            var service = container.GetInstance<AsyncProjectionHostedService>();
+            await service.StartAsync(CancellationToken.None);
 
-            // Node coordinator
-            container.GetInstance<INodeCoordinator>()
-                .ShouldBeOfType<HotColdCoordinator>();
+            service.Agent.ShouldNotBeNull();
+            service.Coordinator.ShouldBeOfType<HotColdCoordinator>();
 
-            // Projection Daemon
-            container.GetInstance<IProjectionDaemon>().ShouldBeOfType<ProjectionDaemon>();
-
-            // Ensure resolution
-            container.GetInstance<AsyncProjectionHostedService>().ShouldNotBeNull();
+            await service.StopAsync(CancellationToken.None);
         }
 
     }
