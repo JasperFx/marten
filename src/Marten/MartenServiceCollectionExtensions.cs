@@ -34,9 +34,25 @@ namespace Marten
         /// <returns></returns>
         public static MartenConfigurationExpression AddMarten(this IServiceCollection services, StoreOptions options)
         {
+            services.AddMarten(s => options);
+            return new MartenConfigurationExpression(services, options);
+        }
+
+        /// <summary>
+        /// Add Marten IDocumentStore, IDocumentSession, and IQuerySession service registrations
+        /// to your application by configuring a StoreOptions using services in your DI container
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="options">The Marten configuration for this application</param>
+        /// <returns></returns>
+        public static MartenConfigurationExpression AddMarten(this IServiceCollection services, Func<IServiceProvider, StoreOptions> optionSource)
+        {
+            services.AddSingleton<StoreOptions>(optionSource);
+
             services.AddSingleton<IDocumentStore>(s =>
             {
                 var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
+                var options = s.GetRequiredService<StoreOptions>();
                 options.Logger(new DefaultMartenLogger(logger));
 
                 return new DocumentStore(options);
@@ -51,7 +67,7 @@ namespace Marten
 
             services.AddHostedService<AsyncProjectionHostedService>();
 
-            return new MartenConfigurationExpression(services, options);
+            return new MartenConfigurationExpression(services, null);
         }
 
         /// <summary>
@@ -115,6 +131,10 @@ namespace Marten
             /// <returns></returns>
             public IDocumentStore InitializeStore()
             {
+                if (_options == null)
+                    throw new InvalidOperationException(
+                        "This operation is not valid when the StoreOptions is built by Func<IServiceProvider, StoreOptions>");
+
                 var store = new DocumentStore(_options);
                 _services.AddSingleton<IDocumentStore>(store);
 
