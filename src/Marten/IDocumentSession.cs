@@ -50,7 +50,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="document"></param>
-        void Eject<T>(T document);
+        void Eject<T>(T document) where T : notnull;
 
         /// <summary>
         /// Completely remove all the documents of given type from this session's unit of work tracking and identity map caching

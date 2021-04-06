@@ -7,7 +7,7 @@ namespace Marten.Internal
 {
     public interface IProviderGraph
     {
-        DocumentProvider<T> StorageFor<T>();
+        DocumentProvider<T> StorageFor<T>() where T : notnull;
     }
 
     internal static class ProviderGraphExtensions
@@ -22,7 +22,7 @@ namespace Marten.Internal
             IDocumentStorage Find(IProviderGraph providers);
         }
 
-        private class StorageFinder<T>: IStorageFinder
+        private class StorageFinder<T>: IStorageFinder where T : notnull
         {
             public IDocumentStorage Find(IProviderGraph providers)
             {

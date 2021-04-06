@@ -16,10 +16,8 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using Npgsql;
 using Remotion.Linq.Clauses;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public class BatchedQuery: IBatchedQuery, IBatchEvents
@@ -165,7 +163,7 @@ namespace Marten.Services.BatchQuerying
             return item.Result;
         }
 
-        private Task<T> load<T, TId>(TId id) where T : class
+        private Task<T> load<T, TId>(TId id) where T : class where TId : notnull
         {
             var storage = _parent.StorageFor<T>();
             if (storage is IDocumentStorage<T, TId> s)

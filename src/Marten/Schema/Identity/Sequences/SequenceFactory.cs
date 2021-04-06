@@ -67,7 +67,7 @@ namespace Marten.Schema.Identity.Sequences
         private string GetSequenceName(Type documentType, HiloSettings settings)
         {
             if (!string.IsNullOrEmpty(settings.SequenceName))
-                return settings.SequenceName;
+                return settings.SequenceName!;
             return documentType.Name;
         }
 

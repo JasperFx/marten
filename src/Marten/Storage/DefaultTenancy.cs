@@ -53,7 +53,7 @@ namespace Marten.Storage
 
         public string TenantId { get; }
 
-        public IDocumentStorage<T> StorageFor<T>()
+        public IDocumentStorage<T> StorageFor<T>() where T : notnull
         {
             return _inner.StorageFor<T>();
         }

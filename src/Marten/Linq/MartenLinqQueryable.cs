@@ -155,7 +155,7 @@ namespace Marten.Linq
         {
             var command = ToPreviewCommand(fetchType);
 
-            return _session.Database.ExplainQuery(_session.Serializer, command, configureExplain);
+            return _session.Database.ExplainQuery(_session.Serializer, command, configureExplain)!;
         }
 
         public IQueryable<TDoc> TransformTo<TDoc>(string transformName)
@@ -163,14 +163,14 @@ namespace Marten.Linq
             return this.Select(x => x.TransformTo<T, TDoc>(transformName));
         }
 
-       public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+       public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
         {
             var include = BuildInclude(idSource, callback);
             MartenProvider.AllIncludes.Add(include);
             return this;
         }
 
-        internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+        internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
         {
             var storage = (IDocumentStorage<TInclude>) _session.StorageFor(typeof(TInclude));
             var identityField = _session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
@@ -179,13 +179,13 @@ namespace Marten.Linq
             return include;
         }
 
-        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list) where TInclude : notnull
         {
             return Include<TInclude>(idSource, list.Add);
         }
 
         internal IIncludePlan BuildInclude<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary)
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey: notnull
         {
             var storage = (IDocumentStorage<TInclude>)_session.StorageFor(typeof(TInclude));
 
@@ -208,7 +208,7 @@ namespace Marten.Linq
         }
 
         public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary)
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
         {
             var include = BuildInclude(idSource, dictionary);
             MartenProvider.AllIncludes.Add(include);

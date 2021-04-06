@@ -295,7 +295,7 @@ namespace Marten
         /// <returns></returns>
         public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
-            Action<TInclude> callback)
+            Action<TInclude> callback) where TInclude : notnull
         {
             return queryable.As<MartenLinqQueryable<T>>().Include(idSource, callback);
         }
@@ -312,7 +312,7 @@ namespace Marten
         /// <returns></returns>
         public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
-            IList<TInclude> list)
+            IList<TInclude> list) where TInclude : notnull
         {
             return queryable.As<MartenLinqQueryable<T>>().Include(idSource, list);
         }
@@ -330,7 +330,7 @@ namespace Marten
         /// <returns></returns>
         public static IMartenQueryable<T> Include<T, TKey, TInclude>(this IQueryable<T> queryable,
             Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary)
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
         {
             return queryable.As<MartenLinqQueryable<T>>()
                 .Include(idSource, dictionary);

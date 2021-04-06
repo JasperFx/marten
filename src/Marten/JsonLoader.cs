@@ -32,7 +32,7 @@ namespace Marten
             return findJsonByIdAsync<T, int>(id, token);
         }
 
-        private string? findJsonById<T, TId>(TId id) where TId : notnull
+        private string? findJsonById<T, TId>(TId id) where T : notnull where TId : notnull
         {
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.Tenant);
@@ -40,7 +40,7 @@ namespace Marten
             return _session.Database.LoadOne(command, LinqConstants.StringValueSelector);
         }
 
-        private Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token) where TId : notnull
+        private Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token) where T : notnull where TId : notnull
         {
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.Tenant);

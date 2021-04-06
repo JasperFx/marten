@@ -27,7 +27,7 @@ namespace Marten.Internal
         void MarkAsAddedForStorage(object id, object document);
 
         void MarkAsDocumentLoaded(object id, object document);
-        IDocumentStorage<T> StorageFor<T>();
+        IDocumentStorage<T> StorageFor<T>() where T : notnull; 
 
         IEventStorage EventStorage();
 

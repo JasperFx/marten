@@ -70,12 +70,12 @@ namespace Marten.Linq
 
     public interface IMartenQueryable<T>: IQueryable<T>, IMartenQueryable
     {
-        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback);
+        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull;
 
-        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list);
+        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list) where TInclude : notnull;
 
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary);
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull;
 
         IMartenQueryable<T> Stats(out QueryStatistics stats);
 

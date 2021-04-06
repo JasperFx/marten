@@ -10,7 +10,7 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Remotion.Linq;
-
+#nullable enable
 namespace Marten.Internal.Storage
 {
     public interface IDocumentStorage : ISelectClause
@@ -23,7 +23,7 @@ namespace Marten.Internal.Storage
 
         IFieldMapping Fields { get; }
 
-        ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query);
+        ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query);
 
         ISqlFragment DefaultWhereFragment();
 
@@ -37,7 +37,7 @@ namespace Marten.Internal.Storage
         TenancyStyle TenancyStyle { get; }
     }
 
-    public interface IDocumentStorage<T> : IDocumentStorage
+    public interface IDocumentStorage<T> : IDocumentStorage where T : notnull
     {
         object IdentityFor(T document);
 
@@ -63,7 +63,7 @@ namespace Marten.Internal.Storage
         IDeletion HardDeleteForDocument(T document, ITenant tenant);
     }
 
-    public interface IDocumentStorage<T, TId> : IDocumentStorage<T>
+    public interface IDocumentStorage<T, TId> : IDocumentStorage<T> where T : notnull where TId : notnull
     {
         /// <summary>
         /// Assign the given identity to the document
@@ -74,8 +74,8 @@ namespace Marten.Internal.Storage
 
         IDeletion DeleteForId(TId id, ITenant tenant);
 
-        T Load(TId id, IMartenSession session);
-        Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+        T? Load(TId id, IMartenSession session);
+        Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
         IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
         Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
