@@ -15,6 +15,8 @@ namespace Marten.Testing
         private readonly Options _options
             = new(dateFormat: DateTimeFormat.ISO8601, includeInherited:true);
 
+        public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
+
         public string ToJson(object document)
         {
             return JSON.Serialize(document, _options);

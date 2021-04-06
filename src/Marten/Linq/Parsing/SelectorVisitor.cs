@@ -9,10 +9,12 @@ namespace Marten.Linq.Parsing
         public class SelectorVisitor: ExpressionVisitor
         {
             private readonly LinqHandlerBuilder _parent;
+            private ISerializer _serializer;
 
             public SelectorVisitor(LinqHandlerBuilder parent)
             {
                 _parent = parent;
+                _serializer = parent._session.Serializer;
             }
 
             protected override Expression VisitUnary(UnaryExpression node)
@@ -29,13 +31,13 @@ namespace Marten.Linq.Parsing
 
             protected override Expression VisitMemberInit(MemberInitExpression node)
             {
-                _parent.CurrentStatement.ToSelectTransform(node);
+                _parent.CurrentStatement.ToSelectTransform(node, _serializer);
                 return null;
             }
 
             protected override Expression VisitNew(NewExpression node)
             {
-                _parent.CurrentStatement.ToSelectTransform(node);
+                _parent.CurrentStatement.ToSelectTransform(node, _serializer);
                 return null;
             }
 

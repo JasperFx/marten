@@ -121,6 +121,8 @@ namespace Marten.Services
             return JsonSerializer.Serialize(document, _withTypes);
         }
 
+        public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
+
         /// <inheritdoc />
         public EnumStorage EnumStorage
         {

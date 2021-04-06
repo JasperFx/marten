@@ -15,11 +15,11 @@ namespace Marten.Linq.Parsing
         private TargetObject _target;
         private SelectedField _currentField;
 
-        public SelectTransformBuilder(Expression @clause, IFieldMapping fields)
+        public SelectTransformBuilder(Expression clause, IFieldMapping fields, ISerializer serializer)
         {
             // ReSharper disable once VirtualMemberCallInConstructor
             Visit(@clause);
-            SelectedFieldExpression = _target.ToSelectField(fields);
+            SelectedFieldExpression = _target.ToSelectField(fields, serializer);
         }
 
         public string SelectedFieldExpression { get; }
@@ -75,9 +75,9 @@ namespace Marten.Linq.Parsing
                 return setter.Field;
             }
 
-            public string ToSelectField(IFieldMapping fields)
+            public string ToSelectField(IFieldMapping fields, ISerializer serializer)
             {
-                var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(fields)).Join(", ");
+                var jsonBuildObjectArgs = _setters.Select(x => x.ToJsonBuildObjectPair(fields, serializer)).Join(", ");
                 return $"jsonb_build_object({jsonBuildObjectArgs})";
             }
 
@@ -91,10 +91,12 @@ namespace Marten.Linq.Parsing
                 private string Name { get; }
                 public SelectedField Field { get; } = new SelectedField();
 
-                public string ToJsonBuildObjectPair(IFieldMapping mapping)
+                public string ToJsonBuildObjectPair(IFieldMapping mapping, ISerializer serializer)
                 {
                     var field = mapping.FieldFor(Field.ToArray());
-                    var locator = field.RawLocator ?? field.TypedLocator;
+                    var locator = serializer.ValueCasting == ValueCasting.Relaxed
+                        ? field.RawLocator ?? field.TypedLocator
+                        : field.TypedLocator;
 
                     return $"'{Name}', {locator}";
                 }

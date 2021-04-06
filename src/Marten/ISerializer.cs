@@ -6,7 +6,30 @@ using System.Threading.Tasks;
 
 namespace Marten
 {
+
+
     #region sample_ISerializer
+
+    /// <summary>
+    /// When selecting data through Linq Select() transforms,
+    /// should the data elements returned from Postgresql be
+    /// cast to their raw types or simple strings
+    /// </summary>
+    public enum ValueCasting
+    {
+        /// <summary>
+        /// Json fields will be returned with their values cast to
+        /// the proper type. I.e., {"number": 1}
+        /// </summary>
+        Strict,
+
+        /// <summary>
+        /// Json fields will be returned with their values in simple
+        /// string values. I.e., {"number": "1"}
+        /// </summary>
+        Relaxed
+    }
+
     public interface ISerializer
     {
         /// <summary>
@@ -83,6 +106,11 @@ namespace Marten
         /// <param name="document"></param>
         /// <returns></returns>
         string ToJsonWithTypes(object document);
+        
+        /// <summary>
+        /// Controls how the Linq Select() behavior needs to work in the database
+        /// </summary>
+        ValueCasting ValueCasting { get; }
     }
 
     #endregion sample_ISerializer

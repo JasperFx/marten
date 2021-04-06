@@ -260,5 +260,7 @@ namespace Marten.Services
                 _clean.ContractResolver = new JsonNetContractResolver(Casing, CollectionStorage, _nonPublicMembersStorage);
             }
         }
+
+        public ValueCasting ValueCasting { get; } = ValueCasting.Relaxed;
     }
 }

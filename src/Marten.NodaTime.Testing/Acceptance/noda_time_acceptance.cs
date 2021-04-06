@@ -212,6 +212,8 @@ namespace Marten.NodaTime.Testing.Acceptance
                 throw new NotImplementedException();
             }
 
+            public ValueCasting ValueCasting { get; } = ValueCasting.Relaxed;
+
             public T FromJson<T>(Stream stream)
             {
                 throw new NotImplementedException();

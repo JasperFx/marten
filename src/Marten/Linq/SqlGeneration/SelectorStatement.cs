@@ -153,9 +153,9 @@ namespace Marten.Linq.SqlGeneration
             ReturnDefaultWhenEmpty = true;
         }
 
-        public void ToSelectTransform(Expression selectExpression)
+        public void ToSelectTransform(Expression selectExpression, ISerializer serializer)
         {
-            var builder = new SelectTransformBuilder(selectExpression, Fields);
+            var builder = new SelectTransformBuilder(selectExpression, Fields, serializer);
             var transformField = builder.SelectedFieldExpression;
 
             SelectClause = typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, transformField, selectExpression.Type);

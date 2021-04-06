@@ -52,7 +52,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new User { FirstName = "Sam" });
             theSession.Store(new User { FirstName = "Tom" });
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             var names = await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync();
             names.ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
