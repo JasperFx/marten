@@ -25,7 +25,7 @@ namespace Marten.Internal.Storage
 
         ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query);
 
-        ISqlFragment DefaultWhereFragment();
+        ISqlFragment? DefaultWhereFragment();
 
         bool UseOptimisticConcurrency { get; }
         IOperationFragment DeleteFragment { get; }

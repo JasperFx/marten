@@ -88,9 +88,9 @@ namespace Marten
         public class MartenConfigurationExpression
         {
             private readonly IServiceCollection _services;
-            private readonly StoreOptions _options;
+            private readonly StoreOptions? _options;
 
-            internal MartenConfigurationExpression(IServiceCollection services, StoreOptions options)
+            internal MartenConfigurationExpression(IServiceCollection services, StoreOptions? options)
             {
                 _services = services;
                 _options = options;
