@@ -126,6 +126,11 @@ namespace Marten.Linq.Fields
 
         public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
+            if (value.Value == null)
+            {
+                return new IsNullFilter(this);
+            }
+
             return new ComparisonFilter(this, new CommandParameter(_parseObject(value), DbType), op);
         }
 
