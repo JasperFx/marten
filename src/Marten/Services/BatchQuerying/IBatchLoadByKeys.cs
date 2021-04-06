@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public interface IBatchLoadByKeys<TDoc> where TDoc : class

@@ -8,10 +8,10 @@ using Marten.Linq.Filters;
 using Marten.Linq.Selectors;
 using Marten.Storage;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Linq.QueryHandlers
 {
-    public class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>>
+    public class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> where T: notnull
     {
         private readonly IDocumentStorage<T> storage;
         private readonly TKey[] _ids;

@@ -1,5 +1,5 @@
 using System;
-
+#nullable enable
 namespace Marten.Events
 {
     // TODO -- make the properties on the interface all be get only?
@@ -37,7 +37,7 @@ namespace Marten.Events
         ///     If using strings as the stream identifier, this will refer
         ///     to the containing Stream's Id
         /// </summary>
-        string StreamKey { get; set; }
+        string? StreamKey { get; set; }
 
         /// <summary>
         ///     The UTC time that this event was originally captured
@@ -47,7 +47,7 @@ namespace Marten.Events
         /// <summary>
         ///     If using multi-tenancy by tenant id
         /// </summary>
-        string TenantId { get; set; }
+        string? TenantId { get; set; }
 
         /// <summary>
         /// The .Net type of the event body
@@ -69,12 +69,12 @@ namespace Marten.Events
 
     #endregion sample_IEvent
 
-    public interface IEvent<out T> : IEvent
+    public interface IEvent<out T> : IEvent where T : notnull
     {
         new T Data { get; }
     }
 
-    internal class Event<T>: IEvent<T>
+    internal class Event<T>: IEvent<T> where T: notnull
     {
         public Event(T data)
         {
@@ -95,9 +95,9 @@ namespace Marten.Events
 
         /// <summary>
         ///     A reference to the stream if the stream
-        ///     identier mode is AsString
+        ///     identifier mode is AsString
         /// </summary>
-        public string StreamKey { get; set; }
+        public string? StreamKey { get; set; }
 
         /// <summary>
         ///     An alternative Guid identifier to identify
@@ -120,21 +120,21 @@ namespace Marten.Events
         /// </summary>
         public DateTimeOffset Timestamp { get; set; }
 
-        public string TenantId { get; set; }
+        public string? TenantId { get; set; }
         #endregion sample_event_metadata
 
         object IEvent.Data => Data;
 
         public Type EventType => typeof(T);
-        public string EventTypeName { get; set; }
-        public string DotNetTypeName { get; set; }
+        public string EventTypeName { get; set; } = null!;
+        public string DotNetTypeName { get; set; } = null!;
 
         protected bool Equals(Event<T> other)
         {
             return Id.Equals(other.Id);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj))
                 return false;

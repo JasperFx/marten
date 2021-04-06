@@ -27,7 +27,7 @@ namespace Marten.Events.Aggregation
 
                 var slices = tenantGroup
                     .GroupBy(x => x.StreamKey)
-                    .Select(x => new EventSlice<TDoc, string>(x.Key, tenant, x));
+                    .Select(x => new EventSlice<TDoc, string>(x.Key!, tenant, x));
 
                 var group = new TenantSliceGroup<TDoc, string>(tenant, slices);
 

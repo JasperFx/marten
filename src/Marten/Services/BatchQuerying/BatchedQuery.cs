@@ -70,7 +70,7 @@ namespace Marten.Services.BatchQuerying
             return new BatchedQueryable<T>(this, _parent.Query<T>());
         }
 
-        public async Task Execute(CancellationToken token = default(CancellationToken))
+        public async Task Execute(CancellationToken token = default)
         {
             if (!_items.Any())
                 return;
@@ -204,9 +204,9 @@ namespace Marten.Services.BatchQuerying
             return addItem<T, T>(queryable, LinqConstants.FirstOperator);
         }
 
-        public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable)
+        public Task<T?> FirstOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return addItem<T, T>(queryable, LinqConstants.FirstOrDefaultOperator);
+            return addItem<T, T?>(queryable, LinqConstants.FirstOrDefaultOperator);
         }
 
         public Task<T> Single<T>(IMartenQueryable<T> queryable)
@@ -214,9 +214,9 @@ namespace Marten.Services.BatchQuerying
             return addItem<T, T>(queryable, LinqConstants.SingleOperator);
         }
 
-        public Task<T> SingleOrDefault<T>(IMartenQueryable<T> queryable)
+        public Task<T?> SingleOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return addItem<T, T>(queryable, LinqConstants.SingleOrDefaultOperator);
+            return addItem<T, T?>(queryable, LinqConstants.SingleOrDefaultOperator);
         }
 
         public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)
