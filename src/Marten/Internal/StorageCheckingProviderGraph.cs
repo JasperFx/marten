@@ -3,7 +3,7 @@ using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Internal
 {
     public class StorageCheckingProviderGraph: IProviderGraph

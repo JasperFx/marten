@@ -86,9 +86,9 @@ namespace Marten.Util
 
             values = GetTypeMapping(npgsqlDbType)?.ClrTypes;
 
-            TypeMemo.Swap(d => d.AddOrUpdate(npgsqlDbType, values));
+            TypeMemo.Swap(d => d.AddOrUpdate(npgsqlDbType, values!));
 
-            return values;
+            return values!;
         }
 
         private static NpgsqlTypeMapping? GetTypeMapping(Type type)
@@ -290,7 +290,7 @@ namespace Marten.Util
 
             if (memberType.IsArray)
             {
-                return GetPgType(memberType.GetElementType(), enumStyle) + "[]";
+                return GetPgType(memberType.GetElementType()!, enumStyle) + "[]";
             }
 
             if (memberType.IsNullable())

@@ -1,4 +1,5 @@
-﻿namespace Marten.Services.Json
+#nullable enable
+namespace Marten.Services.Json
 {
     public enum SerializerType
     {

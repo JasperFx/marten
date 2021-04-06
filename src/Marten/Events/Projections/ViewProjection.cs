@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Projections
 {
     /// <summary>

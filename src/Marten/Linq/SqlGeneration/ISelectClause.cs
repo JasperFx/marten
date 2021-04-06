@@ -3,7 +3,7 @@ using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Linq.SqlGeneration
 {
     public interface ISelectClause

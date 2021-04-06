@@ -4,13 +4,13 @@ using Marten.Internal;
 using Marten.Linq;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Services
 {
     public class Diagnostics: IDiagnostics
     {
         private readonly DocumentStore _store;
-        private Version _postgreSqlVersion;
+        private Version? _postgreSqlVersion;
 
         public Diagnostics(DocumentStore store)
         {
@@ -52,7 +52,7 @@ namespace Marten.Services
             var cmd = PreviewCommand(query);
 
             using var conn = _store.Tenancy.Default.OpenConnection();
-            return conn.ExplainQuery(_store.Serializer, cmd);
+            return conn.ExplainQuery(_store.Serializer, cmd)!;
         }
 
         /// <summary>

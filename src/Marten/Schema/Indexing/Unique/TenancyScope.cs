@@ -1,4 +1,5 @@
-﻿namespace Marten.Schema.Indexing.Unique
+#nullable enable
+namespace Marten.Schema.Indexing.Unique
 {
     public enum TenancyScope
     {

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
     public class SequenceFactory: ISequences

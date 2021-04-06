@@ -12,7 +12,7 @@ using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Util;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>

@@ -10,7 +10,7 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
-
+#nullable enable
 namespace Marten
 {
     internal interface IDocumentMappingBuilder
@@ -107,8 +107,8 @@ namespace Marten
             /// <returns></returns>
             [Obsolete(
                 "Prefer Index() if you just want to optimize querying, or choose Duplicate() if you really want a duplicated field")]
-            public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, string pgType = null,
-                NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null)
+            public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, string? pgType = null,
+                NpgsqlDbType? dbType = null, Action<IndexDefinition>? configure = null)
             {
                 return Duplicate(expression, pgType, dbType, configure);
             }
@@ -125,8 +125,8 @@ namespace Marten
             /// </param>
             /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string pgType = null,
-                NpgsqlDbType? dbType = null, Action<IndexDefinition> configure = null, bool notNull = false)
+            public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string? pgType = null,
+                NpgsqlDbType? dbType = null, Action<IndexDefinition>? configure = null, bool notNull = false)
             {
                 _builder.Alter = mapping =>
                 {
@@ -142,7 +142,7 @@ namespace Marten
             /// <param name="configure"></param>
             /// <returns></returns>
             public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression,
-                Action<ComputedIndex> configure = null)
+                Action<ComputedIndex>? configure = null)
             {
                 _builder.Alter = m => m.Index(expression, configure);
 
@@ -156,7 +156,7 @@ namespace Marten
             /// <param name="configure"></param>
             /// <returns></returns>
             public DocumentMappingExpression<T> Index(IReadOnlyCollection<Expression<Func<T, object>>> expressions,
-                Action<ComputedIndex> configure = null)
+                Action<ComputedIndex>? configure = null)
             {
                 _builder.Alter = m => m.Index(expressions, configure);
 
@@ -240,7 +240,7 @@ namespace Marten
             /// </summary>
             /// <param name="configure"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> IndexLastModified(Action<IndexDefinition> configure = null)
+            public DocumentMappingExpression<T> IndexLastModified(Action<IndexDefinition>? configure = null)
             {
                 _builder.Alter = m => m.AddLastModifiedIndex(configure);
 
@@ -248,7 +248,7 @@ namespace Marten
             }
 
             public DocumentMappingExpression<T> FullTextIndex(string regConfig = Schema.FullTextIndex.DefaultRegConfig,
-                Action<FullTextIndex> configure = null)
+                Action<FullTextIndex>? configure = null)
             {
                 _builder.Alter = m => m.AddFullTextIndex(regConfig, configure);
                 return this;
@@ -295,8 +295,8 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> ForeignKey<TReference>(
                 Expression<Func<T, object>> expression,
-                Action<ForeignKeyDefinition> foreignKeyConfiguration = null,
-                Action<IndexDefinition> indexConfiguration = null)
+                Action<ForeignKeyDefinition>? foreignKeyConfiguration = null,
+                Action<IndexDefinition>? indexConfiguration = null)
             {
                 _builder.Alter = m =>
                 {
@@ -315,7 +315,7 @@ namespace Marten
 
             public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName,
                 string tableName, string columnName,
-                Action<ExternalForeignKeyDefinition> foreignKeyConfiguration = null)
+                Action<ExternalForeignKeyDefinition>? foreignKeyConfiguration = null)
             {
                 _builder.Alter = m =>
                 {
@@ -388,7 +388,7 @@ namespace Marten
             /// </summary>
             /// <param name="configureIndex"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> GinIndexJsonData(Action<IndexDefinition> configureIndex = null)
+            public DocumentMappingExpression<T> GinIndexJsonData(Action<IndexDefinition>? configureIndex = null)
             {
                 _builder.Alter = mapping =>
                 {
@@ -406,7 +406,7 @@ namespace Marten
             /// <param name="subclassType"></param>
             /// <param name="alias"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> AddSubClass(Type subclassType, string alias = null)
+            public DocumentMappingExpression<T> AddSubClass(Type subclassType, string? alias = null)
             {
                 _builder.Alter = mapping => mapping.SubClasses.Add(subclassType, alias);
                 return this;
@@ -439,7 +439,7 @@ namespace Marten
                 return this;
             }
 
-            public DocumentMappingExpression<T> AddSubClass<TSubclass>(string alias = null) where TSubclass : T
+            public DocumentMappingExpression<T> AddSubClass<TSubclass>(string? alias = null) where TSubclass : T
             {
                 return AddSubClass(typeof(TSubclass), alias);
             }
@@ -472,7 +472,7 @@ namespace Marten
                 return this;
             }
 
-            public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<IndexDefinition> configure = null)
+            public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<IndexDefinition>? configure = null)
             {
                 SoftDeleted();
                 _builder.Alter = m => m.AddDeletedAtIndex(configure);
@@ -521,7 +521,7 @@ namespace Marten
 
             public class MetadataConfig
             {
-                private readonly DocumentMapping _mapping;
+                private readonly DocumentMapping? _mapping;
                 private readonly DocumentMappingExpression<T> _parent;
 
                 public MetadataConfig(DocumentMapping mapping)
@@ -657,7 +657,7 @@ namespace Marten
     /// </summary>
     public class MappedType
     {
-        public MappedType(Type type, string alias = null)
+        public MappedType(Type type, string? alias = null)
         {
             Type = type;
             Alias = alias;
@@ -672,7 +672,7 @@ namespace Marten
         /// String alias that will be used to persist or load the documents
         /// from the underlying database
         /// </summary>
-        public string Alias { get; set; }
+        public string? Alias { get; set; }
 
         public static implicit operator MappedType(Type type)
         {

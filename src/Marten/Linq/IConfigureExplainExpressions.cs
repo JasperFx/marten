@@ -1,3 +1,4 @@
+#nullable enable
 namespace Marten.Linq
 {
     public interface IConfigureExplainExpressions

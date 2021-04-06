@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Projections
 {
     public interface IEventSlice
@@ -13,7 +13,7 @@ namespace Marten.Events.Projections
     {
         private readonly List<IEvent> _events = new List<IEvent>();
 
-        public EventSlice(TId id, ITenant tenant, IEnumerable<IEvent> events = null)
+        public EventSlice(TId id, ITenant tenant, IEnumerable<IEvent>? events = null)
         {
             Id = id;
             Tenant = tenant;
@@ -33,7 +33,7 @@ namespace Marten.Events.Projections
         public TId Id { get; }
         public ITenant Tenant { get; }
 
-        public TDoc Aggregate { get; set; }
+        public TDoc? Aggregate { get; set; }
 
         public void AddEvent(IEvent e)
         {

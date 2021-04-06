@@ -1,7 +1,7 @@
 using System;
 using Marten.Linq;
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>

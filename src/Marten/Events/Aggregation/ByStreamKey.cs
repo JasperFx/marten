@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Events.Projections;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Aggregation
 {
     public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
@@ -12,7 +12,7 @@ namespace Marten.Events.Aggregation
             return streams.Select(s =>
             {
                 var tenant = tenancy[s.TenantId];
-                return new EventSlice<TDoc, string>(s.Key, tenant, s.Events);
+                return new EventSlice<TDoc, string>(s.Key!, tenant, s.Events);
             }).ToList();
         }
 

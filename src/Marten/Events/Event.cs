@@ -1,5 +1,4 @@
 using System;
-using Baseline;
 
 namespace Marten.Events
 {

@@ -5,7 +5,7 @@ using System.Linq;
 using Marten.Exceptions;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Storage
 {
     #region sample_IFeatureSchema

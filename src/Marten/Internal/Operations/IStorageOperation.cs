@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.QueryHandlers;
-
+#nullable enable
 namespace Marten.Internal.Operations
 {
     public interface IStorageOperation : IQueryHandler

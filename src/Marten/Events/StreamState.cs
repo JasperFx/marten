@@ -1,6 +1,5 @@
 using System;
-using Marten.Schema.Identity;
-
+#nullable enable
 namespace Marten.Events
 {
     public class StreamState
@@ -36,12 +35,14 @@ namespace Marten.Events
         /// The identity of this stream if using strings as the stream
         /// identity
         /// </summary>
-        public string Key { get; set;}
+        public string? Key { get; set;}
 
         // This needs to stay public
+#nullable disable
         public StreamState()
         {
         }
+#nullable enable
 
         public StreamState(Guid id, long version, Type aggregateType, DateTime lastTimestamp, DateTime created)
         {

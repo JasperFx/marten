@@ -6,26 +6,26 @@ using System.Threading.Tasks;
 using Marten.Linq.Selectors;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Services
 {
     internal static class ManagedConnectionExtensions
     {
-        internal static T LoadOne<T>(this IManagedConnection connection, NpgsqlCommand command, ISelector<T> selector)
+        internal static T? LoadOne<T>(this IManagedConnection connection, NpgsqlCommand command, ISelector<T> selector)
         {
             using (var reader = connection.ExecuteReader(command))
             {
-                if (!reader.Read()) return default(T);
+                if (!reader.Read()) return default;
 
                 return selector.Resolve(reader);
             }
         }
 
-        internal static async Task<T> LoadOneAsync<T>(this IManagedConnection connection, NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
+        internal static async Task<T?> LoadOneAsync<T>(this IManagedConnection connection, NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
         {
             using (var reader = await connection.ExecuteReaderAsync(command, token))
             {
-                if (!(await reader.ReadAsync(token))) return default(T);
+                if (!await reader.ReadAsync(token)) return default;
 
                 return await selector.ResolveAsync(reader, token);
             }
@@ -35,7 +35,7 @@ namespace Marten.Services
         {
             using (var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token))
             {
-                if (!(await reader.ReadAsync(token))) return false;
+                if (!await reader.ReadAsync(token)) return false;
 
                 var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
@@ -65,7 +65,7 @@ namespace Marten.Services
 
         internal static async Task StreamMany(this IManagedConnection connection, NpgsqlCommand command, Stream stream, CancellationToken token)
         {
-            using (var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token))
+            await using (var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token))
             {
                 var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using LamarCodeGeneration;
-
+#nullable enable
 namespace Marten.Schema.Identity
 {
     public interface IIdGeneration

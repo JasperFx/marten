@@ -2,7 +2,7 @@ using System;
 using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
-
+#nullable enable
 namespace Marten.Internal
 {
     public interface IProviderGraph

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Events.Projections;
-
+#nullable enable
 namespace Marten.Events.Aggregation
 {
     public interface IAggregateProjection

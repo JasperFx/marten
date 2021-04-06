@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     #region sample_IMartenLogger
@@ -68,7 +68,7 @@ namespace Marten
     #region sample_ConsoleMartenLogger
     public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
     {
-        private Stopwatch _stopwatch;
+        private Stopwatch? _stopwatch;
 
         public IMartenSessionLogger StartSession(IQuerySession session)
         {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Marten.Events.Daemon;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Projections
 {
     public enum ProjectionLifecycle
@@ -76,7 +76,7 @@ namespace Marten.Events.Projections
             yield break;
         }
 
-        private IProjection _projection;
+        private IProjection? _projection;
 
         internal virtual EventRangeGroup GroupEvents(
             DocumentStore store,

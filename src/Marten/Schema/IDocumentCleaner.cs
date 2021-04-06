@@ -1,5 +1,5 @@
 using System;
-
+#nullable enable
 namespace Marten.Schema
 {
     public interface IDocumentCleaner

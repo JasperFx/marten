@@ -1,5 +1,5 @@
 using Marten.Internal.DirtyTracking;
-
+#nullable enable
 namespace Marten.Internal.Operations
 {
     public interface IDocumentStorageOperation : IStorageOperation

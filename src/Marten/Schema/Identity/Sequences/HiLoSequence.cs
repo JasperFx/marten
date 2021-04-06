@@ -5,7 +5,7 @@ using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
-
+#nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
     public class HiloSequence: ISequence

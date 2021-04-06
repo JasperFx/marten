@@ -1,3 +1,4 @@
+#nullable enable
 namespace Marten.Schema
 {
     public interface IInitialData

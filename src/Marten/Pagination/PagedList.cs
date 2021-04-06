@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten.Pagination
 {
     /// <summary>
@@ -143,7 +143,7 @@ namespace Marten.Pagination
             PageNumber = pageNumber;
             PageSize = pageSize;
 
-            QueryStatistics queryStats = null;
+            QueryStatistics? queryStats;
 
             if (pageNumber == 1)
             {

@@ -4,7 +4,7 @@ using Marten.Events;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Transforms;
-
+#nullable enable
 namespace Marten
 {
     public interface IReadOnlyStoreOptions

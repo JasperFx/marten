@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Projections
 {
     public interface IProjection

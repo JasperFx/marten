@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema
 {
     public interface IDbObjects
