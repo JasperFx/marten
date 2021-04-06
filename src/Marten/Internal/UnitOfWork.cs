@@ -14,6 +14,7 @@ namespace Marten.Internal
     {
         private readonly IMartenSession _parent;
         private readonly List<IStorageOperation> _operations = new List<IStorageOperation>();
+        private readonly List<IStorageOperation> _eventOperations = new List<IStorageOperation>();
 
         public UnitOfWork(IMartenSession parent)
         {
@@ -23,6 +24,7 @@ namespace Marten.Internal
         public void Reset()
         {
             _operations.Clear();
+            _eventOperations.Clear();
             Streams.Clear();
         }
 
@@ -34,10 +36,17 @@ namespace Marten.Internal
                     x is IDocumentStorageOperation && x.As<IDocumentStorageOperation>().Document == o.Document);
             }
 
-            _operations.Add(operation);
+            if (operation.DocumentType == typeof(IEvent))
+            {
+                _eventOperations.Add(operation);
+            }
+            else
+            {
+                _operations.Add(operation);
+            }
         }
 
-        public IReadOnlyList<IStorageOperation> AllOperations => _operations;
+        public IReadOnlyList<IStorageOperation> AllOperations => _operations.Concat(_eventOperations).ToList();
 
         public void Sort(StoreOptions options)
         {
@@ -336,7 +345,7 @@ namespace Marten.Internal
 
         public bool HasOutstandingWork()
         {
-            return _operations.Any() || Streams.Any();
+            return _operations.Any() || Streams.Any() || _eventOperations.Any();
         }
 
         public bool TryFindStream(string streamKey, out StreamAction stream)
