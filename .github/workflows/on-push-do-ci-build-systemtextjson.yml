@@ -17,7 +17,6 @@ env:
   disable_test_parallelization: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  dotnet_core_version: 5.0.x
   node_version: 10.x
   pg_db: marten_testing
   pg_user: postgres
@@ -44,10 +43,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install .NET Core 3.1.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
+
       - name: Install .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ env.dotnet_core_version }}
+          dotnet-version: 5.0.x
 
       - name: Install Node.js
         uses: actions/setup-node@v1
