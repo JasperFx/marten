@@ -17,7 +17,7 @@ env:
   disable_test_parallelization: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  dotnet_core_version: 3.1.x
+  dotnet_core_version: 5.0.x
   node_version: 10.x
   pg_db: marten_testing
   pg_user: postgres
@@ -71,5 +71,5 @@ jobs:
       - name: Build
         env:
           marten_testing_database: "Host=localhost;Port=5432;Database=${{ env.pg_db }};Username=${{ env.pg_user }}"
-        run: ./build.sh ci
+        run: dotnet run -p martenbuild.csproj -f netcoreapp3.1 -c Release -- ci
         shell: bash
