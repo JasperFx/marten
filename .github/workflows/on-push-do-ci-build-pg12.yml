@@ -48,10 +48,15 @@ jobs:
         with:
           dotnet-version: 3.1.x
 
-      - name: Install Node.js 5.0.x
+      - name: Install .NET Core 5.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Install Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: 5.0.x
+          node-version: ${{ env.node_version }}
 
       - name: Check and install plv8 extension
         run: |
