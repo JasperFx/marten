@@ -70,17 +70,17 @@ namespace Marten.Events
         /// <summary>
         /// Optional metadata describing the causation id
         /// </summary>
-        public string CausationId { get; set; }
+        string? CausationId { get; set; }
 
         /// <summary>
         /// Optional metadata describing the correlation id
         /// </summary>
-        public string CorrelationId { get; set; }
+        string? CorrelationId { get; set; }
 
         /// <summary>
         /// Optional user defined metadata values. This may be null.
         /// </summary>
-        public Dictionary<string, object> Headers { get; set; }
+        Dictionary<string, object>? Headers { get; set; }
 
         /// <summary>
         /// Set an optional user defined metadata value by key
@@ -94,7 +94,7 @@ namespace Marten.Events
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        object GetHeader(string key);
+        object? GetHeader(string key);
     }
 
     #endregion sample_IEvent
@@ -155,17 +155,17 @@ namespace Marten.Events
         /// <summary>
         /// Optional metadata describing the causation id
         /// </summary>
-        public string CausationId { get; set; }
+        public string? CausationId { get; set; }
 
         /// <summary>
         /// Optional metadata describing the correlation id
         /// </summary>
-        public string CorrelationId { get; set; }
+        public string? CorrelationId { get; set; }
 
         /// <summary>
         /// This is meant to be lazy created, and can be null
         /// </summary>
-        public Dictionary<string, object> Headers { get; set; }
+        public Dictionary<string, object>? Headers { get; set; }
         #endregion sample_event_metadata
 
         object IEvent.Data => Data;
@@ -180,7 +180,7 @@ namespace Marten.Events
             Headers[key] = value;
         }
 
-        public object GetHeader(string key)
+        public object? GetHeader(string key)
         {
             return Headers?[key];
         }
