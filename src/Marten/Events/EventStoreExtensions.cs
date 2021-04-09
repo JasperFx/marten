@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Baseline;
 using Marten.Linq;
 
 namespace Marten.Events
@@ -7,7 +8,7 @@ namespace Marten.Events
     {
         public static T AggregateTo<T>(this IMartenQueryable<IEvent> queryable) where T : class
         {
-            var session = ((MartenLinqQueryable<IEvent>)queryable).MartenSession;
+            var session = queryable.As<MartenLinqQueryable<IEvent>>().MartenSession;
             var aggregator = session.Options.Events.Projections.AggregatorFor<T>();
 
             var aggregate = aggregator.Build(queryable.ToList(), (IQuerySession)session, null);

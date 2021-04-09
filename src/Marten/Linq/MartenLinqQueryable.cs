@@ -48,7 +48,7 @@ namespace Marten.Linq
 
         public MartenLinqQueryProvider MartenProvider { get; }
 
-        // TODO: Convert this to property?
+        // TODO -- Convert this to property?
         internal IMartenSession MartenSession => _session;
 
         internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase? op = null)
