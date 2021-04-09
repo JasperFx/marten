@@ -34,5 +34,10 @@ namespace Marten.Events
         IReadOnlyList<IProjectionSource> Projections();
 
         IReadOnlyList<IEventType> AllKnownEventTypes();
+
+        /// <summary>
+        /// Metadata configuration
+        /// </summary>
+        IReadonlyMetadataConfig MetadataConfig { get; }
     }
 }

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
@@ -14,13 +16,13 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>
+    internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEventTableColumn
     {
         public static readonly string ColumnName = "headers";
 
         public HeadersColumn() : base(ColumnName, x => x.Headers)
         {
-            Type = "JSONB";
+            Type = "jsonb";
             Enabled = false;
         }
 
@@ -55,6 +57,28 @@ namespace Marten.Storage.Metadata
         public override UpsertArgument ToArgument()
         {
             return new HeadersArgument();
+        }
+
+        public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.IfDbReaderValueIsNotNull(index, () =>
+            {
+                method.AssignMemberFromReader<IEvent>(null, index, x => x.Headers);
+            });
+        }
+
+        public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.IfDbReaderValueIsNotNullAsync(index, () =>
+            {
+                method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.Headers);
+            });
+        }
+
+        public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
+            method.Frames.Code($"parameters[{index}].Value = {{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)});", Use.Type<IMartenSession>(), Use.Type<IEvent>());
         }
     }
 

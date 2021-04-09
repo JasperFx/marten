@@ -4,6 +4,8 @@ using System.Threading;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
@@ -13,7 +15,7 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    internal class CausationIdColumn : MetadataColumn<string>, ISelectableColumn
+    internal class CausationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
     {
         public static readonly string ColumnName = "causation_id";
 
@@ -36,6 +38,27 @@ namespace Marten.Storage.Metadata
         public override UpsertArgument ToArgument()
         {
             return new CausationIdArgument();
+        }
+
+        public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.IfDbReaderValueIsNotNull(index, () =>
+            {
+                method.AssignMemberFromReader<IEvent>(null, index, x => x.CausationId);
+            });
+        }
+
+        public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.IfDbReaderValueIsNotNullAsync(index, () =>
+            {
+                method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.CausationId);
+            });
+        }
+
+        public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)
+        {
+            method.SetParameterFromMember<IEvent>(index, x => x.CausationId);
         }
     }
 
