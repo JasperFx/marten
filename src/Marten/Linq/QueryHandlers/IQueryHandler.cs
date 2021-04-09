@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Linq.QueryHandlers
 {
     public interface IQueryHandler

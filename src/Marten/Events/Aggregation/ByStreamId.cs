@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Events.Projections;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Aggregation
 {
     public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>

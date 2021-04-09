@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Services;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>
@@ -50,7 +50,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="document"></param>
-        void Eject<T>(T document);
+        void Eject<T>(T document) where T : notnull;
 
         /// <summary>
         /// Completely remove all the documents of given type from this session's unit of work tracking and identity map caching
@@ -63,7 +63,7 @@ namespace Marten
         /// Optional metadata describing the user name or
         /// process name for this unit of work
         /// </summary>
-        string LastModifiedBy { get; set; }
+        string? LastModifiedBy { get; set; }
 
         /// <summary>
         /// Set an optional user defined metadata value by key
@@ -77,7 +77,7 @@ namespace Marten
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        object GetHeader(string key);
+        object? GetHeader(string key);
 
         /// <summary>
         /// Access data from another tenant and apply document or event updates to this

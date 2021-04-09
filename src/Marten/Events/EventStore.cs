@@ -15,7 +15,7 @@ using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Events
 {
     internal class EventStore: IEventStore
@@ -33,7 +33,8 @@ namespace Marten.Events
 
         public StreamAction Append(Guid stream, IEnumerable<object> events)
         {
-            return Append(stream, events?.ToArray());
+            // NRT: We're ignoring null here as to not unintentionally change any downstream behaviour - Replace with null guards in the future.
+            return Append(stream, events?.ToArray()!);
         }
 
         public StreamAction Append(Guid stream, params object[] events)
@@ -43,7 +44,7 @@ namespace Marten.Events
 
         public StreamAction Append(string stream, IEnumerable<object> events)
         {
-            return Append(stream, events?.ToArray());
+            return Append(stream, events?.ToArray()!);
         }
 
         public StreamAction Append(string stream, params object[] events)
@@ -53,7 +54,7 @@ namespace Marten.Events
 
         public StreamAction Append(Guid stream, long expectedVersion, IEnumerable<object> events)
         {
-            return Append(stream, expectedVersion, events?.ToArray());
+            return Append(stream, expectedVersion, events?.ToArray()!);
         }
 
         public StreamAction Append(Guid stream, long expectedVersion, params object[] events)
@@ -66,7 +67,7 @@ namespace Marten.Events
 
         public StreamAction Append(string stream, long expectedVersion, IEnumerable<object> events)
         {
-            return Append(stream, expectedVersion, events?.ToArray());
+            return Append(stream, expectedVersion, events?.ToArray()!);
         }
 
         public StreamAction Append(string stream, long expectedVersion, params object[] events)
@@ -79,7 +80,7 @@ namespace Marten.Events
 
         public StreamAction StartStream<TAggregate>(Guid id, IEnumerable<object> events) where TAggregate : class
         {
-            return StartStream<TAggregate>(id, events?.ToArray());
+            return StartStream<TAggregate>(id, events?.ToArray()!);
         }
 
         public StreamAction StartStream<T>(Guid id, params object[] events) where T : class
@@ -89,7 +90,7 @@ namespace Marten.Events
 
         public StreamAction StartStream(Type aggregateType, Guid id, IEnumerable<object> events)
         {
-            return StartStream(aggregateType, id, events?.ToArray());
+            return StartStream(aggregateType, id, events?.ToArray()!);
         }
 
         public StreamAction StartStream(Type aggregateType, Guid id, params object[] events)
@@ -102,7 +103,7 @@ namespace Marten.Events
 
         public StreamAction StartStream<TAggregate>(string streamKey, IEnumerable<object> events) where TAggregate : class
         {
-            return StartStream<TAggregate>(streamKey, events?.ToArray());
+            return StartStream<TAggregate>(streamKey, events?.ToArray()!);
         }
 
         public StreamAction StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
@@ -112,7 +113,7 @@ namespace Marten.Events
 
         public StreamAction StartStream(Type aggregateType, string streamKey, IEnumerable<object> events)
         {
-            return StartStream(aggregateType, streamKey, events?.ToArray());
+            return StartStream(aggregateType, streamKey, events?.ToArray()!);
         }
 
         public StreamAction StartStream(Type aggregateType, string streamKey, params object[] events)
@@ -125,7 +126,7 @@ namespace Marten.Events
 
         public StreamAction StartStream(Guid id, IEnumerable<object> events)
         {
-            return StartStream(id, events?.ToArray());
+            return StartStream(id, events?.ToArray()!);
         }
 
         public StreamAction StartStream(Guid id, params object[] events)
@@ -135,7 +136,7 @@ namespace Marten.Events
 
         public StreamAction StartStream(string streamKey, IEnumerable<object> events)
         {
-            return StartStream(streamKey, events?.ToArray());
+            return StartStream(streamKey, events?.ToArray()!);
         }
 
         public StreamAction StartStream(string streamKey, params object[] events)
@@ -145,7 +146,7 @@ namespace Marten.Events
 
         public StreamAction StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class
         {
-            return StartStream<TAggregate>(events?.ToArray());
+            return StartStream<TAggregate>(events?.ToArray()!);
         }
 
         public StreamAction StartStream<TAggregate>(params object[] events) where TAggregate : class
@@ -155,7 +156,7 @@ namespace Marten.Events
 
         public StreamAction StartStream(Type aggregateType, IEnumerable<object> events)
         {
-            return StartStream(aggregateType, events?.ToArray());
+            return StartStream(aggregateType, events?.ToArray()!);
         }
 
         public StreamAction StartStream(Type aggregateType, params object[] events)
@@ -165,7 +166,7 @@ namespace Marten.Events
 
         public StreamAction StartStream(IEnumerable<object> events)
         {
-            return StartStream(events?.ToArray());
+            return StartStream(events?.ToArray()!);
         }
 
         public StreamAction StartStream(params object[] events)
@@ -188,7 +189,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken))
+        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTime? timestamp = null, CancellationToken token = default)
         {
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
@@ -216,7 +217,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTime? timestamp = null, CancellationToken token = default(CancellationToken))
+        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTime? timestamp = null, CancellationToken token = default)
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
@@ -230,7 +231,7 @@ namespace Marten.Events
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
-        public T AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T state = null) where T : class
+        public T? AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T? state = null) where T : class
         {
             var events = FetchStream(streamId, version, timestamp);
 
@@ -246,8 +247,8 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public async Task<T> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null,
-            T state = null, CancellationToken token = new CancellationToken()) where T : class
+        public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null,
+            T? state = null, CancellationToken token = default) where T : class
         {
             var events = await FetchStreamAsync(streamId, version, timestamp, token);
             if (!events.Any()) return null;
@@ -263,7 +264,7 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public T AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T state = null) where T : class
+        public T? AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T? state = null) where T : class
         {
             var events = FetchStream(streamKey, version, timestamp);
             if (!events.Any())
@@ -280,8 +281,8 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public async Task<T> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null,
-            T state = null, CancellationToken token = new CancellationToken()) where T : class
+        public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null,
+            T? state = null, CancellationToken token = default) where T : class
         {
             var events = await FetchStreamAsync(streamKey, version, timestamp, token);
             if (!events.Any())
@@ -324,7 +325,7 @@ namespace Marten.Events
             return Load(id).As<Event<T>>();
         }
 
-        public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class
+        public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class
         {
             _tenant.EnsureStorageExists(typeof(StreamAction));
 
@@ -339,7 +340,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default(CancellationToken))
+        public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default)
         {
             _tenant.EnsureStorageExists(typeof(StreamAction));
 
@@ -353,7 +354,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = new CancellationToken())
+        public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default)
         {
             var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant));
             return _session.ExecuteHandlerAsync(handler, token);
@@ -365,7 +366,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = new CancellationToken())
+        public Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = default)
         {
             var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant));
             return _session.ExecuteHandlerAsync(handler, token);

@@ -19,6 +19,7 @@ using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 
+#nullable enable
 namespace Marten.Linq
 {
     internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>
@@ -47,7 +48,7 @@ namespace Marten.Linq
 
         public MartenLinqQueryProvider MartenProvider { get; }
 
-        internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase op = null)
+        internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase? op = null)
         {
             var builder = new LinqHandlerBuilder(MartenProvider, _session, Expression, op);
             return builder.BuildHandler<TResult>();
@@ -99,9 +100,9 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOperator);
         }
 
-        public Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token)
+        public Task<TResult?> FirstOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOrDefaultOperator);
+            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.FirstOrDefaultOperator)!;
         }
 
         public Task<TResult> SingleAsync<TResult>(CancellationToken token)
@@ -109,9 +110,9 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOperator);
         }
 
-        public Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token)
+        public Task<TResult?> SingleOrDefaultAsync<TResult>(CancellationToken token)
         {
-            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOrDefaultOperator);
+            return MartenProvider.ExecuteAsync<TResult>(Expression, token, LinqConstants.SingleOrDefaultOperator)!;
         }
 
         public Task<TResult> SumAsync<TResult>(CancellationToken token)
@@ -150,11 +151,11 @@ namespace Marten.Linq
         }
 
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany,
-            Action<IConfigureExplainExpressions> configureExplain = null)
+            Action<IConfigureExplainExpressions>? configureExplain = null)
         {
             var command = ToPreviewCommand(fetchType);
 
-            return _session.Database.ExplainQuery(_session.Serializer, command, configureExplain);
+            return _session.Database.ExplainQuery(_session.Serializer, command, configureExplain)!;
         }
 
         public IQueryable<TDoc> TransformTo<TDoc>(string transformName)
@@ -162,14 +163,14 @@ namespace Marten.Linq
             return this.Select(x => x.TransformTo<T, TDoc>(transformName));
         }
 
-       public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+       public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
         {
             var include = BuildInclude(idSource, callback);
             MartenProvider.AllIncludes.Add(include);
             return this;
         }
 
-        internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback)
+        internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
         {
             var storage = (IDocumentStorage<TInclude>) _session.StorageFor(typeof(TInclude));
             var identityField = _session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
@@ -178,13 +179,13 @@ namespace Marten.Linq
             return include;
         }
 
-        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list)
+        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list) where TInclude : notnull
         {
             return Include<TInclude>(idSource, list.Add);
         }
 
         internal IIncludePlan BuildInclude<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary)
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey: notnull
         {
             var storage = (IDocumentStorage<TInclude>)_session.StorageFor(typeof(TInclude));
 
@@ -207,7 +208,7 @@ namespace Marten.Linq
         }
 
         public IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary)
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
         {
             var include = BuildInclude(idSource, dictionary);
             MartenProvider.AllIncludes.Add(include);

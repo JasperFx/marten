@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public interface IBatchEvents

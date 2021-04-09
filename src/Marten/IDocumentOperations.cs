@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using Marten.Internal.Operations;
 using Marten.Linq.SqlGeneration;
 using Marten.Patching;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>
@@ -17,56 +17,56 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Delete<T>(T entity);
+        void Delete<T>(T entity) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void Delete<T>(int id);
+        void Delete<T>(int id) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void Delete<T>(long id);
+        void Delete<T>(long id) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void Delete<T>(Guid id);
+        void Delete<T>(Guid id) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with a string id for deletion upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void Delete<T>(string id);
+        void Delete<T>(string id) where T : notnull;
 
         /// <summary>
         /// Bulk delete all documents of type T matching the expression condition
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="expression"></param>
-        void DeleteWhere<T>(Expression<Func<T, bool>> expression);
+        void DeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
 
         /// <summary>
         /// Explicitly marks multiple documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Store<T>(IEnumerable<T> entities);
+        void Store<T>(IEnumerable<T> entities) where T : notnull;
 
         /// <summary>
         /// Explicitly marks one or more documents as needing to be inserted or updated upon the next call to SaveChanges()
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Store<T>(params T[] entities);
+        void Store<T>(params T[] entities) where T : notnull;
 
         /// <summary>
         /// Explicitly marks a document as needing to be updated and supplies the
@@ -75,7 +75,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         /// <param name="version"></param>
-        void Store<T>(T entity, Guid version);
+        void Store<T>(T entity, Guid version) where T : notnull;
 
         /// <summary>
         /// DocumentStore an enumerable of potentially mixed documents
@@ -89,7 +89,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(int id);
+        IPatchExpression<T> Patch<T>(int id) where T : notnull;
 
         /// <summary>
         /// Patch a single document of type T with the given id
@@ -97,7 +97,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(long id);
+        IPatchExpression<T> Patch<T>(long id) where T : notnull;
 
         /// <summary>
         /// Patch a single document of type T with the given id
@@ -105,7 +105,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(string id);
+        IPatchExpression<T> Patch<T>(string id) where T : notnull;
 
         /// <summary>
         /// Patch a single document of type T with the given id
@@ -113,7 +113,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(Guid id);
+        IPatchExpression<T> Patch<T>(Guid id) where T : notnull;
 
         /// <summary>
         /// Patch a single document of type T with the given id
@@ -122,7 +122,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="where"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where);
+        IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where) where T : notnull;
 
         /// <summary>
         /// Patch multiple documents matching the supplied where fragment
@@ -130,7 +130,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="fragment"></param>
         /// <returns></returns>
-        IPatchExpression<T> Patch<T>(ISqlFragment fragment);
+        IPatchExpression<T> Patch<T>(ISqlFragment fragment) where T : notnull;
 
         /// <summary>
         /// Catch all mechanism to add additional database calls to the batched
@@ -145,7 +145,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Insert<T>(IEnumerable<T> entities);
+        void Insert<T>(IEnumerable<T> entities) where T : notnull;
 
         /// <summary>
         /// Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
@@ -153,7 +153,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Insert<T>(params T[] entities);
+        void Insert<T>(params T[] entities) where T : notnull;
 
         /// <summary>
         /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
@@ -161,7 +161,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Update<T>(IEnumerable<T> entities);
+        void Update<T>(IEnumerable<T> entities) where T : notnull;
 
         /// <summary>
         /// Explicitly marks a document as needing to be updated upon the next call to SaveChanges().
@@ -169,7 +169,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void Update<T>(params T[] entities);
+        void Update<T>(params T[] entities) where T : notnull;
 
         /// <summary>
         /// Insert an enumerable of potentially mixed documents. Will throw exceptions
@@ -184,7 +184,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        void HardDelete<T>(T entity);
+        void HardDelete<T>(T entity) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with either a numeric or Guid id for "hard" deletion upon the next call to SaveChanges()
@@ -192,7 +192,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void HardDelete<T>(int id);
+        void HardDelete<T>(int id) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with either a numeric or Guid id for hard deletion upon the next call to SaveChanges()
@@ -200,7 +200,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void HardDelete<T>(long id);
+        void HardDelete<T>(long id) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with either a numeric or Guid id for hard deletion upon the next call to SaveChanges()
@@ -208,7 +208,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void HardDelete<T>(Guid id);
+        void HardDelete<T>(Guid id) where T : notnull;
 
         /// <summary>
         /// Mark an entity of type T with a string id for hard deletion upon the next call to SaveChanges()
@@ -216,7 +216,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
-        void HardDelete<T>(string id);
+        void HardDelete<T>(string id) where T : notnull;
 
         /// <summary>
         /// Bulk hard delete all documents of type T matching the expression condition
@@ -224,7 +224,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="expression"></param>
-        void HardDeleteWhere<T>(Expression<Func<T, bool>> expression);
+        void HardDeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
 
         /// <summary>
         /// For soft-deleted document types, this is a one sized fits all mechanism to reverse the
@@ -233,6 +233,6 @@ namespace Marten
         /// <param name="expression"></param>
         /// <typeparam name="T"></typeparam>
         /// <exception cref="InvalidOperationException"></exception>
-        void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression);
+        void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull;
     }
 }

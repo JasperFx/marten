@@ -8,13 +8,13 @@ using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Patching
 {
     public class PatchExpression<T>: IPatchExpression<T>
     {
-        private readonly ISqlFragment _filter;
-        private readonly Expression<Func<T, bool>> _filterExpression;
+        private readonly ISqlFragment? _filter;
+        private readonly Expression<Func<T, bool>>? _filterExpression;
         private readonly DocumentSessionBase _session;
         public readonly IDictionary<string, object> Patch = new Dictionary<string, object>();
 
@@ -30,17 +30,17 @@ namespace Marten.Patching
             _session = session;
         }
 
-        public void Set<TValue>(string name, TValue value)
+        public void Set<TValue>(string name, TValue value) where TValue : notnull
         {
             set(name, value);
         }
 
-        public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value)
+        public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value) where TValue : notnull
         {
             set(toPath(expression) + $".{name}", value);
         }
 
-        public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
+        public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value) where TValue : notnull
         {
             set(toPath(expression), value);
         }
@@ -94,7 +94,7 @@ namespace Marten.Patching
             apply();
         }
 
-        public void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
+        public void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element) where TElement : notnull
         {
             Patch.Add("type", "append");
             Patch.Add("value", element);
@@ -105,7 +105,7 @@ namespace Marten.Patching
             apply();
         }
 
-        public void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
+        public void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element) where TElement : notnull
         {
             Patch.Add("type", "append_if_not_exists");
             Patch.Add("value", element);
@@ -117,7 +117,7 @@ namespace Marten.Patching
         }
 
         public void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
-            int index = 0)
+            int index = 0) where TElement : notnull
         {
             Patch.Add("type", "insert");
             Patch.Add("value", element);
@@ -130,7 +130,7 @@ namespace Marten.Patching
         }
 
         public void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
-            int index = 0)
+            int index = 0) where TElement : notnull
         {
             Patch.Add("type", "insert_if_not_exists");
             Patch.Add("value", element);
@@ -143,7 +143,7 @@ namespace Marten.Patching
         }
 
         public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
-            RemoveAction action = RemoveAction.RemoveFirst)
+            RemoveAction action = RemoveAction.RemoveFirst) where TElement : notnull
         {
             Patch.Add("type", "remove");
             Patch.Add("value", element);
@@ -188,7 +188,7 @@ namespace Marten.Patching
             delete(toPath(expression));
         }
 
-        private void set<TValue>(string path, TValue value)
+        private void set<TValue>(string path, TValue value) where TValue : notnull
         {
             Patch.Add("type", "set");
             Patch.Add("value", value);

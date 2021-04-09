@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
-
+#nullable enable
 namespace Marten.Schema.Identity
 {
     /// <summary>

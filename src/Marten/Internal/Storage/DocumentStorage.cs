@@ -22,13 +22,13 @@ using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
 using LambdaBuilder = Baseline.Expressions.LambdaBuilder;
-
+#nullable enable
 namespace Marten.Internal.Storage
 {
 
-    public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>
+    public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId> where T: notnull where TId: notnull
     {
-        private ISqlFragment _defaultWhere;
+        private ISqlFragment? _defaultWhere;
         private readonly string _selectClause;
 
         protected readonly string _loadArraySql;
@@ -261,7 +261,7 @@ namespace Marten.Internal.Storage
 
         public IOperationFragment HardDeleteFragment { get; }
 
-        public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
+        public ISqlFragment FilterDocuments(QueryModel? model, ISqlFragment query)
         {
             var extras = extraFilters(query).ToList();
 
@@ -274,7 +274,7 @@ namespace Marten.Internal.Storage
             return query;
         }
 
-        public ISqlFragment DefaultWhereFragment()
+        public ISqlFragment? DefaultWhereFragment()
         {
             return _defaultWhere;
         }
@@ -282,11 +282,11 @@ namespace Marten.Internal.Storage
         public IFieldMapping Fields { get; }
 
 
-        public abstract T Load(TId id, IMartenSession session);
-        public abstract Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+        public abstract T? Load(TId id, IMartenSession session);
+        public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
 
-        protected T load(TId id, IMartenSession session)
+        protected T? load(TId id, IMartenSession session)
         {
             var command = BuildLoadCommand(id, session.Tenant);
             var selector = (ISelector<T>)BuildSelector(session);
@@ -294,7 +294,7 @@ namespace Marten.Internal.Storage
             return session.Database.LoadOne(command, selector);
         }
 
-        protected Task<T> loadAsync(TId id, IMartenSession session, CancellationToken token)
+        protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)
         {
             var command = BuildLoadCommand(id, session.Tenant);
             var selector = (ISelector<T>)BuildSelector(session);

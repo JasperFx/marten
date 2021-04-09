@@ -3,7 +3,7 @@ using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Internal
 {
     public class StorageCheckingProviderGraph: IProviderGraph
@@ -19,7 +19,7 @@ namespace Marten.Internal
 
         public ITenantStorage Tenant { get; }
 
-        public DocumentProvider<T> StorageFor<T>()
+        public DocumentProvider<T> StorageFor<T>() where T : notnull
         {
             if (_storage.TryFind(typeof(T), out var stored))
             {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public interface ITransformedBatchQueryable<TValue>
@@ -12,11 +12,11 @@ namespace Marten.Services.BatchQuerying
 
         Task<TValue> First();
 
-        Task<TValue> FirstOrDefault();
+        Task<TValue?> FirstOrDefault();
 
         Task<TValue> Single();
 
-        Task<TValue> SingleOrDefault();
+        Task<TValue?> SingleOrDefault();
     }
 
     public class TransformedBatchQueryable<TValue>: ITransformedBatchQueryable<TValue>
@@ -45,7 +45,7 @@ namespace Marten.Services.BatchQuerying
             throw new NotSupportedException();
         }
 
-        public Task<TValue> FirstOrDefault()
+        public Task<TValue?> FirstOrDefault()
         {
             return _parent.FirstOrDefault<TValue>(_inner);
         }
@@ -55,7 +55,7 @@ namespace Marten.Services.BatchQuerying
             return _parent.Single<TValue>(_inner);
         }
 
-        public Task<TValue> SingleOrDefault()
+        public Task<TValue?> SingleOrDefault()
         {
             return _parent.SingleOrDefault<TValue>(_inner);
         }

@@ -7,7 +7,9 @@ using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Util;
+using Remotion.Linq.Clauses;
 
+#nullable enable
 namespace Marten.Internal
 {
     public class ProviderGraph: IProviderGraph
@@ -20,7 +22,7 @@ namespace Marten.Internal
             _options = options;
         }
 
-        public DocumentProvider<T> StorageFor<T>()
+        public DocumentProvider<T> StorageFor<T>() where T : notnull
         {
             var documentType = typeof(T);
 
@@ -88,7 +90,7 @@ namespace Marten.Internal
             DocumentProvider<T> BuildPersistence(IProviderGraph graph, SubClassMapping mapping);
         }
 
-        private class SubClassLoader<TRoot, T, TId> : ISubClassLoader<T> where T : TRoot
+        private class SubClassLoader<TRoot, T, TId>: ISubClassLoader<T> where T : TRoot where TId : notnull where TRoot: notnull
         {
             public DocumentProvider<T> BuildPersistence(IProviderGraph graph, SubClassMapping mapping)
             {

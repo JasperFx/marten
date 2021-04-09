@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
+using Marten.Events;
 using Marten.Testing.Linq;
 
 namespace EventSourceWorker
@@ -10,8 +11,8 @@ namespace EventSourceWorker
     public class CreateNewTrip
     {
         public int Day { get; set; }
-        public string State { get; set; }
-        public Movement[] Movements { get; set; }
+        public string State { get; set; } = null!;
+        public Movement[] Movements { get; set; } = null!;
     }
 
     public class NewTripHandler
@@ -62,7 +63,7 @@ namespace EventSourceWorker
     {
         public Guid TripId { get; set; }
         public bool Successful { get; set; }
-        public string State { get; set; }
+        public string State { get; set; } = null!;
         public int Day { get; set; }
     }
 

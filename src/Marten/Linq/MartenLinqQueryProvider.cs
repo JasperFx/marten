@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
@@ -93,7 +94,7 @@ namespace Marten.Linq
         }
 
 
-        public async IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(Expression expression, CancellationToken token)
+        public async IAsyncEnumerable<T> ExecuteAsyncEnumerable<T>(Expression expression, [EnumeratorCancellation]CancellationToken token)
         {
             var builder = new LinqHandlerBuilder(this, _session, expression);
             builder.BuildDatabaseStatement();

@@ -7,11 +7,12 @@ using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase
     {
-        public void HardDelete<T>(T entity)
+        public void HardDelete<T>(T entity) where T : notnull
         {
             assertNotDisposed();
             var documentStorage = StorageFor<T>();
@@ -22,7 +23,7 @@ namespace Marten.Internal.Sessions
             documentStorage.Eject(this, entity);
         }
 
-        public void HardDelete<T>(int id)
+        public void HardDelete<T>(int id) where T : notnull
         {
             assertNotDisposed();
 
@@ -46,7 +47,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        public void HardDelete<T>(long id)
+        public void HardDelete<T>(long id) where T : notnull
         {
             assertNotDisposed();
             var deletion = StorageFor<T, long>().HardDeleteForId(id, Tenant);
@@ -55,7 +56,7 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
-        public void HardDelete<T>(Guid id)
+        public void HardDelete<T>(Guid id) where T : notnull
         {
             assertNotDisposed();
             var deletion = StorageFor<T, Guid>().HardDeleteForId(id, Tenant);
@@ -64,7 +65,7 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
-        public void HardDelete<T>(string id)
+        public void HardDelete<T>(string id) where T : notnull
         {
             assertNotDisposed();
 
@@ -74,7 +75,7 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
-        public void HardDeleteWhere<T>(Expression<Func<T, bool>> expression)
+        public void HardDeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull
         {
             assertNotDisposed();
 
@@ -92,7 +93,7 @@ namespace Marten.Internal.Sessions
         /// <param name="expression"></param>
         /// <typeparam name="T"></typeparam>
         /// <exception cref="InvalidOperationException"></exception>
-        public void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression)
+        public void UndoDeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull
         {
             assertNotDisposed();
 

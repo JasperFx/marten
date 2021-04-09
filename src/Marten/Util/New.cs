@@ -2,7 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.Serialization;
-
+#nullable enable
 namespace Marten.Util
 {
     public static class New<T>

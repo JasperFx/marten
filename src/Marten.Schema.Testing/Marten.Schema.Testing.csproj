@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
@@ -23,12 +23,6 @@
       <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
       <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
       <ProjectReference Include="..\Marten\Marten.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
-        <Link>ConnectionSource.cs</Link>
-      </Compile>
     </ItemGroup>
 
     <ItemGroup>

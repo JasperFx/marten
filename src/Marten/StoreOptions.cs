@@ -20,7 +20,7 @@ using Marten.Storage;
 using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>
@@ -56,7 +56,7 @@ namespace Marten
         private string _databaseSchemaName = DefaultDatabaseSchemaName;
 
         private IMartenLogger _logger = new NulloMartenLogger();
-        private ISerializer _serializer;
+        private ISerializer? _serializer;
 
 
         private IRetryPolicy _retryPolicy = new NulloRetryPolicy();
@@ -76,7 +76,7 @@ namespace Marten
             CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));
         }
 
-        internal Action<IDatabaseCreationExpressions> CreateDatabases { get; set; }
+        internal Action<IDatabaseCreationExpressions>? CreateDatabases { get; set; }
 
         internal IProviderGraph Providers { get; }
 
@@ -103,7 +103,7 @@ namespace Marten
         public string DatabaseSchemaName
         {
             get { return _databaseSchemaName; }
-            set { _databaseSchemaName = value?.ToLowerInvariant(); }
+            set { _databaseSchemaName = value.ToLowerInvariant(); }
         }
 
         /// <summary>
@@ -258,7 +258,7 @@ namespace Marten
 
         public IDocumentType FindOrResolveDocumentType(Type documentType)
         {
-            return Storage.FindMapping(documentType).Root as IDocumentType;
+            return (Storage.FindMapping(documentType).Root as IDocumentType)!;
         }
 
         public void RetryPolicy(IRetryPolicy retryPolicy)
@@ -316,7 +316,7 @@ namespace Marten
             }
         }
 
-        public ITenancy Tenancy { get; set; }
+        public ITenancy Tenancy { get; set; } = null!;
 
         private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
         {

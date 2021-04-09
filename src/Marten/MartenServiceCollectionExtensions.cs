@@ -5,7 +5,7 @@ using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
+#nullable enable
 namespace Marten
 {
     public static class MartenServiceCollectionExtensions
@@ -88,9 +88,9 @@ namespace Marten
         public class MartenConfigurationExpression
         {
             private readonly IServiceCollection _services;
-            private readonly StoreOptions _options;
+            private readonly StoreOptions? _options;
 
-            internal MartenConfigurationExpression(IServiceCollection services, StoreOptions options)
+            internal MartenConfigurationExpression(IServiceCollection services, StoreOptions? options)
             {
                 _services = services;
                 _options = options;

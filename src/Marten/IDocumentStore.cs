@@ -9,7 +9,7 @@ using Marten.Services;
 using Marten.Transforms;
 using Microsoft.Extensions.Logging;
 using IsolationLevel = System.Data.IsolationLevel;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>
@@ -67,7 +67,7 @@ namespace Marten
         /// <param name="documents"></param>
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
-        Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+        Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, CancellationToken cancellation = default);
 
         /// <summary>
         ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -78,7 +78,7 @@ namespace Marten
         /// <param name="documents"></param>
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
-        Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+        Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, CancellationToken cancellation = default);
 
 
 
@@ -184,7 +184,7 @@ namespace Marten
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
         Task BulkInsertDocumentsAsync(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+            int batchSize = 1000, CancellationToken cancellation = default);
 
         /// <summary>
         ///     Bulk insert a potentially mixed enumerable of document types
@@ -193,7 +193,7 @@ namespace Marten
         /// <param name="mode"></param>
         /// <param name="batchSize"></param>
         Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-            int batchSize = 1000, CancellationToken cancellation = default(CancellationToken));
+            int batchSize = 1000, CancellationToken cancellation = default);
 
 
         /// <summary>
@@ -208,7 +208,7 @@ namespace Marten
         /// </summary>
         /// <param name="logger">Override the logger inside this instance of the async daemon</param>
         /// <returns></returns>
-        IProjectionDaemon BuildProjectionDaemon(ILogger logger = null);
+        IProjectionDaemon BuildProjectionDaemon(ILogger? logger = null);
 
 
     }

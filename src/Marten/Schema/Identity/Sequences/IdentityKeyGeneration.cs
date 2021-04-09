@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
     public class IdentityKeyGeneration: IIdGeneration

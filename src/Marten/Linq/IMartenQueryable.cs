@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+#nullable enable
 namespace Marten.Linq
 {
     public interface IMartenQueryable
@@ -22,11 +23,11 @@ namespace Marten.Linq
 
         Task<TResult> FirstAsync<TResult>(CancellationToken token);
 
-        Task<TResult> FirstOrDefaultAsync<TResult>(CancellationToken token);
+        Task<TResult?> FirstOrDefaultAsync<TResult>(CancellationToken token);
 
         Task<TResult> SingleAsync<TResult>(CancellationToken token);
 
-        Task<TResult> SingleOrDefaultAsync<TResult>(CancellationToken token);
+        Task<TResult?> SingleOrDefaultAsync<TResult>(CancellationToken token);
 
         Task<TResult> SumAsync<TResult>(CancellationToken token);
 
@@ -37,7 +38,7 @@ namespace Marten.Linq
         Task<double> AverageAsync(CancellationToken token);
 
         /// <param name="configureExplain">Configure EXPLAIN options as documented in <see href="https://www.postgresql.org/docs/9.6/static/sql-explain.html">EXPLAIN documentation</see></param>
-        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions> configureExplain = null);
+        QueryPlan Explain(FetchType fetchType = FetchType.FetchMany, Action<IConfigureExplainExpressions>? configureExplain = null);
 
         /// <summary>
         ///     Applies a pre-loaded Javascript transformation to the documents
@@ -69,12 +70,12 @@ namespace Marten.Linq
 
     public interface IMartenQueryable<T>: IQueryable<T>, IMartenQueryable
     {
-        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback);
+        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull;
 
-        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list);
+        IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list) where TInclude : notnull;
 
         IMartenQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary);
+            IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull;
 
         IMartenQueryable<T> Stats(out QueryStatistics stats);
 

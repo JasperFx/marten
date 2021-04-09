@@ -10,7 +10,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Transforms;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Storage
 {
     public interface ITenantStorage
@@ -47,7 +47,7 @@ namespace Marten.Storage
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        IDocumentStorage<T> StorageFor<T>();
+        IDocumentStorage<T> StorageFor<T>() where T : notnull;
 
         /// <summary>
         /// Used to create new Hilo sequences

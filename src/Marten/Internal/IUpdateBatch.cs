@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
+#nullable enable
 namespace Marten.Internal
 {
     public interface IUpdateBatch

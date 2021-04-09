@@ -8,7 +8,7 @@ using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
-
+#nullable enable
 namespace Marten
 {
     public interface IQuerySession: IDisposable, IAsyncDisposable
@@ -19,7 +19,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(string id);
+        T? Load<T>(string id) where T : notnull;
 
         /// <summary>
         /// Asynchronously find or load a single document of type T by a string id
@@ -28,7 +28,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(string id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(string id, CancellationToken token = default) where T : notnull;
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -36,7 +36,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(int id);
+        T? Load<T>(int id) where T : notnull;
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -44,7 +44,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(long id);
+        T? Load<T>(long id) where T : notnull;
 
         /// <summary>
         /// Load or find a single document of type T with either a numeric or Guid id
@@ -52,7 +52,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="id"></param>
         /// <returns></returns>
-        T Load<T>(Guid id);
+        T? Load<T>(Guid id) where T : notnull;
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -61,7 +61,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(int id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(int id, CancellationToken token = default) where T : notnull;
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -70,7 +70,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(long id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(long id, CancellationToken token = default) where T : notnull;
 
         /// <summary>
         /// Asynchronously load or find a single document of type T with either a numeric or Guid id
@@ -79,7 +79,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T> LoadAsync<T>(Guid id, CancellationToken token = default(CancellationToken));
+        Task<T?> LoadAsync<T>(Guid id, CancellationToken token = default) where T : notnull;
 
         #region sample_querying_with_linq
         /// <summary>
@@ -109,7 +109,7 @@ namespace Marten
         /// <param name="token"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default(CancellationToken), params object[] parameters);
+        Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default, params object[] parameters);
 
         /// <summary>
         /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
@@ -156,175 +156,175 @@ namespace Marten
         /// <param name="query">The instance of a compiled query</param>
         /// <param name="token">A cancellation token</param>
         /// <returns>A task for a single item query result</returns>
-        Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default(CancellationToken));
+        Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(params string[] ids);
+        IReadOnlyList<T> LoadMany<T>(params string[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids);
+        IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(params Guid[] ids);
+        IReadOnlyList<T> LoadMany<T>(params Guid[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(IEnumerable<Guid> ids);
+        IReadOnlyList<T> LoadMany<T>(IEnumerable<Guid> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(params int[] ids);
+        IReadOnlyList<T> LoadMany<T>(params int[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids);
+        IReadOnlyList<T> LoadMany<T>(IEnumerable<int> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(params long[] ids);
+        IReadOnlyList<T> LoadMany<T>(params long[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        IReadOnlyList<T> LoadMany<T>(IEnumerable<long> ids);
+        IReadOnlyList<T> LoadMany<T>(IEnumerable<long> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids) where T : notnull; 
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<string> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<string> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(params Guid[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(params Guid[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<Guid> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<Guid> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(params int[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(params int[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<int> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<int> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(params long[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(params long[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<long> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(IEnumerable<long> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params string[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<string> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<string> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params Guid[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<Guid> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<Guid> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params int[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<int> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<int> ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, params long[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<long> ids);
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(CancellationToken token, IEnumerable<long> ids) where T : notnull;
 
         /// <summary>
         /// Directly load the persisted JSON data for documents by Id
@@ -335,13 +335,13 @@ namespace Marten
         /// Optional metadata describing the causation id for this
         /// unit of work
         /// </summary>
-        string CausationId { get; set; }
+        string? CausationId { get; set; }
 
         /// <summary>
         /// Optional metadata describing the correlation id for this
         /// unit of work
         /// </summary>
-        string CorrelationId { get; set; }
+        string? CorrelationId { get; set; }
 
         /// <summary>
         /// Retrieve the current known version of the given document
@@ -350,7 +350,7 @@ namespace Marten
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        Guid? VersionFor<TDoc>(TDoc entity);
+        Guid? VersionFor<TDoc>(TDoc entity) where TDoc : notnull;
 
         /// <summary>
         /// Performs a full text search against <typeparamref name="TDoc"/>
@@ -441,7 +441,7 @@ namespace Marten
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        DocumentMetadata MetadataFor<T>(T entity);
+        DocumentMetadata MetadataFor<T>(T entity) where T : notnull;
 
         /// <summary>
         ///     Fetch the entity version and last modified time from the database
@@ -450,6 +450,6 @@ namespace Marten
         /// <param name="token"></param>
         /// <returns></returns>
         Task<DocumentMetadata> MetadataForAsync<T>(T entity,
-            CancellationToken token = default(CancellationToken));
+            CancellationToken token = default) where T : notnull;
     }
 }

@@ -3,7 +3,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Services
 {
     public interface IManagedConnection: IDisposable, IAsyncDisposable

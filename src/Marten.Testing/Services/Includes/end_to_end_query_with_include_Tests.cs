@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -329,7 +329,7 @@ namespace Marten.Testing.Services.Includes
             IncludeGeneric<UserWithInterface>(user);
         }
 
-        private void IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : IUserWithInterface
+        private void IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : class, IUserWithInterface
         {
             using (var query = theStore.QuerySession())
             {

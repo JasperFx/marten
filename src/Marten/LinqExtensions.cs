@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Baseline;
 using Marten.Schema;
-
+#nullable enable
 namespace Marten
 {
     public static class LinqExtensions
@@ -115,7 +115,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <param name="enumerable"></param>
         /// <returns></returns>
-        public static bool IsEmpty<T>(this IEnumerable<T> enumerable)
+        public static bool IsEmpty<T>(this IEnumerable<T>? enumerable)
         {
             if (enumerable == null)
                 return true;

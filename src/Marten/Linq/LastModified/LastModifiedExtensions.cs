@@ -1,5 +1,5 @@
 using System;
-
+#nullable enable
 namespace Marten.Linq.LastModified
 {
     public static class LastModifiedExtensions

@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
@@ -73,7 +73,7 @@ namespace Marten.Services.BatchQuerying
         }
 
         public IBatchedQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary) where TInclude : class
+            IDictionary<TKey, TInclude> dictionary) where TKey: notnull where TInclude : class
         {
             _inner = _inner.Include(idSource, dictionary);
             return this;
@@ -115,12 +115,12 @@ namespace Marten.Services.BatchQuerying
             return _parent.First<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
-        public Task<T> FirstOrDefault()
+        public Task<T?> FirstOrDefault()
         {
             return _parent.FirstOrDefault<T>(_inner);
         }
 
-        public Task<T> FirstOrDefault(Expression<Func<T, bool>> filter)
+        public Task<T?> FirstOrDefault(Expression<Func<T, bool>> filter)
         {
             return _parent.FirstOrDefault<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
@@ -135,12 +135,12 @@ namespace Marten.Services.BatchQuerying
             return _parent.Single<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
         }
 
-        public Task<T> SingleOrDefault()
+        public Task<T?> SingleOrDefault()
         {
             return _parent.SingleOrDefault<T>(_inner);
         }
 
-        public Task<T> SingleOrDefault(Expression<Func<T, bool>> filter)
+        public Task<T?> SingleOrDefault(Expression<Func<T, bool>> filter)
         {
             return _parent.SingleOrDefault<T>(_inner.Where(filter).As<IMartenQueryable<T>>());
         }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Marten.Storage;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Services
 {
     public sealed class SessionOptions
@@ -39,12 +39,12 @@ namespace Marten.Services
         /// <summary>
         /// Optional mechanism to open a session with an existing connection
         /// </summary>
-        public NpgsqlConnection Connection { get; set; }
+        public NpgsqlConnection? Connection { get; set; }
 
         /// <summary>
         /// Optional mechanism to open a session with an existing transaction
         /// </summary>
-        public NpgsqlTransaction Transaction { get; set; }
+        public NpgsqlTransaction? Transaction { get; set; }
 
         /// <summary>
         /// Default is true. If false, Marten will issue commands on IDocumentSession.SaveChanges/SaveChangesAsync,
@@ -80,7 +80,7 @@ namespace Marten.Services
                 if (value)
                 {
                     OwnsTransactionLifecycle = false;
-                    DotNetTransaction = System.Transactions.Transaction.Current;
+                    DotNetTransaction = System.Transactions.Transaction.Current!;
                 }
 
                 _enlistInAmbientTransactionScope = value;
@@ -90,7 +90,7 @@ namespace Marten.Services
         /// <summary>
         /// Enlist the session in this transaction
         /// </summary>
-        public System.Transactions.Transaction DotNetTransaction { get; set; }
+        public System.Transactions.Transaction? DotNetTransaction { get; set; }
 
         /// <summary>
         /// Open a session that enlists in the current, ambient TransactionScope

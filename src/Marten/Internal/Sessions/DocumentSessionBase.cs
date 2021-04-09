@@ -13,6 +13,7 @@ using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
@@ -46,12 +47,12 @@ namespace Marten.Internal.Sessions
         internal ISessionWorkTracker WorkTracker => _workTracker;
 
 
-        public void Store<T>(IEnumerable<T> entities)
+        public void Store<T>(IEnumerable<T> entities) where T : notnull
         {
-            Store(entities?.ToArray());
+            Store(entities?.ToArray()!);
         }
 
-        public void Store<T>(params T[] entities)
+        public void Store<T>(params T[] entities) where T : notnull
         {
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
@@ -63,7 +64,7 @@ namespace Marten.Internal.Sessions
             store(entities);
         }
 
-        public void Store<T>(T entity, Guid version)
+        public void Store<T>(T entity, Guid version) where T : notnull
         {
             assertNotDisposed();
 
@@ -73,12 +74,12 @@ namespace Marten.Internal.Sessions
             _workTracker.Add(op);
         }
 
-        public void Insert<T>(IEnumerable<T> entities)
+        public void Insert<T>(IEnumerable<T> entities) where T : notnull
         {
             Insert(entities.ToArray());
         }
 
-        public void Insert<T>(params T[] entities)
+        public void Insert<T>(params T[] entities) where T : notnull
         {
             assertNotDisposed();
 
@@ -105,12 +106,12 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        public void Update<T>(IEnumerable<T> entities)
+        public void Update<T>(IEnumerable<T> entities) where T : notnull
         {
             Update(entities.ToArray());
         }
 
-        public void Update<T>(params T[] entities)
+        public void Update<T>(params T[] entities) where T : notnull
         {
             assertNotDisposed();
 
@@ -168,34 +169,34 @@ namespace Marten.Internal.Sessions
 
         public IEventStore Events { get; }
 
-        public IPatchExpression<T> Patch<T>(int id)
+        public IPatchExpression<T> Patch<T>(int id) where T : notnull
         {
             return patchById<T>(id);
         }
 
-        public IPatchExpression<T> Patch<T>(long id)
+        public IPatchExpression<T> Patch<T>(long id) where T : notnull
         {
             return patchById<T>(id);
         }
 
-        public IPatchExpression<T> Patch<T>(string id)
+        public IPatchExpression<T> Patch<T>(string id) where T : notnull
         {
             return patchById<T>(id);
         }
 
-        public IPatchExpression<T> Patch<T>(Guid id)
+        public IPatchExpression<T> Patch<T>(Guid id) where T : notnull
         {
             return patchById<T>(id);
         }
 
-        public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> filter)
+        public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> filter) where T : notnull
         {
             assertNotDisposed();
 
             return new PatchExpression<T>(filter, this);
         }
 
-        public IPatchExpression<T> Patch<T>(ISqlFragment fragment)
+        public IPatchExpression<T> Patch<T>(ISqlFragment fragment) where T : notnull
         {
             assertNotDisposed();
 
@@ -208,7 +209,7 @@ namespace Marten.Internal.Sessions
             _workTracker.Add(storageOperation);
         }
 
-        public virtual void Eject<T>(T document)
+        public virtual void Eject<T>(T document) where T : notnull
         {
             StorageFor<T>().Eject(this, document);
             _workTracker.Eject(document);
@@ -229,12 +230,12 @@ namespace Marten.Internal.Sessions
             Headers[key] = value;
         }
 
-        public object GetHeader(string key)
+        public object? GetHeader(string key)
         {
             return Headers?[key];
         }
 
-        private Dictionary<string, NestedTenantSession> _byTenant;
+        private Dictionary<string, NestedTenantSession>? _byTenant;
 
         /// <summary>
         /// Access data from another tenant and apply document or event updates to this
@@ -244,10 +245,7 @@ namespace Marten.Internal.Sessions
         /// <returns></returns>
         public ITenantOperations ForTenant(string tenantId)
         {
-            if (_byTenant == null)
-            {
-                _byTenant = new Dictionary<string, NestedTenantSession>();
-            }
+            _byTenant ??= new Dictionary<string, NestedTenantSession>();
 
             if (_byTenant.TryGetValue(tenantId, out var tenantSession))
             {
@@ -261,10 +259,10 @@ namespace Marten.Internal.Sessions
             return tenantSession;
         }
 
-        protected internal abstract void ejectById<T>(long id);
-        protected internal abstract void ejectById<T>(int id);
-        protected internal abstract void ejectById<T>(Guid id);
-        protected internal abstract void ejectById<T>(string id);
+        protected internal abstract void ejectById<T>(long id) where T : notnull;
+        protected internal abstract void ejectById<T>(int id) where T : notnull;
+        protected internal abstract void ejectById<T>(Guid id) where T : notnull;
+        protected internal abstract void ejectById<T>(string id) where T : notnull;
 
         protected internal virtual void processChangeTrackers()
         {
@@ -277,7 +275,7 @@ namespace Marten.Internal.Sessions
         }
 
 
-        private void store<T>(IEnumerable<T> entities)
+        private void store<T>(IEnumerable<T> entities) where T : notnull
         {
             assertNotDisposed();
 
@@ -335,7 +333,7 @@ namespace Marten.Internal.Sessions
             void Store(IDocumentSession session, IEnumerable<object> objects);
         }
 
-        internal class Handler<T>: IHandler
+        internal class Handler<T>: IHandler where T : notnull
         {
             public void Store(IDocumentSession session, IEnumerable<object> objects)
             {
@@ -344,7 +342,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        internal class InsertHandler<T>: IHandler
+        internal class InsertHandler<T>: IHandler where T : notnull
         {
             public void Store(IDocumentSession session, IEnumerable<object> objects)
             {

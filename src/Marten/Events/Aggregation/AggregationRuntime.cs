@@ -11,7 +11,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Events.Aggregation
 {
     public interface IAggregationRuntime : IProjection
@@ -19,7 +19,7 @@ namespace Marten.Events.Aggregation
         EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
     }
 
-    public abstract class AggregationRuntime<TDoc, TId> : IAggregationRuntime
+    public abstract class AggregationRuntime<TDoc, TId> : IAggregationRuntime where TDoc : notnull where TId : notnull
     {
         private readonly IDocumentStore _store;
         public IDocumentStorage<TDoc, TId> Storage { get; }
@@ -37,7 +37,7 @@ namespace Marten.Events.Aggregation
             _store = store;
         }
 
-        public async Task<IStorageOperation> DetermineOperation(DocumentSessionBase session,
+        public async Task<IStorageOperation?> DetermineOperation(DocumentSessionBase session,
             EventSlice<TDoc, TId> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
         {
             var aggregate = slice.Aggregate;
@@ -83,7 +83,7 @@ namespace Marten.Events.Aggregation
         }
 
         public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
-            IEvent evt, TDoc aggregate,
+            IEvent evt, TDoc? aggregate,
             CancellationToken cancellationToken);
 
 
@@ -111,7 +111,7 @@ namespace Marten.Events.Aggregation
             var martenSession = (DocumentSessionBase)operations;
             foreach (var slice in slices)
             {
-                IStorageOperation operation = null;
+                IStorageOperation? operation;
 
                 // TODO -- this can only apply to the last event
                 if (Projection.MatchesAnyDeleteType(slice))

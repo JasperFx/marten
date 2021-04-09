@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-
+#nullable enable
 namespace Marten.Pagination
 {
     /// <summary>

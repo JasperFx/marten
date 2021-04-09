@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
-
+#nullable enable
 namespace Marten
 {
     #region sample_IDocumentSessionListener

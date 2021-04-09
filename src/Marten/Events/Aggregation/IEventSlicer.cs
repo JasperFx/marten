@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Marten.Events.Projections;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events.Aggregation
 {
     public interface IEventSlicer<TDoc, TId>

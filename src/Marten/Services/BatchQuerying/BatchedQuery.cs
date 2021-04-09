@@ -16,10 +16,8 @@ using Marten.Linq.QueryHandlers;
 using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
-using Npgsql;
 using Remotion.Linq.Clauses;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public class BatchedQuery: IBatchedQuery, IBatchEvents
@@ -72,7 +70,7 @@ namespace Marten.Services.BatchQuerying
             return new BatchedQueryable<T>(this, _parent.Query<T>());
         }
 
-        public async Task Execute(CancellationToken token = default(CancellationToken))
+        public async Task Execute(CancellationToken token = default)
         {
             if (!_items.Any())
                 return;
@@ -165,7 +163,7 @@ namespace Marten.Services.BatchQuerying
             return item.Result;
         }
 
-        private Task<T> load<T, TId>(TId id) where T : class
+        private Task<T> load<T, TId>(TId id) where T : class where TId : notnull
         {
             var storage = _parent.StorageFor<T>();
             if (storage is IDocumentStorage<T, TId> s)
@@ -206,9 +204,9 @@ namespace Marten.Services.BatchQuerying
             return addItem<T, T>(queryable, LinqConstants.FirstOperator);
         }
 
-        public Task<T> FirstOrDefault<T>(IMartenQueryable<T> queryable)
+        public Task<T?> FirstOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return addItem<T, T>(queryable, LinqConstants.FirstOrDefaultOperator);
+            return addItem<T, T?>(queryable, LinqConstants.FirstOrDefaultOperator);
         }
 
         public Task<T> Single<T>(IMartenQueryable<T> queryable)
@@ -216,9 +214,9 @@ namespace Marten.Services.BatchQuerying
             return addItem<T, T>(queryable, LinqConstants.SingleOperator);
         }
 
-        public Task<T> SingleOrDefault<T>(IMartenQueryable<T> queryable)
+        public Task<T?> SingleOrDefault<T>(IMartenQueryable<T> queryable)
         {
-            return addItem<T, T>(queryable, LinqConstants.SingleOrDefaultOperator);
+            return addItem<T, T?>(queryable, LinqConstants.SingleOrDefaultOperator);
         }
 
         public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)

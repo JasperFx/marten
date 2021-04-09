@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
     public class SequenceFactory: ISequences
@@ -67,7 +67,7 @@ namespace Marten.Schema.Identity.Sequences
         private string GetSequenceName(Type documentType, HiloSettings settings)
         {
             if (!string.IsNullOrEmpty(settings.SequenceName))
-                return settings.SequenceName;
+                return settings.SequenceName!;
             return documentType.Name;
         }
 

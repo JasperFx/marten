@@ -1,6 +1,6 @@
 using System;
 using Marten.Linq.SqlGeneration;
-
+#nullable enable
 namespace Marten.Linq.MatchesSql
 {
     public static class MatchesSqlExtensions

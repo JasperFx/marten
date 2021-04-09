@@ -4,11 +4,12 @@ using Marten.Exceptions;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 
+#nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase
     {
-        public void Delete<T>(T entity)
+        public void Delete<T>(T entity) where T: notnull
         {
             assertNotDisposed();
             var documentStorage = StorageFor<T>();
@@ -19,7 +20,7 @@ namespace Marten.Internal.Sessions
             documentStorage.Eject(this, entity);
         }
 
-        public void Delete<T>(int id)
+        public void Delete<T>(int id) where T : notnull
         {
             assertNotDisposed();
 
@@ -43,7 +44,7 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        public void Delete<T>(long id)
+        public void Delete<T>(long id) where T : notnull
         {
             assertNotDisposed();
             var deletion = StorageFor<T, long>().DeleteForId(id, Tenant);
@@ -52,7 +53,7 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
-        public void Delete<T>(Guid id)
+        public void Delete<T>(Guid id) where T : notnull
         {
             assertNotDisposed();
             var deletion = StorageFor<T, Guid>().DeleteForId(id, Tenant);
@@ -61,7 +62,7 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
-        public void Delete<T>(string id)
+        public void Delete<T>(string id) where T : notnull
         {
             assertNotDisposed();
 
@@ -71,7 +72,7 @@ namespace Marten.Internal.Sessions
             ejectById<T>(id);
         }
 
-        public void DeleteWhere<T>(Expression<Func<T, bool>> expression)
+        public void DeleteWhere<T>(Expression<Func<T, bool>> expression) where T : notnull
         {
             assertNotDisposed();
 

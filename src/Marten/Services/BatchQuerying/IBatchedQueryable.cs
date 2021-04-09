@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public interface IBatchedQueryable<T>: IBatchedFetcher<T>
@@ -27,7 +27,7 @@ namespace Marten.Services.BatchQuerying
         IBatchedQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, IList<TInclude> list) where TInclude : class;
 
         IBatchedQueryable<T> Include<TInclude, TKey>(Expression<Func<T, object>> idSource,
-            IDictionary<TKey, TInclude> dictionary) where TInclude : class;
+            IDictionary<TKey, TInclude> dictionary) where TInclude : class where TKey: notnull;
 
         Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression);
 

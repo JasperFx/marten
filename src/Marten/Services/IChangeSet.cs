@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Marten.Events;
 using Marten.Patching;
-
+#nullable enable
 namespace Marten.Services
 {
     public interface IChangeSet

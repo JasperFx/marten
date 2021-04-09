@@ -11,7 +11,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Transforms;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Storage
 {
     public class DefaultTenancy: Tenancy, ITenancy
@@ -53,7 +53,7 @@ namespace Marten.Storage
 
         public string TenantId { get; }
 
-        public IDocumentStorage<T> StorageFor<T>()
+        public IDocumentStorage<T> StorageFor<T>() where T : notnull
         {
             return _inner.StorageFor<T>();
         }

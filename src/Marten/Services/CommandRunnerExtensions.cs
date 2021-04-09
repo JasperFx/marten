@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Baseline;
 using Marten.Linq;
-using Marten.Services.Json;
 using Marten.Util;
 using Npgsql;
-
+#nullable enable
 namespace Marten.Services
 {
     public static class CommandRunnerExtensions
@@ -16,7 +15,7 @@ namespace Marten.Services
             return runner.Execute(cmd);
         }
 
-        public static QueryPlan ExplainQuery(this IManagedConnection runner, ISerializer serializer, NpgsqlCommand cmd, Action<IConfigureExplainExpressions> configureExplain = null)
+        public static QueryPlan? ExplainQuery(this IManagedConnection runner, ISerializer serializer, NpgsqlCommand cmd, Action<IConfigureExplainExpressions>? configureExplain = null)
         {
             var config = new ConfigureExplainExpressions();
             configureExplain?.Invoke(config);
@@ -31,7 +30,7 @@ namespace Marten.Services
             if (planToReturn == null)
                 return null;
 
-            planToReturn.PlanningTime = queryPlans[0].PlanningTime;
+            planToReturn.PlanningTime = queryPlans![0].PlanningTime;
             planToReturn.ExecutionTime = queryPlans[0].ExecutionTime;
             planToReturn.Command = cmd;
 
@@ -63,13 +62,13 @@ namespace Marten.Services
             return list;
         }
 
-        public static T QueryScalar<T>(this IManagedConnection runner, string sql)
+        public static T? QueryScalar<T>(this IManagedConnection runner, string sql)
         {
             var cmd = new NpgsqlCommand(sql);
             return runner.QueryScalar<T>(cmd);
         }
 
-        public static T QueryScalar<T>(this IManagedConnection runner, NpgsqlCommand cmd)
+        public static T? QueryScalar<T>(this IManagedConnection runner, NpgsqlCommand cmd)
         {
             using var reader = runner.ExecuteReader(cmd);
 

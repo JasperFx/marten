@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Patching;
-
+#nullable enable
 namespace Marten.Services
 {
     public interface IUnitOfWork

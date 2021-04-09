@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using Baseline;
 using NpgsqlTypes;
-
+#nullable enable
 namespace Marten.Schema
 {
     /// <summary>
@@ -32,7 +32,7 @@ namespace Marten.Schema
         /// <summary>
         /// Use to override the Postgresql database column type of this searchable field
         /// </summary>
-        public string PgType { get; set; } = null;
+        public string? PgType { get; set; } = null;
 
         /// <summary>
         /// Use to override the NpgsqlDbType used when querying with a parameter
@@ -48,7 +48,7 @@ namespace Marten.Schema
         /// <summary>
         /// Specify the name of the index explicity
         /// </summary>
-        public string IndexName { get; set; } = null;
+        public string? IndexName { get; set; } = null;
 
         /// <summary>
         /// Specifies the sort order of the index (only applicable to B-tree indexes)

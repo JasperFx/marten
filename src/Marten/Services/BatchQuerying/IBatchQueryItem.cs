@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public interface IBatchQueryItem

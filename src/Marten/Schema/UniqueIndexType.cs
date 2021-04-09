@@ -1,4 +1,5 @@
-﻿namespace Marten.Schema
+#nullable enable
+namespace Marten.Schema
 {
     public enum UniqueIndexType
     {

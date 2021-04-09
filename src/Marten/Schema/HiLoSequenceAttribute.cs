@@ -1,6 +1,6 @@
 using System;
 using Marten.Schema.Identity.Sequences;
-
+#nullable enable
 namespace Marten.Schema
 {
     /// <summary>
@@ -17,7 +17,7 @@ namespace Marten.Schema
             get { return _settings.MaxLo; }
         }
 
-        public string SequenceName
+        public string? SequenceName
         {
             set { _settings.SequenceName = value; }
             get { return _settings.SequenceName; }

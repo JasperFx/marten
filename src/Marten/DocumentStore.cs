@@ -17,7 +17,7 @@ using Marten.Storage;
 using Marten.Transforms;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>
@@ -232,7 +232,7 @@ namespace Marten
         }
 
         public IDocumentTransforms Transform { get; }
-        public IProjectionDaemon BuildProjectionDaemon(ILogger logger = null)
+        public IProjectionDaemon BuildProjectionDaemon(ILogger? logger = null)
         {
             logger ??= new NulloLogger();
 
@@ -341,7 +341,7 @@ namespace Marten
 
             if (options.DotNetTransaction != null)
             {
-                options.Connection.EnlistTransaction(options.DotNetTransaction);
+                options.Connection!.EnlistTransaction(options.DotNetTransaction);
                 options.OwnsTransactionLifecycle = false;
             }
 

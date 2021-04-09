@@ -1,6 +1,6 @@
 using System;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
     public interface ISequences: IFeatureSchema

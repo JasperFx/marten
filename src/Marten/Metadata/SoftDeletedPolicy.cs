@@ -1,6 +1,6 @@
 using Baseline;
 using Marten.Schema;
-
+#nullable enable
 namespace Marten.Metadata
 {
     internal class SoftDeletedPolicy: IDocumentPolicy

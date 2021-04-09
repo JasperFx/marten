@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Text;
 using Npgsql;
 using NpgsqlTypes;
-
+#nullable enable
 namespace Marten.Util
 {
     public class CommandBuilder: IDisposable

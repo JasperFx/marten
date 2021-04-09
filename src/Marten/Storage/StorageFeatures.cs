@@ -8,7 +8,7 @@ using Marten.Events;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Util;
-
+#nullable enable
 namespace Marten.Storage
 {
     public class StorageFeatures

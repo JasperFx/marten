@@ -12,7 +12,7 @@ using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Marten.Util;
-
+#nullable enable
 namespace Marten
 {
     /// <summary>
@@ -174,7 +174,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             IDocumentSourceCode Load(IProviderGraph providers);
         }
 
-        internal class DocumentSourceCodeLoader<T>: IDocumentSourceCodeLoader
+        internal class DocumentSourceCodeLoader<T>: IDocumentSourceCodeLoader where T : notnull
         {
             public IDocumentSourceCode Load(IProviderGraph providers)
             {

@@ -1,3 +1,4 @@
+#nullable enable
 namespace Marten.Events
 {
     public class EventStoreStatistics

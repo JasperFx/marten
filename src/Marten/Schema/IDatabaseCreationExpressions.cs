@@ -1,5 +1,5 @@
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema
 {
     public interface IDatabaseCreationExpressions

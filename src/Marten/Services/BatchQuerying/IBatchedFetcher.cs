@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-
+#nullable enable
 namespace Marten.Services.BatchQuerying
 {
     public interface IBatchedFetcher<T>
@@ -51,9 +51,9 @@ namespace Marten.Services.BatchQuerying
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<T> FirstOrDefault();
+        Task<T?> FirstOrDefault();
 
-        Task<T> FirstOrDefault(Expression<Func<T, bool>> filter);
+        Task<T?> FirstOrDefault(Expression<Func<T, bool>> filter);
 
         /// <summary>
         /// Returns the single document of type "T" matching this query. Will
@@ -80,7 +80,7 @@ namespace Marten.Services.BatchQuerying
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<T> SingleOrDefault();
+        Task<T?> SingleOrDefault();
 
         /// <summary>
         /// Returns the single document of type "T" matching this query or null. Will
@@ -89,6 +89,6 @@ namespace Marten.Services.BatchQuerying
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<T> SingleOrDefault(Expression<Func<T, bool>> filter);
+        Task<T?> SingleOrDefault(Expression<Func<T, bool>> filter);
     }
 }

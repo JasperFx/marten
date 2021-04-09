@@ -4,7 +4,7 @@ using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Schema.Identity
 {
     public class StringIdGeneration: IIdGeneration
