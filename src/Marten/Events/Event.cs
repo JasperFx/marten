@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+
 #nullable enable
 namespace Marten.Events
 {
@@ -65,6 +67,34 @@ namespace Marten.Events
         /// </summary>
         string DotNetTypeName { get; set; }
 
+        /// <summary>
+        /// Optional metadata describing the causation id
+        /// </summary>
+        public string CausationId { get; set; }
+
+        /// <summary>
+        /// Optional metadata describing the correlation id
+        /// </summary>
+        public string CorrelationId { get; set; }
+
+        /// <summary>
+        /// Optional user defined metadata values. This may be null.
+        /// </summary>
+        public Dictionary<string, object> Headers { get; set; }
+
+        /// <summary>
+        /// Set an optional user defined metadata value by key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        void SetHeader(string key, object value);
+
+        /// <summary>
+        /// Get an optional user defined metadata value by key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        object GetHeader(string key);
     }
 
     #endregion sample_IEvent
@@ -121,6 +151,21 @@ namespace Marten.Events
         public DateTimeOffset Timestamp { get; set; }
 
         public string? TenantId { get; set; }
+
+        /// <summary>
+        /// Optional metadata describing the causation id
+        /// </summary>
+        public string CausationId { get; set; }
+
+        /// <summary>
+        /// Optional metadata describing the correlation id
+        /// </summary>
+        public string CorrelationId { get; set; }
+
+        /// <summary>
+        /// This is meant to be lazy created, and can be null
+        /// </summary>
+        public Dictionary<string, object> Headers { get; set; }
         #endregion sample_event_metadata
 
         object IEvent.Data => Data;
@@ -128,6 +173,17 @@ namespace Marten.Events
         public Type EventType => typeof(T);
         public string EventTypeName { get; set; } = null!;
         public string DotNetTypeName { get; set; } = null!;
+
+        public void SetHeader(string key, object value)
+        {
+            Headers ??= new Dictionary<string, object>();
+            Headers[key] = value;
+        }
+
+        public object GetHeader(string key)
+        {
+            return Headers?[key];
+        }
 
         protected bool Equals(Event<T> other)
         {

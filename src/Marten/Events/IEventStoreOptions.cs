@@ -49,5 +49,7 @@ namespace Marten.Events
         /// </summary>
         /// <param name="types"></param>
         void AddEventTypes(IEnumerable<Type> types);
+
+        public MetadataConfig MetadataConfig { get; }
     }
 }

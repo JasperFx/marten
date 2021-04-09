@@ -73,6 +73,8 @@ namespace Marten.Events
             return _events.OfType<IEventType>().ToList();
         }
 
+        IReadonlyMetadataConfig IReadOnlyEventStoreOptions.MetadataConfig => MetadataConfig;
+
         private Type findAggregateType(string name)
         {
             foreach (var aggregateType in Projections.AllAggregateTypes())
@@ -108,10 +110,16 @@ namespace Marten.Events
         /// </remarks>
         public bool UseAppendEventForUpdateLock { get; set; } = false;
 
+        /// <summary>
+        /// Configure the meta data required to be stored for events. By default meta data fields are disabled
+        /// </summary>
+        public MetadataConfig MetadataConfig => new(Metadata);
+
         internal StoreOptions Options { get; }
 
         internal DbObjectName Table => new DbObjectName(DatabaseSchemaName, "mt_events");
 
+        internal EventMetadataCollection Metadata { get; } = new();
 
         internal EventMapping EventMappingFor(Type eventType)
         {
@@ -504,8 +512,5 @@ namespace Marten.Events
             _store = store;
             Projections.AssertValidity(_store);
         }
-
-
-
     }
 }

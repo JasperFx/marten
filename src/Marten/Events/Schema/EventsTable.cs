@@ -25,6 +25,10 @@ namespace Marten.Events.Schema
             AddColumn<TenantIdColumn>();
             AddColumn(new DotNetTypeColumn {Directive = "NULL"});
 
+            AddIfActive(events.Metadata.CorrelationId);
+            AddIfActive(events.Metadata.CausationId);
+            AddIfActive(events.Metadata.Headers);
+
             if (events.TenancyStyle == TenancyStyle.Conjoined)
             {
                 Constraints.Add(
@@ -57,6 +61,14 @@ namespace Marten.Events.Schema
             columns.Insert(2, dotNetTypeName);
 
             return columns;
+        }
+
+        private void AddIfActive(MetadataColumn column)
+        {
+            if (column.Enabled)
+            {
+                AddColumn(column);
+            }
         }
     }
 
