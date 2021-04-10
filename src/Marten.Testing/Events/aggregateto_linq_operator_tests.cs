@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
@@ -41,7 +42,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void can_aggregate_with_initial_state_synchronously()
         {
-            var initialParty = new QuestParty {Members = new() { "Lan" }};
+            var initialParty = new QuestParty { Members = new List<string> { "Lan" } };
             theSession.Events.StartStream<Quest>(_joined1, _departed1);
             theSession.Events.StartStream<Quest>(_joined2, _departed2);
             theSession.SaveChanges();
@@ -54,7 +55,7 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task can_aggregate_with_initial_state_asynchronously()
         {
-            var initialParty = new QuestParty {Members = new() { "Lan" }};
+            var initialParty = new QuestParty { Members = new List<string> { "Lan" } };
             theSession.Events.StartStream<Quest>(_joined1, _departed1);
             theSession.Events.StartStream<Quest>(_joined2, _departed2);
             await theSession.SaveChangesAsync();
