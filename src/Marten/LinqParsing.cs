@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -141,6 +141,5 @@ namespace Marten
         }
 
         private ImHashMap<Type, ImHashMap<string, IMethodCallParser>> _methodParsing = ImHashMap<Type, ImHashMap<string, IMethodCallParser>>.Empty;
-        private IReadOnlyList<IFieldSource> _fieldSources;
     }
 }
