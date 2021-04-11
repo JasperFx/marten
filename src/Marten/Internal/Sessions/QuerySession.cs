@@ -68,9 +68,9 @@ namespace Marten.Internal.Sessions
             Listeners.AddRange(store.Options.Listeners);
             if (sessionOptions != null)
             {
-                if (sessionOptions.Timeout.HasValue && sessionOptions.Timeout.Value < 0)
+                if (sessionOptions.Timeout is < 0)
                 {
-                    throw new ArgumentOutOfRangeException("CommandTimeout can't be less than zero");
+                    throw new ArgumentOutOfRangeException(nameof(sessionOptions.Timeout),"CommandTimeout can't be less than zero");
                 }
 
                 Listeners.AddRange(sessionOptions.Listeners);

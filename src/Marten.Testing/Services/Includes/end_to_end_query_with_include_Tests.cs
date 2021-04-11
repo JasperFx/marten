@@ -333,7 +333,7 @@ namespace Marten.Testing.Services.Includes
         {
             using (var query = theStore.QuerySession())
             {
-                T included = default(T);
+                T included = default;
                 var issue2 = query.Query<Issue>()
                     .Include<T>(x => x.AssigneeId, x => included = x)
                     .Where(x => x.Tags.Any(t => t == "DIY"))

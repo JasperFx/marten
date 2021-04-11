@@ -1,4 +1,4 @@
-﻿using System;
+using System;
  using System.Collections;
  using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -49,8 +49,7 @@ using Baseline;
             var idFields = _fields.Where(x => x.Value is IdField).ToArray();
             foreach (var pair in idFields)
             {
-                IField field;
-                _fields.TryRemove(pair.Key, out field);
+                _fields.TryRemove(pair.Key, out _);
             }
         }
 

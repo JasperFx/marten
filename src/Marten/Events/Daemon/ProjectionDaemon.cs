@@ -414,7 +414,7 @@ namespace Marten.Events.Daemon
             try
             {
                 var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
-                using (var session = _store.LightweightSession())
+                await using (var session = _store.LightweightSession())
                 {
                     session.Store(deadLetterEvent);
                     await session.SaveChangesAsync();

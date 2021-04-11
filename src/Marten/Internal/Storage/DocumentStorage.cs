@@ -35,7 +35,7 @@ namespace Marten.Internal.Storage
         protected readonly string _loaderSql;
         protected Action<T, TId> _setter;
         protected readonly DocumentMapping _mapping;
-        private NpgsqlDbType _idType;
+        private readonly NpgsqlDbType _idType;
         private readonly string[] _selectFields;
 
         public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
@@ -95,20 +95,12 @@ namespace Marten.Internal.Storage
         private void determineDefaultWhereFragment()
         {
             var defaults = defaultFilters().ToArray();
-            switch (defaults.Length)
+            _defaultWhere = defaults.Length switch
             {
-                case 0:
-                    _defaultWhere = null;
-                    break;
-
-                case 1:
-                    _defaultWhere = defaults[0];
-                    break;
-
-                default:
-                    _defaultWhere = new CompoundWhereFragment("and", defaults);
-                    break;
-            }
+                0 => null,
+                1 => defaults[0],
+                _ => new CompoundWhereFragment("and", defaults)
+            };
         }
 
         private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)

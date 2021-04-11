@@ -290,25 +290,13 @@ namespace Marten
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);
             connection.BeginSession();
 
-            IDocumentSession session;
-            switch (options.Tracking)
+            IDocumentSession session = options.Tracking switch
             {
-                case DocumentTracking.None:
-                    session = new LightweightSession(this, options, connection, tenant);
-                    break;
-
-                case DocumentTracking.IdentityOnly:
-                    session = new IdentityMapDocumentSession(this, options, connection, tenant);
-                    break;
-
-                case DocumentTracking.DirtyTracking:
-                    session = new DirtyCheckingDocumentSession(this, options, connection, tenant);
-                    break;
-
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking));
-            }
+                DocumentTracking.None => new LightweightSession(this, options, connection, tenant),
+                DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection, tenant),
+                DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection, tenant),
+                _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
+            };
 
             session.Logger = _logger.StartSession(session);
 

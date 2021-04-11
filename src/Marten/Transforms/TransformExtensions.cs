@@ -30,7 +30,7 @@ namespace Marten.Transforms
 
         public static TDoc TransformTo<T, TDoc>(this T doc, string transformName)
         {
-            return default(TDoc);
+            return default;
         }
     }
 }

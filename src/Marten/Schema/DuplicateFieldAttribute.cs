@@ -16,7 +16,7 @@ namespace Marten.Schema
         {
             var field = mapping.DuplicateField(member.Name, PgType, notNull: NotNull);
 
-            if (DbType != default(NpgsqlDbType))
+            if (DbType != default)
             {
                 field.DbType = DbType;
             }
@@ -26,7 +26,7 @@ namespace Marten.Schema
             if (IndexName.IsNotEmpty())
                 indexDefinition.IndexName = IndexName;
 
-            indexDefinition.SortOrder = this.IndexSortOrder;
+            indexDefinition.SortOrder = IndexSortOrder;
         }
 
         /// <summary>

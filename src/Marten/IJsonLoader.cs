@@ -47,7 +47,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<string?> FindByIdAsync<T>(string id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<string?> FindByIdAsync<T>(string id, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
@@ -56,7 +56,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<string?> FindByIdAsync<T>(int id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<string?> FindByIdAsync<T>(int id, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
@@ -65,7 +65,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<string?> FindByIdAsync<T>(long id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<string?> FindByIdAsync<T>(long id, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Asynchronously load or find only the document json by numeric or Guid id for a document of type T
@@ -74,7 +74,7 @@ namespace Marten
         /// <param name="id"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<string?> FindByIdAsync<T>(Guid id, CancellationToken token = default(CancellationToken)) where T : class;
+        Task<string?> FindByIdAsync<T>(Guid id, CancellationToken token = default) where T : class;
 
 
 

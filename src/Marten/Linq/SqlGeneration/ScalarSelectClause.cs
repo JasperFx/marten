@@ -77,7 +77,7 @@ namespace Marten.Linq.SqlGeneration
             {
                 if (reader.IsDBNull(0))
                 {
-                    return default(T);
+                    return default;
                 }
 
                 return reader.GetFieldValue<T>(0);
@@ -119,7 +119,7 @@ namespace Marten.Linq.SqlGeneration
         {
             if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
             {
-                return default(T);
+                return default;
             }
 
             return await reader.GetFieldValueAsync<T>(0, token);

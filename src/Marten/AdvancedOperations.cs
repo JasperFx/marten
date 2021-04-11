@@ -106,17 +106,15 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<IReadOnlyList<ProjectionProgress>> AllProjectionProgress(CancellationToken token = default(CancellationToken))
+        public async Task<IReadOnlyList<ProjectionProgress>> AllProjectionProgress(CancellationToken token = default)
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
 
             var handler = (IQueryHandler<IReadOnlyList<ProjectionProgress>>)new ListQueryHandler<ProjectionProgress>(new ProjectionProgressStatement(_store.Events),
                 new ProjectionProgressSelector());
 
-            using (var session = (QuerySession)_store.QuerySession())
-            {
-                return await session.ExecuteHandlerAsync(handler, token);
-            }
+            await using var session = (QuerySession)_store.QuerySession();
+            return await session.ExecuteHandlerAsync(handler, token);
         }
 
         /// <summary>
@@ -124,7 +122,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default(CancellationToken))
+        public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default)
         {
             _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
 

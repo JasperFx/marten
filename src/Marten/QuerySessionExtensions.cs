@@ -34,7 +34,7 @@ namespace Marten
         /// <param name="token"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public static async Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql, CancellationToken token = default(CancellationToken), params object[] parameters)
+        public static async Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql, CancellationToken token = default, params object[] parameters)
         {
             // TODO -- this could be optimized to avoid the Reflection hit.
             var task = (Task)QueryMethodAsync.MakeGenericMethod(type).Invoke(session, new object[] { sql, token, parameters });
