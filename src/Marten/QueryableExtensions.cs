@@ -36,7 +36,7 @@ namespace Marten
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             return queryable.As<IMartenQueryable>().ToListAsync<T>(token);
         }
@@ -48,7 +48,7 @@ namespace Marten
 
         public static Task<bool> AnyAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -59,7 +59,7 @@ namespace Marten
         public static Task<bool> AnyAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -75,7 +75,7 @@ namespace Marten
 
         public static Task<TResult> SumAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -85,7 +85,7 @@ namespace Marten
 
         public static Task<TResult> MaxAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -95,7 +95,7 @@ namespace Marten
 
         public static Task<TResult> MinAsync<TSource, TResult>(
             this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -105,7 +105,7 @@ namespace Marten
 
         public static Task<double> AverageAsync<TSource, TMember>(
             this IQueryable<TSource> source, Expression<Func<TSource, TMember>> expression,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -119,7 +119,7 @@ namespace Marten
 
         public static Task<int> CountAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -130,7 +130,7 @@ namespace Marten
         public static Task<int> CountAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -142,7 +142,7 @@ namespace Marten
 
         public static Task<long> LongCountAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -153,7 +153,7 @@ namespace Marten
         public static Task<long> LongCountAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -169,7 +169,7 @@ namespace Marten
 
         public static Task<TSource> FirstAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -180,7 +180,7 @@ namespace Marten
         public static Task<TSource> FirstAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -192,7 +192,7 @@ namespace Marten
 
         public static Task<TSource?> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -203,7 +203,7 @@ namespace Marten
         public static Task<TSource?> FirstOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -219,7 +219,7 @@ namespace Marten
 
         public static Task<TSource> SingleAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -230,7 +230,7 @@ namespace Marten
         public static Task<TSource> SingleAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -242,7 +242,7 @@ namespace Marten
 
         public static Task<TSource?> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -253,7 +253,7 @@ namespace Marten
         public static Task<TSource?> SingleOrDefaultAsync<TSource>(
             this IQueryable<TSource> source,
             Expression<Func<TSource, bool>> predicate,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));

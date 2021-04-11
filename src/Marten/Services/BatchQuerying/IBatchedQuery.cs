@@ -94,7 +94,7 @@ namespace Marten.Services.BatchQuerying
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task Execute(CancellationToken token = default(CancellationToken));
+        Task Execute(CancellationToken token = default);
 
         /// <summary>
         /// Where for documents of type "T" by Linq expression

@@ -16,9 +16,7 @@ namespace Marten.Services
 
         public void Store(Type documentType, object id, Guid version)
         {
-            IDictionary<object, Guid> dict;
-
-            if (!_versions.TryGetValue(documentType, out dict))
+            if (!_versions.TryGetValue(documentType, out var dict))
             {
                 dict = new Dictionary<object, Guid>();
                 _versions.Add(documentType, dict);

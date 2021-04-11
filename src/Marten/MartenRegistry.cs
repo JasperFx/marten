@@ -521,13 +521,7 @@ namespace Marten
 
             public class MetadataConfig
             {
-                private readonly DocumentMapping? _mapping;
                 private readonly DocumentMappingExpression<T> _parent;
-
-                public MetadataConfig(DocumentMapping mapping)
-                {
-                    _mapping = mapping;
-                }
 
                 public MetadataConfig(DocumentMappingExpression<T> parent)
                 {

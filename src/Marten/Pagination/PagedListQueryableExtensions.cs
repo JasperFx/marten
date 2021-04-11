@@ -40,7 +40,7 @@ namespace Marten.Pagination
             this IQueryable<T> queryable,
             int pageNumber,
             int pageSize,
-            CancellationToken token = default(CancellationToken))
+            CancellationToken token = default)
         {
             // return paged list
             return await PagedList<T>.CreateAsync(queryable, pageNumber, pageSize).ConfigureAwait(false);

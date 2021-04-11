@@ -61,7 +61,7 @@ namespace Marten.Linq.SqlGeneration
             var hasNext = reader.Read();
             return hasNext && !reader.IsDBNull(0)
                 ? reader.GetFieldValue<T>(0)
-                : default(T);
+                : default;
         }
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
@@ -69,7 +69,7 @@ namespace Marten.Linq.SqlGeneration
             var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);
             return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
                 ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false)
-                : default(T);
+                : default;
         }
     }
 }

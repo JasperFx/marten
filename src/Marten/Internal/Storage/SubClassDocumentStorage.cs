@@ -126,17 +126,12 @@ namespace Marten.Internal.Storage
         public ISqlFragment determineWhereFragment()
         {
             var defaults = defaultFilters().ToArray();
-            switch (defaults.Length)
+            return defaults.Length switch
             {
-                case 0:
-                    return null;
-
-                case 1:
-                    return defaults[0];
-
-                default:
-                    return new CompoundWhereFragment("and", defaults);
-            }
+                0 => null,
+                1 => defaults[0],
+                _ => new CompoundWhereFragment("and", defaults)
+            };
         }
 
         private WhereFragment toBasicWhere()

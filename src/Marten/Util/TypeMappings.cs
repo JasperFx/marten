@@ -62,7 +62,7 @@ namespace Marten.Util
 
             value = GetTypeMapping(type)?.PgTypeName;
 
-            PgTypeMemo.Swap(d => d.AddOrUpdate(type, value));
+            PgTypeMemo.Swap(d => d.AddOrUpdate(type, value!));
 
             return value;
         }
@@ -250,7 +250,7 @@ namespace Marten.Util
                 }
 
                 {
-                    dbType = NpgsqlDbType.Array | ToDbType(type.GetElementType());
+                    dbType = NpgsqlDbType.Array | ToDbType(type.GetElementType()!);
                     return true;
                 }
             }

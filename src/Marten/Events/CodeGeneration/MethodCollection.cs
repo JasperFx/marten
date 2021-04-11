@@ -15,7 +15,7 @@ namespace Marten.Events.CodeGeneration
 {
     internal abstract class MethodCollection
     {
-        private static Dictionary<int, Type> _funcBaseTypes = new Dictionary<int, Type>
+        private static readonly Dictionary<int, Type> _funcBaseTypes = new Dictionary<int, Type>
         {
             {1, typeof(Func<>)},
             {2, typeof(Func<,>)},
@@ -27,7 +27,7 @@ namespace Marten.Events.CodeGeneration
             {8, typeof(Func<,,,,,,,>)},
         };
 
-        private static Dictionary<int, Type> _actionBaseTypes = new Dictionary<int, Type>
+        private static readonly Dictionary<int, Type> _actionBaseTypes = new Dictionary<int, Type>
         {
             {1, typeof(Action<>)},
             {2, typeof(Action<,>)},
@@ -260,7 +260,7 @@ namespace Marten.Events.CodeGeneration
 
         private class EventTypeComparer: IComparer<EventProcessingFrame>
         {
-            public int Compare(EventProcessingFrame? x, EventProcessingFrame? y)
+            public int Compare(EventProcessingFrame x, EventProcessingFrame y)
             {
                 if (x.EventType.CanBeCastTo(y.EventType)) return -1;
 

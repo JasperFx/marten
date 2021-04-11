@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
-
+#nullable enable
 namespace Marten.Events
 {
     public interface IReadOnlyEventStoreOptions
