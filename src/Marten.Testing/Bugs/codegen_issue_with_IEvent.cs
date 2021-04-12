@@ -21,6 +21,25 @@ namespace Marten.Testing.Bugs
             session.Events.Append(Guid.NewGuid(), new FooCreated { Id = Guid.NewGuid() });
             session.SaveChanges();
         }
+
+#if NET
+        [Fact]
+        public void TestRecordAggregation()
+        {
+            var store = StoreOptions(_ =>
+            {
+                _.Events.Projections.Add(new RecordProjection());
+            });
+
+            using var session = store.OpenSession();
+            var id = Guid.NewGuid();
+            session.Events.Append(id, new RecordLogCreated(id));
+            session.Events.Append(id, new RecordLogUpdated(id));
+
+            session.SaveChanges();
+        }
+
+#endif
     }
     public class FooCreated
     {
@@ -52,5 +71,36 @@ namespace Marten.Testing.Bugs
             ProjectEvent<IEvent<FooCreated>>((state, ev) => state.Changes.Add($"Foo was updated at {ev.Timestamp}"));
         }
     }
+
+#if NET
+
+
+    public interface IRecordLogEvent
+    {
+        Guid Id { get; init; }
+    }
+
+    public record RecordAuditLog(Guid Id, List<string> Changes);
+
+    public record RecordLogCreated(Guid Id): IRecordLogEvent;
+
+    public record RecordLogUpdated(Guid Id): IRecordLogEvent;
+
+    public class RecordProjection: ViewProjection<RecordAuditLog, Guid>
+    {
+        public RecordProjection()
+        {
+            ProjectionName = nameof(RecordAuditLog);
+            Lifecycle = ProjectionLifecycle.Inline;
+
+            Identity<IRecordLogEvent>(x=> x.Id);
+
+            CreateEvent<RecordLogCreated>(x => new RecordAuditLog(x.Id, new List<string>()));
+            ProjectEvent<IEvent<RecordLogUpdated>>((state, ev) => state.Changes.Add($"Log was updated at {ev.Timestamp}"));
+
+        }
+    }
+
+#endif
 
 }
