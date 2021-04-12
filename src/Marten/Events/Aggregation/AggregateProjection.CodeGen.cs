@@ -158,6 +158,7 @@ namespace Marten.Events.Aggregation
             _assembly.Generation.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
             _assembly.Generation.Assemblies.AddRange(_shouldDeleteMethods.ReferencedAssemblies());
 
+            _assembly.Namespaces.Add("System");
             _assembly.Namespaces.Add("System.Linq");
 
             _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
