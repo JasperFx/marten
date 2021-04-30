@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
@@ -29,6 +30,26 @@ namespace Marten.Testing.Events
             {
                 @event.CorrelationId.ShouldBe(correlationId);
             }
+        }
+
+        [Fact]
+        public async Task check_search_with_correlation_id()
+        {
+            StoreOptions(_ => _.Events.MetadataConfig.CorrelationIdEnabled = true);
+            const string correlationId = "test-correlation-id";
+            theSession.CorrelationId = correlationId;
+
+            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed).Id;
+            await theSession.SaveChangesAsync();
+
+            var events = await theSession.Events.QueryAllRawEvents()
+                .Where(x => x.CorrelationId == correlationId)
+                .ToListAsync();
+
+            events.Count.ShouldBe(3);
+            events[0].StreamId.ShouldBe(streamId);
+            events[1].StreamId.ShouldBe(streamId);
+            events[2].StreamId.ShouldBe(streamId);
         }
 
         [Fact]
@@ -65,6 +86,26 @@ namespace Marten.Testing.Events
             {
                 @event.CausationId.ShouldBe(causationId);
             }
+        }
+
+        [Fact]
+        public async Task check_search_with_causation_id()
+        {
+            StoreOptions(_ => _.Events.MetadataConfig.CausationIdEnabled = true);
+            const string causationId = "test-causation-id";
+            theSession.CausationId = causationId;
+
+            var streamId = theSession.Events.StartStream<QuestParty>(started, joined, slayed).Id;
+            await theSession.SaveChangesAsync();
+
+            var events = await theSession.Events.QueryAllRawEvents()
+                .Where(x => x.CausationId == causationId)
+                .ToListAsync();
+
+            events.Count.ShouldBe(3);
+            events[0].StreamId.ShouldBe(streamId);
+            events[1].StreamId.ShouldBe(streamId);
+            events[2].StreamId.ShouldBe(streamId);
         }
 
         [Fact]
