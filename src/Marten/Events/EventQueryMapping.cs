@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
-using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql;
@@ -31,6 +30,16 @@ namespace Marten.Events
 
             duplicateField(x => x.Version, "version");
             duplicateField(x => x.Timestamp, "timestamp");
+
+            if (storeOptions.EventGraph.Metadata.CorrelationId.Enabled)
+            {
+                duplicateField(x => x.CorrelationId, storeOptions.EventGraph.Metadata.CorrelationId.Name);
+            }
+
+            if (storeOptions.EventGraph.Metadata.CausationId.Enabled)
+            {
+                duplicateField(x => x.CausationId, storeOptions.EventGraph.Metadata.CausationId.Name);
+            }
         }
 
         public override DbObjectName TableName { get; }
@@ -42,6 +51,5 @@ namespace Marten.Events
 
             return DuplicateField(finder.Members.ToArray(), columnName: columnName);
         }
-
     }
 }
