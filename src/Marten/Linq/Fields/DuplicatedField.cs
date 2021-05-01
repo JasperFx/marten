@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Marten.Exceptions;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
@@ -130,7 +131,12 @@ namespace Marten.Linq.Fields
         {
             if (value.Value == null)
             {
-                return new IsNullFilter(this);
+                return op switch
+                {
+                    "=" => new IsNullFilter(this),
+                    "!=" => new IsNotNullFilter(this),
+                    _ => throw new BadLinqExpressionException($"Can only compare property {MemberName} by '=' or '!=' with null value")
+                };
             }
 
             return new ComparisonFilter(this, new CommandParameter(_parseObject(value), DbType), op);
