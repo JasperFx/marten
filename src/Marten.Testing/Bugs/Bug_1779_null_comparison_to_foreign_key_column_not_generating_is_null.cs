@@ -48,6 +48,35 @@ namespace Marten.Testing.Linq
 
             results.Count.ShouldBe(1);
         }
+
+        [Fact]
+        public async Task should_be_able_to_filter_with_null_value_and_not_equals()
+        {
+            using var documentStore = SeparateStore(x =>
+            {
+                x.AutoCreateSchemaObjects = AutoCreate.All;
+                x.Schema.For<HierarchyEntity>()
+                    .ForeignKey<HierarchyEntity>(m => m.ParentId);
+            });
+
+            documentStore.Advanced.Clean.DeleteAllDocuments();
+
+            var parentId = Guid.NewGuid();
+
+            await using var session = documentStore.OpenSession();
+            session.Store(new HierarchyEntity {Id = parentId, Name = "Parent"}, new HierarchyEntity {Name = "Test", ParentId = parentId});
+
+            await session.SaveChangesAsync();
+
+            await using var querySession = documentStore.QuerySession();
+            querySession.Logger = new TestOutputMartenLogger(_output);
+
+            var results = await querySession.Query<HierarchyEntity>()
+                .Where(x => x.Name == "Test" && x.ParentId != null)
+                .ToListAsync();
+
+            results.Count.ShouldBe(1);
+        }
     }
 }
 
