@@ -159,6 +159,9 @@ namespace Marten.Storage
         {
             SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
             SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamptz", "text");
+            SystemFunctions.AddSystemFunction(_options, "mt_grams_vector", "text");
+            SystemFunctions.AddSystemFunction(_options, "mt_grams_query", "text");
+            SystemFunctions.AddSystemFunction(_options, "mt_grams_array", "text");
 
             Add(SystemFunctions);
 
