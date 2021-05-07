@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Baseline;
+using LamarCodeGeneration.Frames;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -10,6 +12,7 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
+using Remotion.Linq.Parsing.ExpressionVisitors.Transformation.PredefinedTransformations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -19,6 +22,9 @@ namespace Marten
     internal interface IDocumentMappingBuilder
     {
         DocumentMapping Build(StoreOptions options);
+        Type DocumentType { get; }
+
+        void Include(IDocumentMappingBuilder include);
     }
 
     internal class DocumentMappingBuilder<T>: IDocumentMappingBuilder
@@ -33,11 +39,16 @@ namespace Marten
 
         public DocumentMapping Build(StoreOptions options)
         {
-            // TODO -- this is going to get fancier
             var mapping = new DocumentMapping<T>(options);
             foreach (var alteration in _alterations) alteration(mapping);
 
             return mapping;
+        }
+
+        public Type DocumentType => typeof(T);
+        public void Include(IDocumentMappingBuilder include)
+        {
+            _alterations.AddRange(include.As<DocumentMappingBuilder<T>>()._alterations);
         }
     }
 
@@ -48,9 +59,32 @@ namespace Marten
     {
         private readonly StoreOptions _storeOptions;
 
-        public MartenRegistry(StoreOptions storeOptions)
+        internal MartenRegistry(StoreOptions storeOptions)
         {
             _storeOptions = storeOptions;
+        }
+
+        protected MartenRegistry() : this(new StoreOptions())
+        {
+
+        }
+
+        /// <summary>
+        /// Include the declarations from another MartenRegistry type
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public void Include<T>() where T : MartenRegistry, new()
+        {
+            Include(new T());
+        }
+
+        /// <summary>
+        /// Include the declarations from another MartenRegistry object
+        /// </summary>
+        /// <param name="registry"></param>
+        public void Include(MartenRegistry registry)
+        {
+            _storeOptions.Storage.IncludeDocumentMappingBuilders(registry._storeOptions.Storage);
         }
 
         /// <summary>

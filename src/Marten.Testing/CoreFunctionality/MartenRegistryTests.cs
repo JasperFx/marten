@@ -133,5 +133,37 @@ namespace Marten.Testing.CoreFunctionality
             public string OtherProp;
             public string OtherField { get; set; }
         }
+
+        public class OrganizationRegistry: MartenRegistry
+        {
+            public OrganizationRegistry()
+            {
+                For<Organization>().Duplicate(x => x.OtherName);
+                For<User>().Duplicate(x => x.UserName);
+            }
+        }
+
+        [Fact]
+        public void using_registry_include()
+        {
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Schema.For<Organization>().Duplicate(x => x.Name);
+                opts.Schema.Include<OrganizationRegistry>();
+                opts.Connection(ConnectionSource.ConnectionString);
+            });
+
+            var organizations = store
+                .Options.Storage.MappingFor(typeof(Organization));
+
+            organizations.DuplicatedFields.Any(x => x.MemberName == nameof(Organization.OtherName))
+                .ShouldBeTrue();
+
+            organizations.DuplicatedFields.Any(x => x.MemberName == nameof(Organization.Name))
+                .ShouldBeTrue();
+
+            store.Options.Storage.MappingFor(typeof(User)).DuplicatedFields
+                .Single().MemberName.ShouldBe(nameof(User.UserName));
+        }
     }
 }

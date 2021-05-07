@@ -322,6 +322,23 @@ namespace Marten.Storage
         }
 
 
-
+        /// <summary>
+        /// Used to support MartenRegistry.Include()
+        /// </summary>
+        /// <param name="includedStorage"></param>
+        internal void IncludeDocumentMappingBuilders(StorageFeatures includedStorage)
+        {
+            foreach (var builder in includedStorage._builders.Values)
+            {
+                if (_builders.TryGetValue(builder.DocumentType, out var existing))
+                {
+                    existing.Include(builder);
+                }
+                else
+                {
+                    _builders.Add(builder.DocumentType, builder);
+                }
+            }
+        }
     }
 }
