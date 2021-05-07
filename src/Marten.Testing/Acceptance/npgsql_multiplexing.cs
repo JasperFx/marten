@@ -11,13 +11,16 @@ namespace Marten.Testing.Acceptance
     {
         private readonly string _connectionMultiplexed = $"{ConnectionSource.ConnectionString};multiplexing=true";
 
-        [Fact(Skip= "Failing - Issue #1646")]
+        [Fact]
         public async Task can_insert_documents()
         {
             using var store = DocumentStore.For(options =>
             {
                 options.Connection(_connectionMultiplexed);
+                options.DatabaseSchemaName = "multiplex";
             });
+
+            await store.Advanced.Clean.CompletelyRemoveAsync(typeof(Target));
 
             await using (var session = store.OpenSession())
             {
@@ -27,7 +30,7 @@ namespace Marten.Testing.Acceptance
 
             await using (var query = store.QuerySession())
             {
-                query.Query<Target>().Count().ShouldBe(99);
+                (await query.Query<Target>().CountAsync()).ShouldBe(99);
             }
         }
 

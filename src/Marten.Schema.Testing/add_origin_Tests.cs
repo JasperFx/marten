@@ -1,4 +1,5 @@
-﻿using Marten.Schema.Testing.Documents;
+﻿using Weasel.Postgresql;
+using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;

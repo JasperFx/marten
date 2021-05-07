@@ -5,6 +5,7 @@ using LamarCodeGeneration;
 using Marten.Exceptions;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.Fields

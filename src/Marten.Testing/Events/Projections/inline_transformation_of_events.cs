@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Events.Projections;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections

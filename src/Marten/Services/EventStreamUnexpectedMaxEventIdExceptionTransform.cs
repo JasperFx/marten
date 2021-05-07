@@ -1,11 +1,13 @@
 using System;
 using System.Text.RegularExpressions;
+using Baseline.Exceptions;
 using Npgsql;
 
 namespace Marten.Services
 {
     internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTransform
     {
+        [Obsolete("let's get rid of this")]
         public static readonly EventStreamUnexpectedMaxEventIdExceptionTransform Instance = new EventStreamUnexpectedMaxEventIdExceptionTransform();
 
         private const string ExpectedMessage = "duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"";

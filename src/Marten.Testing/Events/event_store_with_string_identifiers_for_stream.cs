@@ -30,8 +30,11 @@ namespace Marten.Testing.Events
 
             var table = new StreamsTable(events);
 
-            table.PrimaryKey.Type.ShouldBe("varchar");
-            table.First().Name.ShouldBe("id");
+            var pk = table.Columns.Single(x => x.IsPrimaryKey);
+
+            pk.Type.ShouldBe("varchar");
+            pk.Name.ShouldBe("id");
+            table.Columns.First().Name.ShouldBe("id");
         }
 
         [Fact]

@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Schema;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -75,6 +76,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
+        [DocumentAlias("testmodel1")]
         public class TestModel1
         {
             public Guid Id { get; set; }
@@ -84,12 +86,14 @@ namespace Marten.Testing.CoreFunctionality
             public int Mode { get; set; }
         }
 
+        [DocumentAlias("testmodel2")]
         public class TestModel2
         {
             public Guid Id { get; set; }
             public string Content { get; set; }
         }
 
+        [DocumentAlias("testmodel3")]
         public class TestModel3
         {
             public Guid Id { get; set; }
@@ -100,7 +104,7 @@ namespace Marten.Testing.CoreFunctionality
             public int Cond2 { get; set; }
         }
 
-
+        [DocumentAlias("testmodel4")]
         public class TestModel4
         {
             public Guid Id { get; set; }
@@ -119,6 +123,7 @@ namespace Marten.Testing.CoreFunctionality
             public string Mode { get; set; }
         }
 
+        [DocumentAlias("testmodel5")]
         public class TestModel5
         {
             public Guid Id { get; set; }
@@ -128,6 +133,7 @@ namespace Marten.Testing.CoreFunctionality
             public int Stage { get; set; }
         }
 
+        [DocumentAlias("testmodel6")]
         public class TestModel6
         {
             public Guid Id { get; set; }

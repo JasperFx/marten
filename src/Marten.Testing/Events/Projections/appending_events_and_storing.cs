@@ -8,6 +8,7 @@ using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections
@@ -17,7 +18,7 @@ namespace Marten.Testing.Events.Projections
         [Theory]
         [InlineData(TenancyStyle.Single)]
         [InlineData(TenancyStyle.Conjoined)]
-        public void patch_inside_inline_projection_does_not_error_during_savechanges(TenancyStyle tenancyStyle)
+        public async Task patch_inside_inline_projection_does_not_error_during_savechanges(TenancyStyle tenancyStyle)
         {
             StoreOptions(_ =>
             {
@@ -27,7 +28,7 @@ namespace Marten.Testing.Events.Projections
                 _.Events.Projections.Add(new QuestPatchTestProjection());
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var aggregateId = Guid.NewGuid();
             var quest = new Quest
@@ -41,9 +42,9 @@ namespace Marten.Testing.Events.Projections
             };
 
             theSession.Events.Append(aggregateId, quest, questStarted);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            theSession.Events.FetchStreamState(aggregateId).Version.ShouldBe(2);
+            (await theSession.Events.FetchStreamStateAsync(aggregateId)).Version.ShouldBe(2);
         }
 
         public class QuestPatchTestProjection: IProjection

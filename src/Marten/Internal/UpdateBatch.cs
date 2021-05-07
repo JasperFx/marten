@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Services;
 using Marten.Util;
@@ -51,11 +52,7 @@ namespace Marten.Internal
             }
             catch (Exception e)
             {
-                Exception transformed = null;
-
-                if (_operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                    throw transformed;
-                throw;
+                _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
             }
 
             throwExceptionsIfAny();
@@ -73,10 +70,7 @@ namespace Marten.Internal
                 }
                 catch (Exception e)
                 {
-                    Exception transformed = null;
-                    if (_operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                        throw transformed;
-                    throw;
+                    _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
                 }
             }
             else
@@ -99,10 +93,7 @@ namespace Marten.Internal
                     }
                     catch (Exception e)
                     {
-                        Exception transformed = null;
-                        if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                            throw transformed;
-                        throw;
+                        _operations.OfType<IExceptionTransform>().TransformAndThrow(e);
                     }
 
                     count += session.Options.UpdateBatchSize;
@@ -141,11 +132,7 @@ namespace Marten.Internal
                 }
                 catch (Exception e)
                 {
-                    Exception transformed = null;
-
-                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                        throw transformed;
-                    throw;
+                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
                 }
             }
 
@@ -161,11 +148,7 @@ namespace Marten.Internal
                 }
                 catch (Exception e)
                 {
-                    Exception transformed = null;
-
-                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                        throw transformed;
-                    throw;
+                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
                 }
             }
         }
@@ -185,13 +168,7 @@ namespace Marten.Internal
                 }
                 catch (Exception e)
                 {
-                    Exception transformed = null;
-
-                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                    {
-                        throw transformed;
-                    }
-                    throw;
+                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
                 }
             }
 
@@ -206,14 +183,7 @@ namespace Marten.Internal
                 }
                 catch (Exception e)
                 {
-                    Exception transformed = null;
-
-                    if (operations.OfType<IExceptionTransform>().Any(x => x.TryTransform(e, out transformed)))
-                    {
-                        throw transformed;
-                    }
-
-                    throw;
+                    operations.OfType<IExceptionTransform>().TransformAndThrow(e);
                 }
             }
         }

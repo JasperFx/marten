@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Baseline;
-using Marten.Testing;
 using Marten.Testing.Events;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using StoryTeller;
 using StoryTeller.Grammars;
+using Weasel.Postgresql;
 
 namespace Marten.Storyteller.Fixtures.EventStore
 {

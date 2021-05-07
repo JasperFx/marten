@@ -38,22 +38,23 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void it_finds_the_primary_key()
         {
-            theDerivedTable.PrimaryKey.ShouldNotBeNull();
-            theDerivedTable.PrimaryKey.Name.ShouldBe("id");
+            theDerivedTable.PrimaryKeyColumns.Single()
+                .ShouldBe("id");
         }
 
         [Fact]
         public void it_has_all_the_columns()
         {
-            theDerivedTable.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn, SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "user_name");
+            theDerivedTable.Columns.Select(x => x.Name).ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn, SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "user_name");
         }
 
         [Fact]
         public void it_can_map_the_database_type()
         {
-            theDerivedTable.PrimaryKey.Type.ShouldBe("uuid");
-            theDerivedTable.Column("data").Type.ShouldBe("jsonb");
-            theDerivedTable.Column("user_name").Type.ShouldBe("varchar");
+            theDerivedTable.Columns
+                .Single(x => x.IsPrimaryKey).Type.ShouldBe("uuid");
+            theDerivedTable.ColumnFor("data").Type.ShouldBe("jsonb");
+            theDerivedTable.ColumnFor("user_name").Type.ShouldBe("varchar");
         }
 
     }

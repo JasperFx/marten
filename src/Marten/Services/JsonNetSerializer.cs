@@ -9,6 +9,7 @@ using Marten.Services.Json;
 using Marten.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Weasel.Postgresql;
 using ConstructorHandling = Newtonsoft.Json.ConstructorHandling;
 
 namespace Marten.Services

@@ -4,6 +4,7 @@ using System.Linq;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs

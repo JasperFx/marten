@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Storage;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
@@ -15,7 +17,7 @@ namespace Marten.Schema.Testing.Storage
             private readonly int _startFrom;
             private readonly string _schema;
 
-            public MatterId(StoreOptions options, int startFrom) : base(nameof(MatterId), options)
+            public MatterId(StoreOptions options, int startFrom) : base(nameof(MatterId))
             {
                 _startFrom = startFrom;
                 _schema = options.DatabaseSchemaName;
@@ -30,7 +32,7 @@ namespace Marten.Schema.Testing.Storage
         #endregion sample_scenario-usingsequenceforuniqueid-setup
 
         [Fact]
-        public void ScenarioUsingSequenceForUniqueIdScenario()
+        public async Task ScenarioUsingSequenceForUniqueIdScenario()
         {
             StoreOptions(storeOptions =>
             {
@@ -40,7 +42,7 @@ namespace Marten.Schema.Testing.Storage
             });
 
             #region sample_scenario-usingsequenceforuniqueid-storesetup-2
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
             #endregion sample_scenario-usingsequenceforuniqueid-storesetup-2
 
             #region sample_scenario-usingsequenceforuniqueid-querymatter

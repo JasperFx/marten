@@ -7,6 +7,7 @@ using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
@@ -23,9 +24,9 @@ namespace Marten.Testing.CoreFunctionality
                 _.Schema.For<Organization>()
                     .Duplicate(x => x.Name).Duplicate(x => x.OtherName, configure: x =>
                     {
-                        x.IndexName = "mt_special";
+                        x.Name = "mt_special";
                     })
-                    .GinIndexJsonData(x => x.IndexName = "my_gin_index")
+                    .GinIndexJsonData(x => x.Name = "my_gin_index")
                     .IndexLastModified(x => x.IsConcurrent = true)
                     .SoftDeletedWithIndex(x => x.Method = IndexMethod.brin);
 
@@ -62,7 +63,7 @@ namespace Marten.Testing.CoreFunctionality
             var mapping = theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("name").Single();
-            index.IndexName.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
+            index.Name.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
             index.Columns.ShouldHaveTheSameElementsAs("name");
         }
 
@@ -73,7 +74,7 @@ namespace Marten.Testing.CoreFunctionality
             var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
             var index = mapping.IndexesFor("other_name").Single();
-            index.IndexName.ShouldBe("mt_special");
+            index.Name.ShouldBe("mt_special");
             index.Columns.ShouldHaveTheSameElementsAs("other_name");
         }
 
@@ -84,9 +85,9 @@ namespace Marten.Testing.CoreFunctionality
 
             var index = mapping.IndexesFor("data").Single();
 
-            index.IndexName.ShouldBe("mt_my_gin_index");
+            index.Name.ShouldBe("my_gin_index");
             index.Method.ShouldBe(IndexMethod.gin);
-            index.Expression.ShouldBe("? jsonb_path_ops");
+            index.Expression.ShouldBe("(? jsonb_path_ops)");
         }
 
         [Fact]
@@ -113,7 +114,10 @@ namespace Marten.Testing.CoreFunctionality
 
             var index = mapping.IndexesFor(SchemaConstants.DeletedAtColumn).Single();
 
-            index.Modifier.ShouldBe("WHERE mt_deleted");
+            var ddl = index.ToDDL(new DocumentTable(mapping));
+            ddl
+                .ShouldContain("WHERE (mt_deleted)", Case.Insensitive);
+
             index.Method.ShouldBe(IndexMethod.brin);
         }
 

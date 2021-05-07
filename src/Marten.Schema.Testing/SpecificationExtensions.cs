@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Baseline;
+using Weasel.Postgresql;
 using Newtonsoft.Json.Linq;
 using Shouldly;
 

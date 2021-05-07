@@ -6,6 +6,7 @@ using LamarCodeGeneration;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries
 {

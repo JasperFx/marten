@@ -3,11 +3,13 @@ using System.Runtime.CompilerServices;
 using LamarCodeGeneration;
 using LamarCompiler;
 using Marten.Internal.Storage;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
 using Marten.Util;
 using Npgsql;
+using CommandExtensions = Weasel.Postgresql.CommandExtensions;
 
 namespace Marten.Internal.CodeGeneration
 {

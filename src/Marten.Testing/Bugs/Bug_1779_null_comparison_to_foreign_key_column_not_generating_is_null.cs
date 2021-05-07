@@ -1,13 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-
 using Bug1779;
-
 using Marten.Testing.Harness;
 
 using Shouldly;
-
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 

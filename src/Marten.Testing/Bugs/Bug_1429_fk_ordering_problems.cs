@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 

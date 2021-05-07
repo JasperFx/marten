@@ -10,6 +10,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Parsing;
+using Weasel.Postgresql;
 using Marten.Util;
 using Remotion.Linq.Clauses;
 

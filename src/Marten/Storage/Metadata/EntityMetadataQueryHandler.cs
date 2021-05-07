@@ -7,6 +7,7 @@ using Baseline;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Util;
 
@@ -27,7 +28,7 @@ namespace Marten.Storage.Metadata
 
             if (storage.Fields is DocumentMapping m)
             {
-                _columns = m.Schema.Table.OfType<MetadataColumn>().ToArray();
+                _columns = m.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
             }
             else
             {

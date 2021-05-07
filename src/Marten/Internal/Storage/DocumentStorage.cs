@@ -14,6 +14,7 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -85,6 +86,12 @@ namespace Marten.Internal.Storage
         {
             var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
             tenant.RunSql(sql);
+        }
+
+        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        {
+            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
+            return tenant.RunSqlAsync(sql);
         }
 
         public void SetIdentity(T document, TId identity)

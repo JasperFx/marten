@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Util;
 

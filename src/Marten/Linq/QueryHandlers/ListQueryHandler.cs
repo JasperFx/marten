@@ -6,6 +6,7 @@ using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers

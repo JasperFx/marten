@@ -11,6 +11,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
+using Weasel.Postgresql;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;

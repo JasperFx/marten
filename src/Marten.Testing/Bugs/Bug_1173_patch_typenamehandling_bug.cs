@@ -1,5 +1,6 @@
 using Marten.Services;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -28,7 +29,7 @@ namespace Marten.Testing.Bugs
                     config.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Objects;
                 });
                 _.Serializer(serializer);
-                _.AutoCreateSchemaObjects = Marten.AutoCreate.All;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
             }))
             {
                 using (var session = store.OpenSession())

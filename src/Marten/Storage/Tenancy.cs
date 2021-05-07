@@ -1,4 +1,5 @@
 using Marten.Schema;
+using Weasel.Postgresql;
 
 namespace Marten.Storage
 {

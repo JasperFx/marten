@@ -1,5 +1,7 @@
+using System.Threading.Tasks;
 using Marten.Schema.Testing.Documents;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -7,7 +9,7 @@ namespace Marten.Schema.Testing
     public class ApplyAllConfiguredChangesToDatabaseTests : IntegrationContext
     {
         [Fact]
-        public void can_apply_schema_changes_independent_of_store_options_auto_create()
+        public async Task can_apply_schema_changes_independent_of_store_options_auto_create()
         {
             StoreOptions(_ =>
             {
@@ -16,16 +18,16 @@ namespace Marten.Schema.Testing
                 _.AutoCreateSchemaObjects = AutoCreate.None;
             });
 
-            // should not throw SchemaValidationException
-            Should.NotThrow(() =>
+
+            await Should.NotThrowAsync(async () =>
             {
-                theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+                await theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
         }
 
         [Fact]
-        public void can_apply_schema_changes_with_create_options_independent_of_store_options_auto_create()
+        public async Task can_apply_schema_changes_with_create_options_independent_of_store_options_auto_create()
         {
             StoreOptions(_ =>
             {
@@ -34,11 +36,10 @@ namespace Marten.Schema.Testing
                 _.AutoCreateSchemaObjects = AutoCreate.None;
             });
 
-            // should not throw SchemaValidationException
-            Should.NotThrow(() =>
+            await Should.NotThrowAsync(async () =>
             {
-                theStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
-                theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
+                await theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
         }
 

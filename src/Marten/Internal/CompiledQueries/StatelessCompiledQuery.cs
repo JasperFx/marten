@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.QueryHandlers;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries

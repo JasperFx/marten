@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Schema;
 using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
 using Xunit;
@@ -25,6 +26,7 @@ namespace Marten.Testing.Events.Bugs
             aggregate.ShouldNotBeNull();
         }
 
+        [DocumentAlias("inner_aggregate")]
         public class InnerAggregate
         {
             public Guid Id { get; set; }

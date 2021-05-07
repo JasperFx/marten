@@ -5,14 +5,16 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline.Expressions;
 using LamarCodeGeneration;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using FindMembers = Marten.Linq.Parsing.FindMembers;
-using LambdaBuilder = Marten.Util.LambdaBuilder;
 
 namespace Marten.Storage.Metadata
 {

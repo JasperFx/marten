@@ -1,4 +1,6 @@
 ﻿using Marten.Testing.Documents;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Testing.Examples
 {
@@ -45,7 +47,7 @@ namespace Marten.Testing.Examples
                      {
                          _.Connection("some database connection");
 
-                         _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.CascadeDeletes = true);
+                         _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = CascadeAction.Cascade);
                      });
             #endregion sample_cascade_deletes_with_config_func
         }

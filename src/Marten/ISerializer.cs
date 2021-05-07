@@ -3,6 +3,8 @@ using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten
 {
@@ -106,7 +108,7 @@ namespace Marten
         /// <param name="document"></param>
         /// <returns></returns>
         string ToJsonWithTypes(object document);
-        
+
         /// <summary>
         /// Controls how the Linq Select() behavior needs to work in the database
         /// </summary>
@@ -114,23 +116,6 @@ namespace Marten
     }
 
     #endregion sample_ISerializer
-
-    /// <summary>
-    /// Governs how .Net Enum types are persisted
-    /// in the serialized JSON
-    /// </summary>
-    public enum EnumStorage
-    {
-        /// <summary>
-        /// Serialize Enum values as their integer value
-        /// </summary>
-        AsInteger,
-
-        /// <summary>
-        /// Serialize Enum values as their string value
-        /// </summary>
-        AsString
-    }
 
     /// <summary>
     /// Governs the JSON serialization behavior of how .Net

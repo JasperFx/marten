@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -70,10 +71,10 @@ namespace Marten.Testing.Acceptance
         #endregion sample_transform_example
 
         [Fact] //-- Unreliable on CI
-        public void use_transform_in_production_mode()
+        public async Task use_transform_in_production_mode()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             theStore.Transform.All<User>("default_username");
 

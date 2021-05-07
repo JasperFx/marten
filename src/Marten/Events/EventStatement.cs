@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Events.Daemon;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
 

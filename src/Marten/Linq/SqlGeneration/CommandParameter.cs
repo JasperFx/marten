@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;

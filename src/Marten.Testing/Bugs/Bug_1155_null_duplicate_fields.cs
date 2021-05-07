@@ -2,6 +2,7 @@ using System.Linq;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs

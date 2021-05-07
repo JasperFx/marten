@@ -201,29 +201,13 @@ namespace Marten.Services
         }
 
 
-
+        [Obsolete("Replace with ExceptionTransforms from Baseline")]
         private void handleCommandException(NpgsqlCommand cmd, Exception e)
         {
             this.SafeDispose();
             Logger.LogFailure(cmd, e);
 
-            if ((e as PostgresException)?.SqlState == PostgresErrorCodes.SerializationFailure)
-            {
-                throw new ConcurrentUpdateException(e);
-            }
-
-            // TODO -- this is fine for now, but we might wanna do more to centralize the
-            // exception transformations
-            if (EventStreamUnexpectedMaxEventIdExceptionTransform.Instance.TryTransform(e,
-                out var eventStreamUnexpectedMaxEventIdException))
-            {
-                throw eventStreamUnexpectedMaxEventIdException;
-            }
-
-            if (e is NpgsqlException)
-            {
-                throw MartenCommandExceptionFactory.Create(cmd, e);
-            }
+            MartenExceptionTransformer.WrapAndThrow(cmd, e);
         }
 
         public int Execute(NpgsqlCommand cmd)

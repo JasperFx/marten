@@ -4,12 +4,14 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using Baseline;
+using Baseline.Expressions;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
-using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Util;
+using Weasel.Postgresql;
+using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Internal.CodeGeneration
 {

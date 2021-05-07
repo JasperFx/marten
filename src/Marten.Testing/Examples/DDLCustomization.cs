@@ -1,4 +1,5 @@
 using Marten.Testing.Documents;
+using Weasel.Postgresql;
 
 namespace Marten.Testing.Examples
 {

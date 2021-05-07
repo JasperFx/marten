@@ -5,9 +5,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.Reflection;
 using Marten.Internal;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers

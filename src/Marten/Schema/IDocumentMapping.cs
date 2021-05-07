@@ -1,4 +1,5 @@
 using System;
+using Weasel.Postgresql;
 using Marten.Schema.Identity;
 using Marten.Storage;
 

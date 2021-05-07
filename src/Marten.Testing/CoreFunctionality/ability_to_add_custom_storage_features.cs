@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Marten.Schema;
+using System.Threading.Tasks;
 using Marten.Storage;
+using Weasel.Postgresql;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
@@ -11,15 +13,15 @@ namespace Marten.Testing.CoreFunctionality
     public class ability_to_add_custom_storage_features : IntegrationContext
     {
         [Fact]
-        public void can_register_a_custom_feature()
+        public async Task can_register_a_custom_feature()
         {
             StoreOptions(_ =>
             {
                 _.Storage.Add<FakeStorage>();
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            theStore.Tenancy.Default.DbObjects.SchemaTables().Any(x => x.Name == "mt_fake_table")
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            (await theStore.Tenancy.Default.SchemaTables()).Any(x => x.Name == "mt_fake_table")
                 .ShouldBeTrue();
         }
 
@@ -47,13 +49,16 @@ namespace Marten.Testing.CoreFunctionality
     #region sample_creating-a-fake-schema-feature
     public class FakeStorage : FeatureSchemaBase
     {
-        public FakeStorage(StoreOptions options) : base("fake", options)
+        private readonly StoreOptions _options;
+
+        public FakeStorage(StoreOptions options) : base("fake")
         {
+            _options = options;
         }
 
         protected override IEnumerable<ISchemaObject> schemaObjects()
         {
-            var table = new Table(new DbObjectName(Options.DatabaseSchemaName, "mt_fake_table"));
+            var table = new Table(new DbObjectName(_options.DatabaseSchemaName, "mt_fake_table"));
             table.AddColumn("name", "varchar");
 
             yield return table;

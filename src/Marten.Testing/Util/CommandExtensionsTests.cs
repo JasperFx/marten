@@ -1,4 +1,5 @@
-﻿using Marten.Util;
+﻿using Weasel.Postgresql;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Shouldly;

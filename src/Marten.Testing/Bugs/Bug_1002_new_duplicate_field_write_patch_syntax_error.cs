@@ -1,4 +1,6 @@
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -6,7 +8,7 @@ namespace Marten.Testing.Bugs
     public class Bug_1002_new_duplicate_field_write_patch_syntax_error: BugIntegrationContext
     {
         [Fact]
-        public void update_patch_should_not_contain_double_semicolon()
+        public async Task update_patch_should_not_contain_double_semicolon()
         {
             StoreOptions(_ =>
             {
@@ -15,7 +17,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Bug_1002>();
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var store = SeparateStore(_ =>
             {
@@ -24,7 +26,7 @@ namespace Marten.Testing.Bugs
                     .Duplicate(x => x.Name); // add a new duplicate column
             });
 
-            store.Schema.ToPatch().UpdateDDL.ShouldNotContain(";;");
+            (await store.Schema.CreateMigration()).UpdateSql.ShouldNotContain(";;");
         }
 
     }

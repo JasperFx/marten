@@ -2,6 +2,8 @@ using System;
 using System.Reflection;
 using Baseline;
 using NpgsqlTypes;
+using Weasel.Postgresql.Tables;
+
 #nullable enable
 namespace Marten.Schema
 {
@@ -24,7 +26,9 @@ namespace Marten.Schema
             var indexDefinition = mapping.AddIndex(field.ColumnName);
             indexDefinition.Method = IndexMethod;
             if (IndexName.IsNotEmpty())
-                indexDefinition.IndexName = IndexName;
+            {
+                indexDefinition.Name = IndexName;
+            }
 
             indexDefinition.SortOrder = IndexSortOrder;
         }

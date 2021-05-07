@@ -9,6 +9,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;

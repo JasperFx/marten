@@ -4,13 +4,15 @@ using LamarCodeGeneration.Frames;
 using Marten.Internal;
 using Marten.Storage;
 using NpgsqlTypes;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
 {
     internal class EventJsonDataColumn: TableColumn, IEventTableColumn
     {
-        public EventJsonDataColumn() : base("data", "jsonb", "NOT NULL")
+        public EventJsonDataColumn() : base("data", "jsonb")
         {
+            AllowNulls = false;
         }
 
         public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)

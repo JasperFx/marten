@@ -6,6 +6,7 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.Selectors;
+using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
 #nullable enable

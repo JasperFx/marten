@@ -3,6 +3,7 @@ using System.Reflection;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Storage;
 using Remotion.Linq;
 

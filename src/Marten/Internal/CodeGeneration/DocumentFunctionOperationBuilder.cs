@@ -11,7 +11,8 @@ using LamarCodeGeneration.Model;
 using Marten.Internal.Operations;
 using Marten.Schema;
 using Marten.Storage;
-using TypeMappings = Marten.Util.TypeMappings;
+using Marten.Util;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.CodeGeneration
 {

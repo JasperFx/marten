@@ -4,6 +4,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.Fields;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.Includes

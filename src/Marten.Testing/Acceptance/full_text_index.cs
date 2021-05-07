@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -126,7 +127,7 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<User>().FullTextIndex(
                     index =>
                     {
-                        index.IndexName = "mt_custom_italian_user_fts_idx";
+                        index.Name = "mt_custom_italian_user_fts_idx";
                         index.RegConfig = "italian";
                     },
                     d => d.FirstName);
@@ -158,7 +159,7 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<User>().FullTextIndex(
                     index =>
                     {
-                        index.IndexName = "mt_custom_italian_user_fts_idx";
+                        index.Name = "mt_custom_italian_user_fts_idx";
                         index.RegConfig = "italian";
                     },
                     d => d.FirstName, d => d.LastName);
@@ -496,91 +497,19 @@ namespace Marten.Testing.Acceptance
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void creating_a_full_text_index_should_create_the_index_on_the_table()
+        public async Task creating_a_full_text_index_should_create_the_index_on_the_table()
         {
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex());
 
             var data = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(data);
+            await theStore.BulkInsertAsync(data);
 
-            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Where(x => x.Name == "mt_doc_target_idx_fts")
-                              .Select(x => x.DDL.ToLower())
-                              .First();
+            var table = await theStore.Tenancy.Default.ExistingTableFor(typeof(Target));
+            var index = table.IndexFor("mt_doc_target_idx_fts");
+            index.ShouldNotBeNull();
 
-            SpecificationExtensions.ShouldContain(ddl, "create index mt_doc_target_idx_fts");
-            SpecificationExtensions.ShouldContain(ddl, "on fulltext.mt_doc_target");
-            SpecificationExtensions.ShouldContain(ddl, "to_tsvector");
-        }
+            index.ToDDL(table).ShouldContain("to_tsvector", StringComparisonOption.Default);
 
-        [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void not_specifying_an_index_name_should_generate_default_index_name()
-        {
-            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex());
-            var data = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(data);
-
-            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Select(x => x.DDL.ToLower())
-                              .First();
-
-            SpecificationExtensions.ShouldContain(ddl, "mt_doc_target_idx_fts");
-        }
-
-        [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void specifying_an_index_name_without_marten_prefix_should_prepend_prefix()
-        {
-            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "doesnt_have_prefix"));
-            var data = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(data);
-
-            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Select(x => x.DDL)
-                              .First();
-
-            SpecificationExtensions.ShouldContain(ddl, "mt_doesnt_have_prefix");
-        }
-
-        [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void specifying_an_index_name_with_mixed_case_should_result_in_lower_case_name()
-        {
-            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "Doesnt_Have_PreFix"));
-            var data = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(data);
-
-            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Select(x => x.DDL)
-                              .First();
-
-            SpecificationExtensions.ShouldContain(ddl, "mt_doesnt_have_prefix");
-        }
-
-        [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void specifying_an_index_name_with_marten_prefix_remains_unchanged()
-        {
-            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "mt_i_have_prefix"));
-            var data = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(data);
-
-            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Select(x => x.DDL)
-                              .First();
-
-            SpecificationExtensions.ShouldContain(ddl, "mt_i_have_prefix");
-        }
-
-        [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void specifying_an_index_name_with_marten_prefix_and_mixed_case_results_in_lowercase_name()
-        {
-            StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(configure: x => x.IndexName = "mT_I_hAve_preFIX"));
-            var data = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(data);
-
-            var ddl = theStore.Tenancy.Default.DbObjects.AllIndexes()
-                              .Select(x => x.DDL)
-                              .First();
-
-            SpecificationExtensions.ShouldContain(ddl, "mt_i_have_prefix");
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -640,7 +569,7 @@ namespace Marten.Testing.Acceptance
                 {
                     index.DataConfig = DataConfig;
                     index.RegConfig = RegConfig;
-                    index.IndexName = IndexName;
+                    index.Name = IndexName;
                 }));
 
             var data = Target.GenerateRandomData(100).ToArray();
@@ -648,7 +577,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Target>(
-                    indexName: $"mt_{IndexName}",
+                    indexName: IndexName,
                     regConfig: RegConfig,
                     dataConfig: DataConfig
                 );
@@ -693,7 +622,7 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(
                 index =>
                 {
-                    index.IndexName = IndexName;
+                    index.Name = IndexName;
                     index.RegConfig = RegConfig;
                 },
             d => d.AnotherString));
@@ -703,7 +632,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Target>(
-                    indexName: $"mt_{IndexName}",
+                    indexName: IndexName,
                     regConfig: RegConfig,
                     dataConfig: $"((data ->> '{nameof(Target.AnotherString)}'))"
                 );
@@ -837,7 +766,7 @@ namespace Marten.Testing.Acceptance
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void wholedoc_fts_index_comparison_works()
+        public async Task wholedoc_fts_index_comparison_works()
         {
             StoreOptions(_ =>
             {
@@ -845,16 +774,16 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             // Look at updates after that
-            var patch = theStore.Schema.ToPatch();
+            var patch = await theStore.Schema.CreateMigration();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateDDL);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void fts_index_comparison_must_take_into_account_automatic_cast()
+        public async Task fts_index_comparison_must_take_into_account_automatic_cast()
         {
             StoreOptions(_ =>
             {
@@ -863,16 +792,16 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             // Look at updates after that
-            var patch = theStore.Schema.ToPatch();
+            var patch = await theStore.Schema.CreateMigration();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateDDL);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateSql);
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void multifield_fts_index_comparison_must_take_into_account_automatic_cast()
+        public async Task multifield_fts_index_comparison_must_take_into_account_automatic_cast()
         {
             StoreOptions(_ =>
             {
@@ -881,16 +810,16 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             // Look at updates after that
-            var patch = theStore.Schema.ToPatch();
+            var patch = await theStore.Schema.CreateMigration();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateDDL);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
-        public void modified_fts_index_comparison_must_generate_drop()
+        public async Task modified_fts_index_comparison_must_generate_drop()
         {
             StoreOptions(_ =>
             {
@@ -899,7 +828,7 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             // Change indexed fields
             var store = DocumentStore.For(_ =>
@@ -912,9 +841,9 @@ namespace Marten.Testing.Acceptance
             });
 
             // Look at updates after that
-            var patch = store.Schema.ToPatch();
+            var patch = await store.Schema.CreateMigration();
 
-            Assert.Contains("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateDDL);
+            Assert.Contains("drop index concurrently if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
 
     }
@@ -928,12 +857,14 @@ namespace Marten.Testing.Acceptance
             string regConfig = "english",
             string dataConfig = null)
         {
-            var ddl = storage.MappingFor(typeof(TDocument)).Indexes
-                .Where(x => x.IndexName == indexName)
-                .Select(x => x.ToDDL())
+            var documentMapping = storage.MappingFor(typeof(TDocument));
+            var table = new DocumentTable(documentMapping);
+            var ddl = documentMapping.Indexes
+                .Where(x => x.Name == indexName)
+                .Select(x => x.ToDDL(table))
                 .FirstOrDefault();
 
-            SpecificationExtensions.ShouldNotBeNull(ddl);
+            ddl.ShouldNotBeNull();
 
             SpecificationExtensions.ShouldContain(ddl, $"CREATE INDEX {indexName}");
             SpecificationExtensions.ShouldContain(ddl, $"ON {tableName}");

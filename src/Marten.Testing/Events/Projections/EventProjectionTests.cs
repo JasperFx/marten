@@ -16,7 +16,7 @@ namespace Marten.Testing.Events.Projections
     {
         public EventProjectionTests() : base("event_projections")
         {
-            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(User));
+            theStore.Advanced.Clean.DeleteDocumentsByType(typeof(User));
         }
 
         protected void UseProjection<T>() where T : EventProjection, new()

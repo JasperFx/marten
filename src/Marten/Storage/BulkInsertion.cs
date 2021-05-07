@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Weasel.Postgresql;
 using Marten.Schema.BulkLoading;
 using Marten.Util;
 using Npgsql;
@@ -157,7 +158,7 @@ namespace Marten.Storage
             if (mode != BulkInsertMode.InsertsOnly)
             {
                 var sql = loader.CreateTempTableForCopying();
-                conn.RunSql(sql);
+                conn.CreateCommand(sql).ExecuteNonQuery();
             }
 
             if (documents.Count <= batchSize)
@@ -185,14 +186,14 @@ namespace Marten.Storage
             {
                 var copy = loader.CopyNewDocumentsFromTempTable();
 
-                conn.RunSql(copy);
+                conn.CreateCommand(copy).ExecuteNonQuery();
             }
             else if (mode == BulkInsertMode.OverwriteExisting)
             {
                 var overwrite = loader.OverwriteDuplicatesFromTempTable();
                 var copy = loader.CopyNewDocumentsFromTempTable();
 
-                conn.RunSql(overwrite, copy);
+                conn.CreateCommand(overwrite + ";" + copy).ExecuteNonQuery();
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Exceptions;
@@ -32,7 +33,7 @@ namespace Marten.Schema.Testing
 
 
 
-            var sql = theSchema.ToDDL();
+            var sql = theSchema.ToDatabaseScript();
 
             sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
             sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
@@ -48,7 +49,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.IsActive(null).ShouldBeFalse();
 
-            theSchema.ToDDL().ShouldNotContain("other.mt_streams");
+            theSchema.ToDatabaseScript().ShouldNotContain("other.mt_streams");
         }
 
         [Fact]
@@ -57,22 +58,22 @@ namespace Marten.Schema.Testing
             theStore.Events.AddEventType(typeof(MembersJoined));
             theStore.Events.IsActive(null).ShouldBeTrue();
 
-            theSchema.ToDDL().ShouldContain("other.mt_streams");
+            theSchema.ToDatabaseScript().ShouldContain("other.mt_streams");
         }
 
         [Fact]
-        public void builds_schema_objects_on_the_fly_as_needed()
+        public async Task builds_schema_objects_on_the_fly_as_needed()
         {
             theStore.Tenancy.Default.StorageFor<User>().ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor<Issue>().ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor<Company>().ShouldNotBeNull();
 
-            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            var tables = (await theStore.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             tables.ShouldContain("other.mt_doc_user");
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = theStore.Tenancy.Default.DbObjects.Functions();
+            var functions = (await theStore.Tenancy.Default.Functions()).Select(x => x.QualifiedName).ToArray();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");
@@ -146,7 +147,7 @@ namespace Marten.Schema.Testing
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             string filename = _binAllsql.AppendPath("all.sql");
@@ -181,7 +182,7 @@ namespace Marten.Schema.Testing
                 store.Options.Storage.MappingFor(typeof(User))
                     .DatabaseSchemaName.ShouldBe("other");
 
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
 
@@ -214,7 +215,7 @@ namespace Marten.Schema.Testing
             }))
             {
                 store.Events.IsActive(null).ShouldBeFalse();
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
@@ -237,7 +238,7 @@ namespace Marten.Schema.Testing
             }))
             {
                 store.Events.IsActive(null).ShouldBeTrue();
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
@@ -263,7 +264,7 @@ namespace Marten.Schema.Testing
             }))
             {
                 store.Events.IsActive(null).ShouldBeTrue();
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();

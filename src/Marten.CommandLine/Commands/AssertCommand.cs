@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Schema;
 using Oakton;
@@ -8,11 +9,11 @@ namespace Marten.CommandLine.Commands
     [Description("Assert that the existing database matches the current Marten configuration", Name = "marten-assert")]
     public class AssertCommand: MartenCommand<MartenInput>
     {
-        protected override bool execute(IDocumentStore store, MartenInput input)
+        protected override async Task<bool> execute(IDocumentStore store, MartenInput input)
         {
             try
             {
-                store.Schema.AssertDatabaseMatchesConfiguration();
+                await store.Schema.AssertDatabaseMatchesConfiguration();
 
                 input.WriteLine(ConsoleColor.Green, "No database differences detected.");
 

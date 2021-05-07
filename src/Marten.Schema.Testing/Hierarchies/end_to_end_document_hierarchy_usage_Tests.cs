@@ -185,7 +185,7 @@ namespace Marten.Schema.Testing.Hierarchies
         [Fact]
         public void clean_by_subclass_only_deletes_the_one_subclass()
         {
-            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(AdminUser));
+            theStore.Advanced.Clean.DeleteDocumentsByType(typeof(AdminUser));
 
             theSession.Query<User>().Any().ShouldBeTrue();
             theSession.Query<SuperUser>().Any().ShouldBeTrue();

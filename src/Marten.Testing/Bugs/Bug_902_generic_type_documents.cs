@@ -8,13 +8,6 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_902_generic_type_documents: IntegrationContext
     {
-        public class MartenStoredState<T>
-        {
-            public Guid Id = Guid.NewGuid();
-
-            public T Value { get; set; }
-        }
-
         [Fact]
         public void can_create_object_name()
         {
@@ -39,5 +32,12 @@ namespace Marten.Testing.Bugs
         public Bug_902_generic_type_documents(DefaultStoreFixture fixture) : base(fixture)
         {
         }
+    }
+
+    public class MartenStoredState<T>
+    {
+        public Guid Id = Guid.NewGuid();
+
+        public T Value { get; set; }
     }
 }

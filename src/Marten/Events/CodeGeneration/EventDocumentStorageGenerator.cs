@@ -16,8 +16,8 @@ using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
 using Marten.Storage.Metadata;
-using Marten.Util;
 using Npgsql;
+using Weasel.Postgresql;
 
 namespace Marten.Events.CodeGeneration
 {

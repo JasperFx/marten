@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events.Projections

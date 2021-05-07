@@ -6,11 +6,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
- using Marten.Linq.Parsing;
+using Marten.Linq.Parsing;
  using Marten.Linq.QueryHandlers;
  using Marten.Schema;
  using Marten.Util;
- using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
+using Weasel.Postgresql;
+using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
 
  namespace Marten.Linq.Fields
 {

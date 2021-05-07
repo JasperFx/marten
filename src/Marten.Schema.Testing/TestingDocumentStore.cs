@@ -1,5 +1,6 @@
 using System;
 using Baseline;
+using Weasel.Postgresql;
 using Marten.Testing.Harness;
 using Npgsql;
 using Xunit.Abstractions;
@@ -50,7 +51,7 @@ namespace Marten.Schema.Testing
             {
                 if (output != null)
                     _.Logger(new TestOutputMartenLogger(output));
-                _.DatabaseSchemaName = StoreOptions.DefaultDatabaseSchemaName;
+                _.DatabaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
             });
             return store;
         }
@@ -63,7 +64,7 @@ namespace Marten.Schema.Testing
         {
             var schemaName = Options.DatabaseSchemaName;
 
-            if (schemaName != StoreOptions.DefaultDatabaseSchemaName)
+            if (schemaName != DbObjectName.DefaultDatabaseSchemaName)
             {
                 var sql = $"DROP SCHEMA {schemaName} CASCADE;";
                 var cmd = new NpgsqlCommand(sql);

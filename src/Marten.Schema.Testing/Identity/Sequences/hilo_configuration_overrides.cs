@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -12,7 +13,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
     public class hilo_configuration_overrides
     {
         [Fact]
-        public void can_establish_the_hilo_starting_point()
+        public async Task can_establish_the_hilo_starting_point()
         {
             #region sample_ResetHiloSequenceFloor
             var store = DocumentStore.For(opts =>
@@ -23,7 +24,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
-            store.Tenancy.Default.ResetHiloSequenceFloor<IntDoc>(2500);
+            await store.Tenancy.Default.ResetHiloSequenceFloor<IntDoc>(2500);
             #endregion sample_ResetHiloSequenceFloor
 
             using (var session = store.OpenSession())

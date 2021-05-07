@@ -4,6 +4,7 @@ using Marten.Schema.Identity;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Acceptance

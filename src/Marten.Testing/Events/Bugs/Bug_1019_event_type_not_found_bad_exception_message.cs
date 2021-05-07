@@ -1,5 +1,6 @@
 using System;
 using Marten.Exceptions;
+using Weasel.Postgresql;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Xunit;

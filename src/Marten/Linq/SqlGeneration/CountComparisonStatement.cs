@@ -2,6 +2,7 @@ using System;
 using System.Linq.Expressions;
 using Marten.Internal;
 using Marten.Linq.Fields;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration

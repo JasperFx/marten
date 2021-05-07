@@ -10,7 +10,7 @@ namespace Marten.Storage.Metadata
     {
         public DotNetTypeColumn(): base(SchemaConstants.DotNetTypeColumn, x => x.DotNetType)
         {
-            CanAdd = true;
+            AllowNulls = true;
         }
 
         public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)

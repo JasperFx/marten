@@ -1,4 +1,5 @@
 using System;
+using Baseline.Exceptions;
 using Marten.Exceptions;
 using Marten.Services;
 

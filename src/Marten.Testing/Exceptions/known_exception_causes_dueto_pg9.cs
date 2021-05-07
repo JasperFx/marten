@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Linq;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Xunit;
 

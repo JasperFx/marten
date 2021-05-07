@@ -1,5 +1,6 @@
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.Filters

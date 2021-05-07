@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 #nullable enable
 namespace Marten.Util
 {
-    public static class StreamExtensions
+    internal static class StreamExtensions
     {
         private const int BufferSize = 81920;
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Weasel.Postgresql;
 
 namespace Marten.Storage
 {
@@ -40,7 +41,7 @@ namespace Marten.Storage
         public Type StorageType { get; } = typeof(SystemFunctions);
         public string Identifier { get; } = "system_functions";
 
-        public void WritePermissions(DdlRules rules, StringWriter writer)
+        public void WritePermissions(DdlRules rules, TextWriter writer)
         {
             // Nothing
         }

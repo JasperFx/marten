@@ -1,4 +1,5 @@
-﻿using Marten.Testing.Harness;
+﻿using System.Threading.Tasks;
+using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
@@ -7,11 +8,11 @@ namespace Marten.Testing.Patching
     public class can_build_the_patching_function : IntegrationContext
     {
         [Fact]
-        public void does_not_blow_up()
+        public async Task does_not_blow_up()
         {
             var transform = theStore.Tenancy.Default.TransformFor("patch_doc");
 
-            theStore.Tenancy.Default.DbObjects.Functions()
+            (await theStore.Tenancy.Default.Functions())
                 .ShouldContain(transform.Identifier);
         }
 

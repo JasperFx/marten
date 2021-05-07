@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Linq.Fields;
@@ -14,6 +15,8 @@ using Marten.Storage.Metadata;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
 using Shouldly;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -337,19 +340,17 @@ namespace Marten.Schema.Testing
         }
 
         [Fact]
-        public void generate_a_table_to_the_database_with_duplicated_field()
+        public async Task generate_a_table_to_the_database_with_duplicated_field()
         {
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
-            {
-                store.Advanced.Clean.CompletelyRemove(typeof(User));
+            using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            store.Advanced.Clean.CompletelyRemove(typeof(User));
 
-                var mapping = store.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
-                mapping.DuplicateField(nameof(User.FirstName));
+            var mapping = store.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
+            mapping.DuplicateField(nameof(User.FirstName));
 
-                store.Tenancy.Default.EnsureStorageExists(typeof(User));
+            store.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-                store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain(mapping.TableName.QualifiedName);
-            }
+            (await store.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ShouldContain(mapping.TableName.QualifiedName);
         }
 
         [Fact]
@@ -505,11 +506,11 @@ namespace Marten.Schema.Testing
         public void picks_up_marten_ginindexed_attribute_on_document_type()
         {
             var mapping = DocumentMapping.For<BaseDocumentWithAttribute>();
-            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "data");
+            var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == "data");
             indexDefinition.Method.ShouldBe(IndexMethod.gin);
 
             var mappingSub = DocumentMapping.For<BaseDocumentSubClass>();
-            indexDefinition = mappingSub.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "data");
+            indexDefinition = mappingSub.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == "data");
             indexDefinition.Method.ShouldBe(IndexMethod.gin);
         }
 
@@ -570,7 +571,7 @@ namespace Marten.Schema.Testing
 
             var table = new DocumentTable(mapping);
 
-            table.Select(x => x.Name)
+            table.Columns.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
                     SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "first_name");
         }
@@ -583,7 +584,7 @@ namespace Marten.Schema.Testing
 
             var table = new DocumentTable(mapping);
 
-            var typeColumn = table.Last();
+            var typeColumn = table.Columns.Last();
             typeColumn.Name.ShouldBe(SchemaConstants.DocumentTypeColumn);
             typeColumn.Type.ShouldBe("varchar");
         }
@@ -593,7 +594,7 @@ namespace Marten.Schema.Testing
         {
             var mapping = DocumentMapping.For<IntDoc>();
             var table = new DocumentTable(mapping);
-            table.Select(x => x.Name)
+            table.Columns.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
                     SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn);
         }
@@ -751,7 +752,7 @@ namespace Marten.Schema.Testing
             mapping.TenancyStyle = TenancyStyle.Conjoined;
 
             var table = new DocumentTable(mapping);
-            table.Any(x => x is TenantIdColumn).ShouldBeTrue();
+            table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
         }
 
         [Fact]

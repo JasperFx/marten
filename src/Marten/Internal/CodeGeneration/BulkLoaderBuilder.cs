@@ -85,8 +85,8 @@ namespace Marten.Internal.CodeGeneration
             var table = _mapping.Schema.Table;
 
             var storageTable = table.Identifier.QualifiedName;
-            var columns = table.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"\\\"{x.Name}\\\"").Join(", ");
-            var selectColumns = table.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
+            var columns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"\\\"{x.Name}\\\"").Join(", ");
+            var selectColumns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
             return $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
         }
@@ -96,7 +96,7 @@ namespace Marten.Internal.CodeGeneration
             var table = _mapping.Schema.Table;
             var storageTable = table.Identifier.QualifiedName;
 
-            var updates = table.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
+            var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
             return $@"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE source.id = target.id";

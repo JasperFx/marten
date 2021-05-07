@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;

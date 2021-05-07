@@ -31,7 +31,7 @@ namespace Marten.Schema.Testing
         [Fact]
         public void use_the_default_template_if_it_exists()
         {
-            var ddl = theStore.Schema.ToDDL();
+            var ddl = theStore.Schema.ToDatabaseScript();
             ddl.ShouldContain($"Default for public.mt_doc_user");
             ddl.ShouldContain($"Default for public.mt_upsert_user");
         }
@@ -44,7 +44,7 @@ namespace Marten.Schema.Testing
 -- Blue for public.mt_upsert_bluedoc
              */
 
-            var ddl = theStore.Schema.ToDDL();
+            var ddl = theStore.Schema.ToDatabaseScript();
             ddl.ShouldContain($"Blue for public.mt_doc_bluedoc");
             ddl.ShouldContain($"Blue for public.mt_upsert_bluedoc");
         }

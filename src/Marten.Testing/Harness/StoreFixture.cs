@@ -1,4 +1,5 @@
 using System;
+using Weasel.Postgresql;
 
 namespace Marten.Testing.Harness
 {
@@ -16,7 +17,6 @@ namespace Marten.Testing.Harness
 
             // Can be overridden
             Options.AutoCreateSchemaObjects = AutoCreate.All;
-            Options.NameDataLength = 100;
         }
 
         protected StoreOptions Options { get; } = new StoreOptions();

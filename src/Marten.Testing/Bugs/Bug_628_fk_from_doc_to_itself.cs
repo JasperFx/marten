@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -14,14 +15,14 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
-        public void can_reference_itself_as_an_fk()
+        public async Task can_reference_itself_as_an_fk()
         {
             StoreOptions(_ =>
             {
                 _.Schema.For<Category>().ForeignKey<Category>(x => x.ParentId);
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
         }
 
     }

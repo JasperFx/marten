@@ -1,5 +1,7 @@
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Storage;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
 {
@@ -7,10 +9,12 @@ namespace Marten.Events.Schema
     {
         public EventProgressionTable(string schemaName) : base(new DbObjectName(schemaName, "mt_event_progression"))
         {
-            AddPrimaryKey(new TableColumn("name", "varchar"));
-            AddColumn("last_seq_id", "bigint", "NULL");
-            AddColumn("last_updated", "timestamp with time zone", "DEFAULT transaction_timestamp()")
-                .CanAdd = true;
+            AddColumn<string>("name").AsPrimaryKey();
+            AddColumn("last_seq_id", "bigint").AllowNulls();
+            AddColumn("last_updated", "timestamp with time zone")
+                .DefaultValueByExpression("(transaction_timestamp())");
+
+            PrimaryKeyName = "pk_mt_event_progression";
         }
     }
 }

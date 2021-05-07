@@ -5,6 +5,9 @@ using Baseline;
 using Marten.Schema.Testing.Documents;
 using Marten.Services;
 using Marten.Storage;
+using Shouldly;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -24,18 +27,9 @@ namespace Marten.Schema.Testing
 
             var configured = new DocumentTable(theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>());
 
-            if (!existing.Equals(configured))
-            {
+            var delta = new TableDelta(configured, existing);
+            delta.Difference.ShouldBe(SchemaPatchDifference.None);
 
-                var writer = new StringWriter();
-                writer.WriteLine("Expected:");
-                configured.Write(theStore.Schema.DdlRules, writer);
-                writer.WriteLine();
-                writer.WriteLine("But from the database, was:");
-                existing.Write(theStore.Schema.DdlRules, writer);
-
-                throw new Exception(writer.ToString());
-            }
         }
 
         [Fact]

@@ -18,7 +18,7 @@ namespace Marten.Testing.Examples
             store.Advanced.Clean.DeleteAllDocuments();
 
             // Deletes all of the persisted User documents
-            store.Advanced.Clean.DeleteDocumentsFor(typeof(User));
+            store.Advanced.Clean.DeleteDocumentsByType(typeof(User));
 
             // For cases where you may want to keep some document types,
             // but eliminate everything else. This is here specifically to support

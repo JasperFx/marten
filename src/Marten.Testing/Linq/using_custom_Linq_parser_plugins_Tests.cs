@@ -5,22 +5,21 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
 using Baseline.Reflection;
-using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
-using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Linq
 {
-
     public class using_custom_Linq_parser_plugins_Tests
     {
         #region sample_using_custom_linq_parser
+
         [Fact]
         public void query_with_custom_parser()
         {
@@ -36,7 +35,6 @@ namespace Marten.Testing.Linq
                 _.DatabaseSchemaName = "isblue";
             }))
             {
-
                 store.Advanced.Clean.CompletelyRemoveAll();
 
 
@@ -56,13 +54,13 @@ namespace Marten.Testing.Linq
 
                 using (var session = store.QuerySession())
                 {
-                    session.Query<ColorTarget>().Count(x => CustomExtensions.IsBlue(x))
+                    session.Query<ColorTarget>().Count(x => x.IsBlue())
                         .ShouldBe(count);
                 }
             }
         }
-        #endregion sample_using_custom_linq_parser
 
+        #endregion sample_using_custom_linq_parser
     }
 
     public class ColorTarget
@@ -74,15 +72,18 @@ namespace Marten.Testing.Linq
     public static class CustomExtensions
     {
         #region sample_custom-extension-for-linq
+
         public static bool IsBlue(this ColorTarget target)
         {
             return target.Color == "Blue";
         }
+
         #endregion sample_custom-extension-for-linq
     }
 
     #region sample_IsBlue
-    public class IsBlue : IMethodCallParser
+
+    public class IsBlue: IMethodCallParser
     {
         private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
 
@@ -98,5 +99,6 @@ namespace Marten.Testing.Linq
             return new WhereFragment($"{locator} = 'Blue'");
         }
     }
+
     #endregion sample_IsBlue
 }

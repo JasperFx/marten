@@ -6,6 +6,7 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using NpgsqlTypes;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Linq.Fields

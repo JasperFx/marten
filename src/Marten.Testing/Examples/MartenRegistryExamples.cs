@@ -1,5 +1,6 @@
 using Marten.Schema;
 using Marten.Testing.Documents;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Testing.Examples
 {
@@ -65,7 +66,7 @@ namespace Marten.Testing.Examples
                 // for FirstName
                 options.Schema.For<User>().Duplicate(x => x.FirstName, configure: idx =>
                 {
-                    idx.IndexName = "idx_special";
+                    idx.Name = "idx_special";
                     idx.Method = IndexMethod.hash;
                 });
 

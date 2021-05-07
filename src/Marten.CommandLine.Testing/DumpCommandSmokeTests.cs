@@ -1,5 +1,6 @@
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.CommandLine.Commands.Dump;
 using Marten.Testing.Documents;
@@ -12,7 +13,7 @@ namespace Marten.CommandLine.Testing
     public class DumpCommandSmokeTests
     {
         [Fact]
-        public void can_clean_repeatedly_for_directory()
+        public async Task can_clean_repeatedly_for_directory()
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
@@ -27,15 +28,15 @@ namespace Marten.CommandLine.Testing
 
             };
 
-            new DumpCommand().Execute(input);
+            await new DumpCommand().Execute(input);
             Thread.Sleep(100); // Let the file system calm down
 
             input.HostBuilder = new HostBuilder().ConfigureServices(x => x.AddMarten(options));
-            new DumpCommand().Execute(input);
+            await new DumpCommand().Execute(input);
         }
 
         [Fact]
-        public void can_clean_repeatedly_for_file()
+        public async Task can_clean_repeatedly_for_file()
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
@@ -52,11 +53,11 @@ namespace Marten.CommandLine.Testing
 
             };
 
-            new DumpCommand().Execute(input);
+            await new DumpCommand().Execute(input);
             Thread.Sleep(100); // Let the file system calm down
 
             input.HostBuilder = new HostBuilder().ConfigureServices(x => x.AddMarten(options));
-            new DumpCommand().Execute(input);
+            await new DumpCommand().Execute(input);
         }
     }
 }

@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Baseline.ImTools;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Schema;
-using Marten.Util;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten.Storage
 {
@@ -244,13 +246,8 @@ namespace Marten.Storage
             var mappings = _documentMappings.Value
                 .Enumerate().Select(x => x.Value)
                 .OrderBy(x => x.DocumentType.Name)
-                .TopologicalSort(m =>
-                {
-                    return m.ForeignKeys
-                        .Where(x => x.ReferenceDocumentType != m.DocumentType && x.ReferenceDocumentType != null)
-                        .Select(keyDefinition => keyDefinition.ReferenceDocumentType)
-                        .Select(MappingFor);
-                });
+                .TopologicalSort(m => m.ReferencedTypes()
+                    .Select(MappingFor));
 
             foreach (var mapping in mappings)
             {
@@ -267,13 +264,13 @@ namespace Marten.Storage
                 yield return Transforms;
             }
 
-            if (_options.Events.As<IFeatureSchema>().IsActive(_options))
+            if (_options.Events.As<EventGraph>().IsActive(_options))
             {
                 yield return _options.EventGraph;
             }
 
             var custom = _features.Values
-                .Where(x => x.GetType().GetTypeInfo().Assembly != GetType().GetTypeInfo().Assembly).ToArray();
+                .Where(x => x.GetType().Assembly != GetType().Assembly).ToArray();
 
             foreach (var featureSchema in custom)
             {
@@ -308,17 +305,18 @@ namespace Marten.Storage
             if (documentMapping == null)
                 return Enumerable.Empty<Type>();
 
-            return documentMapping.ForeignKeys.Where(x => x.ReferenceDocumentType != type && x.ReferenceDocumentType != null)
+
+            return documentMapping.ReferencedTypes()
                 .SelectMany(keyDefinition =>
                 {
                     var results = new List<Type>();
                     // If the reference type has sub-classes, also need to insert/update them first too
-                    if (FindMapping(keyDefinition.ReferenceDocumentType) is DocumentMapping referenceMappingType && referenceMappingType.SubClasses.Any())
+                    if (FindMapping(keyDefinition) is DocumentMapping referenceMappingType && referenceMappingType.SubClasses.Any())
                     {
                         results.AddRange(referenceMappingType.SubClasses.Select(s => s.DocumentType));
                     }
 
-                    results.Add(keyDefinition.ReferenceDocumentType);
+                    results.Add(keyDefinition);
                     return results;
                 });
         }

@@ -17,6 +17,7 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
@@ -123,7 +124,7 @@ namespace Marten.Events
         public EventMapping(EventGraph parent) : base(parent, typeof(T))
         {
             var schemaName = parent.DatabaseSchemaName;
-            _tableName = schemaName == StoreOptions.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
+            _tableName = schemaName == DbObjectName.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
 
             _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }
@@ -131,6 +132,11 @@ namespace Marten.Events
         public void TruncateDocumentStorage(ITenant tenant)
         {
             tenant.RunSql($"delete from table {_tableName} where type = '{Alias}'");
+        }
+
+        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        {
+            return tenant.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'");
         }
 
         public bool UseOptimisticConcurrency { get; } = false;

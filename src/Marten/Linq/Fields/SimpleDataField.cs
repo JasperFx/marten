@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.Fields

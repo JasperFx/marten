@@ -1,4 +1,5 @@
 using System;
+using Marten.Schema;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -50,6 +51,7 @@ namespace Marten.Testing.Bugs
             doc2.ShouldNotBeNull();
         }
 
+        [DocumentAlias("nested_generic")]
         public class NestedGenericTypeToPersist<T>
         {
             public Guid Id = Guid.NewGuid();

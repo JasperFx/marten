@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Baseline;
-using Marten.Testing.Events;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Harness

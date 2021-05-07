@@ -67,7 +67,7 @@ namespace Marten.Events.TestSupport
                 _store.Advanced.Clean.DeleteAllEventData();
                 foreach (var storageType in
                     _store.Events.Projections.Projections.SelectMany(x => x.Options.StorageTypes))
-                    _store.Advanced.Clean.DeleteDocumentsFor(storageType);
+                    await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType);
             }
 
             if (_store.Events.Projections.HasAnyAsyncProjections())

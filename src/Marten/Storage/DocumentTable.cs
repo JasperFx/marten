@@ -5,6 +5,8 @@ using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage.Metadata;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
@@ -21,15 +23,13 @@ namespace Marten.Storage
 
             var idColumn = new IdColumn(mapping);
 
+            AddColumn(idColumn).AsPrimaryKey();
+
             if (mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
-                AddPrimaryKeys(new List<TableColumn> {idColumn, mapping.Metadata.TenantId});
+                AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
 
-                Indexes.Add(new IndexDefinition(mapping, TenantIdColumn.Name));
-            }
-            else
-            {
-                AddPrimaryKey(idColumn);
+                Indexes.Add(new DocumentIndex(mapping, TenantIdColumn.Name));
             }
 
             AddColumn<DataColumn>();
@@ -47,20 +47,23 @@ namespace Marten.Storage
 
             if (mapping.IsHierarchy())
             {
-                Indexes.Add(new IndexDefinition(_mapping, SchemaConstants.DocumentTypeColumn));
+                Indexes.Add(new DocumentIndex(_mapping, SchemaConstants.DocumentTypeColumn));
                 AddColumn(_mapping.Metadata.DocumentType);
             }
 
             if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
             {
                 AddColumn(_mapping.Metadata.IsSoftDeleted);
-                Indexes.Add(new IndexDefinition(mapping, SchemaConstants.DeletedColumn));
+                Indexes.Add(new DocumentIndex(mapping, SchemaConstants.DeletedColumn));
 
                 AddColumn(_mapping.Metadata.SoftDeletedAt);
             }
 
             Indexes.AddRange(mapping.Indexes);
             ForeignKeys.AddRange(mapping.ForeignKeys);
+
+            // Compatibility with Marten rules
+            PrimaryKeyName = $"{Identifier.Name}_pkey";
         }
 
         public void AddIfActive(MetadataColumn column)
@@ -82,7 +85,7 @@ namespace Marten.Storage
                 .Replace(DdlRules.METADATA_COLUMNS, Columns.OfType<MetadataColumn>().Select(x => x.Name).Join(", "));
         }
 
-        public void WriteTemplate(DdlTemplate template, StringWriter writer)
+        public void WriteTemplate(DdlTemplate template, TextWriter writer)
         {
             var text = template?.TableCreation;
             if (text.IsNotEmpty())

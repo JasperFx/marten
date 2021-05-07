@@ -2,6 +2,8 @@ using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Util;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {

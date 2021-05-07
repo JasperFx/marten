@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

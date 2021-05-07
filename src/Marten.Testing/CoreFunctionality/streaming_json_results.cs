@@ -27,7 +27,7 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public async Task stream_by_id_miss()
         {
-            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(IntDoc));
+            theStore.Advanced.Clean.DeleteDocumentsByType(typeof(IntDoc));
 
             var stream = new MemoryStream();
             var found = await theSession.Json.StreamById<IntDoc>(1, stream);

@@ -19,25 +19,25 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public class DocHolder: IEnumerable<User>
-        {
-            public Guid Id;
-
-            private readonly IList<User> _users = new List<User>();
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
-
-            public IEnumerator<User> GetEnumerator()
-            {
-                return _users.GetEnumerator();
-            }
-        }
-
         public Bug_571_defensive_check_for_IEnumerable_of_T_in_Store(DefaultStoreFixture fixture) : base(fixture)
         {
+        }
+    }
+
+    public class DocHolder: IEnumerable<User>
+    {
+        public Guid Id;
+
+        private readonly IList<User> _users = new List<User>();
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public IEnumerator<User> GetEnumerator()
+        {
+            return _users.GetEnumerator();
         }
     }
 }

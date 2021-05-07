@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Baseline;
 using Oakton;
 
@@ -14,12 +15,12 @@ namespace Marten.CommandLine.Commands.Dump
                 .Arguments(x => x.FileName);
         }
 
-        protected override bool execute(IDocumentStore store, DumpInput input)
+        protected override Task<bool> execute(IDocumentStore store, DumpInput input)
         {
             if (input.ByTypeFlag)
             {
                 input.WriteLine("Writing DDL files to " + input.FileName);
-                store.Schema.WriteDDLByType(input.FileName, input.TransactionalScriptFlag);
+                store.Schema.WriteDatabaseCreationScriptByType(input.FileName);
 
                 // You only need to clean out the existing folder when dumping
                 // by type
@@ -41,10 +42,10 @@ namespace Marten.CommandLine.Commands.Dump
 
 
 
-                store.Schema.WriteDDL(input.FileName, input.TransactionalScriptFlag);
+                store.Schema.WriteDatabaseCreationScriptFile(input.FileName);
             }
 
-            return true;
+            return Task.FromResult(true);
         }
     }
 }

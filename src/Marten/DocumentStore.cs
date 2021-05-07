@@ -49,7 +49,7 @@ namespace Marten
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
-            Tenancy.Initialize();
+            //Tenancy.Initialize();
 
             Schema = Tenancy.Schema;
 

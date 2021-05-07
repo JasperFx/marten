@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Marten.Testing.Examples;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Harness

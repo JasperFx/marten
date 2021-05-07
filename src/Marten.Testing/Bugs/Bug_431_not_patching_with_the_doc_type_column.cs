@@ -1,5 +1,7 @@
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -7,7 +9,7 @@ namespace Marten.Testing.Bugs
     public class Bug_431_not_patching_with_the_doc_type_column : BugIntegrationContext
     {
         [Fact]
-        public void should_add_a_missing_doc_type_column_in_patch()
+        public async Task should_add_a_missing_doc_type_column_in_patch()
         {
             StoreOptions(_ =>
             {
@@ -22,13 +24,15 @@ namespace Marten.Testing.Bugs
 
             var store2 = SeparateStore(_ =>
             {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Schema.For<User>().AddSubClass<SuperUser>();
             });
 
-            var patch = store2.Schema.ToPatch();
+            await store2.Schema.ApplyAllConfiguredChangesToDatabase();
+            await store2.Schema.AssertDatabaseMatchesConfiguration();
 
-            patch.UpdateDDL.ShouldContain("alter table bugs.mt_doc_user add column mt_doc_type varchar DEFAULT \'BASE\'");
+
+
         }
     }
 }

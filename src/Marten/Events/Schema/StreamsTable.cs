@@ -6,11 +6,13 @@ using System.Reflection;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Parsing;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
 {
@@ -22,28 +24,23 @@ namespace Marten.Events.Schema
                 ? new StreamTableColumn("id", x => x.Id)
                 : new StreamTableColumn("id", x => x.Key);
 
+            AddColumn(idColumn).AsPrimaryKey();
+
             if (events.TenancyStyle == TenancyStyle.Conjoined)
             {
-                AddPrimaryKeys(new List<TableColumn>
-                {
-                    idColumn,
-                    new TenantIdColumn()
-                });
-            }
-            else
-            {
-                AddPrimaryKey(idColumn);
+                AddColumn<TenantIdColumn>().AsPrimaryKey();
             }
 
-            AddColumn(new StreamTableColumn("type", x => x.AggregateTypeName) {Directive = "NULL"});
+            AddColumn(new StreamTableColumn("type", x => x.AggregateTypeName)).AllowNulls();
 
-            AddColumn(new StreamTableColumn("version", x => x.Version) {Directive = "NOT NULL"});
+            AddColumn(new StreamTableColumn("version", x => x.Version)).AllowNulls();
 
             AddColumn(new StreamTableColumn("timestamp", x => x.Timestamp)
             {
                 Type = "timestamptz",
-                Directive = "default (now()) NOT NULL",
-                Writes = false
+                Writes = false,
+                AllowNulls = false,
+                DefaultExpression = "(now())"
             });
 
 
@@ -52,8 +49,8 @@ namespace Marten.Events.Schema
 
             AddColumn(new StreamTableColumn("created", x => x.Created)
             {
-                Directive = "default (now()) NOT NULL", Writes = false, Type = "timestamptz"
-            });
+                Writes = false, Type = "timestamptz"
+            }).NotNull().DefaultValueByString("(now())");
 
             if (events.TenancyStyle != TenancyStyle.Conjoined)
             {

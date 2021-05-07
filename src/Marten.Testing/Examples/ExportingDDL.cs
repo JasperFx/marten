@@ -21,15 +21,15 @@ namespace Marten.Testing.Examples
             });
 
             // Export the SQL to a file
-            store.Schema.WriteDDL("my_database.sql");
+            store.Schema.WriteDatabaseCreationScriptFile("my_database.sql");
 
             // Or instead, write a separate sql script
             // to the named directory
             // for each type of document
-            store.Schema.WriteDDLByType("sql");
+            store.Schema.WriteDatabaseCreationScriptByType("sql");
 
             // or just see it
-            var sql = store.Schema.ToDDL();
+            var sql = store.Schema.ToDatabaseScript();
             Debug.WriteLine(sql);
         }
 

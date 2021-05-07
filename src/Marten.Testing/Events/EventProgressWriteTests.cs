@@ -1,6 +1,7 @@
 using Baseline;
 using Marten.Events;
 using Marten.Events.Operations;
+using Weasel.Postgresql;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;

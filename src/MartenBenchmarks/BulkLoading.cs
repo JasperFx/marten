@@ -14,13 +14,13 @@ namespace MartenBenchmarks
         [GlobalSetup]
         public void Setup()
         {
-            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsFor(typeof(Target));
+            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
         }
 
         [Benchmark]
         public void BulkInsertDocuments()
         {
-            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsFor(typeof(Target));
+            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
             BenchmarkStore.Store.BulkInsert(Docs);
         }
     }

@@ -1,5 +1,6 @@
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration

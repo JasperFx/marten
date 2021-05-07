@@ -1,4 +1,6 @@
-﻿using Marten.Schema.Identity.Sequences;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Testing.Documents;
 using Shouldly;
 using Xunit;
@@ -19,15 +21,15 @@ namespace Marten.Schema.Testing.Identity.Sequences
         }
 
         [Fact]
-        public void can_create_table_on_fly_if_necessary()
+        public async Task can_create_table_on_fly_if_necessary()
         {
-            theStore.Tenancy.Default.DbObjects.Functions().ShouldContain("public.mt_get_next_hi");
+            (await theStore.Tenancy.Default.Functions()).Select(x => x.QualifiedName).ShouldContain("public.mt_get_next_hi");
         }
 
         [Fact]
-        public void can_create_function_on_fly_if_necessary()
+        public async Task can_create_function_on_fly_if_necessary()
         {
-            theStore.Tenancy.Default.DbObjects.Functions().ShouldContain("public.mt_get_next_hi");
+            (await theStore.Tenancy.Default.Functions()).Select(x => x.QualifiedName).ShouldContain("public.mt_get_next_hi");
         }
 
 
@@ -45,15 +47,15 @@ namespace Marten.Schema.Testing.Identity.Sequences
         }
 
         [Fact]
-        public void can_create_table_on_fly_if_necessary()
+        public async Task can_create_table_on_fly_if_necessary()
         {
-            theStore.Tenancy.Default.DbObjects.SchemaTables().ShouldContain("seq_other.mt_hilo");
+            (await theStore.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ShouldContain("seq_other.mt_hilo");
         }
 
         [Fact]
-        public void can_create_function_on_fly_if_necessary()
+        public async Task can_create_function_on_fly_if_necessary()
         {
-            theStore.Tenancy.Default.DbObjects.Functions().ShouldContain("seq_other.mt_get_next_hi");
+            (await theStore.Tenancy.Default.Functions()).Select(x => x.QualifiedName).ShouldContain("seq_other.mt_get_next_hi");
         }
     }
 }

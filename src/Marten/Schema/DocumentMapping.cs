@@ -12,6 +12,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.Unique;
@@ -19,6 +20,7 @@ using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Remotion.Linq;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Schema
 {
@@ -34,7 +36,7 @@ namespace Marten.Schema
         DocumentMetadataCollection Metadata { get; }
         bool UseOptimisticConcurrency { get;}
         IList<IIndexDefinition> Indexes { get; }
-        IList<ForeignKeyDefinition> ForeignKeys { get; }
+        IList<ForeignKey> ForeignKeys { get; }
         SubClasses SubClasses { get; }
         DbObjectName UpsertFunction { get; }
         DbObjectName InsertFunction { get; }
@@ -52,7 +54,7 @@ namespace Marten.Schema
         TenancyStyle TenancyStyle { get; }
         DuplicatedField[] DuplicatedFields { get; }
         bool IsHierarchy();
-        IEnumerable<IndexDefinition> IndexesFor(string column);
+        IEnumerable<DocumentIndex> IndexesFor(string column);
         string AliasFor(Type subclassType);
         Type TypeFor(string alias);
         IField FieldFor(string memberName);
@@ -126,7 +128,17 @@ namespace Marten.Schema
 
         public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
 
-        public IList<ForeignKeyDefinition> ForeignKeys { get; } = new List<ForeignKeyDefinition>();
+        public IList<ForeignKey> ForeignKeys { get; } = new List<ForeignKey>();
+
+        /// <summary>
+        /// Access to all other document types that are linked to by foreign keys
+        /// from this document type
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Type> ReferencedTypes()
+        {
+            return ForeignKeys.OfType<DocumentForeignKey>().Select(x => x.ReferenceDocumentType).Where(x => x != DocumentType);
+        }
 
         public SubClasses SubClasses { get; }
 
@@ -226,7 +238,7 @@ namespace Marten.Schema
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
-        public static DocumentMapping<T> For<T>(string databaseSchemaName = StoreOptions.DefaultDatabaseSchemaName)
+        public static DocumentMapping<T> For<T>(string databaseSchemaName = DbObjectName.DefaultDatabaseSchemaName)
         {
             var storeOptions = new StoreOptions
             {
@@ -262,7 +274,7 @@ namespace Marten.Schema
         }
 
 
-        public IndexDefinition AddGinIndexToData()
+        public DocumentIndex AddGinIndexToData()
         {
             var index = AddIndex("data");
             index.Method = IndexMethod.gin;
@@ -273,34 +285,38 @@ namespace Marten.Schema
             return index;
         }
 
-        public IndexDefinition AddLastModifiedIndex(Action<IndexDefinition> configure = null)
+        public DocumentIndex AddLastModifiedIndex(Action<DocumentIndex> configure = null)
         {
-            var index = new IndexDefinition(this, SchemaConstants.LastModifiedColumn);
+            var index = new DocumentIndex(this, SchemaConstants.LastModifiedColumn);
             configure?.Invoke(index);
             Indexes.Add(index);
 
             return index;
         }
 
-        public IndexDefinition AddDeletedAtIndex(Action<IndexDefinition> configure = null)
+        public DocumentIndex AddDeletedAtIndex(Action<DocumentIndex> configure = null)
         {
             if (DeleteStyle != DeleteStyle.SoftDelete)
                 throw new InvalidOperationException(
                     $"DocumentMapping for {DocumentType.FullName} is not configured to use Soft Delete");
 
-            var index = new IndexDefinition(this, SchemaConstants.DeletedAtColumn) {Modifier = $"WHERE {SchemaConstants.DeletedColumn}"};
+            var index = new DocumentIndex(this, SchemaConstants.DeletedAtColumn)
+            {
+                Predicate = SchemaConstants.DeletedColumn
+            };
+
             configure?.Invoke(index);
             Indexes.Add(index);
 
             return index;
         }
 
-        public IndexDefinition AddIndex(params string[] columns)
+        public DocumentIndex AddIndex(params string[] columns)
         {
-            var existing = Indexes.OfType<IndexDefinition>().FirstOrDefault(x => x.Columns.SequenceEqual(columns));
+            var existing = Indexes.OfType<DocumentIndex>().FirstOrDefault(x => x.Columns.SequenceEqual(columns));
             if (existing != null) return existing;
 
-            var index = new IndexDefinition(this, columns);
+            var index = new DocumentIndex(this, columns);
             Indexes.Add(index);
 
             return index;
@@ -315,7 +331,7 @@ namespace Marten.Schema
                 var fields = members.Select(memberPath => DuplicateField(memberPath)).ToList();
 
                 var index = AddIndex(fields.Select(m => m.ColumnName).ToArray());
-                index.IndexName = indexName;
+                index.Name = indexName;
                 index.Method = indexMethod;
                 index.IsUnique = true;
                 index.TenancyScope = tenancyScope;
@@ -328,10 +344,10 @@ namespace Marten.Schema
                     this,
                     members)
                 {
-                    Method = indexMethod, IndexName = indexName, IsUnique = true, TenancyScope = tenancyScope
+                    Method = indexMethod, Name = indexName, IsUnique = true, TenancyScope = tenancyScope
                 };
 
-                var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
+                var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.Name == index.Name);
                 if (existing != null) return existing;
                 Indexes.Add(index);
 
@@ -367,34 +383,34 @@ namespace Marten.Schema
         public FullTextIndex AddFullTextIndex(MemberInfo[][] members, string regConfig = FullTextIndex.DefaultRegConfig,
             string indexName = null)
         {
-            var index = new FullTextIndex(this, regConfig, members) {IndexName = indexName};
+            var index = new FullTextIndex(this, regConfig, members) {Name = indexName};
 
             return AddFullTextIndexIfDoesNotExist(index);
         }
 
         private FullTextIndex AddFullTextIndexIfDoesNotExist(FullTextIndex index)
         {
-            var existing = Indexes.OfType<FullTextIndex>().FirstOrDefault(x => x.IndexName == index.IndexName);
+            var existing = Indexes.OfType<FullTextIndex>().FirstOrDefault(x => x.Name == index.Name);
             if (existing != null) return existing;
             Indexes.Add(index);
 
             return index;
         }
 
-        public ForeignKeyDefinition AddForeignKey(string memberName, Type referenceType)
+        public DocumentForeignKey AddForeignKey(string memberName, Type referenceType)
         {
             var field = FieldFor(memberName);
             return AddForeignKey(field.Members, referenceType);
         }
 
-        public ForeignKeyDefinition AddForeignKey(MemberInfo[] members, Type referenceType)
+        public DocumentForeignKey AddForeignKey(MemberInfo[] members, Type referenceType)
         {
             var referenceMapping =
                 referenceType != DocumentType ? _storeOptions.Storage.MappingFor(referenceType) : this;
 
             var duplicateField = DuplicateField(members);
 
-            var foreignKey = new ForeignKeyDefinition(duplicateField.ColumnName, this, referenceMapping);
+            var foreignKey = new DocumentForeignKey(duplicateField.ColumnName, this, referenceMapping);
             ForeignKeys.Add(foreignKey);
 
             return foreignKey;
@@ -474,9 +490,9 @@ namespace Marten.Schema
             return duplicatedField;
         }
 
-        public IEnumerable<IndexDefinition> IndexesFor(string column)
+        public IEnumerable<DocumentIndex> IndexesFor(string column)
         {
-            return Indexes.OfType<IndexDefinition>().Where(x => x.Columns.Contains(column));
+            return Indexes.OfType<DocumentIndex>().Where(x => x.Columns.Contains(column));
         }
 
         internal void CompileAndValidate()
@@ -578,7 +594,7 @@ namespace Marten.Schema
         /// </param>
         /// <returns></returns>
         public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null,
-            Action<IndexDefinition> configure = null, bool notNull = false)
+            Action<DocumentIndex> configure = null, bool notNull = false)
         {
             var visitor = new FindMembers();
             visitor.Visit(expression);

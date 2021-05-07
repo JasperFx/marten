@@ -11,7 +11,8 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
-using Marten.Util;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten
 {
@@ -33,9 +34,9 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="floor"></param>
-        public void ResetHiloSequenceFloor<T>(long floor)
+        public Task ResetHiloSequenceFloor<T>(long floor)
         {
-            _store.Tenancy.Default.ResetHiloSequenceFloor<T>(floor);
+            return _store.Tenancy.Default.ResetHiloSequenceFloor<T>(floor);
         }
 
         /// <summary>
@@ -44,9 +45,9 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="floor"></param>
-        public void ResetHiloSequenceFloor<T>(string tenantId, long floor)
+        public Task ResetHiloSequenceFloor<T>(string tenantId, long floor)
         {
-            _store.Tenancy[tenantId].ResetHiloSequenceFloor<T>(floor);
+            return _store.Tenancy[tenantId].ResetHiloSequenceFloor<T>(floor);
         }
 
         /// <summary>

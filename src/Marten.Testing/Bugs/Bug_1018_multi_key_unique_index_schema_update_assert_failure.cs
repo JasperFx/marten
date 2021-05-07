@@ -1,6 +1,8 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -15,7 +17,7 @@ namespace Marten.Testing.Bugs
     public class Bug_1018_multi_key_unique_index_schema_update_assert_failure: BugIntegrationContext
     {
         [Fact]
-        public void check_database_matches_configuration_with_multi_key_unique_index()
+        public async Task check_database_matches_configuration_with_multi_key_unique_index()
         {
             StoreOptions(_ =>
             {
@@ -26,8 +28,8 @@ namespace Marten.Testing.Bugs
                     .UniqueIndex(UniqueIndexType.DuplicatedField, x => x.Field1, x => x.Field2);
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.AssertDatabaseMatchesConfiguration();
         }
 
     }

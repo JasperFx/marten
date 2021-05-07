@@ -1,11 +1,13 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using Baseline;
+using Baseline.ImTools;
 using Marten.Exceptions;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Marten.Services.BatchQuerying;
 using Marten.Util;
+using Weasel.Postgresql;
 
 namespace Marten.Linq.Fields
 {

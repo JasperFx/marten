@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using Marten.Linq.SqlGeneration;
-using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon
 {

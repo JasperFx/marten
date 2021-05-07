@@ -13,7 +13,7 @@ namespace Marten.Testing.Bugs
         public Bug_1703_Equality_Not_Symmetric(DefaultStoreFixture fixture) : base(fixture)
         {
         }
-        
+
         [Fact]
         public void string_equality_equals_operator_should_be_symmetric()
         {
@@ -33,7 +33,7 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .Count
                     .ShouldBe(1);
-                
+
                 session.Query<Target>()
                     .Where(x => theString == x.String )
                     .ToList()
@@ -50,7 +50,7 @@ namespace Marten.Testing.Bugs
             using (var session = theStore.OpenSession())
             {
                 session.Insert(random);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.QuerySession())
@@ -61,7 +61,7 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .Count
                     .ShouldBe(1);
-                
+
                 session.Query<Target>()
                     .Where(x => theString.Equals(x.String))
                     .ToList()
@@ -70,8 +70,8 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        
-        
+
+
         [Fact]
         public async Task string_equality_equals_ignoring_case_should_be_symmetric()
         {
@@ -80,12 +80,12 @@ namespace Marten.Testing.Bugs
             using (var session = theStore.OpenSession())
             {
                 session.Insert(random);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.QuerySession())
             {
-                
+
                 session.Query<Target>()
                     .Where(x => x.String.Equals(theString, StringComparison.InvariantCultureIgnoreCase))
                     .ToList()
@@ -97,10 +97,10 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .Count
                     .ShouldBe(1);
-                
+
             }
         }
-        
+
         [Fact]
         public async Task object_equality_equals_should_be_symmetric()
         {
@@ -109,7 +109,7 @@ namespace Marten.Testing.Bugs
             using (var session = theStore.OpenSession())
             {
                 session.Insert(random);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.QuerySession())
@@ -120,7 +120,7 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .Count
                     .ShouldBe(1);
-                
+
                 session.Query<Target>()
                     .Where(x => theNumber.Equals(x.Number))
                     .ToList()
@@ -128,7 +128,7 @@ namespace Marten.Testing.Bugs
                     .ShouldBe(1);
             }
         }
-        
+
         [Fact]
         public async Task object_equality_equals_operator_should_be_symmetric()
         {
@@ -137,7 +137,7 @@ namespace Marten.Testing.Bugs
             using (var session = theStore.OpenSession())
             {
                 session.Insert(random);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.QuerySession())
@@ -148,7 +148,7 @@ namespace Marten.Testing.Bugs
                     .ToList()
                     .Count
                     .ShouldBe(1);
-                
+
                 session.Query<Target>()
                     .Where(x => theNumber == x.Number)
                     .ToList()

@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using Marten.Internal;
 using Marten.Linq;
+using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
 #nullable enable

@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Weasel.Postgresql;
 
 namespace EventSourceWorker
 {

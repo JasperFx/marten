@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -206,6 +207,7 @@ namespace Marten.Testing.Events.Aggregation
 
         }
 
+        [DocumentAlias("system_state")]
         public class SystemState
         {
             public Guid Id { get; set; }

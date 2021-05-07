@@ -44,34 +44,34 @@ namespace Marten.Schema.Testing.Identity.Sequences
         }
 
         [Fact]
-        public void advance_to_next_hi_from_initial_state()
+        public async Task advance_to_next_hi_from_initial_state()
         {
-            theSequence.AdvanceToNextHi();
+            await theSequence.AdvanceToNextHi();
 
             theSequence.CurrentLo.ShouldBe(1);
             theSequence.CurrentHi.ShouldBe(0);
         }
 
         [Fact]
-        public void advance_to_next_hi_several_times()
+        public async Task advance_to_next_hi_several_times()
         {
-            theSequence.AdvanceToNextHi();
+            await theSequence.AdvanceToNextHi();
 
-            theSequence.AdvanceToNextHi();
+            await theSequence.AdvanceToNextHi();
             theSequence.CurrentHi.ShouldBe(1);
 
-            theSequence.AdvanceToNextHi();
+            await theSequence.AdvanceToNextHi();
             theSequence.CurrentHi.ShouldBe(2);
 
-            theSequence.AdvanceToNextHi();
+            await theSequence.AdvanceToNextHi();
             theSequence.CurrentHi.ShouldBe(3);
         }
 
         [Fact]
-        public void advance_value_from_initial_state()
+        public async Task advance_value_from_initial_state()
         {
             // Gotta do this at least once
-            theSequence.AdvanceToNextHi();
+            await theSequence.AdvanceToNextHi();
 
             theSequence.AdvanceValue().ShouldBe(1);
             theSequence.AdvanceValue().ShouldBe(2);

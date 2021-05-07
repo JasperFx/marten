@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Marten.Internal;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration

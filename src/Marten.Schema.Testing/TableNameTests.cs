@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using Weasel.Postgresql;
+using Shouldly;
 using Xunit;
 
 namespace Marten.Schema.Testing

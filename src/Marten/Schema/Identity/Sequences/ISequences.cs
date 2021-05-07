@@ -1,5 +1,7 @@
 using System;
 using Marten.Storage;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten.Schema.Identity.Sequences
 {

@@ -1,4 +1,6 @@
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -6,7 +8,7 @@ namespace Marten.Testing.Bugs
     public class Bug_1151_assert_db_matches_config_exception: BugIntegrationContext
     {
         [Fact]
-        public void check_assert_db_matches_config_for_doc_with_pg_keyword_prop()
+        public async Task check_assert_db_matches_config_for_doc_with_pg_keyword_prop()
         {
             StoreOptions(_ =>
             {
@@ -15,8 +17,8 @@ namespace Marten.Testing.Bugs
                     .Duplicate(c => c.Trim);
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.AssertDatabaseMatchesConfiguration();
         }
 
     }

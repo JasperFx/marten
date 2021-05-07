@@ -1,7 +1,9 @@
 using System;
+using System.Threading.Tasks;
+using Baseline;
 using Marten.Exceptions;
-using Marten.Schema;
 using Oakton;
+using Weasel.Postgresql;
 
 namespace Marten.CommandLine.Commands.Patch
 {
@@ -15,11 +17,11 @@ namespace Marten.CommandLine.Commands.Patch
             Usage("Write the patch and matching drop file").Arguments(x => x.FileName);
         }
 
-        protected override bool execute(IDocumentStore store, PatchInput input)
+        protected override async Task<bool> execute(IDocumentStore store, PatchInput input)
         {
             try
             {
-                store.Schema.AssertDatabaseMatchesConfiguration();
+                await store.Schema.AssertDatabaseMatchesConfiguration();
 
                 input.WriteLine(ConsoleColor.Green, "No differences were detected between the Marten configuration and the database");
 
@@ -27,15 +29,20 @@ namespace Marten.CommandLine.Commands.Patch
             }
             catch (SchemaValidationException)
             {
-                var patch = store.Schema.ToPatch(input.SchemaFlag, withAutoCreateAll: true);
+                var patch = await store.Schema.CreateMigration();
 
                 input.WriteLine(ConsoleColor.Green, "Wrote a patch file to " + input.FileName);
-                patch.WriteUpdateFile(input.FileName, input.TransactionalScriptFlag);
 
-                var dropFile = input.DropFlag ?? SchemaPatch.ToDropFileName(input.FileName);
+                var rules = store.Options.As<StoreOptions>().Advanced.DdlRules;
+                rules.IsTransactional = input.TransactionalScriptFlag;
+
+                rules.WriteTemplatedFile(input.FileName, (r, w) => patch.WriteAllUpdates(w, r, AutoCreate.CreateOrUpdate));
+
+                var dropFile = input.DropFlag ?? SchemaMigration.ToDropFileName(input.FileName);
 
                 input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + dropFile);
-                patch.WriteRollbackFile(dropFile, input.TransactionalScriptFlag);
+
+                rules.WriteTemplatedFile(input.FileName, (r, w) => patch.WriteAllRollbacks(w, r));
 
                 return true;
             }

@@ -1,4 +1,5 @@
 using Marten.Util;
+using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration
 {

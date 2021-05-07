@@ -1,6 +1,7 @@
+using System.Threading.Tasks;
 using Marten.Exceptions;
-using Marten.Schema;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -13,7 +14,7 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
-        public void should_be_validating_the_new_doc_does_not_exist()
+        public async Task should_be_validating_the_new_doc_does_not_exist()
         {
             StoreOptions(cfg =>
             {
@@ -22,9 +23,9 @@ namespace Marten.Testing.Bugs
                 cfg.AutoCreateSchemaObjects = AutoCreate.None;
             });
 
-            Exception<SchemaValidationException>.ShouldBeThrownBy(() =>
+            await Exception<SchemaValidationException>.ShouldBeThrownByAsync(() =>
             {
-                theStore.Schema.AssertDatabaseMatchesConfiguration();
+                return theStore.Schema.AssertDatabaseMatchesConfiguration();
             });
         }
 

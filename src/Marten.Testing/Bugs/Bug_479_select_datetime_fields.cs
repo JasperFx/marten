@@ -3,6 +3,7 @@ using System.Linq;
 using Baseline.Dates;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Baseline.ImTools;
 using Baseline.Reflection;
 using Marten.Linq;
 using Marten.Linq.Fields;

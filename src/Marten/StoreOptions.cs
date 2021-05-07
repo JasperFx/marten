@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.ImTools;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Events.TestSupport;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
@@ -18,8 +18,9 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
 using Marten.Transforms;
-using Marten.Util;
 using Npgsql;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten
 {
@@ -30,17 +31,16 @@ namespace Marten
     /// </summary>
     public class StoreOptions: IReadOnlyStoreOptions
     {
-        /// <summary>
-        ///     The default database schema used 'public'.
-        /// </summary>
-        public const string DefaultDatabaseSchemaName = "public";
-
         public const string PatchDoc = "patch_doc";
 
         private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs
             = new();
 
-        public StorageFeatures Storage { get; }
+        private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
+        {
+            new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy()
+        };
+
         public readonly IList<IInitialData> InitialData = new List<IInitialData>();
 
         /// <summary>
@@ -53,32 +53,24 @@ namespace Marten
         /// </summary>
         public readonly MartenRegistry Schema;
 
-        private string _databaseSchemaName = DefaultDatabaseSchemaName;
+
+        private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
+
+        private string _databaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
 
         private IMartenLogger _logger = new NulloMartenLogger();
-        private ISerializer? _serializer;
+
+        private ImHashMap<Type, ICompiledQuerySource> _querySources = ImHashMap<Type, ICompiledQuerySource>.Empty;
 
 
         private IRetryPolicy _retryPolicy = new NulloRetryPolicy();
+        private ISerializer? _serializer;
 
         /// <summary>
         ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
         ///     property is "All" by default for more efficient development, but can be set to lower values for production usage.
         /// </summary>
         public AutoCreate AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-
-        /// <summary>
-        /// Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created
-        /// </summary>
-        /// <remarks>Creating and dropping databases requires the CREATEDB privilege</remarks>
-        public void CreateDatabasesForTenants(Action<IDatabaseCreationExpressions> configure)
-        {
-            CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));
-        }
-
-        internal Action<IDatabaseCreationExpressions>? CreateDatabases { get; set; }
-
-        internal IProviderGraph Providers { get; }
 
         public StoreOptions()
         {
@@ -91,20 +83,15 @@ namespace Marten
             Advanced = new AdvancedOptions(this);
         }
 
+        public StorageFeatures Storage { get; }
+
+        internal Action<IDatabaseCreationExpressions>? CreateDatabases { get; set; }
+
+        internal IProviderGraph Providers { get; }
+
         public AdvancedOptions Advanced { get; }
 
-        IReadOnlyAdvancedOptions IReadOnlyStoreOptions.Advanced => Advanced;
-
         internal EventGraph EventGraph { get; }
-
-        /// <summary>
-        ///     Sets the database default schema name used to store the documents.
-        /// </summary>
-        public string DatabaseSchemaName
-        {
-            get { return _databaseSchemaName; }
-            set { _databaseSchemaName = value.ToLowerInvariant(); }
-        }
 
         /// <summary>
         ///     Configuration of event streams and projections
@@ -114,9 +101,25 @@ namespace Marten
         /// <summary>
         ///     Extension point to add custom Linq query parsers
         /// </summary>
-        public LinqParsing Linq { get; } = new LinqParsing();
+        public LinqParsing Linq { get; } = new();
 
         public ITransforms Transforms { get; }
+
+        /// <summary>
+        ///     Apply conventional policies to how documents are mapped
+        /// </summary>
+        public PoliciesExpression Policies => new(this);
+
+        IReadOnlyAdvancedOptions IReadOnlyStoreOptions.Advanced => Advanced;
+
+        /// <summary>
+        ///     Sets the database default schema name used to store the documents.
+        /// </summary>
+        public string DatabaseSchemaName
+        {
+            get => _databaseSchemaName;
+            set => _databaseSchemaName = value.ToLowerInvariant();
+        }
 
         /// <summary>
         ///     Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
@@ -127,9 +130,63 @@ namespace Marten
         public int NameDataLength { get; set; } = 64;
 
         /// <summary>
-        /// Gets Enum values stored as either integers or strings. This is configured on your ISerializer
+        ///     Gets Enum values stored as either integers or strings. This is configured on your ISerializer
         /// </summary>
         public EnumStorage EnumStorage => Serializer().EnumStorage;
+
+
+        /// <summary>
+        ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
+        ///     IUnitOfWork.ApplyChanges()
+        /// </summary>
+        public int UpdateBatchSize { get; set; } = 500;
+
+        public ISerializer Serializer()
+        {
+            return _serializer ?? SerializerFactory.New();
+        }
+
+        public IMartenLogger Logger()
+        {
+            return _logger ?? new NulloMartenLogger();
+        }
+
+        public IRetryPolicy RetryPolicy()
+        {
+            return _retryPolicy ?? new NulloRetryPolicy();
+        }
+
+        IReadOnlyList<IDocumentType> IReadOnlyStoreOptions.AllKnownDocumentTypes()
+        {
+            return Storage.AllDocumentMappings.OfType<IDocumentType>().ToList();
+        }
+
+        public IDocumentType FindOrResolveDocumentType(Type documentType)
+        {
+            return (Storage.FindMapping(documentType).Root as IDocumentType)!;
+        }
+
+        public ITenancy Tenancy { get; set; } = null!;
+
+        public bool PLV8Enabled { get; set; } = true;
+
+        IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
+
+        IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
+
+        IReadOnlyList<TransformFunction> IReadOnlyStoreOptions.Transforms()
+        {
+            return Transforms.AllFunctions().ToList();
+        }
+
+        /// <summary>
+        ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created
+        /// </summary>
+        /// <remarks>Creating and dropping databases requires the CREATEDB privilege</remarks>
+        public void CreateDatabasesForTenants(Action<IDatabaseCreationExpressions> configure)
+        {
+            CreateDatabases = configure ?? throw new ArgumentNullException(nameof(configure));
+        }
 
 
         internal void CreatePatching()
@@ -178,13 +235,6 @@ namespace Marten
             Tenancy = new DefaultTenancy(new LambdaConnectionFactory(source), this);
         }
 
-
-        /// <summary>
-        ///     Sets the batch size for updating or deleting documents in IDocumentSession.SaveChanges() /
-        ///     IUnitOfWork.ApplyChanges()
-        /// </summary>
-        public int UpdateBatchSize { get; set; } = 500;
-
         /// <summary>
         ///     Override the JSON serialization by ISerializer type
         /// </summary>
@@ -231,34 +281,9 @@ namespace Marten
             _serializer = new T();
         }
 
-        public ISerializer Serializer()
-        {
-            return _serializer ?? SerializerFactory.New();
-        }
-
-        public IMartenLogger Logger()
-        {
-            return _logger ?? new NulloMartenLogger();
-        }
-
         public void Logger(IMartenLogger logger)
         {
             _logger = logger;
-        }
-
-        public IRetryPolicy RetryPolicy()
-        {
-            return _retryPolicy ?? new NulloRetryPolicy();
-        }
-
-        IReadOnlyList<IDocumentType> IReadOnlyStoreOptions.AllKnownDocumentTypes()
-        {
-            return Storage.AllDocumentMappings.OfType<IDocumentType>().ToList();
-        }
-
-        public IDocumentType FindOrResolveDocumentType(Type documentType)
-        {
-            return (Storage.FindMapping(documentType).Root as IDocumentType)!;
         }
 
         public void RetryPolicy(IRetryPolicy retryPolicy)
@@ -296,11 +321,20 @@ namespace Marten
         internal void AssertValidIdentifier(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
+            {
                 throw new PostgresqlIdentifierInvalidException(name);
+            }
+
             if (name.IndexOf(' ') >= 0)
+            {
                 throw new PostgresqlIdentifierInvalidException(name);
+            }
+
             if (name.Length < NameDataLength)
+            {
                 return;
+            }
+
             throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
         }
 
@@ -310,50 +344,28 @@ namespace Marten
 
             Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName);
 
-            foreach (var mapping in Storage.AllDocumentMappings)
-            {
-                mapping.CompileAndValidate();
-            }
+            foreach (var mapping in Storage.AllDocumentMappings) mapping.CompileAndValidate();
         }
-
-        public ITenancy Tenancy { get; set; } = null!;
-
-        private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
-        {
-            new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy()
-        };
 
         internal void applyPolicies(DocumentMapping mapping)
         {
-            foreach (var policy in _policies)
-            {
-                policy.Apply(mapping);
-            }
+            foreach (var policy in _policies) policy.Apply(mapping);
         }
 
         /// <summary>
-        /// Validate that minimal options to initialize a document store have been specified
+        ///     Validate that minimal options to initialize a document store have been specified
         /// </summary>
         internal void Validate()
         {
             if (Tenancy == null)
             {
-                throw new InvalidOperationException("Tenancy not specified - provide either connection string or connection factory through Connection(..)");
+                throw new InvalidOperationException(
+                    "Tenancy not specified - provide either connection string or connection factory through Connection(..)");
             }
         }
 
         /// <summary>
-        /// Apply conventional policies to how documents are mapped
-        /// </summary>
-        public PoliciesExpression Policies => new PoliciesExpression(this);
-
-        public bool PLV8Enabled { get; set; } = true;
-
-
-        private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
-
-        /// <summary>
-        /// These mappings should only be used for Linq querying within the SelectMany() body
+        ///     These mappings should only be used for Linq querying within the SelectMany() body
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
@@ -369,79 +381,10 @@ namespace Marten
             _childFieldMappings = _childFieldMappings.AddOrUpdate(type, mapping);
 
             return mapping;
-
         }
 
-        public class PoliciesExpression
-        {
-            private readonly StoreOptions _parent;
-
-            public PoliciesExpression(StoreOptions parent)
-            {
-                _parent = parent;
-            }
-
-            /// <summary>
-            /// Add a pre-built Marten document policy
-            /// </summary>
-            /// <typeparam name="T"></typeparam>
-            /// <returns></returns>
-            public PoliciesExpression OnDocuments<T>() where T : IDocumentPolicy, new()
-            {
-                return OnDocuments(new T());
-            }
-
-            /// <summary>
-            /// Add a pre-built Marten document policy
-            /// </summary>
-            /// <param name="policy"></param>
-            /// <returns></returns>
-            public PoliciesExpression OnDocuments(IDocumentPolicy policy)
-            {
-                _parent._policies.Insert(0, policy);
-                return this;
-            }
-
-            /// <summary>
-            /// Apply configuration to the persistence of all Marten document
-            /// types
-            /// </summary>
-            /// <param name="configure"></param>
-            /// <returns></returns>
-            public PoliciesExpression ForAllDocuments(Action<DocumentMapping> configure)
-            {
-                return OnDocuments(new LambdaDocumentPolicy(configure));
-            }
-
-            /// <summary>
-            /// Unless explicitly marked otherwise, all documents should
-            /// use conjoined multi-tenancy
-            /// </summary>
-            /// <returns></returns>
-            public PoliciesExpression AllDocumentsAreMultiTenanted()
-            {
-                return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
-            }
-
-            /// <summary>
-            /// Turn off the informational metadata columns
-            /// in storage like the last modified, version, and
-            /// dot net type for leaner storage
-            /// </summary>
-            public PoliciesExpression DisableInformationalFields()
-            {
-                return ForAllDocuments(x =>
-                {
-                    x.Metadata.LastModified.Enabled = false;
-                    x.Metadata.DotNetType.Enabled = false;
-                    x.Metadata.Version.Enabled = false;
-                });
-            }
-        }
-
-        private ImHashMap<Type, ICompiledQuerySource> _querySources = ImHashMap<Type, ICompiledQuerySource>.Empty;
-
-        internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc,TOut> query, IMartenSession session)
+        internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
+            IMartenSession session)
         {
             if (_querySources.TryFind(query.GetType(), out var source))
             {
@@ -460,13 +403,71 @@ namespace Marten
             return source;
         }
 
-        IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
-
-        IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
-
-        IReadOnlyList<TransformFunction> IReadOnlyStoreOptions.Transforms()
+        public class PoliciesExpression
         {
-            return Transforms.AllFunctions().ToList();
+            private readonly StoreOptions _parent;
+
+            public PoliciesExpression(StoreOptions parent)
+            {
+                _parent = parent;
+            }
+
+            /// <summary>
+            ///     Add a pre-built Marten document policy
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <returns></returns>
+            public PoliciesExpression OnDocuments<T>() where T : IDocumentPolicy, new()
+            {
+                return OnDocuments(new T());
+            }
+
+            /// <summary>
+            ///     Add a pre-built Marten document policy
+            /// </summary>
+            /// <param name="policy"></param>
+            /// <returns></returns>
+            public PoliciesExpression OnDocuments(IDocumentPolicy policy)
+            {
+                _parent._policies.Insert(0, policy);
+                return this;
+            }
+
+            /// <summary>
+            ///     Apply configuration to the persistence of all Marten document
+            ///     types
+            /// </summary>
+            /// <param name="configure"></param>
+            /// <returns></returns>
+            public PoliciesExpression ForAllDocuments(Action<DocumentMapping> configure)
+            {
+                return OnDocuments(new LambdaDocumentPolicy(configure));
+            }
+
+            /// <summary>
+            ///     Unless explicitly marked otherwise, all documents should
+            ///     use conjoined multi-tenancy
+            /// </summary>
+            /// <returns></returns>
+            public PoliciesExpression AllDocumentsAreMultiTenanted()
+            {
+                return ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
+            }
+
+            /// <summary>
+            ///     Turn off the informational metadata columns
+            ///     in storage like the last modified, version, and
+            ///     dot net type for leaner storage
+            /// </summary>
+            public PoliciesExpression DisableInformationalFields()
+            {
+                return ForAllDocuments(x =>
+                {
+                    x.Metadata.LastModified.Enabled = false;
+                    x.Metadata.DotNetType.Enabled = false;
+                    x.Metadata.Version.Enabled = false;
+                });
+            }
         }
     }
 
@@ -493,12 +494,12 @@ namespace Marten
     public interface IReadOnlyAdvancedOptions
     {
         /// <summary>
-        /// Sets Enum values stored as either integers or strings for DuplicatedField.
+        ///     Sets Enum values stored as either integers or strings for DuplicatedField.
         /// </summary>
-        EnumStorage DuplicatedFieldEnumStorage { get;  }
+        EnumStorage DuplicatedFieldEnumStorage { get; }
 
         /// <summary>
-        /// Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
+        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
         /// </summary>
         bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; }
 
@@ -509,7 +510,7 @@ namespace Marten
         IReadOnlyHiloSettings HiloSequenceDefaults { get; }
 
         /// <summary>
-        /// Option to enable or disable usage of default tenant when using multi-tenanted documents
+        ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
         /// </summary>
         bool DefaultTenantUsageEnabled { get; }
     }
@@ -524,23 +525,6 @@ namespace Marten
             _storeOptions = storeOptions;
         }
 
-        /// <summary>
-        /// Sets Enum values stored as either integers or strings for DuplicatedField.
-        /// </summary>
-        public EnumStorage DuplicatedFieldEnumStorage
-        {
-            get { return _duplicatedFieldEnumStorage ?? _storeOptions.EnumStorage; }
-            set
-            {
-                _duplicatedFieldEnumStorage = value;
-            }
-        }
-
-        /// <summary>
-        /// Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
-        /// </summary>
-        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
-
 
         /// <summary>
         ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
@@ -548,22 +532,33 @@ namespace Marten
         /// </summary>
         public HiloSettings HiloSequenceDefaults { get; } = new();
 
-        IReadOnlyHiloSettings IReadOnlyAdvancedOptions.HiloSequenceDefaults => HiloSequenceDefaults;
-
-
-        /// <summary>
-        /// Option to enable or disable usage of default tenant when using multi-tenanted documents
-        /// </summary>
-        public bool DefaultTenantUsageEnabled { get; set; } = true;
-
 
         /// <summary>
         ///     Allows you to modify how the DDL for document tables and upsert functions is
         ///     written
         /// </summary>
-        public DdlRules DdlRules { get; } = new DdlRules();
+        public DdlRules DdlRules { get; } = new();
+
+        /// <summary>
+        ///     Sets Enum values stored as either integers or strings for DuplicatedField.
+        /// </summary>
+        public EnumStorage DuplicatedFieldEnumStorage
+        {
+            get => _duplicatedFieldEnumStorage ?? _storeOptions.EnumStorage;
+            set => _duplicatedFieldEnumStorage = value;
+        }
+
+        /// <summary>
+        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
+        /// </summary>
+        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
+
+        IReadOnlyHiloSettings IReadOnlyAdvancedOptions.HiloSequenceDefaults => HiloSequenceDefaults;
 
 
+        /// <summary>
+        ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
+        /// </summary>
+        public bool DefaultTenantUsageEnabled { get; set; } = true;
     }
-
 }

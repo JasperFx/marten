@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing.Identity.Sequences

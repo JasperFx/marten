@@ -7,6 +7,8 @@ using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -161,17 +163,17 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void can_add_same_primary_key_to_multiple_tenant()
+        public async Task can_add_same_primary_key_to_multiple_tenant()
         {
             var guid = Guid.NewGuid();
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
-            var existing = theStore.Tenancy.Default.DbObjects.ExistingTableFor(typeof(Target));
+            var existing = await theStore.Tenancy.Default.ExistingTableFor(typeof(Target));
             var mapping = theStore.Options.Storage.MappingFor(typeof(Target));
             var expected = new DocumentTable(mapping);
 
             var delta = new TableDelta(expected, existing);
-            delta.Matches.ShouldBeTrue();
+            delta.Difference.ShouldBe(SchemaPatchDifference.None);
 
             using (var session = theStore.OpenSession("123"))
             {
@@ -179,7 +181,7 @@ namespace Marten.Testing.Acceptance
                 target.Id = guid;
                 target.String = "123";
                 session.ForTenant("123").Store(target);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.OpenSession("abc"))
@@ -188,20 +190,20 @@ namespace Marten.Testing.Acceptance
                 target.Id = guid;
                 target.String = "abc";
                 session.ForTenant("abc").Store(target);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.OpenSession("123"))
             {
                 var target = session.Load<Target>(guid);
-                SpecificationExtensions.ShouldNotBeNull(target);
+                target.ShouldNotBeNull();
                 target.String.ShouldBe("123");
             }
 
             using (var session = theStore.OpenSession("abc"))
             {
                 var target = session.Load<Target>(guid);
-                SpecificationExtensions.ShouldNotBeNull(target);
+                target.ShouldNotBeNull();
                 target.String.ShouldBe("abc");
             }
         }

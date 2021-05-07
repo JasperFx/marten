@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Events.Querying

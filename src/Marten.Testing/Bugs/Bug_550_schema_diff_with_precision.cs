@@ -1,7 +1,8 @@
 using System;
-using Marten.Storage;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -10,7 +11,7 @@ namespace Marten.Testing.Bugs
     {
 
         [Fact]
-        public void can_handle_the_explicit_precision()
+        public async Task can_handle_the_explicit_precision()
         {
             // Configure a doc
             StoreOptions(_ =>
@@ -18,7 +19,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var store = SeparateStore(_ =>
             {
@@ -26,7 +27,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            var patch = store.Schema.ToPatch(typeof(DocWithPrecision));
+            var patch = await store.Schema.CreateMigration(typeof(DocWithPrecision));
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
 
