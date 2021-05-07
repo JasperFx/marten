@@ -81,6 +81,7 @@ namespace Marten
 
             Providers = new ProviderGraph(this);
             Advanced = new AdvancedOptions(this);
+
         }
 
         public StorageFeatures Storage { get; }
@@ -523,6 +524,10 @@ namespace Marten
         internal AdvancedOptions(StoreOptions storeOptions)
         {
             _storeOptions = storeOptions;
+
+            // Making the DDL generation be transactional can cause runtime errors.
+            // Make the user opt into this
+            DdlRules.IsTransactional = false;
         }
 
 
