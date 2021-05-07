@@ -43,7 +43,7 @@ namespace Marten.Pagination
             CancellationToken token = default)
         {
             // return paged list
-            return await PagedList<T>.CreateAsync(queryable, pageNumber, pageSize).ConfigureAwait(false);
+            return await PagedList<T>.CreateAsync(queryable, pageNumber, pageSize);
         }
     }
 }

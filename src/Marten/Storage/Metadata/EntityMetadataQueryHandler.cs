@@ -70,7 +70,7 @@ namespace Marten.Storage.Metadata
         public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IMartenSession session,
             CancellationToken token)
         {
-            var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
+            var hasAny = await reader.ReadAsync(token);
             if (!hasAny)
                 return null;
 

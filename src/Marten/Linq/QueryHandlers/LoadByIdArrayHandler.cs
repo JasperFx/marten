@@ -71,9 +71,9 @@ namespace Marten.Linq.QueryHandlers
 
             var selector = (ISelector<T>)storage.BuildSelector(session);
 
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            while (await reader.ReadAsync(token))
             {
-                list.Add(await selector.ResolveAsync(reader, token).ConfigureAwait(false));
+                list.Add(await selector.ResolveAsync(reader, token));
             }
 
             return list;

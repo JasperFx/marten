@@ -29,9 +29,9 @@ namespace Marten.Linq.Includes
 
         public async Task ReadAsync(DbDataReader reader, CancellationToken token)
         {
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            while (await reader.ReadAsync(token))
             {
-                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                var item = await _selector.ResolveAsync(reader, token);
                 _callback(item);
             }
         }

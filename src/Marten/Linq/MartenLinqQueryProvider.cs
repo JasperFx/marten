@@ -81,8 +81,8 @@ namespace Marten.Linq
         {
             var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
-            return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
+            return await handler.HandleAsync(reader, _session, token);
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)

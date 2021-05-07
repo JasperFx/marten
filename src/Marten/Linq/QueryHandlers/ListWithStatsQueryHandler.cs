@@ -60,7 +60,7 @@ namespace Marten.Linq.QueryHandlers
 
         async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var list = await HandleAsync(reader, session, token).ConfigureAwait(false);
+            var list = await HandleAsync(reader, session, token);
             return list;
         }
 
@@ -73,10 +73,10 @@ namespace Marten.Linq.QueryHandlers
         {
             var list = new List<T>();
 
-            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            if (await reader.ReadAsync(token))
             {
-                _statistics.TotalResults = await reader.GetFieldValueAsync<int>(_countIndex, token).ConfigureAwait(false);
-                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                _statistics.TotalResults = await reader.GetFieldValueAsync<int>(_countIndex, token);
+                var item = await _selector.ResolveAsync(reader, token);
                 list.Add(item);
             }
             else
@@ -87,9 +87,9 @@ namespace Marten.Linq.QueryHandlers
             }
 
             // Get the rest of the data
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            while (await reader.ReadAsync(token))
             {
-                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                var item = await _selector.ResolveAsync(reader, token);
                 list.Add(item);
             }
 

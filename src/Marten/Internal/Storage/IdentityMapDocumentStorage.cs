@@ -148,11 +148,11 @@ namespace Marten.Internal.Storage
             var list = preselectLoadedDocuments(ids, session, out var command);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            using (var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+            using (var reader = await session.Database.ExecuteReaderAsync(command, token))
             {
-                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                while (await reader.ReadAsync(token))
                 {
-                    var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                    var document = await selector.ResolveAsync(reader, token);
                     list.Add(document);
                 }
             }

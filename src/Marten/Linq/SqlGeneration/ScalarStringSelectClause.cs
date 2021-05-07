@@ -81,7 +81,7 @@ namespace Marten.Linq.SqlGeneration
 
         public async Task<string> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+            if (await reader.IsDBNullAsync(0, token))
             {
                 return null;
             }

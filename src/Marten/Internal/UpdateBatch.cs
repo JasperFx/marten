@@ -65,8 +65,8 @@ namespace Marten.Internal
                 var command = session.BuildCommand(_operations);
                 try
                 {
-                    using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                    await ApplyCallbacksAsync(_operations, reader, _exceptions, token).ConfigureAwait(false);
+                    using var reader = await session.Database.ExecuteReaderAsync(command, token);
+                    await ApplyCallbacksAsync(_operations, reader, _exceptions, token);
                 }
                 catch (Exception e)
                 {
@@ -88,8 +88,8 @@ namespace Marten.Internal
                     try
                     {
                         using var reader =
-                            await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-                        await ApplyCallbacksAsync(operations, reader, _exceptions, token).ConfigureAwait(false);
+                            await session.Database.ExecuteReaderAsync(command, token);
+                        await ApplyCallbacksAsync(operations, reader, _exceptions, token);
                     }
                     catch (Exception e)
                     {

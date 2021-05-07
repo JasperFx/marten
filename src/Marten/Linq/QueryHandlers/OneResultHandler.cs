@@ -56,7 +56,7 @@ namespace Marten.Linq.QueryHandlers
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session,
             CancellationToken token)
         {
-            var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);
+            var hasResult = await reader.ReadAsync(token);
             if (!hasResult)
             {
                 if (_canBeNull)
@@ -65,9 +65,9 @@ namespace Marten.Linq.QueryHandlers
                 throw new InvalidOperationException(NoElementsMessage);
             }
 
-            var result = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+            var result = await _selector.ResolveAsync(reader, token);
 
-            if (!_canBeMultiples && await reader.ReadAsync(token).ConfigureAwait(false))
+            if (!_canBeMultiples && await reader.ReadAsync(token))
                 throw new InvalidOperationException(MoreThanOneElementMessage);
 
             return result;

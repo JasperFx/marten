@@ -155,18 +155,18 @@ namespace Marten.Linq.SqlGeneration
 
             await builder.WriteAsync(_arrayPrefix);
 
-            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            if (await reader.ReadAsync(token))
             {
                 using var text = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
 
-                await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync().ConfigureAwait(false));
+                await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync());
             }
 
             while (await reader.ReadAsync(token))
             {
                 using var text = await reader.As<NpgsqlDataReader>().GetStreamAsync(0, token);
                 await builder.WriteAsync(',');
-                await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync().ConfigureAwait(false));
+                await builder.WriteAsync(await text.GetStreamReader().ReadToEndAsync());
             }
 
             await builder.WriteAsync(_arraySuffix);

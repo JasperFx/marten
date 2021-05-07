@@ -38,8 +38,8 @@ namespace Marten.Events.Querying
         public async Task<IEvent> HandleAsync(DbDataReader reader, IMartenSession session,
             CancellationToken token)
         {
-            return await reader.ReadAsync(token).ConfigureAwait(false)
-                ? await _selector.ResolveAsync(reader, token).ConfigureAwait(false)
+            return await reader.ReadAsync(token)
+                ? await _selector.ResolveAsync(reader, token)
                 : null;
         }
     }

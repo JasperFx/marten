@@ -178,7 +178,7 @@ namespace Marten.Internal.Sessions
             _disposed = true;
             if (Database != null)
             {
-                await Database.DisposeAsync().ConfigureAwait(false);
+                await Database.DisposeAsync();
             }
             GC.SuppressFinalize(this);
         }
@@ -200,7 +200,7 @@ namespace Marten.Internal.Sessions
         public async Task<T?> LoadAsync<T>(string id, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
-            var document = await StorageFor<T, string>().LoadAsync(id, this, token).ConfigureAwait(false);
+            var document = await StorageFor<T, string>().LoadAsync(id, this, token);
 
             return document;
         }
@@ -230,8 +230,8 @@ namespace Marten.Internal.Sessions
 
             var document = storage switch
             {
-                IDocumentStorage<T, int> i => await i.LoadAsync(id, this, token).ConfigureAwait(false),
-                IDocumentStorage<T, long> l => await l.LoadAsync(id, this, token).ConfigureAwait(false),
+                IDocumentStorage<T, int> i => await i.LoadAsync(id, this, token),
+                IDocumentStorage<T, long> l => await l.LoadAsync(id, this, token),
                 _ => throw new DocumentIdTypeMismatchException(
                     $"The identity type for document type {typeof(T).FullNameInCode()} is not numeric")
             };
@@ -250,7 +250,7 @@ namespace Marten.Internal.Sessions
         public async Task<T?> LoadAsync<T>(long id, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
-            var document = await StorageFor<T, long>().LoadAsync(id, this, token).ConfigureAwait(false);
+            var document = await StorageFor<T, long>().LoadAsync(id, this, token);
 
             return document;
         }
@@ -266,7 +266,7 @@ namespace Marten.Internal.Sessions
         public async Task<T?> LoadAsync<T>(Guid id, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
-            var document = await StorageFor<T, Guid>().LoadAsync(id, this, token).ConfigureAwait(false);
+            var document = await StorageFor<T, Guid>().LoadAsync(id, this, token);
 
             return document;
         }
@@ -338,7 +338,7 @@ namespace Marten.Internal.Sessions
         }
 
         public IReadOnlyList<T> LoadMany<T>(IEnumerable<string> ids) where T : notnull
-        { 
+        {
             assertNotDisposed();
             return StorageFor<T, string>().LoadMany(ids.ToArray(), this);
 
@@ -468,7 +468,7 @@ namespace Marten.Internal.Sessions
 
 
 
-        public IReadOnlyList<T> LoadMany<T>(params Guid[] ids) where T: notnull 
+        public IReadOnlyList<T> LoadMany<T>(params Guid[] ids) where T: notnull
         {
             assertNotDisposed();
             return StorageFor<T, Guid>().LoadMany(ids, this);

@@ -26,7 +26,7 @@ namespace Marten.Services.BatchQuerying
 
         public async Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var result = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
+            var result = await _handler.HandleAsync(reader, session, token);
             Completion.SetResult(result);
         }
 

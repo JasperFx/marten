@@ -98,10 +98,10 @@ namespace Marten.Services
             if (_mode == CommandRunnerMode.External)
                 return;
 
-            await buildConnectionAsync(token).ConfigureAwait(false);
+            await buildConnectionAsync(token);
             await _retryPolicy.ExecuteAsync(() => _connection.CommitAsync(token), token);
 
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            await _connection.DisposeAsync();
             _connection = null;
         }
 
@@ -154,7 +154,7 @@ namespace Marten.Services
             }
             finally
             {
-                await _connection.DisposeAsync().ConfigureAwait(false);
+                await _connection.DisposeAsync();
                 _connection = null;
             }
         }
@@ -180,7 +180,7 @@ namespace Marten.Services
         {
             if (InTransaction()) return;
 
-            await buildConnectionAsync(token).ConfigureAwait(false);
+            await buildConnectionAsync(token);
 
             _connection.BeginTransaction();
         }
@@ -255,7 +255,7 @@ namespace Marten.Services
 
         public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
         {
-            await buildConnectionAsync(token).ConfigureAwait(false);
+            await buildConnectionAsync(token);
 
             _connection.Apply(command);
 
@@ -280,7 +280,7 @@ namespace Marten.Services
 
         public async Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
         {
-            await buildConnectionAsync(token).ConfigureAwait(false);
+            await buildConnectionAsync(token);
 
             RequestCount++;
 
@@ -311,7 +311,7 @@ namespace Marten.Services
         {
             if (_connection != null)
             {
-                await _connection.DisposeAsync().ConfigureAwait(false);
+                await _connection.DisposeAsync();
             }
         }
     }

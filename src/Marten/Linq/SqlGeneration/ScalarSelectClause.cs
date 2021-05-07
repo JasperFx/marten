@@ -91,7 +91,7 @@ namespace Marten.Linq.SqlGeneration
 
         async Task<T?> ISelector<T?>.ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+            if (await reader.IsDBNullAsync(0, token))
             {
                 return null;
             }
@@ -118,7 +118,7 @@ namespace Marten.Linq.SqlGeneration
 
         public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+            if (await reader.IsDBNullAsync(0, token))
             {
                 return default;
             }

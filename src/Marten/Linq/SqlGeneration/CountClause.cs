@@ -67,9 +67,9 @@ namespace Marten.Linq.SqlGeneration
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);
-            return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
-                ? await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false)
+            var hasNext = await reader.ReadAsync(token);
+            return hasNext && !await reader.IsDBNullAsync(0, token)
+                ? await reader.GetFieldValueAsync<T>(0, token)
                 : default;
         }
     }

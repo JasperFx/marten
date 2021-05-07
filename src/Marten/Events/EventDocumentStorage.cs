@@ -224,7 +224,7 @@ namespace Marten.Events
             var mapping = Events.EventMappingFor(eventTypeName);
             if (mapping == null)
             {
-                var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+                var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token);
                 if (dotnetTypeName.IsEmpty())
                 {
                     throw new UnknownEventTypeException(eventTypeName);

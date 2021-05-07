@@ -332,7 +332,7 @@ namespace Marten.Events
 
             _store.Events.AddEventType(typeof(T));
 
-            return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
+            return (await LoadAsync(id, token)).As<Event<T>>();
         }
 
         public IEvent Load(Guid id)

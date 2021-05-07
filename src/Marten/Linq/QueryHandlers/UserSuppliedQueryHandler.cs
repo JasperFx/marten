@@ -84,9 +84,9 @@ namespace Marten.Linq.QueryHandlers
         {
             var list = new List<T>();
 
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            while (await reader.ReadAsync(token))
             {
-                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                var item = await _selector.ResolveAsync(reader, token);
                 list.Add(item);
             }
 

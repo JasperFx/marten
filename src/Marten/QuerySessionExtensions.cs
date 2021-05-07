@@ -38,7 +38,7 @@ namespace Marten
         {
             // TODO -- this could be optimized to avoid the Reflection hit.
             var task = (Task)QueryMethodAsync.MakeGenericMethod(type).Invoke(session, new object[] { sql, token, parameters });
-            await task.ConfigureAwait(false);
+            await task;
             return (IReadOnlyList<object>)task.GetType().GetProperty("Result").GetValue(task);
         }
     }

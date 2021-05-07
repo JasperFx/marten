@@ -79,18 +79,18 @@ namespace Marten.Services.BatchQuerying
 
             using (var reader = await _runner.ExecuteReaderAsync(command, token))
             {
-                await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
+                await _items[0].ReadAsync(reader, _parent, token);
 
                 var others = _items.Skip(1).ToArray();
 
                 foreach (var item in others)
                 {
-                    var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+                    var hasNext = await reader.NextResultAsync(token);
 
                     if (!hasNext)
                         throw new InvalidOperationException("There is no next result to read over.");
 
-                    await item.ReadAsync(reader, _parent, token).ConfigureAwait(false);
+                    await item.ReadAsync(reader, _parent, token);
                 }
             }
         }
