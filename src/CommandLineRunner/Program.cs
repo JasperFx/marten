@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.AsyncDaemon.Testing;
@@ -9,6 +6,7 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Oakton;
+using Weasel.Postgresql;
 
 namespace CommandLineRunner
 {
@@ -19,8 +17,9 @@ namespace CommandLineRunner
             return CreateHostBuilder(args).RunOaktonCommands(args);
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddMarten(opts =>
@@ -34,5 +33,6 @@ namespace CommandLineRunner
                         opts.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
                     });
                 });
+        }
     }
 }

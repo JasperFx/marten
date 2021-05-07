@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using Baseline;
 using Marten.Storage;
+using Shouldly;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing.Bugs
@@ -29,17 +32,9 @@ namespace Marten.Schema.Testing.Bugs
             var mapping = theStore.Storage.MappingFor(typeof(Login));
             var configured = new DocumentTable(mapping.As<DocumentMapping>());
 
-            if (!existing.Equals(configured))
-            {
-                var writer = new StringWriter();
-                writer.WriteLine("Expected:");
-                configured.Write(theStore.Schema.DdlRules, writer);
-                writer.WriteLine();
-                writer.WriteLine("But from the database, was:");
-                existing.Write(theStore.Schema.DdlRules, writer);
+            var delta = new TableDelta(configured, existing);
+            delta.Difference.ShouldBe(SchemaPatchDifference.None);
 
-                throw new Exception(writer.ToString());
-            }
         }
     }
 

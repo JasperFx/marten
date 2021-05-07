@@ -1,7 +1,9 @@
 using System;
 using System.Data;
 using System.Threading;
+using System.Threading.Tasks;
 using Marten.Exceptions;
+using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
@@ -14,7 +16,7 @@ namespace Marten.Schema.Identity.Sequences
         private readonly StoreOptions _options;
         private readonly string _entityName;
         private readonly object _lock = new object();
-        private HiloSettings _settings;
+        private readonly HiloSettings _settings;
 
         private DbObjectName GetNextFunction => new DbObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
@@ -37,27 +39,25 @@ namespace Marten.Schema.Identity.Sequences
 
         public int MaxLo { get; }
 
-        public void SetFloor(long floor)
+        public async Task SetFloor(long floor)
         {
             var numberOfPages = (long)Math.Ceiling((double)floor / MaxLo);
             var updateSql =
                 $"update {_options.DatabaseSchemaName}.mt_hilo set hi_value = :floor where entity_name = :name";
 
             // This guarantees that the hilo row exists
-            AdvanceToNextHi();
+            await AdvanceToNextHi();
 
-            using (var conn = _tenant.CreateConnection())
-            {
-                conn.Open();
+            using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync();
 
-                conn.CreateCommand(updateSql)
-                    .With("floor", numberOfPages)
-                    .With("name", _entityName)
-                    .ExecuteNonQuery();
-            }
+            await conn.CreateCommand(updateSql)
+                .With("floor", numberOfPages)
+                .With("name", _entityName)
+                .ExecuteNonQueryAsync();
 
             // And again to get it where we need it to be
-            AdvanceToNextHi();
+            await AdvanceToNextHi();
         }
 
         public int NextInt()
@@ -71,46 +71,44 @@ namespace Marten.Schema.Identity.Sequences
             {
                 if(ShouldAdvanceHi())
                 {
-                    AdvanceToNextHi();
+                    AdvanceToNextHi().GetAwaiter().GetResult();
                 }
                 return AdvanceValue();
             }
         }
 
-        public void AdvanceToNextHi()
+        public async Task AdvanceToNextHi()
         {
-            using (var conn = _tenant.CreateConnection())
+            using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync();
+
+            try
             {
-                conn.Open();
-
-                try
+                var attempts = 0;
+                do
                 {
-                    var attempts = 0;
-                    do
-                    {
-                        attempts++;
+                    attempts++;
 
-                        // Sproc is expected to return -1 if it's unable to
-                        // atomically secure the next hi
-                        var raw = conn.CreateCommand().CallsSproc(GetNextFunction)
-                            .With("entity", _entityName)
-                            .Returns("next", NpgsqlDbType.Bigint).ExecuteScalar();
+                    // Sproc is expected to return -1 if it's unable to
+                    // atomically secure the next hi
+                    var raw = await conn.CreateCommand().CallsSproc(GetNextFunction)
+                        .With("entity", _entityName)
+                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalarAsync();
 
-                        CurrentHi = Convert.ToInt64(raw);
+                    CurrentHi = Convert.ToInt64(raw);
 
-                    } while (CurrentHi < 0 && attempts < _settings.MaxAdvanceToNextHiAttempts);
+                } while (CurrentHi < 0 && attempts < _settings.MaxAdvanceToNextHiAttempts);
 
-                    // if CurrentHi is still less than 0 at this point, then throw exception
-                    if (CurrentHi < 0)
-                    {
-                        throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
-                    }
-                }
-                finally
+                // if CurrentHi is still less than 0 at this point, then throw exception
+                if (CurrentHi < 0)
                 {
-                    conn.Close();
-                    conn.Dispose();
+                    throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
                 }
+            }
+            finally
+            {
+                await conn.CloseAsync();
+                conn.Dispose();
             }
 
             CurrentLo = 1;

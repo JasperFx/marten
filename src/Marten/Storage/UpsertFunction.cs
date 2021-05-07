@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Marten.Util;
+using Weasel.Postgresql.Functions;
 
 namespace Marten.Storage
 {
@@ -32,14 +34,8 @@ namespace Marten.Storage
 
             // TODO -- it'd be nice to not need this here.
             var table = new DocumentTable(mapping);
-            if (table.PrimaryKeys.Count > 1)
-            {
-                _primaryKeyConstraintName = mapping.TableName.Name + "_pkey";
-            }
-            else
-            {
-                _primaryKeyConstraintName = "pk_" + mapping.TableName.Name;
-            }
+
+            _primaryKeyConstraintName = table.PrimaryKeyName;
 
             var idType = mapping.IdMember.GetMemberType();
             var pgIdType = TypeMappings.GetPgType(idType, mapping.EnumStorage);
@@ -93,7 +89,7 @@ namespace Marten.Storage
             }
         }
 
-        public override void Write(DdlRules rules, StringWriter writer)
+        public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
         {
             // TODO -- this code could be a lot cleaner! The metadata made it go bad
 
@@ -147,7 +143,8 @@ namespace Marten.Storage
             writeFunction(writer, argList, securityDeclaration, inserts, valueList, updates);
         }
 
-        protected virtual void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts,
+        protected virtual void writeFunction(TextWriter writer, string argList, string securityDeclaration,
+            string inserts,
             string valueList, string updates)
         {
             if (_mapping.Metadata.Version.Enabled)
@@ -197,17 +194,5 @@ $function$;
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }
 
-        protected override string toDropSql()
-        {
-            var argList = OrderedArguments().Select(x => x.PostgresType).Join(", ");
-            var dropSql = $"drop function if exists {Identifier.QualifiedName}({argList});";
-            return dropSql;
-        }
-
-        public void WriteTemplate(DdlRules rules, DdlTemplate template, StringWriter writer)
-        {
-            var body = ToBody(rules);
-            body.WriteTemplate(template, writer);
-        }
     }
 }

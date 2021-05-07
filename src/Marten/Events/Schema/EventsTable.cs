@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Weasel.Postgresql.Tables;
+using IndexDefinition = Weasel.Postgresql.Tables.IndexDefinition;
 
 namespace Marten.Events.Schema
 {
@@ -11,19 +14,19 @@ namespace Marten.Events.Schema
     {
         public EventsTable(EventGraph events): base(new DbObjectName(events.DatabaseSchemaName, "mt_events"))
         {
-            AddPrimaryKey(new EventTableColumn("seq_id", x => x.Sequence));
-            AddColumn(new EventTableColumn("id", x => x.Id) {Directive = "NOT NULL"});
+            AddColumn(new EventTableColumn("seq_id", x => x.Sequence)).AsPrimaryKey();
+            AddColumn(new EventTableColumn("id", x => x.Id)).NotNull();
             AddColumn(new StreamIdColumn(events));
-            AddColumn(new EventTableColumn("version", x => x.Version) {Directive = "NOT NULL"});
+
+            AddColumn(new EventTableColumn("version", x => x.Version)).NotNull();
             AddColumn<EventJsonDataColumn>();
             AddColumn<EventTypeColumn>();
-            AddColumn(new EventTableColumn("timestamp", x => x.Timestamp)
-            {
-                Directive = "default (now()) NOT NULL", Type = "timestamptz"
-            });
+            AddColumn(new EventTableColumn("timestamp", x => x.Timestamp))
+                .NotNull().DefaultValueByString("(now())");
 
             AddColumn<TenantIdColumn>();
-            AddColumn(new DotNetTypeColumn {Directive = "NULL"});
+
+            AddColumn<DotNetTypeColumn>().AllowNulls();
 
             AddIfActive(events.Metadata.CorrelationId);
             AddIfActive(events.Metadata.CausationId);
@@ -31,17 +34,41 @@ namespace Marten.Events.Schema
 
             if (events.TenancyStyle == TenancyStyle.Conjoined)
             {
-                Constraints.Add(
-                    $"FOREIGN KEY(stream_id, {TenantIdColumn.Name}) REFERENCES {events.DatabaseSchemaName}.mt_streams(id, {TenantIdColumn.Name})");
-                Constraints.Add(
-                    $"CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, {TenantIdColumn.Name}, version)");
+                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id")
+                {
+                    ColumnNames = new string[]{"stream_id", TenantIdColumn.Name},
+                    LinkedNames = new string[]{"id", TenantIdColumn.Name},
+                    LinkedTable = new DbObjectName(events.DatabaseSchemaName, "mt_streams")
+                });
+
+                Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                {
+                    IsUnique = true,
+                    Columns = new string[]{"stream_id", TenantIdColumn.Name, "version"}
+                });
             }
             else
             {
-                Constraints.Add("CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version)");
+                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id")
+                {
+                    ColumnNames = new string[]{"stream_id"},
+                    LinkedNames = new string[]{"id"},
+                    LinkedTable = new DbObjectName(events.DatabaseSchemaName, "mt_streams"),
+                    OnDelete = CascadeAction.Cascade
+                });
+
+                Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
+                {
+                    IsUnique = true,
+                    Columns = new string[]{"stream_id", "version"}
+                });
             }
 
-            Constraints.Add("CONSTRAINT pk_mt_events_id_unique UNIQUE(id)");
+            Indexes.Add(new IndexDefinition("pk_mt_events_id_unique")
+            {
+                Columns = new string[]{"id"},
+                IsUnique = true
+            });
         }
 
         internal IList<IEventTableColumn> SelectColumns()

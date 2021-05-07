@@ -2,6 +2,7 @@ using System;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Weasel.Postgresql;
 using Marten.Util;
 #nullable enable
 namespace Marten.Linq.SqlGeneration

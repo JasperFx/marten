@@ -1,7 +1,7 @@
 using System;
-using System.Linq;
 using Marten.Schema.Testing.Identity.Sequences;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing

@@ -14,6 +14,7 @@ using Marten.Linq.Operators;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Transforms;
 using Marten.Util;
 using Npgsql;

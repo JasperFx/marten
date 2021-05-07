@@ -5,6 +5,7 @@ using System.Reflection;
 using Baseline;
 using LamarCodeGeneration.Util;
 using Marten.Util;
+using Weasel.Postgresql;
 
 namespace Marten.Linq.Fields
 {

@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Linq
@@ -19,7 +21,7 @@ namespace Marten.Testing.Linq
     public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: IntegrationContext
     {
         [Fact]
-        public void string_enum_serialization_does_not_work_with_ginindexjsondata()
+        public async Task string_enum_serialization_does_not_work_with_ginindexjsondata()
         {
 
             StoreOptions(_ =>
@@ -33,9 +35,9 @@ namespace Marten.Testing.Linq
                 });
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            using (var store = DocumentStore.For(_ =>
+            using var store = DocumentStore.For(_ =>
             {
                 _.Serializer(new JsonNetSerializer
                 {
@@ -47,18 +49,18 @@ namespace Marten.Testing.Linq
                 {
                     _.Expression = "to_tsvector('english', data::TEXT)";
                 });
-            }))
+            });
+
+            using (var session = store.OpenSession())
             {
-                using (var session = store.OpenSession())
-                {
-                    session.Store(new Bug_1061_Class { Id = "one", Enum = Bug_1061_Enum.One });
-                    session.SaveChanges();
-                }
-                using (var session = store.OpenSession())
-                {
-                    var items = session.Query<Bug_1061_Class>().Where(x => x.Enum == Bug_1061_Enum.One).ToList();
-                    Assert.Single(items);
-                }
+                session.Store(new Bug_1061_Class { Id = "one", Enum = Bug_1061_Enum.One });
+                await session.SaveChangesAsync();
+            }
+
+            using (var session = store.OpenSession())
+            {
+                var items = session.Query<Bug_1061_Class>().Where(x => x.Enum == Bug_1061_Enum.One).ToList();
+                Assert.Single(items);
             }
         }
 

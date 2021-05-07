@@ -8,6 +8,7 @@ using Baseline;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
 using TypeExtensions = LamarCodeGeneration.Util.TypeExtensions;

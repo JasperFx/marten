@@ -1,15 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
 using Marten.Internal.CodeGeneration;
+using Weasel.Postgresql;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Marten.Testing.Harness;
-using Marten.Util;
 using Npgsql;
 using Shouldly;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
@@ -47,7 +49,7 @@ namespace Marten.Schema.Testing.Storage
             table = table ?? theTable;
 
             var writer = new StringWriter();
-            table.Write(new DdlRules(), writer);
+            table.WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -77,32 +79,30 @@ namespace Marten.Schema.Testing.Storage
             _conn.CreateCommand(sql).ExecuteNonQuery();
         }
 
-        private void writeAndApplyPatch(AutoCreate autoCreate, DocumentTable table)
+        private async Task writeAndApplyPatch(AutoCreate autoCreate, DocumentTable table)
         {
-            var patch = new SchemaPatch(new DdlRules());
+            var migration = await SchemaMigration.Determine(_conn, new ISchemaObject[] {table});
 
-            patch.Apply(_conn, autoCreate, new ISchemaObject[] {table});
 
-            var updateDDL = patch.UpdateDDL;
-
-            if (!string.IsNullOrEmpty(updateDDL))
+            if (migration.Difference != SchemaPatchDifference.None)
             {
-                _conn.CreateCommand(updateDDL).ExecuteNonQuery();
+                await migration.ApplyAll(_conn, new DdlRules(), autoCreate);
             }
+
         }
 
         [Theory]
         [InlineData(SchemaConstants.DotNetTypeColumn)]
         [InlineData(SchemaConstants.LastModifiedColumn)]
         [InlineData(SchemaConstants.VersionColumn)]
-        public void can_migrate_missing_metadata_column(string columnName)
+        public async Task can_migrate_missing_metadata_column(string columnName)
         {
             writeTable();
             removeColumn(columnName);
 
-            writeAndApplyPatch(AutoCreate.CreateOrUpdate, theTable);
+            await writeAndApplyPatch(AutoCreate.CreateOrUpdate, theTable);
 
-            var theActual = theTable.FetchExisting(_conn);
+            var theActual = await theTable.FetchExisting(_conn);
 
             theActual.HasColumn(columnName);
         }
@@ -110,7 +110,7 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void basic_columns()
         {
-            theTable.Select(x => x.Name)
+            theTable.Columns.Select(x => x.Name)
                 .ShouldHaveTheSameElementsAs(
                     "id",
                     "data",
@@ -120,15 +120,15 @@ namespace Marten.Schema.Testing.Storage
         }
 
         [Fact]
-        public void can_create_with_indexes()
+        public async Task can_create_with_indexes()
         {
             theMapping.Index(x => x.UserName);
             theMapping.Index(x => x.FirstName);
 
             writeTable();
 
-            var existing = theTable.FetchExisting(_conn);
-            existing.ActualIndices.Count.ShouldBe(2);
+            var existing = await theTable.FetchExisting(_conn);
+            existing.Indexes.Count.ShouldBe(2);
         }
 
         [Fact]
@@ -150,63 +150,49 @@ namespace Marten.Schema.Testing.Storage
         }
 
         [Fact]
-        public void can_migrate_missing_duplicated_fields()
+        public async Task can_migrate_missing_duplicated_fields()
         {
             writeTable();
             theMapping.Duplicate(x => x.FirstName);
             var newTable = new DocumentTable(theMapping);
 
-            writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+            await writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
 
-            var theActual = theTable.FetchExisting(_conn);
+            var theActual = await theTable.FetchExisting(_conn);
 
             theActual.HasColumn("first_name");
         }
 
         [Fact]
-        public void can_migrate_missing_hierarchical_columns()
+        public async Task can_migrate_missing_hierarchical_columns()
         {
             writeTable();
             theMapping.SubClasses.Add(typeof(SuperUser));
             var newTable = new DocumentTable(theMapping);
 
-            writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+            await writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
 
-            var theActual = theTable.FetchExisting(_conn);
+            var theActual = await theTable.FetchExisting(_conn);
 
             theActual.HasColumn(SchemaConstants.DocumentTypeColumn);
         }
 
         [Fact]
-        public void can_migrate_missing_soft_deleted_columns()
+        public async Task can_migrate_missing_soft_deleted_columns()
         {
             writeTable();
             theMapping.DeleteStyle = DeleteStyle.SoftDelete;
             var newTable = new DocumentTable(theMapping);
 
-            writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+            await writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
 
-            var theActual = theTable.FetchExisting(_conn);
+            var theActual = await theTable.FetchExisting(_conn);
 
             theActual.HasColumn(SchemaConstants.DeletedColumn);
             theActual.HasColumn(SchemaConstants.DeletedAtColumn);
         }
 
-        [Fact]
-        public void can_spot_an_extra_index()
-        {
-            theMapping.Index(x => x.UserName);
 
-            writeTable();
-
-            theMapping.Index(x => x.FirstName);
-            var table = new DocumentTable(theMapping);
-
-            var delta = table.FetchDelta(_conn);
-
-            delta.IndexChanges.Count.ShouldBe(1);
-            delta.IndexRollbacks.Count.ShouldBe(1);
-        }
 
         [Fact]
         public void can_write_the_basic_table()
@@ -229,18 +215,6 @@ namespace Marten.Schema.Testing.Storage
         }
 
         [Fact]
-        public void equivalency_negative_column_type_changed()
-        {
-            var users = DocumentMapping.For<User>();
-            var table1 = new DocumentTable(users);
-            var table2 = new DocumentTable(users);
-
-            table2.ReplaceOrAddColumn(table2.PrimaryKey.Name, "int", table2.PrimaryKey.Directive);
-
-            table2.ShouldNotBe(table1);
-        }
-
-        [Fact]
         public void equivalency_negative_different_numbers_of_columns()
         {
             var users = DocumentMapping.For<User>();
@@ -259,47 +233,13 @@ namespace Marten.Schema.Testing.Storage
             var table1 = new DocumentTable(users);
             var table2 = new DocumentTable(users);
 
-            table2.ShouldBe(table1);
-            table1.ShouldBe(table2);
-            table1.ShouldNotBeSameAs(table2);
+            var delta = new TableDelta(table1, table2);
+            delta.Difference.ShouldBe(SchemaPatchDifference.None);
+
         }
 
 
-        [Fact]
-        public void equivalency_with_the_postgres_synonym_issue()
-        {
-            // This was meant to address GH-127
 
-            var users = DocumentMapping.For<User>();
-            users.DuplicateField("FirstName");
-
-            var table1 = new DocumentTable(users);
-            var table2 = new DocumentTable(users);
-
-            table1.ReplaceOrAddColumn("first_name", "varchar");
-            table2.ReplaceOrAddColumn("first_name", "character varying");
-
-            table1.Equals(table2).ShouldBeTrue();
-            table2.Equals(table1).ShouldBeTrue();
-
-            table1.ReplaceOrAddColumn("first_name", "character varying");
-            table2.ReplaceOrAddColumn("first_name", "varchar");
-
-            table1.Equals(table2).ShouldBeTrue();
-            table2.Equals(table1).ShouldBeTrue();
-
-            table1.ReplaceOrAddColumn("first_name", "character varying");
-            table2.ReplaceOrAddColumn("first_name", "character varying");
-
-            table1.Equals(table2).ShouldBeTrue();
-            table2.Equals(table1).ShouldBeTrue();
-
-            table1.ReplaceOrAddColumn("first_name", "varchar");
-            table2.ReplaceOrAddColumn("first_name", "varchar");
-
-            table1.Equals(table2).ShouldBeTrue();
-            table2.Equals(table1).ShouldBeTrue();
-        }
 
         [Fact]
         public void hierarchical()
@@ -309,19 +249,6 @@ namespace Marten.Schema.Testing.Storage
             theTable.HasColumn(SchemaConstants.DocumentTypeColumn);
         }
 
-        [Fact]
-        public void matches_on_indexes()
-        {
-            theMapping.Index(x => x.UserName);
-            theMapping.Index(x => x.FirstName);
-
-            writeTable();
-
-            var delta = theTable.FetchDelta(_conn);
-
-            delta.IndexChanges.Any().ShouldBeFalse();
-            delta.IndexRollbacks.Any().ShouldBeFalse();
-        }
 
         [Fact]
         public void soft_deleted()
@@ -329,7 +256,7 @@ namespace Marten.Schema.Testing.Storage
             theMapping.DeleteStyle = DeleteStyle.SoftDelete;
 
             theTable.HasColumn(SchemaConstants.DeletedColumn);
-            Assert.Contains(theTable.Indexes, x => x.IndexName == $"mt_doc_user_idx_{SchemaConstants.DeletedColumn}");
+            Assert.Contains(theTable.Indexes, x => x.Name == $"mt_doc_user_idx_{SchemaConstants.DeletedColumn}");
             theTable.HasColumn(SchemaConstants.DeletedAtColumn);
         }
 
@@ -343,7 +270,7 @@ namespace Marten.Schema.Testing.Storage
                 TableCreation = CreationStyle.CreateIfNotExists
             };
 
-            var ddl = table.ToDDL(rules);
+            var ddl = table.ToCreateSql(rules);
 
             ddl.ShouldNotContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
             ddl.ShouldContain("CREATE TABLE IF NOT EXISTS public.mt_doc_user");
@@ -359,7 +286,7 @@ namespace Marten.Schema.Testing.Storage
                 TableCreation = CreationStyle.DropThenCreate
             };
 
-            var ddl = table.ToDDL(rules);
+            var ddl = table.ToCreateSql(rules);
 
             ddl.ShouldContain("DROP TABLE IF EXISTS public.mt_doc_user CASCADE;");
             ddl.ShouldContain("CREATE TABLE public.mt_doc_user");

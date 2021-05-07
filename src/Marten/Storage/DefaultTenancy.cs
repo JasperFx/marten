@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,10 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Transforms;
 using Npgsql;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Functions;
+using Weasel.Postgresql.Tables;
+
 #nullable enable
 namespace Marten.Storage
 {
@@ -49,8 +54,6 @@ namespace Marten.Storage
             _retryPolicy = retryPolicy;
         }
 
-        public IDbObjects DbObjects => _inner.DbObjects;
-
         public string TenantId { get; }
 
         public IDocumentStorage<T> StorageFor<T>() where T : notnull
@@ -86,9 +89,9 @@ namespace Marten.Storage
             return _inner.OpenConnection(mode, isolationLevel, timeout);
         }
 
-        public void ResetHiloSequenceFloor<T>(long floor)
+        public Task ResetHiloSequenceFloor<T>(long floor)
         {
-            _inner.ResetHiloSequenceFloor<T>(floor);
+            return _inner.ResetHiloSequenceFloor<T>(floor);
         }
 
         public NpgsqlConnection CreateConnection()
@@ -97,5 +100,29 @@ namespace Marten.Storage
         }
 
         public IProviderGraph Providers => _inner.Providers;
+        public Task<IReadOnlyList<DbObjectName>> SchemaTables()
+        {
+            return _inner.SchemaTables();
+        }
+
+        public Task<IReadOnlyList<DbObjectName>> DocumentTables()
+        {
+            return _inner.DocumentTables();
+        }
+
+        public Task<IReadOnlyList<DbObjectName>> Functions()
+        {
+            return _inner.Functions();
+        }
+
+        public Task<Function> DefinitionForFunction(DbObjectName function)
+        {
+            return _inner.DefinitionForFunction(function);
+        }
+
+        public Task<Table> ExistingTableFor(Type type)
+        {
+            return _inner.ExistingTableFor(type);
+        }
     }
 }

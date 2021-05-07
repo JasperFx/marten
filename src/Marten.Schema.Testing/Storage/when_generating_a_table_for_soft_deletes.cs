@@ -1,7 +1,10 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Shouldly;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
@@ -24,26 +27,26 @@ namespace Marten.Schema.Testing.Storage
         [Fact]
         public void has_a_column_for_the_deleted_mark()
         {
-            var column = theTable.Column(SchemaConstants.DeletedColumn);
-            column.Directive.ShouldBe("DEFAULT FALSE");
+            var column = theTable.ColumnFor(SchemaConstants.DeletedColumn);
+            column.DefaultExpression.ShouldBe("FALSE");
             column.Type.ShouldBe("boolean");
         }
 
         [Fact]
         public void has_a_column_for_the_deleted_at_mark()
         {
-            var column = theTable.Column(SchemaConstants.DeletedAtColumn);
-            column.Directive.ShouldBe("NULL");
+            var column = theTable.ColumnFor(SchemaConstants.DeletedAtColumn);
+            column.AllowNulls.ShouldBeTrue();
             column.Type.ShouldBe("timestamp with time zone");
         }
 
         [Fact]
-        public void can_generate_the_patch()
+        public async Task can_generate_the_patch()
         {
             using (var store1 = SeparateStore(x=> x.AutoCreateSchemaObjects = AutoCreate.All))
             {
 
-                store1.BulkInsert(new User [] {new User {UserName = "foo"}, new User { UserName = "bar" } });
+                await store1.BulkInsertAsync(new User [] {new User {UserName = "foo"}, new User { UserName = "bar" } });
             }
 
             using (var store2 = SeparateStore(_ =>
@@ -59,7 +62,7 @@ namespace Marten.Schema.Testing.Storage
                 }
 
 
-                var table = store2.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
+                var table = await store2.Tenancy.Default.ExistingTableFor(typeof(User));
 
                 table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();
@@ -67,14 +70,14 @@ namespace Marten.Schema.Testing.Storage
         }
 
         [Fact]
-        public void can_generate_the_patch_with_camel_casing()
+        public async Task can_generate_the_patch_with_camel_casing()
         {
             using (var store1 = StoreOptions(_ =>
             {
                 _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
             }))
             {
-                store1.BulkInsert(new User[] { new User { UserName = "foo" }, new User { UserName = "bar" } });
+                await store1.BulkInsertAsync(new User[] { new User { UserName = "foo" }, new User { UserName = "bar" } });
             }
 
             using (var store2 = SeparateStore(_ =>
@@ -91,7 +94,7 @@ namespace Marten.Schema.Testing.Storage
                 }
 
 
-                var table = store2.Tenancy.Default.DbObjects.ExistingTableFor(typeof(User));
+                var table = await store2.Tenancy.Default.ExistingTableFor(typeof(User));
 
                 table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();

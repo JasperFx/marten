@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Marten.Storage;
 using Shouldly;
 using Xunit;
@@ -8,7 +10,7 @@ namespace Marten.Schema.Testing.Storage
     public class will_name_nested_class_documents_appropriately : IntegrationContext
     {
         [Fact]
-        public void will_name_nested_class_table_with_containing_class_name_prefix()
+        public async Task will_name_nested_class_table_with_containing_class_name_prefix()
         {
             DocumentTable table1;
             DocumentTable table2;
@@ -17,7 +19,7 @@ namespace Marten.Schema.Testing.Storage
             theStore.Tenancy.Default.StorageFor<Foo.Document>();
             theStore.Tenancy.Default.StorageFor<Bar.Document>();
 
-            var documentTables = theStore.Tenancy.Default.DbObjects.DocumentTables();
+            var documentTables = (await theStore.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ToArray();
             documentTables.ShouldContain("public.mt_doc_foo_document");
             documentTables.ShouldContain("public.mt_doc_bar_document");
 
@@ -33,7 +35,7 @@ namespace Marten.Schema.Testing.Storage
         }
 
         [Fact]
-        public void will_name_nested_class_table_with_containing_class_name_prefix_on_other_database_schema()
+        public async Task will_name_nested_class_table_with_containing_class_name_prefix_on_other_database_schema()
         {
             DocumentTable table1;
             DocumentTable table2;
@@ -43,7 +45,7 @@ namespace Marten.Schema.Testing.Storage
                 theStore.Tenancy.Default.StorageFor<Foo.Document>();
                 theStore.Tenancy.Default.StorageFor<Bar.Document>();
 
-                var documentTables = theStore.Tenancy.Default.DbObjects.DocumentTables();
+                var documentTables = (await theStore.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ToArray();
                 documentTables.ShouldContain("other.mt_doc_foo_document");
                 documentTables.ShouldContain("other.mt_doc_bar_document");
 

@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
-using Marten.Schema;
-using Marten.Storage;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Functions;
 
 namespace Marten.Transforms
 {
@@ -28,15 +28,10 @@ namespace Marten.Transforms
             return new[] { "doc" }.Concat(OtherArgs);
         }
 
-        public override void Write(DdlRules rules, StringWriter writer)
+        public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
         {
             writer.WriteLine(GenerateFunction());
             writer.WriteLine();
-        }
-
-        protected override string toDropSql()
-        {
-            return ToDropSignature();
         }
 
         public string ToDropSignature()

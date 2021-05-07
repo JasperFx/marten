@@ -1,19 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Marten;
-using Marten.Events.Daemon.Resiliency;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten
 {
     #region sample_StartupConfigureServices
+
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -46,6 +43,7 @@ namespace AspNetCoreWithMarten
         }
 
         // and other methods we don't care about right now...
+
         #endregion sample_StartupConfigureServices
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

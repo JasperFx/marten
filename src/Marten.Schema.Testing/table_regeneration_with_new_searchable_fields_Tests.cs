@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Weasel.Postgresql;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 

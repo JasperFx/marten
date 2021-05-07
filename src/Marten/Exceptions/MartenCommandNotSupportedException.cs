@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
+using Baseline.Exceptions;
 using Npgsql;
 
 namespace Marten.Exceptions
@@ -49,6 +51,28 @@ namespace Marten.Exceptions
         }
 
 
+    }
+
+    internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
+    {
+        public bool TryTransform(Exception original, out Exception transformed)
+        {
+            if (original is NpgsqlException e)
+            {
+                var knownCause = KnownNotSupportedExceptionCause.KnownCauses.FirstOrDefault(x => x.Matches(e));
+                if (knownCause != null)
+                {
+                    var command = e.ReadNpgsqlCommand();
+
+                    transformed = new MartenCommandNotSupportedException(knownCause.Reason, command, e, knownCause.Description);
+
+                    return true;
+                }
+            }
+
+            transformed = null;
+            return false;
+        }
     }
 
     internal sealed class KnownNotSupportedExceptionCause

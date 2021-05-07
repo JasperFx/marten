@@ -9,13 +9,6 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_1325_Any_with_contains_on_IList_of_string: IntegrationContext
     {
-        public class DocWithLists
-        {
-            public Guid Id { get; set; }
-
-            public IList<string> Names { get; set; } = new List<string>();
-        }
-
         [Fact]
         public void can_do_any_with_contains_against_IList()
         {
@@ -73,5 +66,12 @@ namespace Marten.Testing.Bugs
         public Bug_1325_Any_with_contains_on_IList_of_string(DefaultStoreFixture fixture) : base(fixture)
         {
         }
+    }
+
+    public class DocWithLists
+    {
+        public Guid Id { get; set; }
+
+        public IList<string> Names { get; set; } = new List<string>();
     }
 }

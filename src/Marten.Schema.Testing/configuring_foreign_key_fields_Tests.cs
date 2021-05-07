@@ -15,7 +15,7 @@ namespace Marten.Schema.Testing
             theStore.Storage.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
-                .ShouldContain(x => x.ColumnName == "user_id");
+                .ShouldContain(x => x.ColumnNames[0] == "user_id");
         }
 
         [Fact]
@@ -32,7 +32,7 @@ namespace Marten.Schema.Testing
             store.Storage.MappingFor(typeof(Issue))
                 .As<DocumentMapping>()
                 .ForeignKeys
-                .ShouldContain(x => x.ColumnName == "other_user_id");
+                .ShouldContain(x => x.ColumnNames[0] == "other_user_id");
         }
 
         [Fact]
@@ -41,7 +41,7 @@ namespace Marten.Schema.Testing
             theStore.Storage.MappingFor(typeof(Employee))
                 .As<DocumentMapping>()
                 .ForeignKeys
-                .ShouldContain(x => x.ColumnName == "manager_id");
+                .ShouldContain(x => x.ColumnNames[0] == "manager_id");
         }
 
         [Fact]
@@ -60,7 +60,7 @@ namespace Marten.Schema.Testing
             store.Storage.MappingFor(typeof(FooExtra))
                 .As<DocumentMapping>()
                 .ForeignKeys
-                .ShouldContain(x => x.ColumnName == "foo_id");
+                .ShouldContain(x => x.ColumnNames[0] == "foo_id");
         }
 
         #region sample_issue-with-fk-attribute

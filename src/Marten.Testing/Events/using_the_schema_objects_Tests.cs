@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events
@@ -50,7 +53,7 @@ namespace Marten.Testing.Events
         }
 
         [Fact]
-        public void can_build_the_event_schema_objects_in_a_separted_schema()
+        public async Task can_build_the_event_schema_objects_in_a_separted_schema()
         {
             var store = StoreOptions(_ =>
             {
@@ -61,24 +64,24 @@ namespace Marten.Testing.Events
 
             store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
-            var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
+            var schemaTableNames = (await store.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             schemaTableNames.ShouldContain("event_store.mt_streams");
             schemaTableNames.ShouldContain("event_store.mt_events");
         }
 
         [Fact]
-        public void can_build_the_mt_stream_schema_objects()
+        public async Task can_build_the_mt_stream_schema_objects()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
-            var schemaTableNames = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            var schemaTableNames = (await theStore.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             schemaTableNames.ShouldContain($"{SchemaName}.mt_streams");
             schemaTableNames.ShouldContain($"{SchemaName}.mt_events");
             schemaTableNames.ShouldContain($"{SchemaName}.mt_event_progression");
         }
 
         [Fact]
-        public void can_build_the_mt_stream_schema_objects_in_different_database_schema()
+        public async Task can_build_the_mt_stream_schema_objects_in_different_database_schema()
         {
             var store = SeparateStore(_ =>
             {
@@ -87,7 +90,7 @@ namespace Marten.Testing.Events
 
             store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
 
-            var schemaTableNames = store.Tenancy.Default.DbObjects.SchemaTables();
+            var schemaTableNames = (await store.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             schemaTableNames.ShouldContain("other.mt_streams");
             schemaTableNames.ShouldContain("other.mt_events");
             schemaTableNames.ShouldContain("other.mt_event_progression");

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Baseline;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;

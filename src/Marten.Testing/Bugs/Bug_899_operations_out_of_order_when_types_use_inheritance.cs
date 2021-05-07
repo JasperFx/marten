@@ -18,7 +18,7 @@ namespace Marten.Testing.Bugs
                 .Index(x => x.DocumentId, x =>
                 {
                     x.IsUnique = true;
-                    x.Where = "mt_deleted = false";
+                    x.Predicate = "mt_deleted = false";
                 }));
 
             var docId = Guid.Parse("96d41d29-02a5-4c19-b019-034eb2cf964e");

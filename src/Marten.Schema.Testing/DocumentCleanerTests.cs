@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema.Testing.Documents;
 using Shouldly;
@@ -27,7 +28,7 @@ namespace Marten.Schema.Testing
             theSession.SaveChanges();
             theSession.Dispose();
 
-            theCleaner.DeleteDocumentsFor(typeof(Target));
+            theCleaner.DeleteDocumentsByType(typeof(Target));
 
             using (var session = theStore.QuerySession())
             {
@@ -59,7 +60,7 @@ namespace Marten.Schema.Testing
         }
 
         [Fact]
-        public void completely_remove_document_type()
+        public async Task completely_remove_document_type()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -69,37 +70,35 @@ namespace Marten.Schema.Testing
 
             var tableName = theStore.Storage.MappingFor(typeof(Target)).TableName;
 
-            theStore.Tenancy.Default.DbObjects.DocumentTables().Contains(tableName)
+            (await theStore.Tenancy.Default.DocumentTables()).Contains(tableName)
                 .ShouldBeTrue();
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            theStore.Tenancy.Default.DbObjects.DocumentTables().Contains(tableName)
+            (await theStore.Tenancy.Default.DocumentTables()).Contains(tableName)
                 .ShouldBeFalse();
         }
 
         [Fact]
-        public void completely_remove_document_removes_the_upsert_command_too()
+        public async Task completely_remove_document_removes_the_upsert_command_too()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
 
-            theSession.SaveChanges();
-
-            var dbObjects = theStore.Tenancy.Default.DbObjects;
+            await theSession.SaveChangesAsync();
 
             var upsertName = theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            dbObjects.Functions().ShouldContain(upsertName);
+            (await theStore.Tenancy.Default.Functions()).ShouldContain(upsertName);
 
             theCleaner.CompletelyRemove(typeof(Target));
 
-            dbObjects.Functions().Contains(upsertName)
-                .ShouldBeFalse();
+            (await theStore.Tenancy.Default.Functions()).ShouldNotContain(upsertName);
+
         }
 
         [Fact]
-        public void completely_remove_everything()
+        public async Task completely_remove_everything()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -107,15 +106,16 @@ namespace Marten.Schema.Testing
             theSession.Store(new Company());
             theSession.Store(new Issue());
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
             theSession.Dispose();
 
-            theCleaner.CompletelyRemoveAll();
+            await theCleaner.CompletelyRemoveAllAsync();
+            var tables = await theStore.Tenancy.Default.DocumentTables();
+            tables.ShouldBeEmpty();
 
-            var dbObjects = theStore.Tenancy.Default.DbObjects;
-
-            ShouldBeEmpty(dbObjects.DocumentTables());
-            ShouldBeEmpty(dbObjects.Functions().Where(x => x.Name != "mt_immutable_timestamp" || x.Name != "mt_immutable_timestamptz").ToArray());
+            var functions = await theStore.Tenancy.Default.Functions();
+            functions.Where(x => x.Name != "mt_immutable_timestamp" || x.Name != "mt_immutable_timestamptz")
+                .ShouldBeEmpty();
         }
 
         [Fact]
@@ -130,6 +130,21 @@ namespace Marten.Schema.Testing
 
             theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
             theSession.Events.FetchStream(streamId).ShouldBeEmpty();
+        }
+
+
+        [Fact]
+        public async Task delete_all_event_data_async()
+        {
+            var streamId = Guid.NewGuid();
+            theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
+
+            await theSession.SaveChangesAsync();
+
+            await theCleaner.DeleteAllEventDataAsync();
+
+            theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+            (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
         }
 
         private static void ShouldBeEmpty<T>(T[] documentTables)
@@ -165,24 +180,46 @@ namespace Marten.Schema.Testing
         }
 
         [Fact]
-        public void CanCleanSequences()
+        public async Task delete_except_types_async()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new User());
+            theSession.Store(new Company());
+            theSession.Store(new Issue());
+
+            await theSession.SaveChangesAsync();
+            theSession.Dispose();
+
+            await theCleaner.DeleteDocumentsExceptAsync(typeof(Target), typeof(User));
+
+            using var session = theStore.OpenSession();
+            // Not cleaned off
+            session.Query<Target>().Count().ShouldBe(2);
+            session.Query<User>().Count().ShouldBe(1);
+
+            // Should be cleaned off
+            session.Query<Issue>().Count().ShouldBe(0);
+            session.Query<Company>().Count().ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task CanCleanSequences()
         {
             StoreOptions(opts =>
             {
                 opts.Events.AddEventType(typeof(MembersJoined));
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var allSchemas = theStore.Storage.AllSchemaNames();
 
             int GetSequenceCount(IDocumentStore store)
             {
-                using (var session = store.QuerySession())
-                {
-                    return session.Query<int>(@"select count(*) from information_schema.sequences s
+                using var session = store.QuerySession();
+                return session.Query<int>(@"select count(*) from information_schema.sequences s
 where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas).First();
-                }
             }
 
             GetSequenceCount(theStore).ShouldBeGreaterThan(0);

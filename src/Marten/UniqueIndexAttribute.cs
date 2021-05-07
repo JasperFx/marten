@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Marten.Schema.Indexing.Unique;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Schema
 {

@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Events.Projections;
+using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -34,6 +36,7 @@ namespace Marten.Testing.Bugs
             custom.Number.ShouldBe(myDoc.Number);
         }
 
+        [DocumentAlias("mydoc")]
         public class MyDoc
         {
             public Guid Id { get; set; }

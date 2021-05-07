@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Baseline;
 using Marten.Storage;
+using Weasel.Postgresql;
 
 namespace Marten.Transforms
 {
@@ -130,7 +131,7 @@ namespace Marten.Transforms
         public Type StorageType { get; } = typeof(Transforms);
         public string Identifier { get; } = "transforms";
 
-        public void WritePermissions(DdlRules rules, StringWriter writer)
+        public void WritePermissions(DdlRules rules, TextWriter writer)
         {
             // Nothing
         }

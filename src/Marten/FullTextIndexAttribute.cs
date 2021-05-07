@@ -9,12 +9,13 @@ namespace Marten.Schema
     {
         public override void Modify(DocumentMapping mapping)
         {
-            mapping.AddFullTextIndex(regConfig: RegConfig, (index) => { index.IndexName = IndexName; });
+            mapping.AddFullTextIndex(regConfig: RegConfig, (index) => { index.Name = IndexName; });
         }
 
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
-            var membersGroupedByIndexName = member.DeclaringType.GetMembers()
+            var membersGroupedByIndexName = member.DeclaringType
+                .GetMembers()
                 .Where(mi => mi.GetCustomAttributes<FullTextIndexAttribute>().Any())
                 .Select(mi => new
                 {
@@ -22,8 +23,7 @@ namespace Marten.Schema
                     IndexInformation = mi.GetCustomAttributes<FullTextIndexAttribute>().First()
                 })
                 .GroupBy(m => m.IndexInformation.IndexName ?? m.IndexInformation.RegConfig ?? m.Member.Name)
-                .Where(mg => mg.Any(m => m.Member == member))
-                .Single();
+                .Single(mg => mg.Any(m => m.Member == member));
 
             mapping.AddFullTextIndex(
                 membersGroupedByIndexName.Select(mg => new[] { mg.Member }).ToArray(),

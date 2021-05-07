@@ -3,8 +3,8 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
-using Marten.Util;
 using Npgsql;
+using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.HighWater
 {

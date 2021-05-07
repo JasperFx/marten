@@ -1,4 +1,5 @@
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Marten.Util;

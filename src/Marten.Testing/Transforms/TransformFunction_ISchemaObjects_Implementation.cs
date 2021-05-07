@@ -1,4 +1,5 @@
-﻿using Marten.Schema;
+﻿using System.Threading.Tasks;
+using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -16,16 +17,16 @@ namespace Marten.Testing.Transforms
         }
 
         [Fact]
-        public void can_generate_when_the_transform_is_requested()
+        public async Task can_generate_when_the_transform_is_requested()
         {
             var transform = theStore.Tenancy.Default.TransformFor("get_fullname");
 
-            theStore.Tenancy.Default.DbObjects.Functions()
+            (await theStore.Tenancy.Default.Functions())
                 .ShouldContain(transform.Identifier);
         }
 
         [Fact]
-        public void reset_still_makes_it_check_again()
+        public async Task reset_still_makes_it_check_again()
         {
             var transform = theStore.Tenancy.Default.TransformFor("get_fullname");
 
@@ -33,31 +34,29 @@ namespace Marten.Testing.Transforms
 
             var transform2 = theStore.Tenancy.Default.TransformFor("get_fullname");
 
-            theStore.Tenancy.Default.DbObjects.Functions()
+            (await theStore.Tenancy.Default.Functions())
                 .ShouldContain(transform2.Identifier);
         }
 
         [Fact]
-        public void regenerates_if_changed()
+        public async Task regenerates_if_changed()
         {
             var transform = theStore.Tenancy.Default.TransformFor("get_fullname");
 
-            theStore.Tenancy.Default.DbObjects.Functions()
+            (await theStore.Tenancy.Default.Functions())
                 .ShouldContain(transform.Identifier);
 
-            using (var store2 = DocumentStore.For(_ =>
+            using var store2 = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
 
                 _.Transforms.LoadJavascript("get_fullname", "module.exports = function(){return {};}");
-            }))
-            {
-                var transform2 = store2.Tenancy.Default.TransformFor("get_fullname");
+            });
+            var transform2 = store2.Tenancy.Default.TransformFor("get_fullname");
 
 
-                SpecificationExtensions.ShouldContain(store2.Tenancy.Default.DbObjects.DefinitionForFunction(transform2.Identifier)
-                        .Body, transform2.Body);
-            }
+            (await store2.Tenancy.Default.DefinitionForFunction(transform2.Identifier))
+                .Body().ShouldContain(transform2.Body, Case.Sensitive);
         }
     }
 }

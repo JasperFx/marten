@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Marten.Internal.Operations;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
-using Marten.Schema;
+using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
@@ -15,6 +15,7 @@ namespace Marten.Internal.Storage
 {
     public interface IDocumentStorage : ISelectClause
     {
+        Task TruncateDocumentStorageAsync(ITenant tenant);
         void TruncateDocumentStorage(ITenant tenant);
 
         Type SourceType { get; }
@@ -35,6 +36,7 @@ namespace Marten.Internal.Storage
         Type DocumentType { get; }
 
         TenancyStyle TenancyStyle { get; }
+
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage where T : notnull

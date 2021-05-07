@@ -10,7 +10,8 @@ namespace Marten.Storage
         {
         }
 
-        protected override void writeFunction(StringWriter writer, string argList, string securityDeclaration, string inserts, string valueList,
+        protected override void writeFunction(TextWriter writer, string argList, string securityDeclaration,
+            string inserts, string valueList,
             string updates)
         {
             var statement = updates.Contains("where")

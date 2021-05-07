@@ -10,6 +10,9 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
+
 #nullable enable
 namespace Marten
 {
@@ -108,7 +111,7 @@ namespace Marten
             [Obsolete(
                 "Prefer Index() if you just want to optimize querying, or choose Duplicate() if you really want a duplicated field")]
             public DocumentMappingExpression<T> Searchable(Expression<Func<T, object>> expression, string? pgType = null,
-                NpgsqlDbType? dbType = null, Action<IndexDefinition>? configure = null)
+                NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null)
             {
                 return Duplicate(expression, pgType, dbType, configure);
             }
@@ -126,7 +129,7 @@ namespace Marten
             /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
             /// <returns></returns>
             public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string? pgType = null,
-                NpgsqlDbType? dbType = null, Action<IndexDefinition>? configure = null, bool notNull = false)
+                NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false)
             {
                 _builder.Alter = mapping =>
                 {
@@ -240,7 +243,7 @@ namespace Marten
             /// </summary>
             /// <param name="configure"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> IndexLastModified(Action<IndexDefinition>? configure = null)
+            public DocumentMappingExpression<T> IndexLastModified(Action<DocumentIndex>? configure = null)
             {
                 _builder.Alter = m => m.AddLastModifiedIndex(configure);
 
@@ -295,8 +298,8 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> ForeignKey<TReference>(
                 Expression<Func<T, object>> expression,
-                Action<ForeignKeyDefinition>? foreignKeyConfiguration = null,
-                Action<IndexDefinition>? indexConfiguration = null)
+                Action<DocumentForeignKey>? foreignKeyConfiguration = null,
+                Action<DocumentIndex>? indexConfiguration = null)
             {
                 _builder.Alter = m =>
                 {
@@ -306,7 +309,7 @@ namespace Marten
                     var foreignKeyDefinition = m.AddForeignKey(visitor.Members.ToArray(), typeof(TReference));
                     foreignKeyConfiguration?.Invoke(foreignKeyDefinition);
 
-                    var indexDefinition = m.AddIndex(foreignKeyDefinition.ColumnName);
+                    var indexDefinition = m.AddIndex(foreignKeyDefinition.ColumnNames[0]);
                     indexConfiguration?.Invoke(indexDefinition);
                 };
 
@@ -315,21 +318,23 @@ namespace Marten
 
             public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName,
                 string tableName, string columnName,
-                Action<ExternalForeignKeyDefinition>? foreignKeyConfiguration = null)
+                Action<ForeignKey>? foreignKeyConfiguration = null)
             {
                 _builder.Alter = m =>
                 {
-                    var schemaName1 = schemaName;
-                    schemaName1 ??= m.DatabaseSchemaName;
+                    var members = FindMembers.Determine(expression);
 
-                    var visitor = new FindMembers();
-                    visitor.Visit(expression);
-
-                    var duplicateField = m.DuplicateField(visitor.Members.ToArray());
+                    var duplicateField = m.DuplicateField(members);
 
                     var foreignKey =
-                        new ExternalForeignKeyDefinition(duplicateField.ColumnName, m, schemaName1, tableName,
-                            columnName);
+                        new ForeignKey($"{m.TableName.Name}_{duplicateField.ColumnName}_fkey")
+                        {
+                            LinkedTable = new DbObjectName(schemaName ?? m.DatabaseSchemaName, tableName),
+                            ColumnNames = new[] {duplicateField.ColumnName},
+                            LinkedNames = new[] {columnName}
+                        };
+
+
                     foreignKeyConfiguration?.Invoke(foreignKey);
                     m.ForeignKeys.Add(foreignKey);
                 };
@@ -388,7 +393,7 @@ namespace Marten
             /// </summary>
             /// <param name="configureIndex"></param>
             /// <returns></returns>
-            public DocumentMappingExpression<T> GinIndexJsonData(Action<IndexDefinition>? configureIndex = null)
+            public DocumentMappingExpression<T> GinIndexJsonData(Action<DocumentIndex>? configureIndex = null)
             {
                 _builder.Alter = mapping =>
                 {
@@ -472,7 +477,7 @@ namespace Marten
                 return this;
             }
 
-            public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<IndexDefinition>? configure = null)
+            public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<DocumentIndex>? configure = null)
             {
                 SoftDeleted();
                 _builder.Alter = m => m.AddDeletedAtIndex(configure);

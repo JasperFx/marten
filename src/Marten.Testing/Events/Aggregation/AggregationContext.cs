@@ -15,7 +15,7 @@ namespace Marten.Testing.Events.Aggregation
 
         public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
         {
-            theStore.Advanced.Clean.DeleteDocumentsFor(typeof(MyAggregate));
+            theStore.Advanced.Clean.DeleteDocumentsByType(typeof(MyAggregate));
         }
 
         public void UsingDefinition<T>() where T : AggregateProjection<MyAggregate>, new()

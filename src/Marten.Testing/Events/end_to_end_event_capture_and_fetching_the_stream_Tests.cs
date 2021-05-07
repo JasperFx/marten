@@ -7,6 +7,7 @@ using Marten.Testing.Events.Projections;
 using Marten.Testing.Events.Utils;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events

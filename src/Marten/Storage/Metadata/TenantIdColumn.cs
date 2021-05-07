@@ -3,6 +3,7 @@ using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
@@ -12,8 +13,7 @@ namespace Marten.Storage.Metadata
 
         public TenantIdColumn() : base(Name, x => x.TenantId)
         {
-            CanAdd = true;
-            Directive = $"DEFAULT '{Tenancy.DefaultTenantId}'";
+            DefaultExpression = $"'{Tenancy.DefaultTenantId}'";
         }
 
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,

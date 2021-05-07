@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Linq;
 using Marten.Exceptions;
-using Marten.Linq;
-using Marten.Schema;
-using Marten.Schema.Identity;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Npgsql;
-using NpgsqlTypes;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
@@ -39,8 +34,7 @@ namespace Marten.Testing.CoreFunctionality
                 options.Connection(ConnectionSource.ConnectionString);
                 options.RegisterDocumentType<User>();
                 options.RegisterDocumentType(typeof(Company));
-                options.RegisterDocumentTypes(new Type[] {typeof(Target), typeof(Issue)});
-
+                options.RegisterDocumentTypes(new[] {typeof(Target), typeof(Issue)});
             });
 
             store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
@@ -74,18 +68,22 @@ namespace Marten.Testing.CoreFunctionality
         public void using_console_logger()
         {
             #region sample_plugging-in-marten-logger
+
             var store = DocumentStore.For(_ =>
             {
                 _.Logger(new ConsoleMartenLogger());
             });
+
             #endregion sample_plugging-in-marten-logger
 
             #region sample_plugging-in-session-logger
+
             using (var session = store.OpenSession())
             {
                 // Replace the logger for only this one session
                 session.Logger = new RecordingLogger();
             }
+
             #endregion sample_plugging-in-session-logger
         }
 
@@ -254,7 +252,8 @@ namespace Marten.Testing.CoreFunctionality
         }
 
         [Fact]
-        public void duplicated_field_enum_storage_after_it_had_value_assigned_should_not_change_when_enum_storage_was_updated()
+        public void
+            duplicated_field_enum_storage_after_it_had_value_assigned_should_not_change_when_enum_storage_was_updated()
         {
             var storeOptions = new StoreOptions();
             storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
@@ -275,12 +274,14 @@ namespace Marten.Testing.CoreFunctionality
         public void set_the_maximum_name_length()
         {
             #region sample_setting-name-data-length
+
             var store = DocumentStore.For(_ =>
             {
                 // If you have overridden NAMEDATALEN in your
                 // Postgresql database to 100
                 _.NameDataLength = 100;
             });
+
             #endregion sample_setting-name-data-length
         }
     }

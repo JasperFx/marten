@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Storage;
 
 namespace Marten.Schema
 {
-    public class DatabaseSchemaGenerator
+    internal class DatabaseSchemaGenerator
     {
         private const string BeginScript = @"DO $$
 BEGIN";
@@ -21,10 +22,7 @@ $$;
 
         public DatabaseSchemaGenerator(ITenant tenant)
         {
-            if (tenant == null)
-                throw new ArgumentNullException(nameof(tenant));
-
-            _tenant = tenant;
+            _tenant = tenant ?? throw new ArgumentNullException(nameof(tenant));
         }
 
         public void Generate(StoreOptions options, string[] schemaNames)
@@ -49,7 +47,7 @@ $$;
 
             var names = schemaNames
                  .Distinct()
-                 .Where(name => name != StoreOptions.DefaultDatabaseSchemaName).ToList();
+                 .Where(name => name != DbObjectName.DefaultDatabaseSchemaName).ToList();
 
             if (!names.Any())
                 return null;

@@ -38,7 +38,7 @@ namespace Marten.Exceptions
             }
 
 
-            return $"Marten Command Failure:${Environment.NewLine}{prefix}{explanation}{command.CommandText}${Environment.NewLine}${Environment.NewLine}";
+            return $"Marten Command Failure:${Environment.NewLine}{prefix}{explanation}{command?.CommandText}${Environment.NewLine}${Environment.NewLine}";
         }
 
         /// <summary>

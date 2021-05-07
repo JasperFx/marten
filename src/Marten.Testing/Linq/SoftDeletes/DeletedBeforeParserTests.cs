@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using Marten.Linq.SoftDeletes;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Harness;

@@ -7,6 +7,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Weasel.Postgresql;
 using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration

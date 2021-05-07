@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Marten.Exceptions;
-using Marten.Util;
-using Npgsql;
+using Weasel.Postgresql;
+
 #nullable enable
+
 namespace Marten.Storage
 {
     #region sample_IFeatureSchema
@@ -22,13 +22,6 @@ namespace Marten.Storage
         /// </summary>
         /// <returns></returns>
         IEnumerable<Type> DependentTypes();
-
-        /// <summary>
-        /// Should this feature be active based on the current options?
-        /// </summary>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        bool IsActive(StoreOptions options);
 
         /// <summary>
         /// All the schema objects in this feature
@@ -52,7 +45,7 @@ namespace Marten.Storage
         /// </summary>
         /// <param name="rules"></param>
         /// <param name="writer"></param>
-        void WritePermissions(DdlRules rules, StringWriter writer);
+        void WritePermissions(DdlRules rules, TextWriter writer);
     }
 
     #endregion sample_IFeatureSchema
@@ -63,22 +56,15 @@ namespace Marten.Storage
     public abstract class FeatureSchemaBase: IFeatureSchema
     {
         public string Identifier { get; }
-        public StoreOptions Options { get; }
 
-        protected FeatureSchemaBase(string identifier, StoreOptions options)
+        protected FeatureSchemaBase(string identifier)
         {
             Identifier = identifier;
-            Options = options;
         }
 
         public virtual IEnumerable<Type> DependentTypes()
         {
             return new Type[0];
-        }
-
-        public virtual bool IsActive(StoreOptions options)
-        {
-            return true;
         }
 
         protected abstract IEnumerable<ISchemaObject> schemaObjects();
@@ -87,69 +73,9 @@ namespace Marten.Storage
 
         public virtual Type StorageType => GetType();
 
-        public virtual void WritePermissions(DdlRules rules, StringWriter writer)
+        public virtual void WritePermissions(DdlRules rules, TextWriter writer)
         {
             // Nothing
-        }
-    }
-
-    public static class FeatureSchemaExtensions
-    {
-        public static void AssertValidNames(this IFeatureSchema schema, StoreOptions options)
-        {
-            AssertValidNames(schema.Objects, options);
-        }
-
-        public static void AssertValidNames(this ISchemaObject[] schemaObjects, StoreOptions options)
-        {
-            foreach (var objectName in schemaObjects.SelectMany(x => x.AllNames()))
-            {
-                options.AssertValidIdentifier(objectName.Name);
-            }
-        }
-
-        public static string ToDDL(this ISchemaObject @object, DdlRules rules)
-        {
-            var writer = new StringWriter();
-            @object.Write(rules, writer);
-
-            return writer.ToString();
-        }
-
-        public static void Write(this IFeatureSchema schema, DdlRules rules, StringWriter writer)
-        {
-            foreach (var schemaObject in schema.Objects)
-            {
-                schemaObject.Write(rules, writer);
-            }
-
-            schema.WritePermissions(rules, writer);
-        }
-
-        public static void WriteDropStatements(this IFeatureSchema schema, DdlRules rules, StringWriter writer)
-        {
-            foreach (var schemaObject in schema.Objects)
-            {
-                schemaObject.WriteDropStatement(rules, writer);
-            }
-        }
-
-        public static void RemoveAllObjects(this IFeatureSchema schema, DdlRules rules, NpgsqlConnection conn)
-        {
-            var writer = new StringWriter();
-            schema.WriteDropStatements(rules, writer);
-
-            var sql = writer.ToString();
-            var cmd = conn.CreateCommand(sql);
-
-            try
-            {
-                cmd.ExecuteNonQuery();
-            }
-            catch (Exception e)
-            {
-                throw MartenCommandExceptionFactory.Create(cmd, e);
-            }
         }
     }
 }

@@ -1,5 +1,5 @@
-
 using Lamar;
+using Weasel.Postgresql;
 
 namespace Marten.Testing
 {

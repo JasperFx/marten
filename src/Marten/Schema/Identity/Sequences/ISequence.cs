@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 #nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
@@ -9,6 +11,6 @@ namespace Marten.Schema.Identity.Sequences
 
         int MaxLo { get; }
 
-        void SetFloor(long floor);
+        Task SetFloor(long floor);
     }
 }

@@ -1,21 +1,18 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Oakton;
 
 namespace Marten.CommandLine
 {
-    public abstract class MartenCommand<T>: OaktonCommand<T> where T : MartenInput
+    public abstract class MartenCommand<T>: OaktonAsyncCommand<T> where T : MartenInput
     {
-        public override bool Execute(T input)
+        public override async Task<bool> Execute(T input)
         {
             try
             {
-                using (var host = input.BuildHost())
-                {
-                    using (var store = host.Services.GetRequiredService<IDocumentStore>())
-                    {
-                        return execute(store, input);
-                    }
-                }
+                using var host = input.BuildHost();
+                var store = host.Services.GetRequiredService<IDocumentStore>();
+                return await execute(store, input);
             }
             finally
             {
@@ -23,6 +20,6 @@ namespace Marten.CommandLine
             }
         }
 
-        protected abstract bool execute(IDocumentStore store, T input);
+        protected abstract Task<bool> execute(IDocumentStore store, T input);
     }
 }

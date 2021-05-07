@@ -49,16 +49,14 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc2.Id);
         }
 
-        public class DocWithNumber
-        {
-            public Guid Id { get; set; }
-            public int Number { get; set; }
-        }
-
         public query_with_is_in_generic_enumerable_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }
     }
 
-
+    public class DocWithNumber
+    {
+        public Guid Id { get; set; }
+        public int Number { get; set; }
+    }
 }

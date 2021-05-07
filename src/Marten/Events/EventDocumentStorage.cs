@@ -14,6 +14,7 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -62,6 +63,11 @@ namespace Marten.Events
         public void TruncateDocumentStorage(ITenant tenant)
         {
             tenant.RunSql($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
+        }
+
+        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        {
+            return tenant.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
         }
 
         public EventGraph Events { get; }

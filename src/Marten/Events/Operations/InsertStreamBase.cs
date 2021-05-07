@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Util;
 

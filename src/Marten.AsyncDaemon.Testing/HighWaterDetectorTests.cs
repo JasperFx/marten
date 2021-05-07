@@ -5,6 +5,7 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
+using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Util;
 using NpgsqlTypes;

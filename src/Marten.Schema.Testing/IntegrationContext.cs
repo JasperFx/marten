@@ -1,23 +1,16 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
-using Baseline;
-using Marten.Services;
 using Marten.Testing.Harness;
-using Xunit;
 using Xunit.Abstractions;
+using Weasel.Postgresql;
 
 namespace Marten.Schema.Testing
 {
-
-
-    public abstract class IntegrationContext : IDisposable
+    public abstract class IntegrationContext: IDisposable
     {
         protected ITestOutputHelper _output;
-        private DocumentStore _store;
 
         private IDocumentSession _session;
+        private DocumentStore _store;
 
         protected IntegrationContext(ITestOutputHelper output = null)
         {
@@ -28,7 +21,6 @@ namespace Marten.Schema.Testing
         }
 
         protected bool EnableCommandLogging { get; set; }
-
 
 
         protected DocumentStore theStore
@@ -42,6 +34,26 @@ namespace Marten.Schema.Testing
 
                 return _store;
             }
+        }
+
+        protected IDocumentSession theSession
+        {
+            get
+            {
+                if (_session == null)
+                {
+                    _session = buildSession();
+                }
+
+                return _session;
+            }
+        }
+
+        public DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
+
+        public virtual void Dispose()
+        {
+            _store?.Dispose();
         }
 
         protected void UseDefaultSchema()
@@ -73,14 +85,13 @@ namespace Marten.Schema.Testing
         }
 
         /// <summary>
-        /// This creates an all new DocumentStore without
-        /// cleaning the schema
+        ///     This creates an all new DocumentStore without
+        ///     cleaning the schema
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
         protected DocumentStore SeparateStore(Action<StoreOptions> configure)
         {
-
             var store = DocumentStore.For(opts =>
             {
                 opts.NameDataLength = 100;
@@ -99,31 +110,9 @@ namespace Marten.Schema.Testing
             return store;
         }
 
-        protected IDocumentSession theSession
-        {
-            get
-            {
-                if (_session == null)
-                {
-                    _session = buildSession();
-                }
-
-                return _session;
-            }
-        }
-
-        public DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
-
         protected IDocumentSession buildSession()
         {
             return theStore.OpenSession(DocumentTracking);
         }
-
-        public virtual void Dispose()
-        {
-            _store?.Dispose();
-        }
     }
-
-
 }

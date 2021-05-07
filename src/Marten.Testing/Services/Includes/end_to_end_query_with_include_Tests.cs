@@ -12,6 +12,7 @@ using Marten.Testing.Harness;
 using Marten.Testing.Linq;
 using Marten.Util;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;

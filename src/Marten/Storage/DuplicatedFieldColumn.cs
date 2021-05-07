@@ -1,4 +1,5 @@
 using Marten.Linq.Fields;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
@@ -9,9 +10,10 @@ namespace Marten.Storage
         private const string NotNullConstraint = "NOT NULL";
 
 
-        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType, field.NotNull ? NotNullConstraint : NullConstraint)
+        public DuplicatedFieldColumn(DuplicatedField field) : base(field.ColumnName, field.PgType)
         {
-            CanAdd = true;
+            AllowNulls = !field.NotNull;
+
             _field = field;
         }
 

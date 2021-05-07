@@ -8,13 +8,6 @@ namespace Marten.Testing.Linq
 {
     public class query_negating_predicate_with_binary_operator_tests : IntegrationContext
     {
-        public class Player
-        {
-            public Guid Id { get; set; }
-            public string Name { get; set; }
-            public int Level { get; set; }
-        }
-
         [Fact]
         public void negating_predicate_with_an_and_operator_results_in_a_correct_query()
         {
@@ -58,5 +51,12 @@ namespace Marten.Testing.Linq
         public query_negating_predicate_with_binary_operator_tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }
+    }
+
+    public class Player
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public int Level { get; set; }
     }
 }

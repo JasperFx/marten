@@ -1,3 +1,5 @@
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten.Services.Json
 {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Internal.Storage;
@@ -8,12 +9,12 @@ using Marten.Schema.Testing.Documents;
 using Marten.Schema.Testing.Hierarchies;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
-using Issue = Marten.Schema.Testing.Documents.Issue;
 
 namespace Marten.Schema.Testing
 {
-    public class DocumentSchemaTests : IntegrationContext
+    public class DocumentSchemaTests: IntegrationContext
     {
         private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
         private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
@@ -61,7 +62,7 @@ namespace Marten.Schema.Testing
             });
 
             theStore.Tenancy.Default.StorageFor<BaseballTeam>()
-                 .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad, string>>();
+                .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad, string>>();
         }
 
         [Fact]
@@ -85,15 +86,15 @@ namespace Marten.Schema.Testing
             theStore.Tenancy.Default.StorageFor<Company>();
             theStore.Tenancy.Default.EnsureStorageExists(typeof(IntDoc));
 
-            var sql = theStore.Schema.ToDDL();
+            var sql = theStore.Schema.ToDatabaseScript();
 
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_user");
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_issue");
-            SpecificationExtensions.ShouldContain(sql, "CREATE OR REPLACE FUNCTION public.mt_upsert_company");
-            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE public.mt_doc_user");
-            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE public.mt_doc_issue");
-            SpecificationExtensions.ShouldContain(sql, "CREATE TABLE public.mt_doc_company");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_get_next_hi");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_issue");
+            sql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_company");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_user");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_issue");
+            sql.ShouldContain("CREATE TABLE public.mt_doc_company");
         }
 
         [Fact]
@@ -104,12 +105,12 @@ namespace Marten.Schema.Testing
                 _.Events.AddEventType(typeof(MembersDeparted));
             });
 
-            var sql = theStore.Schema.ToDDL();
+            var sql = theStore.Schema.ToDatabaseScript();
 
-            sql.ShouldContain($"CREATE TABLE public.mt_streams");
+            sql.ShouldContain("CREATE TABLE public.mt_streams");
 
             // Crude way of checking that it should only be dumped once
-            sql.IndexOf($"CREATE TABLE public.mt_streams").ShouldBe(sql.LastIndexOf($"CREATE TABLE public.mt_streams"));
+            sql.IndexOf("CREATE TABLE public.mt_streams").ShouldBe(sql.LastIndexOf("CREATE TABLE public.mt_streams"));
         }
 
         [Fact]
@@ -120,7 +121,7 @@ namespace Marten.Schema.Testing
 
             theStore.Events.IsActive(null).ShouldBeFalse();
 
-            theStore.Schema.ToDDL().ShouldNotContain( "public.mt_streams");
+            theStore.Schema.ToDatabaseScript().ShouldNotContain("public.mt_streams");
         }
 
         [Fact]
@@ -129,22 +130,22 @@ namespace Marten.Schema.Testing
             theStore.Events.AddEventType(typeof(MembersJoined));
             theStore.Events.IsActive(null).ShouldBeTrue();
 
-            theStore.Schema.ToDDL().ShouldContain("public.mt_streams");
+            theStore.Schema.ToDatabaseScript().ShouldContain("public.mt_streams");
         }
 
         [Fact]
-        public void builds_schema_objects_on_the_fly_as_needed()
+        public async Task builds_schema_objects_on_the_fly_as_needed()
         {
             theStore.Tenancy.Default.StorageFor<User>().ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor<Issue>().ShouldNotBeNull();
             theStore.Tenancy.Default.StorageFor<Company>().ShouldNotBeNull();
 
-            var tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
+            var tables = (await theStore.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = theStore.Tenancy.Default.DbObjects.Functions();
+            var functions = (await theStore.Tenancy.Default.Functions()).Select(x => x.QualifiedName).ToArray();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
@@ -163,7 +164,7 @@ namespace Marten.Schema.Testing
                 _.Connection(ConnectionSource.ConnectionString);
             }))
             {
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
@@ -174,13 +175,12 @@ namespace Marten.Schema.Testing
             var actuals = files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x);
 
             actuals
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql", "user.sql");
-
-
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql",
+                    "user.sql");
         }
 
         [Fact]
-        public void can_write_patch_by_type_smoke_test()
+        public async Task can_write_patch_by_type_smoke_test()
         {
             using (var store = DocumentStore.For(_ =>
             {
@@ -194,16 +194,15 @@ namespace Marten.Schema.Testing
                 store.Advanced.Clean.CompletelyRemoveAll();
 
 
-                store.Schema.WritePatchByType(_binAllsql2);
+                await store.Schema.WriteMigrationFileByType(_binAllsql2);
             }
 
             var fileSystem = new FileSystem();
             var files = fileSystem.FindFiles(_binAllsql2, FileSet.Shallow("*.sql")).ToArray();
 
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql", "user.sql");
-
-
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql",
+                    "user.sql");
         }
 
         [Fact]
@@ -222,7 +221,7 @@ namespace Marten.Schema.Testing
                 _.Transforms.LoadFile("get_fullname.js");
             }))
             {
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var filename = _binAllsql.AppendPath("all.sql");
@@ -234,8 +233,6 @@ namespace Marten.Schema.Testing
             lines.ShouldContain("\\i issue.sql");
             lines.ShouldContain("\\i eventstore.sql");
             lines.ShouldContain("\\i transforms.sql");
-
-
         }
 
         [Fact]
@@ -254,14 +251,15 @@ namespace Marten.Schema.Testing
                 _.Transforms.LoadFile("get_fullname.js");
             }))
             {
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var file = _binAllsql.AppendPath("transforms.sql");
             var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
 
 
-            lines.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
+            lines.ShouldContain(
+                "CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
         }
 
         [Fact]
@@ -277,7 +275,7 @@ namespace Marten.Schema.Testing
             }))
             {
                 store.Events.IsActive(null).ShouldBeFalse();
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
@@ -300,7 +298,7 @@ namespace Marten.Schema.Testing
             }))
             {
                 store.Events.IsActive(null).ShouldBeFalse();
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
@@ -323,7 +321,7 @@ namespace Marten.Schema.Testing
             }))
             {
                 store.Events.IsActive(null).ShouldBeTrue();
-                store.Schema.WriteDDLByType(_binAllsql);
+                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
             }
 
             var fileSystem = new FileSystem();
@@ -348,21 +346,21 @@ namespace Marten.Schema.Testing
             theStore.Tenancy.Default.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
-
     }
 
 
     [Collection("DefaultSchema")]
-    public class DocumentSchemaWithOverridenSchemaTests : IntegrationContext
+    public class DocumentSchemaWithOverridenSchemaTests: IntegrationContext
     {
-        private readonly string _sql;
-        private readonly DbObjectName[] _tables;
         private readonly DbObjectName[] _functions;
         private readonly IDocumentSchema _schema;
+        private readonly string _sql;
+        private readonly DbObjectName[] _tables;
 
         public DocumentSchemaWithOverridenSchemaTests()
         {
             #region sample_override_schema_per_table
+
             StoreOptions(_ =>
             {
                 _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "other";
@@ -371,12 +369,13 @@ namespace Marten.Schema.Testing
                 _.Storage.MappingFor(typeof(IntDoc));
 
                 // this will tell marten to use the default 'public' schema name.
-                _.DatabaseSchemaName = Marten.StoreOptions.DefaultDatabaseSchemaName;
+                _.DatabaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
             });
+
             #endregion sample_override_schema_per_table
 
             _schema = theStore.Schema;
-            _sql = _schema.ToDDL();
+            _sql = _schema.ToDatabaseScript();
 
             using (var session = theStore.OpenSession())
             {
@@ -386,12 +385,9 @@ namespace Marten.Schema.Testing
                 session.SaveChanges();
             }
 
-            _tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
-            _functions = theStore.Tenancy.Default.DbObjects.Functions();
+            _tables = theStore.Tenancy.Default.SchemaTables().GetAwaiter().GetResult().ToArray();
+            _functions = theStore.Tenancy.Default.Functions().GetAwaiter().GetResult().ToArray();
         }
-
-
-
 
 
         [Fact]
@@ -513,20 +509,23 @@ namespace Marten.Schema.Testing
         }
     }
 
-    public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests : IntegrationContext
+    public class DocumentSchemaWithOverridenDefaultSchemaAndEventsTests: IntegrationContext
     {
-        private readonly string _sql;
-        private readonly DbObjectName[] _tables;
         private readonly DbObjectName[] _functions;
         private readonly IDocumentSchema _schema;
+        private readonly string _sql;
+        private readonly DbObjectName[] _tables;
 
         public DocumentSchemaWithOverridenDefaultSchemaAndEventsTests()
         {
             StoreOptions(_ =>
             {
                 #region sample_override_schema_name
+
                 _.DatabaseSchemaName = "other";
+
                 #endregion sample_override_schema_name
+
                 _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "yet_another";
                 _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
                 _.Storage.MappingFor(typeof(Company));
@@ -535,7 +534,7 @@ namespace Marten.Schema.Testing
 
             _schema = theStore.Schema;
 
-            _sql = _schema.ToDDL();
+            _sql = _schema.ToDatabaseScript();
 
             using (var session = theStore.OpenSession())
             {
@@ -545,8 +544,8 @@ namespace Marten.Schema.Testing
                 session.SaveChanges();
             }
 
-            _tables = theStore.Tenancy.Default.DbObjects.SchemaTables();
-            _functions = theStore.Tenancy.Default.DbObjects.Functions();
+            _tables = theStore.Tenancy.Default.SchemaTables().GetAwaiter().GetResult().ToArray();
+            _functions = theStore.Tenancy.Default.Functions().GetAwaiter().GetResult().ToArray();
         }
 
 
@@ -554,7 +553,7 @@ namespace Marten.Schema.Testing
         public void do_write_the_event_sql_if_the_event_graph_is_active()
         {
             theStore.Events.IsActive(null).ShouldBeTrue();
-            SpecificationExtensions.ShouldContain(_schema.ToDDL(), "other.mt_streams");
+            _schema.ToDatabaseScript().ShouldContain("other.mt_streams");
         }
 
 
@@ -579,7 +578,7 @@ namespace Marten.Schema.Testing
         [Fact]
         public void then_the_user_table_should_be_generated_in_the_default_schema()
         {
-            SpecificationExtensions.ShouldContain(_sql, "CREATE TABLE yet_another.mt_doc_user");
+            _sql.ShouldContain("CREATE TABLE yet_another.mt_doc_user");
         }
 
         [Fact]

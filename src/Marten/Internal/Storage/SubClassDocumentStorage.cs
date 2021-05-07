@@ -12,6 +12,7 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -43,6 +44,12 @@ namespace Marten.Internal.Storage
         public void TruncateDocumentStorage(ITenant tenant)
         {
             tenant.RunSql(
+                $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
+        }
+
+        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        {
+            return tenant.RunSqlAsync(
                 $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
         }
 

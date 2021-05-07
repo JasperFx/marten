@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing

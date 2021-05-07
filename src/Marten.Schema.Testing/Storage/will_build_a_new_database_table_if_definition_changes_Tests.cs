@@ -1,6 +1,9 @@
-﻿using Marten.Schema.Testing.Documents;
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
@@ -10,7 +13,7 @@ namespace Marten.Schema.Testing.Storage
     {
 
         [Fact]
-        public void will_build_the_new_table_if_the_configured_table_does_not_match_the_existing_table()
+        public async Task will_build_the_new_table_if_the_configured_table_does_not_match_the_existing_table()
         {
             DocumentTable table1;
             DocumentTable table2;
@@ -18,57 +21,23 @@ namespace Marten.Schema.Testing.Storage
 
             theStore.Tenancy.Default.StorageFor<User>();
 
-            theStore.Tenancy.Default.DbObjects.DocumentTables().ShouldContain($"public.mt_doc_user");
+            (await theStore.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ShouldContain($"public.mt_doc_user");
 
             table1 = theStore.TableSchema(typeof(User));
-            table1.ShouldNotContain(x => x.Name == "user_name");
+            table1.Columns.ShouldNotContain(x => x.Name == "user_name");
 
             var store = SeparateStore(opts => opts.Schema.For<User>().Duplicate(x => x.UserName));
 
             store.Tenancy.Default.StorageFor<User>();
 
-            store.Tenancy.Default.DbObjects.DocumentTables().ShouldContain($"public.mt_doc_user");
+            (await store.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ShouldContain($"public.mt_doc_user");
 
             table2 = store.TableSchema(typeof(User));
 
             table2.ShouldNotBe(table1);
 
-            ShouldBeNullExtensions.ShouldNotBeNull(table2.Column("user_name"));
+            ShouldBeNullExtensions.ShouldNotBeNull(table2.ColumnFor("user_name"));
         }
 
-        [Fact]
-        public void will_build_the_new_table_if_the_configured_table_does_not_match_the_existing_table_on_other_schema()
-        {
-            DocumentTable table1;
-            DocumentTable table2;
-
-            StoreOptions(_ => _.DatabaseSchemaName = "other");
-
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
-
-            theStore.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
-
-            table1 = theStore.TableSchema(typeof(User));
-            table1.ShouldNotContain(x => x.Name == "user_name");
-
-
-            var store2 = SeparateStore(_ =>
-            {
-                _.DatabaseSchemaName = "other";
-                _.Schema.For<User>().Duplicate(x => x.UserName);
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-            });
-
-            store2.Tenancy.Default.EnsureStorageExists(typeof(User));
-
-            store2.Tenancy.Default.DbObjects.DocumentTables().ShouldContain("other.mt_doc_user");
-
-            table2 = store2.TableSchema(typeof(User));
-
-
-            table2.ShouldNotBe(table1);
-
-            ShouldBeNullExtensions.ShouldNotBeNull(table2.Column("user_name"));
-        }
     }
 }

@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.Filters;
 using Marten.Patching;
-using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -24,13 +24,13 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void can_use_patch_api_when_autocreate_is_none()
+        public async Task can_use_patch_api_when_autocreate_is_none()
         {
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var entity = Target.Random();
             theSession.Store(entity);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
 
 
@@ -40,10 +40,11 @@ namespace Marten.Testing.Acceptance
                 o.UseDefaultSerialization(EnumStorage.AsString);
                 o.AutoCreateSchemaObjects = AutoCreate.None;
             });
+
             using (var session = store.LightweightSession())
             {
                 session.Patch<Target>(entity.Id).Set(t => t.String, "foo");
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         }
 
@@ -773,52 +774,48 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void bug_611_duplicate_field_is_updated_by_set_operation()
+        public async Task bug_611_duplicate_field_is_updated_by_set_operation()
         {
             var mapping = theStore.Storage.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var entity = Target.Random();
             theSession.Store(entity);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             var newval = new string(entity.String.Reverse().ToArray());
             theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            using (var command = theSession.Connection.CreateCommand())
-            {
-                command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
-                                      $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
-                var count = (long)(command.ExecuteScalar() ?? 0);
-                count.ShouldBe(1);
-            }
+            using var command = theSession.Connection.CreateCommand();
+            command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
+                                  $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
+            var count = (long)(command.ExecuteScalar() ?? 0);
+            count.ShouldBe(1);
         }
 
         [Fact]
-        public void bug_611_duplicate_field_is_updated_by_set_operation_with_multiple_duplicates_smoke_test()
+        public async Task bug_611_duplicate_field_is_updated_by_set_operation_with_multiple_duplicates_smoke_test()
         {
             var mapping = theStore.Storage.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
             var field2 = mapping.DuplicateField(nameof(Target.Number));
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             var entity = Target.Random();
             theSession.Store(entity);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             var newval = new string(entity.String.Reverse().ToArray());
             theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            using (var command = theSession.Connection.CreateCommand())
-            {
-                command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
-                                      $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
-                var count = (long)(command.ExecuteScalar() ?? 0);
-                count.ShouldBe(1);
-            }
+            using var command = theSession.Connection.CreateCommand();
+            command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
+                                  $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
+            var count = (long)(command.ExecuteScalar() ?? 0);
+            count.ShouldBe(1);
         }
     }
 

@@ -16,7 +16,7 @@ namespace Marten.Schema
         public override void Modify(DocumentMapping mapping, MemberInfo member)
         {
             var fkDefinition = mapping.AddForeignKey(member.Name, _referenceType);
-            mapping.AddIndex(fkDefinition.ColumnName);
+            mapping.AddIndex(fkDefinition.ColumnNames[0]);
         }
     }
 }

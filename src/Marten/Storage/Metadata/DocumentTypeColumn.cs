@@ -1,6 +1,7 @@
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
@@ -8,8 +9,7 @@ namespace Marten.Storage.Metadata
     {
         public DocumentTypeColumn(DocumentMapping mapping) : base(SchemaConstants.DocumentTypeColumn, x => x.DocumentType)
         {
-            CanAdd = true;
-            Directive = $"DEFAULT '{mapping.AliasFor(mapping.DocumentType)}'";
+            DefaultExpression = $"'{mapping.AliasFor(mapping.DocumentType)}'";
         }
 
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,

@@ -9,6 +9,7 @@ namespace Marten.Exceptions
     /// </summary>
     internal static class MartenCommandExceptionFactory
     {
+        [Obsolete("Replace with MartenExceptionTransformer")]
         internal static MartenCommandException Create
         (
             NpgsqlCommand command,
@@ -25,6 +26,9 @@ namespace Marten.Exceptions
             return new MartenCommandException(command, innerException);
         }
 
+
+
+        [Obsolete("Replace with MartenExceptionTransformer")]
         internal static bool TryToMapToMartenCommandNotSupportedException
         (
             NpgsqlCommand command,

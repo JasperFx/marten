@@ -6,6 +6,7 @@ using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage.Metadata;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
@@ -13,8 +14,8 @@ namespace Marten.Storage
     {
         public VersionColumn() : base(SchemaConstants.VersionColumn, x => x.CurrentVersion)
         {
-            Directive = "NOT NULL default(md5(random()::text || clock_timestamp()::text)::uuid)";
-            CanAdd = true;
+            AllowNulls = false;
+            DefaultExpression = "(md5(random()::text || clock_timestamp()::text)::uuid)";
         }
 
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,

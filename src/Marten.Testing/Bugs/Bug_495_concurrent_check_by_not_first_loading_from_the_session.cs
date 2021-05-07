@@ -9,7 +9,7 @@ namespace Marten.Testing.Bugs
 {
     public class Bug_495_concurrent_check_by_not_first_loading_from_the_session: BugIntegrationContext
     {
-        [UseOptimisticConcurrency]
+        [UseOptimisticConcurrency][DocumentAlias("foo")]
         public class Foo
         {
             public string Id { get; set; }

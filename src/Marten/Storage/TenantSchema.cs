@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
 using Marten.Schema;
+using Weasel.Postgresql;
 
 namespace Marten.Storage
 {
@@ -24,13 +26,13 @@ namespace Marten.Storage
 
         public DdlRules DdlRules { get; }
 
-        public void WriteDDL(string filename, bool transactionalScript = true)
+        public void WriteDatabaseCreationScriptFile(string filename)
         {
-            var sql = ToDDL(transactionalScript);
+            var sql = ToDatabaseScript();
             new FileSystem().WriteStringToFile(filename, sql);
         }
 
-        public void WriteDDLByType(string directory, bool transactionalScript = true)
+        public void WriteDatabaseCreationScriptByType(string directory)
         {
             var system = new FileSystem();
 
@@ -42,12 +44,12 @@ namespace Marten.Storage
 
             foreach (var feature in features)
             {
-                var writer = new StringWriter();
-                feature.Write(DdlRules, writer);
-
                 var file = directory.AppendPath(feature.Identifier + ".sql");
 
-                new SchemaPatch(DdlRules).WriteFile(file, writer.ToString(), transactionalScript);
+                DdlRules.WriteTemplatedFile(file, (r, w) =>
+                {
+                    feature.Write(r, w);
+                });
             }
         }
 
@@ -74,141 +76,128 @@ namespace Marten.Storage
             system.WriteStringToFile(filename, writer.ToString());
         }
 
-        private SchemaPatch ToPatch(bool withSchemas, AutoCreate withAutoCreate)
+        public async Task<SchemaMigration> CreateMigration()
         {
-            var patch = new SchemaPatch(DdlRules);
-
-            if (withSchemas)
-            {
-                var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
-                DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, patch.UpWriter);
-            }
-
             var @objects = _features.AllActiveFeatures(_tenant).SelectMany(x => x.Objects).ToArray();
 
-            using (var conn = _tenant.CreateConnection())
-            {
-                conn.Open();
+            using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync();
 
-                patch.Apply(conn, withAutoCreate, @objects);
-            }
-
-            return patch;
+            return await SchemaMigration.Determine(conn, @objects);
         }
 
-        public string ToDDL(bool transactionalScript = true)
+        public string ToDatabaseScript()
         {
             var writer = new StringWriter();
 
-            new SchemaPatch(DdlRules).WriteScript(writer, w =>
+            StoreOptions.Advanced.DdlRules.WriteScript(writer, (r, w) =>
             {
                 var allSchemaNames = StoreOptions.Storage.AllSchemaNames();
                 DatabaseSchemaGenerator.WriteSql(StoreOptions, allSchemaNames, w);
 
                 foreach (var feature in _features.AllActiveFeatures(_tenant))
                 {
-                    feature.Write(DdlRules, writer);
+                    feature.Write(r, w);
                 }
-            }, transactionalScript);
+            });
 
             return writer.ToString();
         }
 
-        public void WritePatch(string filename, bool withSchemas = true, bool transactionalScript = true)
+        public async Task WriteMigrationFile(string filename)
         {
             if (!Path.IsPathRooted(filename))
             {
                 filename = AppContext.BaseDirectory.AppendPath(filename);
             }
 
-            var patch = ToPatch(withSchemas, withAutoCreateAll: true);
+            var patch = await CreateMigration();
 
-            patch.WriteUpdateFile(filename, transactionalScript);
-
-            var dropFile = SchemaPatch.ToDropFileName(filename);
-            patch.WriteRollbackFile(dropFile, transactionalScript);
-        }
-
-        public SchemaPatch ToPatch(bool withSchemas = true, bool withAutoCreateAll = false)
-        {
-            return ToPatch(withSchemas, withAutoCreateAll ? AutoCreate.All : StoreOptions.AutoCreateSchemaObjects);
-        }
-
-        public void AssertDatabaseMatchesConfiguration()
-        {
-            var patch = ToPatch(false, withAutoCreateAll: true);
-
-            if (patch.UpdateDDL.Trim().IsNotEmpty())
+            DdlRules.WriteTemplatedFile(filename, (r, w) =>
             {
-                throw new SchemaValidationException(patch.UpdateDDL);
+                patch.WriteAllUpdates(w, r, AutoCreate.All);
+            });
+
+            var dropFile = SchemaMigration.ToDropFileName(filename);
+            DdlRules.WriteTemplatedFile(dropFile, (r, w) =>
+            {
+                patch.WriteAllRollbacks(w, r);
+            });
+        }
+
+        public async Task AssertDatabaseMatchesConfiguration()
+        {
+            var patch = await CreateMigration();
+            if (patch.Difference != SchemaPatchDifference.None)
+            {
+                throw new SchemaValidationException(patch.UpdateSql);
             }
         }
 
-        public void ApplyAllConfiguredChangesToDatabase(AutoCreate? withCreateSchemaObjects = null)
+        public async Task ApplyAllConfiguredChangesToDatabase(AutoCreate? withCreateSchemaObjects = null)
         {
             var defaultAutoCreate = StoreOptions.AutoCreateSchemaObjects != AutoCreate.None
                 ? StoreOptions.AutoCreateSchemaObjects
                 : AutoCreate.CreateOrUpdate;
 
-            var patch = ToPatch(true, withCreateSchemaObjects ?? defaultAutoCreate);
-            var ddl = patch.UpdateDDL.Trim();
+            var patch = await CreateMigration();
 
-            if (ddl.IsEmpty()) return;
+            if (patch.Difference == SchemaPatchDifference.None) return;
+
+            using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync();
 
             try
             {
-                _tenant.RunSql(ddl);
-                StoreOptions.Logger().SchemaChange(ddl);
+                var martenLogger = StoreOptions.Logger();
+                await patch.ApplyAll(conn, DdlRules, withCreateSchemaObjects ?? defaultAutoCreate, sql => martenLogger.SchemaChange(sql));
 
                 _tenant.MarkAllFeaturesAsChecked();
             }
             catch (Exception e)
             {
-                throw new MartenSchemaException("All Configured Changes", ddl, e);
+                throw new MartenSchemaException("All Configured Changes", patch.UpdateSql, e);
             }
         }
 
-        public SchemaPatch ToPatch(Type documentType)
+        public async Task<SchemaMigration> CreateMigration(Type documentType)
         {
             var mapping = _features.MappingFor(documentType);
 
-            var patch = new SchemaPatch(DdlRules);
+            using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync();
 
-            using (var conn = _tenant.CreateConnection())
-            {
-                conn.Open();
+            var migration = await SchemaMigration.Determine(conn, mapping.Schema.Objects);
 
-                patch.Apply(conn, AutoCreate.CreateOrUpdate, mapping.Schema.Objects);
-            }
-
-            return patch;
+            return migration;
         }
 
-        public void WritePatchByType(string directory, bool transactionalScript = true)
+        public async Task WriteMigrationFileByType(string directory)
         {
             var system = new FileSystem();
 
             system.DeleteDirectory(directory);
             system.CreateDirectory(directory);
-
             var features = _features.AllActiveFeatures(_tenant).ToArray();
             writeDatabaseSchemaGenerationScript(directory, system, features);
 
-            using (var conn = _tenant.CreateConnection())
+            using var conn = _tenant.CreateConnection();
+            await conn.OpenAsync();
+
+            foreach (var feature in features)
             {
-                conn.Open();
+                var migration = await SchemaMigration.Determine(conn, feature.Objects);
 
-                foreach (var feature in features)
+                if (migration.Difference == SchemaPatchDifference.None)
                 {
-                    var patch = new SchemaPatch(DdlRules);
-                    patch.Apply(conn, AutoCreate.CreateOrUpdate, feature.Objects);
-
-                    if (patch.UpdateDDL.IsNotEmpty())
-                    {
-                        var file = directory.AppendPath(feature.Identifier + ".sql");
-                        patch.WriteUpdateFile(file, transactionalScript);
-                    }
+                    continue;
                 }
+
+                var file = directory.AppendPath(feature.Identifier + ".sql");
+                DdlRules.WriteTemplatedFile(file, (r, w) =>
+                {
+                    migration.WriteAllUpdates(w, r, AutoCreate.CreateOrUpdate);
+                });
             }
         }
     }

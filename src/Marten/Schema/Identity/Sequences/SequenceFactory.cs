@@ -2,7 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using Weasel.Postgresql;
 using Marten.Storage;
+using Weasel.Postgresql.Tables;
+
 #nullable enable
 namespace Marten.Schema.Identity.Sequences
 {
@@ -32,8 +35,8 @@ namespace Marten.Schema.Identity.Sequences
             get
             {
                 var table = new Table(new DbObjectName(_options.DatabaseSchemaName, "mt_hilo"));
-                table.AddPrimaryKey(new TableColumn("entity_name", "varchar"));
-                table.AddColumn("hi_value", "bigint", "default 0");
+                table.AddColumn<string>("entity_name").AsPrimaryKey();
+                table.AddColumn<long>("hi_value").DefaultValue(0L);
 
                 var function = new SystemFunction(_options, "mt_get_next_hi", "varchar");
 
@@ -48,7 +51,7 @@ namespace Marten.Schema.Identity.Sequences
         public Type StorageType { get; } = typeof(SequenceFactory);
         public string Identifier { get; } = "hilo";
 
-        public void WritePermissions(DdlRules rules, StringWriter writer)
+        public void WritePermissions(DdlRules rules, TextWriter writer)
         {
             // Nothing
         }

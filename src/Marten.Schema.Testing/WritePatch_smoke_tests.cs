@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing
 {
     public class WritePatch_smoke_tests : IntegrationContext
     {
-        private void configure()
+        private async Task configure()
         {
             #region sample_configure-document-types-upfront
             var store = DocumentStore.For(_ =>
@@ -27,21 +29,21 @@ namespace Marten.Schema.Testing
             #endregion sample_configure-document-types-upfront
 
             #region sample_WritePatch
-            store.Schema.WritePatch("1.initial.sql");
+            await store.Schema.WriteMigrationFile("1.initial.sql");
             #endregion sample_WritePatch
 
             #region sample_ApplyAllConfiguredChangesToDatabase
-            store.Schema.ApplyAllConfiguredChangesToDatabase();
+            await store.Schema.ApplyAllConfiguredChangesToDatabase();
             #endregion sample_ApplyAllConfiguredChangesToDatabase
 
             #region sample_AssertDatabaseMatchesConfiguration
-            store.Schema.AssertDatabaseMatchesConfiguration();
+            await store.Schema.AssertDatabaseMatchesConfiguration();
             #endregion sample_AssertDatabaseMatchesConfiguration
             store.Dispose();
         }
 
         [Fact(Skip = "flakey on ci")]
-        public void can_create_patch_for_a_single_document_type()
+        public async Task can_create_patch_for_a_single_document_type()
         {
             StoreOptions(_ =>
             {
@@ -50,28 +52,28 @@ namespace Marten.Schema.Testing
                 _.Schema.For<User>();
             });
 
-            var patch = theStore.Schema.ToPatch(typeof(User));
+            var patch = await theStore.Schema.CreateMigration(typeof(User));
 
-            SpecificationExtensions.ShouldContain(patch.UpdateDDL, "CREATE OR REPLACE FUNCTION public.mt_upsert_user");
-            SpecificationExtensions.ShouldContain(patch.UpdateDDL, "CREATE TABLE public.mt_doc_user");
-            SpecificationExtensions.ShouldContain(patch.RollbackDDL, "drop table if exists public.mt_doc_user cascade;");
+            patch.UpdateSql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
+            patch.UpdateSql.ShouldContain("CREATE TABLE public.mt_doc_user");
+            patch.RollbackSql.ShouldContain("drop table if exists public.mt_doc_user cascade;");
 
             var file = AppContext.BaseDirectory.AppendPath("bin", "update_users.sql");
-            patch.WriteUpdateFile(file);
+            new DdlRules().WriteTemplatedFile(file, (r, w) => patch.WriteAllUpdates(w, r, AutoCreate.CreateOrUpdate));
 
             var text = new FileSystem().ReadStringFromFile(file);
 
-            SpecificationExtensions.ShouldContain(text, "DO LANGUAGE plpgsql $tran$");
-            SpecificationExtensions.ShouldContain(text, "$tran$;");
+            text.ShouldContain("DO LANGUAGE plpgsql $tran$");
+            text.ShouldContain("$tran$;");
         }
 
         [Fact(Skip = "flakey on ci")]
-        public void can_do_schema_validation_negative_case_with_detected_changes()
+        public async Task can_do_schema_validation_negative_case_with_detected_changes()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
             using (var store = DocumentStore.For(_ =>
             {
@@ -80,32 +82,37 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Target>();
             }))
             {
-                SpecificationExtensions.ShouldContain(Exception<SchemaValidationException>.ShouldBeThrownBy(
-                    () => { store.Schema.AssertDatabaseMatchesConfiguration(); }).Message, "user_name");
+                var ex = await Exception<SchemaValidationException>.ShouldBeThrownByAsync(async
+                    () =>
+                {
+                    await store.Schema.AssertDatabaseMatchesConfiguration();
+                });
+
+
+
+                ex.Message.ShouldContain("user_name");
             }
         }
 
         [Fact(Skip = "flakey on ci")]
-        public void can_do_schema_validation_with_no_detected_changes()
+        public async Task can_do_schema_validation_with_no_detected_changes()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            using (var store = DocumentStore.For(_ =>
+            using var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<User>();
                 _.Schema.For<Target>();
-            }))
-            {
-                store.Schema.AssertDatabaseMatchesConfiguration();
-            }
+            });
+            await store.Schema.AssertDatabaseMatchesConfiguration();
         }
 
         [Fact] // -- flakey on ci
-        public void can_do_schema_validation_with_no_detected_changes_on_event_store()
+        public async Task can_do_schema_validation_with_no_detected_changes_on_event_store()
         {
             /*
             var system = new FileSystem();
@@ -128,22 +135,20 @@ namespace Marten.Schema.Testing
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
 
 
-
-            using (var store = DocumentStore.For(_ =>
+            using var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Events.AddEventType(typeof(MembersJoined));
-            }))
-            {
-                store.Schema.AssertDatabaseMatchesConfiguration();
-            }
+            });
+
+            await store.Schema.AssertDatabaseMatchesConfiguration();
         }
 
         [Fact(Skip = "flakey on ci")]
-        public void writes_both_the_update_and_rollback_files()
+        public async Task writes_both_the_update_and_rollback_files()
         {
             StoreOptions(_ =>
             {
@@ -165,7 +170,7 @@ namespace Marten.Schema.Testing
 
             #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
-            theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"));
+            await theStore.Schema.WriteMigrationFile(directory.AppendPath("1.initial.sql"));
             #endregion sample_write-patch
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
@@ -173,7 +178,7 @@ namespace Marten.Schema.Testing
         }
 
         [Fact(Skip = "flakey on ci")]
-        public void writepatch_writes_patch_schema_when_autocreate_none()
+        public async Task writepatch_writes_patch_schema_when_autocreate_none()
         {
             StoreOptions(_ =>
             {
@@ -189,7 +194,7 @@ namespace Marten.Schema.Testing
 
             #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
-            theStore.Schema.WritePatch(directory.AppendPath("1.initial.sql"));
+            await theStore.Schema.WriteMigrationFile(directory.AppendPath("1.initial.sql"));
             #endregion sample_write-patch
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
@@ -197,7 +202,7 @@ namespace Marten.Schema.Testing
 
             var patchSql = fileSystem.ReadStringFromFile(directory.AppendPath("1.initial.sql"));
 
-            SpecificationExtensions.ShouldContain(patchSql, "CREATE TABLE public.mt_doc_user");
+            patchSql.ShouldContain("CREATE TABLE public.mt_doc_user");
         }
 
     }

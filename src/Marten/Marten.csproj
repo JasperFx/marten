@@ -27,13 +27,14 @@
         <PackageReference Include="Npgsql" Version="5.0.4" />
         <PackageReference Include="Npgsql.Json.NET" Version="5.0.4" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
-        <PackageReference Include="Baseline" Version="2.1.1" />
+        <PackageReference Include="Baseline" Version="3.1.1" />
         <PackageReference Include="System.Memory" Version="4.5.4" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="5.0.0" />
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.1.0, 6.0.0]" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="[2.1.0, 6.0.0]" />
         <PackageReference Include="System.Text.Json" Version="5.0.2" />
+        <PackageReference Include="Weasel.Postgresql" Version="0.5.0" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->
@@ -50,5 +51,8 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj" />
     </ItemGroup>
 </Project>

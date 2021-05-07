@@ -5,6 +5,7 @@ using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
+using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Clauses;

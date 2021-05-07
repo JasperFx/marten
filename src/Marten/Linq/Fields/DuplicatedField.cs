@@ -6,11 +6,13 @@ using Baseline;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Linq.Fields
 {

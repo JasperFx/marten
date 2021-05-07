@@ -1,6 +1,7 @@
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 using NSubstitute;
 using Shouldly;

@@ -11,6 +11,7 @@ using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments
 {

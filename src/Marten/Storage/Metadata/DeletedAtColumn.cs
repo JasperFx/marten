@@ -10,8 +10,7 @@ namespace Marten.Storage.Metadata
     {
         public DeletedAtColumn(): base(SchemaConstants.DeletedAtColumn, x => x.DeletedAt)
         {
-            CanAdd = true;
-            Directive = "NULL";
+            AllowNulls = true;
         }
 
         public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,

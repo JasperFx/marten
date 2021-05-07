@@ -1,5 +1,9 @@
 using System;
+using System.Threading.Tasks;
+using Weasel.Postgresql;
+
 #nullable enable
+
 namespace Marten.Schema
 {
     public interface IDocumentSchema
@@ -11,21 +15,21 @@ namespace Marten.Schema
         ///     objects to a file
         /// </summary>
         /// <param name="filename"></param>
-        void WriteDDL(string filename, bool transactionalScript = true);
+        void WriteDatabaseCreationScriptFile(string filename);
 
         /// <summary>
         ///     Write all the SQL scripts to build the database schema, but
         ///     split by document type
         /// </summary>
         /// <param name="directory"></param>
-        void WriteDDLByType(string directory, bool transactionalScript = true);
+        void WriteDatabaseCreationScriptByType(string directory);
 
         /// <summary>
         ///     Creates all the SQL script that would build all the database
         ///     schema objects for the configured schema
         /// </summary>
         /// <returns></returns>
-        string ToDDL(bool transactionalScript = true);
+        string ToDatabaseScript();
 
         /// <summary>
         ///     Tries to write a "patch" SQL file to upgrade the database
@@ -33,36 +37,40 @@ namespace Marten.Schema
         ///     rollback file as well.
         /// </summary>
         /// <param name="filename"></param>
-        /// <param name="withSchemas"></param>
-        void WritePatch(string filename, bool withSchemas = true, bool transactionalScript = true);
+        Task WriteMigrationFile(string filename);
 
         /// <summary>
         ///     Tries to write a "patch" SQL text to upgrade the database
         ///     to the current Marten schema configuration
         /// </summary>
         /// <returns></returns>
-        SchemaPatch ToPatch(bool withSchemas = true, bool withAutoCreateAll = false);
+        Task<SchemaMigration> CreateMigration();
 
         /// <summary>
         ///     Validates the Marten configuration of documents and transforms against
         ///     the current database schema. Will throw an exception if any differences are
         ///     detected. Useful for "environment tests"
         /// </summary>
-        void AssertDatabaseMatchesConfiguration();
+        Task AssertDatabaseMatchesConfiguration();
 
         /// <summary>
         ///     Executes all detected DDL patches to the schema based on current configuration
         ///     upfront at one time
         /// </summary>
-        void ApplyAllConfiguredChangesToDatabase(AutoCreate? withAutoCreate = null);
+        Task ApplyAllConfiguredChangesToDatabase(AutoCreate? withAutoCreate = null);
 
         /// <summary>
         ///     Generate a DDL patch for one specific document type
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        SchemaPatch ToPatch(Type documentType);
+        Task<SchemaMigration> CreateMigration(Type documentType);
 
-        void WritePatchByType(string directory, bool transactionalScript = true);
+        /// <summary>
+        /// Write a migration file for a single document type to the supplied file name
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <returns></returns>
+        Task WriteMigrationFileByType(string directory);
     }
 }

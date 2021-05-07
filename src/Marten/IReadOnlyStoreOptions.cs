@@ -4,6 +4,8 @@ using Marten.Events;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Transforms;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten
 {

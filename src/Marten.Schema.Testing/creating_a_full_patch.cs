@@ -1,5 +1,7 @@
-﻿using Marten.Schema.Testing.Documents;
+﻿using System.Threading.Tasks;
+using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -8,7 +10,7 @@ namespace Marten.Schema.Testing
     public class creating_a_full_patch : IntegrationContext
     {
         [Fact]
-        public void patch_for_multiple_tables()
+        public async Task patch_for_multiple_tables()
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
@@ -24,7 +26,7 @@ namespace Marten.Schema.Testing
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }))
             {
-                var patch = store2.Schema.ToPatch().UpdateDDL;
+                var patch = (await store2.Schema.CreateMigration()).UpdateSql;
 
                 // don't patch Target and Company because they don't change
                 patch.ShouldNotContain("mt_doc_company");
@@ -35,26 +37,6 @@ namespace Marten.Schema.Testing
 
                 patch.ShouldContain($"alter table public.mt_doc_user add column user_name varchar");
                 patch.ShouldContain($"update public.mt_doc_user set user_name = data ->> 'UserName';");
-            }
-        }
-
-        [Fact]
-        public void base_patch_should_drop_system_functions_correctly()
-        {
-
-            using (var store2 = StoreOptions(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-                _.Events.AddEventType(typeof(IssueAssigned));
-            }))
-            {
-                var patch = store2.Schema.ToPatch();
-
-                patch.RollbackDDL.ShouldContain($"drop function if exists public.mt_immutable_timestamp(text) cascade;");
-                patch.RollbackDDL.ShouldContain($"drop function if exists public.mt_immutable_timestamptz(text) cascade;");
-                patch.RollbackDDL.ShouldContain($"DROP FUNCTION IF EXISTS public.mt_transform_patch_doc(JSONB, JSONB);");
-
-                patch.RollbackDDL.ShouldContain($"drop function if exists public.mt_mark_event_progression(varchar, bigint) cascade;");
             }
         }
 

@@ -22,7 +22,7 @@ namespace MartenBenchmarks
             docs.Skip(100).Each(x => x.Color = Colors.Green);
             docs.Take(100).Each(x => x.Color = Colors.Blue);
 
-            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsFor(typeof(Target));
+            BenchmarkStore.Store.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
             BenchmarkStore.Store.BulkInsert(docs);
         }
 

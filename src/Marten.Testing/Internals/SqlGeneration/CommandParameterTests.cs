@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;

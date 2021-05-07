@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace Marten.Testing.Bugs
         }
 
         [Fact]
-        public void can_build_the_fk_correctly()
+        public async Task can_build_the_fk_correctly()
         {
             StoreOptions(_ =>
             {
@@ -27,7 +28,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Document>().ForeignKey<FkTarget>(a => a.TargetId);
             });
 
-            theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
         }
 
     }

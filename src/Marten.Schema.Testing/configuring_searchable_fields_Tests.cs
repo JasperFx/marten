@@ -3,6 +3,7 @@ using System.Linq;
 using Baseline;
 using Marten.Util;
 using Shouldly;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -23,7 +24,7 @@ namespace Marten.Schema.Testing
         public void creates_btree_index_for_the_member()
         {
             var mapping = DocumentMapping.For<Organization>();
-            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "Name".ToTableAlias());
+            var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == "Name".ToTableAlias());
 
             indexDefinition.Method.ShouldBe(IndexMethod.btree);
         }
@@ -32,7 +33,7 @@ namespace Marten.Schema.Testing
         public void can_override_index_type_and_name_on_the_attribute()
         {
             var mapping = DocumentMapping.For<Organization>();
-            var indexDefinition = (IndexDefinition)mapping.Indexes.Single(x => x.IndexName == "mt_idx_foo");
+            var indexDefinition = (DocumentIndex)mapping.Indexes.Single(x => x.Name == "idx_foo");
 
             indexDefinition.Method.ShouldBe(IndexMethod.hash);
         }
@@ -41,7 +42,7 @@ namespace Marten.Schema.Testing
         public void can_override_index_sort_order_on_the_attribute()
         {
             var mapping = DocumentMapping.For<Organization>();
-            var indexDefinition = mapping.Indexes.Cast<IndexDefinition>().Single(x => x.Columns.First() == "YetAnotherName".ToTableAlias());
+            var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == "YetAnotherName".ToTableAlias());
 
             indexDefinition.SortOrder.ShouldBe(SortOrder.Desc);
         }

@@ -2,6 +2,7 @@ using System;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
@@ -9,8 +10,7 @@ namespace Marten.Storage.Metadata
     {
         public LastModifiedColumn() : base(SchemaConstants.LastModifiedColumn, x => x.LastModified)
         {
-            Directive = "DEFAULT transaction_timestamp()";
-            CanAdd = true;
+            DefaultExpression = "(transaction_timestamp())";
             Type = "timestamp with time zone";
         }
 

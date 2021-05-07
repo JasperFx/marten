@@ -1,6 +1,7 @@
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
 {
@@ -9,10 +10,6 @@ namespace Marten.Events.Schema
         public StreamIdColumn(EventGraph graph) : base("stream_id", "varchar")
         {
             Type = graph.GetStreamIdDBType();
-            Directive = graph.TenancyStyle != TenancyStyle.Conjoined
-                ? $"REFERENCES {graph.DatabaseSchemaName}.mt_streams ON DELETE CASCADE"
-                : null;
-
         }
 
         public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)

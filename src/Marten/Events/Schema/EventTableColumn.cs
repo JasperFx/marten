@@ -10,6 +10,8 @@ using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
 {

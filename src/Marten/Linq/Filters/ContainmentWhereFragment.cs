@@ -6,6 +6,7 @@ using System.Reflection;
 using Baseline;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql;
 using Marten.Util;
 using NpgsqlTypes;
 

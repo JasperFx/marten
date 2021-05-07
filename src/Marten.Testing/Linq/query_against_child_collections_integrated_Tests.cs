@@ -9,6 +9,7 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -287,18 +288,6 @@ namespace Marten.Testing.Linq
             theSession.SaveChanges();
         }
 
-        public class Article
-        {
-            public Guid Id { get; set; }
-            public long Long { get; set; }
-            public string[] CategoryArray { get; set; }
-            public List<string> CategoryList { get; set; }
-            public Guid[] AuthorArray { get; set; }
-            public List<Guid> AuthorList { get; set; }
-            public Article ReferencedArticle { get; set; }
-            public bool Published { get; set; }
-        }
-
         [Fact]
         public void query_string_array_intersects_array()
         {
@@ -409,37 +398,6 @@ namespace Marten.Testing.Linq
             res[0].Long.ShouldBe(5);
         }
 
-        public class DocWithArrays
-        {
-            public Guid Id { get; set; }
-
-            public int[] Numbers { get; set; }
-
-            public string[] Strings { get; set; }
-
-            public DateTime[] Dates { get; set; }
-        }
-
-        public class DocWithLists
-        {
-            public Guid Id { get; set; }
-
-            public List<int> Numbers { get; set; }
-        }
-
-        public class DocWithLists2
-        {
-            public Guid Id { get; set; }
-
-            public IList<int> Numbers { get; set; }
-        }
-
-        public class DocWithLists3
-        {
-            public Guid Id { get; set; }
-
-            public IEnumerable<int> Numbers { get; set; }
-        }
 
         [Fact]
         public void query_against_number_array()
@@ -689,5 +647,49 @@ namespace Marten.Testing.Linq
 
             items.Count.ShouldBe(1);
         }
+    }
+
+    public class Article
+    {
+        public Guid Id { get; set; }
+        public long Long { get; set; }
+        public string[] CategoryArray { get; set; }
+        public List<string> CategoryList { get; set; }
+        public Guid[] AuthorArray { get; set; }
+        public List<Guid> AuthorList { get; set; }
+        public Article ReferencedArticle { get; set; }
+        public bool Published { get; set; }
+    }
+
+    public class DocWithLists
+    {
+        public Guid Id { get; set; }
+
+        public List<int> Numbers { get; set; }
+    }
+
+    public class DocWithLists2
+    {
+        public Guid Id { get; set; }
+
+        public IList<int> Numbers { get; set; }
+    }
+
+    public class DocWithLists3
+    {
+        public Guid Id { get; set; }
+
+        public IEnumerable<int> Numbers { get; set; }
+    }
+
+    public class DocWithArrays
+    {
+        public Guid Id { get; set; }
+
+        public int[] Numbers { get; set; }
+
+        public string[] Strings { get; set; }
+
+        public DateTime[] Dates { get; set; }
     }
 }

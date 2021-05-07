@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -9,13 +10,13 @@ namespace Marten.Testing.Bugs
     public class Bug_620_alias_bool : BugIntegrationContext
     {
         [Fact]
-        public void can_canonicize_bool()
+        public async Task can_canonicize_bool()
         {
             using (var store1 = SeparateStore())
             {
                 store1.Tenancy.Default.EnsureStorageExists(typeof(DocWithBool));
 
-                store1.Schema.ApplyAllConfiguredChangesToDatabase();
+                await store1.Schema.ApplyAllConfiguredChangesToDatabase();
             }
 
             using (var store2 = SeparateStore(_ =>
@@ -23,7 +24,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithBool>();
             }))
             {
-                store2.Schema.AssertDatabaseMatchesConfiguration();
+                await store2.Schema.AssertDatabaseMatchesConfiguration();
             }
         }
     }

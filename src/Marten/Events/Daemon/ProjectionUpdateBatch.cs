@@ -7,6 +7,7 @@ using System.Threading.Tasks.Dataflow;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Weasel.Postgresql;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Util;

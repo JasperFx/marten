@@ -23,7 +23,9 @@ namespace Marten.Linq.Parsing.Methods
             {
                 typeof(string).GetMethod("Contains", new Type[] { typeof(string), typeof(StringComparison)}),
                 ReflectionHelper.GetMethod<string>(s => s.Contains(null)),
+#if NET5_0
                 ReflectionHelper.GetMethod<string>(s => s.Contains(null, StringComparison.CurrentCulture))
+#endif
             }
             .Where(m => m != null)
             .Distinct()

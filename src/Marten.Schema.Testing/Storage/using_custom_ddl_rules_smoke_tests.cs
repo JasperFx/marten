@@ -1,4 +1,5 @@
 ﻿using Marten.Schema.Testing.Documents;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage

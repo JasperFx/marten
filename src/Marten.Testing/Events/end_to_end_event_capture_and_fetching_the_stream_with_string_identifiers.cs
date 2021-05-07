@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
-using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events

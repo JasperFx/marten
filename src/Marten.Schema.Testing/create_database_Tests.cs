@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
+using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Sdk;
 
@@ -10,7 +13,7 @@ namespace Marten.Schema.Testing
     public class create_database_Tests : IDisposable
     {
         [Fact]
-        public void can_create_new_database_when_one_does_not_exist_for_default_tenant()
+        public async Task can_create_new_database_when_one_does_not_exist_for_default_tenant()
         {
             var cstring = ConnectionSource.ConnectionString;
 
@@ -21,9 +24,9 @@ namespace Marten.Schema.Testing
                 _.Connection(dbToCreateConnectionString);
             }))
             {
-                Assert.Throws<PostgresException>(() =>
+                await Should.ThrowAsync<PostgresException>(async () =>
                 {
-                    store1.Schema.ApplyAllConfiguredChangesToDatabase();
+                    await store1.Schema.ApplyAllConfiguredChangesToDatabase();
                 });
             }
 
@@ -52,8 +55,8 @@ namespace Marten.Schema.Testing
                 #endregion sample_marten_create_database
             }))
             {
-                store.Schema.ApplyAllConfiguredChangesToDatabase();
-                store.Schema.AssertDatabaseMatchesConfiguration();
+                await store.Schema.ApplyAllConfiguredChangesToDatabase();
+                await store.Schema.AssertDatabaseMatchesConfiguration();
                 Assert.True(dbCreated);
             }
         }

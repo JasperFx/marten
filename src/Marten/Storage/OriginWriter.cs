@@ -1,5 +1,9 @@
+using System;
+using Weasel.Postgresql.Tables;
+
 namespace Marten.Storage
 {
+    [Obsolete("Move this to Weasel")]
     internal static class OriginWriter
     {
         private static readonly string MartenFqn = typeof(IDocumentStore).AssemblyQualifiedName;

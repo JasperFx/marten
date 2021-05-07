@@ -5,6 +5,7 @@ using System.Linq;
 using Baseline;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Weasel.Postgresql;
 
 namespace Marten.Schema
 {
@@ -44,13 +45,9 @@ namespace Marten.Schema
         {
             yield return typeof(SystemFunctions);
 
-            foreach (var foreignKey in _mapping.ForeignKeys)
+            foreach (var referencedType in _mapping.ReferencedTypes())
             {
-                // ExternalForeignKeyDefinition's will have a null ReferenceDocumentType, so we can skip it
-                if (foreignKey.ReferenceDocumentType == null)
-                    continue;
-
-                yield return foreignKey.ReferenceDocumentType;
+                yield return referencedType;
             }
         }
 
@@ -72,13 +69,14 @@ namespace Marten.Schema
         public ISchemaObject[] Objects => toSchemaObjects().ToArray();
         public Type StorageType => _mapping.DocumentType;
         public string Identifier => _mapping.Alias.ToLowerInvariant();
-        public void WritePermissions(DdlRules rules, StringWriter writer)
+        public void WritePermissions(DdlRules rules, TextWriter writer)
         {
             var template = _mapping.DdlTemplate.IsNotEmpty()
                 ? rules.Templates[_mapping.DdlTemplate.ToLower()]
                 : rules.Templates["default"];
 
             Table.WriteTemplate(template, writer);
+
             Upsert.WriteTemplate(rules, template, writer);
             Update.WriteTemplate(rules, template, writer);
             Insert.WriteTemplate(rules, template, writer);

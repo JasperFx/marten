@@ -2,6 +2,7 @@
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -70,12 +71,11 @@ namespace Marten.Schema.Testing
                 _.Schema.For<User>().Duplicate(x => x.FirstName);
             }))
             {
-                var ex = Should.Throw<InvalidOperationException>(() =>
+                var ex = Should.Throw<SchemaMigrationException>(() =>
                 {
                     store2.Tenancy.Default.EnsureStorageExists(typeof(User));
                 });
 
-                ex.Message.ShouldBe($"Marten cannot apply updates in CreateOnly mode to existing items public.mt_doc_user, public.mt_upsert_user, public.mt_insert_user, public.mt_update_user");
             }
         }
 

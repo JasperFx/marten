@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.ImTools;
 using Marten.Events.Daemon;
 using Marten.Events.Operations;
 using Marten.Events.Projections;
@@ -13,10 +14,11 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
-using Marten.Schema;
+using Weasel.Postgresql;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
+using Weasel.Postgresql.Functions;
 
 namespace Marten.Events
 {
@@ -163,7 +165,7 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        public bool IsActive(StoreOptions options) => _events.Any() || Projections.Any() ;
+        internal bool IsActive(StoreOptions options) => _events.Any() || Projections.Any() ;
 
         /// <summary>
         /// Override the database schema name for event related tables. By default this
@@ -223,7 +225,7 @@ namespace Marten.Events
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
-                    new DropFunction(DatabaseSchemaName, "mt_append_event", appendEventFunctionArgs),
+                    Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event"))
                 };
             }
         }
@@ -231,7 +233,7 @@ namespace Marten.Events
         Type IFeatureSchema.StorageType => typeof(EventGraph);
         string IFeatureSchema.Identifier { get; } = "eventstore";
 
-        void IFeatureSchema.WritePermissions(DdlRules rules, StringWriter writer)
+        void IFeatureSchema.WritePermissions(DdlRules rules, TextWriter writer)
         {
             // Nothing
         }

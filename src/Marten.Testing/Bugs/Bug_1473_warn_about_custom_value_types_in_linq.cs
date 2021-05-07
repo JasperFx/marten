@@ -12,17 +12,6 @@ namespace Marten.Testing.Bugs
         {
         }
 
-        public class MyClass
-        {
-            public string Id { get; set; }
-            public CustomObject CustomObject { get; set; }
-        }
-
-        public class CustomObject
-        {
-            public string Name { get; set; }
-        }
-
         [Fact]
         public void get_a_descriptive_exception_message()
         {
@@ -33,5 +22,16 @@ namespace Marten.Testing.Bugs
 
             ex.Message.ShouldBe("Marten cannot support custom value types in Linq expression. Please query on either simple properties of the value type, or register a custom IFieldSource for this value type.");
         }
+    }
+
+    public class MyClass
+    {
+        public string Id { get; set; }
+        public CustomObject CustomObject { get; set; }
+    }
+
+    public class CustomObject
+    {
+        public string Name { get; set; }
     }
 }

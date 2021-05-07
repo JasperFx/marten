@@ -2,13 +2,15 @@ using System;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
+using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
 {
     internal class EventTypeColumn: TableColumn, IEventTableColumn
     {
-        public EventTypeColumn() : base("type", "varchar(500)", "NOT NULL")
+        public EventTypeColumn() : base("type", "varchar(500)")
         {
+            AllowNulls = false;
         }
 
         public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)

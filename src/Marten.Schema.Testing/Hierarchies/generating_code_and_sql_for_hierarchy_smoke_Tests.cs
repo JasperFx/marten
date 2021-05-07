@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Storage;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing.Hierarchies
@@ -23,7 +24,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -35,7 +36,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).Write(new DdlRules
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules
             {
                 UpsertRights = SecurityRights.Definer
             }, writer);
@@ -50,7 +51,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -63,7 +64,7 @@ namespace Marten.Schema.Testing.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -76,7 +77,7 @@ namespace Marten.Schema.Testing.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -100,7 +101,7 @@ namespace Marten.Schema.Testing.Hierarchies
         public void contains_index_for_documenttype_column()
         {
             var table = new DocumentTable(theHierarchy);
-            table.Indexes.Any(x => x.IndexName == $"mt_doc_squad_idx_{SchemaConstants.DocumentTypeColumn}").ShouldBeTrue();
+            table.Indexes.Any(x => x.Name == $"mt_doc_squad_idx_{SchemaConstants.DocumentTypeColumn}").ShouldBeTrue();
         }
 
         [Fact]
@@ -108,7 +109,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 
@@ -120,7 +121,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).Write(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
 
             var sql = writer.ToString();
 

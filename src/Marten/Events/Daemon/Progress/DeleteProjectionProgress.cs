@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Weasel.Postgresql;
 using Marten.Util;
 using NpgsqlTypes;
 
@@ -20,7 +21,7 @@ namespace Marten.Events.Daemon.Progress
             _events = events;
             _shardName = shardName;
         }
-        
+
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
             var parameters =

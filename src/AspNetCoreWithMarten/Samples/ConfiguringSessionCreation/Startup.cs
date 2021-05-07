@@ -1,17 +1,14 @@
-using System;
 using System.Data;
 using Marten;
-using Marten.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Npgsql;
+using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
 {
-
     #region sample_CustomSessionFactory
+
     public class CustomSessionFactory: ISessionFactory
     {
         private readonly IDocumentStore _store;
@@ -37,35 +34,37 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
             return _store.LightweightSession(IsolationLevel.Serializable);
         }
     }
+
     #endregion sample_CustomSessionFactory
 
     #region sample_AddMartenWithCustomSessionCreation
+
     public class Startup
     {
-        public IConfiguration Configuration { get; }
-        public IHostEnvironment Hosting { get; }
-
         public Startup(IConfiguration configuration, IHostEnvironment hosting)
         {
             Configuration = configuration;
             Hosting = hosting;
         }
 
+        public IConfiguration Configuration { get; }
+        public IHostEnvironment Hosting { get; }
+
         public void ConfigureServices(IServiceCollection services)
         {
             var connectionString = Configuration.GetConnectionString("postgres");
 
             services.AddMarten(opts =>
-            {
-                opts.Connection(connectionString);
-
-                // Use the more permissive schema auto create behavior
-                // while in development
-                if (Hosting.IsDevelopment())
                 {
-                    opts.AutoCreateSchemaObjects = AutoCreate.All;
-                }
-            })
+                    opts.Connection(connectionString);
+
+                    // Use the more permissive schema auto create behavior
+                    // while in development
+                    if (Hosting.IsDevelopment())
+                    {
+                        opts.AutoCreateSchemaObjects = AutoCreate.All;
+                    }
+                })
 
                 // Chained helper to replace the built in
                 // session factory behavior
@@ -74,5 +73,6 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
 
         // And other methods we don't care about here...
     }
+
     #endregion sample_AddMartenWithCustomSessionCreation
 }
