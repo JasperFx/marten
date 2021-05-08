@@ -10,19 +10,24 @@ namespace Marten.Events.Projections
     {
         public List<IGrouper<TId>> Groupers { get; } = new();
         public List<IFanOutRule> Fanouts { get; } = new();
+        public List<IGrouperFactory<TId>> GrouperFactories { get; } = new();
 
-        public virtual ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> Slice(IQuerySession querySession,
+        public virtual async ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> Slice(IQuerySession querySession,
             IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return new(Slice(streams, tenancy).ToList());
+            var streamActions = streams.ToList();
+            await TryToCreateGroupers(querySession, streamActions.SelectMany(stream => stream.Events).ToList());
+
+            return Slice(streamActions, tenancy).ToList();
         }
 
-        public virtual ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> Slice(IQuerySession querySession,
+        public virtual async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> Slice(IQuerySession querySession,
             IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
+            await TryToCreateGroupers(querySession, events);
             var tenantGroups = events.GroupBy(x => x.TenantId);
             var slices = tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();
-            return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>>(slices);
+            return slices;
         }
 
         protected virtual IEnumerable<EventSlice<TDoc, TId>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
@@ -36,6 +41,23 @@ namespace Marten.Events.Projections
                 {
                     yield return slice;
                 }
+            }
+        }
+
+        protected async ValueTask TryToCreateGroupers(IQuerySession querySession, IReadOnlyList<IEvent> events)
+        {
+            var eventsToGroup = events
+                .SelectMany(@event =>
+                    GrouperFactories
+                        .Where(f => f.Supports(@event.EventType))
+                        .Select(factory => (@event, factory)
+                    )
+                );
+
+            foreach (var (@event, factory) in eventsToGroup)
+            {
+                var grouper = await factory.Create(querySession, @event);
+                Groupers.Add(grouper);
             }
         }
 

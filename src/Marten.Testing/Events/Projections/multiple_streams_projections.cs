@@ -104,41 +104,6 @@ namespace Marten.Testing.Events.Projections
         public List<string> FeatureToggles { get; } = new();
     }
 
-    public class UserFeatureTogglesEventSlicer: ViewProjectionEventSlicer<UserFeatureToggles, Guid>
-    {
-        public override async ValueTask<IReadOnlyList<EventSlice<UserFeatureToggles, Guid>>> Slice(
-            IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
-        {
-            var streamsActions = streams.ToList();
-
-            var eventsToCallQuery = streamsActions
-                .SelectMany(stream => stream.Events)
-                .Where(ev => ev.EventType == typeof(LicenseFeatureToggled))
-                .ToList();
-
-            if (eventsToCallQuery.Any())
-            {
-                foreach (var eventData in eventsToCallQuery.Select(@event => (LicenseFeatureToggled)@event.Data))
-                {
-                    var ids = await querySession.Query<UserFeatureToggles>()
-                        .Where(x => x.LicenseId == eventData.LicenseId)
-                        .Select(x => x.Id)
-                        .ToListAsync();
-
-                    Groupers.Add(new MultiStreamGrouper<Guid, LicenseFeatureToggled>(x => x == eventData ? ids.ToArray() : Array.Empty<Guid>()));
-                }
-            }
-
-            return await base.Slice(querySession, streamsActions, tenancy);
-        }
-
-        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserFeatureToggles, Guid>>> Slice(
-            IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
-        {
-            return base.Slice(querySession, events, tenancy);
-        }
-    }
-
     // projection with documentsession
     public class UserFeatureTogglesProjection: ViewProjection<UserFeatureToggles, Guid>
     {
@@ -146,16 +111,15 @@ namespace Marten.Testing.Events.Projections
         {
             Identity<UserRegistered>(@event => @event.UserId);
             Identity<UserLicenseAssigned>(@event => @event.UserId);
-
-            EventSlicer(new UserFeatureTogglesEventSlicer());
+            Identities<LicenseFeatureToggled>(FindUserIdsWithLicense);
         }
 
-        private static List<Guid> FindUserIdsWithLicense(IQuerySession session, LicenseFeatureToggled @event)
+        private static async Task<IReadOnlyList<Guid>> FindUserIdsWithLicense(IQuerySession session, LicenseFeatureToggled @event)
         {
-            return session.Query<UserFeatureToggles>()
+            return await session.Query<UserFeatureToggles>()
                 .Where(x => x.LicenseId == @event.LicenseId)
                 .Select(x => x.Id)
-                .ToList();
+                .ToListAsync();
         }
 
         public void Apply(UserRegistered @event, UserFeatureToggles view)
@@ -186,7 +150,7 @@ namespace Marten.Testing.Events.Projections
         public UserGroupsAssignmentProjection()
         {
             Identity<UserRegistered>(@event => @event.UserId);
-            Identities<UsersAssignedToGroup>(@event => @event.UserIds.ToArray());
+            Identities<UsersAssignedToGroup>(@event => @event.UserIds);
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)
