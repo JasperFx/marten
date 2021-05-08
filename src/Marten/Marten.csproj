@@ -52,7 +52,4 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj" />
-    </ItemGroup>
 </Project>
