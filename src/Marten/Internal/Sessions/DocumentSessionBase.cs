@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Baseline;
 using Marten.Events;
 using Marten.Internal.Operations;
@@ -243,7 +241,7 @@ namespace Marten.Internal.Sessions
         /// </summary>
         /// <param name="tenantId"></param>
         /// <returns></returns>
-        public ITenantOperations ForTenant(string tenantId)
+        public new ITenantOperations ForTenant(string tenantId)
         {
             _byTenant ??= new Dictionary<string, NestedTenantSession>();
 
