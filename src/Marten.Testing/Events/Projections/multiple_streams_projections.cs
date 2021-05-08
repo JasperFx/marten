@@ -106,12 +106,34 @@ namespace Marten.Testing.Events.Projections
 
     public class UserFeatureTogglesEventSlicer: ViewProjectionEventSlicer<UserFeatureToggles, Guid>
     {
-        public override ValueTask<IReadOnlyList<EventSlice<UserFeatureToggles, Guid>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public override async ValueTask<IReadOnlyList<EventSlice<UserFeatureToggles, Guid>>> Slice(
+            IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return base.Slice(querySession, streams, tenancy);
+            var streamsActions = streams.ToList();
+
+            var eventsToCallQuery = streamsActions
+                .SelectMany(stream => stream.Events)
+                .Where(ev => ev.EventType == typeof(LicenseFeatureToggled))
+                .ToList();
+
+            if (eventsToCallQuery.Any())
+            {
+                foreach (var eventData in eventsToCallQuery.Select(@event => (LicenseFeatureToggled)@event.Data))
+                {
+                    var ids = await querySession.Query<UserFeatureToggles>()
+                        .Where(x => x.LicenseId == eventData.LicenseId)
+                        .Select(x => x.Id)
+                        .ToListAsync();
+
+                    Groupers.Add(new MultiStreamGrouper<Guid, LicenseFeatureToggled>(x => x == eventData ? ids.ToArray() : Array.Empty<Guid>()));
+                }
+            }
+
+            return await base.Slice(querySession, streamsActions, tenancy);
         }
 
-        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserFeatureToggles, Guid>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserFeatureToggles, Guid>>> Slice(
+            IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             return base.Slice(querySession, events, tenancy);
         }
@@ -128,7 +150,7 @@ namespace Marten.Testing.Events.Projections
             EventSlicer(new UserFeatureTogglesEventSlicer());
         }
 
-        private static List<Guid> FindUserIdsWithLicense(IDocumentSession session, LicenseFeatureToggled @event)
+        private static List<Guid> FindUserIdsWithLicense(IQuerySession session, LicenseFeatureToggled @event)
         {
             return session.Query<UserFeatureToggles>()
                 .Where(x => x.LicenseId == @event.LicenseId)
@@ -146,10 +168,10 @@ namespace Marten.Testing.Events.Projections
             view.LicenseId = @event.LicenseId;
         }
 
-        // public void Apply(LicenseFeatureToggled @event, UserFeatureToggles view)
-        // {
-        //     view.FeatureToggles.Add(@event.FeatureToggleName);
-        // }
+        public void Apply(LicenseFeatureToggled @event, UserFeatureToggles view)
+        {
+            view.FeatureToggles.Add(@event.FeatureToggleName);
+        }
     }
 
     public class UserGroupsAssignment
@@ -161,12 +183,31 @@ namespace Marten.Testing.Events.Projections
 
     public class UserGroupsAssignmentEventSlicer: ViewProjectionEventSlicer<UserGroupsAssignment, Guid>
     {
-        public override ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> Slice(
+            IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            return base.Slice(querySession, streams, tenancy);
+            var streamsActions = streams.ToList();
+
+            var eventsToCallQuery = streamsActions
+                .SelectMany(stream => stream.Events)
+                .Where(ev => ev.EventType == typeof(UsersAssignedToGroup))
+                .ToList();
+
+            if (eventsToCallQuery.Any())
+            {
+                foreach (var eventData in eventsToCallQuery.Select(@event => (UsersAssignedToGroup)@event.Data))
+                {
+                    var ids = eventData.UserIds;
+
+                    Groupers.Add(new MultiStreamGrouper<Guid, UsersAssignedToGroup>(x => x == eventData ? ids.ToArray() : Array.Empty<Guid>()));
+                }
+            }
+
+            return base.Slice(querySession, streamsActions, tenancy);
         }
 
-        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> Slice(
+            IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
             return base.Slice(querySession, events, tenancy);
         }
@@ -186,10 +227,10 @@ namespace Marten.Testing.Events.Projections
             view.Id = @event.UserId;
         }
 
-        // public void Apply(UsersAssignedToGroup @event, UserGroupsAssignment view)
-        // {
-        //     view.Groups.Add(@event.GroupId);
-        // }
+        public void Apply(UsersAssignedToGroup @event, UserGroupsAssignment view)
+        {
+            view.Groups.Add(@event.GroupId);
+        }
     }
 
     public class multiple_streams_projections: IntegrationContext
