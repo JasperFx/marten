@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Linq;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -104,19 +101,19 @@ namespace Marten.Testing.Events.Projections
 
         public Guid LicenseId { get; set; }
 
-        public List<string> FeatureToggles { get; set; } = new List<string>();
+        public List<string> FeatureToggles { get; } = new();
     }
 
-    public class UserFeatureTogglesEventSlicer: IEventSlicer<UserFeatureToggles, Guid>
+    public class UserFeatureTogglesEventSlicer: ViewProjectionEventSlicer<UserFeatureToggles, Guid>
     {
-        public ValueTask<IReadOnlyList<EventSlice<UserFeatureToggles, Guid>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<EventSlice<UserFeatureToggles, Guid>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            return base.Slice(querySession, streams, tenancy);
         }
 
-        public ValueTask<IReadOnlyList<TenantSliceGroup<UserFeatureToggles, Guid>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserFeatureToggles, Guid>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            return base.Slice(querySession, events, tenancy);
         }
     }
 
@@ -129,10 +126,6 @@ namespace Marten.Testing.Events.Projections
             Identity<UserLicenseAssigned>(@event => @event.UserId);
 
             EventSlicer(new UserFeatureTogglesEventSlicer());
-
-            ProjectEvent<UserRegistered>(Apply);
-            ProjectEvent<UserLicenseAssigned>(Apply);
-            ProjectEvent<LicenseFeatureToggled>(Apply);
         }
 
         private static List<Guid> FindUserIdsWithLicense(IDocumentSession session, LicenseFeatureToggled @event)
@@ -143,39 +136,39 @@ namespace Marten.Testing.Events.Projections
                 .ToList();
         }
 
-        private void Apply(UserFeatureToggles view, UserRegistered @event)
+        public void Apply(UserRegistered @event, UserFeatureToggles view)
         {
             view.Id = @event.UserId;
         }
 
-        private void Apply(UserFeatureToggles view, UserLicenseAssigned @event)
+        public void Apply(UserLicenseAssigned @event, UserFeatureToggles view)
         {
             view.LicenseId = @event.LicenseId;
         }
 
-        private void Apply(UserFeatureToggles view, LicenseFeatureToggled @event)
-        {
-            view.FeatureToggles.Add(@event.FeatureToggleName);
-        }
+        // public void Apply(LicenseFeatureToggled @event, UserFeatureToggles view)
+        // {
+        //     view.FeatureToggles.Add(@event.FeatureToggleName);
+        // }
     }
 
     public class UserGroupsAssignment
     {
         public Guid Id { get; set; }
 
-        public List<Guid> Groups { get; set; } = new List<Guid>();
+        public List<Guid> Groups { get; } = new();
     }
 
-    public class UserGroupsAssignmentEventSlicer: IEventSlicer<UserGroupsAssignment, Guid>
+    public class UserGroupsAssignmentEventSlicer: ViewProjectionEventSlicer<UserGroupsAssignment, Guid>
     {
-        public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> Slice(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            return base.Slice(querySession, streams, tenancy);
         }
 
-        public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
+        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> Slice(IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
-            throw new NotImplementedException();
+            return base.Slice(querySession, events, tenancy);
         }
     }
 
@@ -186,20 +179,17 @@ namespace Marten.Testing.Events.Projections
             Identity<UserRegistered>(@event => @event.UserId);
 
             EventSlicer(new UserGroupsAssignmentEventSlicer());
-
-            ProjectEvent<UserRegistered>(Apply);
-            ProjectEvent<UsersAssignedToGroup>(Apply);
         }
 
-        private void Apply(UserGroupsAssignment view, UserRegistered @event)
+        public void Apply(UserRegistered @event, UserGroupsAssignment view)
         {
             view.Id = @event.UserId;
         }
 
-        private void Apply(UserGroupsAssignment view, UsersAssignedToGroup @event)
-        {
-            view.Groups.Add(@event.GroupId);
-        }
+        // public void Apply(UsersAssignedToGroup @event, UserGroupsAssignment view)
+        // {
+        //     view.Groups.Add(@event.GroupId);
+        // }
     }
 
     public class multiple_streams_projections: IntegrationContext
@@ -207,14 +197,6 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public async Task multi_stream_projections_should_work()
         {
-            StoreOptions(_ =>
-            {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-
-                _.Events.Projections.Add<UserFeatureTogglesProjection>();
-                _.Events.Projections.Add<UserGroupsAssignmentProjection>();
-            });
-
             // --------------------------------
             // Create Licenses
             // --------------------------------
@@ -325,21 +307,25 @@ namespace Marten.Testing.Events.Projections
             // --------------------------------
 
             var annaFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(annaRegistered.UserId);
+            annaFeatureToggles.ShouldNotBeNull();
             annaFeatureToggles.Id.ShouldBe(annaRegistered.UserId);
             annaFeatureToggles.LicenseId.ShouldBe(premiumLicenseCreated.LicenseId);
             annaFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle, inviteFeatureToggle);
 
             var maggieFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(maggieRegistered.UserId);
+            maggieFeatureToggles.ShouldNotBeNull();
             maggieFeatureToggles.Id.ShouldBe(maggieRegistered.UserId);
             maggieFeatureToggles.LicenseId.ShouldBe(premiumLicenseCreated.LicenseId);
             maggieFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle, inviteFeatureToggle);
 
             var johnFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(johnRegistered.UserId);
+            johnFeatureToggles.ShouldNotBeNull();
             johnFeatureToggles.Id.ShouldBe(johnRegistered.UserId);
             johnFeatureToggles.LicenseId.ShouldBe(freeLicenseCreated.LicenseId);
             johnFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle);
 
             var alanFeatureToggles = await theSession.LoadAsync<UserFeatureToggles>(alanRegistered.UserId);
+            alanFeatureToggles.ShouldNotBeNull();
             alanFeatureToggles.Id.ShouldBe(alanRegistered.UserId);
             alanFeatureToggles.LicenseId.ShouldBe(freeLicenseCreated.LicenseId);
             alanFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle);
@@ -371,24 +357,36 @@ namespace Marten.Testing.Events.Projections
             // --------------------------------
 
             var annaGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(annaRegistered.UserId);
+            annaGroupAssignment.ShouldNotBeNull();
             annaGroupAssignment.Id.ShouldBe(annaRegistered.UserId);
             annaGroupAssignment.Groups.ShouldHaveTheSameElementsAs(adminUsersGroupCreated.GroupId);
 
             var maggieGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(maggieRegistered.UserId);
+            maggieGroupAssignment.ShouldNotBeNull();
             maggieGroupAssignment.Id.ShouldBe(maggieRegistered.UserId);
             maggieGroupAssignment.Groups.ShouldHaveTheSameElementsAs(adminUsersGroupCreated.GroupId);
 
             var johnGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(johnRegistered.UserId);
+            johnGroupAssignment.ShouldNotBeNull();
             johnGroupAssignment.Id.ShouldBe(johnRegistered.UserId);
             johnGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
 
             var alanGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(alanRegistered.UserId);
+            alanGroupAssignment.ShouldNotBeNull();
             alanGroupAssignment.Id.ShouldBe(alanRegistered.UserId);
             alanGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
         }
 
         public multiple_streams_projections(DefaultStoreFixture fixture): base(fixture)
         {
+            StoreOptions(_ =>
+            {
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.DatabaseSchemaName = "multi_stream_projections";
+
+                _.Events.Projections.Add<UserFeatureTogglesProjection>(ProjectionLifecycle.Inline);
+                _.Events.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
+            });
         }
     }
 }

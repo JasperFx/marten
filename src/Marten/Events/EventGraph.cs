@@ -55,11 +55,11 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
+            Projections = new ProjectionCollection(options);
+
             _inlineProjections = new Lazy<IProjection[]>(() => Projections.BuildInlineProjections(_store));
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
-
-            Projections = new ProjectionCollection(options);
 
             _aggregateTypeByName = new Cache<string, Type>(name => findAggregateType(name));
         }

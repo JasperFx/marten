@@ -84,7 +84,7 @@ namespace Marten
         /// </summary>
         /// <param name="tenantId"></param>
         /// <returns></returns>
-        ITenantOperations ForTenant(string tenantId);
+        new ITenantOperations ForTenant(string tenantId);
     }
 
     public interface ILoadByKeys<TDoc>

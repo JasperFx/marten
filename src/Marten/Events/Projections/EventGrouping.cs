@@ -5,7 +5,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections
 {
-    internal class EventGrouping<TId>
+    public class EventGrouping<TId>
     {
         private readonly Dictionary<TId, List<IEvent>> _events = new Dictionary<TId, List<IEvent>>();
 
