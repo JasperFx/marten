@@ -25,7 +25,6 @@ namespace Marten.Events.Projections
             return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>>(slices);
         }
 
-
         protected virtual IEnumerable<EventSlice<TDoc, TId>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
             var events = streams.SelectMany(x => x.Events);

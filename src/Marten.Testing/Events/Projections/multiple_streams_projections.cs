@@ -181,45 +181,12 @@ namespace Marten.Testing.Events.Projections
         public List<Guid> Groups { get; } = new();
     }
 
-    public class UserGroupsAssignmentEventSlicer: ViewProjectionEventSlicer<UserGroupsAssignment, Guid>
-    {
-        public override ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> Slice(
-            IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
-        {
-            var streamsActions = streams.ToList();
-
-            var eventsToCallQuery = streamsActions
-                .SelectMany(stream => stream.Events)
-                .Where(ev => ev.EventType == typeof(UsersAssignedToGroup))
-                .ToList();
-
-            if (eventsToCallQuery.Any())
-            {
-                foreach (var eventData in eventsToCallQuery.Select(@event => (UsersAssignedToGroup)@event.Data))
-                {
-                    var ids = eventData.UserIds;
-
-                    Groupers.Add(new MultiStreamGrouper<Guid, UsersAssignedToGroup>(x => x == eventData ? ids.ToArray() : Array.Empty<Guid>()));
-                }
-            }
-
-            return base.Slice(querySession, streamsActions, tenancy);
-        }
-
-        public override ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> Slice(
-            IQuerySession querySession, IReadOnlyList<IEvent> events, ITenancy tenancy)
-        {
-            return base.Slice(querySession, events, tenancy);
-        }
-    }
-
     public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
     {
         public UserGroupsAssignmentProjection()
         {
             Identity<UserRegistered>(@event => @event.UserId);
-
-            EventSlicer(new UserGroupsAssignmentEventSlicer());
+            Identities<UsersAssignedToGroup>(@event => @event.UserIds.ToArray());
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)
