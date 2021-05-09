@@ -34,24 +34,32 @@ namespace Marten.Events.Projections
 
         public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
-            var grouper = new Grouper<TId, TEvent>(identityFunc);
-            _eventSlicer.Groupers.Add(grouper);
+            Grouper(new Grouper<TId, TEvent>(identityFunc));
         }
 
         public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
         {
-            var grouper = new MultiStreamGrouper<TId, TEvent>(identitiesFunc);
-            _eventSlicer.Groupers.Add(grouper);
+            Grouper(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
         }
 
         public void Identities<TEvent>(Func<IQuerySession, TEvent, Task<IReadOnlyList<TId>>> identitiesFunc)
         {
-            var grouperFactory = new MultiStreamGrouperFactory<TId, TEvent>(identitiesFunc);
+            GrouperFactory(new MultiStreamGrouperFactory<TId, TEvent>(identitiesFunc));
+        }
+
+        public void GrouperFactory(IGrouperFactory<TId> grouperFactory)
+        {
             _eventSlicer.GrouperFactories.Add(grouperFactory);
+        }
+
+        public void Grouper(IGrouper<TId> grouper)
+        {
+            _eventSlicer.Groupers.Add(grouper);
         }
 
         public void EventSlicer(IViewProjectionEventSlicer<TDoc, TId> eventSlicer)
         {
+            eventSlicer.GrouperFactories.AddRange(_eventSlicer.GrouperFactories);
             eventSlicer.Groupers.AddRange(_eventSlicer.Groupers);
             eventSlicer.Fanouts.AddRange(_eventSlicer.Fanouts);
 
