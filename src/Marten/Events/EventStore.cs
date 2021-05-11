@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Archiving;
 using Marten.Events.Querying;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -477,6 +478,18 @@ namespace Marten.Events
         public Task AppendExclusive(Guid streamId, params object[] events)
         {
             return AppendExclusive(streamId, CancellationToken.None, events);
+        }
+
+        public void ArchiveStream(Guid streamId)
+        {
+            var op = new ArchiveStreamOperation(_store.Events, streamId);
+            _session.QueueOperation(op);
+        }
+
+        public void ArchiveStream(string streamKey)
+        {
+            var op = new ArchiveStreamOperation(_store.Events, streamKey);
+            _session.QueueOperation(op);
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
+using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Operations;
 using Marten.Events.Projections;
@@ -110,6 +111,7 @@ namespace Marten.Events
         ///     Not using this can result in race conditions in a concurrent environment that lead to
         ///       event version mismatches between the event and stream version numbers
         /// </remarks>
+        [Obsolete("This is no longer used!")]
         public bool UseAppendEventForUpdateLock { get; set; } = false;
 
         /// <summary>
@@ -225,7 +227,8 @@ namespace Marten.Events
                     new EventProgressionTable(DatabaseSchemaName),
                     sequence,
                     new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
-                    Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event"))
+                    Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event")),
+                    new ArchiveStreamFunction(this)
                 };
             }
         }

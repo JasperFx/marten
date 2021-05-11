@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using LamarCodeGeneration;
+using Marten.Events.Archiving;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql;
@@ -52,10 +53,15 @@ namespace Marten.Events.Schema
                 Writes = false, Type = "timestamptz"
             }).NotNull().DefaultValueByString("(now())");
 
+
             if (events.TenancyStyle != TenancyStyle.Conjoined)
             {
                 AddColumn<TenantIdColumn>();
             }
+
+            AddColumn<IsArchivedColumn>();
+
+
         }
     }
 

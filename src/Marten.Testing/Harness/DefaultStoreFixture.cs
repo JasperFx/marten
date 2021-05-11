@@ -4,6 +4,7 @@ namespace Marten.Testing.Harness
     {
         public DefaultStoreFixture() : base("public")
         {
+
         }
     }
 }

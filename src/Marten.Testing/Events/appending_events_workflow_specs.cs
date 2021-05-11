@@ -341,6 +341,7 @@ namespace Marten.Testing.Events
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                 });
 
+                // TODO -- do this lazily!
                 Store.Advanced.Clean.CompletelyRemoveAll();
 
                 StreamId = Guid.NewGuid();

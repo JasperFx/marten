@@ -73,6 +73,8 @@ namespace Marten.Testing.Events.Aggregation
         {
             aggregate.ACount++;
         }
+
+        public Guid Tracker { get; } = Guid.NewGuid();
     }
 
     public class BEvent : ITabulator

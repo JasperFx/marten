@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Marten.Events.Archiving;
 using Weasel.Postgresql;
-using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql.Tables;
@@ -31,6 +31,8 @@ namespace Marten.Events.Schema
             AddIfActive(events.Metadata.CorrelationId);
             AddIfActive(events.Metadata.CausationId);
             AddIfActive(events.Metadata.Headers);
+
+
 
             if (events.TenancyStyle == TenancyStyle.Conjoined)
             {
@@ -69,6 +71,8 @@ namespace Marten.Events.Schema
                 Columns = new string[]{"id"},
                 IsUnique = true
             });
+
+            AddColumn<IsArchivedColumn>();
         }
 
         internal IList<IEventTableColumn> SelectColumns()

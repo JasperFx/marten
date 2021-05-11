@@ -483,5 +483,17 @@ namespace Marten.Events
         /// <exception cref="NonExistentStreamException"></exception>
         /// <returns></returns>
         Task AppendExclusive(Guid streamId, params object[] events);
+
+        /// <summary>
+        /// Mark a stream and all its events as archived
+        /// </summary>
+        /// <param name="streamId"></param>
+        void ArchiveStream(Guid streamId);
+
+        /// <summary>
+        /// Mark a stream and all its events as archived
+        /// </summary>
+        /// <param name="streamKey"></param>
+        void ArchiveStream(string streamKey);
     }
 }

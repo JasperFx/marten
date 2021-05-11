@@ -95,6 +95,12 @@ namespace Marten.Events
         /// <param name="key"></param>
         /// <returns></returns>
         object? GetHeader(string key);
+
+        /// <summary>
+        /// Has this event been archived and no longer applicable
+        /// to projected views
+        /// </summary>
+        bool IsArchived { get; set; }
     }
 
     #endregion sample_IEvent
@@ -184,6 +190,8 @@ namespace Marten.Events
         {
             return Headers?[key];
         }
+
+        public bool IsArchived { get; set; }
 
         protected bool Equals(Event<T> other)
         {

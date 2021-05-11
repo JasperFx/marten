@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Events.Archiving;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -41,6 +43,7 @@ namespace Marten.Events
     {
         protected readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
+        private WhereFragment _defaultWhereFragment;
 
         protected EventMapping(EventGraph parent, Type eventType)
         {
@@ -55,6 +58,7 @@ namespace Marten.Events
             _inner = new DocumentMapping(eventType, parent.Options);
 
             DotNetTypeName = $"{eventType.FullName}, {eventType.Assembly.GetName().Name}";
+            _defaultWhereFragment = new WhereFragment($"d.type = '{EventTypeName}'");
         }
 
         Type IEventType.EventType => DocumentType;
@@ -105,12 +109,29 @@ namespace Marten.Events
 
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
-            return new CompoundWhereFragment("and", DefaultWhereFragment(), query);
+            var extras = extraFilters(query).ToList();
+
+            if (extras.Count > 0)
+            {
+                extras.Add(query);
+                return new CompoundWhereFragment("and", extras.ToArray());
+            }
+
+            return query;
+        }
+
+        private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
+        {
+            yield return _defaultWhereFragment;
+            if (!query.Flatten().OfType<IArchiveFilter>().Any())
+            {
+                yield return IsNotArchivedFilter.Instance;
+            }
         }
 
         public ISqlFragment DefaultWhereFragment()
         {
-            return new WhereFragment($"d.type = '{EventTypeName}'");
+            return new CompoundWhereFragment("and", _defaultWhereFragment, IsNotArchivedFilter.Instance);
         }
 
         public abstract IEvent Wrap(object data);

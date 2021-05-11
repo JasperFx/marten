@@ -37,6 +37,11 @@ namespace Marten.Events
         /// </summary>
         public string? Key { get; set;}
 
+        /// <summary>
+        /// Is this event stream marked as archived
+        /// </summary>
+        public bool IsArchived { get; set; }
+
         // This needs to stay public
 #nullable disable
         public StreamState()

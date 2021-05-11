@@ -4,7 +4,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events
+namespace Marten.Testing.Events.Bugs
 {
     public class Bug_705_FetchStreamState_before_AggregateStream: BugIntegrationContext
     {

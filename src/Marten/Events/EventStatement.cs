@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
@@ -54,6 +55,8 @@ namespace Marten.Events
 
         private IEnumerable<ISqlFragment> filters()
         {
+            yield return IsNotArchivedFilter.Instance;
+
             if (Range != null)
             {
                 yield return new WhereFragment("d.seq_id > ?", Range.SequenceFloor);

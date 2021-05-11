@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Marten.Events.Archiving;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
@@ -18,7 +20,6 @@ using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
-using Marten.Util;
 using Remotion.Linq;
 
 namespace Marten.Events
@@ -125,12 +126,22 @@ namespace Marten.Events
         public IFieldMapping Fields { get; }
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
-            return query;
+            if (query.Flatten().OfType<IArchiveFilter>().Any()) return query;
+
+            if (query.Contains(IsArchivedColumn.ColumnName)) return query;
+
+            if (query is CompoundWhereFragment c)
+            {
+                c.Add(IsNotArchivedFilter.Instance);
+                return c;
+            }
+
+            return new CompoundWhereFragment("and", new[] {query, IsNotArchivedFilter.Instance});
         }
 
         public ISqlFragment DefaultWhereFragment()
         {
-            return null;
+            return IsNotArchivedFilter.Instance;
         }
 
         public bool UseOptimisticConcurrency { get; } = false;

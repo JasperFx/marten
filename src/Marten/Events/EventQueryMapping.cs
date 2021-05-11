@@ -30,6 +30,7 @@ namespace Marten.Events
 
             duplicateField(x => x.Version, "version");
             duplicateField(x => x.Timestamp, "timestamp");
+            duplicateField(x => x.IsArchived, "is_archived");
 
             if (storeOptions.EventGraph.Metadata.CorrelationId.Enabled)
             {

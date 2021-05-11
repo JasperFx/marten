@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Baseline.ImTools;
 using Baseline.Reflection;
+using Marten.Events.Archiving;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.LastModified;
@@ -77,6 +78,9 @@ namespace Marten
             new IsDeletedParser(),
             new DeletedSinceParser(),
             new DeletedBeforeParser(),
+
+            // event is archived
+            new MaybeArchivedMethodCallParser(),
 
             // last modified
             new ModifiedSinceParser(),

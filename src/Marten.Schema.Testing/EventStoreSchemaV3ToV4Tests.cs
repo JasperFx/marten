@@ -89,6 +89,12 @@ namespace Marten.Schema.Testing
                 conn.CreateCommand($"alter table {_schemaName}.mt_events alter column version type int")
                     .ExecuteNonQuery();
 
+                conn.CreateCommand($"alter table {_schemaName}.mt_events drop column is_archived")
+                    .ExecuteNonQuery();
+
+                conn.CreateCommand($"alter table {_schemaName}.mt_streams drop column is_archived")
+                    .ExecuteNonQuery();
+
                 // version as integer in mt_streams
                 conn.CreateCommand($"alter table {_schemaName}.mt_streams alter column version type int")
                     .ExecuteNonQuery();

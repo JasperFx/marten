@@ -53,7 +53,7 @@ namespace Marten.Testing.Events
         }
 
         [Fact]
-        public async Task can_build_the_event_schema_objects_in_a_separted_schema()
+        public async Task can_build_the_event_schema_objects_in_a_different_schema()
         {
             var store = StoreOptions(_ =>
             {

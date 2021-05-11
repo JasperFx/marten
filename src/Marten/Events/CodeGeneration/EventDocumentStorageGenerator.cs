@@ -9,6 +9,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
+using Marten.Events.Archiving;
 using Marten.Events.Operations;
 using Marten.Events.Querying;
 using Marten.Events.Schema;
@@ -215,6 +216,9 @@ namespace Marten.Events.CodeGeneration
             sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 4, x => x.Created);
             async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 4, x => x.Created);
 
+            sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 5, x => x.IsArchived);
+            async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 5, x => x.IsArchived);
+
             sync.Frames.Return(typeof(StreamState));
             async.Frames.Return(typeof(StreamState));
 
@@ -224,7 +228,7 @@ namespace Marten.Events.CodeGeneration
         private static void buildConfigureCommandMethodForStreamState(EventGraph graph, GeneratedType streamQueryHandlerType)
         {
             var sql =
-                $"select id, version, type, timestamp, created as timestamp from {graph.DatabaseSchemaName}.mt_streams where id = ?";
+                $"select id, version, type, timestamp, created as timestamp, is_archived from {graph.DatabaseSchemaName}.mt_streams where id = ?";
             if (graph.TenancyStyle == TenancyStyle.Conjoined)
             {
                 streamQueryHandlerType.AllInjectedFields.Add(new InjectedField(typeof(string), "tenantId"));
@@ -257,7 +261,10 @@ namespace Marten.Events.CodeGeneration
             configure.DerivedVariables.Add(new Variable(typeof(IEvent), nameof(AppendEventOperationBase.Event)));
             configure.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(AppendEventOperationBase.Stream)));
 
-            var columns = new EventsTable(graph).SelectColumns();
+            var columns = new EventsTable(graph).SelectColumns()
+
+                // TODO - Hokey, use an explicit model for writeable vs readable columns
+                .Where(x => !(x is IsArchivedColumn)).ToList();
 
             var sql =
                 $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
