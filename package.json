@@ -9,9 +9,9 @@
     "docs-build": "vitepress build docs"
   },
   "devDependencies": {
-    "chai": "^4.2.0",
+    "chai": "^4.3.4",
     "lodash": "^4.17.21",
-    "mocha": "^7.2.0",
-    "vitepress": "^0.13.0"
+    "mocha": "^8.4.0",
+    "vitepress": "^0.13.2"
   }
 }
