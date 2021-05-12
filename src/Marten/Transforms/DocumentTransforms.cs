@@ -16,7 +16,7 @@ using Remotion.Linq.Clauses;
 
 namespace Marten.Transforms
 {
-    public class DocumentTransforms: IDocumentTransforms
+    internal class DocumentTransforms: IDocumentTransforms
     {
         private readonly DocumentStore _store;
         private readonly ITenant _tenant;
