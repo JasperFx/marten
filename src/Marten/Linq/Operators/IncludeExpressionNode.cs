@@ -6,7 +6,7 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq.Operators
 {
-    public class IncludeExpressionNode: ResultOperatorExpressionNodeBase
+    internal class IncludeExpressionNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
             typeof(QueryableExtensions).GetMethods().Where(m => m.Name == "Include")

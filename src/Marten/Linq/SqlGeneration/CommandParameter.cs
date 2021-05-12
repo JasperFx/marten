@@ -6,6 +6,7 @@ using NpgsqlTypes;
 
 namespace Marten.Linq.SqlGeneration
 {
+    // TODO -- move to Weasel
     public class CommandParameter : ISqlFragment
     {
         public CommandParameter()

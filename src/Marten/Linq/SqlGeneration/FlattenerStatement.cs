@@ -6,7 +6,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class FlattenerStatement : Statement
+    internal class FlattenerStatement : Statement
     {
         private readonly ArrayField _field;
         private readonly string _sourceTable;

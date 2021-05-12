@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Linq.Selectors
 {
-    public class SerializationSelector<T>: ISelector<T>
+    internal class SerializationSelector<T>: ISelector<T>
     {
         private readonly ISerializer _serializer;
 

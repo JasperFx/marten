@@ -4,7 +4,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class CountStatement<T> : SelectorStatement where T : struct
+    internal class CountStatement<T> : SelectorStatement where T : struct
     {
         public CountStatement(Statement parent) : base(new ScalarSelectClause<T>("count(*)", parent.ExportName), parent.Fields)
         {

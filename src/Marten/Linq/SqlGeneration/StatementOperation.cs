@@ -16,7 +16,7 @@ using Remotion.Linq.Clauses;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class StatementOperation : DocumentStatement, IStorageOperation
+    internal class StatementOperation : DocumentStatement, IStorageOperation
     {
         private readonly IOperationFragment _operation;
 

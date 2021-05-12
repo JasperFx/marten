@@ -1,6 +1,6 @@
 namespace Marten.Linq.SqlGeneration
 {
-    public interface IScalarSelectClause
+    internal interface IScalarSelectClause
     {
         void ApplyOperator(string op);
         ISelectClause CloneToDouble();

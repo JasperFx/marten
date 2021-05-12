@@ -6,7 +6,7 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq.Operators
 {
-    public class ToJsonArrayExpressionNode: ResultOperatorExpressionNodeBase
+    internal class ToJsonArrayExpressionNode: ResultOperatorExpressionNodeBase
     {
         public static MethodInfo[] SupportedMethods =
             typeof(CompiledQueryExtensions).GetMethods().Where(m => m.Name == nameof(CompiledQueryExtensions.ToJsonArray)).ToArray();

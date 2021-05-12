@@ -6,7 +6,7 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq.Operators
 {
-    public class StatsExpressionNode: ResultOperatorExpressionNodeBase
+    internal class StatsExpressionNode: ResultOperatorExpressionNodeBase
     {
         public LambdaExpression Stats { get; set; }
 

@@ -3,7 +3,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class ScalarSelectManyStatement<T>: SelectorStatement where T : struct
+    internal class ScalarSelectManyStatement<T>: SelectorStatement where T : struct
     {
         public static string ToLocator(ISerializer serializer)
         {

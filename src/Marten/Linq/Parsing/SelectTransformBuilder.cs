@@ -10,7 +10,7 @@ using Remotion.Linq.Parsing;
 
 namespace Marten.Linq.Parsing
 {
-    public class SelectTransformBuilder : RelinqExpressionVisitor
+    internal class SelectTransformBuilder : RelinqExpressionVisitor
     {
         private TargetObject _target;
         private SelectedField _currentField;

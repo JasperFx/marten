@@ -6,7 +6,7 @@ using Remotion.Linq.Clauses.StreamedData;
 
 namespace Marten.Linq.Operators
 {
-    public class StatsResultOperator
+    internal class StatsResultOperator
         : SequenceTypePreservingResultOperatorBase
     {
         public LambdaExpression Stats { get; set; }

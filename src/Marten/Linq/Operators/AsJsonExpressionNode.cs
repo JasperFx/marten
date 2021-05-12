@@ -7,7 +7,7 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace Marten.Linq.Operators
 {
-    public class AsJsonMatcher: IMethodCallMatcher
+    internal class AsJsonMatcher: IMethodCallMatcher
     {
         public bool TryMatch(MethodCallExpression expression, ExpressionVisitor selectorVisitor,
             out ResultOperatorBase op)

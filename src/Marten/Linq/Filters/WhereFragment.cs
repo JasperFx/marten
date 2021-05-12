@@ -6,6 +6,7 @@ using Marten.Util;
 
 namespace Marten.Linq.Filters
 {
+    // TODO -- move to Weasel
     public class CustomizableWhereFragment: ISqlFragment
     {
         private readonly string _sql;
@@ -39,6 +40,7 @@ namespace Marten.Linq.Filters
         }
     }
 
+    // TODO -- move to Weasel
     public class WhereFragment: CustomizableWhereFragment
     {
         public WhereFragment(string sql, params object[] parameters) : base(sql, "?", parameters.Select(x => new CommandParameter(x)).ToArray())

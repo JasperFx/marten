@@ -8,7 +8,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.SoftDeletes
 {
-    public class IsDeletedParser: IMethodCallParser
+    internal class IsDeletedParser: IMethodCallParser
     {
         private static readonly MethodInfo _method =
             typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.IsDeleted));

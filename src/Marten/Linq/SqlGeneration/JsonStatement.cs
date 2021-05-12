@@ -5,7 +5,7 @@ using Marten.Linq.Includes;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class JsonStatement : SelectorStatement
+    internal class JsonStatement : SelectorStatement
     {
         public JsonStatement(Type documentType, IFieldMapping fields, Statement parent) : base(typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parent.ExportName,
             documentType), fields)

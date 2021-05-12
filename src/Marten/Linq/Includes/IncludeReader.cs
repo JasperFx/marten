@@ -6,7 +6,7 @@ using Marten.Linq.Selectors;
 
 namespace Marten.Linq.Includes
 {
-    public class IncludeReader<T>: IIncludeReader
+    internal class IncludeReader<T>: IIncludeReader
     {
         private readonly Action<T> _callback;
         private readonly ISelector<T> _selector;

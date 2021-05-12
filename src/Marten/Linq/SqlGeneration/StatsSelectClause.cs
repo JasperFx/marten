@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class StatsSelectClause<T> : ISelectClause
+    internal class StatsSelectClause<T> : ISelectClause
     {
         private QueryStatistics _statistics;
 

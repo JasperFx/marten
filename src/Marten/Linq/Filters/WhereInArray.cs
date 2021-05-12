@@ -5,6 +5,7 @@ using Marten.Util;
 
 namespace Marten.Linq.Filters
 {
+    // TODO -- move to Weasel
     public class WhereInArray: ISqlFragment
     {
         private readonly string _locator;

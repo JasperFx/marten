@@ -17,7 +17,7 @@ using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries
 {
-    public class CompiledQuerySourceBuilder
+    internal class CompiledQuerySourceBuilder
     {
         private readonly CompiledQueryPlan _plan;
         private readonly StoreOptions _storeOptions;

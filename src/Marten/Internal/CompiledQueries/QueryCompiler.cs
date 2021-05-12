@@ -14,7 +14,7 @@ using Npgsql;
 
 namespace Marten.Internal.CompiledQueries
 {
-    public class QueryCompiler
+    internal class QueryCompiler
     {
         internal static readonly IList<IParameterFinder> Finders = new List<IParameterFinder>{new EnumParameterFinder()};
 

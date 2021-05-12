@@ -107,7 +107,7 @@ namespace Marten.Internal.CompiledQueries
 
         public IList<MemberInfo> IncludeMembers { get; } = new List<MemberInfo>();
 
-        public IList<IIncludePlan> IncludePlans { get; } = new List<IIncludePlan>();
+        internal IList<IIncludePlan> IncludePlans { get; } = new List<IIncludePlan>();
 
 
         public QueryStatistics GetStatisticsIfAny(object query)

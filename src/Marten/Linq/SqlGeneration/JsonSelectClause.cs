@@ -16,7 +16,7 @@ using TypeExtensions = LamarCodeGeneration.Util.TypeExtensions;
 namespace Marten.Linq.SqlGeneration
 {
 
-    public class JsonSelectClause: ISelectClause
+    internal class JsonSelectClause: ISelectClause
     {
         private readonly Type _sourceType;
 
