@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -55,14 +56,12 @@ namespace Marten.Testing.Bugs
             _initialData = initialData;
         }
 
-        public void Populate(IDocumentStore store)
+        public async Task Populate(IDocumentStore store)
         {
-            using (var session = store.LightweightSession())
-            {
-                // Marten UPSERT will cater for existing records
-                session.Store(_initialData);
-                session.SaveChanges();
-            }
+            using var session = store.LightweightSession();
+            // Marten UPSERT will cater for existing records
+            session.Store(_initialData);
+            await session.SaveChangesAsync();
         }
     }
 

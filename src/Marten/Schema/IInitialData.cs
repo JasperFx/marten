@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 #nullable enable
 namespace Marten.Schema
 {
@@ -11,6 +13,6 @@ namespace Marten.Schema
         /// Apply the data loading
         /// </summary>
         /// <param name="store"></param>
-        void Populate(IDocumentStore store);
+        Task Populate(IDocumentStore store);
     }
 }

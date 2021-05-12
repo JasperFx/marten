@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -44,15 +45,13 @@ namespace Marten.Testing.Bugs
             _initialData = initialData;
         }
 
-        public void Populate(IDocumentStore store)
+        public async Task Populate(IDocumentStore store)
         {
-            using (var session = store.OpenSession())
+            using var session = store.OpenSession();
+            if (!session.Query<Aggregate1495>().Any())
             {
-                if (!session.Query<Aggregate1495>().Any())
-                {
-                    session.Store(_initialData);
-                    session.SaveChanges();
-                }
+                session.Store(_initialData);
+                await session.SaveChangesAsync();
             }
         }
     }
