@@ -9,7 +9,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Storage
 {
-    public class TenantSchema: IDocumentSchema
+    internal class TenantSchema: IDocumentSchema
     {
         private readonly StorageFeatures _features;
         private readonly Tenant _tenant;

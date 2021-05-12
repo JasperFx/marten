@@ -5,7 +5,7 @@ using Weasel.Postgresql.Functions;
 
 namespace Marten.Storage
 {
-    public class SystemFunction: Function
+    internal class SystemFunction: Function
     {
         private readonly string _args;
 

@@ -19,7 +19,7 @@ using Weasel.Postgresql.Tables;
 #nullable enable
 namespace Marten.Storage
 {
-    public class DefaultTenancy: Tenancy, ITenancy
+    internal class DefaultTenancy: Tenancy, ITenancy
     {
         public DefaultTenancy(IConnectionFactory factory, StoreOptions options) : base(options)
         {
