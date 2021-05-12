@@ -11,7 +11,7 @@ using Marten.Util;
 #nullable enable
 namespace Marten.Patching
 {
-    public class PatchExpression<T>: IPatchExpression<T>
+    internal class PatchExpression<T>: IPatchExpression<T>
     {
         private readonly ISqlFragment? _filter;
         private readonly Expression<Func<T, bool>>? _filterExpression;
