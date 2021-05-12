@@ -9,6 +9,12 @@ namespace Marten.Events.Projections
         IReadOnlyList<IEvent> Events { get; }
     }
 
+    /// <summary>
+    /// A grouping of events that will be applied to an aggregate of type TDoc
+    /// with the identity TId
+    /// </summary>
+    /// <typeparam name="TDoc"></typeparam>
+    /// <typeparam name="TId"></typeparam>
     public class EventSlice<TDoc, TId>: IEventSlice
     {
         private readonly List<IEvent> _events = new List<IEvent>();
@@ -30,21 +36,42 @@ namespace Marten.Events.Projections
         public StreamActionType ActionType => _events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
 
 
+        /// <summary>
+        /// The aggregate identity
+        /// </summary>
         public TId Id { get; }
+
+        /// <summary>
+        /// The current tenant
+        /// </summary>
         public ITenant Tenant { get; }
 
+        /// <summary>
+        /// The related aggregate document
+        /// </summary>
         public TDoc? Aggregate { get; set; }
 
+        /// <summary>
+        /// Add a single event to this slice
+        /// </summary>
+        /// <param name="e"></param>
         public void AddEvent(IEvent e)
         {
             _events.Add(e);
         }
 
+        /// <summary>
+        /// Add a grouping of events to this slice
+        /// </summary>
+        /// <param name="events"></param>
         public void AddEvents(IEnumerable<IEvent> events)
         {
             _events.AddRange(events);
         }
 
+        /// <summary>
+        /// All the events in this slice
+        /// </summary>
         public IReadOnlyList<IEvent> Events => _events;
 
         internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)

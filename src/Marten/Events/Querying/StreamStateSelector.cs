@@ -10,6 +10,9 @@ using Marten.Util;
 namespace Marten.Events.Querying
 {
 
+    /// <summary>
+    /// Internal base class for generated stream state query handling
+    /// </summary>
     public abstract class StreamStateQueryHandler : IQueryHandler<StreamState>
     {
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);

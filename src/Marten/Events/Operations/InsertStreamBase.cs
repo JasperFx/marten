@@ -13,6 +13,7 @@ using Marten.Util;
 
 namespace Marten.Events.Operations
 {
+    // Leave public for codegen!
     public abstract class InsertStreamBase : IStorageOperation, IExceptionTransform
     {
         public InsertStreamBase(StreamAction stream)

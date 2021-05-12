@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Projections
 {
+    // Leave public for codegen!
     public abstract class AsyncProjectionBase: IProjection
     {
         public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)

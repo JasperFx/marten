@@ -6,6 +6,10 @@ using Marten.Events.Projections;
 namespace Marten.Events.Aggregation
 {
 
+    /// <summary>
+    /// Internal base type for live aggregators with at least one asynchronous method
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public abstract class AsyncLiveAggregatorBase<T> : ILiveAggregator<T> where T : class
     {
         public abstract ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot,

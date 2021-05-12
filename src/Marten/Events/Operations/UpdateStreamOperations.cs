@@ -11,6 +11,7 @@ using Marten.Util;
 
 namespace Marten.Events.Operations
 {
+    // Leave public for codegen!
     public abstract class UpdateStreamVersion : IStorageOperation
     {
         public StreamAction Stream { get; }

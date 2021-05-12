@@ -8,6 +8,13 @@ namespace Marten.Events
 {
     public static class EventStoreExtensions
     {
+        /// <summary>
+        /// Aggregate the events in this query to the type T
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="state"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static T AggregateTo<T>(this IMartenQueryable<IEvent> queryable, T state = null) where T : class
         {
             var events = queryable.ToList();
@@ -24,6 +31,14 @@ namespace Marten.Events
             return aggregate;
         }
 
+        /// <summary>
+        /// Aggregate the events in this query to the type T
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="state"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public static async Task<T> AggregateToAsync<T>(this IMartenQueryable<IEvent> queryable, T state = null,
                                                         CancellationToken token = new ()) where T : class
         {

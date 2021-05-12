@@ -102,15 +102,30 @@ namespace Marten.Events
             return this;
         }
 
-
+        /// <summary>
+        /// The events involved in this action
+        /// </summary>
         public IReadOnlyList<IEvent> Events => _events;
+
+        /// <summary>
+        /// The expected starting version of the stream in the server. This is used
+        /// to facilitate optimistic concurrency checks
+        /// </summary>
         public long? ExpectedVersionOnServer { get; internal set; }
 
+        /// <summary>
+        /// The ending version of the stream for this action
+        /// </summary>
         public long Version { get; internal set; }
 
-
+        /// <summary>
+        /// The recorded timestamp for these events
+        /// </summary>
         public DateTime? Timestamp { get; internal set; }
 
+        /// <summary>
+        /// When was the stream created
+        /// </summary>
         public DateTime? Created { get; internal set; }
 
 
@@ -315,14 +330,14 @@ namespace Marten.Events
             }
         }
 
-        public static StreamAction For(Guid streamId, IReadOnlyList<IEvent> events)
+        internal static StreamAction For(Guid streamId, IReadOnlyList<IEvent> events)
         {
             var action = events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
             return new StreamAction(streamId, action)
                 .AddEvents(events);
         }
 
-        public static StreamAction For(string streamKey, IReadOnlyList<IEvent> events)
+        internal static StreamAction For(string streamKey, IReadOnlyList<IEvent> events)
         {
             var action = events[0].Version == 1 ? StreamActionType.Start : StreamActionType.Append;
             return new StreamAction(streamKey, action)

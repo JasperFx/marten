@@ -16,6 +16,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation
 {
+    /// <summary>
+    /// Intermediate grouping of events by tenant within the asynchronous projection support
+    /// </summary>
+    /// <typeparam name="TDoc"></typeparam>
+    /// <typeparam name="TId"></typeparam>
     public class TenantSliceGroup<TDoc, TId> : IDisposable
     {
         public ITenant Tenant { get; }
