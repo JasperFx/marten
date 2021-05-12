@@ -19,7 +19,7 @@ namespace Marten.Services.BatchQuerying
         Task<TValue?> SingleOrDefault();
     }
 
-    public class TransformedBatchQueryable<TValue>: ITransformedBatchQueryable<TValue>
+    internal class TransformedBatchQueryable<TValue>: ITransformedBatchQueryable<TValue>
     {
         private readonly BatchedQuery _parent;
         private readonly IMartenQueryable<TValue> _inner;

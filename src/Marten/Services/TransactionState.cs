@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace Marten.Services
 {
-    public class TransactionState: IDisposable, IAsyncDisposable
+    internal class TransactionState: IDisposable, IAsyncDisposable
     {
         private readonly CommandRunnerMode _mode;
         private readonly IsolationLevel _isolationLevel;

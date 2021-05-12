@@ -4,25 +4,22 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Querying;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq;
-using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq.Clauses;
+
 #nullable enable
 namespace Marten.Services.BatchQuerying
 {
-    public class BatchedQuery: IBatchedQuery, IBatchEvents
+    internal class BatchedQuery: IBatchedQuery, IBatchEvents
     {
-        private static readonly MartenQueryParser QueryParser = new MartenQueryParser();
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
         private readonly QuerySession _parent;
         private readonly IManagedConnection _runner;
@@ -73,7 +70,9 @@ namespace Marten.Services.BatchQuerying
         public async Task Execute(CancellationToken token = default)
         {
             if (!_items.Any())
+            {
                 return;
+            }
 
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
@@ -88,7 +87,9 @@ namespace Marten.Services.BatchQuerying
                     var hasNext = await reader.NextResultAsync(token);
 
                     if (!hasNext)
+                    {
                         throw new InvalidOperationException("There is no next result to read over.");
+                    }
 
                     await item.ReadAsync(reader, _parent, token);
                 }
@@ -98,7 +99,9 @@ namespace Marten.Services.BatchQuerying
         public void ExecuteSynchronously()
         {
             if (!_items.Any())
+            {
                 return;
+            }
 
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
@@ -112,7 +115,9 @@ namespace Marten.Services.BatchQuerying
                     var hasNext = reader.NextResult();
 
                     if (!hasNext)
+                    {
                         throw new InvalidOperationException("There is no next result to read over.");
+                    }
 
                     item.Read(reader, _parent);
                 }
@@ -239,7 +244,7 @@ namespace Marten.Services.BatchQuerying
             return addItem<T, double>(queryable, LinqConstants.AverageOperator);
         }
 
-        public class BatchLoadByKeys<TDoc>: IBatchLoadByKeys<TDoc> where TDoc : class
+        internal class BatchLoadByKeys<TDoc>: IBatchLoadByKeys<TDoc> where TDoc : class
         {
             private readonly BatchedQuery _parent;
 

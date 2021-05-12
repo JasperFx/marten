@@ -7,7 +7,7 @@ using Marten.Linq.QueryHandlers;
 #nullable enable
 namespace Marten.Services.BatchQuerying
 {
-    public interface IBatchQueryItem
+    internal interface IBatchQueryItem
     {
         IQueryHandler Handler { get; }
 

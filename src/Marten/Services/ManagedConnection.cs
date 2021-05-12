@@ -12,7 +12,7 @@ using IsolationLevel = System.Data.IsolationLevel;
 
 namespace Marten.Services
 {
-    public class ManagedConnection: IManagedConnection
+    internal class ManagedConnection: IManagedConnection
     {
         private readonly IConnectionFactory _factory;
         private readonly CommandRunnerMode _mode;

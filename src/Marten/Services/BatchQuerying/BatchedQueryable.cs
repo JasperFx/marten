@@ -8,7 +8,7 @@ using Marten.Linq;
 #nullable enable
 namespace Marten.Services.BatchQuerying
 {
-    public class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
+    internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
     {
         private readonly BatchedQuery _parent;
         private IMartenQueryable<T> _inner;

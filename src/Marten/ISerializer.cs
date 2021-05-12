@@ -147,7 +147,15 @@ namespace Marten
     /// </summary>
     public enum CollectionStorage
     {
+        /// <summary>
+        /// Use default serialization for collections according to the serializer
+        /// being used
+        /// </summary>
         Default,
+
+        /// <summary>
+        /// Direct the underlying serializer to serialize collections as JSON arrays
+        /// </summary>
         AsArray
     }
 
