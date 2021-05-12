@@ -41,6 +41,10 @@ namespace Marten
             new VersionedPolicy(), new SoftDeletedPolicy(), new TrackedPolicy(), new TenancyPolicy()
         };
 
+        /// <summary>
+        /// Register "initial data loads" that will be applied to the DocumentStore when it is
+        /// bootstrapped
+        /// </summary>
         public readonly IList<IInitialData> InitialData = new List<IInitialData>();
 
         /// <summary>
@@ -84,12 +88,18 @@ namespace Marten
 
         }
 
+        /// <summary>
+        /// Access to adding custom schema features to this Marten-enabled Postgresql database
+        /// </summary>
         public StorageFeatures Storage { get; }
 
         internal Action<IDatabaseCreationExpressions>? CreateDatabases { get; set; }
 
         internal IProviderGraph Providers { get; }
 
+        /// <summary>
+        /// Advanced configuration options for this DocumentStore
+        /// </summary>
         public AdvancedOptions Advanced { get; }
 
         internal EventGraph EventGraph { get; }
@@ -104,6 +114,7 @@ namespace Marten
         /// </summary>
         public LinqParsing Linq { get; } = new();
 
+        [Obsolete("Will need to move out as part of the PLv8 isolation")]
         public ITransforms Transforms { get; }
 
         /// <summary>
@@ -142,16 +153,28 @@ namespace Marten
         /// </summary>
         public int UpdateBatchSize { get; set; } = 500;
 
+        /// <summary>
+        /// Retrieve the currently configured serializer
+        /// </summary>
+        /// <returns></returns>
         public ISerializer Serializer()
         {
             return _serializer ?? SerializerFactory.New();
         }
 
+        /// <summary>
+        /// Retrieve the currently configured logger for this DocumentStore
+        /// </summary>
+        /// <returns></returns>
         public IMartenLogger Logger()
         {
             return _logger ?? new NulloMartenLogger();
         }
 
+        /// <summary>
+        /// Retrieve the current retry policy for this DocumentStore
+        /// </summary>
+        /// <returns></returns>
         public IRetryPolicy RetryPolicy()
         {
             return _retryPolicy ?? new NulloRetryPolicy();
@@ -162,13 +185,18 @@ namespace Marten
             return Storage.AllDocumentMappings.OfType<IDocumentType>().ToList();
         }
 
-        public IDocumentType FindOrResolveDocumentType(Type documentType)
+
+        IDocumentType IReadOnlyStoreOptions.FindOrResolveDocumentType(Type documentType)
         {
             return (Storage.FindMapping(documentType).Root as IDocumentType)!;
         }
 
+        /// <summary>
+        /// Get or set the tenancy model for this DocumentStore
+        /// </summary>
         public ITenancy Tenancy { get; set; } = null!;
 
+        [Obsolete("Remove when PLv8 is isolated")]
         public bool PLV8Enabled { get; set; } = true;
 
         IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
@@ -199,13 +227,6 @@ namespace Marten
 
                 Transforms.Load(patching);
             }
-        }
-
-        internal ChildDocument GetChildDocument(string locator, Type documentType)
-        {
-            var byType = _childDocs.GetOrAdd(documentType, _ => new ConcurrentDictionary<string, ChildDocument>());
-
-            return byType.GetOrAdd(locator, _ => new ChildDocument(locator, documentType, this));
         }
 
         /// <summary>
@@ -282,11 +303,19 @@ namespace Marten
             _serializer = new T();
         }
 
+        /// <summary>
+        /// Replace the Marten logging strategy
+        /// </summary>
+        /// <param name="logger"></param>
         public void Logger(IMartenLogger logger)
         {
             _logger = logger;
         }
 
+        /// <summary>
+        /// Replace the Marten retry policy
+        /// </summary>
+        /// <param name="retryPolicy"></param>
         public void RetryPolicy(IRetryPolicy retryPolicy)
         {
             _retryPolicy = retryPolicy;
@@ -470,11 +499,6 @@ namespace Marten
                 });
             }
         }
-    }
-
-    public interface IDocumentPolicy
-    {
-        void Apply(DocumentMapping mapping);
     }
 
     internal class LambdaDocumentPolicy: IDocumentPolicy
