@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Baseline;
-using LamarCodeGeneration.Frames;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Identity;
@@ -12,7 +11,6 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
-using Remotion.Linq.Parsing.ExpressionVisitors.Transformation.PredefinedTransformations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -284,6 +282,12 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Create a full text index
+            /// </summary>
+            /// <param name="regConfig"></param>
+            /// <param name="configure"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> FullTextIndex(string regConfig = Schema.FullTextIndex.DefaultRegConfig,
                 Action<FullTextIndex>? configure = null)
             {
@@ -291,18 +295,33 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Create a full text index
+            /// </summary>
+            /// <param name="configure"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure)
             {
                 _builder.Alter = m => m.AddFullTextIndex(Schema.FullTextIndex.DefaultRegConfig, configure);
                 return this;
             }
 
+            /// <summary>
+            /// Create a full text index against designated fields on this document
+            /// </summary>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> FullTextIndex(params Expression<Func<T, object>>[] expressions)
             {
                 FullTextIndex(Schema.FullTextIndex.DefaultRegConfig, expressions);
                 return this;
             }
 
+            /// <summary>
+            /// Create a full text index against designated fields on this document
+            /// </summary>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> FullTextIndex(string regConfig,
                 params Expression<Func<T, object>>[] expressions)
             {
@@ -310,6 +329,11 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Create a full text index against designated fields on this document
+            /// </summary>
+            /// <param name="expressions"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndex> configure,
                 params Expression<Func<T, object>>[] expressions)
             {
@@ -350,6 +374,15 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Create a foreign key against the designated member of the document
+            /// </summary>
+            /// <param name="expression"></param>
+            /// <param name="schemaName"></param>
+            /// <param name="tableName"></param>
+            /// <param name="columnName"></param>
+            /// <param name="foreignKeyConfiguration"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> ForeignKey(Expression<Func<T, object>> expression, string schemaName,
                 string tableName, string columnName,
                 Action<ForeignKey>? foreignKeyConfiguration = null)
@@ -406,6 +439,12 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Explicitly choose the identity member for this document type
+            /// </summary>
+            /// <param name="member"></param>
+            /// <returns></returns>
+            /// <exception cref="InvalidOperationException"></exception>
             public DocumentMappingExpression<T> Identity(Expression<Func<T, object>> member)
             {
                 _builder.Alter = mapping =>
@@ -478,6 +517,13 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Add a sub class type to this document type so that Marten will store that document in the parent
+            /// table storage
+            /// </summary>
+            /// <param name="alias"></param>
+            /// <typeparam name="TSubclass"></typeparam>
+            /// <returns></returns>
             public DocumentMappingExpression<T> AddSubClass<TSubclass>(string? alias = null) where TSubclass : T
             {
                 return AddSubClass(typeof(TSubclass), alias);
@@ -511,6 +557,11 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Mark this document type as soft-deleted, with an index on the is_deleted column
+            /// </summary>
+            /// <param name="configure"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> SoftDeletedWithIndex(Action<DocumentIndex>? configure = null)
             {
                 SoftDeleted();
@@ -550,6 +601,11 @@ namespace Marten
                 return this;
             }
 
+            /// <summary>
+            /// Configure the metadata storage for only this document type
+            /// </summary>
+            /// <param name="configure"></param>
+            /// <returns></returns>
             public DocumentMappingExpression<T> Metadata(Action<MetadataConfig> configure)
             {
                 var metadata = new MetadataConfig(this);

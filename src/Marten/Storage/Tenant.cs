@@ -19,7 +19,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
-    public class Tenant: ITenant
+    internal class Tenant: ITenant
     {
         private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new();
         private readonly ConcurrentDictionary<Type, bool> _checks = new();

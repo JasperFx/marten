@@ -24,7 +24,7 @@ namespace Marten.Events
     {
         private readonly EventMetadataCollection _parent;
 
-        public MetadataConfig(EventMetadataCollection parent)
+        internal MetadataConfig(EventMetadataCollection parent)
         {
             _parent = parent;
         }

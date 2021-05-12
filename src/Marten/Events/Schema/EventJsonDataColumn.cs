@@ -2,7 +2,6 @@ using System;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using Marten.Internal;
-using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Postgresql.Tables;
 

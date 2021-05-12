@@ -4,7 +4,10 @@ using Marten.Events.Projections;
 #nullable enable
 namespace Marten.Events.Aggregation
 {
-    public interface IAggregateProjection
+    /// <summary>
+    /// Internal service within aggregating projections
+    /// </summary>
+    public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     {
         Type AggregateType { get; }
 

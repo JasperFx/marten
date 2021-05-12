@@ -8,7 +8,7 @@ namespace Marten.Linq.SqlGeneration
     /// <summary>
     /// Used as an intermediate CTE in sub-collection Contains(primitive) queries
     /// </summary>
-    public class ContainsIdSelectorStatement: Statement
+    internal class ContainsIdSelectorStatement: Statement
     {
         private readonly string _from;
         private readonly CommandParameter _parameter;

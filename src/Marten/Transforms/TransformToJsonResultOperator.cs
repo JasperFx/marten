@@ -12,7 +12,7 @@ using Remotion.Linq.Clauses.StreamedData;
 
 namespace Marten.Transforms
 {
-    public class TransformToJsonResultOperator: SequenceTypePreservingResultOperatorBase, ISelectableOperator
+    internal class TransformToJsonResultOperator: SequenceTypePreservingResultOperatorBase, ISelectableOperator
     {
         private readonly string _transformName;
 

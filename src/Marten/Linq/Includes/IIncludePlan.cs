@@ -3,7 +3,7 @@ using Marten.Linq.SqlGeneration;
 
 namespace Marten.Linq.Includes
 {
-    public interface IIncludePlan
+    internal interface IIncludePlan
     {
         IIncludeReader BuildReader(IMartenSession session);
 

@@ -47,6 +47,9 @@ namespace Marten.Events.Projections
         Type ProjectionType { get; }
     }
 
+    /// <summary>
+    /// Base type for projection types that operate by code generation
+    /// </summary>
     public abstract class ProjectionSource: IProjectionSource
     {
         public string ProjectionName { get; protected internal set; }

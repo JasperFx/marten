@@ -14,6 +14,9 @@ using ConstructorHandling = Newtonsoft.Json.ConstructorHandling;
 
 namespace Marten.Services
 {
+    /// <summary>
+    /// Serialization with Newtonsoft.Json
+    /// </summary>
     public class JsonNetSerializer: ISerializer
     {
         private readonly ArrayPool<char> _charPool = ArrayPool<char>.Create();

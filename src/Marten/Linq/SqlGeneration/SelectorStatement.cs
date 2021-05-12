@@ -12,7 +12,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public abstract class SelectorStatement: Statement
+    internal abstract class SelectorStatement: Statement
     {
         protected SelectorStatement(ISelectClause selectClause, IFieldMapping fields) : base(fields)
         {

@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class VersionArgument: UpsertArgument
+    internal class VersionArgument: UpsertArgument
     {
         public const string ArgName = "docVersion";
 

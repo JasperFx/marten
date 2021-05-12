@@ -9,7 +9,7 @@ using Remotion.Linq.Clauses.StreamedData;
 
 namespace Marten.Linq.Operators
 {
-    public class AsJsonResultOperator
+    internal class AsJsonResultOperator
         : SequenceTypePreservingResultOperatorBase, ISelectableOperator
     {
         public static readonly AsJsonResultOperator Flyweight = new AsJsonResultOperator(null);

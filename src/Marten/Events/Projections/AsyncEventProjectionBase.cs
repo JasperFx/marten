@@ -7,6 +7,7 @@ using Npgsql;
 
 namespace Marten.Events.Projections
 {
+    // Leave public for codegen!
     public abstract class AsyncEventProjectionBase: AsyncProjectionBase
     {
         public override async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,

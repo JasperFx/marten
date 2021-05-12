@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace Marten.Util
 {
-    public static class NoSynchronizationContextScope
+    internal static class NoSynchronizationContextScope
     {
         public static Disposable Enter()
         {

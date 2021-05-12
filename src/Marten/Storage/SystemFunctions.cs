@@ -6,7 +6,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Storage
 {
-    public class SystemFunctions: IFeatureSchema
+    internal class SystemFunctions: IFeatureSchema
     {
         private readonly StoreOptions _options;
         private readonly IDictionary<string, SystemFunction> _systemFunctions = new Dictionary<string, SystemFunction>();

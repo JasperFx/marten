@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Marten.Internal.CompiledQueries
 {
-    public class EnumParameterFinder : IParameterFinder
+    internal class EnumParameterFinder : IParameterFinder
     {
         public bool Matches(Type memberType)
         {

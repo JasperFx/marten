@@ -5,6 +5,9 @@ using LamarCodeGeneration.Frames;
 #nullable enable
 namespace Marten.Schema.Identity
 {
+    /// <summary>
+    /// Simple Guid identity generation
+    /// </summary>
     public class GuidIdGeneration: IIdGeneration
     {
         public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(Guid) };

@@ -8,7 +8,6 @@ using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Schema;
-using Weasel.Postgresql;
 
 #nullable enable
 namespace Marten.Storage
@@ -25,7 +24,7 @@ namespace Marten.Storage
 
         private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
 
-        public StorageFeatures(StoreOptions options)
+        internal StorageFeatures(StoreOptions options)
         {
             _options = options;
 
@@ -127,7 +126,7 @@ namespace Marten.Storage
             Add(feature);
         }
 
-        public SystemFunctions SystemFunctions { get; }
+        internal SystemFunctions SystemFunctions { get; }
 
         internal IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Value.Enumerate().Select(x => x.Value);
 
@@ -185,6 +184,11 @@ namespace Marten.Storage
             }
         }
 
+        /// <summary>
+        /// Retrieve an IFeatureSchema for the designated type
+        /// </summary>
+        /// <param name="featureType"></param>
+        /// <returns></returns>
         public IFeatureSchema FindFeature(Type featureType)
         {
             if (_features.TryGetValue(featureType, out var schema))
@@ -226,6 +230,10 @@ namespace Marten.Storage
             }
         }
 
+        /// <summary>
+        /// All referenced schema names by this DocumentStore
+        /// </summary>
+        /// <returns></returns>
         public string[] AllSchemaNames()
         {
             var schemas = AllDocumentMappings
@@ -239,7 +247,8 @@ namespace Marten.Storage
             return schemas.Select(x => x.ToLowerInvariant()).ToArray();
         }
 
-        public IEnumerable<IFeatureSchema> AllActiveFeatures(ITenant tenant)
+
+        internal IEnumerable<IFeatureSchema> AllActiveFeatures(ITenant tenant)
         {
             yield return SystemFunctions;
 

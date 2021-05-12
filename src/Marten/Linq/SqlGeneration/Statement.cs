@@ -12,6 +12,9 @@ using Remotion.Linq.Clauses;
 
 namespace Marten.Linq.SqlGeneration
 {
+    /// <summary>
+    /// Internal model used to generate SQL within Linq queries
+    /// </summary>
     public abstract class Statement
     {
         private Statement _next;

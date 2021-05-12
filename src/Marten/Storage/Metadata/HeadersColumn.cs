@@ -26,7 +26,7 @@ namespace Marten.Storage.Metadata
             Enabled = false;
         }
 
-        public override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token)
         {
             if (await reader.IsDBNullAsync(index, token))
@@ -37,7 +37,7 @@ namespace Marten.Storage.Metadata
             metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(reader, index, token);
         }
 
-        public override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        internal override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader)
         {
             if (reader.IsDBNull(index))
@@ -49,12 +49,12 @@ namespace Marten.Storage.Metadata
             metadata.Headers = martenSession.Serializer.FromJson<Dictionary<string, object>>(reader, index);
         }
 
-        public override void RegisterForLinqSearching(DocumentMapping mapping)
+        internal override void RegisterForLinqSearching(DocumentMapping mapping)
         {
             // Nothing
         }
 
-        public override UpsertArgument ToArgument()
+        internal override UpsertArgument ToArgument()
         {
             return new HeadersArgument();
         }
@@ -82,7 +82,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    public class HeadersArgument: UpsertArgument
+    internal class HeadersArgument: UpsertArgument
     {
         public HeadersArgument()
         {

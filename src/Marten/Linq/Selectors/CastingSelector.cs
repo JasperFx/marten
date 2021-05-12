@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Marten.Linq.Selectors
 {
-    public class CastingSelector<T, TRoot>: ISelector<T> where T : TRoot
+    internal class CastingSelector<T, TRoot>: ISelector<T> where T : TRoot
     {
         private readonly ISelector<TRoot> _inner;
 

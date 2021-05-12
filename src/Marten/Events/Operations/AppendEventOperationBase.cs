@@ -10,6 +10,7 @@ using Marten.Util;
 
 namespace Marten.Events.Operations
 {
+    // Leave public for codegen!
     public abstract class AppendEventOperationBase : IStorageOperation
     {
         public StreamAction Stream { get; }

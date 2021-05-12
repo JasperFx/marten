@@ -6,7 +6,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class CurrentVersionArgument: UpsertArgument
+    internal class CurrentVersionArgument: UpsertArgument
     {
         public CurrentVersionArgument()
         {

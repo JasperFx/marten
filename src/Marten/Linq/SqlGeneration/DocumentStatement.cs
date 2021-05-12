@@ -7,7 +7,7 @@ using Marten.Linq.Parsing;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class DocumentStatement : SelectorStatement
+    internal class DocumentStatement : SelectorStatement
     {
         private readonly IDocumentStorage _storage;
 

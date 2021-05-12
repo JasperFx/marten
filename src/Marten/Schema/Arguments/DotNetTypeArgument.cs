@@ -10,7 +10,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class DotNetTypeArgument: UpsertArgument
+    internal class DotNetTypeArgument: UpsertArgument
     {
         private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");
 

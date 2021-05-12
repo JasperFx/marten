@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class DataSelectClause<T> : ISelectClause, IScalarSelectClause
+    internal class DataSelectClause<T> : ISelectClause, IScalarSelectClause
     {
         public DataSelectClause(string from)
         {

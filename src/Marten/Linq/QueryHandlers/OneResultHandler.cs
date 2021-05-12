@@ -11,7 +11,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
+    internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
     {
         private const string NoElementsMessage = "Sequence contains no elements";
         private const string MoreThanOneElementMessage = "Sequence contains more than one element";

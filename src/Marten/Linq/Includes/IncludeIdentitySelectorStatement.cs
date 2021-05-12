@@ -13,7 +13,7 @@ namespace Marten.Linq.Includes
 {
 
     // This is also used as an ISelectClause inside the statement structure
-    public class IncludeIdentitySelectorStatement : Statement, ISelectClause
+    internal class IncludeIdentitySelectorStatement : Statement, ISelectClause
     {
         private readonly IList<IIncludePlan> _includes;
         private readonly SelectorStatement _innerEnd;

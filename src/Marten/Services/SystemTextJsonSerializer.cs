@@ -13,6 +13,9 @@ using Weasel.Postgresql;
 
 namespace Marten.Services
 {
+    /// <summary>
+    /// Serializer based on System.Text.Json
+    /// </summary>
     public class SystemTextJsonSerializer: ISerializer
     {
         private EnumStorage _enumStorage = EnumStorage.AsInteger;

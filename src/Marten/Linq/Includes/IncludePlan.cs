@@ -9,7 +9,7 @@ using Marten.Util;
 
 namespace Marten.Linq.Includes
 {
-    public class IncludePlan<T> : IIncludePlan
+    internal class IncludePlan<T> : IIncludePlan
     {
         private readonly IDocumentStorage<T> _storage;
         private readonly Action<T> _callback;

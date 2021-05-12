@@ -4,6 +4,7 @@ using Marten.Util;
 
 namespace Marten.Linq.Filters
 {
+    // TODO -- move to Weasel
     public class NotWhereFragment: ISqlFragment, IWhereFragmentHolder
     {
         private readonly IWhereFragmentHolder _parent;

@@ -11,7 +11,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class ListQueryHandler<T> : IQueryHandler<IReadOnlyList<T>>, IQueryHandler<IEnumerable<T>>, IMaybeStatefulHandler
+    internal class ListQueryHandler<T> : IQueryHandler<IReadOnlyList<T>>, IQueryHandler<IEnumerable<T>>, IMaybeStatefulHandler
     {
         private readonly Statement _statement;
 

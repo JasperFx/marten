@@ -3,7 +3,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Storage
 {
-    public abstract class Tenancy
+    internal abstract class Tenancy
     {
         public const string DefaultTenantId = "*DEFAULT*";
 
@@ -12,7 +12,7 @@ namespace Marten.Storage
             Options = options;
         }
 
-        public StoreOptions Options { get; }
+        internal StoreOptions Options { get; }
 
         protected void seedSchemas(ITenant tenant)
         {

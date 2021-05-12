@@ -42,7 +42,7 @@ namespace Marten.Events
 
         private DocumentStore _store;
 
-        public EventGraph(StoreOptions options)
+        internal EventGraph(StoreOptions options)
         {
             Options = options;
             _events.OnMissing = eventType =>

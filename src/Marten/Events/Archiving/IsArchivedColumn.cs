@@ -1,8 +1,6 @@
 using LamarCodeGeneration;
 using Marten.Events.Schema;
 using Marten.Internal.CodeGeneration;
-using Marten.Linq.Filters;
-using Marten.Schema;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Archiving

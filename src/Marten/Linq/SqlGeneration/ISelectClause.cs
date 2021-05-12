@@ -7,6 +7,9 @@ using Marten.Util;
 #nullable enable
 namespace Marten.Linq.SqlGeneration
 {
+    /// <summary>
+    /// Internal interface for the Linq subsystem
+    /// </summary>
     public interface ISelectClause
     {
         string FromObject { get; }

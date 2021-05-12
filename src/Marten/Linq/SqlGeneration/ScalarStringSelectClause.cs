@@ -12,7 +12,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISelector<string>
+    internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISelector<string>
     {
         private string _locator;
 

@@ -5,7 +5,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class IdSelectorStatement : Statement
+    internal class IdSelectorStatement : Statement
     {
         public IdSelectorStatement(IMartenSession session, IFieldMapping fields, Statement parent) : base(fields)
         {

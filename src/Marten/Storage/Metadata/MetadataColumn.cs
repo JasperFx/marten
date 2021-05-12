@@ -28,15 +28,19 @@ namespace Marten.Storage.Metadata
             DotNetType = dotNetType;
         }
 
-        public abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        internal abstract Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token);
-        public abstract void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        internal abstract void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader);
 
         public abstract MemberInfo Member { get; set; }
+
+        /// <summary>
+        /// Is this metadata column enabled?
+        /// </summary>
         public bool Enabled { get; set; } = true;
 
-        public virtual void RegisterForLinqSearching(DocumentMapping mapping)
+        internal virtual void RegisterForLinqSearching(DocumentMapping mapping)
         {
             if (!Enabled || Member == null) return;
 
@@ -51,7 +55,7 @@ namespace Marten.Storage.Metadata
             return Enabled && Member != null;
         }
 
-        public virtual UpsertArgument ToArgument()
+        internal virtual UpsertArgument ToArgument()
         {
             return new UpsertArgument
             {
@@ -94,7 +98,7 @@ namespace Marten.Storage.Metadata
             _setter = LambdaBuilder.Setter<DocumentMetadata, T>(member);
         }
 
-        public override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token)
         {
             if (await reader.IsDBNullAsync(index, token)) return;
@@ -103,7 +107,7 @@ namespace Marten.Storage.Metadata
             _setter(metadata, value);
         }
 
-        public override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
+        internal override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader)
         {
             if (reader.IsDBNull(index)) return;

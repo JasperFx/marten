@@ -14,7 +14,7 @@ using Remotion.Linq.Clauses.StreamedData;
 
 namespace Marten.Linq.Operators
 {
-    public class IncludeResultOperator
+    internal class IncludeResultOperator
         : SequenceTypePreservingResultOperatorBase
     {
         public Expression ConnectingField { get; }

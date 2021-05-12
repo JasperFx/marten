@@ -14,7 +14,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
+    internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     {
         private readonly object[] _parameters;
         private readonly ISelector<T> _selector;

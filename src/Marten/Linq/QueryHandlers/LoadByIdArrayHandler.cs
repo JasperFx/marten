@@ -12,7 +12,7 @@ using Marten.Util;
 #nullable enable
 namespace Marten.Linq.QueryHandlers
 {
-    public class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> where T: notnull
+    internal class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> where T: notnull
     {
         private readonly IDocumentStorage<T> storage;
         private readonly TKey[] _ids;

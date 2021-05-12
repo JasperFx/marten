@@ -3,6 +3,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
+    // TODO -- move to Weasel
     public class WhereInSubQuery: ISqlFragment
     {
         private readonly string _tableName;

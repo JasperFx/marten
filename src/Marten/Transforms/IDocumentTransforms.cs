@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 
 namespace Marten.Transforms
 {
+    // TODO -- needs to be async options for all of these
     public interface IDocumentTransforms
     {
         /// <summary>

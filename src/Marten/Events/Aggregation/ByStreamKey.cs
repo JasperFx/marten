@@ -5,7 +5,7 @@ using Marten.Storage;
 #nullable enable
 namespace Marten.Events.Aggregation
 {
-    public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
+    internal class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>
     {
         public IReadOnlyList<EventSlice<TDoc, string>> Slice(IEnumerable<StreamAction> streams, ITenancy tenancy)
         {

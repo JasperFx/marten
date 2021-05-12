@@ -34,7 +34,7 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.CorrelationId.EnabledWithMember();
         }
 
-        public override UpsertArgument ToArgument()
+        internal override UpsertArgument ToArgument()
         {
             return new CorrelationIdArgument();
         }
@@ -61,7 +61,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    public class CorrelationIdArgument: UpsertArgument
+    internal class CorrelationIdArgument: UpsertArgument
     {
         public CorrelationIdArgument()
         {

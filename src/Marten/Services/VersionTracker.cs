@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace Marten.Services
 {
+    /// <summary>
+    /// Used internally by Marten to track document versions
+    /// </summary>
     public class VersionTracker
     {
         private readonly IDictionary<Type, IDictionary<object, Guid>> _versions = new Dictionary<Type, IDictionary<object, Guid>>();

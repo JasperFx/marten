@@ -10,9 +10,9 @@ using Npgsql;
 
 namespace Marten.Storage
 {
-    public static class TenantExtensions
+   internal static class TenantExtensions
     {
-        public static IEventStorage EventStorage(this ITenant tenant)
+        internal static IEventStorage EventStorage(this ITenant tenant)
         {
             return (IEventStorage) tenant.StorageFor<IEvent>();
         }

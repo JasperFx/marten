@@ -9,6 +9,10 @@ using Marten.Util;
 
 namespace Marten.Schema
 {
+    /// <summary>
+    /// IDocumentMapping implementation for a document type that's a subclass of a parent type, and
+    /// maps to the parent storage
+    /// </summary>
     public class SubClassMapping: IDocumentMapping
     {
         public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,

@@ -48,7 +48,7 @@ namespace Marten.Testing.CoreFunctionality
                 .ShouldContain(x => MatchesDeletion(target, x));
         }
 
-        public static bool MatchesDeletion(Target target, Deletion deletion)
+        internal static bool MatchesDeletion(Target target, Deletion deletion)
         {
             if (deletion.Id.Equals(target.Id)) return true;
 

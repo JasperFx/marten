@@ -11,7 +11,7 @@ using Marten.Util;
 
 namespace Marten.Linq.QueryHandlers
 {
-    public class LoadByIdHandler<T, TId>: IQueryHandler<T>
+    internal class LoadByIdHandler<T, TId>: IQueryHandler<T>
     {
         private readonly IDocumentStorage<T> storage;
         private readonly TId _id;

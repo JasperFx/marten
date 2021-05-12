@@ -11,7 +11,7 @@ using Marten.Schema;
 
 namespace Marten.Linq.SoftDeletes
 {
-    public class DeletedBeforeParser: IMethodCallParser
+    internal class DeletedBeforeParser: IMethodCallParser
     {
         private static readonly MethodInfo _method =
             typeof(SoftDeletedExtensions).GetMethod(nameof(SoftDeletedExtensions.DeletedBefore));

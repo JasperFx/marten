@@ -14,11 +14,19 @@ using Npgsql;
 #nullable enable
 namespace Marten.Events.Aggregation
 {
+    /// <summary>
+    /// Internal interface for runtime event aggregation
+    /// </summary>
     public interface IAggregationRuntime : IProjection
     {
         EventRangeGroup GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
     }
 
+    /// <summary>
+    /// Internal base class for runtime event aggregation
+    /// </summary>
+    /// <typeparam name="TDoc"></typeparam>
+    /// <typeparam name="TId"></typeparam>
     public abstract class AggregationRuntime<TDoc, TId> : IAggregationRuntime where TDoc : notnull where TId : notnull
     {
         private readonly IDocumentStore _store;

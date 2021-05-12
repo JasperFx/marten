@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Operations
 {
-    public class EventProgressWrite: IStorageOperation
+    internal class EventProgressWrite: IStorageOperation
     {
         private readonly string _key;
         private readonly long _number;

@@ -5,6 +5,10 @@ using Marten.Events.Projections;
 #nullable enable
 namespace Marten.Events.Aggregation
 {
+    /// <summary>
+    /// Internal base class for purely synchronous live aggregators
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public abstract class SyncLiveAggregatorBase<T> : ILiveAggregator<T> where T : class
     {
         public abstract T Build(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot);

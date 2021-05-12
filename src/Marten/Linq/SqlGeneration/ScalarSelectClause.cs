@@ -13,7 +13,7 @@ using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
-    public class ScalarSelectClause<T> : ISelectClause, ISelector<T>, IScalarSelectClause, ISelector<Nullable<T>> where T : struct
+    internal class ScalarSelectClause<T> : ISelectClause, ISelector<T>, IScalarSelectClause, ISelector<Nullable<T>> where T : struct
     {
         private static readonly string NullResultMessage = $"The cast to value type '{typeof(T).FullNameInCode()}' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.";
         private string _locator;

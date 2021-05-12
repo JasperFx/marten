@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Marten.Internal.CompiledQueries
 {
-    public class SimpleParameterFinder<T> : IParameterFinder
+    internal class SimpleParameterFinder<T> : IParameterFinder
     {
         private readonly Func<int, T[]> _uniqueValues;
 

@@ -8,11 +8,15 @@ using Marten.Util;
 
 namespace Marten.Linq.Includes
 {
-    public interface IIncludeQueryHandler<T>
+    internal interface IIncludeQueryHandler<T>
     {
         IQueryHandler<T> Inner { get; }
     }
 
+    /// <summary>
+    /// Used internally to process Include() operations
+    /// in the Linq support
+    /// </summary>
     public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
     {
         private readonly IIncludeReader[] _readers;

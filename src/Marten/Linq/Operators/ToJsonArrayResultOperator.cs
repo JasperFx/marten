@@ -6,7 +6,7 @@ using Remotion.Linq.Clauses.StreamedData;
 
 namespace Marten.Linq.Operators
 {
-    public class ToJsonArrayResultOperator
+    internal class ToJsonArrayResultOperator
         : SequenceTypePreservingResultOperatorBase
     {
         public ToJsonArrayResultOperator(Expression parameter)

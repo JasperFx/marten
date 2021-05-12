@@ -22,7 +22,7 @@ using Remotion.Linq;
 
 namespace Marten.Internal.Storage
 {
-    public class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
+    internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>
         where T : TRoot
     {
         private readonly IDocumentStorage<TRoot, TId> _parent;

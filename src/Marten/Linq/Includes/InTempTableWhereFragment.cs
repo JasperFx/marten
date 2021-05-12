@@ -5,7 +5,8 @@ using Marten.Util;
 namespace Marten.Linq.Includes
 {
     // TODO -- replace with WhereInSubQuery?
-    public class InTempTableWhereFragment: ISqlFragment
+    // TODO -- move to Weasel
+    internal class InTempTableWhereFragment: ISqlFragment
     {
         private readonly string _tempTableName;
         private readonly string _tempTableColumn;

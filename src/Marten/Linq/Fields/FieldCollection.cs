@@ -15,6 +15,9 @@ using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
 
  namespace Marten.Linq.Fields
 {
+    /// <summary>
+    /// Internal representation of queryable members within a Linq query
+    /// </summary>
     public interface IFieldMapping
     {
         IField FieldFor(Expression expression);
@@ -33,7 +36,7 @@ using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
         private readonly ConcurrentDictionary<string, IField> _fields = new ConcurrentDictionary<string, IField>();
         private readonly ISerializer _serializer;
 
-        public FieldMapping(string dataLocator, Type documentType, StoreOptions options)
+        internal FieldMapping(string dataLocator, Type documentType, StoreOptions options)
         {
             _dataLocator = dataLocator;
             _documentType = documentType;

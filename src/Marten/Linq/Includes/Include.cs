@@ -7,8 +7,16 @@ using Marten.Linq.Selectors;
 
 namespace Marten.Linq.Includes
 {
+    /// <summary>
+    /// Used internally to process Include() operations
+    /// in the Linq support
+    /// </summary>
     public static class Include
     {
+        /// <summary>
+        /// Used internally to process Include() operations
+        /// in the Linq support
+        /// </summary>
         public static IIncludeReader ReaderToAction<T>(IMartenSession session, Action<T> action)
         {
             var storage = session.StorageFor<T>();
@@ -17,11 +25,19 @@ namespace Marten.Linq.Includes
             return new IncludeReader<T>(action, selector);
         }
 
+        /// <summary>
+        /// Used internally to process Include() operations
+        /// in the Linq support
+        /// </summary>
         public static IIncludeReader ReaderToList<T>(IMartenSession session, IList<T> list)
         {
             return ReaderToAction<T>(session, list.Add);
         }
 
+        /// <summary>
+        /// Used internally to process Include() operations
+        /// in the Linq support
+        /// </summary>
         public static IIncludeReader ReaderToDictionary<T, TId>(IMartenSession session, IDictionary<TId, T> dictionary)
         {
             var storage = session.StorageFor<T>();
