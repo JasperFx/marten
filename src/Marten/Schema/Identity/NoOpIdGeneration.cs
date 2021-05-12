@@ -6,6 +6,9 @@ using Marten.Storage;
 #nullable enable
 namespace Marten.Schema.Identity
 {
+    /// <summary>
+    /// User-assigned identity strategy
+    /// </summary>
     public class NoOpIdGeneration: IIdGeneration
     {
         public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(int), typeof(long), typeof(string), typeof(Guid) };

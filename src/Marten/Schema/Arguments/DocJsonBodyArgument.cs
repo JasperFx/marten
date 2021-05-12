@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class DocJsonBodyArgument: UpsertArgument
+    internal class DocJsonBodyArgument: UpsertArgument
     {
 
         public DocJsonBodyArgument()

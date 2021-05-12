@@ -6,6 +6,10 @@ using Npgsql;
 
 namespace Marten.Schema.BulkLoading
 {
+    /// <summary>
+    /// Internal service to implement bulk loading
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public interface IBulkLoader<T>
     {
         void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents);

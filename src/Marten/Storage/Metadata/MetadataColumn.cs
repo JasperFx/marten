@@ -51,7 +51,7 @@ namespace Marten.Storage.Metadata
             return Enabled && Member != null;
         }
 
-        public virtual UpsertArgument ToArgument()
+        internal virtual UpsertArgument ToArgument()
         {
             return new UpsertArgument
             {

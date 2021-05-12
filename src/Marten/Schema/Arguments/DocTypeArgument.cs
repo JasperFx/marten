@@ -13,7 +13,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    public class DocTypeArgument: UpsertArgument
+    internal class DocTypeArgument: UpsertArgument
     {
         private static readonly MethodInfo _getAlias = ReflectionHelper.GetMethod<DocumentMapping>(x => x.AliasFor(null));
         private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");

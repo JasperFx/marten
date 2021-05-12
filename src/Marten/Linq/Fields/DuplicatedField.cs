@@ -88,7 +88,7 @@ namespace Marten.Linq.Fields
         public NpgsqlDbType DbType { get; set; }
 
 
-        public UpsertArgument UpsertArgument => new UpsertArgument
+        internal UpsertArgument UpsertArgument => new UpsertArgument
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),

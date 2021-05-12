@@ -30,7 +30,7 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.LastModifiedBy.EnabledWithMember();
         }
 
-        public override UpsertArgument ToArgument()
+        internal override UpsertArgument ToArgument()
         {
             return new LastModifiedByArgument();
         }
