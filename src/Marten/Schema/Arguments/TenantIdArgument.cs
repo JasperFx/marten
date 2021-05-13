@@ -9,7 +9,7 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    internal class TenantIdArgument: UpsertArgument
+    public class TenantIdArgument: UpsertArgument
     {
         public const string ArgName = "tenantid";
 

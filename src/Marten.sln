@@ -41,6 +41,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventPublisher", "EventPubl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLineRunner", "CommandLineRunner\CommandLineRunner.csproj", "{B297B011-B5D1-4B3C-8503-484A93F2F073}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.PLv8", "Marten.PLv8\Marten.PLv8.csproj", "{25357907-98A3-49E7-A4C9-E366EA56B364}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.PLv8.Testing", "Marten.PLv8.Testing\Marten.PLv8.Testing.csproj", "{8CBEFD7A-C757-43FE-A1C8-62FBE98178C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +115,14 @@ Global
 		{B297B011-B5D1-4B3C-8503-484A93F2F073}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B297B011-B5D1-4B3C-8503-484A93F2F073}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B297B011-B5D1-4B3C-8503-484A93F2F073}.Release|Any CPU.Build.0 = Release|Any CPU
+		{25357907-98A3-49E7-A4C9-E366EA56B364}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25357907-98A3-49E7-A4C9-E366EA56B364}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25357907-98A3-49E7-A4C9-E366EA56B364}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25357907-98A3-49E7-A4C9-E366EA56B364}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CBEFD7A-C757-43FE-A1C8-62FBE98178C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CBEFD7A-C757-43FE-A1C8-62FBE98178C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CBEFD7A-C757-43FE-A1C8-62FBE98178C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CBEFD7A-C757-43FE-A1C8-62FBE98178C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
