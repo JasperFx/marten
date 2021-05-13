@@ -7,6 +7,5 @@ namespace Marten.Events.Projections
     {
         List<IGrouper<TId>> Groupers { get; }
         List<IFanOutRule> Fanouts { get; }
-        List<IGrouperFactory<TId>> GrouperFactories { get; }
     }
 }

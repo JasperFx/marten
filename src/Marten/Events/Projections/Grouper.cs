@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Events.Projections
@@ -27,12 +26,5 @@ namespace Marten.Events.Projections
                 grouping.AddRange(eventGroups.Key, eventGroups);
             }
         }
-    }
-
-    public interface IGrouperFactory<TId>
-    {
-        bool Supports(Type eventType);
-
-        Task<IGrouper<TId>> Create(IQuerySession session, IEvent @event);
     }
 }

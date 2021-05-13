@@ -104,6 +104,34 @@ namespace Marten.Testing.Events.Projections
         public List<string> FeatureToggles { get; } = new();
     }
 
+    public class LicenseFeatureToggledEventSlicer : ViewProjectionEventSlicer<UserFeatureToggles, Guid>
+    {
+        protected override async ValueTask SetupCustomGroupers(IQuerySession querySession, IReadOnlyList<IEvent> events)
+        {
+            var licenceFeatureTogglesEvents = events.Where(e => e.EventType == typeof(LicenseFeatureToggled)).ToList();
+
+            if (!licenceFeatureTogglesEvents.Any())
+                return;
+            
+            var streamIds = await FindUserIdsWithLicense(querySession,
+                licenceFeatureTogglesEvents.Select(e => (LicenseFeatureToggled)e.Data));
+
+            Groupers.Add(new MultiStreamGrouper<Guid, LicenseFeatureToggled>(e => streamIds[e.LicenseId]));
+        }
+
+        private static async Task<IDictionary<Guid, List<Guid>>> FindUserIdsWithLicense(IQuerySession session, IEnumerable<LicenseFeatureToggled> events)
+        {
+            var licenceIds = events.Select(e => e.LicenseId).ToList();
+            var result = await session.Query<UserFeatureToggles>()
+                .Where(x => licenceIds.Contains(x.LicenseId))
+                .Select(x => new {x.Id, x.LicenseId})
+                .ToListAsync();
+
+            return result.GroupBy(ks => ks.LicenseId, vs=> vs.Id)
+                .ToDictionary(ks=>ks.Key, vs => vs.ToList());
+        }
+    }
+
     // projection with documentsession
     public class UserFeatureTogglesProjection: ViewProjection<UserFeatureToggles, Guid>
     {
@@ -111,7 +139,7 @@ namespace Marten.Testing.Events.Projections
         {
             Identity<UserRegistered>(@event => @event.UserId);
             Identity<UserLicenseAssigned>(@event => @event.UserId);
-            Identities<LicenseFeatureToggled>(FindUserIdsWithLicense);
+            EventSlicer(new LicenseFeatureToggledEventSlicer());
         }
 
         private static async Task<IReadOnlyList<Guid>> FindUserIdsWithLicense(IQuerySession session, LicenseFeatureToggled @event)
