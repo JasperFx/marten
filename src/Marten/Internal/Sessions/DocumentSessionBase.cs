@@ -170,39 +170,7 @@ namespace Marten.Internal.Sessions
 
         public IEventStore Events { get; }
 
-        public IPatchExpression<T> Patch<T>(int id) where T : notnull
-        {
-            return patchById<T>(id);
-        }
 
-        public IPatchExpression<T> Patch<T>(long id) where T : notnull
-        {
-            return patchById<T>(id);
-        }
-
-        public IPatchExpression<T> Patch<T>(string id) where T : notnull
-        {
-            return patchById<T>(id);
-        }
-
-        public IPatchExpression<T> Patch<T>(Guid id) where T : notnull
-        {
-            return patchById<T>(id);
-        }
-
-        public IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> filter) where T : notnull
-        {
-            assertNotDisposed();
-
-            return new PatchExpression<T>(filter, this);
-        }
-
-        public IPatchExpression<T> Patch<T>(ISqlFragment fragment) where T : notnull
-        {
-            assertNotDisposed();
-
-            return new PatchExpression<T>(fragment, this);
-        }
 
 
         public void QueueOperation(IStorageOperation storageOperation)
@@ -313,14 +281,6 @@ namespace Marten.Internal.Sessions
                     }
                 }
             }
-        }
-
-        private IPatchExpression<T> patchById<T>(object id)
-        {
-            assertNotDisposed();
-
-            var where = new WhereFragment("d.id = ?", id);
-            return new PatchExpression<T>(where, this);
         }
 
         public void EjectPatchedTypes(IUnitOfWork changes)

@@ -86,55 +86,6 @@ namespace Marten
         void StoreObjects(IEnumerable<object> documents);
 
         /// <summary>
-        /// Patch a single document of type T with the given id
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        IPatchExpression<T> Patch<T>(int id) where T : notnull;
-
-        /// <summary>
-        /// Patch a single document of type T with the given id
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        IPatchExpression<T> Patch<T>(long id) where T : notnull;
-
-        /// <summary>
-        /// Patch a single document of type T with the given id
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        IPatchExpression<T> Patch<T>(string id) where T : notnull;
-
-        /// <summary>
-        /// Patch a single document of type T with the given id
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        IPatchExpression<T> Patch<T>(Guid id) where T : notnull;
-
-        /// <summary>
-        /// Patch a single document of type T with the given id
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="id"></param>
-        /// <param name="where"></param>
-        /// <returns></returns>
-        IPatchExpression<T> Patch<T>(Expression<Func<T, bool>> where) where T : notnull;
-
-        /// <summary>
-        /// Patch multiple documents matching the supplied where fragment
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="fragment"></param>
-        /// <returns></returns>
-        IPatchExpression<T> Patch<T>(ISqlFragment fragment) where T : notnull;
-
-        /// <summary>
         /// Catch all mechanism to add additional database calls to the batched
         /// updates in SaveChanges()/SaveChangesAsync()
         /// </summary>

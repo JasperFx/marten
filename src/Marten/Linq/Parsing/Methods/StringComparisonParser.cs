@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,6 +8,7 @@ using Marten.Exceptions;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using NpgsqlTypes;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods
@@ -45,7 +47,12 @@ namespace Marten.Linq.Parsing.Methods
             }
 
             var stringOperator = GetOperator(expression);
-            return new WhereFragment("{0} {1} ?".ToFormat(locator, stringOperator), FormatValue(expression.Method, value.Value as string));
+            var parameterValue = FormatValue(expression.Method, value.Value as string);
+            var param = parameterValue == null
+                ? new CommandParameter(DBNull.Value, NpgsqlDbType.Varchar)
+                : new CommandParameter(parameterValue, NpgsqlDbType.Varchar);
+
+            return new CustomizableWhereFragment($"{locator} {stringOperator} ?", "?", param);
         }
 
         protected bool AreMethodsEqual(MethodInfo method1, MethodInfo method2)

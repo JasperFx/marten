@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Patching;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.CoreFunctionality;

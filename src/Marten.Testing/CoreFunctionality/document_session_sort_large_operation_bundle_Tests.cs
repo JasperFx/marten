@@ -1,4 +1,5 @@
 ﻿using System;
+using Marten.Patching;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Xunit;

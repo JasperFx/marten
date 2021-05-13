@@ -1,3 +1,4 @@
+using Marten.Patching;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Weasel.Postgresql;
