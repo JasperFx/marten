@@ -13,6 +13,7 @@ using Marten.Storage;
 using Marten.Util;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Transforms
 {

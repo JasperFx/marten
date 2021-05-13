@@ -5,6 +5,7 @@ using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Util;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Fields
 {

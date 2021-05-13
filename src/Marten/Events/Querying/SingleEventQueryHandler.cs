@@ -25,9 +25,8 @@ namespace Marten.Events.Querying
         {
             _selector.WriteSelectClause(sql);
 
-            var param = sql.AddParameter(_id);
-            sql.Append(" where id = :");
-            sql.Append(param.ParameterName);
+            sql.Append(" where id = ");
+            sql.AppendParameter(_id);
         }
 
         public IEvent Handle(DbDataReader reader, IMartenSession session)

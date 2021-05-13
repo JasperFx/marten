@@ -8,6 +8,7 @@ using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SoftDeletes
 {

@@ -3,6 +3,7 @@ using System.Linq;
 using Marten.Linq.SqlGeneration;
 using NpgsqlTypes;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
 {

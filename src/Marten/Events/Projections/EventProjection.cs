@@ -17,6 +17,7 @@ using Marten.Internal.CodeGeneration;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Storage;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections
 {

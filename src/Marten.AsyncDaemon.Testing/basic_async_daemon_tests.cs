@@ -8,6 +8,7 @@ using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 using Xunit.Abstractions;
 

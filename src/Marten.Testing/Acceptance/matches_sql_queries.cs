@@ -5,6 +5,7 @@ using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -45,26 +46,24 @@ namespace Marten.Testing.Acceptance
             var user3 = new User { UserName = "baz" };
             var user4 = new User { UserName = "jack" };
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(user1, user2, user3, user4);
-                session.SaveChanges();
+            using var session = theStore.OpenSession();
+            session.Store(user1, user2, user3, user4);
+            session.SaveChanges();
 
-                var whereFragment = new CompoundWhereFragment("and");
-                whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "baz"));
-                whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "jack"));
+            var whereFragment = CompoundWhereFragment.And();
+            whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "baz"));
+            whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "jack"));
 
-                // no where clause
-                session.Query<User>().Where(x => x.MatchesSql(whereFragment)).OrderBy(x => x.UserName).Select(x => x.UserName)
-                    .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
+            // no where clause
+            session.Query<User>().Where(x => x.MatchesSql(whereFragment)).OrderBy(x => x.UserName).Select(x => x.UserName)
+                .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
 
-                // with a where clause
-                session.Query<User>().Where(x => x.UserName != "bar" && x.MatchesSql(whereFragment))
-                    .OrderBy(x => x.UserName)
-                    .ToList()
-                    .Select(x => x.UserName)
-                    .Single().ShouldBe("foo");
-            }
+            // with a where clause
+            session.Query<User>().Where(x => x.UserName != "bar" && x.MatchesSql(whereFragment))
+                .OrderBy(x => x.UserName)
+                .ToList()
+                .Select(x => x.UserName)
+                .Single().ShouldBe("foo");
         }
 
         public matches_sql_queries(DefaultStoreFixture fixture) : base(fixture)

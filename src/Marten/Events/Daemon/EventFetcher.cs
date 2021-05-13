@@ -6,6 +6,7 @@ using Baseline.Dates;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
 {

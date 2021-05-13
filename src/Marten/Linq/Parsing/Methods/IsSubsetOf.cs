@@ -6,6 +6,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods
 {

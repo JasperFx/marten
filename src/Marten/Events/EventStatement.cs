@@ -9,6 +9,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events
 {
@@ -36,7 +37,7 @@ namespace Marten.Events
                     wheres[0].Apply(builder);
                     break;
                 default:
-                    var where = new CompoundWhereFragment(" AND ", wheres);
+                    var where = CompoundWhereFragment.And(wheres);
                     builder.Append(" WHERE ");
                     where.Apply(builder);
                     break;
@@ -45,9 +46,8 @@ namespace Marten.Events
             builder.Append(" ORDER BY d.seq_id");
             if (Limit > 0)
             {
-                var param = builder.AddParameter(Limit);
-                builder.Append(" LIMIT :");
-                builder.Append(param.ParameterName);
+                builder.Append(" LIMIT ");
+                builder.AppendParameter(Limit);
             }
         }
 

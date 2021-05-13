@@ -2,6 +2,7 @@ using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Events.Projections;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
 {

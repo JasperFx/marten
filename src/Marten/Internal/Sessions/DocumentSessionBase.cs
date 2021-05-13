@@ -12,6 +12,7 @@ using Marten.Linq.SqlGeneration;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
+using Weasel.Postgresql.SqlGeneration;
 
 #nullable enable
 namespace Marten.Internal.Sessions

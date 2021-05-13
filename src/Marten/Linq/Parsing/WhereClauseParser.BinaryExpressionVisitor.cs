@@ -4,6 +4,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Parsing;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing
 {

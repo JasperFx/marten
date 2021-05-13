@@ -7,6 +7,7 @@ using Marten.Exceptions;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods
 {
@@ -31,11 +32,11 @@ namespace Marten.Linq.Parsing.Methods
             ConstantExpression value;
             if (expression.Object?.NodeType == ExpressionType.Constant)
             {
-                value = (ConstantExpression) expression.Object;   
+                value = (ConstantExpression) expression.Object;
             }
             else
             {
-                value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();    
+                value = expression.Arguments.OfType<ConstantExpression>().FirstOrDefault();
             }
 
             if (value == null)

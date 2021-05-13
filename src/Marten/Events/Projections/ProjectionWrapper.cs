@@ -4,6 +4,7 @@ using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections
 {

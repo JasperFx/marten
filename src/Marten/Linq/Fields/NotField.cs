@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
+using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Fields
 {
@@ -15,7 +17,7 @@ namespace Marten.Linq.Fields
 
         public ISqlFragment CreateComparison(string op, ConstantExpression value, Expression memberExpression)
         {
-            var opposite = WhereClauseParser.NotOperators[op];
+            var opposite = ComparisonFilter.NotOperators[op];
             return _inner.CreateComparison(opposite, value, memberExpression);
         }
     }

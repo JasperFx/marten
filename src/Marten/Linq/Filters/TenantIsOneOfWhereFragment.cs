@@ -4,12 +4,13 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
 {
     internal class TenantIsOneOfWhereFragment: ISqlFragment, ITenantWhereFragment
     {
-        private static readonly string _filter = $"{TenantIdColumn.Name} = ANY(?)";
+        private static readonly string _filter = $"{TenantIdColumn.Name} = ANY(:?)";
 
         private readonly string[] _values;
 
@@ -22,7 +23,7 @@ namespace Marten.Linq.Filters
         {
             var param = builder.AddParameter(_values);
             param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-            builder.Append(_filter.Replace("?", ":" + param.ParameterName));
+            builder.Append(_filter.Replace("?", param.ParameterName));
         }
 
         public bool Contains(string sqlText)

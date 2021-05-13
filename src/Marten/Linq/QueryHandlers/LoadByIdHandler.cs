@@ -36,10 +36,9 @@ namespace Marten.Linq.QueryHandlers
 
             sql.Append(" from ");
             sql.Append(storage.FromObject);
-            sql.Append(" as d where id = :");
-
-            var parameter = sql.AddParameter(_id);
-            sql.Append(parameter.ParameterName);
+            sql.Append(" as d where id = ");
+            
+            sql.AppendParameter(_id);
 
             // TODO -- there's some duplication here that should be handled consistently
             if (storage.TenancyStyle == TenancyStyle.Conjoined)

@@ -10,6 +10,8 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Remotion.Linq;
+using Weasel.Postgresql.SqlGeneration;
+
 #nullable enable
 namespace Marten.Internal.Storage
 {

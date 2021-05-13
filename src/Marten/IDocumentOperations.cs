@@ -4,6 +4,8 @@ using System.Linq.Expressions;
 using Marten.Internal.Operations;
 using Marten.Linq.SqlGeneration;
 using Marten.Patching;
+using Weasel.Postgresql.SqlGeneration;
+
 #nullable enable
 namespace Marten
 {

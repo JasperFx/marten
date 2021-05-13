@@ -1,5 +1,6 @@
 using Marten.Linq.Filters;
 using Shouldly;
+using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
 namespace Marten.Testing.Linq.Parsing

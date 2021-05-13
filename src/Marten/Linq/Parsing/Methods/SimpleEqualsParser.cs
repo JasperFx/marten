@@ -10,6 +10,7 @@ using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Util;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods
 {

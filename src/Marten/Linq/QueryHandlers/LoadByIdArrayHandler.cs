@@ -9,6 +9,8 @@ using Marten.Linq.Selectors;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
+using NpgsqlTypes;
+
 #nullable enable
 namespace Marten.Linq.QueryHandlers
 {
@@ -38,10 +40,10 @@ namespace Marten.Linq.QueryHandlers
 
             sql.Append(" from ");
             sql.Append(storage.FromObject);
-            sql.Append(" as d where id = ANY(:");
+            sql.Append(" as d where id = ANY(");
 
-            var parameter = sql.AddParameter(_ids);
-            sql.Append(parameter.ParameterName);
+            sql.AppendParameter(_ids);
+
             sql.Append(")");
 
             // TODO -- there's some duplication here that should be handled consistently

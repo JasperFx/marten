@@ -8,6 +8,7 @@ using Marten.Linq.SqlGeneration;
 using Marten.Services.BatchQuerying;
 using Marten.Util;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Fields
 {

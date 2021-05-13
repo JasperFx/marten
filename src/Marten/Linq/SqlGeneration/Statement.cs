@@ -9,6 +9,7 @@ using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Clauses;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -112,7 +113,7 @@ namespace Marten.Linq.SqlGeneration
             if (WhereClauses.Count == 1) return parser.Build(WhereClauses.Single());
 
             var wheres = WhereClauses.Select(x => parser.Build(x)).ToArray();
-            return new CompoundWhereFragment("and", wheres);
+            return CompoundWhereFragment.And(wheres);
         }
 
         protected void writeOrderClause(CommandBuilder sql)

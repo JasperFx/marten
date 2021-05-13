@@ -4,6 +4,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Remotion.Linq.Parsing;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing
 {
@@ -26,7 +27,7 @@ namespace Marten.Linq.Parsing
             {
                 if (Constant != null)
                 {
-                    return right.CompareTo(this, WhereClauseParser.OppositeOperators[op]);
+                    return right.CompareTo(this, ComparisonFilter.OppositeOperators[op]);
                 }
 
                 if (Comparable != null && right.Constant != null) return Comparable.CreateComparison(op, right.Constant, MemberExpression);

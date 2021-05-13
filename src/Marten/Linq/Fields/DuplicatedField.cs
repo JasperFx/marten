@@ -13,6 +13,7 @@ using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Linq.Fields

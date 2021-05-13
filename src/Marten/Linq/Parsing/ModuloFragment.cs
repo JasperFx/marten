@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing
 {

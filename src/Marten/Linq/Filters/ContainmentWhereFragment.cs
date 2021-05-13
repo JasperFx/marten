@@ -9,6 +9,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
 {
@@ -34,11 +35,9 @@ namespace Marten.Linq.Filters
         public void Apply(CommandBuilder builder)
         {
             var json = _serializer.ToCleanJson(_dictionary);
-            var param = builder.AddParameter(json);
-            param.NpgsqlDbType = NpgsqlDbType.Jsonb;
 
-            builder.Append($"{_wherePrefix}d.data @> :");
-            builder.Append(param.ParameterName);
+            builder.Append($"{_wherePrefix}d.data @> ");
+            builder.AppendJsonBParameter(json);
         }
 
         public bool Contains(string sqlText)

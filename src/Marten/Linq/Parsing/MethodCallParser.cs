@@ -5,6 +5,7 @@ using Baseline.Reflection;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing
 {

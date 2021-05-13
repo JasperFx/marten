@@ -8,6 +8,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
 namespace Marten.Testing.Acceptance

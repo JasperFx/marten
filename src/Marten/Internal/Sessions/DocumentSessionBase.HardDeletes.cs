@@ -6,6 +6,7 @@ using Marten.Exceptions;
 using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql.SqlGeneration;
 
 #nullable enable
 namespace Marten.Internal.Sessions

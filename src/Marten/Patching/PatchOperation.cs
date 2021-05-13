@@ -16,6 +16,7 @@ using Marten.Services;
 using Marten.Transforms;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Patching
 {
@@ -76,8 +77,6 @@ namespace Marten.Patching
                 patchParam = builder.AddJsonParameter(replacedValue);
             }
 
-            var versionParam = builder.AddParameter(CombGuidIdGeneration.NewGuid(), NpgsqlDbType.Uuid);
-
             builder.Append("update ");
             builder.Append(_storage.TableName.QualifiedName);
             builder.Append(" as d set data = ");
@@ -88,8 +87,8 @@ namespace Marten.Patching
             builder.Append(SchemaConstants.LastModifiedColumn);
             builder.Append(" = (now() at time zone 'utc'), ");
             builder.Append(SchemaConstants.VersionColumn);
-            builder.Append(" = :");
-            builder.Append(versionParam.ParameterName);
+            builder.Append(" = ");
+            builder.AppendParameter(CombGuidIdGeneration.NewGuid());
 
             if (!_fragment.Contains("where"))
             {

@@ -21,6 +21,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Remotion.Linq;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events
 {
@@ -130,13 +131,7 @@ namespace Marten.Events
 
             if (query.Contains(IsArchivedColumn.ColumnName)) return query;
 
-            if (query is CompoundWhereFragment c)
-            {
-                c.Add(IsNotArchivedFilter.Instance);
-                return c;
-            }
-
-            return new CompoundWhereFragment("and", new[] {query, IsNotArchivedFilter.Instance});
+            return query.CombineAnd(IsNotArchivedFilter.Instance);
         }
 
         public ISqlFragment DefaultWhereFragment()

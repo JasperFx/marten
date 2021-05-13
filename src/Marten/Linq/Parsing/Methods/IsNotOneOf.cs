@@ -1,13 +1,10 @@
-using System;
 using System.Linq;
 using System.Linq.Expressions;
-using Baseline;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
-using Weasel.Postgresql;
 using Marten.Util;
-using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods
 {
@@ -33,61 +30,6 @@ namespace Marten.Linq.Parsing.Methods
             }
 
             return new WhereFragment($"NOT({locator} = ANY(?))", values);
-        }
-    }
-
-    public class EnumIsNotOneOfWhereFragment: ISqlFragment
-    {
-        private readonly object _values;
-        private readonly string _locator;
-        private readonly NpgsqlDbType _dbType;
-
-        public EnumIsNotOneOfWhereFragment(object values, EnumStorage enumStorage, string locator)
-        {
-            var array = values.As<Array>();
-            if (enumStorage == EnumStorage.AsInteger)
-            {
-                var numbers = new int[array.Length];
-
-                for (int i = 0; i < array.Length; i++)
-                {
-                    numbers[i] = array.GetValue(i).As<int>();
-                }
-
-                _values = numbers;
-                _dbType = NpgsqlDbType.Integer | NpgsqlDbType.Array;
-            }
-            else
-            {
-                var strings = new string[array.Length];
-
-                for (int i = 0; i < array.Length; i++)
-                {
-                    strings[i] = array.GetValue(i).ToString();
-                }
-
-                _values = strings;
-                _dbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
-            }
-
-            _locator = locator;
-        }
-
-        public void Apply(CommandBuilder builder)
-        {
-            var param = builder.AddParameter(_values, _dbType);
-
-            builder.Append("NOT(");
-            builder.Append(_locator);
-            builder.Append(" = ANY(:");
-            builder.Append(param.ParameterName);
-            builder.Append(")");
-            builder.Append(")");
-        }
-
-        public bool Contains(string sqlText)
-        {
-            return false;
         }
     }
 }

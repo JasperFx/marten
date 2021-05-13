@@ -22,6 +22,7 @@ using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
+using Weasel.Postgresql.SqlGeneration;
 using LambdaBuilder = Baseline.Expressions.LambdaBuilder;
 #nullable enable
 namespace Marten.Internal.Storage
@@ -106,7 +107,7 @@ namespace Marten.Internal.Storage
             {
                 0 => null,
                 1 => defaults[0],
-                _ => new CompoundWhereFragment("and", defaults)
+                _ => CompoundWhereFragment.And(defaults)
             };
         }
 
@@ -148,7 +149,7 @@ namespace Marten.Internal.Storage
             {
                 return new Deletion(this, HardDeleteFragment)
                 {
-                    Where = new CompoundWhereFragment("and", new SpecificTenantFilter(tenant), ByIdFilter(id)),
+                    Where = CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)),
                     Id = id
                 };
             }
@@ -244,7 +245,7 @@ namespace Marten.Internal.Storage
             {
                 return new Deletion(this, DeleteFragment)
                 {
-                    Where = new CompoundWhereFragment("and", new SpecificTenantFilter(tenant), ByIdFilter(id)),
+                    Where = CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)),
                     Id = id
                 };
             }
@@ -267,7 +268,7 @@ namespace Marten.Internal.Storage
             if (extras.Count > 0)
             {
                 extras.Add(query);
-                return new CompoundWhereFragment("and", extras.ToArray());
+                return CompoundWhereFragment.And(extras);
             }
 
             return query;

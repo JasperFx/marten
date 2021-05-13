@@ -1,5 +1,7 @@
 using System;
 using Marten.Linq.SqlGeneration;
+using Weasel.Postgresql.SqlGeneration;
+
 #nullable enable
 namespace Marten.Linq.MatchesSql
 {

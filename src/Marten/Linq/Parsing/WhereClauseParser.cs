@@ -12,6 +12,7 @@ using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Clauses.ResultOperators;
 using Remotion.Linq.Parsing;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing
 {
@@ -27,32 +28,6 @@ namespace Marten.Linq.Parsing
             {ExpressionType.GreaterThanOrEqual, ">="},
             {ExpressionType.LessThan, "<"},
             {ExpressionType.LessThanOrEqual, "<="}
-        };
-
-        /// <summary>
-        /// Used for NOT operator conversions
-        /// </summary>
-        public static readonly IDictionary<string, string> NotOperators = new Dictionary<string, string>
-        {
-            {"=", "!="},
-            {"!=", "="},
-            {">", "<="},
-            {">=", "<"},
-            {"<", ">="},
-            {"<=", ">"}
-        };
-
-        /// <summary>
-        /// Used when reordering a Binary comparison
-        /// </summary>
-        public static readonly IDictionary<string, string> OppositeOperators = new Dictionary<string, string>
-        {
-            {"=", "="},
-            {"!=", "!="},
-            {">", "<"},
-            {">=", "<="},
-            {"<", ">"},
-            {"<=", ">="}
         };
 
 
@@ -140,7 +115,7 @@ namespace Marten.Linq.Parsing
         {
             var original = _holder;
 
-            var compound =  new CompoundWhereFragment(separator);
+            var compound =  CompoundWhereFragment.For(separator);
             _holder.Register(compound);
 
             _holder = compound;
@@ -273,7 +248,7 @@ namespace Marten.Linq.Parsing
                         return buildWhereForContains(findArrayField());
 
                     case SubQueryUsage.Intersect:
-                        return new WhereInArray("data", (ConstantExpression)_expression.QueryModel.MainFromClause.FromExpression);
+                        return new WhereInArrayFilter("data", (ConstantExpression)_expression.QueryModel.MainFromClause.FromExpression);
 
                     default:
                         throw new NotImplementedException();

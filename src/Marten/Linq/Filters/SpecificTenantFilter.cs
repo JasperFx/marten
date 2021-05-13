@@ -4,6 +4,7 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
 {
@@ -21,9 +22,8 @@ namespace Marten.Linq.Filters
 
         public void Apply(CommandBuilder builder)
         {
-            builder.Append($"d.{TenantIdColumn.Name} = :");
-            var parameter = builder.AddParameter(_tenant.TenantId, NpgsqlDbType.Varchar);
-            builder.Append(parameter.ParameterName);
+            builder.Append($"d.{TenantIdColumn.Name} = ");
+            builder.AppendParameter(_tenant.TenantId);
         }
 
         public bool Contains(string sqlText)

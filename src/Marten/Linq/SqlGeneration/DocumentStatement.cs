@@ -4,6 +4,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -38,7 +39,7 @@ namespace Marten.Linq.SqlGeneration
                 default:
                     var wheres = WhereClauses.Select(x => parser.Build(x)).ToArray();
 
-                    where = new CompoundWhereFragment("and", wheres);
+                    where = CompoundWhereFragment.And(wheres);
                     break;
 
 

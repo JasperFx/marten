@@ -3,6 +3,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
 {

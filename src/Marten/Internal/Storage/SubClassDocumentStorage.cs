@@ -19,6 +19,7 @@ using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage
 {
@@ -99,8 +100,7 @@ namespace Marten.Internal.Storage
         {
             var extras = extraFilters(query).ToArray();
 
-            var extraCompound = new CompoundWhereFragment("and", extras);
-            return new CompoundWhereFragment("and", query, extraCompound);
+            return query.CombineAnd(extras);
         }
 
         // TODO -- there's duplication here w/ DocumentStorage
@@ -137,7 +137,7 @@ namespace Marten.Internal.Storage
             {
                 0 => null,
                 1 => defaults[0],
-                _ => new CompoundWhereFragment("and", defaults)
+                _ => CompoundWhereFragment.And(defaults)
             };
         }
 

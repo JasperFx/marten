@@ -34,17 +34,14 @@ namespace Marten.Linq.SqlGeneration
 
             if (Offset > 0)
             {
-                // TODO -- need to add more overloads to avoid the type to DbType lookup
-                var param = sql.AddParameter(Offset);
-                sql.Append(" OFFSET :");
-                sql.Append(param.ParameterName);
+                sql.Append(" OFFSET ");
+                sql.AppendParameter(Offset);
             }
 
             if (Limit > 0)
             {
-                var param = sql.AddParameter(Limit);
-                sql.Append(" LIMIT :");
-                sql.Append(param.ParameterName);
+                sql.Append(" LIMIT ");
+                sql.AppendParameter(Limit);
             }
 
             endCommonTableExpression(sql);

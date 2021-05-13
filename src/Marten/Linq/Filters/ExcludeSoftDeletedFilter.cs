@@ -1,4 +1,5 @@
 using Marten.Schema;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
 {

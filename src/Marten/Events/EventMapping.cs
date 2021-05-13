@@ -28,6 +28,7 @@ using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events
 {
@@ -111,13 +112,7 @@ namespace Marten.Events
         {
             var extras = extraFilters(query).ToList();
 
-            if (extras.Count > 0)
-            {
-                extras.Add(query);
-                return new CompoundWhereFragment("and", extras.ToArray());
-            }
-
-            return query;
+            return query.CombineAnd(extras);
         }
 
         private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
@@ -131,7 +126,7 @@ namespace Marten.Events
 
         public ISqlFragment DefaultWhereFragment()
         {
-            return new CompoundWhereFragment("and", _defaultWhereFragment, IsNotArchivedFilter.Instance);
+            return _defaultWhereFragment.CombineAnd(IsNotArchivedFilter.Instance);
         }
 
         public abstract IEvent Wrap(object data);

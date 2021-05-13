@@ -2,8 +2,9 @@ using LamarCodeGeneration.Util;
 using Marten.Linq.Filters;
 using NSubstitute;
 using Shouldly;
+using Weasel.Postgresql.SqlGeneration;
 using Xunit;
-using NotWhereFragment = Marten.Linq.Filters.NotWhereFragment;
+using NotWhereFragment = Weasel.Postgresql.SqlGeneration.NotWhereFragment;
 
 namespace Marten.Testing.Linq.Parsing
 {

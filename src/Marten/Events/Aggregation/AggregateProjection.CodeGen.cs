@@ -22,6 +22,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Storage;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Aggregation
 {
