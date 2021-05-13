@@ -10,13 +10,12 @@ namespace Marten.Events.Projections
     {
         public List<IGrouper<TId>> Groupers { get; } = new();
         public List<IFanOutRule> Fanouts { get; } = new();
-        public List<IGrouperFactory<TId>> GrouperFactories { get; } = new();
 
         public virtual async ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> Slice(IQuerySession querySession,
             IEnumerable<StreamAction> streams, ITenancy tenancy)
         {
             var streamActions = streams.ToList();
-            await TryToCreateGroupers(querySession, streamActions.SelectMany(stream => stream.Events).ToList());
+            await SetupCustomGroupers(querySession, streamActions.SelectMany(stream => stream.Events).ToList());
 
             return Slice(streamActions, tenancy).ToList();
         }
@@ -24,7 +23,7 @@ namespace Marten.Events.Projections
         public virtual async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> Slice(IQuerySession querySession,
             IReadOnlyList<IEvent> events, ITenancy tenancy)
         {
-            await TryToCreateGroupers(querySession, events);
+            await SetupCustomGroupers(querySession, events);
             var tenantGroups = events.GroupBy(x => x.TenantId);
             var slices = tenantGroups.Select(x => Slice(tenancy[x.Key], x.ToList())).ToList();
             return slices;
@@ -44,24 +43,13 @@ namespace Marten.Events.Projections
             }
         }
 
-        protected async ValueTask TryToCreateGroupers(IQuerySession querySession, IReadOnlyList<IEvent> events)
+        protected virtual ValueTask SetupCustomGroupers(IQuerySession querySession, IReadOnlyList<IEvent> events)
         {
-            var eventsToGroup = events
-                .SelectMany(@event =>
-                    GrouperFactories
-                        .Where(f => f.Supports(@event.EventType))
-                        .Select(factory => (@event, factory)
-                    )
-                );
+            return new ();
 
-            foreach (var (@event, factory) in eventsToGroup)
-            {
-                var grouper = await factory.Create(querySession, @event);
-                Groupers.Add(grouper);
-            }
         }
 
-        protected virtual TenantSliceGroup<TDoc, TId> Slice(ITenant tenant, IList<IEvent> events)
+        protected TenantSliceGroup<TDoc, TId> Slice(ITenant tenant, IList<IEvent> events)
         {
             var grouping = new EventGrouping<TId>();
             foreach (var grouper in Groupers)

@@ -42,24 +42,19 @@ namespace Marten.Events.Projections
             Grouper(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
         }
 
-        public void Identities<TEvent>(Func<IQuerySession, TEvent, Task<IReadOnlyList<TId>>> identitiesFunc)
-        {
-            GrouperFactory(new MultiStreamGrouperFactory<TId, TEvent>(identitiesFunc));
-        }
-
-        public void GrouperFactory(IGrouperFactory<TId> grouperFactory)
-        {
-            _eventSlicer.GrouperFactories.Add(grouperFactory);
-        }
-
         public void Grouper(IGrouper<TId> grouper)
         {
             _eventSlicer.Groupers.Add(grouper);
         }
 
+        public void EventSlicer<T>()
+            where T: IViewProjectionEventSlicer<TDoc, TId>, new()
+        {
+            EventSlicer(new T());
+        }
+
         public void EventSlicer(IViewProjectionEventSlicer<TDoc, TId> eventSlicer)
         {
-            eventSlicer.GrouperFactories.AddRange(_eventSlicer.GrouperFactories);
             eventSlicer.Groupers.AddRange(_eventSlicer.Groupers);
             eventSlicer.Fanouts.AddRange(_eventSlicer.Fanouts);
 
