@@ -62,7 +62,7 @@ namespace Marten
 
             Transform = new DocumentTransforms(this, Tenancy.Default);
 
-            options.InitialData.Each(x => x.Populate(this));
+            options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());
         }
 
         IReadOnlyStoreOptions IDocumentStore.Options => Options;
