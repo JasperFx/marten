@@ -112,7 +112,7 @@ namespace Marten.Testing.Events.Projections
 
             if (!licenceFeatureTogglesEvents.Any())
                 return;
-            
+
             var streamIds = await FindUserIdsWithLicense(querySession,
                 licenceFeatureTogglesEvents.Select(e => (LicenseFeatureToggled)e.Data));
 
@@ -122,6 +122,7 @@ namespace Marten.Testing.Events.Projections
         private static async Task<IDictionary<Guid, List<Guid>>> FindUserIdsWithLicense(IQuerySession session, IEnumerable<LicenseFeatureToggled> events)
         {
             var licenceIds = events.Select(e => e.LicenseId).ToList();
+
             var result = await session.Query<UserFeatureToggles>()
                 .Where(x => licenceIds.Contains(x.LicenseId))
                 .Select(x => new {x.Id, x.LicenseId})
@@ -139,15 +140,7 @@ namespace Marten.Testing.Events.Projections
         {
             Identity<UserRegistered>(@event => @event.UserId);
             Identity<UserLicenseAssigned>(@event => @event.UserId);
-            EventSlicer(new LicenseFeatureToggledEventSlicer());
-        }
-
-        private static async Task<IReadOnlyList<Guid>> FindUserIdsWithLicense(IQuerySession session, LicenseFeatureToggled @event)
-        {
-            return await session.Query<UserFeatureToggles>()
-                .Where(x => x.LicenseId == @event.LicenseId)
-                .Select(x => x.Id)
-                .ToListAsync();
+            EventSlicer<LicenseFeatureToggledEventSlicer>();
         }
 
         public void Apply(UserRegistered @event, UserFeatureToggles view)
