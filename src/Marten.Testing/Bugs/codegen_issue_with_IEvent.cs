@@ -14,7 +14,7 @@ namespace Marten.Testing.Bugs
         {
             var store = StoreOptions(_ =>
             {
-                _.Events.Projections.Add(new FooProjection());
+                _.Projections.Add(new FooProjection());
             });
 
             using var session = store.OpenSession();
@@ -28,7 +28,7 @@ namespace Marten.Testing.Bugs
         {
             var store = StoreOptions(_ =>
             {
-                _.Events.Projections.Add(new RecordProjection());
+                _.Projections.Add(new RecordProjection());
             });
 
             using var session = store.OpenSession();

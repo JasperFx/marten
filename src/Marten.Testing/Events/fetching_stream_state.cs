@@ -55,7 +55,7 @@ namespace Marten.Testing.Events
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Events.AddEventTypes(new[] { typeof(FooEvent), });
 
-                _.Events.Projections.AggregatorFor<FooAggregate>();
+                _.Projections.AggregatorFor<FooAggregate>();
             });
 
             using (var session = store2.OpenSession())

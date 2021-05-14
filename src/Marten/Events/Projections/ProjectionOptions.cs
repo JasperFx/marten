@@ -12,7 +12,7 @@ namespace Marten.Events.Projections
     /// <summary>
     /// Used to register projections with Marten
     /// </summary>
-    public class ProjectionCollection
+    public class ProjectionOptions
     {
         private readonly StoreOptions _options;
         private readonly Dictionary<Type, object> _liveAggregateSources = new Dictionary<Type, object>();
@@ -20,21 +20,21 @@ namespace Marten.Events.Projections
 
         private Lazy<Dictionary<string, AsyncProjectionShard>> _asyncShards;
 
-        internal ProjectionCollection(StoreOptions options)
+        internal ProjectionOptions(StoreOptions options)
         {
             _options = options;
         }
 
-        internal IList<ProjectionSource> Projections { get; } = new List<ProjectionSource>();
+        internal IList<ProjectionSource> All { get; } = new List<ProjectionSource>();
 
         internal IList<AsyncProjectionShard> BuildAllShards(DocumentStore store)
         {
-            return Projections.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
+            return All.SelectMany(x => x.AsyncProjectionShards(store)).ToList();
         }
 
         internal bool HasAnyAsyncProjections()
         {
-            return Projections.Any(x => x.Lifecycle == ProjectionLifecycle.Async);
+            return All.Any(x => x.Lifecycle == ProjectionLifecycle.Async);
         }
 
         internal IEnumerable<Type> AllAggregateTypes()
@@ -44,7 +44,7 @@ namespace Marten.Events.Projections
                 yield return kv.Key;
             }
 
-            foreach (var projection in Projections.OfType<IAggregateProjection>())
+            foreach (var projection in All.OfType<IAggregateProjection>())
             {
                 yield return projection.AggregateType;
             }
@@ -52,7 +52,7 @@ namespace Marten.Events.Projections
 
         internal IProjection[] BuildInlineProjections(DocumentStore store)
         {
-            return Projections.Where(x => x.Lifecycle == ProjectionLifecycle.Inline).Select(x => x.Build(store)).ToArray();
+            return All.Where(x => x.Lifecycle == ProjectionLifecycle.Inline).Select(x => x.Build(store)).ToArray();
         }
 
 
@@ -80,7 +80,7 @@ namespace Marten.Events.Projections
             }
 
             asyncConfiguration?.Invoke(wrapper.Options);
-            Projections.Add(wrapper);
+            All.Add(wrapper);
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
             projection.AssertValidity();
-            Projections.Add(projection);
+            All.Add(projection);
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Marten.Events.Projections
                 Lifecycle = lifecycle ?? ProjectionLifecycle.Inline
             };
             source.AssertValidity();
-            Projections.Add(source);
+            All.Add(source);
 
             return expression;
         }
@@ -137,7 +137,7 @@ namespace Marten.Events.Projections
 
             projection.AssertValidity();
 
-            Projections.Add(projection);
+            All.Add(projection);
         }
 
         /// <summary>
@@ -157,14 +157,14 @@ namespace Marten.Events.Projections
 
             projection.AssertValidity();
 
-            Projections.Add(projection);
+            All.Add(projection);
 
             return expression;
         }
 
         internal bool Any()
         {
-            return Projections.Any();
+            return All.Any();
         }
 
         internal ILiveAggregator<T> AggregatorFor<T>() where T : class
@@ -185,7 +185,7 @@ namespace Marten.Events.Projections
 
         private AggregateProjection<T> tryFindProjectionSourceForAggregateType<T>() where T : class
         {
-            var candidate = Projections.OfType<AggregateProjection<T>>().FirstOrDefault();
+            var candidate = All.OfType<AggregateProjection<T>>().FirstOrDefault();
             if (candidate != null)
             {
                 return candidate;
@@ -201,7 +201,7 @@ namespace Marten.Events.Projections
 
         internal void AssertValidity(DocumentStore store)
         {
-            var messages = Projections.Concat(_liveAggregateSources.Values)
+            var messages = All.Concat(_liveAggregateSources.Values)
                 .OfType<ProjectionSource>()
                 .Distinct()
                 .SelectMany(x => x.ValidateConfiguration(_options))
@@ -209,7 +209,7 @@ namespace Marten.Events.Projections
 
             _asyncShards = new Lazy<Dictionary<string, AsyncProjectionShard>>(() =>
             {
-                return Projections
+                return All
                     .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
                     .SelectMany(x => x.AsyncProjectionShards(store))
                     .ToDictionary(x => x.Name.Identity);
@@ -234,14 +234,14 @@ namespace Marten.Events.Projections
 
         internal bool TryFindProjection(string projectionName, out ProjectionSource source)
         {
-            source = Projections.FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(projectionName));
+            source = All.FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(projectionName));
             return source != null;
         }
 
 
         internal string[] AllProjectionNames()
         {
-            return Projections.Select(x => $"'{x.ProjectionName}'").ToArray();
+            return All.Select(x => $"'{x.ProjectionName}'").ToArray();
         }
     }
 }

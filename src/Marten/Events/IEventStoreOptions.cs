@@ -30,11 +30,6 @@ namespace Marten.Events
         string DatabaseSchemaName { get; set; }
 
         /// <summary>
-        /// Configuration for all event store projections
-        /// </summary>
-        ProjectionCollection Projections { get; }
-
-        /// <summary>
         /// Register an event type with Marten. This isn't strictly necessary for normal usage,
         /// but can help Marten with asynchronous projections where Marten hasn't yet encountered
         /// the event type

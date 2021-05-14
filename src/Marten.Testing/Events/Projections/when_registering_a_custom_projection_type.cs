@@ -8,7 +8,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events.Projections
+namespace Marten.Testing.Projections
 {
     public class when_registering_a_custom_projection_type: IDisposable
     {
@@ -20,7 +20,7 @@ namespace Marten.Testing.Events.Projections
             _store = DocumentStore.For(opts =>
             {
                 opts.Connection(ConnectionSource.ConnectionString);
-                opts.Events.Projections.Add(new MyProjection(), ProjectionLifecycle.Async,
+                opts.Projections.Add(new MyProjection(), ProjectionLifecycle.Async,
                     projectionName: "NewProjection", asyncConfiguration:
                     o =>
                     {
@@ -28,7 +28,7 @@ namespace Marten.Testing.Events.Projections
                     });
             });
 
-            _store.Events.Projections.TryFindProjection("NewProjection", out theProjection)
+            _store.Options.Projections.TryFindProjection("NewProjection", out theProjection)
                 .ShouldBeTrue();
         }
 

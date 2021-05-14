@@ -31,9 +31,8 @@ namespace Marten.CommandLine.Commands.Projection
         {
             var projections = store
                 .Options
-                .Events
                 .Projections
-                .Projections;
+                .All;
 
             if (ProjectionFlag.IsEmpty())
             {
@@ -65,9 +64,8 @@ namespace Marten.CommandLine.Commands.Projection
         {
             var projections = store
                 .Options
-                .Events
                 .Projections
-                .Projections;
+                .All;
 
             if (ProjectionFlag.IsNotEmpty())
             {

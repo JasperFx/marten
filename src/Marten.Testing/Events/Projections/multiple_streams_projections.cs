@@ -11,7 +11,7 @@ using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Events.Projections
+namespace Marten.Testing.Projections
 {
     // License events
     public class LicenseCreated
@@ -405,8 +405,8 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.DatabaseSchemaName = "multi_stream_projections";
 
-                _.Events.Projections.Add<UserFeatureTogglesProjection>(ProjectionLifecycle.Inline);
-                _.Events.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
+                _.Projections.Add<UserFeatureTogglesProjection>(ProjectionLifecycle.Inline);
+                _.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
             });
         }
     }

@@ -47,7 +47,7 @@ namespace Marten.AsyncDaemon.Testing
 
             StoreOptions(x =>
             {
-                x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                 x.Logger(new TestOutputMartenLogger(_output));
             }, true);
 
@@ -56,7 +56,7 @@ namespace Marten.AsyncDaemon.Testing
             await PublishSingleThreaded();
 
 
-            var shard = theStore.Events.Projections.AllShards().Single();
+            var shard = theStore.Options.Projections.AllShards().Single();
             var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 15.Seconds());
 
             await agent.StartShard(shard.Name.Identity, CancellationToken.None);
@@ -72,7 +72,7 @@ namespace Marten.AsyncDaemon.Testing
             StoreOptions(x =>
             {
                 x.Events.TenancyStyle = TenancyStyle.Conjoined;
-                x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                 x.Schema.For<Trip>().MultiTenanted();
             }, true);
 
@@ -82,7 +82,7 @@ namespace Marten.AsyncDaemon.Testing
 
             var agent = await StartDaemon();
 
-            var shard = theStore.Events.Projections.AllShards().Single();
+            var shard = theStore.Options.Projections.AllShards().Single();
             var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
 
             await PublishSingleThreaded();
@@ -101,7 +101,7 @@ namespace Marten.AsyncDaemon.Testing
 
             Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-            StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async), true);
+            StoreOptions(x => x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async), true);
 
             var agent = await StartDaemon();
 
@@ -123,7 +123,7 @@ namespace Marten.AsyncDaemon.Testing
 
             Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-            StoreOptions(x => x.Events.Projections.Add<TripAggregationWithoutCustomName>(ProjectionLifecycle.Async), true);
+            StoreOptions(x => x.Projections.Add<TripAggregationWithoutCustomName>(ProjectionLifecycle.Async), true);
 
             var agent = await StartDaemon();
 

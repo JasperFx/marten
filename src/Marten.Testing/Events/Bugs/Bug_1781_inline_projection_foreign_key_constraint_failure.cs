@@ -21,8 +21,8 @@ namespace Marten.Testing.Events.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Events.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
-                x.Events.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline)
+                x.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline)
                     .ForeignKey<DataImportAggregate>(y => y.ImportId);
             });
 
@@ -35,9 +35,9 @@ namespace Marten.Testing.Events.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Events.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline)
+                x.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline)
                     .ForeignKey<DataImportAggregate>(y => y.ImportId);
-                x.Events.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
             });
 
             await RunTest(documentStore);

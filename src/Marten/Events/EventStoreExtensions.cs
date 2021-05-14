@@ -24,7 +24,7 @@ namespace Marten.Events
             }
 
             var session = queryable.As<MartenLinqQueryable<IEvent>>().MartenSession;
-            var aggregator = session.Options.Events.Projections.AggregatorFor<T>();
+            var aggregator = session.Options.Projections.AggregatorFor<T>();
 
             var aggregate = aggregator.Build(queryable.ToList(), (IQuerySession)session, state);
 
@@ -49,7 +49,7 @@ namespace Marten.Events
             }
 
             var session = queryable.As<MartenLinqQueryable<IEvent>>().MartenSession;
-            var aggregator = session.Options.Events.Projections.AggregatorFor<T>();
+            var aggregator = session.Options.Projections.AggregatorFor<T>();
 
             var aggregate = await aggregator.BuildAsync(events, (IQuerySession)session, state, token);
 

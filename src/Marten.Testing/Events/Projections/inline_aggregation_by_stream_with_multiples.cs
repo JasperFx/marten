@@ -33,15 +33,15 @@ namespace Marten.Testing.Events.Projections
 
                 // This is all you need to create the QuestParty projected
                 // view
-                _.Events.Projections.SelfAggregate<QuestParty>();
+                _.Projections.SelfAggregate<QuestParty>();
             });
             #endregion sample_registering-quest-party
 
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.Projections.SelfAggregate<QuestParty>();
-                _.Events.Projections.SelfAggregate<QuestMonsters>();
+                _.Projections.SelfAggregate<QuestParty>();
+                _.Projections.SelfAggregate<QuestMonsters>();
             });
 
             var streamId = theSession.Events
@@ -61,8 +61,7 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                _.Events.Projections.SelfAggregate<QuestParty>();
-                _.Events.Projections.SelfAggregate<QuestMonsters>();
+                _.Projections.SelfAggregate<QuestMonsters>();
             });
 
             var streamId = theSession.Events

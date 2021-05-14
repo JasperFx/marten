@@ -105,7 +105,7 @@ namespace Marten.Events.Daemon
                 await StartDaemon();
             }
 
-            var shards = _store.Events.Projections.AllShards();
+            var shards = _store.Options.Projections.AllShards();
             foreach (var shard in shards) await StartShard(shard, CancellationToken.None);
         }
 
@@ -119,7 +119,7 @@ namespace Marten.Events.Daemon
             // Latch it so it doesn't double start
             if (_agents.ContainsKey(shardName)) return;
 
-            if (_store.Events.Projections.TryFindAsyncShard(shardName, out var shard)) await StartShard(shard, token);
+            if (_store.Options.Projections.TryFindAsyncShard(shardName, out var shard)) await StartShard(shard, token);
         }
 
         public async Task StartShard(AsyncProjectionShard shard, CancellationToken cancellationToken)
@@ -236,9 +236,9 @@ namespace Marten.Events.Daemon
 
         public Task RebuildProjection(string projectionName, CancellationToken token)
         {
-            if (!_store.Events.Projections.TryFindProjection(projectionName, out var projection))
+            if (!_store.Options.Projections.TryFindProjection(projectionName, out var projection))
                 throw new ArgumentOutOfRangeException(nameof(projectionName),
-                    $"No registered projection matches the name '{projectionName}'. Available names are {_store.Events.Projections.AllProjectionNames().Join(", ")}");
+                    $"No registered projection matches the name '{projectionName}'. Available names are {_store.Options.Projections.AllProjectionNames().Join(", ")}");
 
             return RebuildProjection(projection, token);
         }

@@ -64,13 +64,13 @@ namespace Marten.Events.TestSupport
         {
             if (!DoNotDeleteExistingData)
             {
-                _store.Advanced.Clean.DeleteAllEventData();
+                await _store.Advanced.Clean.DeleteAllEventDataAsync();
                 foreach (var storageType in
-                    _store.Events.Projections.Projections.SelectMany(x => x.Options.StorageTypes))
+                    _store.Options.Projections.All.SelectMany(x => x.Options.StorageTypes))
                     await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType);
             }
 
-            if (_store.Events.Projections.HasAnyAsyncProjections())
+            if (_store.Options.Projections.HasAnyAsyncProjections())
             {
                 Daemon = _store.BuildProjectionDaemon();
                 await Daemon.StartAllShards();

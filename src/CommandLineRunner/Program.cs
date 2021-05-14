@@ -28,9 +28,9 @@ namespace CommandLineRunner
                         opts.DatabaseSchemaName = "cli";
                         opts.Connection(ConnectionSource.ConnectionString);
 
-                        opts.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
-                        opts.Events.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
-                        opts.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
+                        opts.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                        opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
+                        opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
                     });
                 });
         }

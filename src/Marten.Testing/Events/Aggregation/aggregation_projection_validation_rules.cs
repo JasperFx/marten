@@ -38,7 +38,7 @@ namespace Marten.Testing.Events.Aggregation
             var message = errorMessageFor(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsGuid;
-                x.Events.Projections.SelfAggregate<StringIdentifiedAggregate>(ProjectionLifecycle.Async);
+                x.Projections.SelfAggregate<StringIdentifiedAggregate>(ProjectionLifecycle.Async);
             });
 
             message.ShouldContain("Id type mismatch. The stream identity type is System.Guid, but the aggregate document Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.StringIdentifiedAggregate id type is string", StringComparisonOption.Default);
@@ -51,7 +51,7 @@ namespace Marten.Testing.Events.Aggregation
             var message = errorMessageFor(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Events.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+                x.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
             });
 
             message.ShouldContain("Id type mismatch. The stream identity type is string, but the aggregate document Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate id type is Guid", StringComparisonOption.Default);
@@ -63,7 +63,7 @@ namespace Marten.Testing.Events.Aggregation
             errorMessageFor(opts =>
             {
                 opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-                opts.Events.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+                opts.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
             }).ShouldContain("Tenancy storage style mismatch between the events (Conjoined) and the aggregate type Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate (Single)", StringComparisonOption.Default);
         }
 
@@ -72,7 +72,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             errorMessageFor(opts =>
             {
-                opts.Events.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
+                opts.Projections.SelfAggregate<GuidIdentifiedAggregate>(ProjectionLifecycle.Async);
                 opts.Schema.For<GuidIdentifiedAggregate>().MultiTenanted();
             }).ShouldContain("Tenancy storage style mismatch between the events (Single) and the aggregate type Marten.Testing.Events.Aggregation.aggregation_projection_validation_rules.GuidIdentifiedAggregate (Conjoined)", StringComparisonOption.Default);
         }
@@ -82,7 +82,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             errorMessageFor(opts =>
             {
-                opts.Events.Projections.Add(new Projections.EmptyProjection());
+                opts.Projections.Add(new Projections.EmptyProjection());
             }).ShouldNotBeNull();
         }
 

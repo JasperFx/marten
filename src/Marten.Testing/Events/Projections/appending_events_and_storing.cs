@@ -26,7 +26,7 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = tenancyStyle;
 
-                _.Events.Projections.Add(new QuestPatchTestProjection());
+                _.Projections.Add(new QuestPatchTestProjection());
             });
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabase();

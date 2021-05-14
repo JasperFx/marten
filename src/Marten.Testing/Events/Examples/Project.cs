@@ -19,7 +19,7 @@ namespace Marten.Testing.Events.Examples
 
                 // Direct Marten to update the Project aggregate
                 // inline as new events are captured
-                opts.Events
+                opts
                     .Projections
                     .SelfAggregate<Project>(ProjectionLifecycle.Inline);
 

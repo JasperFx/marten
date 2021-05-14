@@ -237,7 +237,7 @@ namespace Marten.Events
         {
             var events = FetchStream(streamId, version, timestamp);
 
-            var aggregator = _store.Events.Projections.AggregatorFor<T>();
+            var aggregator = _store.Options.Projections.AggregatorFor<T>();
 
             if (!events.Any()) return null;
 
@@ -255,7 +255,7 @@ namespace Marten.Events
             var events = await FetchStreamAsync(streamId, version, timestamp, token);
             if (!events.Any()) return null;
 
-            var aggregator = _store.Events.Projections.AggregatorFor<T>();
+            var aggregator = _store.Options.Projections.AggregatorFor<T>();
             var aggregate = await aggregator.BuildAsync(events, _session, state, token);
 
             if (aggregate == null) return null;
@@ -274,7 +274,7 @@ namespace Marten.Events
                 return null;
             }
 
-            var aggregator = _store.Events.Projections.AggregatorFor<T>();
+            var aggregator = _store.Options.Projections.AggregatorFor<T>();
             var aggregate = aggregator.Build(events, _session, state);
 
             var storage = _session.StorageFor<T>();
@@ -292,7 +292,7 @@ namespace Marten.Events
                 return null;
             }
 
-            var aggregator = _store.Events.Projections.AggregatorFor<T>();
+            var aggregator = _store.Options.Projections.AggregatorFor<T>();
 
             var aggregate = await aggregator.BuildAsync(events, _session, state, token);
 

@@ -59,7 +59,7 @@ namespace Marten.Schema.Testing
             StoreOptions(opts =>
             {
                 opts.Events.AddEventTypes(new[] { typeof(UserCreated) });
-                opts.Events.Projections.Add(new UserViewProjection());
+                opts.Projections.Add(new UserViewProjection());
                 opts.RegisterDocumentType<UniqueUser>();
             });
         }

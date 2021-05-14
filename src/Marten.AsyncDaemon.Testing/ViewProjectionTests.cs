@@ -64,7 +64,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task run_end_to_end()
         {
-            StoreOptions(x => x.Events.Projections.Add(new DayProjection()));
+            StoreOptions(x => x.Projections.Add(new DayProjection()));
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Day));
 
