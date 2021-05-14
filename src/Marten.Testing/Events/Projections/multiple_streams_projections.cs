@@ -146,7 +146,7 @@ namespace Marten.Testing.Projections
 
             CustomGrouping(new LicenseFeatureToggledEventGrouper());
         }
-        
+
         public void Apply(UserRegistered @event, UserFeatureToggles view)
         {
             view.Id = @event.UserId;
