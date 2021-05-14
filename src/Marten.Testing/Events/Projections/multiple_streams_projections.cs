@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql;
@@ -171,10 +172,32 @@ namespace Marten.Testing.Events.Projections
 
     public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
     {
+        public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
+        {
+            public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
+            {
+                var allEvents = streams.SelectMany(x => x.Events).ToList();
+                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
+                group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
+                group.AddEvents<UsersAssignedToGroup>(@event => @event.UserIds, allEvents);
+
+                return new(group.Slices.ToList());
+            }
+
+            public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events, ITenancy tenancy)
+            {
+                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
+                group.AddEvents<UserRegistered>(@event => @event.UserId, events);
+                group.AddEvents<UsersAssignedToGroup>(@event => @event.UserIds, events);
+
+                return new(new List<TenantSliceGroup<UserGroupsAssignment, Guid>>{group});
+            }
+        }
+
+
         public UserGroupsAssignmentProjection()
         {
-            Identity<UserRegistered>(@event => @event.UserId);
-            Identities<UsersAssignedToGroup>(@event => @event.UserIds);
+            CustomGrouping(new CustomSlicer());
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)
@@ -187,6 +210,8 @@ namespace Marten.Testing.Events.Projections
             view.Groups.Add(@event.GroupId);
         }
     }
+
+
 
     public class multiple_streams_projections: IntegrationContext
     {

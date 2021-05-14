@@ -95,23 +95,47 @@ namespace Marten.Events.Projections
 
         public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
+            if (_customSlicer != null)
+                throw new InvalidOperationException(
+                    "There is already a custom event slicer registered for this projection");
             _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         }
 
         public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
         {
+            if (_customSlicer != null)
+                throw new InvalidOperationException(
+                    "There is already a custom event slicer registered for this projection");
             _groupers.Add(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
         }
 
+        /// <summary>
+        /// Apply a custom event grouping strategy for events. This is additive to Identity() or Identities()
+        /// </summary>
+        /// <param name="grouper"></param>
+        /// <exception cref="InvalidOperationException"></exception>
         public void CustomGrouping(IAggregateGrouper<TId> grouper)
         {
+            if (_customSlicer != null)
+                throw new InvalidOperationException(
+                    "There is already a custom event slicer registered for this projection");
             _lookupGroupers.Add(grouper);
+        }
+
+        /// <summary>
+        /// If your grouping of events to aggregates doesn't fall into any simple pattern supported
+        /// directly by ViewProjection, supply your own "let me do whatever I want" event slicer
+        /// </summary>
+        /// <param name="slicer"></param>
+        public void CustomGrouping(IEventSlicer<TDoc, TId> slicer)
+        {
+            _customSlicer = slicer;
         }
 
 
         protected override void specialAssertValid()
         {
-            if (!_groupers.Any() && !_lookupGroupers.Any())
+            if (_customSlicer == null && !_groupers.Any() && !_lookupGroupers.Any())
             {
                 throw new InvalidProjectionException(
                     $"ViewProjection {GetType().FullNameInCode()} has no Identity() rules defined or registered lookup grouping rules and does not know how to identify event membership in the aggregated document {typeof(TDoc).FullNameInCode()}");
@@ -125,9 +149,12 @@ namespace Marten.Events.Projections
         }
 
         private bool _groupByTenant = false;
+        private IEventSlicer<TDoc, TId> _customSlicer;
 
         protected override object buildEventSlicer(StoreOptions options)
         {
+            if (_customSlicer != null) return _customSlicer;
+
             var mapping = options.Storage.MappingFor(typeof(TDoc));
             var aggregateStyle = mapping.TenancyStyle;
             var eventStyle = options.Events.TenancyStyle;
