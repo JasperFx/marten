@@ -73,7 +73,7 @@ namespace Marten.Events.Daemon
         /// The actual events fetched for this range and the base filters of the projection
         /// shard
         /// </summary>
-        public IReadOnlyList<IEvent> Events { get; set; }
+        public List<IEvent> Events { get; set; }
 
         /// <summary>
         /// The actual number of events in this range

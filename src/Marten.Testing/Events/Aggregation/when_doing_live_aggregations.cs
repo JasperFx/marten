@@ -35,7 +35,7 @@ namespace Marten.Testing.Events.Aggregation
                 x.D();
             });
 
-            _output.WriteLine(_projection.SourceCode());
+
 
             aggregate.ACount.ShouldBe(1);
             aggregate.BCount.ShouldBe(2);
@@ -133,6 +133,8 @@ namespace Marten.Testing.Events.Aggregation
                 x.A();
                 x.D();
             });
+
+            _output.WriteLine(_projection.SourceCode());
 
             aggregate.Created.ShouldBe(user1.UserName);
             aggregate.ACount.ShouldBe(1);

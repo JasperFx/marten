@@ -37,22 +37,23 @@ namespace Marten.AsyncDaemon.Testing
 
             var projection = (IEventSlicer<Day, int>)new DayProjection();
 
-            var slices = await projection.Slice(theSession, allEvents, theStore.Tenancy);
+            var slices = await projection.SliceAsyncEvents(theSession, allEvents.ToList(), theStore.Tenancy);
 
             foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
             {
-                slice.Events.All(x => x.Data is IDayEvent || x.Data is Movement).ShouldBeTrue();
-                slice.Events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
+                var events = slice.Events();
+                events.All(x => x.Data is IDayEvent || x.Data is Movement).ShouldBeTrue();
+                events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
                     .ShouldBeTrue();
 
-                var travels = slice.Events.OfType<Event<Travel>>().ToArray();
+                var travels = events.OfType<Event<Travel>>().ToArray();
                 foreach (var travel in travels)
                 {
-                    var index = slice.Events.As<List<IEvent>>().IndexOf(travel);
+                    var index = events.As<List<IEvent>>().IndexOf(travel);
 
                     for (var i = 0; i < travel.Data.Movements.Count; i++)
                     {
-                        slice.Events.ElementAt(index + i + 1).Data.ShouldBeTheSameAs(travel.Data.Movements[i]);
+                        events.ElementAt(index + i + 1).Data.ShouldBeTheSameAs(travel.Data.Movements[i]);
                     }
                 }
             }

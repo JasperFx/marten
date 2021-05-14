@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -16,22 +17,99 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation
 {
+
+
+    public interface ITenantSliceGroup<TId>
+    {
+        /// <summary>
+        /// Add a single event to a single event slice by id
+        /// </summary>
+        /// <param name="id">The aggregate id</param>
+        /// <param name="event"></param>
+        void AddEvent(TId id, IEvent @event);
+
+        /// <summary>
+        /// Add many events to a single event slice by aggregate id
+        /// </summary>
+        /// <param name="id">The aggregate id</param>
+        /// <param name="events"></param>
+        void AddEvents(TId id, IEnumerable<IEvent> events);
+
+        /// <summary>
+        /// Add events to streams where each event of type TEvent applies to only
+        /// one stream
+        /// </summary>
+        /// <param name="singleIdSource"></param>
+        /// <param name="events"></param>
+        /// <typeparam name="TEvent"></typeparam>
+        void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events);
+
+        /// <summary>
+        /// Add events to streams where each event of type TEvent may be related to many
+        /// different aggregates
+        /// </summary>
+        /// <param name="multipleIdSource"></param>
+        /// <param name="events"></param>
+        /// <typeparam name="TEvent"></typeparam>
+        void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events);
+    }
+
     /// <summary>
     /// Intermediate grouping of events by tenant within the asynchronous projection support
     /// </summary>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TId"></typeparam>
-    public class TenantSliceGroup<TDoc, TId> : IDisposable
+    public class TenantSliceGroup<TDoc, TId> : IDisposable, ITenantSliceGroup<TId>
     {
         public ITenant Tenant { get; }
-        public readonly IReadOnlyList<EventSlice<TDoc, TId>> Slices;
+        public LightweightCache<TId, EventSlice<TDoc, TId>> Slices { get; }
         private TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
         private Task<Task> _application;
 
-        public TenantSliceGroup(ITenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices)
+        public TenantSliceGroup(ITenant tenant)
         {
             Tenant = tenant;
-            Slices = new List<EventSlice<TDoc, TId>>(slices);
+            Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant));
+        }
+
+        public TenantSliceGroup(ITenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices) : this(tenant)
+        {
+            foreach (var slice in slices)
+            {
+                Slices[slice.Id] = slice;
+            }
+        }
+
+        public void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events)
+        {
+            var matching = events.Where(x => x.Data is TEvent);
+            foreach (var @event in matching)
+            {
+                var id = singleIdSource((TEvent) @event.Data);
+                AddEvent(id, @event);
+            }
+        }
+
+        public void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
+        {
+            var matching = events.Where(x => x.Data is TEvent)
+                .SelectMany(@event => multipleIdSource(@event.Data.As<TEvent>()).Select(id => (id, @event)));
+
+            var groups = matching.GroupBy(x => x.id);
+            foreach (var @group in groups)
+            {
+                AddEvents(@group.Key, @group.Select(x => x.@event));
+            }
+        }
+
+        public void AddEvent(TId id, IEvent @event)
+        {
+            Slices[id].AddEvent(@event);
+        }
+
+        public void AddEvents(TId id, IEnumerable<IEvent> events)
+        {
+            Slices[id].AddEvents(events);
         }
 
         internal void Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,

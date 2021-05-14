@@ -30,10 +30,14 @@ namespace Marten.Testing.Events.Aggregation
 
         internal Event<EEvent> E() => Add<EEvent>();
 
+
         internal Event<T> Add<T>() where T : new()
         {
             var @event = new Event<T>(new T());
             AddEvent(@event);
+
+            @event.Sequence = Count;
+            @event.Id = Guid.NewGuid();
 
             return @event;
         }
@@ -42,6 +46,8 @@ namespace Marten.Testing.Events.Aggregation
         {
             var item = new Event<T>(@event);
             AddEvent(item);
+            item.Id = Guid.NewGuid();
+            item.Sequence = Count;
 
             return item;
         }

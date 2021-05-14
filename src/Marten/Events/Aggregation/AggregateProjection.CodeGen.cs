@@ -102,7 +102,7 @@ namespace Marten.Events.Aggregation
             }
 
             var storage = store.Options.Providers.StorageFor<T>().Lightweight;
-            var slicer = buildEventSlicer();
+            var slicer = buildEventSlicer(store.Options);
 
             var ctor = _inlineType.CompiledType.GetConstructors().Single();
             foreach (var parameter in ctor.GetParameters())
@@ -116,7 +116,7 @@ namespace Marten.Events.Aggregation
             return inline;
         }
 
-        protected virtual object buildEventSlicer()
+        protected virtual object buildEventSlicer(StoreOptions documentMapping)
         {
             Type slicerType = null;
             if (_aggregateMapping.IdType == typeof(Guid))

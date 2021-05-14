@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql;
@@ -104,32 +103,34 @@ namespace Marten.Testing.Events.Projections
         public List<string> FeatureToggles { get; } = new();
     }
 
-    public class LicenseFeatureToggledEventSlicer : ViewProjectionEventSlicer<UserFeatureToggles, Guid>
+    public class LicenseFeatureToggledEventGrouper : IAggregateGrouper<Guid>
     {
-        protected override async ValueTask SetupCustomGroupers(IQuerySession querySession, IReadOnlyList<IEvent> events)
+        public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
         {
-            var licenceFeatureTogglesEvents = events.Where(e => e.EventType == typeof(LicenseFeatureToggled)).ToList();
+            var licenceFeatureTogglesEvents = events
+                .OfType<Event<LicenseFeatureToggled>>()
+                .ToList();
 
             if (!licenceFeatureTogglesEvents.Any())
+            {
                 return;
+            }
 
-            var streamIds = await FindUserIdsWithLicense(querySession,
-                licenceFeatureTogglesEvents.Select(e => (LicenseFeatureToggled)e.Data));
-
-            Groupers.Add(new MultiStreamGrouper<Guid, LicenseFeatureToggled>(e => streamIds[e.LicenseId]));
-        }
-
-        private static async Task<IDictionary<Guid, List<Guid>>> FindUserIdsWithLicense(IQuerySession session, IEnumerable<LicenseFeatureToggled> events)
-        {
-            var licenceIds = events.Select(e => e.LicenseId).ToList();
+            // TODO -- let's build more samples first, but see if there's a useful
+            // pattern for the next 3/4 operations later
+            var licenceIds = licenceFeatureTogglesEvents
+                .Select(e => e.Data.LicenseId)
+                .ToList();
 
             var result = await session.Query<UserFeatureToggles>()
                 .Where(x => licenceIds.Contains(x.LicenseId))
                 .Select(x => new {x.Id, x.LicenseId})
                 .ToListAsync();
 
-            return result.GroupBy(ks => ks.LicenseId, vs=> vs.Id)
+            var streamIds = (IDictionary<Guid, List<Guid>>) result.GroupBy(ks => ks.LicenseId, vs=> vs.Id)
                 .ToDictionary(ks=>ks.Key, vs => vs.ToList());
+
+            grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenceFeatureTogglesEvents);
         }
     }
 
@@ -141,9 +142,10 @@ namespace Marten.Testing.Events.Projections
             Identity<UserRegistered>(@event => @event.UserId);
             Identity<UserLicenseAssigned>(@event => @event.UserId);
 
-            EventSlicer<LicenseFeatureToggledEventSlicer>();
-        }
 
+            CustomGrouping(new LicenseFeatureToggledEventGrouper());
+        }
+        
         public void Apply(UserRegistered @event, UserFeatureToggles view)
         {
             view.Id = @event.UserId;

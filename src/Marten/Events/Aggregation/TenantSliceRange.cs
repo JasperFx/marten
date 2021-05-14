@@ -60,7 +60,7 @@ namespace Marten.Events.Aggregation
             Range.SkipEventSequence(eventSequence);
 
             await using var session = _store.QuerySession();
-            Groups = await _runtime.Slicer.Slice(session, Range.Events, _store.Tenancy);
+            Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events, _store.Tenancy);
         }
     }
 }

@@ -91,7 +91,7 @@ namespace Marten.Events.Aggregation
 
         public bool MatchesAnyDeleteType(IEventSlice slice)
         {
-            return slice.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
+            return slice.Events().Select(x => x.EventType).Intersect(DeleteEvents).Any();
         }
 
         public bool MatchesAnyDeleteType(StreamAction action)

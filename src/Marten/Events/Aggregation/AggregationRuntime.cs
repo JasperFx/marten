@@ -57,7 +57,7 @@ namespace Marten.Events.Aggregation
 
             var exists = aggregate != null;
 
-            foreach (var @event in slice.Events)
+            foreach (var @event in slice.Events())
             {
                 try
                 {
@@ -97,7 +97,7 @@ namespace Marten.Events.Aggregation
 
         public virtual bool IsNew(EventSlice<TDoc, TId> slice)
         {
-            return slice.Events.First().Version == 1;
+            return slice.Events().First().Version == 1;
         }
 
         public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
@@ -114,7 +114,7 @@ namespace Marten.Events.Aggregation
                 .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
                 .ToArray();
 
-            var slices = await Slicer.Slice(operations, filteredStreams, Tenancy);
+            var slices = await Slicer.SliceInlineActions(operations, filteredStreams, Tenancy);
 
             var martenSession = (DocumentSessionBase)operations;
             foreach (var slice in slices)
@@ -141,7 +141,7 @@ namespace Marten.Events.Aggregation
 
             using (var session = store.QuerySession())
             {
-                groups = await Slicer.Slice(session, range.Events, store.Tenancy);
+                groups = await Slicer.SliceAsyncEvents(session, range.Events, store.Tenancy);
             }
 
             return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
