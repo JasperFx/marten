@@ -39,7 +39,8 @@ namespace Marten.Testing.Events.Aggregation
             var fragment = BuildStreamFragment(action);
 
             var aggregator = _projection.BuildLiveAggregator();
-            return aggregator.BuildAsync((IReadOnlyList<IEvent>)fragment.Events, theSession, null, CancellationToken.None);
+            var events = (IReadOnlyList<IEvent>)fragment.Events();
+            return aggregator.BuildAsync(events, theSession, null, CancellationToken.None);
         }
 
 
@@ -58,7 +59,7 @@ namespace Marten.Testing.Events.Aggregation
             var streams = scenario
                 .Streams
                 .ToDictionary()
-                .Select(x => StreamAction.Append(x.Key, x.Value.Events.ToArray()))
+                .Select(x => StreamAction.Append(x.Key, x.Value.Events().ToArray()))
                 .ToArray();
 
             var inline = _projection.BuildRuntime(theStore);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
@@ -12,84 +13,138 @@ using Marten.Storage;
 namespace Marten.Events.Projections
 {
     /// <summary>
-    /// Project a single document view across events that may span across
-    /// event streams in a user-defined grouping
+    ///     Project a single document view across events that may span across
+    ///     event streams in a user-defined grouping
     /// </summary>
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TId"></typeparam>
     public abstract class ViewProjection<TDoc, TId>: AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
     {
-        private IViewProjectionEventSlicer<TDoc, TId> _eventSlicer = new ViewProjectionEventSlicer<TDoc, TId>();
+        private readonly IList<IFanOutRule> _fanOutRules = new List<IFanOutRule>();
+        private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
+        private readonly IList<IAggregateGrouper<TId>> _lookupGroupers = new List<IAggregateGrouper<TId>>();
+
 
         protected ViewProjection()
         {
             Lifecycle = ProjectionLifecycle.Async;
         }
 
+        async ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> IEventSlicer<TDoc, TId>.SliceInlineActions(
+            IQuerySession querySession,
+            IEnumerable<StreamAction> streams, ITenancy tenancy)
+        {
+            var events = streams.SelectMany(x => x.Events).ToList();
+
+
+            var groups = await this.As<IEventSlicer<TDoc, TId>>().SliceAsyncEvents(querySession, events, tenancy);
+            return groups.SelectMany(x => x.Slices).ToList();
+        }
+
+        private async Task<TenantSliceGroup<TDoc, TId>> groupSingleTenant(ITenant tenant, IQuerySession querySession, IList<IEvent> events)
+        {
+            var @group = new TenantSliceGroup<TDoc, TId>(tenant);
+
+            foreach (var grouper in _groupers)
+            {
+                grouper.Apply(events, @group);
+            }
+
+            foreach (var lookupGrouper in _lookupGroupers)
+            {
+                await lookupGrouper.Group(querySession, events, @group);
+            }
+
+            return @group;
+        }
+
+        async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> IEventSlicer<TDoc, TId>.SliceAsyncEvents(
+            IQuerySession querySession,
+            List<IEvent> events, ITenancy tenancy)
+        {
+            foreach (var fanOutRule in _fanOutRules) fanOutRule.Apply(events);
+
+            if (_groupByTenant)
+            {
+                var byTenant = events.GroupBy(x => x.TenantId);
+                var groupTasks = byTenant.Select(tGroup =>
+                {
+                    var tenant = tenancy[tGroup.Key];
+                    return groupSingleTenant(tenant, querySession.ForTenant(tGroup.Key), tGroup.ToList());
+                });
+
+                var list = new List<TenantSliceGroup<TDoc, TId>>();
+                foreach (var groupTask in groupTasks)
+                {
+                    list.Add(await groupTask);
+                }
+
+                return list;
+            }
+
+            var group = await groupSingleTenant(tenancy.Default, querySession, events);
+
+            return new List<TenantSliceGroup<TDoc, TId>> {group};
+        }
+
         protected override Type[] determineEventTypes()
         {
-            return base.determineEventTypes().Concat(_eventSlicer.Fanouts.Select(x => x.OriginatingType))
+            return base.determineEventTypes().Concat(_fanOutRules.Select(x => x.OriginatingType))
                 .Distinct().ToArray();
         }
 
         public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
         {
-            Grouper(new Grouper<TId, TEvent>(identityFunc));
+            _groupers.Add(new SingleStreamGrouper<TId, TEvent>(identityFunc));
         }
 
         public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
         {
-            Grouper(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
+            _groupers.Add(new MultiStreamGrouper<TId, TEvent>(identitiesFunc));
         }
 
-        public void Grouper(IGrouper<TId> grouper)
+        public void CustomGrouping(IAggregateGrouper<TId> grouper)
         {
-            _eventSlicer.Groupers.Add(grouper);
+            _lookupGroupers.Add(grouper);
         }
 
-        public void EventSlicer<T>()
-            where T: IViewProjectionEventSlicer<TDoc, TId>, new()
-        {
-            EventSlicer(new T());
-        }
-
-        public void EventSlicer(IViewProjectionEventSlicer<TDoc, TId> eventSlicer)
-        {
-            eventSlicer.Groupers.AddRange(_eventSlicer.Groupers);
-            eventSlicer.Fanouts.AddRange(_eventSlicer.Fanouts);
-
-            _eventSlicer = eventSlicer;
-        }
 
         protected override void specialAssertValid()
         {
-            if (!_eventSlicer.Groupers.Any())
+            if (!_groupers.Any() && !_lookupGroupers.Any())
             {
                 throw new InvalidProjectionException(
-                    $"ViewProjection {GetType().FullNameInCode()} has no Identity() rules defined and does not know how to identify event membership in the aggregated document {typeof(TDoc).FullNameInCode()}");
+                    $"ViewProjection {GetType().FullNameInCode()} has no Identity() rules defined or registered lookup grouping rules and does not know how to identify event membership in the aggregated document {typeof(TDoc).FullNameInCode()}");
             }
         }
 
         public void FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc)
         {
             var fanout = new FanOutOperator<TEvent, TChild>(fanOutFunc);
-            _eventSlicer.Fanouts.Add(fanout);
+            _fanOutRules.Add(fanout);
         }
 
-        ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession,
-            IEnumerable<StreamAction> streams, ITenancy tenancy)
-        {
-            return _eventSlicer.Slice(querySession, streams, tenancy);
-        }
+        private bool _groupByTenant = false;
 
-        ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> IEventSlicer<TDoc, TId>.Slice(IQuerySession querySession,
-            IReadOnlyList<IEvent> events, ITenancy tenancy)
+        protected override object buildEventSlicer(StoreOptions options)
         {
-            return _eventSlicer.Slice(querySession, events, tenancy);
-        }
+            var mapping = options.Storage.MappingFor(typeof(TDoc));
+            var aggregateStyle = mapping.TenancyStyle;
+            var eventStyle = options.Events.TenancyStyle;
 
-        protected override object buildEventSlicer()
-        {
+            if (aggregateStyle == TenancyStyle.Conjoined)
+            {
+                if (eventStyle == TenancyStyle.Conjoined)
+                {
+                    _groupByTenant = true;
+                }
+                else
+                {
+                    throw new InvalidProjectionException(
+                        $"Aggregate {typeof(TDoc).FullNameInCode()} is multi-tenanted, but the events are not");
+                }
+            }
+
             return this;
         }
 

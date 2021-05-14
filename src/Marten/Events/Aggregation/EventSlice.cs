@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using Marten.Storage;
 #nullable enable
 namespace Marten.Events.Projections
 {
     public interface IEventSlice
     {
-        IReadOnlyList<IEvent> Events { get; }
+        IReadOnlyList<IEvent> Events();
     }
 
     /// <summary>
@@ -68,10 +69,12 @@ namespace Marten.Events.Projections
             _events.AddRange(events);
         }
 
+        public int Count => _events.Count;
+
         /// <summary>
         /// All the events in this slice
         /// </summary>
-        public IReadOnlyList<IEvent> Events => _events;
+        public IReadOnlyList<IEvent> Events() => _events.Distinct().OrderBy(x => x.Version).ToList();
 
         internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)
         {
