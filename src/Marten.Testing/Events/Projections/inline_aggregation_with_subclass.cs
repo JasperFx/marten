@@ -14,7 +14,7 @@ namespace Marten.Testing.Events.Projections
             {
                 x.Schema.For<FooBase>().AddSubClass<FooA>();
 
-                x.Events.Projections.SelfAggregate<FooA>();
+                x.Projections.SelfAggregate<FooA>();
             });
         }
 

@@ -19,8 +19,8 @@ namespace Marten.Testing.CoreFunctionality
             {
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "read_only";
-                opts.Events.Projections.Add<AllGood>();
-                opts.Events.Projections.Add<AllSync>();
+                opts.Projections.Add<AllGood>();
+                opts.Projections.Add<AllSync>();
 
                 opts.RegisterDocumentType<User>();
                 opts.RegisterDocumentType<Target>();

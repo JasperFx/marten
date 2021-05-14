@@ -37,7 +37,7 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
                 _.Schema.For<NewsletterSubscription>().MultiTenanted();
-                _.Events.Projections.Add(new NewsletterSubscriptionProjection(), ProjectionLifecycle.Inline);
+                _.Projections.Add(new NewsletterSubscriptionProjection(), ProjectionLifecycle.Inline);
 
             });
 

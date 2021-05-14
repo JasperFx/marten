@@ -42,7 +42,7 @@ namespace EventSourceWorker
                         // Run the asynchronous projections in this node
                         options.Events.Daemon.Mode = DaemonMode.Solo;
 
-                        options.Events.Projections.Add(new TripAggregation());
+                        options.Projections.Add(new TripAggregation());
                     });
                 });
         }

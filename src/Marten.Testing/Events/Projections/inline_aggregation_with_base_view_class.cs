@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Events.Projections
+namespace Marten.Testing.Projections
 {
     public class inline_aggregation_with_base_view_class: IntegrationContext
     {
@@ -18,9 +19,9 @@ namespace Marten.Testing.Events.Projections
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Events.Projections.SelfAggregate<QuestMonstersWithBaseClass>();
-                _.Events.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloaded>();
-                _.Events.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+                _.Projections.SelfAggregate<QuestMonstersWithBaseClass>();
+                _.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloaded>();
+                _.Projections.SelfAggregate<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
             });
 
             streamId = theSession.Events

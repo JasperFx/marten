@@ -7,6 +7,7 @@ using Baseline;
 using Baseline.ImTools;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
@@ -86,7 +87,14 @@ namespace Marten
             Providers = new ProviderGraph(this);
             Advanced = new AdvancedOptions(this);
 
+            Projections = new ProjectionOptions(this);
+
         }
+
+        /// <summary>
+        /// Configuration for all event store projections
+        /// </summary>
+        public ProjectionOptions Projections { get;}
 
         /// <summary>
         /// Access to adding custom schema features to this Marten-enabled Postgresql database

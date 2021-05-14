@@ -55,6 +55,7 @@ namespace Marten
 
             Storage.PostProcessConfiguration();
             Events.AssertValidity(this);
+            Options.Projections.AssertValidity(this);
 
             Advanced = new AdvancedOperations(this);
 

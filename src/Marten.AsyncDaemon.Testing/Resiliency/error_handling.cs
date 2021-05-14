@@ -30,7 +30,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection1, ProjectionLifecycle.Async);
                 opts.Events.Daemon.OnException<ArithmeticException>()
                     .RetryLater(50.Milliseconds(), 50.Milliseconds());
             });
@@ -55,7 +55,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection1, ProjectionLifecycle.Async);
                 opts.Events.Daemon
                     .OnException<ApplyEventException>()
                     .AndInner<ArithmeticException>()
@@ -94,8 +94,8 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
-                opts.Events.Projections.Add(projection2, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection1, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection2, ProjectionLifecycle.Async);
                 opts.Events.Daemon.OnException<ApplyEventException>().AndInner<ArithmeticException>()
                     .RetryLater(50.Milliseconds(), 50.Milliseconds()).Then.PauseAll(50.Milliseconds());
             });
@@ -135,7 +135,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection1, ProjectionLifecycle.Async);
                 opts.Events.Daemon.OnException<ArithmeticException>()
                     .RetryLater(50.Milliseconds(), 50.Milliseconds());
             });
@@ -160,8 +160,8 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
-                opts.Events.Projections.Add(projection2, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection1, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection2, ProjectionLifecycle.Async);
                 opts.Events.Daemon.OnException<ArithmeticException>()
                     .RetryLater(50.Milliseconds(), 50.Milliseconds());
             });
@@ -189,8 +189,8 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(projection1, ProjectionLifecycle.Async);
-                opts.Events.Projections.Add(projection2, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection1, ProjectionLifecycle.Async);
+                opts.Projections.Add(projection2, ProjectionLifecycle.Async);
                 opts.Events.Daemon.OnException<ApplyEventException>().AndInner<DivideByZeroException>().StopAll();
             });
 

@@ -55,9 +55,7 @@ namespace Marten.Events
 
             _byEventName.OnMissing = name => { return AllEvents().FirstOrDefault(x => x.EventTypeName == name); };
 
-            Projections = new ProjectionCollection(options);
-
-            _inlineProjections = new Lazy<IProjection[]>(() => Projections.BuildInlineProjections(_store));
+            _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
 
             _establishTombstone = new Lazy<EstablishTombstoneStream>(() => new EstablishTombstoneStream(this));
 
@@ -68,7 +66,7 @@ namespace Marten.Events
 
         IReadOnlyList<IProjectionSource> IReadOnlyEventStoreOptions.Projections()
         {
-            return Projections.Projections.OfType<IProjectionSource>().ToList();
+            return Options.Projections.All.OfType<IProjectionSource>().ToList();
         }
 
         public IReadOnlyList<IEventType> AllKnownEventTypes()
@@ -80,7 +78,7 @@ namespace Marten.Events
 
         private Type findAggregateType(string name)
         {
-            foreach (var aggregateType in Projections.AllAggregateTypes())
+            foreach (var aggregateType in Options.Projections.AllAggregateTypes())
             {
                 var possibleName = _aggregateNameByType[aggregateType];
                 if (name.EqualsIgnoreCase(possibleName)) return aggregateType;
@@ -167,7 +165,7 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
-        internal bool IsActive(StoreOptions options) => _events.Any() || Projections.Any() ;
+        internal bool IsActive(StoreOptions options) => _events.Any() || Options.Projections.All.Any() ;
 
         /// <summary>
         /// Override the database schema name for event related tables. By default this
@@ -499,10 +497,7 @@ namespace Marten.Events
             return false;
         }
 
-        /// <summary>
-        /// Configuration for all event store projections
-        /// </summary>
-        public ProjectionCollection Projections { get; }
+
 
         internal IEvent BuildEvent(object eventData)
         {
@@ -515,7 +510,7 @@ namespace Marten.Events
         internal void AssertValidity(DocumentStore store)
         {
             _store = store;
-            Projections.AssertValidity(_store);
+
         }
     }
 }

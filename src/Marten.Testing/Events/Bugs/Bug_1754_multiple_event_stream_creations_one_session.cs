@@ -2,12 +2,11 @@ using System;
 
 using Bug1754;
 
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
-
 using Shouldly;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Events.Projections;
 using Xunit;
 
 namespace Marten.Testing.Events.Bugs
@@ -20,11 +19,11 @@ namespace Marten.Testing.Events.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString; // easier to debug
-                x.Events.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
-                x.Events.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline);
             });
 
-            documentStore.Advanced.Clean.CompletelyRemoveAll();
+            await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using var session = documentStore.OpenSession();
 
@@ -52,8 +51,8 @@ namespace Marten.Testing.Events.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString; // easier to debug
-                x.Events.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
-                x.Events.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<DataItemAggregate>(ProjectionLifecycle.Inline);
             });
 
             documentStore.Advanced.Clean.CompletelyRemoveAll();

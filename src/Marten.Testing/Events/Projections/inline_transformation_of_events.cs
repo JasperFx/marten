@@ -31,7 +31,7 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Events.TenancyStyle = tenancyStyle;
 
-                _.Events.Projections.Add(new MonsterDefeatedTransform());
+                _.Projections.Add(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events
@@ -57,7 +57,7 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                _.Events.Projections.Add(new MonsterDefeatedTransform());
+                _.Projections.Add(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events
@@ -85,7 +85,7 @@ namespace Marten.Testing.Events.Projections
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = "monster_defeated";
 
-                _.Events.Projections.Add(new MonsterDefeatedTransform());
+                _.Projections.Add(new MonsterDefeatedTransform());
             });
             #endregion sample_applying-monster-defeated
 
@@ -95,7 +95,7 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                _.Events.Projections.Add(new MonsterDefeatedTransform());
+                _.Projections.Add(new MonsterDefeatedTransform());
             });
 
             var streamId = theSession.Events

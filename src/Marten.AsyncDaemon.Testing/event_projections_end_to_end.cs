@@ -39,7 +39,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task run_simultaneously()
         {
-            StoreOptions(x => x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+            StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
             NumberOfStreams = 10;
 
@@ -60,7 +60,7 @@ namespace Marten.AsyncDaemon.Testing
         {
             StoreOptions(x =>
             {
-                x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
+                x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
                 x.Events.TenancyStyle = TenancyStyle.Conjoined;
                 x.Schema.For<Distance>().MultiTenanted();
             });
@@ -81,7 +81,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task rebuild()
         {
-            StoreOptions(x => x.Events.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+            StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
             NumberOfStreams = 10;
 

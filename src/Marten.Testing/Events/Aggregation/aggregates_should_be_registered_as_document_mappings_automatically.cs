@@ -14,7 +14,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             StoreOptions(_ =>
             {
-                _.Events.Projections.AggregatorFor<QuestParty>();
+                _.Projections.AggregatorFor<QuestParty>();
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
@@ -27,7 +27,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             StoreOptions(_ =>
             {
-                _.Events.Projections.SelfAggregate<QuestParty>();
+                _.Projections.SelfAggregate<QuestParty>();
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
@@ -39,7 +39,7 @@ namespace Marten.Testing.Events.Aggregation
         {
             StoreOptions(_ =>
             {
-                _.Events.Projections.SelfAggregate<QuestParty>(ProjectionLifecycle.Async);
+                _.Projections.SelfAggregate<QuestParty>(ProjectionLifecycle.Async);
             });
 
             theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)

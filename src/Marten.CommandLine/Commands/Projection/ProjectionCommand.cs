@@ -48,16 +48,15 @@ namespace Marten.CommandLine.Commands.Projection
 
             if (input.InteractiveFlag)
             {
-                var projectionNames = store.Events.Projections.Projections.Select(x => x.ProjectionName).ToArray();
+                var projectionNames = store.Options.Projections.All.Select(x => x.ProjectionName).ToArray();
                 var names = AnsiConsole.Prompt(new MultiSelectionPrompt<string>()
                     .Title("Choose projections to rebuild")
                     .AddChoices(projectionNames));
 
                 projections = store
                     .Options
-                    .Events
                     .Projections
-                    .Projections
+                    .All
                     .Where(x => names.Contains(x.ProjectionName))
                     .ToList();
             }
@@ -96,7 +95,7 @@ namespace Marten.CommandLine.Commands.Projection
 
             if (input.InteractiveFlag)
             {
-                var all = store.Options.Events.Projections.Projections.SelectMany(x => x.AsyncProjectionShards(store))
+                var all = store.Options.Projections.All.SelectMany(x => x.AsyncProjectionShards(store))
                     .Select(x => x.Name.Identity).ToArray();
 
                 var prompt = new MultiSelectionPrompt<string>()
@@ -104,7 +103,7 @@ namespace Marten.CommandLine.Commands.Projection
                     .AddChoices(all);
 
                 var selections = AnsiConsole.Prompt(prompt);
-                shards = store.Options.Events.Projections.Projections.SelectMany(x => x.AsyncProjectionShards(store))
+                shards = store.Options.Projections.All.SelectMany(x => x.AsyncProjectionShards(store))
                     .Where(x => selections.Contains(x.Name.Identity)).ToList();
             }
 
@@ -155,7 +154,7 @@ namespace Marten.CommandLine.Commands.Projection
 
         private static void WriteProjectionTable(DocumentStore store)
         {
-            var projections = store.Options.Events.Projections.Projections;
+            var projections = store.Options.Projections.All;
 
             var table = new Table();
             table.AddColumn("Projection Name");

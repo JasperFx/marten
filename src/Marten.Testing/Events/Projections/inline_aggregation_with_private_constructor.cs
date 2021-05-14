@@ -15,7 +15,7 @@ namespace Marten.Testing.Events.Projections
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
-                _.Events.Projections.SelfAggregate<QuestMonstersWithPrivateConstructor>();
+                _.Projections.SelfAggregate<QuestMonstersWithPrivateConstructor>();
             });
         }
 

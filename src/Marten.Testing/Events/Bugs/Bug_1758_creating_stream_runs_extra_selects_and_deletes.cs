@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Bug1758;
-
 using Marten.Events.Projections;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -25,9 +24,9 @@ namespace Marten.Testing.Events.Bugs
 
             using var documentStore = SeparateStore(x =>
             {
-                x.Events.Projections.SelfAggregate<AggregateA>(ProjectionLifecycle.Inline);
-                x.Events.Projections.SelfAggregate<AggregateB>(ProjectionLifecycle.Inline);
-                x.Events.Projections.SelfAggregate<AggregateC>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<AggregateA>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<AggregateB>(ProjectionLifecycle.Inline);
+                x.Projections.SelfAggregate<AggregateC>(ProjectionLifecycle.Inline);
                 x.Logger(logger);
             });
 

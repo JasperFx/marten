@@ -23,7 +23,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task start_stop_and_restart_a_new_daemon()
         {
-            StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
+            StoreOptions(x => x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
 
             using var daemon = await StartDaemon();
             await daemon.StartAllShards();
@@ -48,7 +48,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task start_and_stop_a_projection()
         {
-            StoreOptions(x => x.Events.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
+            StoreOptions(x => x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async));
 
             using var daemon = await StartDaemon();
             await daemon.StartAllShards();

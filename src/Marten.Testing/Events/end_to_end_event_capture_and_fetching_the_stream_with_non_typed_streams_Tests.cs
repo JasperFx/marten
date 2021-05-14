@@ -569,7 +569,7 @@ namespace Marten.Testing.Events
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Events.Projections.SelfAggregate<QuestParty>();
+                _.Projections.SelfAggregate<QuestParty>();
 
                 _.Events.AddEventType(typeof(MembersJoined));
                 _.Events.AddEventType(typeof(MembersDeparted));

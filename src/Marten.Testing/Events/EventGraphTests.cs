@@ -34,8 +34,8 @@ namespace Marten.Testing.Events
         [Fact]
         public void caches_the_stream_mapping()
         {
-            theGraph.Projections.AggregatorFor<IssueAggregate>()
-                .ShouldBeSameAs(theGraph.Projections.AggregatorFor<IssueAggregate>());
+            theGraph.Options.Projections.AggregatorFor<IssueAggregate>()
+                .ShouldBeSameAs(theGraph.Options.Projections.AggregatorFor<IssueAggregate>());
         }
 
         [Fact]

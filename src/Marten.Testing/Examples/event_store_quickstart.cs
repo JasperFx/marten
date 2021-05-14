@@ -17,7 +17,7 @@ namespace Marten.Testing.Examples
             var store = DocumentStore.For(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
-                _.Events.Projections.SelfAggregate<QuestParty>();
+                _.Projections.SelfAggregate<QuestParty>();
             });
 
             var questId = Guid.NewGuid();

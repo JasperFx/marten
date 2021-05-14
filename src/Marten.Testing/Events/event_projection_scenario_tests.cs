@@ -21,7 +21,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
             });
 
             await theStore.Advanced.EventProjectionScenario(scenario =>
@@ -52,7 +52,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
             });
 
             await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
@@ -87,7 +87,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
             });
 
             await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
@@ -123,7 +123,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
             });
 
             await theStore.Advanced.EventProjectionScenario(scenario =>
@@ -154,7 +154,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
             });
 
             await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>
@@ -189,7 +189,7 @@ namespace Marten.Testing.Events
         {
             StoreOptions(opts =>
             {
-                opts.Events.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
             });
 
             await Exception<ProjectionScenarioException>.ShouldBeThrownByAsync(async () =>

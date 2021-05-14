@@ -21,7 +21,7 @@ namespace Marten.Testing.Events.Projections
 
         protected void UseProjection<T>() where T : EventProjection, new()
         {
-            StoreOptions(x => x.Events.Projections.Add(new T()));
+            StoreOptions(x => x.Projections.Add(new T()));
         }
 
         [Fact]

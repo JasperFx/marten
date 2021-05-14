@@ -43,8 +43,8 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             StoreOptions(opts =>
             {
                 opts.Events.DatabaseSchemaName = "daemon";
-                opts.Events.Projections.Add<ErrorRejectingEventProjection>(ProjectionLifecycle.Async);
-                opts.Events.Projections.Add<CollateNames>(ProjectionLifecycle.Async);
+                opts.Projections.Add<ErrorRejectingEventProjection>(ProjectionLifecycle.Async);
+                opts.Projections.Add<CollateNames>(ProjectionLifecycle.Async);
 
                 opts.Events.Daemon.OnApplyEventException().SkipEvent();
                 opts.Events.Daemon.OnException<NpgsqlException>().RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
