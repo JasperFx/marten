@@ -140,6 +140,7 @@ namespace Marten.Testing.Events.Projections
         {
             Identity<UserRegistered>(@event => @event.UserId);
             Identity<UserLicenseAssigned>(@event => @event.UserId);
+
             EventSlicer<LicenseFeatureToggledEventSlicer>();
         }
 
