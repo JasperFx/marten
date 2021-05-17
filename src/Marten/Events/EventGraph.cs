@@ -62,7 +62,7 @@ namespace Marten.Events
             _aggregateTypeByName = new Cache<string, Type>(name => findAggregateType(name));
         }
 
-        IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => Daemon;
+        IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
 
         IReadOnlyList<IProjectionSource> IReadOnlyEventStoreOptions.Projections()
         {
@@ -86,11 +86,6 @@ namespace Marten.Events
 
             return null;
         }
-
-        /// <summary>
-        /// Advanced configuration for the asynchronous projection execution
-        /// </summary>
-        public DaemonSettings Daemon { get; } = new DaemonSettings();
 
         /// <summary>
         /// Configure whether event streams are identified with Guid or strings

@@ -9,11 +9,6 @@ namespace Marten.Events
     public interface IEventStoreOptions
     {
         /// <summary>
-        /// Advanced configuration for the asynchronous projection execution
-        /// </summary>
-        DaemonSettings Daemon { get; }
-
-        /// <summary>
         /// Configure whether event streams are identified with Guid or strings
         /// </summary>
         StreamIdentity StreamIdentity { get; set; }
