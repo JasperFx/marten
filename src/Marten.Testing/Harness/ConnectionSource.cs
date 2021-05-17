@@ -4,8 +4,9 @@ namespace Marten.Testing.Harness
 {
     public class ConnectionSource : ConnectionFactory
     {
+        // Keep the default timeout pretty short
         public static readonly string ConnectionString = Environment.GetEnvironmentVariable("marten_testing_database")
-            ?? "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
+            ?? "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5";
 
         static ConnectionSource()
         {

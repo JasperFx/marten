@@ -44,8 +44,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
         {
-            theStore.Events.Daemon.LeadershipPollingTime = 100;
-            var coordinator = new HotColdCoordinator(theStore, theStore.Events.Daemon, Logger);
+            theStore.Options.Projections.LeadershipPollingTime = 100;
+            var coordinator = new HotColdCoordinator(theStore, theStore.Options.Projections, Logger);
             var daemon = new ProjectionDaemon(theStore, new HighWaterDetector(coordinator, theStore.Events), Logger);
 
             await daemon.UseCoordinator(coordinator);
@@ -58,8 +58,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
 
         internal async Task<ProjectionDaemon> StartAdditionalDaemonInHotColdMode()
         {
-            theStore.Events.Daemon.LeadershipPollingTime = 100;
-            var coordinator = new HotColdCoordinator(theStore, theStore.Events.Daemon, Logger);
+            theStore.Options.Projections.LeadershipPollingTime = 100;
+            var coordinator = new HotColdCoordinator(theStore, theStore.Options.Projections, Logger);
             var daemon = new ProjectionDaemon(theStore, new HighWaterDetector(coordinator, theStore.Events), Logger);
 
             await daemon.UseCoordinator(coordinator);

@@ -28,7 +28,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            switch (_store.Options.Events.Daemon.Mode)
+            switch (_store.Options.Events.Daemon.AsyncMode)
             {
                 case DaemonMode.Disabled:
                     return;

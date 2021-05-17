@@ -62,6 +62,7 @@ namespace Marten.Testing.Events.Projections
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
                 _.Projections.SelfAggregate<QuestMonsters>();
+                _.Projections.SelfAggregate<QuestParty>();
             });
 
             var streamId = theSession.Events

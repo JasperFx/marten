@@ -40,7 +40,7 @@ namespace Marten.Events.Daemon
         /// <summary>
         /// Projection Daemon mode. The default is Disabled
         /// </summary>
-        DaemonMode Mode { get; }
+        DaemonMode AsyncMode { get; }
     }
 
     public class DaemonSettings: IReadOnlyDaemonSettings
@@ -100,7 +100,7 @@ namespace Marten.Events.Daemon
         /// <summary>
         /// Projection Daemon mode. The default is Disabled
         /// </summary>
-        public DaemonMode Mode { get; set; } = DaemonMode.Disabled;
+        public DaemonMode AsyncMode { get; set; } = DaemonMode.Disabled;
 
         internal IList<IExceptionPolicy> Policies { get; } = new List<IExceptionPolicy>();
 

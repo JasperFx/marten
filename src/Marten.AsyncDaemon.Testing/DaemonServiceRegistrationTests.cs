@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Lamar;
@@ -6,7 +5,6 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
@@ -19,7 +17,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public void disabled_by_default()
         {
-            new DaemonSettings().Mode.ShouldBe(DaemonMode.Disabled);
+            new DaemonSettings().AsyncMode.ShouldBe(DaemonMode.Disabled);
         }
 
         [Fact]
@@ -31,7 +29,7 @@ namespace Marten.AsyncDaemon.Testing
                 x.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.Events.Daemon.Mode = DaemonMode.Disabled;
+                    opts.Projections.AsyncMode = DaemonMode.Disabled;
                 });
             });
 
@@ -50,7 +48,7 @@ namespace Marten.AsyncDaemon.Testing
                 x.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.Events.Daemon.Mode = DaemonMode.Solo;
+                    opts.Projections.AsyncMode = DaemonMode.Solo;
                 });
                 x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             });
@@ -72,7 +70,7 @@ namespace Marten.AsyncDaemon.Testing
                 x.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.Events.Daemon.Mode = DaemonMode.HotCold;
+                    opts.Projections.AsyncMode = DaemonMode.HotCold;
                 });
                 x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
             });

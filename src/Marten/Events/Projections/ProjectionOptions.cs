@@ -12,7 +12,7 @@ namespace Marten.Events.Projections
     /// <summary>
     /// Used to register projections with Marten
     /// </summary>
-    public class ProjectionOptions
+    public class ProjectionOptions : DaemonSettings
     {
         private readonly StoreOptions _options;
         private readonly Dictionary<Type, object> _liveAggregateSources = new Dictionary<Type, object>();
@@ -52,7 +52,23 @@ namespace Marten.Events.Projections
 
         internal IProjection[] BuildInlineProjections(DocumentStore store)
         {
-            return All.Where(x => x.Lifecycle == ProjectionLifecycle.Inline).Select(x => x.Build(store)).ToArray();
+            var inlineSources = All.Where(x => x.Lifecycle == ProjectionLifecycle.Inline).ToArray();
+
+            return inlineSources.Select(x =>
+            {
+                try
+                {
+                    // TODO -- do something better with logging
+                    return x.Build(store);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error trying to build an IProjection for projection " + x.ProjectionName);
+                    Console.WriteLine(e.ToString());
+
+                    throw;
+                }
+            }).ToArray();
         }
 
 

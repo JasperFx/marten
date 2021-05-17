@@ -34,9 +34,9 @@ namespace Marten.Events.Daemon
             _logger = logger;
 
             Tracker = new ShardStateTracker(logger);
-            _highWater = new HighWaterAgent(detector, Tracker, logger, store.Events.Daemon, _cancellation.Token);
+            _highWater = new HighWaterAgent(detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
 
-            Settings = store.Events.Daemon;
+            Settings = store.Options.Projections;
         }
 
         public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events), logger)

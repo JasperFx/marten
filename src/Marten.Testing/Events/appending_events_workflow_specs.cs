@@ -328,25 +328,33 @@ namespace Marten.Testing.Events
         public class TestCase : IDisposable
         {
             private readonly string _description;
+            private Lazy<DocumentStore> _store;
 
             public TestCase(string description, Action<EventGraph> config)
             {
                 _description = description;
 
-                Store = DocumentStore.For(opts =>
+                _store = new Lazy<DocumentStore>(() =>
                 {
-                    config(opts.EventGraph);
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "v4events";
-                    opts.AutoCreateSchemaObjects = AutoCreate.All;
-                });
+                    var store = DocumentStore.For(opts =>
+                    {
+                        config(opts.EventGraph);
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "v4events";
+                        opts.AutoCreateSchemaObjects = AutoCreate.All;
+                    });
 
-                // TODO -- do this lazily!
-                Store.Advanced.Clean.CompletelyRemoveAll();
+                    // TODO -- do this lazily!
+                    store.Advanced.Clean.CompletelyRemoveAll();
+
+                    return store;
+                });
 
                 StreamId = Guid.NewGuid();
                 TenantId = "KC";
             }
+
+            internal DocumentStore Store => _store.Value;
 
             public StreamAction StartNewStream(IMartenSessionLogger logger = null)
             {
@@ -401,11 +409,12 @@ namespace Marten.Testing.Events
 
             public Guid StreamId { get;  }
 
-            public DocumentStore Store { get;  }
-
             public void Dispose()
             {
-                Store?.Dispose();
+                if (_store.IsValueCreated)
+                {
+                    _store.Value.Dispose();
+                }
             }
 
             public override string ToString()
