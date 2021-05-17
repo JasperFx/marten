@@ -217,6 +217,18 @@ namespace Marten.Events.Projections
 
         internal void AssertValidity(DocumentStore store)
         {
+            var duplicateNames = All
+                .GroupBy(x => x.ProjectionName)
+                .Where(x => x.Count() > 1)
+                .Select(group => $"Duplicate projection name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}")
+                .ToArray();
+
+            if (duplicateNames.Any())
+            {
+                throw new InvalidOperationException(duplicateNames.Join("; "));
+            }
+
+
             var messages = All.Concat(_liveAggregateSources.Values)
                 .OfType<ProjectionSource>()
                 .Distinct()
