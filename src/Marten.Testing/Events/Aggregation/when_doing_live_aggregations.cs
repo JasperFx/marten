@@ -332,6 +332,11 @@ namespace Marten.Testing.Events.Aggregation
 
     public class AllSync: AggregateProjection<MyAggregate>
     {
+        public AllSync()
+        {
+            ProjectionName = "AllSync";
+        }
+
         public MyAggregate Create(CreateEvent @event)
         {
             return new MyAggregate
