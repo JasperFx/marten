@@ -51,6 +51,12 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void default_timeout_should_be_npgsql_default_ie_30()
         {
+            StoreOptions(opts =>
+            {
+                var connectionString = ConnectionSource.ConnectionString.Replace(";Command Timeout=5", "");
+                opts.Connection(connectionString);
+            });
+
             var options = new SessionOptions();
 
             using (var query = theStore.QuerySession(options))

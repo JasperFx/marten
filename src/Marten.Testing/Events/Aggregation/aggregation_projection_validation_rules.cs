@@ -238,6 +238,11 @@ namespace Marten.Testing.Events.Aggregation
 
     public class AllGood: AggregateProjection<MyAggregate>
     {
+        public AllGood()
+        {
+            ProjectionName = "AllGood";
+        }
+
         [MartenIgnore]
         public void RandomMethodName()
         {
