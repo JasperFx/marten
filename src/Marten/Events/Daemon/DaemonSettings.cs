@@ -61,6 +61,8 @@ namespace Marten.Events.Daemon
             OnException<MartenCommandException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
                 .Then.Pause(30.Seconds());
 
+            OnException<ProgressionProgressOutOfOrderException>().Pause(10.Seconds());
+
             BaselinePolicies.AddRange(Policies);
             Policies.Clear();
         }
