@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Storage;
-using Marten.Transforms;
 using Weasel.Postgresql;
 
 #nullable enable
@@ -32,12 +31,6 @@ namespace Marten
         IReadOnlyLinqParsing Linq { get; }
 
         /// <summary>
-        /// Custom transform functions configured in this document store
-        /// </summary>
-        /// <returns></returns>
-        IReadOnlyList<TransformFunction> Transforms();
-
-        /// <summary>
         ///     Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
         ///     Marten getting confused when comparing database schemas against the configuration. See
         ///     https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html
@@ -60,11 +53,6 @@ namespace Marten
         /// Access to information about document store tenants configured in this application
         /// </summary>
         ITenancy Tenancy { get; }
-
-        /// <summary>
-        /// Are the features that depend on PLV8 being used by this document store?
-        /// </summary>
-        bool PLV8Enabled { get; }
 
         /// <summary>
         /// Access to the underlying Marten serializer

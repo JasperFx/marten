@@ -22,9 +22,6 @@ namespace Marten.Schema.Testing
 
                 // Lets Marten know that the event store is active
                 _.Events.AddEventType(typeof(MembersJoined));
-
-                // Tell Marten about all the javascript functions
-                _.Transforms.LoadFile("default_username.js");
             });
             #endregion sample_configure-document-types-upfront
 

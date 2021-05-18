@@ -1,7 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <Description>Document transforms and patching extension for Marten</Description>
+        <VersionPrefix>2.0.0-alpha.11</VersionPrefix>
+        <TargetFrameworks>netstandard2.0;net5.0</TargetFrameworks>
+        <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+        <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="mt_patching.js" />
+    </ItemGroup>
 
 </Project>

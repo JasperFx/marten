@@ -74,30 +74,6 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-        [Fact]
-        public void use_select_to_another_type_as_json()
-        {
-            theSession.Store(new User { FirstName = "Hank" });
-            theSession.Store(new User { FirstName = "Bill" });
-            theSession.Store(new User { FirstName = "Sam" });
-            theSession.Store(new User { FirstName = "Tom" });
-
-            theSession.SaveChanges();
-
-            // Postgres sticks some extra spaces into the JSON string
-
-            #region sample_AsJson-plus-Select-1
-            theSession
-                .Query<User>()
-                .OrderBy(x => x.FirstName)
-
-                // Transform the User class to a different type
-                .Select(x => new UserName { Name = x.FirstName })
-                .AsJson()
-                .First()
-                .ShouldBe("{\"Name\": \"Bill\"}");
-            #endregion sample_AsJson-plus-Select-1
-        }
 
         #region sample_get_first_projection
         [Fact]
@@ -117,30 +93,7 @@ namespace Marten.Testing.Linq
 
         #endregion sample_get_first_projection
 
-        [Fact]
-        public void use_select_to_anonymous_type_with_first_as_json()
-        {
-            theSession.Store(new User { FirstName = "Hank" });
-            theSession.Store(new User { FirstName = "Bill" });
-            theSession.Store(new User { FirstName = "Sam" });
-            theSession.Store(new User { FirstName = "Tom" });
 
-            theSession.SaveChanges();
-
-            #region sample_AsJson-plus-Select-2
-            theSession
-                .Query<User>()
-                .OrderBy(x => x.FirstName)
-
-                // Transform to an anonymous type
-                .Select(x => new { Name = x.FirstName })
-
-                // Select only the raw JSON
-                .AsJson()
-                .FirstOrDefault()
-                .ShouldBe("{\"Name\": \"Bill\"}");
-            #endregion sample_AsJson-plus-Select-2
-        }
 
         [Fact]
         public void use_select_to_anonymous_type_with_to_json_array()

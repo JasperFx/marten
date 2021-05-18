@@ -29,8 +29,6 @@ namespace Marten.Storage
             _options = options;
 
             SystemFunctions = new SystemFunctions(options);
-
-            Transforms = options.Transforms.As<Transforms.Transforms>();
         }
 
         private readonly IDictionary<Type, IDocumentMappingBuilder> _builders
@@ -88,8 +86,6 @@ namespace Marten.Storage
                 var mapping = MappingFor(pair.Key);
             }
         }
-
-        public Transforms.Transforms Transforms { get; }
 
         /// <summary>
         /// Register custom storage features
@@ -211,8 +207,6 @@ namespace Marten.Storage
 
             Add(SystemFunctions);
 
-            Add(Transforms.As<IFeatureSchema>());
-
             Add(_options.EventGraph);
             _features[typeof(StreamState)] = _options.EventGraph;
             _features[typeof(StreamAction)] = _options.EventGraph;
@@ -266,11 +260,6 @@ namespace Marten.Storage
             if (SequenceIsRequired())
             {
                 yield return tenant.Sequences;
-            }
-
-            if (Transforms.IsActive(_options))
-            {
-                yield return Transforms;
             }
 
             if (_options.Events.As<EventGraph>().IsActive(_options))

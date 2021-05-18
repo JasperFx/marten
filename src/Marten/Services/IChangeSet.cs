@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Marten.Events;
-using Marten.Patching;
 #nullable enable
 namespace Marten.Services
 {
@@ -11,8 +10,6 @@ namespace Marten.Services
         IEnumerable<IDeletion> Deleted { get; }
 
         IEnumerable<IEvent> GetEvents();
-
-        IEnumerable<PatchOperation> Patches { get; }
 
         IEnumerable<StreamAction> GetStreams();
 

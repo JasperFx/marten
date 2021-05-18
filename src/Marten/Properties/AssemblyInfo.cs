@@ -1,4 +1,6 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.Testing")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.CommandLine")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.PLv8")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.PLv8.Testing")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.Schema.Testing")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.AsyncDaemon.Testing")]

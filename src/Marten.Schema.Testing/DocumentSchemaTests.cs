@@ -175,7 +175,7 @@ namespace Marten.Schema.Testing
             var actuals = files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x);
 
             actuals
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql",
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql",
                     "user.sql");
         }
 
@@ -201,7 +201,7 @@ namespace Marten.Schema.Testing
             var files = fileSystem.FindFiles(_binAllsql2, FileSet.Shallow("*.sql")).ToArray();
 
             files.Select(Path.GetFileName).Where(x => x != "all.sql").OrderBy(x => x)
-                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql", "transforms.sql",
+                .ShouldHaveTheSameElementsAs("company.sql", "issue.sql", "system_functions.sql",
                     "user.sql");
         }
 
@@ -218,7 +218,6 @@ namespace Marten.Schema.Testing
 
                 _.Connection(ConnectionSource.ConnectionString);
 
-                _.Transforms.LoadFile("get_fullname.js");
             }))
             {
                 store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
@@ -232,35 +231,8 @@ namespace Marten.Schema.Testing
             lines.ShouldContain("\\i company.sql");
             lines.ShouldContain("\\i issue.sql");
             lines.ShouldContain("\\i eventstore.sql");
-            lines.ShouldContain("\\i transforms.sql");
         }
 
-        [Fact]
-        public void writes_transform_function()
-        {
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.RegisterDocumentType<User>();
-                _.RegisterDocumentType<Company>();
-                _.RegisterDocumentType<Issue>();
-
-                _.Events.AddEventType(typeof(MembersJoined));
-
-                _.Connection(ConnectionSource.ConnectionString);
-
-                _.Transforms.LoadFile("get_fullname.js");
-            }))
-            {
-                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
-            }
-
-            var file = _binAllsql.AppendPath("transforms.sql");
-            var lines = new FileSystem().ReadStringFromFile(file).ReadLines().ToArray();
-
-
-            lines.ShouldContain(
-                "CREATE OR REPLACE FUNCTION public.mt_transform_get_fullname(doc JSONB) RETURNS JSONB AS $$");
-        }
 
         [Fact]
         public void write_ddl_by_type_with_no_events()

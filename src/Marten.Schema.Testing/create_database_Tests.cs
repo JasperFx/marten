@@ -35,7 +35,6 @@ namespace Marten.Schema.Testing
             using (var store = DocumentStore.For(storeOptions =>
             {
                 storeOptions.Connection(dbToCreateConnectionString);
-                storeOptions.PLV8Enabled = false;
                 #region sample_marten_create_database
                 storeOptions.CreateDatabasesForTenants(c =>
                 {

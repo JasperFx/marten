@@ -22,7 +22,6 @@ namespace Marten.Schema.Testing
             {
                 _.Schema.For<User>().Duplicate(x => x.UserName);
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
-                _.PLV8Enabled = false;
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }))
             {

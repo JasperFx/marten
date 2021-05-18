@@ -67,7 +67,11 @@ namespace martenbuild
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
-            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema"));
+            Target("test-plv8", DependsOn("compile"), () =>
+                Run("dotnet", $"test src/Marten.PLv8.Testing/Marten.PLv8.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+
+
+            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema", "test-plv8"));
 
             Target("storyteller", DependsOn("compile"), () =>
                 Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
@@ -99,7 +103,7 @@ namespace martenbuild
                 }
             });
 
-            Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime"), project =>
+            Target("pack", DependsOn("compile"), ForEach("./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime", "./src/Marten.PLv8"), project =>
                 Run("dotnet", $"pack {project} -o ./artifacts --configuration Release"));
 
             Target("init-db", () =>

@@ -14,8 +14,6 @@ using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 using Marten.Services;
-using Marten.Transforms;
-using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -23,38 +21,50 @@ using Remotion.Linq.Clauses;
 #nullable enable
 namespace Marten.Linq
 {
-    internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>
+    internal interface IMartenLinqQueryable
     {
-        private readonly IMartenSession _session;
+        MartenLinqQueryProvider MartenProvider { get; }
+        IMartenSession Session { get; }
 
+        Expression Expression { get; }
+
+        LinqHandlerBuilder BuildLinqHandler();
+    }
+
+    internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IMartenLinqQueryable
+    {
         public MartenLinqQueryable(IMartenSession session, MartenLinqQueryProvider provider, Expression expression): base(provider,
             expression)
         {
-            _session = session;
+            Session = session;
             MartenProvider = provider;
         }
 
         public MartenLinqQueryable(IMartenSession session): base(new MartenLinqQueryProvider(session))
         {
-            _session = session;
+            Session = session;
             MartenProvider = Provider.As<MartenLinqQueryProvider>();
         }
 
         public MartenLinqQueryable(IMartenSession session, Expression expression): base(new MartenLinqQueryProvider(session),
             expression)
         {
-            _session = session;
+            Session = session;
             MartenProvider = Provider.As<MartenLinqQueryProvider>();
+        }
+
+        public LinqHandlerBuilder BuildLinqHandler()
+        {
+            return MartenProvider.BuildLinqHandler(Expression);
         }
 
         public MartenLinqQueryProvider MartenProvider { get; }
 
-        // TODO -- Convert this to property?
-        internal IMartenSession MartenSession => _session;
+        public IMartenSession Session { get; }
 
         internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase? op = null)
         {
-            var builder = new LinqHandlerBuilder(MartenProvider, _session, Expression, op);
+            var builder = new LinqHandlerBuilder(MartenProvider, Session, Expression, op);
             return builder.BuildHandler<TResult>();
         }
 
@@ -74,7 +84,7 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsyncEnumerable<T>(Expression, token);
         }
 
-        public Task StreamManyAsync(Stream destination, CancellationToken token)
+        public Task StreamMany(Stream destination, CancellationToken token)
         {
             return MartenProvider.StreamMany(Expression, destination, token);
         }
@@ -139,32 +149,12 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsync<double>(Expression, token, LinqConstants.AverageOperator);
         }
 
-        public string ToJsonArray()
-        {
-            return MartenProvider.Execute<string>(Expression, LinqConstants.AsJsonOperator);
-        }
-
-        public Task<string> ToJsonArrayAsync(CancellationToken token)
-        {
-            return MartenProvider.ExecuteAsync<string>(Expression, token, LinqConstants.AsJsonOperator);
-        }
-
-        public Task<string> ToJsonArrayAsync()
-        {
-            return MartenProvider.ExecuteAsync<string>(Expression, CancellationToken.None, LinqConstants.AsJsonOperator);
-        }
-
         public QueryPlan Explain(FetchType fetchType = FetchType.FetchMany,
             Action<IConfigureExplainExpressions>? configureExplain = null)
         {
             var command = ToPreviewCommand(fetchType);
 
-            return _session.Database.ExplainQuery(_session.Serializer, command, configureExplain)!;
-        }
-
-        public IQueryable<TDoc> TransformTo<TDoc>(string transformName)
-        {
-            return this.Select(x => x.TransformTo<T, TDoc>(transformName));
+            return Session.Database.ExplainQuery(Session.Serializer, command, configureExplain)!;
         }
 
        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
@@ -176,8 +166,8 @@ namespace Marten.Linq
 
         internal IIncludePlan BuildInclude<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
         {
-            var storage = (IDocumentStorage<TInclude>) _session.StorageFor(typeof(TInclude));
-            var identityField = _session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
+            var storage = (IDocumentStorage<TInclude>) Session.StorageFor(typeof(TInclude));
+            var identityField = Session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
 
             var include = new IncludePlan<TInclude>(storage, identityField, callback);
             return include;
@@ -191,11 +181,11 @@ namespace Marten.Linq
         internal IIncludePlan BuildInclude<TInclude, TKey>(Expression<Func<T, object>> idSource,
             IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey: notnull
         {
-            var storage = (IDocumentStorage<TInclude>)_session.StorageFor(typeof(TInclude));
+            var storage = (IDocumentStorage<TInclude>)Session.StorageFor(typeof(TInclude));
 
             if (storage is IDocumentStorage<TInclude, TKey> s)
             {
-                var identityField = _session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
+                var identityField = Session.StorageFor(typeof(T)).Fields.FieldFor(idSource);
 
                 void Callback(TInclude item)
                 {
@@ -231,7 +221,7 @@ namespace Marten.Linq
 
         public NpgsqlCommand ToPreviewCommand(FetchType fetchType)
         {
-            var builder = new LinqHandlerBuilder(MartenProvider, _session, Expression);
+            var builder = new LinqHandlerBuilder(MartenProvider, Session, Expression);
             var command = new NpgsqlCommand();
             var sql = new CommandBuilder(command);
             builder.BuildDiagnosticCommand(fetchType, sql);

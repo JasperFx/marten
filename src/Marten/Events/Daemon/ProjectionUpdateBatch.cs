@@ -8,9 +8,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Weasel.Postgresql;
-using Marten.Patching;
 using Marten.Services;
-using Marten.Util;
 using Npgsql;
 
 namespace Marten.Events.Daemon
@@ -186,11 +184,6 @@ namespace Marten.Events.Daemon
             throw new NotSupportedException();
         }
 
-        IEnumerable<PatchOperation> IUnitOfWork.Patches()
-        {
-            throw new NotSupportedException();
-        }
-
         IEnumerable<IStorageOperation> IUnitOfWork.Operations()
         {
             throw new NotSupportedException();
@@ -216,8 +209,6 @@ namespace Marten.Events.Daemon
         {
             throw new NotSupportedException();
         }
-
-        IEnumerable<PatchOperation> IChangeSet.Patches => throw new NotSupportedException();
 
         IEnumerable<StreamAction> IChangeSet.GetStreams()
         {

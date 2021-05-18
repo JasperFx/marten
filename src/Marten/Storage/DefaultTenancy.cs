@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
-using Marten.Transforms;
 using Npgsql;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
@@ -21,12 +18,14 @@ namespace Marten.Storage
 {
     internal class DefaultTenancy: Tenancy, ITenancy
     {
-        public DefaultTenancy(IConnectionFactory factory, StoreOptions options) : base(options)
+        public DefaultTenancy(IConnectionFactory factory, StoreOptions options): base(options)
         {
             Default = new Tenant(options.Storage, options, factory, DefaultTenantId);
             Cleaner = new DocumentCleaner(options, Default);
             Schema = new TenantSchema(options, Default.As<Tenant>());
         }
+
+        public TenancyStyle Style { get; } = TenancyStyle.Conjoined;
 
         public ITenant this[string tenantId] => new LightweightTenant(tenantId, Default, Options.RetryPolicy());
 
@@ -39,7 +38,6 @@ namespace Marten.Storage
 
         public IDocumentCleaner Cleaner { get; }
         public IDocumentSchema Schema { get; }
-        public TenancyStyle Style { get; } = TenancyStyle.Conjoined;
     }
 
     public class LightweightTenant: ITenant
@@ -71,12 +69,12 @@ namespace Marten.Storage
             _inner.EnsureStorageExists(documentType);
         }
 
-        public ISequences Sequences => _inner.Sequences;
-
-        public TransformFunction TransformFor(string name)
+        public IFeatureSchema FindFeature(Type storageType)
         {
-            return _inner.TransformFor(name);
+            return _inner.FindFeature(storageType);
         }
+
+        public ISequences Sequences => _inner.Sequences;
 
         public void ResetSchemaExistenceChecks()
         {
@@ -100,6 +98,7 @@ namespace Marten.Storage
         }
 
         public IProviderGraph Providers => _inner.Providers;
+
         public Task<IReadOnlyList<DbObjectName>> SchemaTables()
         {
             return _inner.SchemaTables();

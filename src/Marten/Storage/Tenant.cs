@@ -11,7 +11,6 @@ using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
-using Marten.Transforms;
 using Npgsql;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
@@ -50,6 +49,11 @@ namespace Marten.Storage
 
         public string TenantId { get; }
 
+        public IFeatureSchema FindFeature(Type storageType)
+        {
+            return _options.Storage.FindFeature(storageType);
+        }
+
 
         public void ResetSchemaExistenceChecks()
         {
@@ -77,12 +81,6 @@ namespace Marten.Storage
         }
 
         public ISequences Sequences => _sequences.Value;
-
-        public TransformFunction TransformFor(string name)
-        {
-            EnsureStorageExists(typeof(Transforms.Transforms));
-            return _features.Transforms.For(name);
-        }
 
         public void MarkAllFeaturesAsChecked()
         {

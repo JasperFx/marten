@@ -15,7 +15,6 @@ using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
-using Marten.Transforms;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
@@ -29,13 +28,6 @@ namespace Marten.Linq.Parsing
     {
         private readonly IMartenSession _session;
 
-
-        private static readonly IList<IMethodCallMatcher> _methodMatchers = new List<IMethodCallMatcher>
-        {
-            new AsJsonMatcher(),
-            new TransformToJsonMatcher(),
-            new TransformToOtherMatcher()
-        };
 
         private MartenLinqQueryProvider _provider;
 
@@ -130,10 +122,6 @@ namespace Marten.Linq.Parsing
         {
             switch (resultOperator)
             {
-                case ISelectableOperator selectable:
-                    CurrentStatement = selectable.ModifyStatement(CurrentStatement, _session);
-                    break;
-
                 case TakeResultOperator take:
                     CurrentStatement.Limit = (int)take.Count.Value();
                     break;

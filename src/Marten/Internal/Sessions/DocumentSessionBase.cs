@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using Baseline;
 using Marten.Events;
 using Marten.Internal.Operations;
-using Marten.Linq.Filters;
-using Marten.Linq.SqlGeneration;
-using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
-using Weasel.Postgresql.SqlGeneration;
 
 #nullable enable
 namespace Marten.Internal.Sessions
@@ -18,6 +13,8 @@ namespace Marten.Internal.Sessions
     public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
     {
         internal readonly ISessionWorkTracker _workTracker;
+
+        private Dictionary<string, NestedTenantSession>? _byTenant;
 
 
         protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
@@ -54,11 +51,15 @@ namespace Marten.Internal.Sessions
         public void Store<T>(params T[] entities) where T : notnull
         {
             if (entities == null)
+            {
                 throw new ArgumentNullException(nameof(entities));
+            }
 
             if (typeof(T).IsGenericEnumerable())
+            {
                 throw new ArgumentOutOfRangeException(typeof(T).Name,
                     "Do not use IEnumerable<T> here as the document type. Either cast entities to an array instead or use the IEnumerable<T> Store() overload instead.");
+            }
 
             store(entities);
         }
@@ -82,11 +83,16 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
+            if (entities == null)
+            {
+                throw new ArgumentNullException(nameof(entities));
+            }
 
             if (typeof(T).IsGenericEnumerable())
+            {
                 throw new ArgumentOutOfRangeException(typeof(T).Name,
                     "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
 
             if (typeof(T) == typeof(object))
             {
@@ -114,11 +120,16 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
+            if (entities == null)
+            {
+                throw new ArgumentNullException(nameof(entities));
+            }
 
             if (typeof(T).IsGenericEnumerable())
+            {
                 throw new ArgumentOutOfRangeException(typeof(T).Name,
                     "Do not use IEnumerable<T> here as the document type. You may need to cast entities to an array instead.");
+            }
 
             if (typeof(T) == typeof(object))
             {
@@ -169,8 +180,6 @@ namespace Marten.Internal.Sessions
         public IEventStore Events { get; }
 
 
-
-
         public void QueueOperation(IStorageOperation storageOperation)
         {
             _workTracker.Add(storageOperation);
@@ -202,11 +211,9 @@ namespace Marten.Internal.Sessions
             return Headers?[key];
         }
 
-        private Dictionary<string, NestedTenantSession>? _byTenant;
-
         /// <summary>
-        /// Access data from another tenant and apply document or event updates to this
-        /// IDocumentSession for a separate tenant
+        ///     Access data from another tenant and apply document or event updates to this
+        ///     IDocumentSession for a separate tenant
         /// </summary>
         /// <param name="tenantId"></param>
         /// <returns></returns>
@@ -283,8 +290,9 @@ namespace Marten.Internal.Sessions
 
         public void EjectPatchedTypes(IUnitOfWork changes)
         {
-            var patchedTypes = changes.Patches().Select(x => x.DocumentType).Distinct().ToArray();
-            foreach (var type in patchedTypes) EjectAllOfType(type);
+            // TODO -- redo later
+            // var patchedTypes = changes.Patches().Select(x => x.DocumentType).Distinct().ToArray();
+            // foreach (var type in patchedTypes) EjectAllOfType(type);
         }
 
         internal interface IHandler

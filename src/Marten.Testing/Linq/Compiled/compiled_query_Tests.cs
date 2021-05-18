@@ -78,30 +78,6 @@ namespace Marten.Testing.Linq.Compiled
             theSession.Query(new UserByUsernameSingleOrDefault() { UserName = "nonexistent" }).ShouldBeNull();
         }
 
-        #region sample_FindJsonUserByUsername
-        [Fact]
-        public void a_single_item_compiled_query_AsJson()
-        {
-            var user = theSession.Query(new FindJsonUserByUsername() { Username = "jdm" });
-
-            SpecificationExtensions.ShouldNotBeNull(user);
-            user.ShouldBe(_user1.ToJson());
-        }
-
-        #endregion sample_FindJsonUserByUsername
-
-        #region sample_FindJsonOrderedUsersByUsername
-        [Fact]
-        public void a_sorted_list_compiled_query_AsJson()
-        {
-            var user = theSession.Query(new FindJsonOrderedUsersByUsername() { FirstName = "Jeremy" });
-
-            user.ShouldNotBeNull();
-            user.ShouldBe($"[{_user1.ToJson()},{_user5.ToJson()}]");
-        }
-
-        #endregion sample_FindJsonOrderedUsersByUsername
-
         [Fact]
         public void a_filtered_list_compiled_query_AsJson()
         {

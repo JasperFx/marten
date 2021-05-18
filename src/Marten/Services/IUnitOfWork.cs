@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Marten.Events;
 using Marten.Internal.Operations;
-using Marten.Patching;
 #nullable enable
 namespace Marten.Services
 {
@@ -72,12 +71,6 @@ namespace Marten.Services
         /// </summary>
         /// <returns></returns>
         IList<StreamAction> Streams();
-
-        /// <summary>
-        /// All of the pending patch operations in this unit of work
-        /// </summary>
-        /// <returns></returns>
-        IEnumerable<PatchOperation> Patches();
 
         /// <summary>
         /// All the storage operations that will be executed when this session is committed

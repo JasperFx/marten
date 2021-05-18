@@ -5,9 +5,7 @@ using Baseline;
 using Baseline.ImTools;
 using Marten.Events;
 using Marten.Internal.Operations;
-using Marten.Patching;
 using Marten.Services;
-using Marten.Util;
 
 namespace Marten.Internal
 {
@@ -165,11 +163,6 @@ namespace Marten.Internal
 
         IList<StreamAction> IUnitOfWork.Streams() => Streams;
 
-        IEnumerable<PatchOperation> IUnitOfWork.Patches()
-        {
-            return _operations.OfType<PatchOperation>();
-        }
-
         IEnumerable<IStorageOperation> IUnitOfWork.Operations()
         {
             return _operations;
@@ -195,8 +188,6 @@ namespace Marten.Internal
         {
             return Streams.SelectMany(x => x.Events);
         }
-
-        IEnumerable<PatchOperation> IChangeSet.Patches => _operations.OfType<PatchOperation>();
 
         IEnumerable<StreamAction> IChangeSet.GetStreams()
         {

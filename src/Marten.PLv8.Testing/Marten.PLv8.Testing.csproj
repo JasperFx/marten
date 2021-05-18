@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
         <PackageReference Include="xunit" Version="2.4.1" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -17,6 +17,23 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Marten.PLv8\Marten.PLv8.csproj" />
+      <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="default_username.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="get_fullname.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="get_target_float.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

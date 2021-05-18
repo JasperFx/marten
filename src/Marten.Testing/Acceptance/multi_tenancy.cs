@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Marten.Patching;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.CoreFunctionality;
@@ -457,57 +456,7 @@ namespace Marten.Testing.Acceptance
                 query.Load<User>(user.Id).UserName.ShouldBe("Me");
             }
         }
-
-        [Fact]
-        public void patching_respects_tenancy_too()
-        {
-            var user = new User {UserName = "Me", FirstName = "Jeremy", LastName = "Miller"};
-            user.Id = Guid.NewGuid();
-
-            using (var red = theStore.OpenSession("Red"))
-            {
-                red.Store(user);
-                red.SaveChanges();
-            }
-
-            using (var green = theStore.OpenSession("Green"))
-            {
-                green.Patch<User>(user.Id).Set(x => x.FirstName, "John");
-                green.SaveChanges();
-            }
-
-            using (var red = theStore.QuerySession("Red"))
-            {
-                var final = red.Load<User>(user.Id);
-                final.FirstName.ShouldBe("Jeremy");
-            }
-        }
-
-        [Fact]
-        public void patching_respects_tenancy_too_2()
-        {
-            var user = new User {UserName = "Me", FirstName = "Jeremy", LastName = "Miller"};
-            user.Id = Guid.NewGuid();
-
-            using (var red = theStore.OpenSession("Red"))
-            {
-                red.Store(user);
-                red.SaveChanges();
-            }
-
-            using (var green = theStore.OpenSession("Green"))
-            {
-                green.Patch<User>(x => x.UserName == "Me").Set(x => x.FirstName, "John");
-                green.SaveChanges();
-            }
-
-            using (var red = theStore.QuerySession("Red"))
-            {
-                var final = red.Load<User>(user.Id);
-                final.FirstName.ShouldBe("Jeremy");
-            }
-        }
-
+        
         [Fact]
         public void bulk_insert_respects_tenancy()
         {

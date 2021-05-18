@@ -29,6 +29,8 @@ namespace Marten.Testing.Harness
             _schemaName = schemaName;
         }
 
+        public IList<IDisposable> Disposables => _disposables;
+
         /// <summary>
         /// This will create an additional DocumentStore with the same schema name
         /// The base context will track it and dispose it later
