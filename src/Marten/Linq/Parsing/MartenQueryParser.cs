@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Operators;
 using Marten.Pagination;
-using Marten.Transforms;
 using Remotion.Linq;
 using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
 using Remotion.Linq.Parsing.Structure;
@@ -17,13 +16,9 @@ namespace Marten.Linq.Parsing
 
         public static readonly MartenQueryParser TransformQueryFlyweight = new MartenQueryParser(r =>
         {
-            r.Register(AsJsonExpressionNode.SupportedMethods, typeof(AsJsonExpressionNode));
             r.Register(ToJsonArrayExpressionNode.SupportedMethods, typeof(ToJsonArrayExpressionNode));
             r.Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode));
             r.Register(StatsExpressionNode.SupportedMethods, typeof(StatsExpressionNode));
-            r.Register(TransformToJsonNode.SupportedMethods, typeof(TransformToJsonNode));
-            r.Register(TransformToOtherTypeNode.SupportedMethods, typeof(TransformToOtherTypeNode));
-
         });
 
         private readonly QueryParser _parser;

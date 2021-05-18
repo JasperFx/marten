@@ -25,12 +25,6 @@ namespace Marten.Testing.CoreFunctionality
                 opts.RegisterDocumentType<User>();
                 opts.RegisterDocumentType<Target>();
 
-                // Let Marten derive the transform name from the filename
-                opts.Transforms.LoadFile("get_fullname.js");
-
-                // Explicitly define the transform name yourself
-                opts.Transforms.LoadFile("default_username.js", "set_default_username");
-
                 opts.Schema.For<Squad>()
                     .AddSubClass<BaseballTeam>()
                     .AddSubClass<BasketballTeam>()
@@ -67,12 +61,6 @@ namespace Marten.Testing.CoreFunctionality
             var readOnlyStoreOptions = theStore.Options;
             var readOnlyEventStoreOptions = readOnlyStoreOptions.Events;
             readOnlyEventStoreOptions.Projections().Any().ShouldBeTrue();
-        }
-
-        [Fact]
-        public void can_get_transforms()
-        {
-            theStore.Options.Transforms().Any().ShouldBeTrue();
         }
 
         [Fact]

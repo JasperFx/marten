@@ -5,7 +5,7 @@ using Baseline;
 
 namespace Marten.Schema
 {
-    public static class SchemaBuilder
+    internal static class SchemaBuilder
     {
         public static string GetSqlScript(string databaseSchemaName, string script)
         {
@@ -14,12 +14,14 @@ namespace Marten.Schema
             return ReadFromStream(name, databaseSchemaName);
         }
 
-        public static string GetJavascript(StoreOptions options, string jsfile)
+        public static string GetJavascript(StoreOptions options, string jsfile, string @namespace = null)
         {
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
-            var name = $"{typeof(SchemaBuilder).Namespace}.SQL.{jsfile}.js";
+            @namespace ??= typeof(SchemaBuilder).Namespace;
+
+            var name = $"{@namespace}.SQL.{jsfile}.js";
 
             return ReadFromStream(name, options.DatabaseSchemaName);
         }
@@ -35,7 +37,7 @@ namespace Marten.Schema
             return writer;
         }
 
-        private static string ReadFromStream(string name, string databaseSchemaName)
+        internal static string ReadFromStream(string name, string databaseSchemaName)
         {
             var stream = typeof(SchemaBuilder).GetTypeInfo().Assembly.GetManifestResourceStream(name);
             if (stream == null)

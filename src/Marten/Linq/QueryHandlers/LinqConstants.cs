@@ -23,7 +23,6 @@ namespace Marten.Linq.QueryHandlers
         internal static readonly ResultOperatorBase MinOperator = new MinResultOperator();
         internal static readonly ResultOperatorBase MaxOperator = new MaxResultOperator();
         internal static readonly ResultOperatorBase AverageOperator = new AverageResultOperator();
-        internal static readonly ResultOperatorBase AsJsonOperator = new AsJsonResultOperator(null);
 
         internal static readonly ResultOperatorBase FirstOperator = new FirstResultOperator(false);
         internal static readonly ResultOperatorBase SingleOperator = new SingleResultOperator(false);

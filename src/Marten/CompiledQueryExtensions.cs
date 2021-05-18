@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -61,9 +62,14 @@ namespace Marten
         /// <param name="queryable"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
+        [Obsolete("Favor StreamMany() intead")]
         public static string ToJsonArray<T>(this IQueryable<T> queryable)
         {
-            return queryable.As<IMartenQueryable<T>>().ToJsonArray();
+            var stream = new MemoryStream();
+            queryable.As<IMartenQueryable<T>>().StreamMany(stream).GetAwaiter().GetResult();
+
+            stream.Position = 0;
+            return stream.ReadAllText();
         }
 
         /// <summary>
@@ -84,9 +90,13 @@ namespace Marten
         /// <param name="token"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static Task<string> ToJsonArrayAsync<T>(this IQueryable<T> queryable, CancellationToken token = default)
+        public static async Task<string> ToJsonArrayAsync<T>(this IQueryable<T> queryable, CancellationToken token = default)
         {
-            return queryable.As<IMartenQueryable<T>>().ToJsonArrayAsync(token);
+            var stream = new MemoryStream();
+            await QueryableExtensions.StreamMany(queryable.As<IMartenQueryable<T>>(), stream, token);
+
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
         }
     }
 }

@@ -358,7 +358,7 @@ namespace Marten
         /// <returns></returns>
         public static Task StreamMany<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
         {
-            return queryable.As<IMartenQueryable<T>>().StreamManyAsync(destination, token);
+            return queryable.As<IMartenQueryable<T>>().StreamMany(destination, token);
         }
 
         /// <summary>

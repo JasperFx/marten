@@ -7,7 +7,6 @@ using Marten.Linq;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Transforms;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -551,64 +550,6 @@ namespace Marten.Testing.Linq
 
 
 
-        [Fact]
-        public void select_many_with_select_and_as_json()
-        {
-            var targets = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(targets);
-
-            using (var query = theStore.QuerySession())
-            {
-                var actual = query.Query<Target>()
-                    .SelectMany(x => x.Children)
-                    .Where(x => x.Color == Colors.Green)
-                    .Select(x => new { Id = x.Id, Shade = x.Color })
-                    .AsJson()
-                    .ToList();
-
-                var expected = targets
-                    .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
-
-                actual.Count.ShouldBe(expected);
-            }
-        }
-
-        [Fact]
-        public void project_select_many_with_javascript()
-        {
-            StoreOptions(_ =>
-            {
-                _.Transforms.LoadFile("get_target_float.js");
-            });
-
-            var targets = Target.GenerateRandomData(100).ToArray();
-            theStore.BulkInsert(targets);
-
-            using (var query = theStore.OpenSession())
-            {
-                var count = targets
-                    .Where(x => x.Flag)
-                    .SelectMany(x => x.Children)
-                    .Count(x => x.Color == Colors.Green);
-
-                var jsonList = query.Query<Target>()
-                    .Where(x => x.Flag)
-                    .SelectMany(x => x.Children)
-                    .Where(x => x.Color == Colors.Green)
-                    .TransformToJson("get_target_float").ToList();
-
-                jsonList.Count.ShouldBe(count);
-
-                var transformed = query.Query<Target>()
-                    .Where(x => x.Flag)
-                    .SelectMany(x => x.Children)
-                    .Where(x => x.Color == Colors.Green)
-                    .TransformTo<TargetNumbers>("get_target_float")
-                    .ToList();
-
-                transformed.Count.ShouldBe(count);
-            }
-        }
 
         [Fact]
         public void Bug_665()

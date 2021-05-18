@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
-using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Transforms;
 using Microsoft.Extensions.Logging;
 using IsolationLevel = System.Data.IsolationLevel;
 #nullable enable
@@ -194,12 +192,6 @@ namespace Marten
         /// <param name="batchSize"></param>
         Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000, CancellationToken cancellation = default);
-
-
-        /// <summary>
-        /// Use Javascript transformations to alter existing documents
-        /// </summary>
-        IDocumentTransforms Transform { get; }
 
 
         /// <summary>

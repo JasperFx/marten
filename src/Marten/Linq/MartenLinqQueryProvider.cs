@@ -113,12 +113,23 @@ namespace Marten.Linq
 
         public Task StreamMany(Expression expression, Stream destination, CancellationToken token)
         {
-            var builder = new LinqHandlerBuilder(this, _session, expression);
-            builder.BuildDatabaseStatement();
+            var builder = BuildLinqHandler(expression);
 
             var command = builder.TopStatement.BuildCommand();
 
             return _session.Database.StreamMany(command, destination, token);
+        }
+
+        /// <summary>
+        /// Builds out a LinqHandlerBuilder for this MartenQueryable<T>
+        /// </summary>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        internal LinqHandlerBuilder BuildLinqHandler(Expression expression)
+        {
+            var builder = new LinqHandlerBuilder(this, _session, expression);
+            builder.BuildDatabaseStatement();
+            return builder;
         }
 
         public Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)

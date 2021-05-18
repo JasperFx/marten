@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
-using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -14,16 +13,16 @@ using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
-using Marten.Transforms;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten
 {
     /// <summary>
     ///     The main entry way to using Marten
     /// </summary>
-    public class  DocumentStore: IDocumentStore
+    public class DocumentStore: IDocumentStore
     {
         private readonly IMartenLogger _logger;
         private readonly IRetryPolicy _retryPolicy;
@@ -35,7 +34,6 @@ namespace Marten
         public DocumentStore(StoreOptions options)
         {
             options.ApplyConfiguration();
-            options.CreatePatching();
             options.Validate();
 
             Options = options;
@@ -61,12 +59,9 @@ namespace Marten
 
             Diagnostics = new Diagnostics(this);
 
-            Transform = new DocumentTransforms(this, Tenancy.Default);
-
             options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());
-        }
 
-        IReadOnlyStoreOptions IDocumentStore.Options => Options;
+        }
 
         public ITenancy Tenancy => Options.Tenancy;
 
@@ -77,6 +72,8 @@ namespace Marten
         public ISerializer Serializer { get; }
 
         public StoreOptions Options { get; }
+
+        IReadOnlyStoreOptions IDocumentStore.Options => Options;
 
         public virtual void Dispose()
         {
@@ -195,8 +192,11 @@ namespace Marten
         {
             var tenant = Tenancy[options.TenantId];
 
-            if (!Options.Advanced.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            if (!Options.Advanced.DefaultTenantUsageEnabled &&
+                tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
                 throw new DefaultTenantUsageDisabledException();
+            }
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly, _retryPolicy);
             var session = new QuerySession(this, options, connection, tenant);
@@ -217,8 +217,11 @@ namespace Marten
         {
             var tenant = Tenancy[tenantId];
 
-            if (!Options.Advanced.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            if (!Options.Advanced.DefaultTenantUsageEnabled &&
+                tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
                 throw new DefaultTenantUsageDisabledException();
+            }
 
 
             var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
@@ -232,7 +235,6 @@ namespace Marten
             return session;
         }
 
-        public IDocumentTransforms Transform { get; }
         public IProjectionDaemon BuildProjectionDaemon(ILogger? logger = null)
         {
             logger ??= new NulloLogger();
@@ -285,8 +287,11 @@ namespace Marten
         {
             var tenant = Tenancy[options.TenantId];
 
-            if (!Options.Advanced.DefaultTenantUsageEnabled && tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            if (!Options.Advanced.DefaultTenantUsageEnabled &&
+                tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
                 throw new DefaultTenantUsageDisabledException();
+            }
 
             var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);
             connection.BeginSession();
@@ -313,11 +318,19 @@ namespace Marten
             // Hate crap like this, but if we don't control the transation, use External to direct
             // IManagedConnection not to call commit or rollback
             if (!options.OwnsTransactionLifecycle && commandRunnerMode != CommandRunnerMode.ReadOnly)
+            {
                 commandRunnerMode = CommandRunnerMode.External;
+            }
 
-            if (options.Connection != null || options.Transaction != null) options.OwnsConnection = false;
+            if (options.Connection != null || options.Transaction != null)
+            {
+                options.OwnsConnection = false;
+            }
 
-            if (options.Transaction != null) options.Connection = options.Transaction.Connection;
+            if (options.Transaction != null)
+            {
+                options.Connection = options.Transaction.Connection;
+            }
 
             if (options.Connection == null && options.DotNetTransaction != null)
             {
@@ -335,17 +348,24 @@ namespace Marten
             }
 
             if (options.Connection == null)
+            {
                 return tenant.OpenConnection(commandRunnerMode, options.IsolationLevel, options.Timeout);
+            }
+
             return new ManagedConnection(options, commandRunnerMode, retryPolicy);
         }
     }
 
 
-
-    internal class NulloLogger : ILogger, IDisposable
+    internal class NulloLogger: ILogger, IDisposable
     {
+        public void Dispose()
+        {
+            // Nothing
+        }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+            Func<TState, Exception, string> formatter)
         {
             var message = $"{logLevel}: {formatter(state, exception)}";
             Debug.WriteLine(message);
@@ -360,13 +380,5 @@ namespace Marten
         {
             return this;
         }
-
-
-        public void Dispose()
-        {
-            // Nothing
-        }
     }
-
-
 }
