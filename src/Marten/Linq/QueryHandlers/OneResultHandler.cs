@@ -1,13 +1,16 @@
 using System;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -71,6 +74,38 @@ namespace Marten.Linq.QueryHandlers
                 throw new InvalidOperationException(MoreThanOneElementMessage);
 
             return result;
+        }
+
+        public async Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            var npgsqlReader = reader.As<NpgsqlDataReader>();
+
+            var hasResult = await reader.ReadAsync(token);
+            if (!hasResult)
+            {
+                if (_canBeNull)
+                {
+                    return 0;
+                }
+                else
+                {
+                    throw new InvalidOperationException(NoElementsMessage);
+                }
+            }
+
+            var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
+
+            var source = await npgsqlReader.GetStreamAsync(ordinal, token);
+            await source.CopyStreamSkippingSOHAsync(stream, token);
+
+            if (_canBeMultiples) return 1;
+
+            if (await reader.ReadAsync(token))
+            {
+                throw new InvalidOperationException(MoreThanOneElementMessage);
+            }
+
+            return 1;
         }
 
         public bool DependsOnDocumentSelector()

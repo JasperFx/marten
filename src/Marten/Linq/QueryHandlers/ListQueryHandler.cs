@@ -1,13 +1,17 @@
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Services;
 using Weasel.Postgresql;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -45,6 +49,11 @@ namespace Marten.Linq.QueryHandlers
         {
             var list = await HandleAsync(reader, session, token);
             return list;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            return reader.As<NpgsqlDataReader>().StreamMany(stream, token);
         }
 
         IEnumerable<T> IQueryHandler<IEnumerable<T>>.Handle(DbDataReader reader, IMartenSession session)

@@ -1,4 +1,6 @@
+using System;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
@@ -32,6 +34,11 @@ namespace Marten.Linq.Includes
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
             Inner.ConfigureCommand(builder, session);
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException("JSON streaming is not supported in combination with Include() operations");
         }
 
         public T Handle(DbDataReader reader, IMartenSession session)

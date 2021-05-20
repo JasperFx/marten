@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using LamarCodeGeneration.Util;
+using Baseline;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;
@@ -17,6 +16,7 @@ using Marten.Services;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
+using TypeExtensions = LamarCodeGeneration.Util.TypeExtensions;
 
 #nullable enable
 namespace Marten.Linq
@@ -43,14 +43,14 @@ namespace Marten.Linq
         public MartenLinqQueryable(IMartenSession session): base(new MartenLinqQueryProvider(session))
         {
             Session = session;
-            MartenProvider = Provider.As<MartenLinqQueryProvider>();
+            MartenProvider = TypeExtensions.As<MartenLinqQueryProvider>(Provider);
         }
 
         public MartenLinqQueryable(IMartenSession session, Expression expression): base(new MartenLinqQueryProvider(session),
             expression)
         {
             Session = session;
-            MartenProvider = Provider.As<MartenLinqQueryProvider>();
+            MartenProvider = TypeExtensions.As<MartenLinqQueryProvider>(Provider);
         }
 
         public LinqHandlerBuilder BuildLinqHandler()
@@ -84,14 +84,9 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsyncEnumerable<T>(Expression, token);
         }
 
-        public Task StreamMany(Stream destination, CancellationToken token)
+        public Task StreamJsonArray(Stream destination, CancellationToken token)
         {
             return MartenProvider.StreamMany(Expression, destination, token);
-        }
-
-        public Task<bool> StreamOne(Stream destination, CancellationToken token)
-        {
-            return MartenProvider.StreamOne(Expression, destination, token);
         }
 
         public Task<bool> AnyAsync(CancellationToken token)
@@ -209,8 +204,6 @@ namespace Marten.Linq
             return this;
         }
 
-
-
         public IMartenQueryable<T> Stats(out QueryStatistics stats)
         {
             Statistics = new QueryStatistics();
@@ -227,6 +220,70 @@ namespace Marten.Linq
             builder.BuildDiagnosticCommand(fetchType, sql);
             command.CommandText = sql.ToString();
             return command;
+        }
+
+        public async Task<string> ToJsonArray(CancellationToken token)
+        {
+            var stream = new MemoryStream();
+            await StreamJsonArray(stream, token);
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
+        }
+
+        public Task StreamJsonFirst(Stream destination, CancellationToken token)
+        {
+            return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.FirstOperator);
+        }
+
+        public Task<int> StreamJsonFirstOrDefault(Stream destination, CancellationToken token)
+        {
+            return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.FirstOrDefaultOperator);
+        }
+
+        public Task StreamJsonSingle(Stream destination, CancellationToken token)
+        {
+            return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.SingleOperator);
+        }
+
+        public Task<int> StreamJsonSingleOrDefault(Stream destination, CancellationToken token)
+        {
+            return MartenProvider.StreamJson<T>(destination, Expression, token, LinqConstants.SingleOrDefaultOperator);
+        }
+
+        public async Task<string> ToJsonFirst(CancellationToken token)
+        {
+            var stream = new MemoryStream();
+            await StreamJsonFirst(stream, token);
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
+        }
+
+        public async Task<string?> ToJsonFirstOrDefault(CancellationToken token)
+        {
+            var stream = new MemoryStream();
+            var actual = await StreamJsonFirstOrDefault(stream, token);
+            if (actual == 0) return null;
+
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
+        }
+
+        public async Task<string> ToJsonSingle(CancellationToken token)
+        {
+            var stream = new MemoryStream();
+            await StreamJsonSingle(stream, token);
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
+        }
+
+        public async Task<string?> ToJsonSingleOrDefault(CancellationToken token)
+        {
+            var stream = new MemoryStream();
+            var count = await StreamJsonSingleOrDefault(stream, token);
+            if (count == 0) return null;
+
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
         }
     }
 }

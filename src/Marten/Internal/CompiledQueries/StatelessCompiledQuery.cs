@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq.QueryHandlers;
@@ -21,6 +22,10 @@ namespace Marten.Internal.CompiledQueries
         }
 
         public abstract void ConfigureCommand(CommandBuilder builder, IMartenSession session);
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            return _inner.StreamJson(stream, reader, token);
+        }
 
         public TOut Handle(DbDataReader reader, IMartenSession session)
         {

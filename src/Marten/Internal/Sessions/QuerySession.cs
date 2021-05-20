@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,8 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using Npgsql;
+using Weasel.Postgresql;
+
 #nullable enable
 namespace Marten.Internal.Sessions
 {
@@ -285,6 +288,20 @@ namespace Marten.Internal.Sessions
             return provider.ExecuteHandler(handler);
         }
 
+        public Task<int> StreamJson<T>(Stream destination, CancellationToken token, string sql, params object[] parameters)
+        {
+            assertNotDisposed();
+            var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
+            var builder = new CommandBuilder();
+            handler.ConfigureCommand(builder, this);
+            return Database.StreamMany(builder.Compile(), destination, token);
+        }
+
+        public Task<int> StreamJson<T>(Stream destination, string sql, params object[] parameters)
+        {
+            return StreamJson<T>(destination, CancellationToken.None, sql, parameters);
+        }
+
         public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default, params object[] parameters)
         {
             assertNotDisposed();
@@ -329,6 +346,39 @@ namespace Marten.Internal.Sessions
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
 
             return ExecuteHandlerAsync(handler, token);
+        }
+
+        public async Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination, CancellationToken token = default)
+        {
+            var source = Options.GetCompiledQuerySourceFor(query, this);
+            var handler = (IQueryHandler<TOut>)source.Build(query, this);
+            return (await StreamJson(handler, destination, token) > 0);
+        }
+
+        public Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
+            CancellationToken token = default)
+        {
+            var source = Options.GetCompiledQuerySourceFor(query, this);
+            var handler = (IQueryHandler<TOut>)source.Build(query, this);
+            return StreamJson(handler, destination, token);
+        }
+
+        public async Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
+            CancellationToken token = default)
+        {
+            var stream = new MemoryStream();
+            var count = await StreamJsonOne(query, stream, token);
+            if (!count) return null;
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
+        }
+
+        public async Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
+        {
+            var stream = new MemoryStream();
+            await StreamJsonOne(query, stream, token);
+            stream.Position = 0;
+            return await stream.ReadAllTextAsync();
         }
 
         public IReadOnlyList<T> LoadMany<T>(params string[] ids) where T : notnull
@@ -598,14 +648,20 @@ namespace Marten.Internal.Sessions
             return tenantSession;
         }
 
+        public async Task<int> StreamJson<T>(IQueryHandler<T> handler, Stream destination, CancellationToken token)
+        {
+            var cmd = this.BuildCommand(handler);
+
+            using var reader = await Database.ExecuteReaderAsync(cmd, token);
+            return await handler.StreamJson(destination, reader, token);
+        }
+
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
             var cmd = this.BuildCommand(handler);
 
-            using (var reader = await Database.ExecuteReaderAsync(cmd, token))
-            {
-                return await handler.HandleAsync(reader, this, token);
-            }
+            using var reader = await Database.ExecuteReaderAsync(cmd, token);
+            return await handler.HandleAsync(reader, this, token);
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)

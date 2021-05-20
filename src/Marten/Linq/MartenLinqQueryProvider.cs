@@ -77,6 +77,17 @@ namespace Marten.Linq
             return ExecuteHandlerAsync(handler, token);
         }
 
+        public async Task<int> StreamJson<TResult>(Stream stream, Expression expression, CancellationToken token, ResultOperatorBase op)
+        {
+            var builder = new LinqHandlerBuilder(this, _session, expression, op);
+            var handler = builder.BuildHandler<TResult>();
+
+            var cmd = _session.BuildCommand(handler);
+
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
+            return await handler.StreamJson(stream, reader, token);
+        }
+
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
             var cmd = _session.BuildCommand(handler);

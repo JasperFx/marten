@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -56,6 +57,27 @@ namespace Marten.Testing.Linq
                 .ToList();
 
             list.Any().ShouldBeTrue();
+
+            query.Stats.TotalResults.ShouldBe(count);
+        }
+
+        [Fact]
+        public async Task can_use_json_streaming_with_statistics()
+        {
+
+            var count = theSession.Query<Target>().Count(x => x.Number > 10);
+            count.ShouldBeGreaterThan(0);
+
+            var query = new TargetPaginationQuery(2, 5);
+            var stream = new MemoryStream();
+            var resultCount = await theSession
+                .StreamJsonMany(query, stream);
+
+            resultCount.ShouldBeGreaterThan(0);
+
+            stream.Position = 0;
+            var list = theStore.Options.Serializer().FromJson<Target[]>(stream);
+            list.Length.ShouldBe(5);
 
             query.Stats.TotalResults.ShouldBe(count);
         }

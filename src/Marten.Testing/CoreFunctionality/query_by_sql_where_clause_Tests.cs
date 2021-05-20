@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
@@ -8,13 +9,40 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class query_by_sql_where_clause_Tests : IntegrationContext
+    public class query_by_sql_where_clause_Tests: IntegrationContext
     {
+        public query_by_sql_where_clause_Tests(DefaultStoreFixture fixture): base(fixture)
+        {
+        }
 
         [Fact]
         public void query_by_string_scalar()
         {
+        }
 
+        [Fact]
+        public async Task stream_query_by_one_parameter()
+        {
+            using var session = theStore.OpenSession();
+            session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+            session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+            session.Store(new User {FirstName = "Max", LastName = "Miller"});
+            session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
+            await session.SaveChangesAsync();
+
+            var stream = new MemoryStream();
+            await session.StreamJson<User>(stream, "where data ->> 'LastName' = ?", "Miller");
+
+            stream.Position = 0;
+            var results = theStore.Options.Serializer().FromJson<User[]>(stream);
+            var firstnames = results
+                .OrderBy(x => x.FirstName)
+                .Select(x => x.FirstName).ToArray();
+
+            firstnames.Length.ShouldBe(3);
+            firstnames[0].ShouldBe("Jeremy");
+            firstnames[1].ShouldBe("Lindsey");
+            firstnames[2].ShouldBe("Max");
         }
 
         [Fact]
@@ -22,15 +50,15 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
 
                 var firstnames =
                     session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
-                           .Select(x => x.FirstName).ToArray();
+                        .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
                 firstnames[0].ShouldBe("Jeremy");
@@ -44,15 +72,15 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
 
                 var firstnames =
                     session.Query<User>("WHERE data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
-                           .Select(x => x.FirstName).ToArray();
+                        .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
                 firstnames[0].ShouldBe("Jeremy");
@@ -66,15 +94,16 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
 
                 var firstnames =
-                    session.Query<User>("where data ->> 'LastName' = :Name", new { Name = "Miller" }).OrderBy(x => x.FirstName)
-                           .Select(x => x.FirstName).ToArray();
+                    session.Query<User>("where data ->> 'LastName' = :Name", new {Name = "Miller"})
+                        .OrderBy(x => x.FirstName)
+                        .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
                 firstnames[0].ShouldBe("Jeremy");
@@ -88,16 +117,19 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
+
                 #region sample_using_parameterized_sql
+
                 var user =
                     session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
-                               "Miller")
-                           .Single();
+                            "Miller")
+                        .Single();
+
                 #endregion sample_using_parameterized_sql
 
                 user.ShouldNotBeNull();
@@ -105,23 +137,26 @@ namespace Marten.Testing.CoreFunctionality
         }
 
         #region sample_query_by_two_named_parameters
+
         [Fact]
         public void query_by_two_named_parameters()
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
                 var user =
-                    session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName", new { FirstName = "Jeremy", LastName = "Miller" })
-                           .Single();
+                    session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName",
+                            new {FirstName = "Jeremy", LastName = "Miller"})
+                        .Single();
 
                 SpecificationExtensions.ShouldNotBeNull(user);
             }
         }
+
         #endregion sample_query_by_two_named_parameters
 
         [Fact]
@@ -129,14 +164,15 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
                 var user =
-                    session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name", new { Name = "Jeremy" })
-                           .Single();
+                    session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name",
+                            new {Name = "Jeremy"})
+                        .Single();
 
                 SpecificationExtensions.ShouldNotBeNull(user);
             }
@@ -147,15 +183,15 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
 
                 var firstnames =
                     session.Query<User>("where data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
-                           .Select(x => x.FirstName).ToArray();
+                        .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
                 firstnames[0].ShouldBe("Jeremy");
@@ -170,15 +206,15 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
-                session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
-                session.Store(new User { FirstName = "Max", LastName = "Miller" });
-                session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+                session.Store(new User {FirstName = "Jeremy", LastName = "Miller"});
+                session.Store(new User {FirstName = "Lindsey", LastName = "Miller"});
+                session.Store(new User {FirstName = "Max", LastName = "Miller"});
+                session.Store(new User {FirstName = "Frank", LastName = "Zombo"});
                 session.SaveChanges();
 
                 var firstnames =
                     session.Query<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'")
-                           .Select(x => x.FirstName).ToArray();
+                        .Select(x => x.FirstName).ToArray();
 
                 firstnames.Length.ShouldBe(3);
                 firstnames[0].ShouldBe("Jeremy");
@@ -189,12 +225,13 @@ namespace Marten.Testing.CoreFunctionality
 
 
         #region sample_query_with_only_the_where_clause
+
         [Fact]
         public void query_for_single_document()
         {
             using (var session = theStore.OpenSession())
             {
-                var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                var u = new User {FirstName = "Jeremy", LastName = "Miller"};
                 session.Store(u);
                 session.SaveChanges();
 
@@ -203,6 +240,7 @@ namespace Marten.Testing.CoreFunctionality
                 user.Id.ShouldBe(u.Id);
             }
         }
+
         #endregion sample_query_with_only_the_where_clause
 
         [Fact]
@@ -210,7 +248,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var session = theStore.OpenSession())
             {
-                var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                var u = new User {FirstName = "Jeremy", LastName = "Miller"};
                 session.Store(u);
                 session.SaveChanges();
 
@@ -222,12 +260,13 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
         }
 
         #region sample_query_with_matches_sql
+
         [Fact]
         public void query_with_matches_sql()
         {
             using (var session = theStore.OpenSession())
             {
-                var u = new User { FirstName = "Eric", LastName = "Smith" };
+                var u = new User {FirstName = "Eric", LastName = "Smith"};
                 session.Store(u);
                 session.SaveChanges();
 
@@ -236,6 +275,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
                 user.Id.ShouldBe(u.Id);
             }
         }
+
         #endregion sample_query_with_matches_sql
 
         [Fact]
@@ -243,15 +283,18 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
         {
             using (var session = theStore.OpenSession())
             {
-                var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                var u = new User {FirstName = "Jeremy", LastName = "Miller"};
                 session.Store(u);
                 session.SaveChanges();
 
                 #region sample_use_all_your_own_sql
+
                 var user =
                     session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
-                           .Single();
+                        .Single();
+
                 #endregion sample_use_all_your_own_sql
+
                 user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
             }
@@ -260,27 +303,25 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
         [Fact]
         public async Task query_with_select_in_query_async()
         {
-			using (var session = theStore.OpenSession())
+            using (var session = theStore.OpenSession())
             {
-                var u = new User { FirstName = "Jeremy", LastName = "Miller" };
+                var u = new User {FirstName = "Jeremy", LastName = "Miller"};
                 session.Store(u);
                 session.SaveChanges();
 
                 #region sample_using-queryasync
+
                 var users =
                     await
                         session.QueryAsync<User>(
-                                   "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
+                            "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
                 var user = users.Single();
+
                 #endregion sample_using-queryasync
 
-				user.LastName.ShouldBe("Miller");
+                user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
             }
-        }
-
-        public query_by_sql_where_clause_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
         }
     }
 }

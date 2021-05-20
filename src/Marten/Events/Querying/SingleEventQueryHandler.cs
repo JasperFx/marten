@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
@@ -40,6 +41,11 @@ namespace Marten.Events.Querying
             return await reader.ReadAsync(token)
                 ? await _selector.ResolveAsync(reader, token)
                 : null;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
     }
 }

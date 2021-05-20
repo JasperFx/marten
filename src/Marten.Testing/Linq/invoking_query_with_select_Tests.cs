@@ -96,18 +96,17 @@ namespace Marten.Testing.Linq
 
 
         [Fact]
-        public void use_select_to_anonymous_type_with_to_json_array()
+        public async Task use_select_to_anonymous_type_with_to_json_array()
         {
             theSession.Store(new User { FirstName = "Hank" });
             theSession.Store(new User { FirstName = "Bill" });
             theSession.Store(new User { FirstName = "Sam" });
             theSession.Store(new User { FirstName = "Tom" });
 
-            theSession.SaveChanges();
-
-            theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
-                .ToJsonArray()
-                .ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
+            await theSession.SaveChangesAsync();
+            var json = await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
+                .ToJsonArray();
+            json.ShouldBe("[{\"Name\": \"Bill\"},{\"Name\": \"Hank\"},{\"Name\": \"Sam\"},{\"Name\": \"Tom\"}]");
         }
 
         [Fact]
@@ -118,7 +117,7 @@ namespace Marten.Testing.Linq
             theSession.Store(new User { FirstName = "Sam" });
             theSession.Store(new User { FirstName = "Tom" });
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
             var users = await theSession
                 .Query<User>()
@@ -131,16 +130,15 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
-        public void use_select_to_another_type_as_to_json_array()
+        public async Task use_select_to_another_type_as_to_json_array()
         {
             theSession.Store(new User { FirstName = "Hank" });
             theSession.Store(new User { FirstName = "Bill" });
             theSession.Store(new User { FirstName = "Sam" });
             theSession.Store(new User { FirstName = "Tom" });
 
-            theSession.SaveChanges();
-
-            var users = theSession
+            await theSession.SaveChangesAsync();
+            var users = await theSession
                 .Query<User>()
                 .OrderBy(x => x.FirstName)
                 .Select(x => new UserName { Name = x.FirstName })

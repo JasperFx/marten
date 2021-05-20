@@ -11,11 +11,11 @@ using Marten.Linq.Selectors;
 using Weasel.Postgresql;
 using Marten.Util;
 using Npgsql;
-using TypeExtensions = LamarCodeGeneration.Util.TypeExtensions;
 
 namespace Marten.Linq.SqlGeneration
 {
 
+    [Obsolete]
     internal class JsonSelectClause: ISelectClause
     {
         private readonly Type _sourceType;
@@ -72,6 +72,7 @@ namespace Marten.Linq.SqlGeneration
         }
     }
 
+    [Obsolete("Kill off with streaming")]
     public class JsonArrayHandler: IQueryHandler<string>, IQueryHandler<IReadOnlyList<string>>, IQueryHandler<IEnumerable<string>>, ISelector<string>
     {
         private readonly Statement _statement;
@@ -128,6 +129,11 @@ namespace Marten.Linq.SqlGeneration
         {
             IQueryHandler<IEnumerable<string>> inner = new ListQueryHandler<string>(null, this);
             return inner.HandleAsync(reader, session, token);
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
 
         IEnumerable<string> IQueryHandler<IEnumerable<string>>.Handle(DbDataReader reader, IMartenSession session)

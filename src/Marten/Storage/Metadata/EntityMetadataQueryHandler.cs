@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -83,6 +84,11 @@ namespace Marten.Storage.Metadata
             }
 
             return metadata;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
 
         public Type SourceType { get; }

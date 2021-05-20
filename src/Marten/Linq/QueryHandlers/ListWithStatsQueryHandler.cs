@@ -1,13 +1,17 @@
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Marten.Services;
 using Weasel.Postgresql;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -56,6 +60,36 @@ namespace Marten.Linq.QueryHandlers
             }
 
             return list;
+        }
+
+        public async Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            var count = 0;
+            var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
+
+            await stream.WriteBytes(ManagedConnectionExtensions.LeftBracket, token);
+
+            if (await reader.ReadAsync(token))
+            {
+                _statistics.TotalResults = reader.GetFieldValue<int>(_countIndex);
+
+                count++;
+                var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token);
+                await source.CopyStreamSkippingSOHAsync(stream, token);
+            }
+
+            while (await reader.ReadAsync(token))
+            {
+                count++;
+                await stream.WriteBytes(ManagedConnectionExtensions.Comma, token);
+
+                var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token);
+                await source.CopyStreamSkippingSOHAsync(stream, token);
+            }
+
+            await stream.WriteBytes(ManagedConnectionExtensions.RightBracket, token);
+
+            return count;
         }
 
         async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)

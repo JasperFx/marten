@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
@@ -48,6 +50,11 @@ namespace Marten.Events
             }
 
             return queue;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
     }
 }

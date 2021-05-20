@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;
-using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
 #nullable enable
@@ -102,6 +102,28 @@ namespace Marten
         IReadOnlyList<T> Query<T>(string sql, params object[] parameters);
 
         /// <summary>
+        /// Stream the results of a user-supplied query directly to a stream as a JSON array
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <param name="sql"></param>
+        /// <param name="parameters"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<int> StreamJson<T>(Stream destination, CancellationToken token, string sql, params object[] parameters);
+
+        /// <summary>
+        /// Stream the results of a user-supplied query directly to a stream as a JSON array
+        /// </summary>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <param name="sql"></param>
+        /// <param name="parameters"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        Task<int> StreamJson<T>(Stream destination, string sql, params object[] parameters);
+
+        /// <summary>
         /// Asynchronously queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -157,6 +179,54 @@ namespace Marten
         /// <param name="token">A cancellation token</param>
         /// <returns>A task for a single item query result</returns>
         Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
+
+
+        /// <summary>
+        /// Stream a single JSON document to the destination using a compiled query
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TOut"></typeparam>
+        /// <returns></returns>
+        Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination, CancellationToken token = default);
+
+
+        /// <summary>
+        /// Stream many documents as a JSON array to the destination using a compiled query
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="destination"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TOut"></typeparam>
+        /// <returns></returns>
+        Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
+            CancellationToken token = default);
+
+
+        /// <summary>
+        /// Fetch the JSON representation of a single document using a compiled query
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TOut"></typeparam>
+        /// <returns></returns>
+        Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
+
+        /// <summary>
+        /// Fetch the JSON array representation of a list of documents using a compiled query
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="token"></param>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TOut"></typeparam>
+        /// <returns></returns>
+        Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
+
+
 
         /// <summary>
         /// Load or find multiple documents by id
@@ -219,7 +289,7 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids) where T : notnull; 
+        Task<IReadOnlyList<T>> LoadManyAsync<T>(params string[] ids) where T : notnull;
 
         /// <summary>
         /// Load or find multiple documents by id
