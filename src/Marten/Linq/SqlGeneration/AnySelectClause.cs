@@ -1,12 +1,12 @@
 using System;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Weasel.Postgresql;
-using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -72,6 +72,11 @@ namespace Marten.Linq.SqlGeneration
 
             return hasRow && !await reader.IsDBNullAsync(0, token) &&
                    await reader.GetFieldValueAsync<bool>(0, token);
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
     }
 }

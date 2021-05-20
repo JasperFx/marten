@@ -1,14 +1,18 @@
 using System.Collections.Generic;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.Selectors;
+using Marten.Services;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 using NpgsqlTypes;
 
 #nullable enable
@@ -79,6 +83,11 @@ namespace Marten.Linq.QueryHandlers
             }
 
             return list;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            return reader.As<NpgsqlDataReader>().StreamMany(stream, token);
         }
     }
 }

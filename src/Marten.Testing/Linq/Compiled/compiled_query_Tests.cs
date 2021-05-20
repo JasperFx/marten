@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -79,21 +80,11 @@ namespace Marten.Testing.Linq.Compiled
         }
 
         [Fact]
-        public void a_filtered_list_compiled_query_AsJson()
+        public async Task a_filtered_list_compiled_query_AsJson()
         {
-            var user = theSession.Query(new FindJsonUsersByUsername() { FirstName = "Jeremy" });
+            var user = await theSession.ToJsonMany(new FindJsonUsersByUsername() { FirstName = "Jeremy" });
 
-            SpecificationExtensions.ShouldNotBeNull(user);
-            user.ShouldNotBeEmpty();
-        }
-
-        [Fact]
-        public async Task a_filtered_list_compiled_query_AsJson_async()
-        {
-            var user = await theSession.QueryAsync(new FindJsonUsersByUsername() { FirstName = "Jeremy" });
-
-            SpecificationExtensions.ShouldNotBeNull(user);
-            user.ShouldNotBeEmpty();
+            user.ShouldNotBeNull();
         }
 
         [Fact]
@@ -114,6 +105,53 @@ namespace Marten.Testing.Linq.Compiled
             SpecificationExtensions.ShouldNotBeNull(user);
             var differentUser = await theSession.QueryAsync(new UserByUsername { UserName = "jdm" });
             differentUser.UserName.ShouldBe("jdm");
+        }
+
+        [Fact]
+        public async Task a_single_item_compiled_query_streamed_hit()
+        {
+            var stream = new MemoryStream();
+
+            var wasFound = await theSession.StreamJsonOne(new UserByUsername { UserName = "myusername" }, stream);
+            wasFound.ShouldBe(true);
+
+            stream.Position = 0;
+
+            var user = theStore.Options.Serializer().FromJson<User>(stream);
+            user.UserName.ShouldBe("myusername");
+        }
+
+        [Fact]
+        public async Task a_single_item_compiled_query_to_json_hit()
+        {
+            var json = await theSession.ToJsonOne(new UserByUsername { UserName = "myusername" });
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream) {AutoFlush = true};
+            await writer.WriteAsync(json);
+            stream.Position = 0;
+
+            var user = theStore.Options.Serializer().FromJson<User>(stream);
+            user.UserName.ShouldBe("myusername");
+        }
+
+
+        [Fact]
+        public async Task a_single_item_compiled_query_streamed_miss()
+        {
+            var stream = new MemoryStream();
+
+            var wasFound = await theSession.StreamJsonOne(new UserByUsername { UserName = "nonexistent" }, stream);
+            wasFound.ShouldBeFalse();
+            stream.Length.ShouldBe(0);
+
+        }
+
+
+        [Fact]
+        public async Task a_single_item_compiled_query_to_one_json_miss()
+        {
+            var json = await theSession.ToJsonOne(new UserByUsername { UserName = "nonexistent" });
+            json.ShouldBeNull();
         }
 
         [Fact]
@@ -148,6 +186,36 @@ namespace Marten.Testing.Linq.Compiled
             users.ElementAt(1).UserName.ShouldBe("shadetreedev");
             var differentUsers = await theSession.QueryAsync(new UsersByFirstName { FirstName = "Jeremy" });
             differentUsers.Count().ShouldBe(2);
+        }
+
+        [Fact]
+        public async Task to_json_many()
+        {
+            var userJson = await theSession.ToJsonMany(new UsersByFirstName { FirstName = "Jeremy" });
+            var stream = new MemoryStream();
+            var writer = new StreamWriter(stream) {AutoFlush = true};
+            await writer.WriteAsync(userJson);
+            stream.Position = 0;
+
+            var users = theStore.Options.Serializer().FromJson<User[]>(stream);
+            users.Count().ShouldBe(2);
+            users.ElementAt(0).UserName.ShouldBe("jdm");
+            users.ElementAt(1).UserName.ShouldBe("shadetreedev");
+        }
+
+        [Fact]
+        public async Task stream_json_many()
+        {
+            var stream = new MemoryStream();
+            var count = await theSession.StreamJsonMany(new UsersByFirstName { FirstName = "Jeremy" }, stream);
+            count.ShouldBe(2);
+
+            stream.Position = 0;
+
+            var users = theStore.Options.Serializer().FromJson<User[]>(stream);
+            users.Count().ShouldBe(2);
+            users.ElementAt(0).UserName.ShouldBe("jdm");
+            users.ElementAt(1).UserName.ShouldBe("shadetreedev");
         }
 
         [Fact]
@@ -240,9 +308,10 @@ namespace Marten.Testing.Linq.Compiled
 
         public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
         {
-            return query =>
-                    query.Where(x => Username == x.UserName)
-                        .AsJson().Single();
+            throw new NotImplementedException();
+            // return query =>
+            //         query.Where(x => Username == x.UserName)
+            //             .AsJson().Single();
         }
     }
 
@@ -255,24 +324,24 @@ namespace Marten.Testing.Linq.Compiled
 
         public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
         {
-            return query =>
-                    query.Where(x => FirstName == x.FirstName)
-                        .OrderBy(x => x.UserName)
-                        .ToJsonArray();
+            throw new NotImplementedException();
+            // return query =>
+            //         query.Where(x => FirstName == x.FirstName)
+            //             .OrderBy(x => x.UserName)
+            //             .ToJsonArray();
         }
     }
 
     #endregion sample_CompiledToJsonArray
 
-    public class FindJsonUsersByUsername: ICompiledQuery<User, string>
+    public class FindJsonUsersByUsername: ICompiledListQuery<User>
     {
         public string FirstName { get; set; }
 
-        public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
+        Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> ICompiledQuery<User, IEnumerable<User>>.QueryIs()
         {
             return query =>
-                    query.Where(x => FirstName == x.FirstName)
-                        .ToJsonArray();
+                query.Where(x => FirstName == x.FirstName);
         }
     }
 

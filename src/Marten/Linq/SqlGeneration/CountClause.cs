@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
@@ -71,6 +72,11 @@ namespace Marten.Linq.SqlGeneration
             return hasNext && !await reader.IsDBNullAsync(0, token)
                 ? await reader.GetFieldValueAsync<T>(0, token)
                 : default;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
     }
 }

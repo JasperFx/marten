@@ -193,10 +193,6 @@ namespace Marten.Linq.Parsing
                     CurrentStatement.ApplyAggregateOperator("MAX");
                     break;
 
-                case ToJsonArrayResultOperator _:
-                    CurrentStatement.ToJsonSelector();
-                    break;
-
                 case LastResultOperator _:
                     throw new InvalidOperationException("Marten does not support Last() or LastOrDefault() queries. Please reverse the ordering and use First()/FirstOrDefault() instead");
 

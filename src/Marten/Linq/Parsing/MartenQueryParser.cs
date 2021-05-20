@@ -16,7 +16,6 @@ namespace Marten.Linq.Parsing
 
         public static readonly MartenQueryParser TransformQueryFlyweight = new MartenQueryParser(r =>
         {
-            r.Register(ToJsonArrayExpressionNode.SupportedMethods, typeof(ToJsonArrayExpressionNode));
             r.Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode));
             r.Register(StatsExpressionNode.SupportedMethods, typeof(StatsExpressionNode));
         });

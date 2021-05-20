@@ -356,21 +356,54 @@ namespace Marten
         /// <param name="destination"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Task StreamMany<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        public static Task StreamJsonArray<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
         {
-            return queryable.As<IMartenQueryable<T>>().StreamMany(destination, token);
+            return queryable.As<MartenLinqQueryable<T>>().StreamJsonArray(destination, token);
         }
 
-        /// <summary>
-        /// Write the raw persisted JSON directly to the destination stream. Uses "FirstOrDefault()"
-        /// rules. Returns true if there is at least one record.
-        /// </summary>
-        /// <param name="destination"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public static Task<bool> StreamOne<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        public static Task<string> ToJsonArray<T>(this IQueryable<T> queryable, CancellationToken token = default)
         {
-            return queryable.As<IMartenQueryable<T>>().StreamOne(destination, token);
+            return queryable.As<MartenLinqQueryable<T>>().ToJsonArray(token);
+        }
+
+        public static Task StreamJsonFirst<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().StreamJsonFirst(destination, token);
+        }
+
+        public static async Task<bool> StreamJsonFirstOrDefault<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        {
+            return (await queryable.As<MartenLinqQueryable<T>>().StreamJsonFirstOrDefault(destination, token)) > 0;
+        }
+
+        public static Task StreamJsonSingle<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().StreamJsonFirst(destination, token);
+        }
+
+        public static Task StreamJsonSingleOrDefault<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().StreamJsonSingleOrDefault(destination, token);
+        }
+
+        public static Task<string> ToJsonFirst<T>(this IQueryable<T> queryable, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().ToJsonFirst(token);
+        }
+
+        public static Task<string?> ToJsonFirstOrDefault<T>(this IQueryable<T> queryable, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().ToJsonFirstOrDefault(token);
+        }
+
+        public static Task<string> ToJsonSingle<T>(this IQueryable<T> queryable, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().ToJsonSingle(token);
+        }
+
+        public static Task<string?> ToJsonSingleOrDefault<T>(this IQueryable<T> queryable, CancellationToken token = default)
+        {
+            return queryable.As<MartenLinqQueryable<T>>().ToJsonSingleOrDefault(token);
         }
     }
 }

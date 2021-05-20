@@ -1,49 +1,49 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
     public class get_raw_json_Tests : IntegrationContext
     {
         #region sample_get-raw-json
-        //[Fact]
-        public void when_get_json_then_raw_json_should_be_returned()
+        [Fact]
+        public async Task when_get_json_then_raw_json_should_be_returned()
         {
             var issue = new Issue { Title = "Issue 1" };
 
             theSession.Store(issue);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
+            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArray();
+            json.ShouldNotBeNull();
 
-            var json = theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArray();
-            json.ShouldBe($"[{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}]");
-            json = theSession.Query<Issue>().AsJson().First();
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}");
-            json = theSession.Query<Issue>().AsJson().FirstOrDefault();
-            json = theSession.Query<Issue>().AsJson().Single();
-            json = theSession.Query<Issue>().AsJson().SingleOrDefault();
+            json = await theSession.Query<Issue>().ToJsonFirst();
+            json = await theSession.Query<Issue>().ToJsonFirstOrDefault();
+            json = await theSession.Query<Issue>().ToJsonSingle();
+            json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
         }
         #endregion sample_get-raw-json
 
         #region sample_get-raw-json-async
-        //[Fact]
+        [Fact]
         public async Task when_get_json_then_raw_json_should_be_returned_async()
         {
             var issue = new Issue { Title = "Issue 1" };
 
             theSession.Store(issue);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
+            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArray();
+            json.ShouldNotBeNull();
 
-            var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArrayAsync();
-            json.ShouldBe($"[{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}]");
-            json = await theSession.Query<Issue>().AsJson().FirstAsync();
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"Title\": \"Issue 1\", \"AssigneeId\": null, \"ReporterId\": null}}");
-            json = await theSession.Query<Issue>().AsJson().FirstOrDefaultAsync();
-            json = await theSession.Query<Issue>().AsJson().SingleAsync();
-            json = await theSession.Query<Issue>().AsJson().SingleOrDefaultAsync();
+            json = await theSession.Query<Issue>().ToJsonFirst();
+            json = await theSession.Query<Issue>().ToJsonFirstOrDefault();
+            json = await theSession.Query<Issue>().ToJsonSingle();
+            json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
         }
         #endregion sample_get-raw-json-async
         public get_raw_json_Tests(DefaultStoreFixture fixture) : base(fixture)

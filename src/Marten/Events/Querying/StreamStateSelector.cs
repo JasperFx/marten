@@ -1,4 +1,6 @@
+using System;
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
@@ -27,6 +29,11 @@ namespace Marten.Events.Querying
         public async Task<StreamState> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
             return (await reader.ReadAsync(token)) ? await ResolveAsync(session, reader, token) : null;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            throw new NotSupportedException();
         }
 
         public abstract Task<StreamState> ResolveAsync(IMartenSession session, DbDataReader reader, CancellationToken token);

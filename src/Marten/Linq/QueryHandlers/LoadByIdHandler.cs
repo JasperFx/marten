@@ -1,13 +1,17 @@
 using System.Data.Common;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Filters;
 using Marten.Linq.Selectors;
+using Marten.Services;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 
 namespace Marten.Linq.QueryHandlers
 {
@@ -37,7 +41,7 @@ namespace Marten.Linq.QueryHandlers
             sql.Append(" from ");
             sql.Append(storage.FromObject);
             sql.Append(" as d where id = ");
-            
+
             sql.AppendParameter(_id);
 
             // TODO -- there's some duplication here that should be handled consistently
@@ -63,6 +67,11 @@ namespace Marten.Linq.QueryHandlers
             }
 
             return default;
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            return reader.As<NpgsqlDataReader>().StreamOne(stream, token);
         }
     }
 }
