@@ -76,15 +76,15 @@ namespace Marten.Schema
                 switch (casing)
                 {
                     case Casings.Upper:
-                        yield return $" upper({sql})";
+                        yield return $"upper({sql})";
                         break;
 
                     case Casings.Lower:
-                        yield return $" lower({sql})";
+                        yield return $"lower({sql})";
                         break;
 
                     default:
-                        yield return $" ({sql})";
+                        yield return $"({sql})";
                         break;
                 }
             }
