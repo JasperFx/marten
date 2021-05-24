@@ -87,7 +87,7 @@ namespace Marten.Testing.CoreFunctionality
 
             index.Name.ShouldBe("my_gin_index");
             index.Method.ShouldBe(IndexMethod.gin);
-            index.Mask.ShouldBe("(? jsonb_path_ops)");
+            index.Mask.ShouldBe("? jsonb_path_ops");
         }
 
         [Fact]
