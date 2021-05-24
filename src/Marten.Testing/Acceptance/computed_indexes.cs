@@ -142,9 +142,9 @@ namespace Marten.Testing.Acceptance
             await theStore.BulkInsertAsync(data.ToArray());
 
             var table = await theStore.Tenancy.Default.ExistingTableFor(typeof(Target));
-            var index = table.IndexFor("mt_doc_target_idx_user_idflag").As<ActualIndex>();
+            var index = table.IndexFor("mt_doc_target_idx_user_idflag");
 
-            index.DDL.ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON acceptance.mt_doc_target USING btree ((((data ->> 'UserId'::text))::uuid), (((data ->> 'Flag'::text))::boolean));");
+            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON acceptance.mt_doc_target USING btree ((((data ->> 'UserId'::text))::uuid), (((data ->> 'Flag'::text))::boolean));");
 
 
 
@@ -167,9 +167,9 @@ namespace Marten.Testing.Acceptance
             await theStore.BulkInsertAsync(data.ToArray());
 
             var table = await theStore.Tenancy.Default.ExistingTableFor(typeof(Target));
-            var index = table.IndexFor("mt_doc_target_idx_stringstring_field").ShouldBeOfType<ActualIndex>();
+            var index = table.IndexFor("mt_doc_target_idx_stringstring_field");
 
-            index.DDL.ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON acceptance.mt_doc_target USING btree (upper((data ->> 'String'::text)), upper((data ->> 'StringField'::text)));");
+            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON acceptance.mt_doc_target USING btree (upper((data ->> 'String'::text)), upper((data ->> 'StringField'::text)));");
 
 
         }

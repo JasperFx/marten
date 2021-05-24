@@ -30,8 +30,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Company>()
                     .Duplicate(c => c.Name, pgType: "jsonb", configure: id =>
                       {
-                          id.Method = IndexMethod.gin;
-                          id.Expression = "? jsonb_path_ops";
+                          id.ToGinWithJsonbPathOps();
                       });
             });
 
@@ -49,7 +48,7 @@ namespace Marten.Testing.Bugs
                     {
                         // The DDL for this expression is not reformatted,
                         // and so the index definition matches the DDL.
-                        id.Expression = "lower(?)";
+                        id.Mask = "lower(?)";
                         id.Name = id.Name + "_lower";
                     });
             });

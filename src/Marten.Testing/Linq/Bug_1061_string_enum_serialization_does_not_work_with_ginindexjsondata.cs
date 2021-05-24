@@ -31,7 +31,7 @@ namespace Marten.Testing.Linq
 
                 _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
                 {
-                    _.Expression = "to_tsvector('english', data::TEXT)";
+                    _.Columns = new []{"to_tsvector('english', data::TEXT)"};
                 });
             });
 
@@ -47,7 +47,7 @@ namespace Marten.Testing.Linq
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
                 {
-                    _.Expression = "to_tsvector('english', data::TEXT)";
+                    _.Columns = new []{"to_tsvector('english', data::TEXT)"};
                 });
             });
 

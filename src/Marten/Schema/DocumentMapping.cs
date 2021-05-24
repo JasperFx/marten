@@ -35,7 +35,7 @@ namespace Marten.Schema
 
         DocumentMetadataCollection Metadata { get; }
         bool UseOptimisticConcurrency { get;}
-        IList<IIndexDefinition> Indexes { get; }
+        IList<IndexDefinition> Indexes { get; }
         IList<ForeignKey> ForeignKeys { get; }
         SubClasses SubClasses { get; }
         DbObjectName UpsertFunction { get; }
@@ -126,7 +126,7 @@ namespace Marten.Schema
                 .Each(fieldInfo => { fieldInfo.ForAttribute<DuplicateFieldAttribute>(att => att.Modify(this, fieldInfo)); });
         }
 
-        public IList<IIndexDefinition> Indexes { get; } = new List<IIndexDefinition>();
+        public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 
         public IList<ForeignKey> ForeignKeys { get; } = new List<ForeignKey>();
 
@@ -277,8 +277,7 @@ namespace Marten.Schema
         public DocumentIndex AddGinIndexToData()
         {
             var index = AddIndex("data");
-            index.Method = IndexMethod.gin;
-            index.Expression = "? jsonb_path_ops";
+            index.ToGinWithJsonbPathOps();
 
             PropertySearching = PropertySearching.ContainmentOperator;
 
@@ -322,7 +321,7 @@ namespace Marten.Schema
             return index;
         }
 
-        public IIndexDefinition AddUniqueIndex(MemberInfo[][] members,
+        public IndexDefinition AddUniqueIndex(MemberInfo[][] members,
             UniqueIndexType indexType = UniqueIndexType.Computed, string indexName = null,
             IndexMethod indexMethod = IndexMethod.btree, TenancyScope tenancyScope = TenancyScope.Global)
         {
