@@ -18,7 +18,7 @@ namespace Marten.Events.Daemon
             Source = source;
         }
 
-        public AsyncProjectionShard(ProjectionSource source, ISqlFragment[] filters): this(source.ProjectionName,
+        public AsyncProjectionShard(ProjectionSource source, ISqlFragment[] filters): this(ShardName.All,
             source, filters)
         {
         }

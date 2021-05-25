@@ -74,10 +74,15 @@ namespace Marten.Events.Projections
         /// <summary>
         /// All the events in this slice
         /// </summary>
-        public IReadOnlyList<IEvent> Events() => _events.Distinct().OrderBy(x => x.Version).ToList();
+        public IReadOnlyList<IEvent> Events() => _events;
 
         internal void ApplyFanOutRules(IEnumerable<IFanOutRule> rules)
         {
+            // Need to do this first before applying the fanout rules
+            var events = _events.Distinct().OrderBy(x => x.Version).ToArray();
+            _events.Clear();
+            _events.AddRange(events);
+
             foreach (var rule in rules)
             {
                 rule.Apply(_events);

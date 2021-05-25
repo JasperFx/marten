@@ -77,13 +77,12 @@ namespace Marten.AsyncDaemon.Testing
             StoreOptions(x =>
             {
                 x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
-                x.Logger(new TestOutputMartenLogger(_output));
             }, true);
 
             var agent = await StartDaemonInHotColdMode();
             var daemon2 = await StartAdditionalDaemonInHotColdMode();
 
-            var waiter = agent.Tracker.WaitForShardState("Trip:All", NumberOfEvents, 15.Seconds());
+            var waiter = agent.Tracker.WaitForShardState("Trip:All", NumberOfEvents, 30.Seconds());
 
 
             await PublishSingleThreaded();

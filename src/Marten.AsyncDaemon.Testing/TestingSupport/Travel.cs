@@ -14,7 +14,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
             {
                 var movement = new Movement
                 {
-                    Direction = TripStream.RandomDirection(), Distance = TripStream.Random.NextDouble() * 100
+                    Direction = TripStream.RandomDirection(), Distance = TripStream.Random.Next(500, 3000) / 100
                 };
 
                 travel.Movements.Add(movement);

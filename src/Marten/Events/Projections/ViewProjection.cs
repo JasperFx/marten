@@ -20,7 +20,8 @@ namespace Marten.Events.Projections
     /// <typeparam name="TId"></typeparam>
     public abstract class ViewProjection<TDoc, TId>: AggregateProjection<TDoc>, IEventSlicer<TDoc, TId>
     {
-        private readonly IList<IFanOutRule> _fanOutRules = new List<IFanOutRule>();
+        private readonly List<IFanOutRule> _beforeGroupingFanoutRules = new List<IFanOutRule>();
+        private readonly List<IFanOutRule> _afterGroupingFanoutRules = new List<IFanOutRule>();
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
         private readonly IList<IAggregateGrouper<TId>> _lookupGroupers = new List<IAggregateGrouper<TId>>();
 
@@ -55,6 +56,8 @@ namespace Marten.Events.Projections
                 await lookupGrouper.Group(querySession, events, @group);
             }
 
+            group.ApplyFanOutRules(_afterGroupingFanoutRules);
+
             return @group;
         }
 
@@ -62,7 +65,10 @@ namespace Marten.Events.Projections
             IQuerySession querySession,
             List<IEvent> events, ITenancy tenancy)
         {
-            foreach (var fanOutRule in _fanOutRules) fanOutRule.Apply(events);
+            foreach (var fanOutRule in _beforeGroupingFanoutRules)
+            {
+                fanOutRule.Apply(events);
+            }
 
             if (_groupByTenant)
             {
@@ -84,12 +90,14 @@ namespace Marten.Events.Projections
 
             var group = await groupSingleTenant(tenancy.Default, querySession, events);
 
+
+
             return new List<TenantSliceGroup<TDoc, TId>> {group};
         }
 
         protected override Type[] determineEventTypes()
         {
-            return base.determineEventTypes().Concat(_fanOutRules.Select(x => x.OriginatingType))
+            return base.determineEventTypes().Concat(_beforeGroupingFanoutRules.Concat(_afterGroupingFanoutRules).Select(x => x.OriginatingType))
                 .Distinct().ToArray();
         }
 
@@ -142,10 +150,32 @@ namespace Marten.Events.Projections
             }
         }
 
-        public void FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc)
+        /// <summary>
+        /// Apply "fan out" operations to the given TEvent type that inserts an enumerable of TChild events right behind the parent
+        /// event in the event stream
+        /// </summary>
+        /// <param name="fanOutFunc"></param>
+        /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
+        /// <typeparam name="TEvent"></typeparam>
+        /// <typeparam name="TChild"></typeparam>
+        public void FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc, FanoutMode mode = FanoutMode.AfterGrouping)
         {
-            var fanout = new FanOutOperator<TEvent, TChild>(fanOutFunc);
-            _fanOutRules.Add(fanout);
+            var fanout = new FanOutOperator<TEvent, TChild>(fanOutFunc)
+            {
+                Mode = mode
+            };
+
+            switch (mode)
+            {
+                case FanoutMode.AfterGrouping:
+                    _afterGroupingFanoutRules.Add(fanout);
+                    break;
+
+                case FanoutMode.BeforeGrouping:
+                    _beforeGroupingFanoutRules.Add(fanout);
+                    break;
+            }
+
         }
 
         private bool _groupByTenant = false;

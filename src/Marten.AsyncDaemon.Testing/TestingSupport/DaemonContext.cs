@@ -26,6 +26,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
             theStore.Advanced.Clean.DeleteAllEventData();
             Logger = new TestLogger<IProjection>(output);
 
+            theStore.Options.Projections.DaemonLockId++;
+
             _output = output;
         }
 
@@ -45,6 +47,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         internal async Task<ProjectionDaemon> StartDaemonInHotColdMode()
         {
             theStore.Options.Projections.LeadershipPollingTime = 100;
+
             var coordinator = new HotColdCoordinator(theStore, theStore.Options.Projections, Logger);
             var daemon = new ProjectionDaemon(theStore, new HighWaterDetector(coordinator, theStore.Events), Logger);
 
