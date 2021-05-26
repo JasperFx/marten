@@ -5,7 +5,6 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
-using Marten.Linq;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
@@ -142,7 +141,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task delete_when_delete_event_happens()
         {
-            NumberOfStreams = 20;
+            NumberOfStreams = 10;
 
             Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
@@ -172,16 +171,16 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task conditional_deletes_through_lambda_conditions_on_event_only()
         {
-            NumberOfStreams = 20;
+            NumberOfStreams = 2;
 
             Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
             var projection = new TripAggregationWithoutCustomName();
+            projection.ProjectionName = "Trip";
+
             StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async), true);
 
             var agent = await StartDaemon();
-
-            _output.WriteLine(projection.SourceCode());
 
             await PublishSingleThreaded();
 
@@ -199,7 +198,11 @@ namespace Marten.AsyncDaemon.Testing
 
             await theSession.SaveChangesAsync();
 
-            await agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents + 2), 30.Seconds());
+            var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents + 2), 300.Seconds());
+
+            await waiter2;
+
+
 
             using var query = theStore.QuerySession();
 
@@ -210,7 +213,58 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
+        [Fact]
+        public async Task conditional_deletes_through_lambda_conditions_on_aggregate()
+        {
 
+            var shortTrip = new TripStream().TravelIsUnder(200);
+            var longTrip = new TripStream().TravelIsOver(2000);
+            var initialCount = shortTrip.Events.Count + longTrip.Events.Count;
+
+            _output.WriteLine($"Initially publishing {initialCount} events");
+
+            var projection = new TripAggregationWithoutCustomName();
+            projection.ProjectionName = "Trip";
+
+            StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async), true);
+
+            var agent = await StartDaemon();
+
+
+
+            var waiter1 = agent.Tracker.WaitForShardState("Trip:All", initialCount);
+
+            using (var session = theStore.LightweightSession())
+            {
+                session.Events.Append(shortTrip.StreamId, shortTrip.Events.ToArray());
+                session.Events.Append(longTrip.StreamId, longTrip.Events.ToArray());
+                await session.SaveChangesAsync();
+            }
+
+            await waiter1;
+
+            // This should not trigger a delete
+            theSession.Events.Append(shortTrip.StreamId, new VacationOver());
+
+            // This should trigger a delete
+            theSession.Events.Append(longTrip.StreamId, new VacationOver());
+
+            await theSession.SaveChangesAsync();
+
+            var totalNumberOfEvents = initialCount + 2;
+            var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", totalNumberOfEvents), 30.Seconds());
+
+            await waiter2;
+
+
+
+            using var query = theStore.QuerySession();
+
+            (await query.LoadAsync<Trip>(shortTrip.StreamId)).ShouldNotBeNull();
+            (await query.LoadAsync<Trip>(longTrip.StreamId)).ShouldBeNull();
+
+
+        }
 
     }
 }

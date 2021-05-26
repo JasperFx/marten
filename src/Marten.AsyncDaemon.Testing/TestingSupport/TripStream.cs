@@ -111,6 +111,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         private int _index;
 
 
+
         public void Reset()
         {
             _index = 0;
@@ -145,5 +146,26 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         }
 
         public string TenantId { get; set; }
+
+        public TripStream TravelIsUnder(int miles)
+        {
+            var movements = Events.OfType<Travel>().SelectMany(x => x.Movements).ToArray();
+            foreach (var movement in movements)
+            {
+                if (movements.Sum(x => x.Distance) > miles)
+                {
+                    movement.Distance = 0.1;
+                }
+            }
+
+            return this;
+        }
+
+        public TripStream TravelIsOver(int miles)
+        {
+            var movements = Events.OfType<Travel>().SelectMany(x => x.Movements).ToArray();
+            movements[0].Distance = miles + 1;
+            return this;
+        }
     }
 }

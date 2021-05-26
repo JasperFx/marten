@@ -200,7 +200,10 @@ namespace Marten.Events.Aggregation
 
         internal async Task Complete()
         {
-            if (_application != null) await _application;
+            if (_application != null)
+            {
+                await (await _application);
+            }
 
             // This can happen if one group fails early
             if (_builder != null)
