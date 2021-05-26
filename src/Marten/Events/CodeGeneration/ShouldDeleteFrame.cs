@@ -11,14 +11,17 @@ using Marten.Storage;
 
 namespace Marten.Events.CodeGeneration
 {
-    internal class MaybeDeleteFrame: Frame, IEventHandlingFrame
+    internal class ShouldDeleteFrame: Frame, IEventHandlingFrame
     {
+        private static int _number = 0;
+
         private Variable _aggregate;
 
-        public MaybeDeleteFrame(MethodSlot slot) : base(slot.Method.As<MethodInfo>().IsAsync())
+        public ShouldDeleteFrame(MethodSlot slot) : base(slot.Method.As<MethodInfo>().IsAsync())
         {
             EventType = slot.EventType;
             Maybe = new MethodCall(slot.HandlerType, (MethodInfo) slot.Method) {Target = slot.Setter};
+            Maybe.ReturnVariable.OverrideName(Maybe.ReturnVariable.Usage + ++_number);
         }
 
         public MethodCall Maybe { get; }

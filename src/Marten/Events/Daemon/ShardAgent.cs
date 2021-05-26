@@ -184,8 +184,6 @@ namespace Marten.Events.Daemon
             {
                 batch = await buildUpdateBatch(@group);
 
-
-
                 group.Dispose();
             }, _cancellation, (logger, e) =>
             {

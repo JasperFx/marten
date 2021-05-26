@@ -19,7 +19,7 @@ namespace Marten.Events.CodeGeneration
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
             DocumentMapping aggregateMapping, MethodSlot slot)
         {
-            return new MaybeDeleteFrame(slot);
+            return new ShouldDeleteFrame(slot);
         }
 
         internal override void validateMethod(MethodSlot method)

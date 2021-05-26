@@ -5,6 +5,7 @@ using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
+using Marten.Linq;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
@@ -137,5 +138,79 @@ namespace Marten.AsyncDaemon.Testing
             Logger.LogDebug("Done rebuilding Trip:All");
             await CheckAllExpectedAggregatesAgainstActuals();
         }
+
+        [Fact]
+        public async Task delete_when_delete_event_happens()
+        {
+            NumberOfStreams = 20;
+
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+            StoreOptions(x => x.Projections.Add<TripAggregationWithoutCustomName>(ProjectionLifecycle.Async), true);
+
+            var agent = await StartDaemon();
+
+            await PublishSingleThreaded();
+
+            var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+
+            await waiter;
+
+            foreach (var stream in Streams)
+            {
+                if (stream.Events.OfType<TripAborted>().Any())
+                {
+                    (await theSession.LoadAsync<Trip>(stream.StreamId)).ShouldBeNull();
+                }
+                else
+                {
+                    (await theSession.LoadAsync<Trip>(stream.StreamId)).ShouldNotBeNull();
+                }
+            }
+        }
+
+        [Fact]
+        public async Task conditional_deletes_through_lambda_conditions_on_event_only()
+        {
+            NumberOfStreams = 20;
+
+            Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
+
+            var projection = new TripAggregationWithoutCustomName();
+            StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async), true);
+
+            var agent = await StartDaemon();
+
+            _output.WriteLine(projection.SourceCode());
+
+            await PublishSingleThreaded();
+
+            var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
+
+            await waiter;
+
+            var days = await theSession.Query<Trip>().ToListAsync();
+
+            var notCriticalBreakdownStream = days[0].Id;
+            var criticalBreakdownStream = days[1].Id;
+
+            theSession.Events.Append(notCriticalBreakdownStream, new Breakdown {IsCritical = false});
+            theSession.Events.Append(criticalBreakdownStream, new Breakdown {IsCritical = true});
+
+            await theSession.SaveChangesAsync();
+
+            await agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents + 2), 30.Seconds());
+
+            using var query = theStore.QuerySession();
+
+            (await query.LoadAsync<Trip>(notCriticalBreakdownStream)).ShouldNotBeNull();
+            (await query.LoadAsync<Trip>(criticalBreakdownStream)).ShouldBeNull();
+
+
+        }
+
+
+
+
     }
 }

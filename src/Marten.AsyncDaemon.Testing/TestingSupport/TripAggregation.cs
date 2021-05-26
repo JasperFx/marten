@@ -17,8 +17,17 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         {
             DeleteEvent<TripAborted>();
 
+            //DeleteEvent<Breakdown>(x => x.IsCritical);
+
+            DeleteEvent<VacationOver>((trip, v) => trip.Traveled > 1000);
+
             // Now let's change the lifecycle to inline
             Lifecycle = ProjectionLifecycle.Inline;
+        }
+
+        public bool ShouldDelete(Breakdown breakdown)
+        {
+            return breakdown.IsCritical;
         }
 
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;

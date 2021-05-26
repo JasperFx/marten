@@ -250,7 +250,7 @@ namespace Marten.Events.Aggregation
 
             foreach (var slot in _shouldDeleteMethods.Methods)
             {
-                eventHandlers[slot.EventType].Deletion = new MaybeDeleteFrame(slot);
+                eventHandlers[slot.EventType].Deletion = new ShouldDeleteFrame(slot);
             }
 
             var patternMatching = new EventTypePatternMatchFrame(eventHandlers.OfType<EventProcessingFrame>().ToList());

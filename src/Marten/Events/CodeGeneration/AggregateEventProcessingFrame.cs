@@ -16,7 +16,7 @@ namespace Marten.Events.CodeGeneration
         public bool AlwaysDeletes { get; set; }
 
         private Frame _creation;
-        private MaybeDeleteFrame _deletion;
+        private ShouldDeleteFrame _deletion;
         private ApplyMethodCall _apply;
 
         public Frame CreationFrame
@@ -37,7 +37,7 @@ namespace Marten.Events.CodeGeneration
             }
         }
 
-        public MaybeDeleteFrame Deletion
+        public ShouldDeleteFrame Deletion
         {
             get
             {

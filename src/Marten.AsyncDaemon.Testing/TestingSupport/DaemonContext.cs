@@ -117,6 +117,8 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         private ProjectionDaemon _daemon;
         protected ITestOutputHelper _output;
 
+        public IReadOnlyList<TripStream> Streams => _streams;
+
         protected StreamAction[] ToStreamActions()
         {
             return _streams.Select(x => x.ToAction(theStore.Events)).ToArray();
