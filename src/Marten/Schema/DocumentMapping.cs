@@ -233,7 +233,6 @@ namespace Marten.Schema
 
         public Type DocumentType { get; }
 
-        // TODO -- this needs to be memoized!!!
         public virtual DbObjectName TableName => new DbObjectName(DatabaseSchemaName, $"{SchemaConstants.TablePrefix}{_alias}");
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
@@ -515,7 +514,6 @@ namespace Marten.Schema
                 throw new InvalidDocumentException($"{DocumentType.FullName} must be configured for soft deletion to map soft deleted metadata.");
             }
 
-            // TODO -- validate optimistic versioning is on if Version member is non-null
 
             var idField = new IdField(IdMember);
             setField(IdMember.Name, idField);

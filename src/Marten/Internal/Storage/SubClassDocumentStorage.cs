@@ -103,7 +103,6 @@ namespace Marten.Internal.Storage
             return query.CombineAnd(extras);
         }
 
-        // TODO -- there's duplication here w/ DocumentStorage
         private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
         {
             yield return toBasicWhere();
@@ -115,7 +114,6 @@ namespace Marten.Internal.Storage
                 yield return new CurrentTenantFilter();
         }
 
-        // TODO -- there's duplication here w/ DocumentStorage
         private IEnumerable<ISqlFragment> defaultFilters()
         {
             yield return toBasicWhere();

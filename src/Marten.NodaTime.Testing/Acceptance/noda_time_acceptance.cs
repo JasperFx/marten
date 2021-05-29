@@ -201,68 +201,68 @@ namespace Marten.NodaTime.Testing.Acceptance
 
         private class CustomJsonSerializer: ISerializer
         {
-            public EnumStorage EnumStorage => throw new NotImplementedException();
+            public EnumStorage EnumStorage => throw new NotSupportedException();
 
-            public Casing Casing => throw new NotImplementedException();
+            public Casing Casing => throw new NotSupportedException();
 
-            public CollectionStorage CollectionStorage => throw new NotImplementedException();
+            public CollectionStorage CollectionStorage => throw new NotSupportedException();
 
-            public NonPublicMembersStorage NonPublicMembersStorage => throw new NotImplementedException();
+            public NonPublicMembersStorage NonPublicMembersStorage => throw new NotSupportedException();
             public string ToJsonWithTypes(object document)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public ValueCasting ValueCasting { get; } = ValueCasting.Relaxed;
 
             public T FromJson<T>(Stream stream)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public T FromJson<T>(DbDataReader reader, int index)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public object FromJson(Type type, Stream stream)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public object FromJson(Type type, DbDataReader reader, int index)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public string ToCleanJson(object document)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             public string ToJson(object document)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
         }
 

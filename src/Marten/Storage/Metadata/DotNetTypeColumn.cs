@@ -1,3 +1,4 @@
+using System;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Schema;
@@ -15,12 +16,12 @@ namespace Marten.Storage.Metadata
 
         public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)

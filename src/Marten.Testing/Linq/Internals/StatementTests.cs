@@ -1,3 +1,4 @@
+using System;
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.SqlGeneration;
@@ -17,7 +18,7 @@ namespace Marten.Testing.Linq.Internals
 
         protected override void configure(CommandBuilder builder)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 

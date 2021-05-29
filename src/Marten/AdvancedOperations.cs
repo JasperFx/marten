@@ -71,7 +71,7 @@ select count(*) from {_store.Events.DatabaseSchemaName}.mt_streams;
 select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
 ";
 
-            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token);
 
             var statistics = new EventStoreStatistics();
 
@@ -107,12 +107,12 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<IReadOnlyList<ProjectionProgress>> AllProjectionProgress(CancellationToken token = default)
+        public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(CancellationToken token = default)
         {
-            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token);
 
-            var handler = (IQueryHandler<IReadOnlyList<ProjectionProgress>>)new ListQueryHandler<ProjectionProgress>(new ProjectionProgressStatement(_store.Events),
-                new ProjectionProgressSelector());
+            var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(new ProjectionProgressStatement(_store.Events),
+                new ShardStateSelector());
 
             await using var session = (QuerySession)_store.QuerySession();
             return await session.ExecuteHandlerAsync(handler, token);
@@ -125,21 +125,21 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// <returns></returns>
         public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default)
         {
-            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token);
 
             var statement = new ProjectionProgressStatement(_store.Events)
             {
                 Name = name
             };
 
-            var handler = new OneResultHandler<ProjectionProgress>(statement,
-                new ProjectionProgressSelector(), true, false);
+            var handler = new OneResultHandler<ShardState>(statement,
+                new ShardStateSelector(), true, false);
 
             await using var session = (QuerySession)_store.QuerySession();
 
             var progress = await session.ExecuteHandlerAsync(handler, token);
 
-            return progress?.LastSequenceId ?? 0;
+            return progress?.Sequence ?? 0;
         }
 
 

@@ -31,13 +31,7 @@ namespace Marten.Events.CodeGeneration
         public void Configure(EventProcessingFrame parent)
         {
             // Replace any arguments to IEvent<T>
-
-            if (Method.GetParameters().Any(x => x.ParameterType == parent.SpecificEvent.VariableType))
-            {
-                // TODO -- there's a LamarCodeGeneration bug here. It's using CanCastTo(), but should be using an exact match,
-                // or looser find of the argument
-                TrySetArgument(parent.SpecificEvent);
-            }
+            TrySetArgument(parent.SpecificEvent);
 
             // Replace any arguments to the specific T event type
             TrySetArgument(parent.DataOnly);

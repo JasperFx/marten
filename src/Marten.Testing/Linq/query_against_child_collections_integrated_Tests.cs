@@ -140,7 +140,7 @@ namespace Marten.Testing.Linq
                 .ShouldBeGreaterThanOrEqualTo(1);
         }
 
-        //[Fact] -- TODO, there's a GH issue to bring this back when the containment operator is replaced
+        [Fact]
         public void Bug_503_child_collection_query_in_compiled_query()
         {
             using (var session = theStore.OpenSession())

@@ -53,7 +53,6 @@ namespace Marten.Events.Daemon.HighWater
 
         private async Task DetectChanges()
         {
-            // TODO -- need to put some retry & exception handling here.
             try
             {
                 _current = await _detector.Detect(_token);

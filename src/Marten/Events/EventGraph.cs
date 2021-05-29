@@ -19,6 +19,7 @@ using Weasel.Postgresql;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
+using NpgsqlTypes;
 using Weasel.Postgresql.Functions;
 
 namespace Marten.Events
@@ -44,6 +45,7 @@ namespace Marten.Events
 
         internal EventGraph(StoreOptions options)
         {
+            StreamIdentity = StreamIdentity.AsGuid;
             Options = options;
             _events.OnMissing = eventType =>
             {
@@ -90,7 +92,17 @@ namespace Marten.Events
         /// <summary>
         /// Configure whether event streams are identified with Guid or strings
         /// </summary>
-        public StreamIdentity StreamIdentity { get; set; } = StreamIdentity.AsGuid;
+        public StreamIdentity StreamIdentity
+        {
+            get => _streamIdentity;
+            set
+            {
+                _streamIdentity = value;
+                StreamIdDbType = value == StreamIdentity.AsGuid ? NpgsqlDbType.Uuid : NpgsqlDbType.Varchar;
+            }
+        }
+
+        internal NpgsqlDbType StreamIdDbType { get; private set; }
 
         /// <summary>
         /// Configure the event sourcing storage for multi-tenancy
@@ -246,6 +258,7 @@ namespace Marten.Events
 
 
         private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
+        private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
 
         internal Type TypeForDotNetName(string assemblyQualifiedName)
         {
@@ -358,7 +371,6 @@ namespace Marten.Events
 
             var storage = session.EventStorage();
 
-            // TODO -- we'll optimize this later to batch up queries to the database
             var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
             var sequences = session.ExecuteHandler(fetcher);
 
@@ -408,7 +420,6 @@ namespace Marten.Events
                 return;
             }
 
-            // TODO -- we'll optimize this later to batch up queries to the database
             var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
             var sequences = await session.ExecuteHandlerAsync(fetcher, token);
 

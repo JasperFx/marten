@@ -1,12 +1,11 @@
 using System;
 using System.Linq;
-using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Projections
+namespace Marten.Testing.Events.Projections
 {
     public class inline_aggregation_with_base_view_class: IntegrationContext
     {

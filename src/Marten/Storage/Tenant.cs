@@ -3,14 +3,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.Dates;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Marten.Services;
+using Marten.Util;
 using Npgsql;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
@@ -20,7 +23,6 @@ namespace Marten.Storage
 {
     internal class Tenant: ITenant
     {
-        private readonly ConcurrentDictionary<Type, object> _bulkLoaders = new();
         private readonly ConcurrentDictionary<Type, bool> _checks = new();
         private readonly IConnectionFactory _factory;
         private readonly StorageFeatures _features;
@@ -30,7 +32,6 @@ namespace Marten.Storage
 
         private readonly StoreOptions _options;
 
-        private readonly object _updateLock = new();
         private Lazy<SequenceFactory> _sequences;
 
         public Tenant(StorageFeatures features, StoreOptions options, IConnectionFactory factory, string tenantId)
@@ -72,8 +73,16 @@ namespace Marten.Storage
                 return;
             }
 
-            ensureStorageExists(new List<Type>(), featureType);
+            ensureStorageExists(new List<Type>(), featureType).GetAwaiter().GetResult();
         }
+
+        public Task EnsureStorageExistsAsync(Type featureType, CancellationToken token)
+        {
+            return _options.AutoCreateSchemaObjects == AutoCreate.None
+                ? Task.CompletedTask
+                : ensureStorageExists(new List<Type>(), featureType, token);
+        }
+
 
         public IDocumentStorage<T> StorageFor<T>()
         {
@@ -129,13 +138,13 @@ namespace Marten.Storage
             {
                 var sequences = new SequenceFactory(_options, this);
 
-                generateOrUpdateFeature(typeof(SequenceFactory), sequences);
+                generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).GetAwaiter().GetResult();
 
                 return sequences;
             });
         }
 
-        private void ensureStorageExists(IList<Type> types, Type featureType)
+        private async Task ensureStorageExists(IList<Type> types, Type featureType, CancellationToken token = default)
         {
             if (_checks.ContainsKey(featureType))
             {
@@ -164,16 +173,29 @@ namespace Marten.Storage
 
             types.Fill(featureType);
 
-            foreach (var dependentType in feature.DependentTypes()) ensureStorageExists(types, dependentType);
+            foreach (var dependentType in feature.DependentTypes())
+            {
+                await ensureStorageExists(types, dependentType, token);
+            }
 
-            generateOrUpdateFeature(featureType, feature);
+            await generateOrUpdateFeature(featureType, feature, token);
         }
 
-        private static readonly object _migrateLocker = new object();
 
-        private void generateOrUpdateFeature(Type featureType, IFeatureSchema feature)
+        private readonly TimedLock _migrateLocker = new TimedLock();
+
+        private async Task generateOrUpdateFeature(Type featureType, IFeatureSchema feature, CancellationToken token)
         {
-            lock (_updateLock)
+            if (_checks.ContainsKey(featureType))
+            {
+                RegisterCheck(featureType, feature);
+                return;
+            }
+
+            var schemaObjects = feature.Objects;
+            schemaObjects.AssertValidNames(_options);
+
+            using (await _migrateLocker.Lock(5.Seconds()))
             {
                 if (_checks.ContainsKey(featureType))
                 {
@@ -181,22 +203,15 @@ namespace Marten.Storage
                     return;
                 }
 
-                var schemaObjects = feature.Objects;
-                schemaObjects.AssertValidNames(_options);
-
-                lock (_migrateLocker) // Not happy about this, but it should only come into play at development time
-                {
-                    executeMigration(schemaObjects).GetAwaiter().GetResult();
-                }
-
+                await executeMigration(schemaObjects, token);
                 RegisterCheck(featureType, feature);
             }
         }
 
-        private async Task executeMigration(ISchemaObject[] schemaObjects)
+        private async Task executeMigration(ISchemaObject[] schemaObjects, CancellationToken token = default)
         {
             using var conn = _factory.Create();
-            await conn.OpenAsync();
+            await conn.OpenAsync(token);
 
             var migration = await SchemaMigration.Determine(conn, schemaObjects);
 

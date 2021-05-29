@@ -5,11 +5,14 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
     public class multi_tenancy_and_event_capture: IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         public static TheoryData<TenancyStyle> TenancyStyles = new TheoryData<TenancyStyle>
         {
             { TenancyStyle.Conjoined },
@@ -117,12 +120,14 @@ namespace Marten.Testing.Events
             Guid stream = Guid.NewGuid();
             using (var session = theStore.OpenSession("Green"))
             {
+                session.Logger = new TestOutputMartenLogger(_output);
                 session.Events.Append(stream, new MembersJoined(), new MembersJoined());
                 session.SaveChanges();
             }
 
             using (var session = theStore.OpenSession("Green"))
             {
+                session.Logger = new TestOutputMartenLogger(_output);
                 session.Events.Append(stream, new MembersJoined(), new MembersJoined());
                 session.SaveChanges();
             }
@@ -173,8 +178,9 @@ namespace Marten.Testing.Events
             });
         }
 
-        public multi_tenancy_and_event_capture(DefaultStoreFixture fixture) : base(fixture)
+        public multi_tenancy_and_event_capture(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 }

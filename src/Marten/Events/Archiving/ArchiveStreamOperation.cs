@@ -26,11 +26,9 @@ namespace Marten.Events.Archiving
             var parameter = builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?)")[0];
             parameter.Value = _streamId;
 
-            // TODO -- memoize this on EventGraph because why not.
-            parameter.NpgsqlDbType = _events.StreamIdentity == StreamIdentity.AsGuid
-                ? NpgsqlDbType.Uuid
-                : NpgsqlDbType.Varchar;
+            parameter.NpgsqlDbType = _events.StreamIdDbType;
         }
+
 
         public Type DocumentType => typeof(IEvent);
         public void Postprocess(DbDataReader reader, IList<Exception> exceptions)

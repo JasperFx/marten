@@ -22,7 +22,6 @@ namespace Marten.Events.Daemon
         /// </summary>
         public int MaximumHopperSize { get; set; } = 5000;
 
-        // TODO -- add an option to just use SQL
 
         /// <summary>
         /// Add explicit teardown rule to delete all documents of type T

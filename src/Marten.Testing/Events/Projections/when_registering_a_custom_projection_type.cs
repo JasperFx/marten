@@ -8,7 +8,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Projections
+namespace Marten.Testing.Events.Projections
 {
     public class when_registering_a_custom_projection_type: IDisposable
     {
@@ -59,12 +59,12 @@ namespace Marten.Testing.Projections
         {
             public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
             {
-                throw new System.NotImplementedException();
+                throw new System.NotSupportedException();
             }
 
             public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
             {
-                throw new System.NotImplementedException();
+                throw new System.NotSupportedException();
             }
         }
     }

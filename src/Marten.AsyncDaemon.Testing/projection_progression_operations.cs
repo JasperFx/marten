@@ -99,8 +99,8 @@ namespace Marten.AsyncDaemon.Testing
 
             var progressions = await theStore.Advanced.AllProjectionProgress();
 
-            progressions.Any(x => x.ProjectionOrShardName == "five:All").ShouldBeTrue();
-            progressions.Any(x => x.ProjectionOrShardName == "six:All").ShouldBeTrue();
+            progressions.Any(x => x.ShardName == "five:All").ShouldBeTrue();
+            progressions.Any(x => x.ShardName == "six:All").ShouldBeTrue();
         }
 
         [Fact]

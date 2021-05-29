@@ -86,12 +86,12 @@ namespace Marten.AsyncDaemon.Testing
         public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
             EventRangeGroup eventRangeGroup)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override ValueTask SkipEventSequence(long eventSequence)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

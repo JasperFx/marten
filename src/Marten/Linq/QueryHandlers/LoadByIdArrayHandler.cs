@@ -50,11 +50,7 @@ namespace Marten.Linq.QueryHandlers
 
             sql.Append(")");
 
-            // TODO -- there's some duplication here that should be handled consistently
-            if (storage.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                sql.Append($" and {CurrentTenantFilter.Filter}");
-            }
+            storage.AddTenancyFilter(sql);
         }
 
         public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)

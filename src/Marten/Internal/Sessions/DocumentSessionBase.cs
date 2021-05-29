@@ -290,9 +290,8 @@ namespace Marten.Internal.Sessions
 
         public void EjectPatchedTypes(IUnitOfWork changes)
         {
-            // TODO -- redo later
-            // var patchedTypes = changes.Patches().Select(x => x.DocumentType).Distinct().ToArray();
-            // foreach (var type in patchedTypes) EjectAllOfType(type);
+            var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType).Distinct().ToArray();
+            foreach (var type in patchedTypes) EjectAllOfType(type);
         }
 
         internal interface IHandler

@@ -22,7 +22,6 @@ namespace Marten.Linq.Filters
         {
             _regConfig = regConfig;
 
-            // TODO -- try to delete the damn d. prefix.
             _dataConfig = GetDataConfig(mapping, regConfig).Replace("data", "d.data");
             _searchFunction = searchFunction;
             _searchTerm = searchTerm;

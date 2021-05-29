@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using Baseline.ImTools;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Exceptions;
@@ -94,9 +95,18 @@ namespace Marten.Internal.Sessions
 
         public IDocumentStorage StorageFor(Type documentType)
         {
-            // TODO -- possible optimization opportunity
-            return typeof(StorageFinder<>).CloseAndBuildAs<IStorageFinder>(documentType).Find(this);
+            if (_byType.TryFind(documentType, out var storage))
+            {
+                return storage;
+            }
+
+            storage = typeof(StorageFinder<>).CloseAndBuildAs<IStorageFinder>(documentType).Find(this);
+            _byType = _byType.AddOrUpdate(documentType, storage);
+
+            return storage;
         }
+
+        private ImHashMap<Type, IDocumentStorage> _byType = ImHashMap<Type, IDocumentStorage>.Empty;
 
         private interface IStorageFinder
         {
@@ -606,7 +616,7 @@ namespace Marten.Internal.Sessions
             return Query<TDoc>().Where(d => d.WebStyleSearch(searchTerm, regConfig)).ToListAsync(token: token);
         }
 
-        public DocumentMetadata MetadataFor<T>(T entity) where T: notnull
+        public DocumentMetadata? MetadataFor<T>(T entity) where T: notnull
         {
             assertNotDisposed();
             if (entity == null) throw new ArgumentNullException(nameof(entity));

@@ -139,7 +139,7 @@ namespace Marten.Testing.Services
 
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
-            throw new NotImplementedException();
+
         }
 
         public void OnBeforeExecute(NpgsqlCommand command)

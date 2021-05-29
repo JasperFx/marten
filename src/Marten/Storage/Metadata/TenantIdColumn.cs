@@ -1,3 +1,4 @@
+using System;
 using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Schema;
@@ -64,12 +65,12 @@ namespace Marten.Storage.Metadata
 
         void IStreamTableColumn.GenerateSelectorCodeAsync(GeneratedMethod method, int index)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
 
         void IStreamTableColumn.GenerateSelectorCodeSync(GeneratedMethod method, int index)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException();
         }
 
         bool IStreamTableColumn.Reads => true;

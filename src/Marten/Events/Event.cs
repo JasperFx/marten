@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Marten.Storage;
 
 #nullable enable
 namespace Marten.Events
 {
-    // TODO -- make the properties on the interface all be get only?
-
     #region sample_IEvent
     public interface IEvent
     {
@@ -49,7 +48,7 @@ namespace Marten.Events
         /// <summary>
         ///     If using multi-tenancy by tenant id
         /// </summary>
-        string? TenantId { get; set; }
+        string TenantId { get; set; }
 
         /// <summary>
         /// The .Net type of the event body
@@ -156,7 +155,7 @@ namespace Marten.Events
         /// </summary>
         public DateTimeOffset Timestamp { get; set; }
 
-        public string? TenantId { get; set; }
+        public string TenantId { get; set; } = Tenancy.DefaultTenantId;
 
         /// <summary>
         /// Optional metadata describing the causation id

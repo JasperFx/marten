@@ -98,7 +98,6 @@ namespace Marten.Events
 
         public long Version { get; set; }
 
-        // TODO -- change to datetimeoffset
         public DateTime? Timestamp { get; set; }
 
         public string TenantId { get; set; } = ALL_TENANTS;

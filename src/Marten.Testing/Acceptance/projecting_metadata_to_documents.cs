@@ -228,16 +228,14 @@ namespace Marten.Testing.Acceptance
             var doc = new DocWithMeta();
             var tenant = "TENANT_A";
 
-            theStore.BulkInsert(tenant, new DocWithMeta[] { doc });
+            await theStore.BulkInsertAsync(tenant, new DocWithMeta[] { doc });
 
-            using (var session = theStore.OpenSession(tenant))
-            {
-                session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
+            using var session = theStore.OpenSession(tenant);
+            session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
-                var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
-                loaded.TenantId.ShouldBe(tenant);
-                (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
-            }
+            var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
+            loaded.TenantId.ShouldBe(tenant);
+            (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
         }
 
 

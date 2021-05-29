@@ -29,5 +29,10 @@ namespace Marten.Events.Daemon
         public string ExceptionMessage { get; set; }
         public string ExceptionType { get; set; }
         public long EventSequence { get; set; }
+
+        public override string ToString()
+        {
+            return $"{nameof(ProjectionName)}: {ProjectionName}, {nameof(ShardName)}: {ShardName}, {nameof(EventSequence)}: {EventSequence}";
+        }
     }
 }

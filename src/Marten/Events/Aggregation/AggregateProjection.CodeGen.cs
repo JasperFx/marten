@@ -151,7 +151,7 @@ namespace Marten.Events.Aggregation
 
         internal GeneratedAssembly Compile(StoreOptions options)
         {
-            _assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
+            _assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
 
             _assembly.Generation.Assemblies.Add(GetType().Assembly);
             _assembly.Generation.Assemblies.Add(typeof(T).Assembly);
@@ -169,16 +169,11 @@ namespace Marten.Events.Aggregation
 
             if (_aggregateMapping.IdMember == null)
             {
-                // TODO -- possibly try to relax this!!!
                 throw new InvalidDocumentException(
                     $"No identity property or field can be determined for the aggregate '{typeof(T).FullNameInCode()}', but one is required to be used as an aggregate in projections");
             }
 
             _storageType = typeof(IDocumentStorage<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
-
-
-            // TODO -- Validate the id strategy for the mapping
-            // against the aggregation setup
 
 
             buildLiveAggregationType();
@@ -372,8 +367,6 @@ namespace Marten.Events.Aggregation
 
         internal override IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
         {
-            // TODO -- support sharding
-
             _runtime = BuildRuntime(store);
 
             var eventTypes = determineEventTypes();

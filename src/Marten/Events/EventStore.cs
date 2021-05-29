@@ -178,7 +178,6 @@ namespace Marten.Events
 
         public IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null)
         {
-            // TODO -- do this later by just delegating to Load<StreamState>(streamId)
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
             var statement = new EventStatement(selector)
@@ -329,7 +328,7 @@ namespace Marten.Events
 
         public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
+            await _tenant.EnsureStorageExistsAsync(typeof(StreamAction), token);
 
             _store.Events.AddEventType(typeof(T));
 
@@ -378,7 +377,6 @@ namespace Marten.Events
         {
             _store.Events.EnsureAsStringStorage(_session);
 
-            // TODO memoize this
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
                 .With("id", streamKey);
 

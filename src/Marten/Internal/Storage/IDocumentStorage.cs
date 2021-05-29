@@ -4,7 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
 using Marten.Linq.Fields;
+using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
+using Marten.Schema;
 using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Storage;
@@ -91,6 +93,18 @@ namespace Marten.Internal.Storage
         IDeletion HardDeleteForId(TId id, ITenant tenant);
         NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant);
         NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant);
+    }
+
+    internal static class DocumentStoreExtensions
+    {
+        public static void AddTenancyFilter(this IDocumentStorage storage, CommandBuilder sql)
+        {
+            if (storage.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                sql.Append($" and {CurrentTenantFilter.Filter}");
+            }
+        }
+
     }
 
 }

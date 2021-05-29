@@ -16,12 +16,12 @@ namespace Marten.Events.Schema
 
         public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index)

@@ -302,34 +302,32 @@ namespace Marten.Testing.Linq.Compiled
     #endregion sample_FindUserByAllTheThings
 
     #region sample_CompiledAsJson
-    public class FindJsonUserByUsername: ICompiledQuery<User, string>
+    public class FindJsonUserByUsername: ICompiledQuery<User>
     {
         public string Username { get; set; }
 
-        public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
+        Expression<Func<IMartenQueryable<User>, User>> ICompiledQuery<User, User>.QueryIs()
         {
-            throw new NotImplementedException();
-            // return query =>
-            //         query.Where(x => Username == x.UserName)
-            //             .AsJson().Single();
+            return query =>
+                query.Where(x => Username == x.UserName).Single();
         }
     }
 
     #endregion sample_CompiledAsJson
 
     #region sample_CompiledToJsonArray
-    public class FindJsonOrderedUsersByUsername: ICompiledQuery<User, string>
+    public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
     {
         public string FirstName { get; set; }
 
-        public Expression<Func<IMartenQueryable<User>, string>> QueryIs()
+        Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> ICompiledQuery<User, IEnumerable<User>>.QueryIs()
         {
-            throw new NotImplementedException();
-            // return query =>
-            //         query.Where(x => FirstName == x.FirstName)
-            //             .OrderBy(x => x.UserName)
-            //             .ToJsonArray();
+            return query =>
+                query.Where(x => FirstName == x.FirstName)
+                    .OrderBy(x => x.UserName);
         }
+
+
     }
 
     #endregion sample_CompiledToJsonArray

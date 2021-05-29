@@ -11,6 +11,7 @@ using LamarCompiler;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
+using Marten.Schema;
 using Weasel.Postgresql;
 using Marten.Schema.Arguments;
 using Marten.Util;
@@ -30,7 +31,7 @@ namespace Marten.Internal.CompiledQueries
 
         public ICompiledQuerySource Build()
         {
-            var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
+            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
 
 
             var handlerType = determineHandlerType();

@@ -63,7 +63,6 @@ namespace Marten.Linq.Fields
                 return JSONBLocator.Replace("d.", "");
             }
 
-            // TODO -- get rid of the replacement here
             return $"CAST(ARRAY(SELECT jsonb_array_elements_text({RawLocator.Replace("d.", "")})) as {pgType})";
         }
 

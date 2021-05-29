@@ -166,7 +166,6 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception e)
                 {
-                    // TODO -- log them, but never let it through
                     Console.WriteLine(e);
                 }
         }

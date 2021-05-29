@@ -121,7 +121,6 @@ namespace Marten.Events.Aggregation
             {
                 IStorageOperation? operation;
 
-                // TODO -- this can only apply to the last event
                 if (Projection.MatchesAnyDeleteType(slice))
                 {
                     operation = Storage.DeleteForId(slice.Id, slice.Tenant);

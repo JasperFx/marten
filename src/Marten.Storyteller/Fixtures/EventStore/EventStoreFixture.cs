@@ -132,7 +132,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
                         return session.Events.FetchStreamAsync(_lastStream, timestamp: time.ToUniversalTime()).GetAwaiter().GetResult().Select(x => x.Data.ToString()).ToArray();
 
                     case "In a batch":
-                        throw new NotImplementedException("Not ready yet");
+                        throw new NotSupportedException("Not ready yet");
                 }
 
                 throw new NotSupportedException();
@@ -182,7 +182,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
                         return session.Events.FetchStreamAsync(_lastStream, version).GetAwaiter().GetResult().Select(x => x.Data.ToString()).ToArray();
 
                     case "In a batch":
-                        throw new NotImplementedException("Not ready yet");
+                        throw new NotSupportedException("Not ready yet");
                 }
             }
 
@@ -223,7 +223,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
 
                 }
 
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
         }
 
@@ -242,7 +242,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
 
                 }
 
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
         }
 
@@ -262,7 +262,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
                 }
             }
 
-            throw new NotImplementedException();
+            throw new Exception();
         }
     }
 }

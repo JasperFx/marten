@@ -24,7 +24,8 @@ namespace Marten.Events.Projections
         private readonly List<IFanOutRule> _afterGroupingFanoutRules = new List<IFanOutRule>();
         private readonly IList<IGrouper<TId>> _groupers = new List<IGrouper<TId>>();
         private readonly IList<IAggregateGrouper<TId>> _lookupGroupers = new List<IAggregateGrouper<TId>>();
-
+        private bool _groupByTenant = false;
+        private IEventSlicer<TDoc, TId>? _customSlicer = null;
 
         protected ViewProjection()
         {
@@ -178,8 +179,7 @@ namespace Marten.Events.Projections
 
         }
 
-        private bool _groupByTenant = false;
-        private IEventSlicer<TDoc, TId> _customSlicer;
+
 
         protected override object buildEventSlicer(StoreOptions options)
         {

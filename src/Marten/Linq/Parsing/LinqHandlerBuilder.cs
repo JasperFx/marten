@@ -46,7 +46,6 @@ namespace Marten.Linq.Parsing
             TopStatement = CurrentStatement = new DocumentStatement(storage);
 
 
-            // TODO -- this probably needs to get fancier later when this goes n-deep
             if (Model.MainFromClause.FromExpression is SubQueryExpression sub)
             {
                 readQueryModel(Model, storage, false, storage.Fields);
