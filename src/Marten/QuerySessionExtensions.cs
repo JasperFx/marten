@@ -21,7 +21,6 @@ namespace Marten
         /// <returns></returns>
         public static IReadOnlyList<object> Query(this IQuerySession session, Type type, string sql, params object[] parameters)
         {
-            // TODO -- this could be optimized to avoid the Reflection hit.
             return (IReadOnlyList<object>)QueryMethod.MakeGenericMethod(type).Invoke(session, new object[] { sql, parameters });
         }
 
@@ -36,7 +35,6 @@ namespace Marten
         /// <returns></returns>
         public static async Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql, CancellationToken token = default, params object[] parameters)
         {
-            // TODO -- this could be optimized to avoid the Reflection hit.
             var task = (Task)QueryMethodAsync.MakeGenericMethod(type).Invoke(session, new object[] { sql, token, parameters });
             await task;
             return (IReadOnlyList<object>)task.GetType().GetProperty("Result").GetValue(task);

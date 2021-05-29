@@ -4,6 +4,6 @@ namespace Marten.Events.CodeGeneration
     {
         Initialize,
         Assign,
-        NullCoalesce // TODO -- this should be in Lamar itself
+        NullCoalesce 
     }
 }

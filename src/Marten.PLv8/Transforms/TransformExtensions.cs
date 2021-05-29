@@ -37,7 +37,6 @@ namespace Marten.PLv8.Transforms
 
         internal static void EnsureTransformsExist(this IDocumentOperations operations)
         {
-            // TODO -- make an async version of this
             try
             {
                 operations.As<DocumentSessionBase>().Tenant.EnsureStorageExists(typeof(TransformSchema));
@@ -65,7 +64,7 @@ namespace Marten.PLv8.Transforms
         }
 
 
-        private static Task StreamOneTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
+        private static async Task StreamOneTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
             Stream destination, CancellationToken token)
         {
             var builder = martenQueryable.BuildLinqHandler();
@@ -73,8 +72,7 @@ namespace Marten.PLv8.Transforms
             var session = martenQueryable.Session;
             var tenant = session.Tenant;
 
-            // TODO -- use async version
-            tenant.EnsureStorageExists(typeof(TransformSchema));
+            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token);
 
             var transform = tenant.TransformFor(transformName);
 
@@ -85,7 +83,7 @@ namespace Marten.PLv8.Transforms
             statement.Current().Limit = 1;
             var command = statement.BuildCommand();
 
-            return session.Database.StreamOne(command, destination, token);
+            await session.Database.StreamOne(command, destination, token);
         }
 
         /// <summary>
@@ -103,7 +101,7 @@ namespace Marten.PLv8.Transforms
             return StreamManyTransformed(queryable.As<IMartenLinqQueryable>(), transformName, destination, token);
         }
 
-        private static Task StreamManyTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
+        private static async Task StreamManyTransformed(this IMartenLinqQueryable martenQueryable, string transformName,
             Stream destination, CancellationToken token)
         {
             var builder = martenQueryable.BuildLinqHandler();
@@ -111,8 +109,7 @@ namespace Marten.PLv8.Transforms
             var session = martenQueryable.Session;
             var tenant = session.Tenant;
 
-            // TODO -- use async version
-            tenant.EnsureStorageExists(typeof(TransformSchema));
+            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token);
 
             var transform = tenant.TransformFor(transformName);
 
@@ -122,7 +119,7 @@ namespace Marten.PLv8.Transforms
             var statement = builder.TopStatement;
             var command = statement.BuildCommand();
 
-            return session.Database.StreamMany(command, destination, token);
+            await session.Database.StreamMany(command, destination, token);
         }
 
         /// <summary>

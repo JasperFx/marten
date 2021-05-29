@@ -10,6 +10,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten.Events.CodeGeneration
 {
@@ -201,13 +202,15 @@ namespace Marten.Events.CodeGeneration
                 IList<ParameterExpression> parameters);
         }
 
-        private class LambdaLoader<T> : ILambdaLoader
+        private class LambdaLoader<T> : ILambdaLoader where T : class
         {
             public void Add(MethodCollection methods, MethodInfo method, Type aggregateType, IList<ParameterExpression> parameters)
             {
                 Expression body = Expression.Call(parameters[0], method, parameters.OfType<Expression>().Skip(1).ToArray());
                 var expression = Expression.Lambda<T>(body, parameters);
-                var lambda =  expression.Compile(); // TODO -- use FastExpressionCompiler here!
+
+
+                var lambda = ExpressionCompiler.Compile<T>(expression);
 
                 var eventType = method.GetEventType(aggregateType);
 

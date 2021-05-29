@@ -57,7 +57,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartDaemon()
         {
-            _store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent));
             await _highWater.Start();
         }
 

@@ -89,7 +89,6 @@ namespace Marten.Events
 
         internal StreamAction AddEvents(IReadOnlyList<IEvent> events)
         {
-            // TODO -- let's get rid of this maybe?
             _events.AddRange(events);
 
             foreach (var @event in events)
@@ -277,7 +276,7 @@ namespace Marten.Events
                     @event.Id = CombGuidIdGeneration.NewGuid();
                 }
                 @event.Sequence = sequences.Dequeue();
-                @event.TenantId ??= session.Tenant.TenantId;
+                @event.TenantId = session.Tenant.TenantId;
                 @event.Timestamp = timestamp;
 
                 ProcessMetadata(@event, graph, session);

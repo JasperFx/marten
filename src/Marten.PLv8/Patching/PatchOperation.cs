@@ -34,7 +34,6 @@ namespace Marten.PLv8.Patching
             _serializer = serializer;
         }
 
-        // TODO -- come back and do this with a single command!
         private const string VALUE_LOOKUP = "___VALUE___";
 
         internal bool PossiblyPolymorhpic { get; set; } = false;

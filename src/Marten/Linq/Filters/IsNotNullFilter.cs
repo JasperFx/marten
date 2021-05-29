@@ -6,7 +6,6 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
 {
-    // TODO -- remove the usage of IField
     public class IsNotNullFilter: IReversibleWhereFragment
     {
         public IsNotNullFilter(IField field)

@@ -38,7 +38,6 @@ namespace Marten.Linq.Includes
 
         public bool RequiresLateralJoin()
         {
-            // TODO -- dont' think this is permanent. Or definitely shouldn't be
             return ConnectingField is ArrayField;
         }
 

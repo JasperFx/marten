@@ -38,7 +38,6 @@ namespace Marten.Internal.CodeGeneration
 
             for (var i = 0; i < columns.Length; i++)
             {
-                // TODO -- use the memo-ized table
                 columns[i].GenerateCode(_style, type, async, sync, i, _mapping);
             }
 

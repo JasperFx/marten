@@ -93,7 +93,7 @@ namespace Marten.Events
 
         public IDeletion HardDeleteForDocument(IEvent document, ITenant tenant)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public string FromObject { get; }
@@ -184,7 +184,7 @@ namespace Marten.Events
 
         public IStorageOperation Upsert(IEvent document, IMartenSession session, ITenant tenant)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IStorageOperation Overwrite(IEvent document, IMartenSession session, ITenant tenant)

@@ -31,7 +31,7 @@ namespace Marten.PLv8.Testing.Transforms
             theStore.Advanced.Clean.DeleteAllDocuments();
         }
 
-        public void example()
+        internal static void example()
         {
             #region sample_loading_js_transform_files
             var store = DocumentStore.For(_ =>

@@ -58,7 +58,6 @@ namespace Marten.Events.Projections
             {
                 try
                 {
-                    // TODO -- do something better with logging
                     return x.Build(store);
                 }
                 catch (Exception e)

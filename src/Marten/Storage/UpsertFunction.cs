@@ -32,7 +32,6 @@ namespace Marten.Storage
 
             _tableName = mapping.TableName;
 
-            // TODO -- it'd be nice to not need this here.
             var table = new DocumentTable(mapping);
 
             _primaryKeyConstraintName = table.PrimaryKeyName;
@@ -52,9 +51,8 @@ namespace Marten.Storage
 
             Arguments.AddRange(mapping.DuplicatedFields.Where(x => !x.OnlyForSearching).Select(x => x.UpsertArgument));
 
-            // TODO -- see the columns below
+            // These two arguments need to be added this way
             if (mapping.Metadata.Version.Enabled) Arguments.Add(new VersionArgument());
-
             if (mapping.Metadata.DotNetType.Enabled) Arguments.Add(new DotNetTypeArgument());
 
             AddIfActive(mapping.Metadata.CorrelationId);
@@ -91,8 +89,6 @@ namespace Marten.Storage
 
         public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
         {
-            // TODO -- this code could be a lot cleaner! The metadata made it go bad
-
             var ordered = OrderedArguments();
 
             var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");

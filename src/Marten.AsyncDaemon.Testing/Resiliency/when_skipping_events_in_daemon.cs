@@ -168,7 +168,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
 
         public void Apply(NameEvent e, NamesByLetter names)
         {
-            if (e.Name.Contains("bad", StringComparison.OrdinalIgnoreCase))
+            if (e.Name.Contains("bad", StringComparison.OrdinalIgnoreCase) && e.Name.StartsWith("J"))
             {
                 throw new Exception("Bad name.");
             }

@@ -62,7 +62,7 @@ namespace Marten.Testing.Events
         [MemberData(nameof(Data))]
         public async Task can_fetch_stream_async(TestCase @case)
         {
-            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+            await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
             @case.StartNewStream(new TestOutputMartenLogger(_output));
             using var query = @case.Store.QuerySession();
 
@@ -344,7 +344,6 @@ namespace Marten.Testing.Events
                         opts.AutoCreateSchemaObjects = AutoCreate.All;
                     });
 
-                    // TODO -- do this lazily!
                     store.Advanced.Clean.CompletelyRemoveAll();
 
                     return store;

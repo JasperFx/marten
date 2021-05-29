@@ -225,8 +225,6 @@ namespace Marten.Linq.Parsing
                             _contains = op.Item;
                             break;
 
-                        // TODO -- add Min/Max/Avg/Sum operators?
-
                         default:
                             throw new BadLinqExpressionException($"Invalid result operator {@operator} in sub query '{expression}'");
                     }
@@ -251,7 +249,7 @@ namespace Marten.Linq.Parsing
                         return new WhereInArrayFilter("data", (ConstantExpression)_expression.QueryModel.MainFromClause.FromExpression);
 
                     default:
-                        throw new NotImplementedException();
+                        throw new NotSupportedException();
                 }
             }
 
@@ -279,7 +277,7 @@ namespace Marten.Linq.Parsing
                     return new WhereInSubQuery(idSelectorStatement.ExportName);
                 }
 
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
 
             private ISqlFragment buildWhereForAny(ArrayField field)

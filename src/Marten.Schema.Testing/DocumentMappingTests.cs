@@ -115,7 +115,7 @@ namespace Marten.Schema.Testing
             public bool RequiresSequences { get; } = false;
             public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException();
             }
         }
 

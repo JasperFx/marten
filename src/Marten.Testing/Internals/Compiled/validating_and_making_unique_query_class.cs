@@ -24,7 +24,7 @@ namespace Marten.Testing.Internals.Compiled
 
             public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
-                throw new NotImplementedException();
+                throw new System.NotSupportedException();
             }
         }
 
@@ -71,7 +71,7 @@ namespace Marten.Testing.Internals.Compiled
 
             public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
             {
-                throw new NotImplementedException();
+                throw new System.NotSupportedException();
             }
 
             public int Page { get; set; }

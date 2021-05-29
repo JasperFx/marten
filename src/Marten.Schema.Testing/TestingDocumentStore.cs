@@ -40,11 +40,6 @@ namespace Marten.Schema.Testing
             }).As<DocumentStore>();
         }
 
-        internal static IDisposable For(Func<object, object> p)
-        {
-            throw new NotImplementedException();
-        }
-
         public static DocumentStore DefaultSchema(ITestOutputHelper output = null)
         {
             var store = For(_ =>

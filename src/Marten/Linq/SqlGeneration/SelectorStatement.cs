@@ -165,14 +165,9 @@ namespace Marten.Linq.SqlGeneration
             SelectClause = SelectClause.UseStatistics(statistics);
         }
 
-        public void ToJsonSelector()
-        {
-            SelectClause = new JsonSelectClause(SelectClause);
-        }
-
         public virtual SelectorStatement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

@@ -511,7 +511,7 @@ namespace Marten
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
-        DocumentMetadata MetadataFor<T>(T entity) where T : notnull;
+        DocumentMetadata? MetadataFor<T>(T entity) where T : notnull;
 
         /// <summary>
         ///     Fetch the entity version and last modified time from the database

@@ -276,7 +276,7 @@ namespace Marten.Events
 
         public IDeletion HardDeleteForDocument(T document, ITenant tenant)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override IEvent Wrap(object data)

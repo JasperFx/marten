@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal;
@@ -67,6 +68,11 @@ namespace Marten.Storage
         public void EnsureStorageExists(Type documentType)
         {
             _inner.EnsureStorageExists(documentType);
+        }
+
+        public Task EnsureStorageExistsAsync(Type featureType, CancellationToken token = default)
+        {
+            return _inner.EnsureStorageExistsAsync(featureType, token);
         }
 
         public IFeatureSchema FindFeature(Type storageType)

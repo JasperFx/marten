@@ -11,7 +11,7 @@ using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Projections
+namespace Marten.Testing.Events.Projections
 {
     // License events
     public class LicenseCreated

@@ -11,7 +11,6 @@ namespace Marten.Linq.Fields
 
         public override string SelectorForDuplication(string pgType)
         {
-            // TODO -- get rid of the replacement here
             return $"CAST({RawLocator.Replace("d.", "")} as {pgType})";
         }
     }

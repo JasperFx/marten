@@ -153,7 +153,6 @@ namespace Marten.Linq.Fields
 
         public string TypedLocator { get; set; }
 
-        // TODO -- have this take in CommandBuilder
         public string UpdateSqlFragment()
         {
             return $"{ColumnName} = {InnerField.SelectorForDuplication(PgType)}";

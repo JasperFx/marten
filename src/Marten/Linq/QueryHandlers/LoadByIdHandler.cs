@@ -44,11 +44,7 @@ namespace Marten.Linq.QueryHandlers
 
             sql.AppendParameter(_id);
 
-            // TODO -- there's some duplication here that should be handled consistently
-            if (storage.TenancyStyle == TenancyStyle.Conjoined)
-            {
-                sql.Append($" and {CurrentTenantFilter.Filter}");
-            }
+            storage.AddTenancyFilter(sql);
         }
 
 

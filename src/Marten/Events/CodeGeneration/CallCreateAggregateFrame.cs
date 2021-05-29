@@ -7,7 +7,6 @@ using LamarCodeGeneration.Model;
 
 namespace Marten.Events.CodeGeneration
 {
-    // TODO -- LamarCodeGeneration needs a "call generated method" Frame
     internal class CallCreateAggregateFrame: Frame
     {
         private Variable _session;

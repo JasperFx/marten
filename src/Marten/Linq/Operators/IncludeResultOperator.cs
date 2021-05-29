@@ -34,7 +34,7 @@ namespace Marten.Linq.Operators
         public override void TransformExpressions(
             Func<Expression, Expression> transformation)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public override StreamedSequence ExecuteInMemory<T>(StreamedSequence input)

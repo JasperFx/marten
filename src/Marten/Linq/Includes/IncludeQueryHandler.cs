@@ -43,8 +43,6 @@ namespace Marten.Linq.Includes
 
         public T Handle(DbDataReader reader, IMartenSession session)
         {
-            // TODO -- watch this. May be extra temp tables
-
             foreach (var includeReader in _readers)
             {
                 includeReader.Read(reader);
@@ -56,8 +54,6 @@ namespace Marten.Linq.Includes
 
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            // TODO -- watch this. May be extra temp tables
-
             foreach (var includeReader in _readers)
             {
                 await includeReader.ReadAsync(reader, token);

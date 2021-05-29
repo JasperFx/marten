@@ -32,7 +32,6 @@ namespace Marten.Linq.Parsing
         /// <param name="serializer"></param>
         /// <param name="expression"></param>
         /// <returns></returns>
-        // TODO -- eliminate serializer as a call here
         ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression);
     }
 

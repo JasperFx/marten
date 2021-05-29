@@ -9,18 +9,21 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
     [Collection("projections")]
     public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConfigurationsContext
     {
+        private readonly ITestOutputHelper _output;
         private static readonly string[] SameTenants = { "tenant", "tenant" };
         private static readonly string[] DiffetentTenants = { "tenant", "differentTenant" };
         private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
 
-        public end_to_end_event_capture_and_fetching_the_stream_Tests() : base("projections")
+        public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output) : base("projections")
         {
+            _output = output;
         }
 
         public static TheoryData<DocumentTracking, TenancyStyle, string[]> SessionParams = new TheoryData<DocumentTracking, TenancyStyle, string[]>
@@ -51,6 +54,8 @@ namespace Marten.Testing.Events
             {
                 using (var session = store.OpenSession(tenantId, sessionType))
                 {
+                    session.Logger = new TestOutputMartenLogger(_output);
+
                     #region sample_start-stream-with-aggregate-type
                     var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
                     var departed = new MembersDeparted { Members = new[] { "Thom" } };

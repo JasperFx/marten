@@ -26,7 +26,7 @@ namespace Marten.Internal.CodeGeneration
 
         public DocumentProvider<T> Generate<T>()
         {
-            var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
+            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
 
             var operations = new DocumentOperations(assembly, _mapping, _options);
 

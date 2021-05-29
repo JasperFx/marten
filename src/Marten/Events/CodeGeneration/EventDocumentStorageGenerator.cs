@@ -15,6 +15,7 @@ using Marten.Events.Querying;
 using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
@@ -22,19 +23,19 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.CodeGeneration
 {
-    // TODO -- introduce constants for all the type names
     internal static class EventDocumentStorageGenerator
     {
         private const string StreamStateSelectorTypeName = "GeneratedStreamStateQueryHandler";
         private const string InsertStreamOperationName = "GeneratedInsertStream";
         private const string UpdateStreamVersionOperationName = "GeneratedStreamVersionOperation";
+        private const string EventDocumentStorageTypeName = "GeneratedEventDocumentStorage";
 
         public static (EventDocumentStorage, string) GenerateStorage(StoreOptions options)
         {
-            var assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
+            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
             assembly.ReferenceAssembly(typeof(EventGraph).Assembly);
 
-            var builderType = assembly.AddType("GeneratedEventDocumentStorage", typeof(EventDocumentStorage));
+            var builderType = assembly.AddType(EventDocumentStorageTypeName, typeof(EventDocumentStorage));
 
             buildSelectorMethods(options, builderType);
 
@@ -263,7 +264,7 @@ namespace Marten.Events.CodeGeneration
 
             var columns = new EventsTable(graph).SelectColumns()
 
-                // TODO - Hokey, use an explicit model for writeable vs readable columns
+                // Hokey, use an explicit model for writeable vs readable columns some day
                 .Where(x => !(x is IsArchivedColumn)).ToList();
 
             var sql =

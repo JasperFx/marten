@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Storage;
@@ -32,6 +33,16 @@ namespace Marten.Storage
         void EnsureStorageExists(Type documentType);
 
         /// <summary>
+        ///     Ensures that the IDocumentStorage object for a document type is ready
+        ///     and also attempts to update the database schema for any detected changes
+        /// </summary>
+        /// <param name="featureType"></param>
+        /// <param name="???"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task EnsureStorageExistsAsync(Type featureType, CancellationToken token = default);
+
+        /// <summary>
         /// Find the feature schema object for the designated storageType
         /// </summary>
         /// <param name="storageType"></param>
@@ -41,8 +52,6 @@ namespace Marten.Storage
 
     public interface ITenant: ITenantStorage
     {
-
-
         string TenantId { get; }
 
         /// <summary>
@@ -120,5 +129,7 @@ namespace Marten.Storage
         /// <param name="type"></param>
         /// <returns></returns>
         Task<Table> ExistingTableFor(Type type);
+
+
     }
 }

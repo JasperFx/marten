@@ -29,7 +29,6 @@ namespace Marten.Linq.Parsing.Methods
                 return new EnumIsOneOfWhereFragment(values, serializer.EnumStorage, locator);
             }
 
-            // TODO -- use new WhereInArray
             return new WhereFragment($"{locator} = ANY(?)", values);
         }
     }

@@ -36,7 +36,6 @@ namespace Marten.Events.Projections
             _projectMethods = new ProjectMethodCollection(GetType());
             _createMethods = new CreateMethodCollection(GetType());
 
-            // TODO -- get fancier later
             ProjectionName = GetType().FullNameInCode();
         }
 
@@ -114,12 +113,7 @@ namespace Marten.Events.Projections
             {
                 // Replace any arguments to IEvent<T>
 
-                if (Method.GetParameters().Any(x => x.ParameterType == parent.SpecificEvent.VariableType))
-                {
-                    // TODO -- there's a LamarCodeGeneration bug here. It's using CanCastTo(), but should be using an exact match,
-                    // or looser find of the argument
-                    TrySetArgument(parent.SpecificEvent);
-                }
+                TrySetArgument(parent.SpecificEvent);
 
                 // Replace any arguments to the specific T event type
                 TrySetArgument(parent.DataOnly);
@@ -171,13 +165,7 @@ namespace Marten.Events.Projections
             public void Configure(EventProcessingFrame parent)
             {
                 // Replace any arguments to IEvent<T>
-
-                if (Method.GetParameters().Any(x => x.ParameterType == parent.SpecificEvent.VariableType))
-                {
-                    // TODO -- there's a LamarCodeGeneration bug here. It's using CanCastTo(), but should be using an exact match,
-                    // or looser find of the argument
-                    TrySetArgument(parent.SpecificEvent);
-                }
+                TrySetArgument(parent.SpecificEvent);
 
                 // Replace any arguments to the specific T event type
                 TrySetArgument(parent.DataOnly);
@@ -220,7 +208,6 @@ namespace Marten.Events.Projections
 
         internal override IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
         {
-            // TODO -- sharding behavior
             var baseFilters = new ISqlFragment[0];
             var eventTypes = MethodCollection.AllEventTypes(_createMethods, _projectMethods);
             if (!eventTypes.Any(x => x.IsAbstract || x.IsInterface))
@@ -233,7 +220,7 @@ namespace Marten.Events.Projections
 
         internal void Compile()
         {
-            _assembly = new GeneratedAssembly(new GenerationRules("Marten.Generated"));
+            _assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
 
             _assembly.Generation.Assemblies.Add(GetType().Assembly);
             _assembly.Generation.Assemblies.AddRange(_projectMethods.ReferencedAssemblies());

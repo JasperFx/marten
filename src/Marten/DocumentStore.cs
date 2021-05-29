@@ -239,7 +239,6 @@ namespace Marten
         {
             logger ??= new NulloLogger();
 
-            // TODO -- this will vary later
             var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(Tenancy.Default), Events);
 
             return new ProjectionDaemon(this, detector, logger);
@@ -312,9 +311,6 @@ namespace Marten
         private static IManagedConnection buildManagedConnection(SessionOptions options, ITenant tenant,
             CommandRunnerMode commandRunnerMode, IRetryPolicy retryPolicy)
         {
-            // TODO -- this is all spaghetti code. Make this some kind of more intelligent state machine
-            // w/ the logic encapsulated into SessionOptions
-
             // Hate crap like this, but if we don't control the transation, use External to direct
             // IManagedConnection not to call commit or rollback
             if (!options.OwnsTransactionLifecycle && commandRunnerMode != CommandRunnerMode.ReadOnly)

@@ -54,19 +54,16 @@ namespace Marten.Testing.Bugs
         Guid DocumentId { get; set; }
     }
 
-    // This bug only manifests when there are multiple implementations of BaseAccountingDocument
     public class Invoice: BaseAccountingDocument { }
 
     public class PurchaseOrder: BaseAccountingDocument { }
 
-    // This bug only manifests when there are multiple levels of inheritance
     public abstract class BaseAccountingDocument: IAccountingDocument
     {
         public Guid VersionId { get; set; }
         public Guid DocumentId { get; set; }
         public string Name { get; set; }
 
-        // This bug only manifests when there are multiple properties with non-builtin types
         public AnotherClass Another { get; set; }
 
         public YetAnotherClass YetAnother { get; set; }

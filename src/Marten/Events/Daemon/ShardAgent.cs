@@ -149,8 +149,7 @@ namespace Marten.Events.Daemon
 
             foreach (var storageType in _source.Options.StorageTypes)
             {
-                // TODO -- this will have to get fancier when we do multi-tenancy by database
-                _store.Tenancy.Default.EnsureStorageExists(storageType);
+                await _store.Tenancy.Default.EnsureStorageExistsAsync(storageType, _cancellation);
             }
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));

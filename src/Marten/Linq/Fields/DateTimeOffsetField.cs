@@ -11,7 +11,6 @@ namespace Marten.Linq.Fields
 
         public override string SelectorForDuplication(string pgType)
         {
-            // TODO -- eliminate replace
             return TypedLocator.Replace("d.", "");
         }
     }

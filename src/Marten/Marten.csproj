@@ -19,15 +19,15 @@
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="BaselineTypeDiscovery" Version="1.1.1" />
-        <PackageReference Include="LamarCodeGeneration" Version="3.1.2" />
-        <PackageReference Include="LamarCompiler" Version="3.0.0" />
+        <PackageReference Include="BaselineTypeDiscovery" Version="1.1.2" />
+        <PackageReference Include="LamarCodeGeneration" Version="3.2.1" />
+        <PackageReference Include="LamarCompiler" Version="3.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[2.1.0, 6.0.0]" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
         <PackageReference Include="Npgsql" Version="5.0.4" />
         <PackageReference Include="Npgsql.Json.NET" Version="5.0.4" />
         <PackageReference Include="Remotion.Linq" Version="2.2.0" />
-        <PackageReference Include="Baseline" Version="3.1.1" />
+        <PackageReference Include="Baseline" Version="3.1.2" />
         <PackageReference Include="System.Memory" Version="4.5.4" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="5.0.0" />
         <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />

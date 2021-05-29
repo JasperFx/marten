@@ -22,21 +22,6 @@ namespace Marten.Storyteller.Fixtures
             Title = "Default Document Filtering";
         }
 
-        [ExposeAsTable("Default Filter Determination for User and AdminUser subclass")]
-        public void FiltersAre(
-            [Header("Soft Deleted")] bool softDeleted,
-            [Header("Tenancy")] TenancyStyle tenancy,
-            [Header("User")]out string user, [Header("AdminUser")]out string subclass)
-        {
-            var store = buildStore(softDeleted, tenancy);
-
-            //user = store.Storage.MappingFor(typeof(User)).DefaultWhereFragment().ToSql();
-
-            throw new NotImplementedException();
-            // subclass = store
-            //     .Tenancy.Default.MappingFor(typeof(AdminUser)).As<IQueryableDocument>()
-            //     .DefaultWhereFragment().ToSql();
-        }
 
         private static DocumentStore buildStore(bool softDeleted, TenancyStyle tenancy)
         {

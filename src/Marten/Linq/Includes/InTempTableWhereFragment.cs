@@ -5,8 +5,6 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Includes
 {
-    // TODO -- replace with WhereInSubQuery?
-    // TODO -- move to Weasel
     internal class InTempTableWhereFragment: ISqlFragment
     {
         private readonly string _tempTableName;

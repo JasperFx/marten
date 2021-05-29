@@ -31,9 +31,7 @@ namespace Marten.Events.Projections
         }
     }
 
-    // TODO -- 100% convention based. Sometimes you'll
-    // have to use an attribute to "help" know what the document
-    // type is
+
 
     // All the signatures could take in IQuerySession, or Event<T>
     public class SomeDocument1Projector
@@ -63,20 +61,20 @@ namespace Marten.Events.Projections
         public bool MaybeDelete(SomeEvent4 @event, out Guid id)
         {
             // Optional deletion
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         // @wastaz's scenario. Could also be an IEnumerable
         // Create a bunch
         public SomeDocument3[] CreateMany(SomeEvent4 @event)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         [Document(typeof(SomeDocument3))]
         public IEnumerable<Guid> DeleteMany(SomeEvent5 @event)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
 

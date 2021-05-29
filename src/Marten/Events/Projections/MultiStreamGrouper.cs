@@ -17,8 +17,6 @@ namespace Marten.Events.Projections
 
         public MultiStreamGrouper(Func<TEvent, IReadOnlyList<TId>> expression)
         {
-            // TODO -- it's possible we'll use the expression later to write metadata into the events table
-            // to support the async daemon, but I'm doing it the easy way for now
             _func = expression;
         }
 

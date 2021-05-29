@@ -13,6 +13,9 @@ namespace Marten.Linq.Fields
 {
     public class NullableTypeField: IField
     {
+        private readonly string _isNullSql;
+        private readonly string _isNotNullSql;
+
         public NullableTypeField(IField innerField)
         {
             InnerField = innerField;
@@ -24,6 +27,8 @@ namespace Marten.Linq.Fields
             JSONBLocator = innerField.JSONBLocator;
             LocatorForIncludedDocumentId = innerField.LocatorForIncludedDocumentId;
 
+            _isNullSql = $"{RawLocator} is null";
+            _isNotNullSql = $"{RawLocator} is not null";
         }
 
         public IField InnerField { get; }
@@ -61,12 +66,10 @@ namespace Marten.Linq.Fields
                 switch (op)
                 {
                     case "=":
-                        // TODO -- make this a static readonly
-                        return new WhereFragment($"{RawLocator} is null");
+                        return new WhereFragment(_isNullSql);
 
                     case "!=":
-                        // TODO -- make this a static readonly
-                        return new WhereFragment($"{RawLocator} is not null");
+                        return new WhereFragment(_isNotNullSql);
 
                     default:
                         throw new BadLinqExpressionException($"Can only compare property type {FieldType.FullNameInCode()} by '=' or '!='");
