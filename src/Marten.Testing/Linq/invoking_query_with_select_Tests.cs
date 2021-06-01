@@ -353,6 +353,24 @@ namespace Marten.Testing.Linq
             actual.InnerNumber.ShouldBe(target.Inner.Number);
         }
 
+        [Fact]
+        public void use_select_in_query_for_one_object_property()
+        {
+            var target = Target.Random(true);
+
+            theSession.Store(target);
+            theSession.SaveChanges();
+
+            var actual = theSession.Query<Target>()
+                .Where(x => x.Id == target.Id)
+                .Select(x => x.Inner)
+                .First();
+
+            actual.Id.ShouldBe(target.Inner.Id);
+            actual.Number.ShouldBe(target.Inner.Number);
+        }
+
+
         public class FlatTarget
         {
             public FlatTarget(Guid id, int number, int innerNumber)
