@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Versioning;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Npgsql;
 using static Bullseye.Targets;
@@ -79,15 +80,61 @@ namespace martenbuild
             Target("open_st", DependsOn("compile"), () =>
                 Run("dotnet", $"storyteller open --framework {framework} --culture en-US", "src/Marten.Storyteller"));
 
-            Target("docs", () =>
-                Run("dotnet", $"stdocs run -d documentation -c src -v {BUILD_VERSION}"));
+            Target("install-mdsnippets", () =>
+                Run("dotnet", $"tool install -g MarkdownSnippets.Tool"));
+
+            Target("docs", DependsOn("install"), () => {
+                if (framework != "net5.0") {
+                  Console.ForegroundColor = ConsoleColor.Red;
+                  Console.WriteLine("!!! Docs site required .NET 5.0 due to MarkdownSnippets.Tool requiring it");
+                  Console.ResetColor();
+                  return;
+                }
+
+                // check whether MarkdownSnippets.Tool is installed
+                try
+                {
+                    Run("mdsnippets", "--version");
+                }
+                catch (Exception)
+                {
+                  Console.ForegroundColor = ConsoleColor.Red;
+                  Console.WriteLine("!!! Install MarkdownSnippets.Tool using `build install-mdsnippets`");
+                  Console.ResetColor();
+                  return;
+                }
+
+                // add the code snippets to markdown files by running MarkdownSnippets.Tool
+                Run("mdsnippets");
+                // Run docs site
+                RunNpm("run docs");
+            });
+
+            Target("clear-inline-samples", () => {
+                var files = Directory.GetFiles("./docs", "*.md", SearchOption.AllDirectories);
+                var pattern = @"<!-- snippet:(.+)-->[\s\S]*?<!-- endSnippet -->";
+                var replacePattern = $"<!-- snippet:$1-->{Environment.NewLine}<!-- endSnippet -->";
+                foreach (var file in files)
+                {
+                    Console.WriteLine(file);
+                    var content = File.ReadAllText(file);
+
+                    if (!content.Contains("<!-- snippet:")) {
+                        continue;
+                    }
+
+                    var updatedContent = Regex.Replace(content, pattern, replacePattern);
+                    File.WriteAllText(file, updatedContent);
+                }
+            });
 
             Target("publish-docs", () =>
             {
                 // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
-                PublishDocs(branchName: "gh-pages", exportWithGithubProjectPrefix: true);
+                // PublishDocs(branchName: "gh-pages", exportWithGithubProjectPrefix: true);
+
                 // Exports the documentation to Netlify - martendb.io - requires Git access to that repo though!
-                PublishDocs(branchName: "gh-pages-netlify", exportWithGithubProjectPrefix: false);
+                // PublishDocs(branchName: "gh-pages-netlify", exportWithGithubProjectPrefix: false);
             });
 
             Target("benchmarks", () =>
