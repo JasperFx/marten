@@ -71,9 +71,18 @@ namespace Marten.Linq.SqlGeneration
         {
             var field = Fields.FieldFor(selectClauseSelector);
 
-            SelectClause = field.FieldType == typeof(string)
-                ? new ScalarStringSelectClause(field, SelectClause.FromObject)
-                : typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(field, SelectClause.FromObject, field.FieldType);
+            if (field.FieldType == typeof(string))
+            {
+                SelectClause = new ScalarStringSelectClause(field, SelectClause.FromObject);
+            }
+            else if (field.FieldType.IsPrimitive)
+            {
+                SelectClause = typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(field, SelectClause.FromObject, field.FieldType);
+            }
+            else
+            {
+                SelectClause = typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(SelectClause.FromObject, field.RawLocator, field.FieldType);
+            }
         }
 
         public SelectorStatement ToSelectMany(IField collectionField, IMartenSession session, bool isComplex,
