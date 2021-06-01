@@ -20,6 +20,12 @@
     <PackageReference Include="NSubstitute" Version="4.2.2" />
     <PackageReference Include="Shouldly" Version="4.0.3" />
   </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="MarkdownSnippets.MsBuild" Version="23.1.4">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
   <PropertyGroup>
     <NoWarn>xUnit1013</NoWarn>
   </PropertyGroup>
