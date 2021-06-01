@@ -48,7 +48,8 @@ It comes of the way how Marten handles projection mechanism:
 
 If additional Marten event details are needed, then events can use the `ProjectionEvent<>` generic when setting them up with `ProjectEvent`. `ProjectionEvent` exposes the Marten Id, Version, Timestamp and Data.
 
-<<< @/../src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#sample_viewprojection-from-class-with-eventdata
+<!-- snippet: sample_viewprojection-from-class-with-eventdata -->
+<!-- endSnippet -->
 
 ### Injecting helpers classes
 
@@ -85,4 +86,5 @@ Lets' look on the following scenario of the projection that manages the newslett
 1. User unsubscribed from newsletter and _ReaderUnsubscribed_ event was published. Projection removed the view from database (because we market it with `DeleteEvent`).
 1. User opened newsletter after unsubscribing and _NewsletterOpened_ event was published. As there is no record in database if we use the default behaviour then new record will be created with only data that are applied for the _NewsletterOpened_ event. That's might create views with unexpected state. <u>In that case, **onlyUpdate** set to **true** should be used. Having that, if the view does not exist then the event will not be projected and new view record will not be created in database.</u>
 
-<<< @/../src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#sample_viewprojection-with-update-only
+<!-- snippet: sample_viewprojection-with-update-only -->
+<!-- endSnippet -->

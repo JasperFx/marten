@@ -24,7 +24,8 @@ This method moved from `IDocumentStore.Advanced` to `IDocumentSession` in Marten
 You can find the metadata values for a given document object with the following mechanism
 on `IDocumentSession`:
 
-<<< @/../src/Marten.Testing/Acceptance/fetching_entity_metadata.cs#sample_resolving_metadata
+<!-- snippet: sample_resolving_metadata -->
+<!-- endSnippet -->
 
 ## Correlation, Causation, and Last Modified By Tracking
 

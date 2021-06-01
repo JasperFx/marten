@@ -8,4 +8,5 @@ to override whether or not `SaveChanges/SaveChangesAsync` will commit the underl
 Do note that the transaction scope enlisting is only available in either the full .Net framework (> .Net 4.6) or applications targeting
 Netstandard 2.0.
 
-<<< @/../src/Marten.Testing/CoreFunctionality/ability_to_use_an_existing_connection_and_transaction.cs#sample_passing-in-existing-connections-and-transactions
+<!-- snippet: sample_passing-in-existing-connections-and-transactions -->
+<!-- endSnippet -->

@@ -8,7 +8,8 @@ for RavenDb in several existing applications. As such, you may clearly see some 
 To use Marten as a document database, you first need a Postgresql schema that will store your documents. Once you have that, getting started
 with Marten can be as simple as opening a `DocumentStore` to your new Postgresql schema:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_start_a_store
+<!-- snippet: sample_start_a_store -->
+<!-- endSnippet -->
 
 The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this "quickstart" configuration,
 Marten will build new database tables and functions for each new document type as needed **if those database schema objects do not already exist**.
@@ -19,7 +20,8 @@ As of Marten v3.0, document storage tables, by default, are created and updated,
 
 While the default "auto-create or update" (`AutoCreate.CreateOrUpdate`) database schema management is fantastic for a development time experience, you may not want Marten to be building out new database schema objects at production time. You might also want to override the default JSON serialization, tweak the document storage for performance, or opt into Postgresql 9.5's fancy new "upsert" capability. For customization, you have a different syntax for bootstrapping a `DocumentStore`:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_start_a_complex_store
+<!-- snippet: sample_start_a_complex_store -->
+<!-- endSnippet -->
 
 For more information on using the `IDocumentStore` and configuring document storage, see:
 
@@ -36,16 +38,18 @@ For more information on using the `IDocumentStore` and configuring document stor
 
 Now that we've got a document store, we can use that to create a new `IQuerySession` object just for querying or loading documents from the database:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_start_a_query_session
+<!-- snippet: sample_start_a_query_session -->
+<!-- endSnippet -->
 
-For more information on the query support within Marten, check [document querying](/guide/documents/querying)
+For more information on the query support within Marten, check [document querying](/guide/documents/querying/)
 
 ## Persisting Documents
 
 The main service for updating and persisting documents is the `IDocumentSession`. An `IDocumentSession` is created by your `IDocumentStore` from above
 in one of three ways:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_opening_sessions
+<!-- snippet: sample_opening_sessions -->
+<!-- endSnippet -->
 
 In all cases, `IDocumentSession` has the same query and loading functions as the read only `IQuerySession`.
 

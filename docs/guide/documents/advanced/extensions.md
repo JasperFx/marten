@@ -3,16 +3,19 @@
 New in Marten 2.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's
 [schema management facilities)[/guide/schema/migrations). The key abstraction is the `IFeatureSchema` interface shown below:
 
-<<< @/../src/Marten/Storage/IFeatureSchema.cs#sample_IFeatureSchema
+<!-- snippet: sample_IFeatureSchema -->
+<!-- endSnippet -->
 
 Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple
 example that defines a custom table with one column:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#sample_creating-a-fake-schema-feature
+<!-- snippet: sample_creating-a-fake-schema-feature -->
+<!-- endSnippet -->
 
 Now, to actually apply this feature to your Marten applications, use this syntax:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#sample_adding-schema-feature
+<!-- snippet: sample_adding-schema-feature -->
+<!-- endSnippet -->
 
 Do note that when you use the `Add<T>()` syntax, Marten will pass along the current `StoreOptions` to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.
 
@@ -26,7 +29,8 @@ While you *can* directly implement the `ISchemaObject` interface for something M
 
 Postgresql tables can be modeled with the `Table` class as shown in this example from the event store inside of Marten:
 
-<<< @/../src/Marten/Events/Schema/EventsTable.cs#sample_EventsTable
+<!-- snippet: sample_EventsTable -->
+<!-- endSnippet -->
 
 ## Function
 
@@ -38,4 +42,5 @@ Postgresql functions can be managed by creating a subclass of the `Function` bas
 
 [Postgresql sequences](https://www.postgresql.org/docs/10/static/sql-createsequence.html) can be managed with this usage:
 
-<<< @/../src/Marten/Events/EventGraph.cs#sample_using-sequence
+<!-- snippet: sample_using-sequence -->
+<!-- endSnippet -->

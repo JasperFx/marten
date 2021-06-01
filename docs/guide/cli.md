@@ -10,7 +10,8 @@ your .Net Core application that uses Marten. _Marten.CommandLine_ is an extensio
 
 To use the expanded command line options to a .Net Core application bootstrapped by `IHostBuilder`, add a reference to the _Marten.CommandLine_ Nuget and ever so slightly change your `Program.Main()` entry point as shown below:
 
-<<< @/../src/AspNetCoreWithMarten/Program.cs#sample_SampleConsoleApp
+<!-- snippet: sample_SampleConsoleApp -->
+<!-- endSnippet -->
 
 Once the _Marten.CommandLine_ Nuget is installed and Oakton is handling your command line parsing, you should be able to see the Marten commands by typing `dotnet run -- help` in the command line terminal of your choice at the root of your project:
 

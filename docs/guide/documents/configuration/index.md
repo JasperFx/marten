@@ -30,13 +30,15 @@ This can unfortunately have a negative impact on Marten's ability to detect chan
 truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the `NAMEDATALEN` value,
 but you do need to tell Marten about any non-default length limit like so:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#sample_setting-name-data-length
+<!-- snippet: sample_setting-name-data-length -->
+<!-- endSnippet -->
 
 ## Custom StoreOptions
 
 It's perfectly valid to create your own subclass of `StoreOptions` that configures itself, as shown below.
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_custom-store-options
+<!-- snippet: sample_custom-store-options -->
+<!-- endSnippet -->
 
 This strategy might be beneficial if you need to share Marten configuration across different applications
 or testing harnesses or custom migration tooling.
@@ -51,7 +53,8 @@ your own subclass of `MartenRegistry` and place declarations in the constructor 
 
 To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
 
-<<< @/../src/Marten.Testing/Examples/MartenRegistryExamples.cs#sample_using_marten_registry_to_bootstrap_document_store
+<!-- snippet: sample_using_marten_registry_to_bootstrap_document_store -->
+<!-- endSnippet -->
 
 Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
 
@@ -67,7 +70,8 @@ that Marten will ignore your manual indexes when calculating schema differences.
 If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the `MartenAttribute` shown below:
 
-<<< @/../src/Marten/Schema/MartenAttribute.cs#sample_MartenAttribute
+<!-- snippet: sample_MartenAttribute -->
+<!-- endSnippet -->
 
 And decorate either classes or individual field or properties on a document type, your custom attribute will be
 picked up and used by Marten to configure the underlying `DocumentMapping` model for that document type. The
@@ -76,7 +80,8 @@ picked up and used by Marten to configure the underlying `DocumentMapping` model
 As an example, an attribute to add a gin index to the JSONB storage for more efficient adhoc querying of a document
 would look like this:
 
-<<< @/../src/Marten/Schema/GinIndexedAttribute.cs#sample_GinIndexedAttribute
+<!-- snippet: sample_GinIndexedAttribute -->
+<!-- endSnippet -->
 
 ## Embedding Configuration in Document Types
 
@@ -84,7 +89,8 @@ Lastly, Marten can examine the document types themselves for a `public static Co
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:
 
-<<< @/../src/Marten.Schema.Testing/DocumentMappingTests.cs#sample_ConfigureMarten-generic
+<!-- snippet: sample_ConfigureMarten-generic -->
+<!-- endSnippet -->
 
 The `DocumentMapping` type is the core configuration class representing how a document type is persisted or
 queried from within a Marten application. All the other configuration options end up writing to a
@@ -93,4 +99,5 @@ queried from within a Marten application. All the other configuration options en
 You can optionally take in the more specific `DocumentMapping<T>` for your document type to get at
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:
 
-<<< @/../src/Marten.Schema.Testing/DocumentMappingTests.cs#sample_ConfigureMarten-specifically
+<!-- snippet: sample_ConfigureMarten-specifically -->
+<!-- endSnippet -->

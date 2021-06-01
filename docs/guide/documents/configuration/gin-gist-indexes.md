@@ -5,6 +5,7 @@ See [Exploring the Postgres GIN index](https://hashrocket.com/blog/posts/explori
 To optimize a wider range of ad-hoc queries against the document JSONB, you can apply a [GIN index](http://www.postgresql.org/docs/9.4/static/gin.html) to
 the JSON field in the database:
 
-<<< @/../src/Marten.Testing/Examples/MartenRegistryExamples.cs#sample_IndexExamples
+<!-- snippet: sample_IndexExamples -->
+<!-- endSnippet -->
 
 **Marten may be changed to make the GIN index on the data field be automatic in the future.**

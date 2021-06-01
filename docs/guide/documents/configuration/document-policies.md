@@ -4,9 +4,11 @@ Document Policies enable convention-based customizations to be applied across th
 
 The following sample demonstrates a policy that sets types implementing `IRequireMultiTenancy` marker-interface to be multi-tenanted (see [tenancy](/guide/documents/tenancy/)).
 
-<<< @/../src/Marten.Testing/Examples/Policies.cs#sample_sample-policy-configure
+<!-- snippet: sample_sample-policy-configure -->
+<!-- endSnippet -->
 
-<<< @/../src/Marten.Testing/Examples/Policies.cs#sample_sample-policy-implementation
+<!-- snippet: sample_sample-policy-implementation -->
+<!-- endSnippet -->
 
 To set all types to be multi-tenanted, the pre-baked `Policies.AllDocumentsAreMultiTenanted` could also have been used.
 

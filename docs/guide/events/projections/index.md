@@ -22,13 +22,16 @@ Transformations project from one event type to one document. If you want to have
 As a sample problem, let's say that we're constantly capturing `MonsterSlayed` events and our system needs to query just this data. You could query directly against the large `mt_events` table with
 `IEventStore.Query<MonsterSlayed>()`, but it would be more efficient to keep a separate "read side" copy of this data in a new data collection. We could build a new transform class and readside document like this:
 
-<<< @/../src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#sample_MonsterDefeatedTransform
+<!-- snippet: sample_MonsterDefeatedTransform -->
+<!-- endSnippet -->
 
 Now, we can plug our new transform type above as a projection when we configure our document store like this:
 
-<<< @/../src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#sample_applying-monster-defeated
+<!-- snippet: sample_applying-monster-defeated -->
+<!-- endSnippet -->
 
-<<< @/../src/Marten.Testing/Examples/event_store_quickstart.cs#sample_using_live_transformed_events
+<!-- snippet: sample_using_live_transformed_events -->
+<!-- endSnippet -->
 
 ## Aggregates
 
@@ -38,14 +41,16 @@ The out-of-the box convention is to expose `public Apply([Event Type])` methods 
 
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
-<<< @/../src/Marten.Testing/Events/Projections/QuestParty.cs#sample_QuestParty
+<!-- snippet: sample_QuestParty -->
+<!-- endSnippet -->
 
 New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
 
 The syntax using the built in aggregation technique is to take in `Event<T>` as the argument to your `Apply(event)` methods,
 where `T` is the event type you're interested in:
 
-<<< @/../src/Marten.Testing/Events/Projections/QuestPartyWithEvents.cs#sample_QuestPartyWithEvents
+<!-- snippet: sample_QuestPartyWithEvents -->
+<!-- endSnippet -->
 
 ### Aggregates Across Multiple Streams
 
@@ -73,7 +78,8 @@ The aggregation lookup can also be set in the `StoreOptions.Events.UserAggregato
 
 You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:
 
-<<< @/../src/Marten.Testing/Examples/event_store_quickstart.cs#sample_events-aggregate-on-the-fly
+<!-- snippet: sample_events-aggregate-on-the-fly -->
+<!-- endSnippet -->
 
 There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with
 `IBatchQuery.Events.AggregateStream<T>(streamId)`.
@@ -84,7 +90,8 @@ _First off, be aware that event metadata (e.g. stream version and sequence numbe
 
 If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
-<<< @/../src/Marten.Testing/Events/Projections/inline_aggregation_by_stream_with_multiples.cs#sample_registering-quest-party
+<!-- snippet: sample_registering-quest-party -->
+<!-- endSnippet -->
 
 At this point, you would be able to query against `QuestParty` as just another document type.
 

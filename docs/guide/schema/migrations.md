@@ -9,7 +9,8 @@ with the Marten `StoreOptions` configuration in your system.
 As long as you have rights to alter your Postgresql database, you can happily set up Marten in one of the permissive "AutoCreate"
 modes and not worry about schema changes at all as you happily code new features and change existing document types:
 
-<<< @/../src/Marten.Schema.Testing/auto_create_mode_Tests.cs#sample_AutoCreateSchemaObjects
+<!-- snippet: sample_AutoCreateSchemaObjects -->
+<!-- endSnippet -->
 
 As long as you're using a permissive auto creation mode (i.e., not _None_), you should be able to code in your application model
 and let Marten change your development database as needed behind the scenes to match the active configuration.
@@ -26,12 +27,14 @@ In usage, you would need to tell Marten about every possible document type, any 
 [javascript transforms](/guide/documents/advanced/javascript-transformations) so that Marten
 "knows" how to make the full comparison:
 
-<<< @/../src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#sample_configure-document-types-upfront
+<!-- snippet: sample_configure-document-types-upfront -->
+<!-- endSnippet -->
 
 Then to write a patch DDL file, bootstrap your `IDocumentStore` pointing to the database connection you
 want to update, and use:
 
-<<< @/../src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#sample_WritePatch
+<!-- snippet: sample_WritePatch -->
+<!-- endSnippet -->
 
 The command above will generate a file called "1.initial.sql" to update the schema, and a second file called
 "1.initial.drop.sql" that attempts to rollback all of the changes from "1.initial.sql." Today, the `WritePatch()`
@@ -48,13 +51,15 @@ mechanism covers:
 To programmatically apply all detectable schema changes upfront when an application is first
 bootstrapped, you can use this mechanism:
 
-<<< @/../src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#sample_ApplyAllConfiguredChangesToDatabase
+<!-- snippet: sample_ApplyAllConfiguredChangesToDatabase -->
+<!-- endSnippet -->
 
 ## Assert that a Schema Matches the Configuration
 
 As a possible [environment test](http://codebetter.com/jeremymiller/2006/04/06/environment-tests-and-self-diagnosing-configuration-with-structuremap/), Marten can do a complete check of its known configuration versus the active Postgresql database and assert any differences
 by throwing an exception:
 
-<<< @/../src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#sample_AssertDatabaseMatchesConfiguration
+<!-- snippet: sample_AssertDatabaseMatchesConfiguration -->
+<!-- endSnippet -->
 
 The exception will list out all the DDL changes that are missing.

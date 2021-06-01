@@ -8,17 +8,20 @@ I first learned about this concept from Martin Fowler's [PEAA book](http://marti
 
 In Marten's case, you have to explicitly opt into optimistic versioning for each document type. You can do that with either an attribute on your document type like so:
 
-<<< @/../src/Marten.Testing/Acceptance/optimistic_concurrency.cs#sample_UseOptimisticConcurrencyAttribute
+<!-- snippet: sample_UseOptimisticConcurrencyAttribute -->
+<!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:
 
-<<< @/../src/Marten.Testing/Acceptance/optimistic_concurrency.cs#sample_configuring-optimistic-concurrency
+<!-- snippet: sample_configuring-optimistic-concurrency -->
+<!-- endSnippet -->
 
 Once optimistic concurrency is turned on for the CoffeeShop document type, a session will now only be able to update a document if the document has been unchanged in the database since it was initially loaded.
 
 To demonstrate the failure case, consider the following  acceptance test from Marten's codebase:
 
-<<< @/../src/Marten.Testing/Acceptance/optimistic_concurrency.cs#sample_update_with_stale_version_standard
+<!-- snippet: sample_update_with_stale_version_standard -->
+<!-- endSnippet -->
 
 Marten is throwing an AggregateException for the entire batch of changes being persisted from SaveChanges()/SaveChangesAsync() after rolling back the current database transaction. The individual ConcurrencyException's inside of the aggregated exception expose information about the actual document type and identity that failed.
 
@@ -26,7 +29,8 @@ Marten is throwing an AggregateException for the entire batch of changes being p
 
 Marten allows overriding store-wide optimistic concurrency settings within a session via `SessionOptions`, whereby the `ConcurrencyChecks` can be set to `ConcurrencyChecks.Disabled`.
 
-<<< @/../src/Marten.Testing/Acceptance/optimistic_concurrency.cs#sample_sample-override-optimistic-concurrency
+<!-- snippet: sample_sample-override-optimistic-concurrency -->
+<!-- endSnippet -->
 
 ## How it works
 
@@ -42,6 +46,7 @@ with all the detected violations.
 To designate the version of the document you're trying to store, you can use the `IDocumentSession.Store(doc, version)` method
 shown below:
 
-<<< @/../src/Marten.Testing/Acceptance/optimistic_concurrency.cs#sample_store_with_the_right_version
+<!-- snippet: sample_store_with_the_right_version -->
+<!-- endSnippet -->
 
 This method might come in handy if you detect that a document in your current session has been changed by another session.

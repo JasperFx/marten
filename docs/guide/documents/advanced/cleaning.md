@@ -5,4 +5,5 @@ For the purpose of automated testing where you need to carefully control the sta
 
 This service is exposed as the `IDocumentStore.Advanced.Clean` property. You can see the usages of the document cleaner below:
 
-<<< @/../src/Marten.Testing/Examples/DocumentCleanerExamples.cs#sample_clean_out_documents
+<!-- snippet: sample_clean_out_documents -->
+<!-- endSnippet -->

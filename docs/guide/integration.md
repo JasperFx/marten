@@ -17,7 +17,8 @@ Jumping right into a basic ASP.Net MVC Core application using the out of the box
 the IoC service registrations for your application in the `ConfigureServices()` method. To add Marten
 to your application, use the `AddMarten()` method as shown below:
 
-<<< @/../src/AspNetCoreWithMarten/Startup.cs#sample_StartupConfigureServices
+<!-- snippet: sample_StartupConfigureServices -->
+<!-- endSnippet -->
 
 The `AddMarten()` method will add these service registrations to your application:
 
@@ -40,15 +41,18 @@ registrations within a `Startup` class, but Marten can be used with any IoC cont
 
 First, if you are using Marten completely out of the box with no customizations (besides attributes on your documents), you can just supply a connection string to the underlying Postgresql database like this:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/ByConnectionString/Startup.cs#sample_AddMartenByConnectionString
+<!-- snippet: sample_AddMartenByConnectionString -->
+<!-- endSnippet -->
 
 The second option is to supply a [nested closure](https://martinfowler.com/dslCatalog/nestedClosure.html) to configure Marten inline like so:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/ByNestedClosure/Startup.cs#sample_AddMartenByNestedClosure
+<!-- snippet: sample_AddMartenByNestedClosure -->
+<!-- endSnippet -->
 
 Lastly, if you prefer, you can pass a Marten `StoreOptions` object to `AddMarten()` like this example:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#sample_AddMartenByStoreOptions
+<!-- snippet: sample_AddMartenByStoreOptions -->
+<!-- endSnippet -->
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
 
@@ -58,11 +62,13 @@ The last option may be best for more complicated Marten configuration just to ke
 By default, Marten will create a document session with the basic identity map enabled and a [ReadCommitted](https://docs.microsoft.com/en-us/dotnet/api/system.transactions.isolationlevel?view=netcore-3.1) transaction isolation level. If you want to use a different configuration for sessions globally in your application, you can use a custom implementation of the `ISessionFactory` class
 as shown in this example:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#sample_CustomSessionFactory
+<!-- snippet: sample_CustomSessionFactory -->
+<!-- endSnippet -->
 
 To register the custom session factory, use the `BuildSessionsWith()` method as shown in this example:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#sample_AddMartenWithCustomSessionCreation
+<!-- snippet: sample_AddMartenWithCustomSessionCreation -->
+<!-- endSnippet -->
 
 The session factories can also be used to build out and attach custom `IDocumentSessionListener` objects or replace the logging as we'll see in the next section.
 
@@ -75,19 +81,23 @@ session identification in your application? That's now possible by using a custo
 
 Taking the example of an ASP.Net Core application, let's say that you have a small service scoped to an HTTP request that tracks a correlation identifier for the request like this:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#sample_CorrelationIdWithISession
+<!-- snippet: sample_CorrelationIdWithISession -->
+<!-- endSnippet -->
 
 And a custom Marten session logger to add the correlation identifier to the log output like this:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#sample_CorrelatedMartenLogger
+<!-- snippet: sample_CorrelatedMartenLogger -->
+<!-- endSnippet -->
 
 Now, let's move on to building out a custom session factory that will attach our correlated marten logger to sessions being resolved from the IoC container:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#sample_CustomSessionFactoryByScope
+<!-- snippet: sample_CustomSessionFactoryByScope -->
+<!-- endSnippet -->
 
 Lastly, let's register our new session factory, but this time we need to take care to register the session factory as `Scoped` in the underlying container so we're using the correct `ISession` at runtime:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#sample_AddMartenWithCustomSessionCreationByScope
+<!-- snippet: sample_AddMartenWithCustomSessionCreationByScope -->
+<!-- endSnippet -->
 
 ::: tip
 This correlation tracking might be better with structural logging with something like [Serilog](https://serilog.net), but we'll leave that to users.
@@ -97,4 +107,5 @@ This correlation tracking might be better with structural logging with something
 
 Lastly, if desirable, you can force Marten to initialize the applications document store as part of bootstrapping instead of waiting for it to be initialized on the first usage with this syntax:
 
-<<< @/../src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#sample_AddMartenWithEagerInitialization
+<!-- snippet: sample_AddMartenWithEagerInitialization -->
+<!-- endSnippet -->

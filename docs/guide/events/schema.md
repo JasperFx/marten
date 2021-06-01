@@ -5,7 +5,8 @@
 By default, the event store database objects are created in the default schema for the active `IDocumentStore`. If you wish,
 you can segregate the event store objects into a separate schema with this syntax:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_setting_event_schema
+<!-- snippet: sample_setting_event_schema -->
+<!-- endSnippet -->
 
 ## Configuration
 
@@ -42,6 +43,7 @@ And finally, a couple functions that Marten uses internally:
 
 Hopefully, it's relatively clear how the fields in `mt_events` map to the `IEvent` interface in Marten:
 
-<<< @/../src/Marten/Events/Event.cs#sample_event_metadata
+<!-- snippet: sample_event_metadata -->
+<!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/guide/documents/diagnostics) for more information on capturing event data in the instrumentation hooks.

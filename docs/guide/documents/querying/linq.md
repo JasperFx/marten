@@ -3,23 +3,27 @@
 Marten uses the [Relinq library](https://github.com/re-motion/Relinq) to support a subset of the normal Linq operators. Linq queries are done with
 Marten using the `IQuerySession.Query<T>()` or `IDocumentSession.Query<T>()` method to return an [IQueryable](https://msdn.microsoft.com/en-us/library/system.linq.iqueryable(v=vs.100).aspx) for the document type `T`.
 
-<<< @/../src/Marten/IQuerySession.cs#sample_querying_with_linq
+<!-- snippet: sample_querying_with_linq -->
+<!-- endSnippet -->
 
 To query for all documents of a type - not that you would do this very often outside of testing - use the `Query<T>()` method like this:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_query_for_all
+<!-- snippet: sample_query_for_all -->
+<!-- endSnippet -->
 
 ## Basic Operators
 
 Since you usually don't want to pull down the entire database at one time, Marten supports these basic operators in Linq searches:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_query_by_basic_operators
+<!-- snippet: sample_query_by_basic_operators -->
+<!-- endSnippet -->
 
 ## And and Or Queries
 
 Right now, Marten supports both _and_ and _or_ queries with Linq:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_querying_with_and_or_or
+<!-- snippet: sample_querying_with_and_or_or -->
+<!-- endSnippet -->
 
 ## Searching within Child Collections
 
@@ -30,42 +34,50 @@ Marten will also allow you to use the `Contains` method to search within arrays 
 
 The following code sample demonstrates the supported Linq patterns for collection searching:
 
-<<< @/../src/Marten.Testing/Examples/Searching_Within_Child_Collections.cs#sample_searching_within_child_collections
+<!-- snippet: sample_searching_within_child_collections -->
+<!-- endSnippet -->
 
 You can search on equality of multiple fields or properties within the child collection
 using the `&&` operator:
 
-<<< @/../src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#sample_any-query-through-child-collection-with-and
+<!-- snippet: sample_any-query-through-child-collection-with-and -->
+<!-- endSnippet -->
 
 Finally, you can query for child collections that do **not** contain a value:
 
-<<< @/../src/Marten.Testing/Bugs/Bug_561_negation_of_query_on_contains.cs#sample_negated-contains
+<!-- snippet: sample_negated-contains -->
+<!-- endSnippet -->
 
 ## Searching for NULL Values
 
 Regardless of your feelings about _NULL_, they do exist in databases and Marten allows you to search for documents that have (or don't have) null values:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_query_by_nullable_types
+<!-- snippet: sample_query_by_nullable_types -->
+<!-- endSnippet -->
 
 ## Deep Queries
 
 Marten's Linq support will allow you to make "deep" searches on properties of properties (or fields):
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_deep_nested_properties
+<!-- snippet: sample_deep_nested_properties -->
+<!-- endSnippet -->
 
 ## Searching on String Fields
 
 Marten supports a subset of the common sub/string searches:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_searching_within_string_fields
+<!-- snippet: sample_searching_within_string_fields -->
+<!-- endSnippet -->
 
 Marten also supports case insensitive substring searches:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_searching_within_case_insensitive_string_fields
+<!-- snippet: sample_searching_within_case_insensitive_string_fields -->
+<!-- endSnippet -->
 
 A shorthand for case-insensitive string matching is provided through `EqualsIgnoreCase` (string extension method in *Baseline*):
 
-<<< @/../src/Marten.Testing/Linq/EqualsIgnoreCase_filtering.cs#sample_sample-linq-EqualsIgnoreCase
+<!-- snippet: sample_sample-linq-EqualsIgnoreCase -->
+<!-- endSnippet -->
 
 This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type.
 
@@ -73,75 +85,88 @@ This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase
 
 Marten supports the `IQueryable.Count()` method:
 
-<<< @/../src/Marten.Testing/Linq/invoking_queryable_count_Tests.cs#sample_using_count
+<!-- snippet: sample_using_count -->
+<!-- endSnippet -->
 
 ## Min()
 
 Marten supports the `IQueryable.Min()` method:
 
-<<< @/../src/Marten.Testing/Linq/query_with_aggregate_functions.cs#sample_using_min
+<!-- snippet: sample_using_min -->
+<!-- endSnippet -->
 
 ## Max()
 
 Marten supports the `IQueryable.Max()` method:
 
-<<< @/../src/Marten.Testing/Linq/query_with_aggregate_functions.cs#sample_using_max
+<!-- snippet: sample_using_max -->
+<!-- endSnippet -->
 
 ## Average()
 
 Marten supports the `IQueryable.Average()` method:
 
-<<< @/../src/Marten.Testing/Linq/query_with_aggregate_functions.cs#sample_using_average
+<!-- snippet: sample_using_average -->
+<!-- endSnippet -->
 
 ## Sum()
 
 Marten supports the `IQueryable.Sum()` method:
 
-<<< @/../src/Marten.Testing/Linq/query_for_sum_Tests.cs#sample_using_sum
+<!-- snippet: sample_using_sum -->
+<!-- endSnippet -->
 
 ## Ordering Results
 
 Marten contains support for expressing ordering in both ascending and descending order in Linq queries:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_ordering-in-linq
+<!-- snippet: sample_ordering-in-linq -->
+<!-- endSnippet -->
 
 ## Take() and Skip() for Paging
 
 For simple paging, Marten supports the `IQueryable.Take()` and `IQueryable.Skip()` methods:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_using_take_and_skip
+<!-- snippet: sample_using_take_and_skip -->
+<!-- endSnippet -->
 
 ## Searching for a Single Document
 
 Marten supports the `IQueryable` methods for returning only a single document at a time:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_select_a_single_value
+<!-- snippet: sample_select_a_single_value -->
+<!-- endSnippet -->
 
 ## Querying within Value IEnumerables
 
 As of now, Marten allows you to do "contains" searches within Arrays, Lists & ILists of primitive values like string or numbers:
 
-<<< @/../src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#sample_query_against_string_array
+<!-- snippet: sample_query_against_string_array -->
+<!-- endSnippet -->
 
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
 
-<<< @/../src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#sample_query_any_string_array
+<!-- snippet: sample_query_any_string_array -->
+<!-- endSnippet -->
 
 As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
 operators (`==`, `>`, `>=`, etc.):
 
-<<< @/../src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#sample_query_against_number_list_with_count_method
+<!-- snippet: sample_query_against_number_list_with_count_method -->
+<!-- endSnippet -->
 
 ## SelectMany()
 
 Marten 1.2 adds the ability to use the `SelectMany()` operator to issue queries against child collections. You can use
 `SelectMany()` against primitive collections like so:
 
-<<< @/../src/Marten.Testing/Linq/query_with_select_many.cs#sample_can_do_simple_select_many_against_simple_array
+<!-- snippet: sample_can_do_simple_select_many_against_simple_array -->
+<!-- endSnippet -->
 
 Or against collections of child documents:
 
-<<< @/../src/Marten.Testing/Linq/query_with_select_many.cs#sample_using-select-many
+<!-- snippet: sample_using-select-many -->
+<!-- endSnippet -->
 
 A few notes on the `SelectMany()` usage and limitations:
 
@@ -155,78 +180,93 @@ A few notes on the `SelectMany()` usage and limitations:
 
 New in Marten 1.2 is support for the Linq `Distinct()` operator:
 
-<<< @/../src/Marten.Testing/Linq/query_with_distinct_Tests.cs#sample_get_distinct_strings
+<!-- snippet: sample_get_distinct_strings -->
+<!-- endSnippet -->
 
 Do note that the `Distinct()` keyword can be used with `Select()` transforms as well:
 
-<<< @/../src/Marten.Testing/Linq/query_with_distinct_Tests.cs#sample_get_distinct_numbers
+<!-- snippet: sample_get_distinct_numbers -->
+<!-- endSnippet -->
 
 ## Searching with Boolean Flags
 
 Linq queries against boolean properties can use shorthand mechanisms in `Where()` clauses like so:
 
-<<< @/../src/Marten.Testing/Examples/LinqExamples.cs#sample_boolean_queries
+<!-- snippet: sample_boolean_queries -->
+<!-- endSnippet -->
 
 ## Use MatchesSql(sql) to search using raw SQL
 
 Combine your Linq queries with raw SQL using the `MatchesSql(sql)` method like so:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/query_by_sql_where_clause_Tests.cs#sample_query_with_matches_sql
+<!-- snippet: sample_query_with_matches_sql -->
+<!-- endSnippet -->
 
 ## IsOneOf
 
 `IsOneOf()` extension can be used to query for documents having
 a field or property matching one of many supplied values:
 
-<<< @/../src/Marten.Testing/Examples/IsOneOfExamples.cs#sample_is_one_of
+<!-- snippet: sample_is_one_of -->
+<!-- endSnippet -->
 
 To find one of for an array you can use this strategy:
 
-<<< @/../src/Marten.Testing/Examples/IsOneOfExamples.cs#sample_is_one_of_array
+<!-- snippet: sample_is_one_of_array -->
+<!-- endSnippet -->
 
 To find one of for a list you can use this strategy:
 
-<<< @/../src/Marten.Testing/Examples/IsOneOfExamples.cs#sample_is_one_of_list
+<!-- snippet: sample_is_one_of_list -->
+<!-- endSnippet -->
 
 ## In
 
 `In()` extension works exactly the same as `IsOneOf()`. It was introduced as syntactic sugar to ease RavenDB transition:
 
-<<< @/../src/Marten.Testing/Examples/InExamples.cs#sample_in
+<!-- snippet: sample_in -->
+<!-- endSnippet -->
 
 To find one of for an array you can use this strategy:
 
-<<< @/../src/Marten.Testing/Examples/InExamples.cs#sample_in_array
+<!-- snippet: sample_in_array -->
+<!-- endSnippet -->
 
 To find one of for a list you can use this strategy:
 
-<<< @/../src/Marten.Testing/Examples/InExamples.cs#sample_in_list
+<!-- snippet: sample_in_list -->
+<!-- endSnippet -->
 
 ## IsSupersetOf
 
-<<< @/../src/Marten.Testing/Linq/query_with_IsSuperSetOf_Tests.cs#sample_is_superset_of
+<!-- snippet: sample_is_superset_of -->
+<!-- endSnippet -->
 
 ## IsSubsetOf
 
-<<< @/../src/Marten.Testing/Linq/query_with_IsSubsetOf_Tests.cs#sample_is_subset_of
+<!-- snippet: sample_is_subset_of -->
+<!-- endSnippet -->
 
 ## Modulo Queries
 
 Marten has the ability to use the modulo operator in Linq queries:
 
-<<< @/../src/Marten.Testing/Linq/query_with_modulo_Tests.cs#sample_querying-with-modulo
+<!-- snippet: sample_querying-with-modulo -->
+<!-- endSnippet -->
 
 ## AnyTenant
 
 Query data from all tenants using `AnyTenant` method.
 
-<<< @/../src/Marten.Testing/Acceptance/multi_tenancy.cs#sample_any_tenant
+<!-- snippet: sample_any_tenant -->
+<!-- endSnippet -->
 
 ## TenantIsOneOf
 
 Use `TenantIsOneOf` to query on a selected list of tenants.
 
-<<< @/../src/Marten.Testing/Acceptance/multi_tenancy.cs#sample_tenant_is_one_of
+<!-- snippet: sample_tenant_is_one_of -->
+<!-- endSnippet -->
 
 ## Text Search
 
@@ -235,27 +275,33 @@ Currently three types of full Text Search functions are supported:
 
 * regular Search (to_tsquery)
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_search_in_query_sample
+<!-- snippet: sample_search_in_query_sample -->
+<!-- endSnippet -->
 
 * plain text Search (plainto_tsquery)
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_plain_search_in_query_sample
+<!-- snippet: sample_plain_search_in_query_sample -->
+<!-- endSnippet -->
 
 * phrase Search (phraseto_tsquery)
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_phrase_search_in_query_sample
+<!-- snippet: sample_phrase_search_in_query_sample -->
+<!-- endSnippet -->
 
 * web-style Search (websearch_to_tsquery, [supported from Postgres 11+](https://www.postgresql.org/docs/11/textsearch-controls.html)
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_web_search_in_query_sample
+<!-- snippet: sample_web_search_in_query_sample -->
+<!-- endSnippet -->
 
 All types of Text Searches can be combined with other Linq queries
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_text_search_combined_with_other_query_sample
+<!-- snippet: sample_text_search_combined_with_other_query_sample -->
+<!-- endSnippet -->
 
 They allow also to specify language (regConfig) of the text search query (by default `english` is being used)
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_text_search_with_non_default_regConfig_sample
+<!-- snippet: sample_text_search_with_non_default_regConfig_sample -->
+<!-- endSnippet -->
 
 ## Supported Types
 

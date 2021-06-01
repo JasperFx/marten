@@ -8,14 +8,16 @@ a document from the database just to turn around and delete it. Deletions are ex
 
 The usage is shown below:
 
-<<< @/../src/Marten.Testing/Examples/Deletes.cs#sample_deletes
+<!-- snippet: sample_deletes -->
+<!-- endSnippet -->
 
 
 ## Delete by Linq Queries
 
 New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new `IDocumentSession.DeleteWhere<T>()` method:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/delete_many_documents_by_query_Tests.cs#sample_DeleteWhere
+<!-- snippet: sample_DeleteWhere -->
+<!-- endSnippet -->
 
 A couple things to note:
 

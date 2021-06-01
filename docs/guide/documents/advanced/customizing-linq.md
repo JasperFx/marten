@@ -24,8 +24,10 @@ different queries for "IsBlue()." First, write the method you want to be recogni
  The `IMethodCallParser` interface needs to match on method expressions that it could parse, and be able to turn the Linq expression into
  part of a Postgresql "where" clause. The custom Linq parser for `IsBlue()` is shown below:
 
-<<< @/../src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#sample_custom-extension-for-linq
+<!-- snippet: sample_custom-extension-for-linq -->
+<!-- endSnippet -->
 
 Lastly, to plug in our new parser, we can add that to the `StoreOptions` object that we use to bootstrap a new `DocumentStore` as shown below:
 
-<<< @/../src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#sample_using_custom_linq_parser
+<!-- snippet: sample_using_custom_linq_parser -->
+<!-- endSnippet -->

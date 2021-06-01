@@ -6,7 +6,8 @@ a smooth "getting started" story, Marten comes out of the box with support for a
 
 Internally, Marten uses an adapter interface for JSON serialization:
 
-<<< @/../src/Marten/ISerializer.cs#sample_ISerializer
+<!-- snippet: sample_ISerializer -->
+<!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it
 into the `DocumentStore` (there's an example of doing that in the section on using Jil).
