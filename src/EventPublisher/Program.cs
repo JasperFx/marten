@@ -54,6 +54,12 @@ namespace EventPublisher
 
                         await Task.Delay(delay.Milliseconds());
                         await PublishEvents();
+
+                        using (var session = _store.LightweightSession())
+                        {
+                            var count = await session.Events.QueryAllRawEvents().CountAsync();
+                            Console.WriteLine($"Published {count} total events");
+                        }
                     }
                 });
             }
