@@ -9,7 +9,8 @@ To make that concrete, let's say you have a document type named `User` that has 
 called `SuperUser` and `AdminUser`. To use the document hierarchy storage, we need to tell Marten that
 `SuperUser` and `AdminUser` should just be stored as subclasses of `User` like this:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_configure-hierarchy-of-types
+<!-- snippet: sample_configure-hierarchy-of-types -->
+<!-- endSnippet -->
 
 With the configuration above, you can now query by `User` and get `AdminUser` and `SuperUser` documents as part of the results,
 or query directly for any of the subclasses to limit the query.
@@ -33,19 +34,23 @@ Say you have a document type named `ISmurf` that is implemented by `Smurf`. Now,
 subclasses called `PapaSmurf` and `PapySmurf` and that both implement `IPapaSmurf` and that `PapaSmurf` has the subclass
 `BrainySmurf` like so:
 
-<<< @/../src/Marten.Testing/Linq/query_with_inheritance.cs#sample_smurfs-hierarchy
+<!-- snippet: sample_smurfs-hierarchy -->
+<!-- endSnippet -->
 
 If you wish to query over one of hierarchy classes and be able to get all of its documents as well as its subclasses,
 first you will need to map the hierarchy like so:
 
-<<< @/../src/Marten.Testing/Linq/query_with_inheritance.cs#sample_add-subclass-hierarchy
+<!-- snippet: sample_add-subclass-hierarchy -->
+<!-- endSnippet -->
 
 Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map
 and its alias. Since `Type` implicitly converts to `MappedType` and the methods takes in `params MappedType[]`, you could
 use a mix of both like so:
 
-<<< @/../src/Marten.Testing/Linq/query_with_inheritance.cs#sample_add-subclass-hierarchy-with-aliases
+<!-- snippet: sample_add-subclass-hierarchy-with-aliases -->
+<!-- endSnippet -->
 
 Now you can query the "complex" hierarchy in the following ways:
 
-<<< @/../src/Marten.Testing/Linq/query_with_inheritance.cs#sample_query-subclass-hierarchy
+<!-- snippet: sample_query-subclass-hierarchy -->
+<!-- endSnippet -->

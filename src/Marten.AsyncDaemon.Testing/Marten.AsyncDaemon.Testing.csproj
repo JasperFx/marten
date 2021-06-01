@@ -16,4 +16,10 @@
       <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
       <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="MarkdownSnippets.MsBuild" Version="23.1.4">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
 </Project>

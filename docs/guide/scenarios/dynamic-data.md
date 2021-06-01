@@ -6,12 +6,15 @@ This scenario demonstrates how to store and query non-uniform documents via the 
 
 Let us assume we have a document with non-uniform records, presenting temperature sensor data whereby individual records are identified either via the field _detector_ or _sensor_.
 
-<<< @/../src/Marten.Testing/Scenarios/persist_and_query_via_dynamic.cs#sample_sample-scenarios-dynamic-records
+<!-- snippet: sample_sample-scenarios-dynamic-records -->
+<!-- endSnippet -->
 
 To store and later read back these records, we create a wrapper type with a `dynamic` property to present our record.
 
-<<< @/../src/Marten.Testing/Scenarios/persist_and_query_via_dynamic.cs#sample_sample-scenarios-dynamic-type
+<!-- snippet: sample_sample-scenarios-dynamic-type -->
+<!-- endSnippet -->
 
 We then read and serialize our records into our newly introduced intermediate type and persist an array of its instances via `BulkInsert`. Lastly, we read back the records, via the non-generic `Query` extension method, passing in predicates that take into account the non-uniform fields of the source documents. After reading back the data for _sensor-1_, we calculate the average of its recorded temperatures:
 
-<<< @/../src/Marten.Testing/Scenarios/persist_and_query_via_dynamic.cs#sample_sample-scenarios-dynamic-insertandquery
+<!-- snippet: sample_sample-scenarios-dynamic-insertandquery -->
+<!-- endSnippet -->

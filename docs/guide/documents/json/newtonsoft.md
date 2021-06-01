@@ -5,11 +5,13 @@ because of its flexibility and ability to handle polymorphism within child colle
 
 Out of the box, Marten uses this configuration for Newtonsoft.Json:
 
-<<< @/../src/Marten/Services/JsonNetSerializer.cs#sample_newtonsoft-configuration
+<!-- snippet: sample_newtonsoft-configuration -->
+<!-- endSnippet -->
 
 To customize the Newtonsoft.Json serialization, you need to explicitly supply an instance of Marten's `JsonNetSerializer` as shown below:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_customize_json_net_serialization
+<!-- snippet: sample_customize_json_net_serialization -->
+<!-- endSnippet -->
 
 ::: tip INFO
 You should not override the Newtonsoft.Json `ContractResolver` with `CamelCasePropertyNamesContractResolver` for Json Serialization. Newtonsoft.Json by default respects the casing used in property / field names which is typically PascalCase.
@@ -24,7 +26,8 @@ Marten allows how enum values are being stored. By default, they are stored as i
 
 To do that you need to change the serialization settings in the `DocumentStore` options.
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_customize_json_net_enum_storage_serialization
+<!-- snippet: sample_customize_json_net_enum_storage_serialization -->
+<!-- endSnippet -->
 
 ## Fields Names Casing
 
@@ -37,9 +40,11 @@ You can have them also automatically formatted to:
 
 by changing the serialization settings in the `DocumentStore` options.
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_customize_json_net_camelcase_casing_serialization
+<!-- snippet: sample_customize_json_net_camelcase_casing_serialization -->
+<!-- endSnippet -->
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_customize_json_net_snakecase_casing_serialization
+<!-- snippet: sample_customize_json_net_snakecase_casing_serialization -->
+<!-- endSnippet -->
 
 ## Collection Storage
 
@@ -56,7 +61,8 @@ That improves the nested collections queries handling.
 
 To do that you need to change the serialization settings in the `DocumentStore` options.
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_customize_json_net_snakecase_collectionstorage
+<!-- snippet: sample_customize_json_net_snakecase_collectionstorage -->
+<!-- endSnippet -->
 
 ## Non Public Members Storage
 
@@ -64,4 +70,5 @@ By default `Newtonsoft.Json` only deserializes properties with public setters.
 
 You can allow deserialisation of properties with non-public setters by changing the serialization settings in the `DocumentStore` options.
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters
+<!-- snippet: sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters -->
+<!-- endSnippet -->

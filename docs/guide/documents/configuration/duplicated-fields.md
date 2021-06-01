@@ -8,11 +8,13 @@ queries using the duplicated field.
 
 To create a duplicated field, you can use the `[DuplicateField]` attribute like this:
 
-<<< @/../src/Marten.Testing/Examples/MartenRegistryExamples.cs#sample_using_attributes_on_document
+<!-- snippet: sample_using_attributes_on_document -->
+<!-- endSnippet -->
 
 Or by using the fluent interface off of `StoreOptions`:
 
-<<< @/../src/Marten.Testing/Examples/MartenRegistryExamples.cs#sample_IndexExamples
+<!-- snippet: sample_IndexExamples -->
+<!-- endSnippet -->
 
 In the case above, Marten would add an extra columns to the generated `mt_doc_user` table with `first_name` and `department`. Some users find duplicated fields to be useful for user supplied SQL queries.
 

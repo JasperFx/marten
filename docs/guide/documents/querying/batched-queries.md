@@ -11,7 +11,8 @@ the data returned and sets the results of the `Task` objects handed out earlier.
 
 This functionality is demonstrated below:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_using-batch-query
+<!-- snippet: sample_using-batch-query -->
+<!-- endSnippet -->
 
 ## Combining Compiled Queries and Batch Queries
 
@@ -19,16 +20,19 @@ As of v0.8.10, Marten allows you to incorporate <[linkto:documentation/documents
 
 Say you have a compiled query that finds the first user with a given first name:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_FindByFirstName
+<!-- snippet: sample_FindByFirstName -->
+<!-- endSnippet -->
 
 To use that compiled query class in a batch query, you simply use the `IBatchedQuery.Query(ICompiledQuery)` syntax shown below:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_batch-query-with-compiled-queries
+<!-- snippet: sample_batch-query-with-compiled-queries -->
+<!-- endSnippet -->
 
 ## Running Synchronously
 
 As of v0.9.1, Marten also exposes the batch querying functionality with a synchronous option:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_batch-query-with-compiled-queries-synchronously
+<!-- snippet: sample_batch-query-with-compiled-queries-synchronously -->
+<!-- endSnippet -->
 
 The mechanics of running synchronously are identical except for calling `IBatchedQuery.ExecuteSynchronously()`.

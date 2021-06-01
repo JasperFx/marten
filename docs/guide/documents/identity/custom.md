@@ -2,7 +2,8 @@
 
 A custom ID generator strategy should implement [IIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/IIdGeneration.cs).
 
-<<< @/../src/Marten.Schema.Testing/Identity/Sequences/CustomKeyGenerationTests.cs#sample_custom-id-generation
+<!-- snippet: sample_custom-id-generation -->
+<!-- endSnippet -->
 
 The `Build()` method should return the actual `IdGenerator<T>` for the document type, where `T` is the type of the Id field.
 
@@ -10,8 +11,10 @@ For more advances examples you can have a look at existing ID generator: [HiloId
 
 To use custom id generation you should enabled it when configuring the document store. This defines that the strategy will be used for all the documents types.
 
-<<< @/../src/Marten.Schema.Testing/Identity/Sequences/CustomKeyGenerationTests.cs#sample_configuring-global-custom
+<!-- snippet: sample_configuring-global-custom -->
+<!-- endSnippet -->
 
 It is also possible define a custom id generation algorithm for a specific document type.
 
-<<< @/../src/Marten.Schema.Testing/Identity/Sequences/CustomKeyGenerationTests.cs#sample_configuring-mapping-specific-custom
+<!-- snippet: sample_configuring-mapping-specific-custom -->
+<!-- endSnippet -->

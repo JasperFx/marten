@@ -12,10 +12,12 @@ Tenancy can be configured at the store level, applying to all documents or, at t
 
 Tenancy can be configured through Document Policies, accesible via `StoreOptions.Policies`. The following sample demonstrates setting the default tenancy to `TenancyStyle.Conjoined` for all documents.
 
-<<< @/../src/Marten.Testing/Examples/MultiTenancy.cs#sample_tenancy-configure-through-policy
+<!-- snippet: sample_tenancy-configure-through-policy -->
+<!-- endSnippet -->
 
 ## Tenancy At Document Level & Policy Overrides
 
 Tenancy can be configured at a document level through document mappings. This also enables overriding store-level configurations applied through Document Policies. The following sample demonstrates setting, through `StoreOptions` the tenancy for `Target` to `TenancyStyle.Conjoined`, making it deviate from the configured default policy of `TenancyStyle.Single`.
 
-<<< @/../src/Marten.Testing/Acceptance/document_policies_can_be_overridden_by_attributes.cs#sample_tenancy-configure-override
+<!-- snippet: sample_tenancy-configure-override -->
+<!-- endSnippet -->

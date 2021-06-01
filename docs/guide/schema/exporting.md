@@ -4,7 +4,8 @@ In production, you
 may either not have rights to generate new tables at runtime or simply not wish to do that. In that case, Marten exposes some ability to dump all
 the SQL for creating these objects for *all the known document types* from `IDocumentStore` like this:
 
-<<< @/../src/Marten.Testing/Examples/ExportingDDL.cs#sample_export-ddl
+<!-- snippet: sample_export-ddl -->
+<!-- endSnippet -->
 
 As of v0.8, this export will include the Hilo id generation table and all the objects necessary to use the event store functionality if that is enabled.
 

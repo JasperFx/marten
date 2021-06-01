@@ -6,25 +6,30 @@ Marten has now the capacity to run [projection queries](https://en.wikipedia.org
 
 When you wish to retrieve an IEnumerable of a certain document property for example:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_one_field_projection
+<!-- snippet: sample_one_field_projection -->
+<!-- endSnippet -->
 
 When you wish to retrieve certain properties and transform them into another type:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_other_type_projection
+<!-- snippet: sample_other_type_projection -->
+<!-- endSnippet -->
 
 When you wish to retrieve certain properties and transform them into an anonymous type:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_anonymous_type_projection
+<!-- snippet: sample_anonymous_type_projection -->
+<!-- endSnippet -->
 
 Marten also allows you to run projection queries on deep (nested) properties:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_deep_properties_projection
+<!-- snippet: sample_deep_properties_projection -->
+<!-- endSnippet -->
 
 ## Chaining other Linq Methods
 
 After calling Select, you'd be able to chain other linq methods such as `First()`, `FirstOrDefault()`, `Single()` and so on, like so:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_get_first_projection
+<!-- snippet: sample_get_first_projection -->
+<!-- endSnippet -->
 
 ## Async Projections
 

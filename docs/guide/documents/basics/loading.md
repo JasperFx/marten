@@ -4,8 +4,10 @@ Documents can be loaded by id from the `IQuerySession` interface (and so also `I
 
 ## Synchronous Loading
 
-<<< @/../src/Marten.Testing/Examples/Load_by_Id.cs#sample_load_by_id
+<!-- snippet: sample_load_by_id -->
+<!-- endSnippet -->
 
 ## Asynchronous Loading
 
-<<< @/../src/Marten.Testing/Examples/Load_by_Id.cs#sample_async_load_by_id
+<!-- snippet: sample_async_load_by_id -->
+<!-- endSnippet -->

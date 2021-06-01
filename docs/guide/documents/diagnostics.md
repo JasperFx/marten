@@ -10,11 +10,13 @@ For information on accessing and previewing the database schema objects generate
 
 Marten has a facility for listening and even intercepting document persistence events with the `IDocumentSessionListener` interface:
 
-<<< @/../src/Marten/IDocumentSessionListener.cs#sample_IDocumentSessionListener
+<!-- snippet: sample_IDocumentSessionListener -->
+<!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/Using_Local_DocumentSessionListener_Tests.cs#sample_registering-a-document-session-listener
+<!-- snippet: sample_registering-a-document-session-listener -->
+<!-- endSnippet -->
 
 The listeners can be used to modify an `IDocumentSession` and its related unit of work just before persisting. Marten itself will be using this mechanism
 internally to perform projections in the future.
@@ -22,7 +24,8 @@ internally to perform projections in the future.
 The following fake, sample listener demonstrates how you can query into the pending changes before making a transactional commit, and also how to
 query what was done after a commit is made:
 
-<<< @/../src/Marten.Testing/Examples/SimpleSessionListener.cs#sample_writing_custom_session_listener
+<!-- snippet: sample_writing_custom_session_listener -->
+<!-- endSnippet -->
 
 As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the
 `DocumentStore.OpenSession(SessionOptions)` signature.
@@ -31,19 +34,23 @@ As of Marten 1.4, you can also register `IDocumentSessionListener` objects scope
 
 Marten v0.8 comes with a new mechanism to plug in custom logging to the `IDocumentStore`, `IQuerySession`, and `IDocumentSession` activity:
 
-<<< @/../src/Marten/IMartenLogger.cs#sample_IMartenLogger
+<!-- snippet: sample_IMartenLogger -->
+<!-- endSnippet -->
 
 To apply these logging abstractions, you can either plug your own `IMartenLogger` into the `StoreOptions` object and allow that default logger to create the individual session loggers:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#sample_plugging-in-marten-logger
+<!-- snippet: sample_plugging-in-marten-logger -->
+<!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#sample_plugging-in-session-logger
+<!-- snippet: sample_plugging-in-session-logger -->
+<!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
 
-<<< @/../src/Marten/IMartenLogger.cs#sample_ConsoleMartenLogger
+<!-- snippet: sample_ConsoleMartenLogger -->
+<!-- endSnippet -->
 
 ## Accessing Diagnostics
 
@@ -53,11 +60,13 @@ All the diagnostics are going to be exposed off of the `IDocumentStore.Diagnosti
 
 Let's say that we have a small document type called `Trade`:
 
-<<< @/../src/Marten.Testing/Examples/DiagnosticsExamples.cs#sample_trade_document_type
+<!-- snippet: sample_trade_document_type -->
+<!-- endSnippet -->
 
 The `[DuplicateField]` attribute directs Marten to duplicate the value of `Value` into a separate database field for more efficient querying. Now, let's say that we want to search for every `Trade` document with a value of over 2,000, but we want to see the SQL query that Marten will build for that query first:
 
-<<< @/../src/Marten.Testing/Examples/DiagnosticsExamples.cs#sample_preview_linq_command
+<!-- snippet: sample_preview_linq_command -->
+<!-- endSnippet -->
 
 The sql string in our debug window for the code above is:
 
@@ -69,7 +78,8 @@ select d.data from mt_doc_trade as d where d.value > :arg0
 
 Marten has a helper to find and preview the [PostgreSQL EXPLAIN plan](http://www.postgresql.org/docs/9.5/static/using-explain.html) for a Linq query. Our hope is that this will be a valuable aid to teams who need face performance problems while using Marten. The syntax for fetching the EXPLAIN plan for the Linq query from the previous section is shown below:
 
-<<< @/../src/Marten.Testing/Examples/DiagnosticsExamples.cs#sample_preview_linq_explain_plan
+<!-- snippet: sample_preview_linq_explain_plan -->
+<!-- endSnippet -->
 
 The console output for the code below (on my box) was:
 
@@ -88,7 +98,8 @@ PlanWidth: 36
 Marten has several facilities for improving system performance by reducing the number of network round trips to the server, but the first step maybe to
 just understand what kinds of operations are being chatty in the first place. To that end, Marten exposes the request count for each `IQuerySession` or `IDocumentSession` that simply tells you how many commands have been issued to Postgresql by that session:
 
-<<< @/../src/Marten.Testing/Examples/DiagnosticsExamples.cs#sample_using_request_count
+<!-- snippet: sample_using_request_count -->
+<!-- endSnippet -->
 
 At this point, Marten does not have any built in support for asserting requests per session thresholds like other tools. While I think that we are uncomfortable with that functionality ever being turned on in production, it should be easily feasible to build those kinds of automated threshold testing like "fail the test if there were more than 25 requests issued for any given HTTP request."
 
@@ -96,4 +107,5 @@ At this point, Marten does not have any built in support for asserting requests 
 
 Marten provides a helper method to fetch the PostgreSQL server version exposed via `IDocumentStore.Diagnostics`. This is helpful to enable feature toggles based on features available in PostgreSQL versions or perform any diagnostics.
 
-<<< @/../src/Marten.Testing/CoreFunctionality/ability_to_fetch_postgres_server_version.cs#sample_get_postgres_version
+<!-- snippet: sample_get_postgres_version -->
+<!-- endSnippet -->

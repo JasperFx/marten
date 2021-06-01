@@ -10,16 +10,20 @@ and there's nothing to install other than the Marten NuGet.
 
 Because I’ve read way too much epic fantasy fiction, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest, you may want to record events like:
 
-<<< @/../src/Marten.Testing/Events/QuestTypes.cs#sample_sample-events
+<!-- snippet: sample_sample-events -->
+<!-- endSnippet -->
 
 Now, let's say that we're starting a new "quest" with the first couple of events, then appending a couple more as other quest party members join up:
 
-<<< @/../src/Marten.Testing/Examples/event_store_quickstart.cs#sample_event-store-start-stream-with-explicit-type
+<!-- snippet: sample_event-store-start-stream-with-explicit-type -->
+<!-- endSnippet -->
 
 In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
 
-<<< @/../src/Marten.Testing/Examples/event_store_quickstart.cs#sample_event-store-quickstart
+<!-- snippet: sample_event-store-quickstart -->
+<!-- endSnippet -->
 
 It has also overload to create streams without associating them with aggregate type (stored in `mt_streams` table).
 
-<<< @/../src/Marten.Testing/Examples/event_store_quickstart.cs#sample_event-store-start-stream-with-explicit-type
+<!-- snippet: sample_event-store-start-stream-with-explicit-type -->
+<!-- endSnippet -->

@@ -12,7 +12,8 @@ Full Text Indexes can be created using the fluent interface of `StoreOptions` li
 
 * one index for whole document - all document properties values will be indexed
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_whole_document_full_text_index_through_store_options_with_default
+<!-- snippet: sample_using_whole_document_full_text_index_through_store_options_with_default -->
+<!-- endSnippet -->
 
 ::: tip INFO
 If you don't specify language (regConfig) - by default it will be created with 'english' value.
@@ -20,23 +21,28 @@ If you don't specify language (regConfig) - by default it will be created with '
 
 * single property - there is possibility to specify specific property to be indexed
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_a_single_property_full_text_index_through_store_options_with_default
+<!-- snippet: sample_using_a_single_property_full_text_index_through_store_options_with_default -->
+<!-- endSnippet -->
 
 * single property with custom settings
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_a_single_property_full_text_index_through_store_options_with_custom_settings
+<!-- snippet: sample_using_a_single_property_full_text_index_through_store_options_with_custom_settings -->
+<!-- endSnippet -->
 
 * multiple properties
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_multiple_properties_full_text_index_through_store_options_with_default
+<!-- snippet: sample_using_multiple_properties_full_text_index_through_store_options_with_default -->
+<!-- endSnippet -->
 
 * multiple properties with custom settings
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_multiple_properties_full_text_index_through_store_options_with_custom_settings
+<!-- snippet: sample_using_multiple_properties_full_text_index_through_store_options_with_custom_settings -->
+<!-- endSnippet -->
 
 * more than one index for document with different languages (regConfig)
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_more_than_one_full_text_index_through_store_options_with_different_reg_config
+<!-- snippet: sample_using_more_than_one_full_text_index_through_store_options_with_different_reg_config -->
+<!-- endSnippet -->
 
 ## Defining Full Text  Index through Attribute
 
@@ -44,11 +50,13 @@ Full Text  Indexes can be created using the `[FullTextIndex]` attribute like thi
 
 * one index for whole document - by setting attribute on the class all document properties values will be indexed
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_a_full_text_index_through_attribute_on_class_with_default
+<!-- snippet: sample_using_a_full_text_index_through_attribute_on_class_with_default -->
+<!-- endSnippet -->
 
 * single property
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_a_single_property_full_text_index_through_attribute_with_default
+<!-- snippet: sample_using_a_single_property_full_text_index_through_attribute_with_default -->
+<!-- endSnippet -->
 
 ::: tip INFO
 If you don't specify regConfig - by default it will be created with 'english' value.
@@ -56,11 +64,13 @@ If you don't specify regConfig - by default it will be created with 'english' va
 
 * single property with custom settings
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings
+<!-- snippet: sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings -->
+<!-- endSnippet -->
 
 * multiple properties
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_multiple_properties_full_text_index_through_attribute_with_default
+<!-- snippet: sample_using_multiple_properties_full_text_index_through_attribute_with_default -->
+<!-- endSnippet -->
 
 ::: tip INFO
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
@@ -68,4 +78,5 @@ To group multiple properties into single index you need to specify the same valu
 
 * multiple indexes for multiple properties with custom settings
 
-<<< @/../src/Marten.Testing/Acceptance/full_text_index.cs#sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings
+<!-- snippet: sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings -->
+<!-- endSnippet -->

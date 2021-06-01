@@ -3,4 +3,5 @@
 By default, Marten just uses the underlying timeout configuration from the [Npgsql connection string](http://www.npgsql.org/doc/connection-string-parameters.html).
 You can though, opt to set a different command timeout per session with this syntax:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/SessionOptionsTests.cs#sample_ConfigureCommandTimeout
+<!-- snippet: sample_ConfigureCommandTimeout -->
+<!-- endSnippet -->

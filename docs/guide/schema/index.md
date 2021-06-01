@@ -7,7 +7,8 @@ In all cases, the Marten schema objects are all prefixed with `mt_.`
 As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the
 `StoreOptions.AutoCreateSchemaObjects` like so:
 
-<<< @/../src/Marten.Schema.Testing/auto_create_mode_Tests.cs#sample_AutoCreateSchemaObjects
+<!-- snippet: sample_AutoCreateSchemaObjects -->
+<!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
 
@@ -29,19 +30,22 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
 
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
 
-<<< @/../src/Marten.Schema.Testing/DocumentSchemaTests.cs#sample_override_schema_name
+<!-- snippet: sample_override_schema_name -->
+<!-- endSnippet -->
 
 The `Hilo` sequence table is always created in this document store database schema.
 
 If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:
 
-<<< @/../src/Marten.Schema.Testing/DocumentSchemaTests.cs#sample_override_schema_per_table
+<!-- snippet: sample_override_schema_per_table -->
+<!-- endSnippet -->
 
 This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
 
 ### Event Store
 The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.
 
-<<< @/../src/Marten.Testing/Events/using_the_schema_objects_Tests.cs#sample_override_schema_name_event_store
+<!-- snippet: sample_override_schema_name_event_store -->
+<!-- endSnippet -->
 
 This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the `event_store` schema.

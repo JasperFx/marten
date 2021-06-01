@@ -21,7 +21,8 @@ When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure 
 
 You can see some example id usages below:
 
-<<< @/../src/Marten.Testing/Examples/IdExamples.cs#sample_id_samples
+<!-- snippet: sample_id_samples -->
+<!-- endSnippet -->
 
 ## Overriding the Choice of Id Property/Field
 
@@ -29,8 +30,10 @@ If you really want to or you're migrating existing document types from another d
 the `[Identity]` attribute to force Marten to use a property or field as the identifier that doesn't match
 the "id" or "Id" or "ID" convention:
 
-<<< @/../src/Marten.Testing/Acceptance/using_natural_identity_keys.cs#sample_IdentityAttribute
+<!-- snippet: sample_IdentityAttribute -->
+<!-- endSnippet -->
 
 The identity property or field can also be configured through `StoreOptions` by using the `Schema` to obtain a document mapping:
 
-<<< @/../src/Marten.Testing/Acceptance/using_natural_identity_keys.cs#sample_sample-override-id-fluent-interance
+<!-- snippet: sample_sample-override-id-fluent-interance -->
+<!-- endSnippet -->

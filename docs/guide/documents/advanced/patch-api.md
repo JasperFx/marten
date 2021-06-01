@@ -27,30 +27,35 @@ In all cases, the property or field being updated can be a deep accessor like `T
 
 To apply a patch to all documents matching a given criteria, use the following syntax:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_set_an_immediate_property_by_where_clause
+<!-- snippet: sample_set_an_immediate_property_by_where_clause -->
+<!-- endSnippet -->
 
 ## Setting a single Property/Field
 
 The usage of `IDocumentSession.Patch().Set()` to change the value of a single persisted field is
 shown below:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_set_an_immediate_property_by_id
+<!-- snippet: sample_set_an_immediate_property_by_id -->
+<!-- endSnippet -->
 
 ## Initialize a new Property/Field
 
 To initialize a new property on existing documents:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_initialise_a_new_property_by_expression
+<!-- snippet: sample_initialise_a_new_property_by_expression -->
+<!-- endSnippet -->
 
 ## Duplicating an existing Property/Field
 
 To copy an existing value to a new location:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_duplicate_to_new_field
+<!-- snippet: sample_duplicate_to_new_field -->
+<!-- endSnippet -->
 
 The same value can be copied to multiple new locations:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_duplicate_to_multiple_new_fields
+<!-- snippet: sample_duplicate_to_multiple_new_fields -->
+<!-- endSnippet -->
 
 The new locations need not exist in the persisted document, null or absent parents will be initialized
 
@@ -58,11 +63,13 @@ The new locations need not exist in the persisted document, null or absent paren
 
 To increment a persisted value in the persisted document, use this operation:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_increment_for_int
+<!-- snippet: sample_increment_for_int -->
+<!-- endSnippet -->
 
 By default, the `Patch.Increment()` operation will add 1 to the existing value. You can optionally override the increment:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_increment_for_int_with_explicit_increment
+<!-- snippet: sample_increment_for_int_with_explicit_increment -->
+<!-- endSnippet -->
 
 ## Append an Element to a Child Collection
 
@@ -72,7 +79,8 @@ Because the Patching API depends on comparisons to the underlying serialized JSO
 
 The `Patch.Append()` operation adds a new item to the end of a child collection:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_append_complex_element
+<!-- snippet: sample_append_complex_element -->
+<!-- endSnippet -->
 
 The `Patch.AppendIfNotExists()` operation will treat the child collection as a set rather than a list and only append the element if it does not already exist within the collection
 
@@ -84,7 +92,8 @@ Instead of appending an item to the end of a child collection, the `Patch.Insert
 to insert a new item into a persisted collection with a given index -- with the default index
 being 0 so that a new item would be inserted at the beginning of the child collection.
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_insert_first_complex_element
+<!-- snippet: sample_insert_first_complex_element -->
+<!-- endSnippet -->
 
 The `Patch.InsertIfNotExists()` operation will only insert the element if the element at the designated index does not already exist.
 
@@ -92,15 +101,18 @@ The `Patch.InsertIfNotExists()` operation will only insert the element if the el
 
 The `Patch.Remove()` operation removes the given item from a child collection:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_remove_primitive_element
+<!-- snippet: sample_remove_primitive_element -->
+<!-- endSnippet -->
 
 Removing complex items can also be accomplished, matching is performed on all fields:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_remove_complex_element
+<!-- snippet: sample_remove_complex_element -->
+<!-- endSnippet -->
 
 To remove reoccurring values from a collection specify `RemoveAction.RemoveAll`:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_remove_repeated_primitive_element
+<!-- snippet: sample_remove_repeated_primitive_element -->
+<!-- endSnippet -->
 
 ## Rename a Property/Field
 
@@ -108,7 +120,8 @@ In the case of changing the name of a property or field in your document type th
 in your Marten database, you have the option to apply a patch that will move the value from the
 old name to the new name.
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_rename_deep_prop
+<!-- snippet: sample_rename_deep_prop -->
+<!-- endSnippet -->
 
 Renaming can be used on nested values.
 
@@ -119,16 +132,20 @@ to load, deserialize, edit and save all affected documents
 
 To delete a redundant property no longer available on the class use the string overload:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_delete_redundant_property
+<!-- snippet: sample_delete_redundant_property -->
+<!-- endSnippet -->
 
 To delete a redundant property nested on a child class specify a location lambda:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_delete_redundant_nested_property
+<!-- snippet: sample_delete_redundant_nested_property -->
+<!-- endSnippet -->
 
 A current property may be erased simply with a lambda:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_delete_existing_property
+<!-- snippet: sample_delete_existing_property -->
+<!-- endSnippet -->
 
 Many documents may be patched using a where expressions:
 
-<<< @/../src/Marten.Testing/Acceptance/patching_api.cs#sample_delete_property_from_many_documents
+<!-- snippet: sample_delete_property_from_many_documents -->
+<!-- endSnippet -->

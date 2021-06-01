@@ -49,7 +49,8 @@ By popular demand, Marten 3.12 added extension methods to quickly integrate Mart
 
 In the `Startup.ConfigureServices()` method of your .Net Core application (or you can use `IHostBuilder.ConfigureServices()` as well) make a call to `AddMarten()` to register Marten services like so:
 
-<<< @/../src/AspNetCoreWithMarten/Startup.cs#sample_StartupConfigureServices
+<!-- snippet: sample_StartupConfigureServices -->
+<!-- endSnippet -->
 
 See [integrating Marten in .NET Core applications](/guide/integration) for more information and options about this integration.
 
@@ -59,17 +60,20 @@ See [integrating Marten in .NET Core applications](/guide/integration) for more 
 To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with
 all the default behavior and a connection string:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_start_a_store
+<!-- snippet: sample_start_a_store -->
+<!-- endSnippet -->
 
 Now, for your first document type, let's represent the users in our system:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_user_document
+<!-- snippet: sample_user_document -->
+<!-- endSnippet -->
 
 _For more information on document id's, see [identity](/guide/documents/identity/)._
 
 And now that we've got a PostgreSQL schema and an `IDocumentStore`, let's start persisting and loading user documents:
 
-<<< @/../src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#sample_opening_sessions
+<!-- snippet: sample_opening_sessions -->
+<!-- endSnippet -->
 
 ## IoC container integration
 
@@ -83,7 +87,8 @@ use an IoC container specifically to manage dependencies and the life cycle of M
 
 Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we recommend registering Marten something like this:
 
-<<< @\..\src\Marten.Testing\DevelopmentModeRegistry.cs#sample_MartenServices
+<!-- snippet: sample_MartenServices -->
+<!-- endSnippet -->
 
 There are really only two key points here:
 
@@ -98,7 +103,8 @@ There is a lot more capabilities than what we're showing here, so head on over t
 
 Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
 
-<<< @/../src/Marten.Schema.Testing/create_database_Tests.cs#sample_marten_create_database
+<!-- snippet: sample_marten_create_database -->
+<!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behaviour to check for database existence from `pg_database`.
 

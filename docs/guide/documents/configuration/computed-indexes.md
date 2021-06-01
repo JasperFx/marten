@@ -12,7 +12,8 @@ to resort to a duplicated field for these types.
 
 If you want to optimize a document type for searches on a certain field within the JSON body without incurring the potential cost of the duplicated field, you can take advantage of Postgresql's [computed index feature](https://www.postgresql.org/docs/9.5/static/indexes-expressional.html) within Marten with this syntax:
 
-<<< @/../src/Marten.Testing/Acceptance/computed_indexes.cs#sample_using-a-simple-calculated-index
+<!-- snippet: sample_using-a-simple-calculated-index -->
+<!-- endSnippet -->
 
 In the configuration shown above, Marten generates a database index in Postgresql:
 
@@ -22,7 +23,8 @@ CREATE INDEX mt_doc_user_idx_user_name ON public.mt_doc_user ((data ->> 'UserNam
 
 You can also create calculated indexes for deep or nested properties like this:
 
-<<< @/../src/Marten.Testing/Acceptance/computed_indexes.cs#sample_deep-calculated-index
+<!-- snippet: sample_deep-calculated-index -->
+<!-- endSnippet -->
 
 The configuration above creates an index like this:
 
@@ -32,7 +34,8 @@ CREATE INDEX mt_doc_target_idx_inner_color ON public.mt_doc_target (((data -> 'I
 
 Or create calculated multi-property indexes like this:
 
-<<< @/../src/Marten.Testing/Examples/MultiPropertyCalculatedIndexExamples.cs#sample_multi-property-calculated-index
+<!-- snippet: sample_multi-property-calculated-index -->
+<!-- endSnippet -->
 
 The configuration above creates an index like this:
 
@@ -45,4 +48,5 @@ CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btr
 You have some ability to customize the calculated index by passing a second Lambda `Action` into
 the `Index()` method as shown below:
 
-<<< @/../src/Marten.Testing/Acceptance/computed_indexes.cs#sample_customizing-calculated-index
+<!-- snippet: sample_customizing-calculated-index -->
+<!-- endSnippet -->

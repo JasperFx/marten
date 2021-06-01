@@ -7,12 +7,14 @@ that also adds a foreign key constraint to enforce referential integrity between
 One of our sample document types in Marten is the `Issue` class that has
 a couple properties that link to the id's of related `User` documents:
 
-<<< @/../src/Marten.Testing/Documents/Issue.cs#sample_Issue
+<!-- snippet: sample_Issue -->
+<!-- endSnippet -->
 
 If I want to enforce referential integrity between the `Issue` document and the `User` documents,
 I can use this syntax shown below to configure Marten:
 
-<<< @/../src/Marten.Testing/Examples/ForeignKeyExamples.cs#sample_configure-foreign-key
+<!-- snippet: sample_configure-foreign-key -->
+<!-- endSnippet -->
 
 With the configuration above, Marten will make an `assignee_id` field in the database table and build a
 foreign key constraint to the `User` document like so:
@@ -37,7 +39,8 @@ to save the new user first so that the issue will not fail with referential inte
 Marten can also create a foreign key to tables that are not managed by Marten. Continuing the our sample
 of `Issue`, we can create a foreign key from our `Issue` to our external bug tracking system:
 
-<<< @/../src/Marten.Testing/Examples/ForeignKeyExamples.cs#sample_configure-external-foreign-key
+<!-- snippet: sample_configure-external-foreign-key -->
+<!-- endSnippet -->
 
 With the configuration above, Marten will generate a foreign key constraint from the `Issue` to a table in the
 `bug-tracker` schema called `bugs` on the `id` column.  The constraint would be defined as:
@@ -54,10 +57,12 @@ Marten can also cascade deletes on the foreign keys that it creates.  The `Forei
 `CascadeDeletes` property that indicates whether the foreign key should enable cascading deletes.  One way
 to enable this is to use a configuration function like:
 
-<<< @/../src/Marten.Testing/Examples/ForeignKeyExamples.cs#sample_cascade_deletes_with_config_func
+<!-- snippet: sample_cascade_deletes_with_config_func -->
+<!-- endSnippet -->
 
 ## Configuring with Attributes
 
 You can optionally configure properties or fields as foreign key relationships with the `[ForeignKey]` attribute:
 
-<<< @/../src/Marten.Schema.Testing/configuring_foreign_key_fields_Tests.cs#sample_issue-with-fk-attribute
+<!-- snippet: sample_issue-with-fk-attribute -->
+<!-- endSnippet -->

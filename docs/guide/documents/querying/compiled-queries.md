@@ -5,11 +5,13 @@ to express document queries in compiler-safe manner, but there is a non-trivial 
 
 All compiled queries are classes that implement the `ICompiledQuery<TDoc, TResult>` interface shown below:
 
-<<< @/../src/Marten/Linq/ICompiledQuery.cs#sample_ICompiledQuery
+<!-- snippet: sample_ICompiledQuery -->
+<!-- endSnippet -->
 
 In its simplest usage, let's say that we want to find the first user document with a certain first name. That class would look like this:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_FindByFirstName
+<!-- snippet: sample_FindByFirstName -->
+<!-- endSnippet -->
 
 So a couple things to note in the class above:
 
@@ -18,11 +20,13 @@ So a couple things to note in the class above:
 
 To use the `FindByFirstName` query, just use the code below:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_using-compiled-query
+<!-- snippet: sample_using-compiled-query -->
+<!-- endSnippet -->
 
 Or to use it as part of a batched query, this syntax:
 
-<<< @/../src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#sample_batch-query-with-compiled-queries
+<!-- snippet: sample_batch-query-with-compiled-queries -->
+<!-- endSnippet -->
 
 
 ## How does it work?
@@ -61,26 +65,31 @@ To query for multiple results, you need to just return the raw `IQueryable<T>` a
 
 If you are selecting the whole document without any kind of `Select()` transform, you can use this interface:
 
-<<< @/../src/Marten/Linq/ICompiledQuery.cs#sample_ICompiledListQuery-with-no-select
+<!-- snippet: sample_ICompiledListQuery-with-no-select -->
+<!-- endSnippet -->
 
 A sample usage of this type of query is shown below:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_UsersByFirstName-Query
+<!-- snippet: sample_UsersByFirstName-Query -->
+<!-- endSnippet -->
 
 If you do want to use a `Select()` transform, use this interface:
 
-<<< @/../src/Marten/Linq/ICompiledQuery.cs#sample_ICompiledListQuery-with-select
+<!-- snippet: sample_ICompiledListQuery-with-select -->
+<!-- endSnippet -->
 
 A sample usage of this type of query is shown below:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_UserNamesForFirstName
+<!-- snippet: sample_UserNamesForFirstName -->
+<!-- endSnippet -->
 
 ## Querying for included documents
 
 If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the (Include())(/guide/documents/querying/include) method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
 on the query:
 
-<<< @/../src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#sample_compiled_include
+<!-- snippet: sample_compiled_include -->
+<!-- endSnippet -->
 
 In this example, the query has an `Included` property which will receive the included Assignee / `User`. The 'resulting' included property can only be
 a property of the query, so that Marten would know how to assign the included result of the postgres query.
@@ -95,20 +104,23 @@ Fetching "included" documents could also be done when you wish to include multip
 So picking up the same example, if you wish to get a list of `Issue`s and for every Issue you wish to retrieve
 its' Assignee / `User`, in your compiled query you should have a list of `User`s like so:
 
-<<< @/../src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#sample_compiled_include_list
+<!-- snippet: sample_compiled_include_list -->
+<!-- endSnippet -->
 
 Note that you could either have the list instantiated or at least make sure the property has a setter as well as a getter (we've got your back).
 
 As with the simple include queries, you could also use a Dictionary with a key type corresponding to the Id of the document- the dictionary value type:
 
-<<< @/../src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#sample_compiled_include_dictionary
+<!-- snippet: sample_compiled_include_dictionary -->
+<!-- endSnippet -->
 
 ## Querying for paginated results
 
 Marten compiled queries also support queries for paginated results, where you could specify the page number and size, as well as getting the total count.
 A simple example of how this can be achieved as follows:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_statistics.cs#sample_compiled-query-statistics
+<!-- snippet: sample_compiled-query-statistics -->
+<!-- endSnippet -->
 
 Note that the way to get the `QueryStatistics` out is done by having a property on the query, which we specify in the `Stats()` method, similarly to the way
 we handle Include queries.
@@ -117,23 +129,26 @@ we handle Include queries.
 
 If you are querying for a single document with no transformation, you can use this interface as a convenience:
 
-<<< @/../src/Marten/Linq/ICompiledQuery.cs#sample_ICompiledQuery-for-single-doc
+<!-- snippet: sample_ICompiledQuery-for-single-doc -->
+<!-- endSnippet -->
 
 And an example:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_FindUserByAllTheThings
+<!-- snippet: sample_FindUserByAllTheThings -->
+<!-- endSnippet -->
 
 ## Querying for multiple results as Json
 
 To query for multiple results and have them returned as a Json string, you may run any query on your `IQueryable<T>` (be it ordering or filtering) and then simply finalize the query with `ToJsonArray();` like so:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_CompiledToJsonArray
+<!-- snippet: sample_CompiledToJsonArray -->
+<!-- endSnippet -->
 
 If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method.
 
 A sample usage of this type of query is shown below:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_FindJsonOrderedUsersByUsername
+<[sample:sample_FindJsonOrderedUsersByUsername]>
 
 Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
 
@@ -141,10 +156,11 @@ Note that the result has the documents comma separated and wrapped in angle brac
 
 Finally, if you are querying for a single document as json, you will need to prepend your call to `Single()`, `First()` and so on with a call to `AsJson()`:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_CompiledAsJson
+<!-- snippet: sample_CompiledAsJson -->
+<!-- endSnippet -->
 
 And an example:
 
-<<< @/../src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#sample_FindJsonUserByUsername
+<[sample:sample_FindJsonUserByUsername]>
 
 (our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)

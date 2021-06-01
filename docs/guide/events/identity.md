@@ -6,7 +6,8 @@ The Event Store in Marten can identify and index streams either as Guids (`Syste
 
 Configuration of the stream identity is done through `StoreOptions.Events.StreamIdentity`. If not set, Marten defaults to `StreamIdentity.AsGuid`. The identity is configured once per store, whereby different stream identity types cannot be mixed. The following sample demonstrates configuring streams to be identified as strings.
 
-<<< @/../src/Marten.Testing/Events/event_store_with_string_identifiers_for_stream.cs#sample_eventstore-configure-stream-identity
+<!-- snippet: sample_eventstore-configure-stream-identity -->
+<!-- endSnippet -->
 
 # Practical Implications
 

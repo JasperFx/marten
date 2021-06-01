@@ -5,11 +5,13 @@ flexible as Newtonsoft.Json and might be missing support for some scenarios you 
 
 To use Jil inside of Marten, add a class to your system like this one that implements the `ISerializer` interface:
 
-<<< @/../src/Marten.Testing/performance_tuning.cs#sample_JilSerializer
+<!-- snippet: sample_JilSerializer -->
+<!-- endSnippet -->
 
 Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
 
-<<< @/../src/Marten.Testing/performance_tuning.cs#sample_replacing_serializer_with_jil
+<!-- snippet: sample_replacing_serializer_with_jil -->
+<!-- endSnippet -->
 
 See [Optimizing for Performance in Marten](http://jeremydmiller.com/2015/11/09/optimizing-for-performance-in-marten/) 
 and [Optimizing Marten Part 2](http://jeremydmiller.com/2015/11/30/optimizing-marten-part-2/) for some performance comparisons 

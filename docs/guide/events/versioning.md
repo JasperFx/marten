@@ -23,15 +23,18 @@ Such mapping needs to be defined manually:
 
 For the case of namespace migration, it's enough to use `AddEventTypes` method as it's generating mapping based on the event type. As an example, change `OrderStatusChanged` event from:
 
-<<< @/../src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#sample_old_event_namespace
+<!-- snippet: sample_old_event_namespace -->
+<!-- endSnippet -->
 
 to:
 
-<<< @/../src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#sample_new_event_namespace
+<!-- snippet: sample_new_event_namespace -->
+<!-- endSnippet -->
 
 It's enough to register new event type as follows:
 
-<<< @/../src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#sample_event_namespace_migration_options
+<!-- snippet: sample_event_namespace_migration_options -->
+<!-- endSnippet -->
 
 After that Marten will automatically perform a matching based on the type name (that didn't change) - `order_status_changed`.
 
@@ -43,11 +46,13 @@ To do that you need to use `Events.EventMappingFor` method to define the type na
 
 Eg. for migrating `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`
 
-<<< @/../src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#sample_new_event_type_name
+<!-- snippet: sample_new_event_type_name -->
+<!-- endSnippet -->
 
 it's needed to register mapping using old event type name (`order_status_changed`) as follows:
 
-<<< @/../src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#sample_event_type_name_migration_options
+<!-- snippet: sample_event_type_name_migration_options -->
+<!-- endSnippet -->
 
 ::: warning
 In this case, both old `OrderStatusChanged` and new `ConfirmedOrderStatusChanged` event type names will get published with the same `order_status_changed` event type.

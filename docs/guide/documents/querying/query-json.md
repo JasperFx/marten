@@ -4,26 +4,32 @@ Added in Marten v0.6 is the ability to retrieve just the raw JSON string for a d
 
 As of v0.6, Marten supplies the `IQuerySession/IDocumentSession.FindById<T>()` mechanism as shown below:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/document_session_find_json_Tests.cs#sample_find-json-by-id
+<!-- snippet: sample_find-json-by-id -->
+<!-- endSnippet -->
 
 There is also an asynchronous version:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/document_session_find_json_async_Tests.cs#sample_find-json-by-id-async
+<!-- snippet: sample_find-json-by-id-async -->
+<!-- endSnippet -->
 
 As of v0.9, Marten supplies the following functionality to retrieve the raw JSON strings:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/get_raw_json_Tests.cs#sample_get-raw-json
+<!-- snippet: sample_get-raw-json -->
+<!-- endSnippet -->
 
 And the asynchronous version:
 
-<<< @/../src/Marten.Testing/CoreFunctionality/get_raw_json_Tests.cs#sample_get-raw-json-async
+<!-- snippet: sample_get-raw-json-async -->
+<!-- endSnippet -->
 
 ## Using AsJson() with Select() Transforms
 
 New for Marten v0.9.1 is the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_AsJson-plus-Select-1
+<!-- snippet: sample_AsJson-plus-Select-1 -->
+<!-- endSnippet -->
 
 And another example, but this time transforming to an anonymous type:
 
-<<< @/../src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#sample_AsJson-plus-Select-2
+<!-- snippet: sample_AsJson-plus-Select-2 -->
+<!-- endSnippet -->

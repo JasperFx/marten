@@ -12,11 +12,13 @@ Unique Indexes can be created using the fluent interface of `StoreOptions` like 
 
 - single property
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_single_property_computed_unique_index_through_store_options
+<!-- snippet: sample_using_a_single_property_computed_unique_index_through_store_options -->
+<!-- endSnippet -->
 
 - multiple properties
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_multiple_properties_computed_unique_index_through_store_options
+<!-- snippet: sample_using_a_multiple_properties_computed_unique_index_through_store_options -->
+<!-- endSnippet -->
 
 ::: tip INFO
 If you don't specify first parameter (index type) - by default it will be created as computed index.
@@ -26,11 +28,13 @@ If you don't specify first parameter (index type) - by default it will be create
 
 - single property
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_single_property_duplicate_field_unique_index_through_store_options
+<!-- snippet: sample_using_a_single_property_duplicate_field_unique_index_through_store_options -->
+<!-- endSnippet -->
 
 - multiple properties
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options
+<!-- snippet: sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options -->
+<!-- endSnippet -->
 
 ## Defining Unique Index through Attribute
 
@@ -40,11 +44,13 @@ Unique Indexes can be created using the `[UniqueIndex]` attribute like this:
 
 - single property
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_single_property_computed_unique_index_through_attribute
+<!-- snippet: sample_using_a_single_property_computed_unique_index_through_attribute -->
+<!-- endSnippet -->
 
 - multiple properties
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_multiple_properties_computed_unique_index_through_store_attribute
+<!-- snippet: sample_using_a_multiple_properties_computed_unique_index_through_store_attribute -->
+<!-- endSnippet -->
 
 ::: tip INFO
 If you don't specify IndexType parameter - by default it will be created as computed index.
@@ -54,11 +60,13 @@ If you don't specify IndexType parameter - by default it will be created as comp
 
 - single property
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute
+<!-- snippet: sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute -->
+<!-- endSnippet -->
 
 - multiple properties
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute
+<!-- snippet: sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute -->
+<!-- endSnippet -->
 
 ::: tip INFO
 To group multiple properties into single index you need to specify the same values in `IndexName` parameters.
@@ -69,14 +77,17 @@ To group multiple properties into single index you need to specify the same valu
 You have some ability to extend to Computed Index definition to be unique index by passing a second Lambda `Action` into
 the `Index()` method and definining `IsUnique` property as `true` as shown below:
 
-<<< @/../src/Marten.Testing/Acceptance/computed_indexes.cs#sample_customizing-calculated-index
+<!-- snippet: sample_customizing-calculated-index -->
+<!-- endSnippet -->
 
 Same can be configured for Duplicated Field:
 
-<<< @/../src/Marten.Testing/Examples/MartenRegistryExamples.cs#sample_IndexExamples
+<!-- snippet: sample_IndexExamples -->
+<!-- endSnippet -->
 
 ## Unique Index per Tenant
 
 For tables which have been configured for [tenancy](/guide/documents/tenancy), index definitions may also be scoped per tenant.
 
-<<< @/../src/Marten.Testing/Acceptance/unique_indexes.cs#sample_per-tenant-unique-index
+<!-- snippet: sample_per-tenant-unique-index -->
+<!-- endSnippet -->
