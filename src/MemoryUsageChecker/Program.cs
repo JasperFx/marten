@@ -4,11 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline.Dates;
-using JetBrains.dotMemoryUnit;
 using Marten;
 using Marten.Services;
-using Marten.Testing.Documents;
-using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
 using Weasel.Postgresql;
 
