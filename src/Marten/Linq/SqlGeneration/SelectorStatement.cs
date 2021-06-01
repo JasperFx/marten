@@ -75,7 +75,7 @@ namespace Marten.Linq.SqlGeneration
             {
                 SelectClause = new ScalarStringSelectClause(field, SelectClause.FromObject);
             }
-            else if (field.FieldType.IsPrimitive)
+            else if (field.FieldType.IsSimple() || field.FieldType == typeof(Guid) || field.FieldType == typeof(Decimal) || field.FieldType == typeof(DateTimeOffset))
             {
                 SelectClause = typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(field, SelectClause.FromObject, field.FieldType);
             }
