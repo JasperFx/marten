@@ -54,6 +54,8 @@ namespace Marten.Schema.Testing
                 #endregion sample_marten_create_database
             }))
             {
+                await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
                 await store.Schema.ApplyAllConfiguredChangesToDatabase();
                 await store.Schema.AssertDatabaseMatchesConfiguration();
                 Assert.True(dbCreated);
@@ -65,9 +67,9 @@ namespace Marten.Schema.Testing
         {
             var user1 = new User { FirstName = "User" };
             var dbCreated = false;
-            using (var store = DocumentStore.For(_ =>
+            using var store = DocumentStore.For(_ =>
             {
-	            _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.AutoCreateSchemaObjects = AutoCreate.All;
                 _.Connection(ConnectionSource.ConnectionString);
                 _.CreateDatabasesForTenants(c =>
                 {
@@ -80,16 +82,17 @@ namespace Marten.Schema.Testing
                         .OnDatabaseCreated(___ => dbCreated = true);
                 });
 
-            }))
-            {
-                using (var session = store.OpenSession())
-                {
-                    session.Store(user1);
-                    session.SaveChanges();
-                }
+            });
 
-                Assert.False(dbCreated);
+            store.Advanced.Clean.CompletelyRemoveAll();
+
+            using (var session = store.OpenSession())
+            {
+                session.Store(user1);
+                session.SaveChanges();
             }
+
+            Assert.False(dbCreated);
         }
 
         [Fact]
