@@ -84,28 +84,6 @@ namespace martenbuild
                 Run("dotnet", $"tool install -g MarkdownSnippets.Tool"));
 
             Target("docs", DependsOn("install"), () => {
-                if (framework != "net5.0") {
-                  Console.ForegroundColor = ConsoleColor.Red;
-                  Console.WriteLine("!!! Docs site required .NET 5.0 due to MarkdownSnippets.Tool requiring it");
-                  Console.ResetColor();
-                  return;
-                }
-
-                // check whether MarkdownSnippets.Tool is installed
-                try
-                {
-                    Run("mdsnippets", "--version");
-                }
-                catch (Exception)
-                {
-                  Console.ForegroundColor = ConsoleColor.Red;
-                  Console.WriteLine("!!! Install MarkdownSnippets.Tool using `build install-mdsnippets`");
-                  Console.ResetColor();
-                  return;
-                }
-
-                // add the code snippets to markdown files by running MarkdownSnippets.Tool
-                Run("mdsnippets");
                 // Run docs site
                 RunNpm("run docs");
             });

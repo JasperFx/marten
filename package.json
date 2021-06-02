@@ -5,13 +5,17 @@
   "scripts": {
     "tdd": "mocha -w -G",
     "test": "mocha",
-    "docs": "vitepress dev docs --port 5050",
-    "docs-build": "vitepress build docs"
+    "mdsnippets": "mdsnippets",
+    "vitepress-dev": "vitepress dev docs --port 5050",
+    "vitepress-build": "vitepress build docs",
+    "docs": "npm-run-all -s mdsnippets vitepress-dev",
+    "docs-build": "npm-run-all -s mdsnippets vitepress-build"
   },
   "devDependencies": {
     "chai": "^4.3.4",
     "lodash": "^4.17.21",
     "mocha": "^8.4.0",
+    "npm-run-all": "^4.1.5",
     "vitepress": "^0.14.0"
   }
 }
