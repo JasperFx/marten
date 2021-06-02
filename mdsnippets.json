@@ -1,6 +1,7 @@
 {
     "Convention": "InPlaceOverwrite",
     "LinkFormat": "GitHub",
+    "UrlPrefix": "https://github.com/JasperFx/marten/blob/master",
     "ExcludeMarkdownDirectories": ["documentation", "planning", "./src/DinnerParty"],
     "ExcludeSnippetDirectories": ["./src/Marten", "./src/CommandLineRunner", "./src/DinnerParty", "./src/EventPublisher", "./src/EventSourceWorker", "./src/Marten", "./src/Marten.CommandLine", "./src/Marten.NodaTime", "./src/Marten.PLv8", "Marten.Storyteller", "./src/MartenBenchmarks", "./src/StorytellerRunner"]
 }
