@@ -94,7 +94,7 @@ namespace martenbuild
                 var replacePattern = $"<!-- snippet:$1-->{Environment.NewLine}<!-- endSnippet -->";
                 foreach (var file in files)
                 {
-                    Console.WriteLine(file);
+                    // Console.WriteLine(file);
                     var content = File.ReadAllText(file);
 
                     if (!content.Contains("<!-- snippet:")) {
