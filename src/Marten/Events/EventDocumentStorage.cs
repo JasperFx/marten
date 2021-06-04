@@ -38,6 +38,7 @@ namespace Marten.Events
         private readonly ISerializer _serializer;
         private readonly string[] _fields;
         private readonly string _selectClause;
+        private readonly ISqlFragment _defaultWhere;
 
         public EventDocumentStorage(StoreOptions options)
         {
@@ -60,6 +61,10 @@ namespace Marten.Events
             _fields = columns.Select(x => x.Name).ToArray();
 
             _selectClause = $"select {_fields.Join(", ")} from {Events.DatabaseSchemaName}.mt_events as d";
+
+            _defaultWhere = Events.TenancyStyle == TenancyStyle.Conjoined
+                ? CompoundWhereFragment.And(IsNotArchivedFilter.Instance, CurrentTenantFilter.Instance)
+                : IsNotArchivedFilter.Instance;
         }
 
         public void TruncateDocumentStorage(ITenant tenant)
@@ -127,16 +132,20 @@ namespace Marten.Events
         public IFieldMapping Fields { get; }
         public ISqlFragment FilterDocuments(QueryModel model, ISqlFragment query)
         {
-            if (query.Flatten().OfType<IArchiveFilter>().Any()) return query;
+            var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
+            if (shouldBeTenanted)
+            {
+                query = query.CombineAnd(CurrentTenantFilter.Instance);
+            }
 
-            if (query.Contains(IsArchivedColumn.ColumnName)) return query;
-
-            return query.CombineAnd(IsNotArchivedFilter.Instance);
+            return query.SpecifiesEventArchivalStatus()
+                ? query
+                : query.CombineAnd(IsNotArchivedFilter.Instance);
         }
 
         public ISqlFragment DefaultWhereFragment()
         {
-            return IsNotArchivedFilter.Instance;
+            return _defaultWhere;
         }
 
         public bool UseOptimisticConcurrency { get; } = false;

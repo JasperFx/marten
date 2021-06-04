@@ -44,7 +44,7 @@ namespace Marten.Events
     {
         protected readonly EventGraph _parent;
         protected readonly DocumentMapping _inner;
-        private WhereFragment _defaultWhereFragment;
+        private ISqlFragment _defaultWhereFragment;
 
         protected EventMapping(EventGraph parent, Type eventType)
         {
@@ -59,7 +59,15 @@ namespace Marten.Events
             _inner = new DocumentMapping(eventType, parent.Options);
 
             DotNetTypeName = $"{eventType.FullName}, {eventType.Assembly.GetName().Name}";
-            _defaultWhereFragment = new WhereFragment($"d.type = '{EventTypeName}'");
+            ISqlFragment filter = new WhereFragment($"d.type = '{EventTypeName}'");
+            filter = filter.CombineAnd(IsNotArchivedFilter.Instance);
+            if (parent.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                filter = filter.CombineAnd(CurrentTenantFilter.Instance);
+            }
+
+
+            _defaultWhereFragment = filter;
         }
 
         Type IEventType.EventType => DocumentType;
@@ -118,15 +126,21 @@ namespace Marten.Events
         private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
         {
             yield return _defaultWhereFragment;
-            if (!query.Flatten().OfType<IArchiveFilter>().Any())
+            if (!query.SpecifiesEventArchivalStatus())
             {
                 yield return IsNotArchivedFilter.Instance;
+            }
+
+            var shouldBeTenanted = _parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
+            if (shouldBeTenanted)
+            {
+                yield return CurrentTenantFilter.Instance;
             }
         }
 
         public ISqlFragment DefaultWhereFragment()
         {
-            return _defaultWhereFragment.CombineAnd(IsNotArchivedFilter.Instance);
+            return _defaultWhereFragment;
         }
 
         public abstract IEvent Wrap(object data);

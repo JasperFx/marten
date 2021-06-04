@@ -120,7 +120,7 @@ namespace Marten.Internal.Storage
 
             if (TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
             {
-                yield return new CurrentTenantFilter();
+                yield return CurrentTenantFilter.Instance;
             }
         }
 
@@ -128,7 +128,7 @@ namespace Marten.Internal.Storage
         {
             if (_mapping.DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedFilter.Instance;
 
-            if (TenancyStyle == TenancyStyle.Conjoined) yield return new CurrentTenantFilter();
+            if (TenancyStyle == TenancyStyle.Conjoined) yield return CurrentTenantFilter.Instance;
         }
 
 

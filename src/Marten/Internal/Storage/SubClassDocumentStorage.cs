@@ -111,14 +111,14 @@ namespace Marten.Internal.Storage
                 yield return ExcludeSoftDeletedFilter.Instance;
 
             if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant())
-                yield return new CurrentTenantFilter();
+                yield return CurrentTenantFilter.Instance;
         }
 
         private IEnumerable<ISqlFragment> defaultFilters()
         {
             yield return toBasicWhere();
 
-            if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined) yield return new CurrentTenantFilter();
+            if (_mapping.Parent.TenancyStyle == TenancyStyle.Conjoined) yield return CurrentTenantFilter.Instance;
 
             if (_mapping.DeleteStyle == DeleteStyle.SoftDelete) yield return ExcludeSoftDeletedFilter.Instance;
         }

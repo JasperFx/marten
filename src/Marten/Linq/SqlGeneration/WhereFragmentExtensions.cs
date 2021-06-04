@@ -1,4 +1,5 @@
 using System.Linq;
+using Marten.Events.Archiving;
 using Marten.Linq.Filters;
 using Npgsql;
 using Weasel.Postgresql;
@@ -11,6 +12,15 @@ namespace Marten.Linq.SqlGeneration
         public static bool SpecifiesTenant(this ISqlFragment fragment)
         {
             return fragment.Flatten().OfType<ITenantWhereFragment>().Any();
+        }
+
+        public static bool SpecifiesEventArchivalStatus(this ISqlFragment query)
+        {
+            if (query.Flatten().OfType<IArchiveFilter>().Any()) return true;
+
+            if (query.Contains(IsArchivedColumn.ColumnName)) return true;
+
+            return false;
         }
     }
 }

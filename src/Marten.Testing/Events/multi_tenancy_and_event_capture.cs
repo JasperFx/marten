@@ -171,6 +171,8 @@ namespace Marten.Testing.Events
         {
             InitStore(TenancyStyle.Conjoined);
 
+            theStore.Advanced.Clean.DeleteAllEventData();
+
             using (var session = theStore.OpenSession("Green"))
             {
                 session.Events.Append(Guid.NewGuid(), new MembersJoined());
