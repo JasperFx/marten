@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Storage;
@@ -163,6 +164,30 @@ namespace Marten.Testing.Events
                     session.SaveChanges();
                 }
             });
+        }
+
+        [Fact]
+        public void tenanted_session_should_not_see_other_tenants_events()
+        {
+            InitStore(TenancyStyle.Conjoined);
+
+            using (var session = theStore.OpenSession("Green"))
+            {
+                session.Events.Append(Guid.NewGuid(), new MembersJoined());
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.OpenSession("Red"))
+            {
+                session.Events.Append(Guid.NewGuid(), new MembersJoined());
+                session.SaveChanges();
+            }
+
+            using (var session = theStore.QuerySession("Green"))
+            {
+                var memberJoins = session.Query<MembersJoined>().ToList();
+                memberJoins.Count.ShouldBe(1);
+            }
         }
 
         private void InitStore(TenancyStyle tenancyStyle, StreamIdentity streamIdentity = StreamIdentity.AsGuid)
