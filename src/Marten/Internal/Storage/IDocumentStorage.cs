@@ -7,6 +7,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Schema.Arguments;
 using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Storage;
@@ -102,6 +103,7 @@ namespace Marten.Internal.Storage
             if (storage.TenancyStyle == TenancyStyle.Conjoined)
             {
                 sql.Append($" and {CurrentTenantFilter.Filter}");
+                sql.AddNamedParameter(TenantIdArgument.ArgName, "");
             }
         }
 
