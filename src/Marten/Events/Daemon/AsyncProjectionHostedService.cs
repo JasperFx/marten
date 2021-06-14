@@ -54,8 +54,14 @@ namespace Marten.Events.Daemon
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
+            if (_store.Options.Events.Daemon.AsyncMode == DaemonMode.Disabled)
+            {
+                return;
+            }
+
             try
             {
+                _logger.LogDebug("Stopping the asynchronous projection agent");
                 await Coordinator.Stop();
                 await Agent.StopAll();
             }
