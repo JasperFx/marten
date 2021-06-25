@@ -8,6 +8,8 @@ namespace Marten.Internal
     public interface IProviderGraph
     {
         DocumentProvider<T> StorageFor<T>() where T : notnull;
+
+        void Append<T>(DocumentProvider<T> provider);
     }
 
     internal static class ProviderGraphExtensions

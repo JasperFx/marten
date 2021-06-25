@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Baseline;
 using LamarCodeGeneration;
@@ -33,24 +34,7 @@ namespace Marten.Events.CodeGeneration
         public static (EventDocumentStorage, string) GenerateStorage(StoreOptions options)
         {
             var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
-            assembly.ReferenceAssembly(typeof(EventGraph).Assembly);
-
-            var builderType = assembly.AddType(EventDocumentStorageTypeName, typeof(EventDocumentStorage));
-
-            buildSelectorMethods(options, builderType);
-
-            var appendType = buildAppendEventOperation(options.EventGraph, assembly);
-
-            builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
-                .Frames.Code($"return new Marten.Generated.AppendEventOperation(stream, e);");
-
-            var insertType = buildInsertStream(builderType, assembly, options.EventGraph);
-
-            var streamQueryHandlerType = buildStreamQueryHandlerType(options.EventGraph, assembly);
-
-            buildQueryForStreamMethod(options.EventGraph, builderType);
-
-            var updateType = buildUpdateStreamVersion(builderType, assembly, options.EventGraph);
+            var builderType = AssembleTypes(options, assembly);
 
 
             var compiler = new AssemblyGenerator();
@@ -59,28 +43,12 @@ namespace Marten.Events.CodeGeneration
 
 
             var writer = new StringWriter();
-
-            writer.WriteLine($"    // {streamQueryHandlerType.TypeName}");
-            writer.WriteLine(streamQueryHandlerType.SourceCode);
-            writer.WriteLine();
-
-            writer.WriteLine($"    // {insertType.TypeName}");
-            writer.WriteLine(insertType.SourceCode);
-            writer.WriteLine();
-
-            writer.WriteLine($"    // {appendType.TypeName}");
-            writer.WriteLine(appendType.SourceCode);
-            writer.WriteLine();
-
-            writer.WriteLine($"    // {updateType.TypeName}");
-            writer.WriteLine(updateType.SourceCode);
-            writer.WriteLine();
-
-            writer.WriteLine($"    // {builderType.TypeName}");
-            writer.WriteLine(builderType.SourceCode);
-            writer.WriteLine();
-
-
+            foreach (var generatedType in assembly.GeneratedTypes)
+            {
+                writer.WriteLine($"    // {generatedType.TypeName}");
+                writer.WriteLine(generatedType.SourceCode);
+                writer.WriteLine();
+            }
 
 
 
@@ -89,6 +57,59 @@ namespace Marten.Events.CodeGeneration
             var storage = (EventDocumentStorage) Activator.CreateInstance(builderType.CompiledType, options);
 
             return (storage, code);
+        }
+
+        public static DocumentProvider<IEvent> BuildProvider(StoreOptions options)
+        {
+            var (storage, code) = GenerateStorage(options);
+
+            return new DocumentProvider<IEvent>
+            {
+                DirtyTracking = storage,
+                Lightweight = storage,
+                IdentityMap = storage,
+                QueryOnly = storage,
+                SourceCode = code
+            };
+        }
+
+        public static DocumentProvider<IEvent> BuildProviderFromAssembly(Assembly assembly, StoreOptions options)
+        {
+            var storageType = assembly.GetExportedTypes().FirstOrDefault(x => x.CanBeCastTo<IEventStorage>());
+            if (storageType == null) return null;
+
+            var storage = (EventDocumentStorage)Activator.CreateInstance(storageType, options);
+            return new DocumentProvider<IEvent>
+            {
+                DirtyTracking = storage,
+                Lightweight = storage,
+                IdentityMap = storage,
+                QueryOnly = storage,
+                SourceCode = storageType.FullNameInCode()
+            };
+        }
+
+        public static GeneratedType AssembleTypes(StoreOptions options, GeneratedAssembly assembly)
+        {
+            assembly.ReferenceAssembly(typeof(EventGraph).Assembly);
+
+            var builderType = assembly.AddType(EventDocumentStorageTypeName, typeof(EventDocumentStorage));
+
+            buildSelectorMethods(options, builderType);
+
+            buildAppendEventOperation(options.EventGraph, assembly);
+
+            builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
+                .Frames.Code($"return new Marten.Generated.AppendEventOperation(stream, e);");
+
+            buildInsertStream(builderType, assembly, options.EventGraph);
+
+            buildStreamQueryHandlerType(options.EventGraph, assembly);
+
+            buildQueryForStreamMethod(options.EventGraph, builderType);
+
+            buildUpdateStreamVersion(builderType, assembly, options.EventGraph);
+            return builderType;
         }
 
         private static void buildSelectorMethods(StoreOptions options, GeneratedType builderType)
@@ -309,6 +330,8 @@ namespace Marten.Events.CodeGeneration
 
             return operationType;
         }
+
+
     }
 
 

@@ -23,6 +23,11 @@ namespace Marten.Internal
             _options = options;
         }
 
+        public void Append<T>(DocumentProvider<T> provider)
+        {
+            _storage = _storage.Update(typeof(T), provider);
+        }
+
         public DocumentProvider<T> StorageFor<T>() where T : notnull
         {
             var documentType = typeof(T);
@@ -34,15 +39,7 @@ namespace Marten.Internal
 
             if (documentType == typeof(IEvent))
             {
-                var (storage, code) = EventDocumentStorageGenerator.GenerateStorage(_options);
-                var slot = new DocumentProvider<IEvent>
-                {
-                    DirtyTracking = storage,
-                    Lightweight = storage,
-                    IdentityMap = storage,
-                    QueryOnly = storage,
-                    SourceCode = code
-                };
+                var slot = EventDocumentStorageGenerator.BuildProvider(_options);
 
                 _storage = _storage.AddOrUpdate(documentType, slot);
 
