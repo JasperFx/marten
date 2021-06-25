@@ -24,7 +24,7 @@ using Weasel.Postgresql.Functions;
 
 namespace Marten.Events
 {
-    public class EventGraph: IFeatureSchema, IEventStoreOptions, IReadOnlyEventStoreOptions
+    public partial class EventGraph: IFeatureSchema, IEventStoreOptions, IReadOnlyEventStoreOptions
     {
 
         private readonly Cache<string, EventMapping> _byEventName = new Cache<string, EventMapping>();
@@ -189,9 +189,6 @@ namespace Marten.Events
             return _aggregateTypeByName[aggregateTypeName];
         }
 
-        internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");
-        internal DbObjectName StreamsTable => new DbObjectName(DatabaseSchemaName, "mt_streams");
-
         internal string AggregateAliasFor(Type aggregateType)
         {
             var alias = _aggregateNameByType[aggregateType];
@@ -201,50 +198,6 @@ namespace Marten.Events
             return alias;
         }
 
-        IEnumerable<Type> IFeatureSchema.DependentTypes()
-        {
-            yield break;
-        }
-
-        ISchemaObject[] IFeatureSchema.Objects
-        {
-            get
-            {
-                var eventsTable = new EventsTable(this);
-                var streamsTable = new StreamsTable(this);
-
-                #region sample_using-sequence
-                var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequence"))
-                {
-                    Owner = eventsTable.Identifier,
-                    OwnerColumn = "seq_id"
-                };
-                #endregion sample_using-sequence
-
-                // compute the args for mt_append_event function
-                var streamIdTypeArg = StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";
-                var appendEventFunctionArgs = $"{streamIdTypeArg}, varchar, varchar, uuid[], varchar[], varchar[], jsonb[]";
-
-                return new ISchemaObject[]
-                {
-                    streamsTable,
-                    eventsTable,
-                    new EventProgressionTable(DatabaseSchemaName),
-                    sequence,
-                    new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint"),
-                    Function.ForRemoval(new DbObjectName(DatabaseSchemaName, "mt_append_event")),
-                    new ArchiveStreamFunction(this)
-                };
-            }
-        }
-
-        Type IFeatureSchema.StorageType => typeof(EventGraph);
-        string IFeatureSchema.Identifier { get; } = "eventstore";
-
-        void IFeatureSchema.WritePermissions(DdlRules rules, TextWriter writer)
-        {
-            // Nothing
-        }
 
         internal string GetStreamIdDBType()
         {
@@ -289,219 +242,6 @@ namespace Marten.Events
             return session.EventStorage();
         }
 
-        internal StreamAction Append(DocumentSessionBase session, Guid stream, params object[] events)
-        {
-            EnsureAsGuidStorage(session);
-
-            if (stream == Guid.Empty)
-                throw new ArgumentOutOfRangeException(nameof(stream), "Cannot use an empty Guid as the stream id");
-
-            var wrapped = events.Select(BuildEvent).ToArray();
-
-            if (session.WorkTracker.TryFindStream(stream, out var eventStream))
-            {
-                eventStream.AddEvents(wrapped);
-            }
-            else
-            {
-                eventStream = StreamAction.Append(stream, wrapped);
-                session.WorkTracker.Streams.Add(eventStream);
-            }
-
-            return eventStream;
-        }
-
-        internal StreamAction Append(DocumentSessionBase session, string stream, params object[] events)
-        {
-            EnsureAsStringStorage(session);
-
-            if (stream.IsEmpty())
-                throw new ArgumentOutOfRangeException(nameof(stream), "The stream key cannot be null or empty");
-
-            var wrapped = events.Select(BuildEvent).ToArray();
-
-            if (session.WorkTracker.TryFindStream(stream, out var eventStream))
-            {
-                eventStream.AddEvents(wrapped);
-            }
-            else
-            {
-                eventStream = StreamAction.Append(stream, wrapped);
-                session.WorkTracker.Streams.Add(eventStream);
-            }
-
-            return eventStream;
-        }
-
-        internal StreamAction StartStream(DocumentSessionBase session, Guid id, params object[] events)
-        {
-            EnsureAsGuidStorage(session);
-
-            if (id == Guid.Empty)
-                throw new ArgumentOutOfRangeException(nameof(id), "Cannot use an empty Guid as the stream id");
-
-
-            var stream = StreamAction.Start(this, id, events);
-            session.WorkTracker.Streams.Add(stream);
-
-            return stream;
-        }
-
-        internal StreamAction StartStream(DocumentSessionBase session, string streamKey, params object[] events)
-        {
-            EnsureAsStringStorage(session);
-
-            if (streamKey.IsEmpty())
-                throw new ArgumentOutOfRangeException(nameof(streamKey), "The stream key cannot be null or empty");
-
-
-            var stream = StreamAction.Start(this, streamKey, events);
-
-            session.WorkTracker.Streams.Add(stream);
-
-            return stream;
-        }
-
-        internal void ProcessEvents(DocumentSessionBase session)
-        {
-            if (!session.WorkTracker.Streams.Any())
-            {
-                return;
-            }
-
-            var storage = session.EventStorage();
-
-            var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
-            var sequences = session.ExecuteHandler(fetcher);
-
-
-            foreach (var stream in session.WorkTracker.Streams)
-            {
-                stream.TenantId ??= session.Tenant.TenantId;
-
-                if (stream.ActionType == StreamActionType.Start)
-                {
-                    stream.PrepareEvents(0, this, sequences, session);
-                    session.QueueOperation(storage.InsertStream(stream));
-                }
-                else
-                {
-                    var handler = storage.QueryForStream(stream);
-                    var state = session.ExecuteHandler(handler);
-
-                    if (state == null)
-                    {
-                        stream.PrepareEvents(0, this, sequences, session);
-                        session.QueueOperation(storage.InsertStream(stream));
-                    }
-                    else
-                    {
-                        stream.PrepareEvents(state.Version, this, sequences, session);
-                        session.QueueOperation(storage.UpdateStreamVersion(stream));
-                    }
-                }
-
-                foreach (var @event in stream.Events)
-                {
-                    session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
-                }
-            }
-
-            foreach (var projection in _inlineProjections.Value)
-            {
-                projection.Apply(session, session.WorkTracker.Streams.ToList());
-            }
-        }
-
-        internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
-        {
-            if (!session._workTracker.Streams.Any())
-            {
-                return;
-            }
-
-            var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
-            var sequences = await session.ExecuteHandlerAsync(fetcher, token);
-
-
-            var storage = session.EventStorage();
-
-            foreach (var stream in session.WorkTracker.Streams)
-            {
-                stream.TenantId ??= session.Tenant.TenantId;
-
-                if (stream.ActionType == StreamActionType.Start)
-                {
-                    stream.PrepareEvents(0, this, sequences, session);
-                    session.QueueOperation(storage.InsertStream(stream));
-                }
-                else
-                {
-                    var handler = storage.QueryForStream(stream);
-                    var state = await session.ExecuteHandlerAsync(handler, token);
-
-                    if (state == null)
-                    {
-                        stream.PrepareEvents(0, this, sequences, session);
-                        session.QueueOperation(storage.InsertStream(stream));
-                    }
-                    else
-                    {
-                        stream.PrepareEvents(state.Version, this, sequences, session);
-                        session.QueueOperation(storage.UpdateStreamVersion(stream));
-                    }
-                }
-
-                foreach (var @event in stream.Events)
-                {
-                    session.QueueOperation(storage.AppendEvent(this, session, stream, @event));
-                }
-            }
-
-            foreach (var projection in _inlineProjections.Value)
-            {
-                await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token);
-            }
-        }
-
-        internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
-        {
-            if (session.WorkTracker.Streams.Any())
-            {
-                var stream = StreamAction.ForTombstone();
-
-                var tombstone = new Tombstone();
-                var mapping = EventMappingFor<Tombstone>();
-
-                var operations = new List<IStorageOperation>();
-                var storage = session.EventStorage();
-
-                operations.Add(_establishTombstone.Value);
-                var tombstones = session.WorkTracker.Streams
-                    .SelectMany(x => x.Events)
-                    .Select(x => new Event<Tombstone>(tombstone)
-                    {
-                        Sequence = x.Sequence,
-                        Version = x.Version,
-                        TenantId = x.TenantId,
-                        StreamId = EstablishTombstoneStream.StreamId,
-                        StreamKey = EstablishTombstoneStream.StreamKey,
-                        Id = CombGuidIdGeneration.NewGuid(),
-                        EventTypeName = mapping.EventTypeName,
-                        DotNetTypeName = mapping.DotNetTypeName
-                    })
-                    .Select(e => storage.AppendEvent(this, session, stream, e));
-
-                operations.AddRange(tombstones);
-
-                batch = new UpdateBatch(operations);
-
-                return true;
-            }
-
-            batch = null;
-            return false;
-        }
 
 
 
