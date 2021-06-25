@@ -9,7 +9,7 @@ using Weasel.Postgresql.Functions;
 
 namespace Marten.Events
 {
-    public partial class EventGraph
+    public partial class EventGraph : IFeatureSchema
     {
 
         internal DbObjectName ProgressionTable => new DbObjectName(DatabaseSchemaName, "mt_event_progression");

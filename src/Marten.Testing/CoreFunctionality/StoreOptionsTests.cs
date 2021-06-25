@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using LamarCodeGeneration;
 using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -263,6 +264,13 @@ namespace Marten.Testing.CoreFunctionality
             storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
             storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);
             storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsInteger);
+        }
+
+        [Fact]
+        public void default_code_generation_is_dynamic()
+        {
+            var storeOptions = new StoreOptions();
+            storeOptions.GeneratedCodeMode.ShouldBe(TypeLoadMode.Dynamic);
         }
 
         public void set_the_maximum_name_length()

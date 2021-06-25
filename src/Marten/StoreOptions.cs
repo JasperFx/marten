@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
+using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -93,6 +94,11 @@ namespace Marten
         /// Configuration for all event store projections
         /// </summary>
         public ProjectionOptions Projections { get;}
+
+        /// <summary>
+        /// Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
+        /// </summary>
+        public TypeLoadMode GeneratedCodeMode { get; set; } = TypeLoadMode.Dynamic;
 
         /// <summary>
         /// Access to adding custom schema features to this Marten-enabled Postgresql database
