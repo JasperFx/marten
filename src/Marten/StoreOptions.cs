@@ -30,7 +30,7 @@ namespace Marten
     ///     necessary to customize and bootstrap a working
     ///     DocumentStore
     /// </summary>
-    public class StoreOptions: IReadOnlyStoreOptions
+    public partial class StoreOptions: IReadOnlyStoreOptions
     {
 
 
