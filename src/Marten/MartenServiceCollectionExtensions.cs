@@ -1,7 +1,10 @@
 using System;
+using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Linq.QueryHandlers;
+using Marten.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -60,12 +63,22 @@ namespace Marten
 
             // This can be overridden by the expression following
             services.AddSingleton<ISessionFactory, DefaultSessionFactory>();
+            services.AddSingleton<GenerationRules>(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
+
+            // To support LamarCodeGeneration.Commands
+            services.AddSingleton<DynamicCodeBuilder>();
 
 
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
 
             services.AddHostedService<AsyncProjectionHostedService>();
+
+            services.AddSingleton<IGeneratesCode[]>(s =>
+            {
+                var options = s.GetRequiredService<StoreOptions>();
+                return new IGeneratesCode[] {options.EventGraph, options};
+            });
 
             return new MartenConfigurationExpression(services, null);
         }
