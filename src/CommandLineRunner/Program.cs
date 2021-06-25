@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using LamarCodeGeneration;
 using Marten;
 using Marten.AsyncDaemon.Testing;
 using Marten.AsyncDaemon.Testing.TestingSupport;
@@ -27,6 +28,8 @@ namespace CommandLineRunner
                         opts.AutoCreateSchemaObjects = AutoCreate.All;
                         opts.DatabaseSchemaName = "cli";
                         opts.Connection(ConnectionSource.ConnectionString);
+
+                        //opts.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly;
 
                         opts.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                         opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);

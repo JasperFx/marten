@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -58,6 +60,12 @@ namespace Marten
             Advanced = new AdvancedOperations(this);
 
             Diagnostics = new Diagnostics(this);
+
+            if (Options.GeneratedCodeMode == TypeLoadMode.LoadFromPreBuiltAssembly)
+            {
+                var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace);
+                Events.As<IGeneratesCode>().AttachPreBuiltTypes(rules, Assembly.GetEntryAssembly(), null);
+            }
 
             options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());
 
