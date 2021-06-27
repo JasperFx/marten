@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Storage;
 #nullable enable
@@ -46,6 +48,12 @@ namespace Marten.Events.Projections
         /// The concrete .Net type implementing this projection
         /// </summary>
         Type ProjectionType { get; }
+    }
+
+    internal interface IGeneratedProjection
+    {
+        void AssembleTypes(GeneratedAssembly assembly, StoreOptions options);
+        void AttachTypes(Assembly assembly, StoreOptions options);
     }
 
     /// <summary>

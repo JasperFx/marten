@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Projections;
 using Marten.Schema;
 
 namespace Marten.Events
@@ -15,7 +17,11 @@ namespace Marten.Events
             rules.ApplicationNamespace = SchemaConstants.MartenGeneratedNamespace;
             EventDocumentStorageGenerator.AssembleTypes(Options, assembly);
 
-            // TODO -- projections
+            var projections = Options.Projections.All.OfType<IGeneratedProjection>();
+            foreach (var projection in projections)
+            {
+                projection.AssembleTypes(assembly, Options);
+            }
 
             return null;
         }
@@ -25,7 +31,11 @@ namespace Marten.Events
             var provider = EventDocumentStorageGenerator.BuildProviderFromAssembly(assembly, Options);
             Options.Providers.Append(provider);
 
-            // TODO -- projections
+            var projections = Options.Projections.All.OfType<IGeneratedProjection>();
+            foreach (var projection in projections)
+            {
+                projection.AttachTypes(assembly, Options);
+            }
 
             return Task.CompletedTask;
         }
