@@ -3,6 +3,7 @@ using LamarCodeGeneration;
 using Marten;
 using Marten.AsyncDaemon.Testing;
 using Marten.AsyncDaemon.Testing.TestingSupport;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
@@ -29,11 +30,13 @@ namespace CommandLineRunner
                         opts.DatabaseSchemaName = "cli";
                         opts.Connection(ConnectionSource.ConnectionString);
 
-                        //opts.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly;
+                        opts.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly;
 
                         opts.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                         opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
                         opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
+
+                        opts.Projections.AsyncMode = DaemonMode.Solo;
                     });
                 });
         }
