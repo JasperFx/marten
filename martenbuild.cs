@@ -64,6 +64,13 @@ namespace martenbuild
             Target("test-commands", () =>
                 Run("dotnet", $"test src/Marten.CommandLine.Testing/Marten.CommandLine.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
+            Target("test-codegen", () =>
+            {
+                var projectPath = "src/CommandLineRunner";
+                Run("dotnet", $"run -- codegen delete", projectPath);
+                Run("dotnet", $"run -- codegen write", projectPath);
+                Run("dotnet", $"run -- test", projectPath);
+            });
 
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
