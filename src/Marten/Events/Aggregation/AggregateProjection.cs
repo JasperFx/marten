@@ -99,5 +99,9 @@ namespace Marten.Events.Aggregation
             return action.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
         }
 
+        protected override IEnumerable<Type> publishedTypes()
+        {
+            yield return typeof(T);
+        }
     }
 }

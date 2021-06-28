@@ -29,12 +29,16 @@ namespace Marten.Internal.CodeGeneration
 
             foreach (var property in typeof(IDocumentSourceCode).GetProperties())
             {
+                var generatedType = property.GetValue(this);
+                if (generatedType == null) continue;
+
                 var title = property.HasAttribute<DescriptionAttribute>()
                     ? property.GetAttribute<DescriptionAttribute>().Description
                     : property.Name.SplitPascalCase();
 
                 writer.WriteLine("// " + title);
-                writer.WriteLine(property.GetValue(this));
+
+                writer.WriteLine(generatedType);
                 writer.WriteLine();
             }
 

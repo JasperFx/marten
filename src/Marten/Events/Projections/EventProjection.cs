@@ -248,6 +248,21 @@ namespace Marten.Events.Projections
             Debug.WriteLine(_inlineType.SourceCode);
         }
 
+        protected override IEnumerable<Type> publishedTypes()
+        {
+            foreach (var method in _createMethods.Methods)
+            {
+                var docType = method.ReturnType;
+                if (docType.Closes(typeof(Task<>)))
+                {
+                    yield return docType.GetGenericArguments().Single();
+                }
+                else
+                {
+                    yield return docType;
+                }
+            }
+        }
     }
 
     public abstract class SyncEventProjection<T>: SyncEventProjectionBase where T : EventProjection

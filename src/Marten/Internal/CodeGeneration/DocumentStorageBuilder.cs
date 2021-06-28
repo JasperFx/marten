@@ -19,11 +19,16 @@ namespace Marten.Internal.CodeGeneration
         private readonly string _typeName;
         private readonly DocumentMapping _mapping;
 
+        public static string DeriveTypeName(DocumentMapping mapping, StorageStyle style)
+        {
+            return $"{style}{mapping.DocumentType.Name.Sanitize()}DocumentStorage";
+        }
+
         public DocumentStorageBuilder(DocumentMapping mapping, StorageStyle style, Func<DocumentOperations, GeneratedType> selectorTypeSource)
         {
             _mapping = mapping;
             _selectorTypeSource = selectorTypeSource;
-            _typeName = $"{style}{mapping.DocumentType.Name.Sanitize()}DocumentStorage";
+            _typeName = DeriveTypeName(mapping, style);
 
             _baseType =
                 determineOpenDocumentStorageType(style).MakeGenericType(mapping.DocumentType, mapping.IdType);

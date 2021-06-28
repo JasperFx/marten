@@ -18,7 +18,10 @@ namespace Marten.Internal.CodeGeneration
         {
             _mapping = mapping;
             _tempTable = _mapping.TableName.Name + "_temp" ;
+            TypeName = $"{_mapping.DocumentType.Name.Sanitize()}BulkLoader";
         }
+
+        public string TypeName { get; }
 
         public GeneratedType BuildType(GeneratedAssembly assembly)
         {
@@ -29,7 +32,7 @@ namespace Marten.Internal.CodeGeneration
 
             var columns = arguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
 
-            var type = assembly.AddType($"{_mapping.DocumentType.Name.Sanitize()}BulkLoader",
+            var type = assembly.AddType(TypeName,
                 typeof(BulkLoader<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType));
 
             if (_mapping.IsHierarchy())
