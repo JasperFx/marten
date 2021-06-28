@@ -109,6 +109,12 @@ namespace Marten.Events.Projections
             {
                 projection.Lifecycle = lifecycle.Value;
             }
+
+            foreach (var publishedType in projection.As<IProjectionSource>().PublishedTypes())
+            {
+                _options.Storage.RegisterDocumentType(publishedType);
+            }
+
             projection.AssertValidity();
             All.Add(projection);
         }
@@ -145,6 +151,12 @@ namespace Marten.Events.Projections
         public void Add<TProjection>(ProjectionLifecycle? lifecycle = null) where TProjection: ProjectionSource, new()
         {
             var projection = new TProjection();
+
+            foreach (var publishedType in projection.As<IProjectionSource>().PublishedTypes())
+            {
+                _options.Storage.RegisterDocumentType(publishedType);
+            }
+
             if (lifecycle.HasValue)
             {
                 projection.Lifecycle = lifecycle.Value;

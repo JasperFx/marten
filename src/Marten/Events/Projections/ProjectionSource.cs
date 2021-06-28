@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
-using Marten.Storage;
 #nullable enable
 namespace Marten.Events.Projections
 {
@@ -48,12 +47,21 @@ namespace Marten.Events.Projections
         /// The concrete .Net type implementing this projection
         /// </summary>
         Type ProjectionType { get; }
+
+        /// <summary>
+        /// This is *only* a hint to Marten about what projected document types
+        /// are published by this projection to aid the "generate ahead" model
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<Type> PublishedTypes();
     }
 
     internal interface IGeneratedProjection
     {
         void AssembleTypes(GeneratedAssembly assembly, StoreOptions options);
         void AttachTypes(Assembly assembly, StoreOptions options);
+
+
     }
 
     /// <summary>
@@ -99,5 +107,12 @@ namespace Marten.Events.Projections
 
             return new ValueTask<EventRangeGroup>(new TenantedEventRange(store, _projection, range, cancellationToken));
         }
+
+        IEnumerable<Type> IProjectionSource.PublishedTypes()
+        {
+            return publishedTypes();
+        }
+
+        protected abstract IEnumerable<Type> publishedTypes();
     }
 }

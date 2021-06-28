@@ -21,6 +21,19 @@ namespace Marten.Testing.Events.Aggregation
                 .ShouldContain(typeof(QuestParty));
         }
 
+        [Fact]
+        public void aggregate_projections_should_automatically_register_the_aggregate_document_type()
+        {
+            StoreOptions(opts =>
+            {
+                opts.Projections.Add<AllGood>();
+            });
+
+            // MyAggregate is the aggregate type for AllGood above
+            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+                .ShouldContain(typeof(MyAggregate));
+        }
+
 
         [Fact]
         public void inline_aggregations_are_registered()

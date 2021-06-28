@@ -65,6 +65,8 @@ namespace Marten
             {
                 var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace);
                 Events.As<IGeneratesCode>().AttachPreBuiltTypes(rules, Assembly.GetEntryAssembly(), null);
+
+                Options.As<IGeneratesCode>().AttachPreBuiltTypes(rules, Assembly.GetEntryAssembly(), null);
             }
 
             options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());

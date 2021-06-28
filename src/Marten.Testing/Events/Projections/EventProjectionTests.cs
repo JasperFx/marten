@@ -25,6 +25,16 @@ namespace Marten.Testing.Events.Projections
         }
 
         [Fact]
+        public void documents_created_by_event_projection_should_be_registered_as_document_types()
+        {
+            UseProjection<SimpleTransformProjectionUsingMetadata>();
+
+            // MyAggregate is the aggregate type for AllGood above
+            theStore.Storage.AllDocumentMappings.Select(x => x.DocumentType)
+                .ShouldContain(typeof(User));
+        }
+
+        [Fact]
         public void use_simple_synchronous_project_methods()
         {
             UseProjection<SimpleProjection>();

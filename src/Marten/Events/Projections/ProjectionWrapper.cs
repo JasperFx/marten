@@ -32,5 +32,11 @@ namespace Marten.Events.Projections
                 new AsyncProjectionShard(this, new ISqlFragment[0])
             };
         }
+
+        protected override IEnumerable<Type> publishedTypes()
+        {
+            // Really indeterminate
+            yield break;
+        }
     }
 }

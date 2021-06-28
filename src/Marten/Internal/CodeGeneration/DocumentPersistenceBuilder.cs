@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using LamarCodeGeneration;
 using LamarCompiler;
@@ -22,6 +24,64 @@ namespace Marten.Internal.CodeGeneration
         {
             _mapping = mapping;
             _options = options;
+        }
+
+        public void AssemblyTypes(GeneratedAssembly assembly)
+        {
+            var operations = new DocumentOperations(assembly, _mapping, _options);
+
+            assembly.Namespaces.Add(typeof(CommandExtensions).Namespace);
+            assembly.Namespaces.Add(typeof(TenantIdArgument).Namespace);
+            assembly.Namespaces.Add(typeof(NpgsqlCommand).Namespace);
+
+
+            new DocumentStorageBuilder(_mapping, StorageStyle.QueryOnly, x => x.QueryOnlySelector)
+                .Build(assembly, operations);
+
+            new DocumentStorageBuilder(_mapping, StorageStyle.Lightweight, x => x.LightweightSelector)
+                .Build(assembly, operations);
+
+            new DocumentStorageBuilder(_mapping, StorageStyle.IdentityMap, x => x.IdentityMapSelector)
+                .Build(assembly, operations);
+
+            new DocumentStorageBuilder(_mapping, StorageStyle.DirtyTracking, x => x.DirtyCheckingSelector)
+                .Build(assembly, operations);
+
+            new BulkLoaderBuilder(_mapping).BuildType(assembly);
+        }
+
+        public static DocumentProvider<T> FromPreBuiltTypes<T>(Assembly assembly, DocumentMapping mapping)
+        {
+            var queryOnly = assembly.ExportedTypes.FirstOrDefault(x =>
+                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.QueryOnly));
+
+            var lightweight = assembly.ExportedTypes.FirstOrDefault(x =>
+                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.Lightweight));
+
+            var identityMap = assembly.ExportedTypes.FirstOrDefault(x =>
+                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.IdentityMap));
+
+            var dirtyTracking = assembly.ExportedTypes.FirstOrDefault(x =>
+                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.DirtyTracking));
+
+            var bulkWriterType =
+                assembly.ExportedTypes.FirstOrDefault(x => x.Name == new BulkLoaderBuilder(mapping).TypeName);
+
+            var slot = new DocumentProvider<T>
+            {
+                QueryOnly = (IDocumentStorage<T>)Activator.CreateInstance(queryOnly, mapping),
+                Lightweight = (IDocumentStorage<T>)Activator.CreateInstance(lightweight, mapping),
+                IdentityMap = (IDocumentStorage<T>)Activator.CreateInstance(identityMap, mapping),
+                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking, mapping),
+
+            };
+
+            slot.BulkLoader = mapping.IsHierarchy()
+                ? (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType, slot.QueryOnly, mapping)
+                : (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType, slot.QueryOnly);
+
+
+            return slot;
         }
 
         public DocumentProvider<T> Generate<T>()
