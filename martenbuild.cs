@@ -79,7 +79,7 @@ namespace martenbuild
                 Run("dotnet", $"test src/Marten.PLv8.Testing/Marten.PLv8.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
 
-            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema", "test-plv8"));
+            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema", "test-plv8", "test-codegen"));
 
             Target("storyteller", DependsOn("compile"), () =>
                 Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
