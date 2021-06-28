@@ -148,9 +148,11 @@ namespace Marten.Internal.CompiledQueries
 
         public object TryCreateUniqueTemplate(Type type)
         {
-            var constructor = type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic)
+            var constructor = type.GetConstructors()
                 .OrderByDescending(x => x.GetParameters().Count())
                 .FirstOrDefault();
+
+
 
             if (constructor == null)
             {

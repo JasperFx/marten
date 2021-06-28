@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
+using Baseline.ImTools;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
@@ -16,6 +17,10 @@ namespace Marten.Internal.Sessions
 
         private Dictionary<string, NestedTenantSession>? _byTenant;
 
+        protected DocumentSessionBase(StoreOptions options): base(options)
+        {
+
+        }
 
         protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
             ITenant tenant): base(store, sessionOptions, database, tenant)

@@ -22,15 +22,45 @@ namespace Marten.Internal.CompiledQueries
     {
         private readonly CompiledQueryPlan _plan;
         private readonly StoreOptions _storeOptions;
+        private readonly string _typeName;
 
         public CompiledQuerySourceBuilder(CompiledQueryPlan plan, StoreOptions storeOptions)
         {
             _plan = plan;
             _storeOptions = storeOptions;
+            _typeName = _plan.QueryType.Name + "CompiledQuerySource";
+        }
+
+        public void AssemblyType(GeneratedAssembly assembly)
+        {
+            assembly.Namespaces.Fill("System");
+
+            var handlerType = determineHandlerType();
+
+            var hardcoded = new HardCodedParameters(_plan);
+            var compiledHandlerType = buildHandlerType(assembly, handlerType, hardcoded);
+
+            buildSourceType(assembly, handlerType, compiledHandlerType);
+        }
+
+        public ICompiledQuerySource CreateFromPreBuiltType(Assembly assembly)
+        {
+            var hardcoded = new HardCodedParameters(_plan);
+
+            var sourceType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _typeName);
+            if (sourceType == null) return null;
+
+            return (ICompiledQuerySource)Activator.CreateInstance(sourceType, new object[] {hardcoded, _plan.HandlerPrototype});
         }
 
         public ICompiledQuerySource Build()
         {
+            if (_storeOptions.GeneratedCodeMode == TypeLoadMode.LoadFromPreBuiltAssembly)
+            {
+                var source = CreateFromPreBuiltType(Assembly.GetEntryAssembly());
+                if (source != null) return source;
+            }
+
             var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
 
 
@@ -44,8 +74,6 @@ namespace Marten.Internal.CompiledQueries
             assembly.Namespaces.Add("System");
             compileAssembly(assembly);
 
-Debug.WriteLine(compiledHandlerType.SourceCode);
-
             return (ICompiledQuerySource)Activator.CreateInstance(sourceType.CompiledType, new object[] {hardcoded, _plan.HandlerPrototype});
         }
 
@@ -53,8 +81,7 @@ Debug.WriteLine(compiledHandlerType.SourceCode);
             GeneratedType compiledHandlerType)
         {
             var sourceBaseType = typeof(CompiledQuerySource<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
-            var sourceName = _plan.QueryType.Name + "CompiledQuerySource";
-            var sourceType = assembly.AddType(sourceName, sourceBaseType);
+            var sourceType = assembly.AddType(_typeName, sourceBaseType);
 
             var hardcoded = new InjectedField(typeof(HardCodedParameters), "hardcoded");
             sourceType.AllInjectedFields.Add(hardcoded);

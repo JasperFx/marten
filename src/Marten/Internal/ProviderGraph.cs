@@ -25,7 +25,7 @@ namespace Marten.Internal
 
         public void Append<T>(DocumentProvider<T> provider)
         {
-            _storage = _storage.Update(typeof(T), provider);
+            _storage = _storage.AddOrUpdate(typeof(T), provider);
         }
 
         public DocumentProvider<T> StorageFor<T>() where T : notnull
