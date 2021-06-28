@@ -230,3 +230,5 @@ stresults.htm
 *.ncrunch*
 
 docs/.vitepress/dist
+
+src/CommandLineRunner/Internal/*
