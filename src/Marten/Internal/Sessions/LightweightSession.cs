@@ -9,8 +9,14 @@ namespace Marten.Internal.Sessions
 {
     public class LightweightSession: DocumentSessionBase
     {
+
         public LightweightSession(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database, ITenant tenant) : base(store, sessionOptions, database, tenant)
         {
+        }
+
+        public LightweightSession(StoreOptions options): base(options)
+        {
+
         }
 
         protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)

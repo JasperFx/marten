@@ -5,6 +5,7 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
+using Marten.Testing.Linq.Compiled;
 using Microsoft.Extensions.DependencyInjection;
 using Oakton;
 using Shouldly;
@@ -20,6 +21,8 @@ namespace CommandLineRunner
             var store = host.Services.GetRequiredService<IDocumentStore>();
             await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
+            await store.Schema.ApplyAllConfiguredChangesToDatabase();
+
             var targets = Target.GenerateRandomData(1000).ToArray();
 
             // Bulk Insert
@@ -30,14 +33,28 @@ namespace CommandLineRunner
             using (var session1 = store.QuerySession())
             {
                 (await session1.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
+
+
             }
 
             Console.WriteLine("Lightweight");
             using (var session2 = store.LightweightSession())
             {
+                var user = new User {FirstName = "Jeremy", LastName = "Miller", UserName = "jeremydmiller"};
+
+
                 var target = Target.Random();
                 session2.Store(target);
+                session2.Store(user);
                 await session2.SaveChangesAsync();
+
+
+
+                // Just a smoke test
+                await session2.QueryAsync(new FindUserByAllTheThings
+                {
+                    FirstName = "Jeremy", LastName = "Miller", Username = "jeremydmiller"
+                });
             }
 
             Console.WriteLine("IdentityMap");

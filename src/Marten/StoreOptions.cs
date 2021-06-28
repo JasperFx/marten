@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
@@ -336,6 +337,23 @@ namespace Marten
         public void RegisterDocumentTypes(IEnumerable<Type> documentTypes)
         {
             documentTypes.Each(RegisterDocumentType);
+        }
+
+        private readonly IList<Type> _compiledQueryTypes = new List<Type>();
+
+        /// <summary>
+        /// Register a compiled query type for the "generate ahead" code generation strategy
+        /// </summary>
+        /// <param name="queryType"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        public void RegisterCompiledQueryType(Type queryType)
+        {
+            if (!queryType.Closes(typeof(ICompiledQuery<,>)))
+            {
+                throw new ArgumentOutOfRangeException(nameof(queryType), $"{queryType.FullNameInCode()} is not a valid Marten compiled query type");
+            }
+
+            _compiledQueryTypes.Fill(queryType);
         }
 
         internal void AssertValidIdentifier(string name)

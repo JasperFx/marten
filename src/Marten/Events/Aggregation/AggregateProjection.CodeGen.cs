@@ -139,7 +139,7 @@ namespace Marten.Events.Aggregation
 
             foreach (var setter in _liveGeneratedType.Setters)
             {
-                var prop = _inlineType.GetProperty(setter.PropName);
+                var prop = _liveType.GetProperty(setter.PropName);
                 prop.SetValue(aggregator, setter.InitialValue);
             }
 

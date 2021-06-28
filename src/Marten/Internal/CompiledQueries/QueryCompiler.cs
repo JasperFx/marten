@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Baseline;
 using Baseline.Dates;
 using LamarCodeGeneration;
@@ -121,7 +122,45 @@ namespace Marten.Internal.CompiledQueries
             });
         }
 
+        public static CompiledQueryPlan BuildPlan(IMartenSession session, Type queryType, StoreOptions storeOptions)
+        {
+            var querySignature = queryType.FindInterfaceThatCloses(typeof(ICompiledQuery<,>));
+            if (querySignature == null)
+                throw new ArgumentOutOfRangeException(nameof(queryType),
+                    $"Cannot derive query type for {queryType.FullNameInCode()}");
 
+            var builder =
+                typeof(CompiledQueryPlanBuilder<,>).CloseAndBuildAs<ICompiledQueryPlanBuilder>(
+                    querySignature.GetGenericArguments());
+
+            return builder.BuildPlan(session, queryType, storeOptions);
+        }
+
+        public class CompiledQueryPlanBuilder<TDoc, TOut>: ICompiledQueryPlanBuilder
+        {
+            public CompiledQueryPlan BuildPlan(IMartenSession session, Type queryType, StoreOptions storeOptions)
+            {
+                object query;
+
+                try
+                {
+                    query = Activator.CreateInstance(queryType);
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"Unable to create query type {queryType.FullNameInCode()}. If you receive this message, add a no-arg constructor that can be either public or non-public",
+                        e);
+                }
+
+                return QueryCompiler.BuildPlan<TDoc, TOut>(session, (ICompiledQuery<TDoc, TOut>) query, storeOptions);
+            }
+        }
+
+        public interface ICompiledQueryPlanBuilder
+        {
+            CompiledQueryPlan BuildPlan(IMartenSession session, Type queryType, StoreOptions storeOptions);
+        }
 
         public static CompiledQueryPlan BuildPlan<TDoc, TOut>(IMartenSession session, ICompiledQuery<TDoc, TOut> query,
             StoreOptions storeOptions)

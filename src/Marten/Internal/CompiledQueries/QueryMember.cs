@@ -91,7 +91,9 @@ namespace Marten.Internal.CompiledQueries
         {
             if (CanWrite())
             {
-                SetValue(query, (T)valueSource.GetValue(typeof(T)));
+                var value = (T)valueSource.GetValue(typeof(T));
+                Value = value;
+                SetValue(query, value);
             }
         }
 

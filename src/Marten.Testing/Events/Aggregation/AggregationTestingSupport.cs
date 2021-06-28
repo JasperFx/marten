@@ -75,6 +75,9 @@ namespace Marten.Testing.Events.Aggregation
 
     public class AEvent : ITabulator
     {
+        // Necessary for a couple tests. Let it go.
+        public Guid Id { get; set; }
+
         public void Apply(MyAggregate aggregate)
         {
             aggregate.ACount++;

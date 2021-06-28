@@ -62,6 +62,15 @@ namespace Marten.Internal.Sessions
 
         internal SessionOptions? SessionOptions { get; }
 
+        protected QuerySession(StoreOptions options)
+        {
+            Serializer = options.Serializer();
+            Tenant = options.Tenancy.Default;
+            Options = options;
+            _providers = options.Providers;
+        }
+
+
         public QuerySession(DocumentStore store, SessionOptions? sessionOptions, IManagedConnection database,
             ITenant tenant)
         {
