@@ -55,6 +55,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             var method = new GeneratedMethod(MethodName, returnType, args);
+            method.AsyncMode = IsAsync ? AsyncMode.AsyncTask : AsyncMode.None;
             generatedType.AddMethod(method);
 
             var eventHandling = AddEventHandling(AggregateType, aggregateMapping, this);

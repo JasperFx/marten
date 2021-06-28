@@ -112,6 +112,10 @@ namespace Marten.Events.Aggregation
             {
                 Compile(options);
             }
+            else if (_liveGeneratedType == null)
+            {
+                AssembleTypes(new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace)), options);
+            }
 
             return BuildLiveAggregator();
         }
@@ -132,7 +136,12 @@ namespace Marten.Events.Aggregation
         internal ILiveAggregator<T> BuildLiveAggregator()
         {
             var aggregator = (ILiveAggregator<T>)Activator.CreateInstance(_liveType, this);
-            _liveGeneratedType.ApplySetterValues(aggregator);
+
+            foreach (var setter in _liveGeneratedType.Setters)
+            {
+                var prop = _inlineType.GetProperty(setter.PropName);
+                prop.SetValue(aggregator, setter.InitialValue);
+            }
 
             return aggregator;
         }
