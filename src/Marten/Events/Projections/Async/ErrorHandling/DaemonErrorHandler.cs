@@ -46,11 +46,11 @@ namespace Marten.Events.Projections.Async.ErrorHandling
 
                     case ExceptionAction.Stop:
                         await stop(activity).ConfigureAwait(false);
-                        break;
+                        throw;
 
                     case ExceptionAction.StopAll:
                         await stopAll().ConfigureAwait(false);
-                        break;
+                        throw;
                 }
             }
         }
