@@ -18,10 +18,10 @@ using ProjectStarted = Marten.Testing.CodeTracker.ProjectStarted;
 
 namespace Marten.Testing.AsyncDaemon
 {
-    [Collection("daemon")]
+    [Collection("bug1845")]
     public class async_daemon_end_to_end: OneOffConfigurationsContext, IClassFixture<AsyncDaemonTestHelper>
     {
-        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output) : base("daemon")
+        public async_daemon_end_to_end(AsyncDaemonTestHelper testHelper, ITestOutputHelper output) : base("bug1845")
         {
             _testHelper = testHelper;
             _logger = new TracingLogger(output.WriteLine);
