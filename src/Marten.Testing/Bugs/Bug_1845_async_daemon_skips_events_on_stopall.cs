@@ -15,12 +15,12 @@ using Shouldly;
 
 namespace Marten.Testing.Bugs
 {
-    [Collection("daemon")]
+    [Collection("Bug1845")]
     public class Bug_1845_async_daemon_skips_events_on_stopall: OneOffConfigurationsContext
     {
         private readonly IDaemonLogger _logger;
 
-        public Bug_1845_async_daemon_skips_events_on_stopall(ITestOutputHelper output) : base("daemon")
+        public Bug_1845_async_daemon_skips_events_on_stopall(ITestOutputHelper output) : base("Bug1845")
         {
             _logger = new TracingLogger(output.WriteLine);
         }
