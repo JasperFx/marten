@@ -13,4 +13,8 @@
         <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+
 </Project>
