@@ -28,6 +28,7 @@ using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events
@@ -154,7 +155,7 @@ namespace Marten.Events
         public EventMapping(EventGraph parent) : base(parent, typeof(T))
         {
             var schemaName = parent.DatabaseSchemaName;
-            _tableName = schemaName == DbObjectName.DefaultDatabaseSchemaName ? "mt_events" : $"{schemaName}.mt_events";
+            _tableName = schemaName == SchemaConstants.DefaultSchema ? "mt_events" : $"{schemaName}.mt_events";
 
             _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }

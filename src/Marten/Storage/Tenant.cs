@@ -15,6 +15,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 using Weasel.Postgresql.Tables;

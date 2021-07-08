@@ -6,6 +6,7 @@ using Baseline;
 using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Storage;
+using Weasel.Core;
 
 namespace Marten.Schema
 {
@@ -47,7 +48,7 @@ $$;
 
             var names = schemaNames
                  .Distinct()
-                 .Where(name => name != DbObjectName.DefaultDatabaseSchemaName).ToList();
+                 .Where(name => name != SchemaConstants.DefaultSchema).ToList();
 
             if (!names.Any())
                 return null;

@@ -6,6 +6,7 @@ using Marten.Events.Archiving;
 using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;

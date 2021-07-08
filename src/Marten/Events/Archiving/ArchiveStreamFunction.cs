@@ -1,4 +1,5 @@
 using System.IO;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 

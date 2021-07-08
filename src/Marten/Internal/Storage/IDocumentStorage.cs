@@ -13,6 +13,7 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 #nullable enable

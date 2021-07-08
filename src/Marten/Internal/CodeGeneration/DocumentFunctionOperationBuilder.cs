@@ -61,7 +61,7 @@ namespace Marten.Internal.CodeGeneration
             }
 
             type.MethodFor("Role").Frames.Return(Constant.ForEnum(_role));
-            type.MethodFor("DbType").Frames.Return(Constant.ForEnum(TypeMappings.ToDbType(_mapping.IdType)));
+            type.MethodFor("DbType").Frames.Return(Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(_mapping.IdType)));
             type.MethodFor("CommandText").Frames.Return(Constant.ForString(CommandText));
 
             buildConfigureMethod(type);

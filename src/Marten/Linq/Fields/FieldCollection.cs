@@ -10,6 +10,7 @@ using Marten.Linq.Parsing;
  using Marten.Linq.QueryHandlers;
  using Marten.Schema;
  using Marten.Util;
+using Weasel.Core;
 using Weasel.Postgresql;
 using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
 
@@ -179,7 +180,7 @@ using ReflectionExtensions = LamarCodeGeneration.Util.ReflectionExtensions;
             }
 
 
-            var pgType = TypeMappings.GetPgType(fieldType, _serializer.EnumStorage);
+            var pgType = PostgresqlProvider.Instance.GetDatabaseType(fieldType, _serializer.EnumStorage);
 
 
             if (fieldType.Closes(typeof(IDictionary<,>)))

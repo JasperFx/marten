@@ -9,6 +9,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Filters
@@ -37,7 +38,7 @@ namespace Marten.Linq.Filters
             var json = _serializer.ToCleanJson(_dictionary);
 
             builder.Append($"{_wherePrefix}d.data @> ");
-            builder.AppendJsonBParameter(json);
+            builder.AppendParameter(json, NpgsqlDbType.Jsonb);
         }
 
         public bool Contains(string sqlText)

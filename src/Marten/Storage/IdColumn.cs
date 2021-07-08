@@ -12,7 +12,7 @@ namespace Marten.Storage
         private const string IdentityMapCode = "if (_identityMap.TryGetValue(id, out var existing)) return existing;";
 
         public IdColumn(DocumentMapping mapping): base("id",
-            TypeMappings.GetPgType(mapping.IdMember.GetMemberType(), mapping.EnumStorage))
+            PostgresqlProvider.Instance.GetDatabaseType(mapping.IdMember.GetMemberType(), mapping.EnumStorage))
         {
         }
 

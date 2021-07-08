@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.PLv8.Patching;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 

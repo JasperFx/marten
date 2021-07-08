@@ -24,7 +24,7 @@ namespace Marten.Storage
 
             try
             {
-                conn.CreateCommand().WithText(sql).ExecuteNonQuery();
+                conn.CreateCommand(sql).ExecuteNonQuery();
             }
             finally
             {

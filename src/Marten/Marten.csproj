@@ -34,7 +34,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.1.0, 6.0.0]" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="[2.1.0, 6.0.0]" />
         <PackageReference Include="System.Text.Json" Version="5.0.2" />
-        <PackageReference Include="Weasel.Postgresql" Version="0.7.3" />
+        <PackageReference Include="Weasel.Postgresql" Version="0.9.1" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->

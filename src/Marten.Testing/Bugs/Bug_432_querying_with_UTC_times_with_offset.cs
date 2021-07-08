@@ -54,7 +54,7 @@ namespace Marten.Testing.Bugs
 
                 var sql = $"select {SchemaName}.mt_immutable_timestamp(d.data ->> \'DateTimeField\') as time from {SchemaName}.mt_doc_dateclass as d";
 
-                using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
+                using (var reader = session.Connection.CreateCommand(sql).ExecuteReader())
                 {
                     while (reader.Read())
                     {
@@ -108,7 +108,7 @@ namespace Marten.Testing.Bugs
 
                 var sql = $"select {SchemaName}.mt_immutable_timestamp(d.data ->> \'dateTimeField\') as time from {SchemaName}.mt_doc_dateclass as d";
 
-                using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
+                using (var reader = session.Connection.CreateCommand(sql).ExecuteReader())
                 {
                     while (reader.Read())
                     {
@@ -162,7 +162,7 @@ namespace Marten.Testing.Bugs
 
                 var sql = $"select {SchemaName}.mt_immutable_timestamp(d.data ->> \'date_time_field\') as time from {SchemaName}.mt_doc_dateclass as d";
 
-                using (var reader = session.Connection.CreateCommand().Sql(sql).ExecuteReader())
+                using (var reader = session.Connection.CreateCommand(sql).ExecuteReader())
                 {
                     while (reader.Read())
                     {

@@ -8,6 +8,7 @@ using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Marten.Util;
+using Weasel.Core;
 using Weasel.Postgresql.Functions;
 
 namespace Marten.Storage
@@ -37,7 +38,7 @@ namespace Marten.Storage
             _primaryKeyConstraintName = table.PrimaryKeyName;
 
             var idType = mapping.IdMember.GetMemberType();
-            var pgIdType = TypeMappings.GetPgType(idType, mapping.EnumStorage);
+            var pgIdType = PostgresqlProvider.Instance.GetDatabaseType(idType, mapping.EnumStorage);
 
             Arguments.Add(new UpsertArgument
             {

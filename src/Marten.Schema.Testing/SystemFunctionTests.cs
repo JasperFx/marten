@@ -3,6 +3,7 @@ using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
+using Weasel.Core;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -18,14 +19,14 @@ namespace Marten.Schema.Testing
                 await conn.ExecuteAsync(cmd);
             }
 
-            (await theStore.Tenancy.Default.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamtzp")))
+            (await theStore.Tenancy.Default.DefinitionForFunction(new DbObjectName(SchemaConstants.DefaultSchema, "mt_immutable_timestamtzp")))
                 .ShouldBeNull();
 
             theStore.Tenancy.Default.ResetSchemaExistenceChecks();
 
             theStore.Tenancy.Default.EnsureStorageExists(typeof(SystemFunctions));
 
-            (await theStore.Tenancy.Default.DefinitionForFunction(new DbObjectName("public", "mt_immutable_timestamptz")))
+            (await theStore.Tenancy.Default.DefinitionForFunction(new DbObjectName(SchemaConstants.DefaultSchema, "mt_immutable_timestamptz")))
                 .ShouldNotBeNull();
         }
 

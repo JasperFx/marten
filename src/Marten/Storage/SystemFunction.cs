@@ -1,6 +1,7 @@
 using System.IO;
 using Weasel.Postgresql;
 using Marten.Schema;
+using Weasel.Core;
 using Weasel.Postgresql.Functions;
 
 namespace Marten.Storage

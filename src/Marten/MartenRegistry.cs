@@ -11,6 +11,7 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 

@@ -8,6 +8,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Marten.Testing.Harness;
 using Npgsql;
+using NpgsqlTypes;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
@@ -114,7 +115,7 @@ namespace Marten.PLv8.Testing.Transforms
                 var cmd = new NpgsqlCommand(func.GenerateFunction());
                 conn.Execute(cmd);
 
-                var cmd2 = new NpgsqlCommand("select mt_transform_get_fullname(:json)").WithJsonParameter("json", json);
+                var cmd2 = new NpgsqlCommand("select mt_transform_get_fullname(:json)").With("json", json, NpgsqlDbType.Jsonb);
                 var actual = conn.QueryScalar<string>(cmd2);
 
                 actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");

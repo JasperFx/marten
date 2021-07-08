@@ -11,6 +11,7 @@ using Marten.PLv8.Transforms;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Services;
+using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -55,7 +56,7 @@ namespace Marten.PLv8.Patching
 
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
-            var patchParam = builder.AddJsonParameter(_serializer.ToCleanJson(_patch));
+            var patchParam = builder.AddParameter(_serializer.ToCleanJson(_patch), NpgsqlDbType.Jsonb);
             if (_patch.TryGetValue("value", out var document))
             {
                 var value = PossiblyPolymorhpic ? _serializer.ToJsonWithTypes(document) : _serializer.ToJson(document);
@@ -69,7 +70,7 @@ namespace Marten.PLv8.Patching
                 var patchJson = _serializer.ToJson(copy);
                 var replacedValue = patchJson.Replace($"\"{VALUE_LOOKUP}\"", value);
 
-                patchParam = builder.AddJsonParameter(replacedValue);
+                patchParam = builder.AddParameter(replacedValue, NpgsqlDbType.Jsonb);
             }
 
             builder.Append("update ");

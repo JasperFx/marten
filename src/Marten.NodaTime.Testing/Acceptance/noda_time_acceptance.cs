@@ -10,6 +10,7 @@ using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using NodaTime;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 

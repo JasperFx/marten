@@ -10,6 +10,7 @@ using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
+using Weasel.Core;
 
 namespace Marten.Schema
 {
@@ -270,7 +271,7 @@ END; $$;
                 eventsWhere += tenantPart;
             }
 
-            var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
+            var cmd = conn.CreateCommand($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
             cmd.AddNamedParameter("id", streamId);
 
             if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
@@ -311,7 +312,7 @@ END; $$;
                 eventsWhere += tenantPart;
             }
 
-            var cmd = conn.CreateCommand().WithText($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
+            var cmd = conn.CreateCommand($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
             cmd.AddNamedParameter("id", streamId);
 
             if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
