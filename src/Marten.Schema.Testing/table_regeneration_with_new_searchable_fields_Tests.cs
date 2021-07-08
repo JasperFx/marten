@@ -4,6 +4,7 @@ using Weasel.Postgresql;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -34,7 +35,7 @@ namespace Marten.Schema.Testing
                     using (
                         var reader =
                             session.Connection.CreateCommand()
-                                .WithText("select first_name from mt_doc_user")
+                                .Sql("select first_name from mt_doc_user")
                                 .ExecuteReader())
                     {
                         while (reader.Read())
@@ -78,7 +79,7 @@ namespace Marten.Schema.Testing
                     using (
                         var reader =
                             session.Connection.CreateCommand()
-                                .WithText("select first_name from mt_doc_user")
+                                .Sql("select first_name from mt_doc_user")
                                 .ExecuteReader())
                     {
                         while (reader.Read())

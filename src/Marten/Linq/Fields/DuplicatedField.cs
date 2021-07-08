@@ -13,6 +13,7 @@ using Marten.Schema.Arguments;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 using Weasel.Postgresql.Tables;
 
@@ -33,7 +34,7 @@ namespace Marten.Linq.Fields
             ColumnName = MemberName.ToTableAlias();
             this.useTimestampWithoutTimeZoneForDateTime = useTimestampWithoutTimeZoneForDateTime;
 
-            PgType = TypeMappings.GetPgType(FieldType, enumStorage);
+            PgType = PostgresqlProvider.Instance.GetDatabaseType(FieldType, enumStorage);
 
             if (FieldType.IsEnum)
             {
@@ -74,7 +75,7 @@ namespace Marten.Linq.Fields
             }
             else
             {
-                DbType = TypeMappings.ToDbType(FieldType);
+                DbType = PostgresqlProvider.Instance.ToParameterType(FieldType);
             }
         }
 

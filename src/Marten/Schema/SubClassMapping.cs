@@ -6,6 +6,7 @@ using Baseline;
 using Baseline.Reflection;
 using Weasel.Postgresql;
 using Marten.Util;
+using Weasel.Core;
 
 namespace Marten.Schema
 {

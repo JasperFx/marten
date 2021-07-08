@@ -11,6 +11,7 @@ using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments
@@ -51,7 +52,7 @@ namespace Marten.Schema.Arguments
                 _members = value;
                 if (value != null)
                 {
-                    DbType = TypeMappings.ToDbType(value.Last().GetMemberType());
+                    DbType = PostgresqlProvider.Instance.ToParameterType(value.Last().GetMemberType());
 
 
                     if (_members.Length == 1)
@@ -107,7 +108,7 @@ namespace Marten.Schema.Arguments
 
 
                 var dbTypeString = rawMemberType.IsArray
-                    ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(TypeMappings.ToDbType(rawMemberType.GetElementType())).Usage}"
+                    ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
                     : Constant.ForEnum(DbType).Usage;
 
                 method.Frames.Code($"{parameters.Usage}[{i}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};");
@@ -173,7 +174,7 @@ END
 
 
             var dbTypeString = rawMemberType.IsArray
-                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(TypeMappings.ToDbType(rawMemberType.GetElementType())).Usage}"
+                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
                 : Constant.ForEnum(DbType).Usage;
 
 
@@ -207,7 +208,7 @@ END
 
 
             var dbTypeString = rawMemberType.IsArray
-                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(TypeMappings.ToDbType(rawMemberType.GetElementType())).Usage}"
+                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
                 : Constant.ForEnum(DbType).Usage;
 
 

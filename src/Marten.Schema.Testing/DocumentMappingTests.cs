@@ -15,6 +15,7 @@ using Marten.Storage.Metadata;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;

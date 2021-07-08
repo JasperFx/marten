@@ -6,6 +6,7 @@ using LamarCodeGeneration;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries
@@ -143,7 +144,7 @@ parameters[{ParameterIndex}].Value = _query.{Member.Name}.ToString();
             method.Frames.Code($@"
 parameters[{ParameterIndex}].NpgsqlDbType = {{0}};
 parameters[{ParameterIndex}].Value = {maskedValue};
-", TypeMappings.ToDbType(Member.GetMemberType()));
+", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
         }
 
         private void generateBasicSetter(GeneratedMethod method)
@@ -151,7 +152,7 @@ parameters[{ParameterIndex}].Value = {maskedValue};
             method.Frames.Code($@"
 parameters[{ParameterIndex}].NpgsqlDbType = {{0}};
 parameters[{ParameterIndex}].Value = _query.{Member.Name};
-", TypeMappings.ToDbType(Member.GetMemberType()));
+", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
         }
     }
 }

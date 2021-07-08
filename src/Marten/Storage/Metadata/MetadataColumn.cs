@@ -12,6 +12,7 @@ using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using FindMembers = Marten.Linq.Parsing.FindMembers;
@@ -61,7 +62,7 @@ namespace Marten.Storage.Metadata
             {
                 Arg = "arg_" + Name,
                 Column = Name,
-                DbType = TypeMappings.ToDbType(DotNetType),
+                DbType = PostgresqlProvider.Instance.ToParameterType(DotNetType),
                 PostgresType = Type,
                 Members = new MemberInfo[]{Member}
 
@@ -91,7 +92,7 @@ namespace Marten.Storage.Metadata
         private MemberInfo _member;
         private readonly string _memberName;
 
-        protected MetadataColumn(string name, Expression<Func<DocumentMetadata, T>> property) : base(name, TypeMappings.GetPgType(typeof(T), EnumStorage.AsInteger), typeof(T))
+        protected MetadataColumn(string name, Expression<Func<DocumentMetadata, T>> property) : base(name, PostgresqlProvider.Instance.GetDatabaseType(typeof(T), EnumStorage.AsInteger), typeof(T))
         {
             var member = FindMembers.Determine(property).Last();
             _memberName = member.Name;

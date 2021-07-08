@@ -5,6 +5,7 @@ using Marten.Services;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
 

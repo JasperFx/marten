@@ -19,6 +19,7 @@ using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage

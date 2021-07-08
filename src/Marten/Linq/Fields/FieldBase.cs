@@ -54,7 +54,7 @@ namespace Marten.Linq.Fields
         [Obsolete("Try to eliminate this")]
         public bool ShouldUseContainmentOperator()
         {
-            return TypeMappings.ContainmentOperatorTypes.Contains(FieldType);
+            return PostgresqlProvider.Instance.ContainmentOperatorTypes.Contains(FieldType);
         }
 
         public abstract string SelectorForDuplication(string pgType);

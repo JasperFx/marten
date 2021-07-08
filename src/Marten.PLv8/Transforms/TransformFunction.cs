@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 

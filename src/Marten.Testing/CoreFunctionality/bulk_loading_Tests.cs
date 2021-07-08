@@ -5,6 +5,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality

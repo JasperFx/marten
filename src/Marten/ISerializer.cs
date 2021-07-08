@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 #nullable enable

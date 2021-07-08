@@ -20,6 +20,7 @@ using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Schema
@@ -109,11 +110,11 @@ namespace Marten.Schema
             documentType.ForAttribute<MartenAttribute>(att => att.Modify(this));
 
             documentType.GetProperties()
-                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.PropertyType))
+                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && PostgresqlProvider.Instance.HasTypeMapping(x.PropertyType))
                 .Each(prop => { prop.ForAttribute<MartenAttribute>(att => att.Modify(this, prop)); });
 
             documentType.GetFields()
-                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && TypeMappings.HasTypeMapping(x.FieldType))
+                .Where(x => !x.HasAttribute<DuplicateFieldAttribute>() && PostgresqlProvider.Instance.HasTypeMapping(x.FieldType))
                 .Each(fieldInfo => { fieldInfo.ForAttribute<MartenAttribute>(att => att.Modify(this, fieldInfo)); });
 
             // DuplicateFieldAttribute does not require TypeMappings check
@@ -237,7 +238,7 @@ namespace Marten.Schema
 
         public DuplicatedField[] DuplicatedFields => fields().OfType<DuplicatedField>().ToArray();
 
-        public static DocumentMapping<T> For<T>(string databaseSchemaName = DbObjectName.DefaultDatabaseSchemaName)
+        public static DocumentMapping<T> For<T>(string databaseSchemaName = SchemaConstants.DefaultSchema)
         {
             var storeOptions = new StoreOptions
             {

@@ -91,7 +91,7 @@ namespace Marten.Schema.Testing
 
             (await theStore.Tenancy.Default.Functions()).ShouldContain(upsertName);
 
-            theCleaner.CompletelyRemove(typeof(Target));
+            await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
             (await theStore.Tenancy.Default.Functions()).ShouldNotContain(upsertName);
 
@@ -224,7 +224,7 @@ where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchema
 
             GetSequenceCount(theStore).ShouldBeGreaterThan(0);
 
-            theStore.Advanced.Clean.CompletelyRemoveAll();
+            await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
             GetSequenceCount(theStore).ShouldBe(0);
 

@@ -7,6 +7,7 @@ using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Marten.Services.BatchQuerying;
 using Marten.Util;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -26,7 +27,7 @@ namespace Marten.Linq.Fields
             var valueType = FieldType.GenericTypeArguments[1];
             _valueIsObject = valueType == typeof(object);
             _isStringValue = valueType == typeof(string);
-            _valuePgType = TypeMappings.GetPgType(valueType, enumStorage);
+            _valuePgType = PostgresqlProvider.Instance.GetDatabaseType(valueType, enumStorage);
             _enumStorage = enumStorage;
         }
 
@@ -70,7 +71,7 @@ namespace Marten.Linq.Fields
             {
                 if (_valueIsObject)
                 {
-                    var pgType = TypeMappings.GetPgType(value.Value.GetType(), _enumStorage);
+                    var pgType = PostgresqlProvider.Instance.GetDatabaseType(value.Value.GetType(), _enumStorage);
                     locator = $"CAST({locator} as {pgType})";
                 }
             }

@@ -5,6 +5,7 @@ using System.Reflection;
 using Baseline;
 using LamarCodeGeneration.Util;
 using Marten.Util;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.Fields
@@ -19,10 +20,10 @@ namespace Marten.Linq.Fields
 
             var collectionType = members.Last().GetMemberType();
             ElementType = collectionType.DetermineElementType();
-            var innerPgType = TypeMappings.GetPgType(ElementType, EnumStorage.AsInteger);
+            var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
 
 
-            if (TypeMappings.HasTypeMapping(ElementType))
+            if (PostgresqlProvider.Instance.HasTypeMapping(ElementType))
             {
                 PgType = innerPgType + "[]";
             }

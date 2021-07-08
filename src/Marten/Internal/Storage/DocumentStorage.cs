@@ -22,6 +22,7 @@ using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 using LambdaBuilder = Baseline.Expressions.LambdaBuilder;
 #nullable enable
@@ -49,7 +50,7 @@ namespace Marten.Internal.Storage
 
             determineDefaultWhereFragment();
 
-            _idType = TypeMappings.ToDbType(typeof(TId));
+            _idType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
 
             var table = _mapping.Schema.Table;
 

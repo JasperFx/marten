@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 #nullable enable

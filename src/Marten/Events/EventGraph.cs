@@ -12,6 +12,7 @@ using Marten.Internal;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Events

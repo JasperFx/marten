@@ -11,6 +11,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Events;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;

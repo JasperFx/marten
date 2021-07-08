@@ -4,6 +4,7 @@ using System.IO;
 using Marten.Events.Archiving;
 using Marten.Events.Schema;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 

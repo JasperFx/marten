@@ -21,6 +21,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events
