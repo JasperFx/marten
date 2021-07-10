@@ -41,22 +41,18 @@ jobs:
         with:
           node-version: ${{ env.node_version }}
 
-      - name: Build docs
-        run: ./build.sh --no-color docs-build
-        shell: bash
-
-      - name: Deploy docs
-        run: yarn deploy
-        if: ${{ github.ref != 'refs/heads/main' }}
+      - name: Build & Deploy docs preview
+        run: ./build.sh --no-color publish-docs-preview
+        if: ${{ github.ref != 'refs/heads/master' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       
       # deploy
-      - name: Deploy docs prod
-        run: yarn deploy:prod
-        if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Build & Deploy docs
+        run: ./build.sh --no-color publish-docs
+        if: ${{ github.ref == 'refs/heads/master' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
