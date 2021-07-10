@@ -87,12 +87,18 @@ namespace martenbuild
             Target("open_st", DependsOn("compile"), () =>
                 Run("dotnet", $"storyteller open --framework {framework} --culture en-US", "src/Marten.Storyteller"));
 
-            Target("install-mdsnippets", () =>
-                Run("dotnet", $"tool install -g MarkdownSnippets.Tool"));
+            Target("install-mdsnippets", IgnoreIfFailed(() =>
+                Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
+            ));
 
-            Target("docs", DependsOn("install"), () => {
+            Target("docs", DependsOn("install", "install-mdsnippets"), () => {
                 // Run docs site
                 RunNpm("run docs");
+            });
+
+            Target("docs-build", DependsOn("install", "install-mdsnippets"), () => {
+                // Run docs site
+                RunNpm("run docs-build");
             });
 
             Target("clear-inline-samples", () => {
@@ -268,6 +274,21 @@ namespace martenbuild
             var version = float.Parse(frameworkName.Split('=')[1].Replace("v",""), System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
 
             return version < 5.0 ? $"netcoreapp{version.ToString("N1")}" : $"net{version.ToString("N1")}";
+        }
+
+        private static Action IgnoreIfFailed(Action action)
+        {
+            return () =>
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception.Message);
+                }
+            };
         }
     }
 }
