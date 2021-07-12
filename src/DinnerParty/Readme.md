@@ -1,4 +1,4 @@
-﻿# DinnerParty for Marten
+# DinnerParty for Marten
 
 ## Introduction
 
