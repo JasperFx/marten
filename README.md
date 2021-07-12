@@ -132,10 +132,10 @@ All code snippet identifier starts with `sample_` as a convention to clearly ide
 
 - Use the below steps to include the code snippet in a docs page
 
-```markdown
-<!-- snippet: sample_my_snippet -->
-<!-- endSnippet -->
-```
+<pre>
+&#60;!-- snippet: sample_my_snippet -->
+&#60;!-- endSnippet -->
+</pre>
 
 Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with the actual code snippet from the source code. Please ensure to commit the changes with the inline code snippet intact. This helps with easier change tracking when you send PR's.
 
