@@ -87,12 +87,18 @@ namespace martenbuild
             Target("open_st", DependsOn("compile"), () =>
                 Run("dotnet", $"storyteller open --framework {framework} --culture en-US", "src/Marten.Storyteller"));
 
-            Target("install-mdsnippets", () =>
-                Run("dotnet", $"tool install -g MarkdownSnippets.Tool"));
+            Target("install-mdsnippets", IgnoreIfFailed(() =>
+                Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
+            ));
 
-            Target("docs", DependsOn("install"), () => {
+            Target("docs", DependsOn("install", "install-mdsnippets"), () => {
                 // Run docs site
                 RunNpm("run docs");
+            });
+
+            Target("docs-build", DependsOn("install", "install-mdsnippets"), () => {
+                // Run docs site
+                RunNpm("run docs-build");
             });
 
             Target("clear-inline-samples", () => {
@@ -113,14 +119,12 @@ namespace martenbuild
                 }
             });
 
-            Target("publish-docs", () =>
-            {
-                // Exports the documentation to jasperfx.github.io/marten - requires Git access to that repo though!
-                // PublishDocs(branchName: "gh-pages", exportWithGithubProjectPrefix: true);
 
-                // Exports the documentation to Netlify - martendb.io - requires Git access to that repo though!
-                // PublishDocs(branchName: "gh-pages-netlify", exportWithGithubProjectPrefix: false);
-            });
+            Target("publish-docs-preview", DependsOn("docs-build"), () =>
+                RunNpm("run deploy"));
+
+            Target("publish-docs", DependsOn("docs-build"), () =>
+                RunNpm("run deploy:prod"));
 
             Target("benchmarks", () =>
                 Run("dotnet", "run --project src/MartenBenchmarks --configuration Release"));
@@ -268,6 +272,21 @@ namespace martenbuild
             var version = float.Parse(frameworkName.Split('=')[1].Replace("v",""), System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
 
             return version < 5.0 ? $"netcoreapp{version.ToString("N1")}" : $"net{version.ToString("N1")}";
+        }
+
+        private static Action IgnoreIfFailed(Action action)
+        {
+            return () =>
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception.Message);
+                }
+            };
         }
     }
 }

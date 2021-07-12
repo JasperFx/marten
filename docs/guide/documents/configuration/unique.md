@@ -274,7 +274,7 @@ var store = DocumentStore.For(options =>
 
 ## Unique Index per Tenant
 
-For tables which have been configured for [tenancy](/guide/documents/tenancy), index definitions may also be scoped per tenant.
+For tables which have been configured for [tenancy](/guide/documents/tenancy/index), index definitions may also be scoped per tenant.
 
 <!-- snippet: sample_per-tenant-unique-index -->
 <a id='snippet-sample_per-tenant-unique-index'></a>

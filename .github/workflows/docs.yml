@@ -1,0 +1,58 @@
+name: Docs build and deploy
+
+on:
+  # run it on push to the default repository branch
+  push:
+    branches: [master]
+  # run it during pull request
+  pull_request:
+  workflow_dispatch:
+
+env:
+  config: Release
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  node_version: 15.x
+
+jobs:
+  build-and-test-code:
+    name: Build and deploy docs to Netlify
+    # use system defined below in the tests matrix
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      # define the test matrix
+      matrix:
+        # selected operation systems to run CI
+        os: [ubuntu-latest]
+        # selected node version to run CI
+        node-version: [15.x]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install .NET Core 5.0.x
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.node_version }}
+
+      - name: Build & Deploy docs preview
+        run: ./build.sh --no-color publish-docs-preview
+        if: ${{ github.ref != 'refs/heads/master' }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      
+      # deploy
+      - name: Build & Deploy docs
+        run: ./build.sh --no-color publish-docs
+        if: ${{ github.ref == 'refs/heads/master' }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

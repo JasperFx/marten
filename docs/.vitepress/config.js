@@ -1,5 +1,5 @@
 module.exports = {
-  base: '/v4/',
+  base: '/',
   lang: 'en-US',
   title: 'Marten',
   description: '.NET Transactional Document DB and Event Store on PostgreSQL',
