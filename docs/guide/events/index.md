@@ -5,7 +5,7 @@ stream data, Marten also helps you create "read side" views of the raw event dat
 
 ## Event Store quick start
 
-There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](guide/schema/]>. Marten is just a client library,
+There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](/guide/schema/). Marten is just a client library,
 and there's nothing to install other than the Marten NuGet.
 
 Because I’ve read way too much epic fantasy fiction, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest, you may want to record events like:
@@ -283,24 +283,6 @@ public class MembersEscaped
 
 Now, let's say that we're starting a new "quest" with the first couple of events, then appending a couple more as other quest party members join up:
 
-<!-- snippet: sample_event-store-start-stream-with-explicit-type -->
-<a id='snippet-sample_event-store-start-stream-with-explicit-type'></a>
-```cs
-using (var session = store.OpenSession())
-{
-    var started = new QuestStarted { Name = "Destroy the One Ring" };
-    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
-
-    // Start a brand new stream and commit the new events as
-    // part of a transaction
-    session.Events.StartStream(typeof(Quest), questId, started, joined1);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L45-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
-
 <!-- snippet: sample_event-store-quickstart -->
 <a id='snippet-sample_event-store-quickstart'></a>
 ```cs
@@ -333,7 +315,7 @@ using (var session = store.OpenSession())
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L16-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-It has also overload to create streams without associating them with aggregate type (stored in `mt_streams` table).
+In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
 
 <!-- snippet: sample_event-store-start-stream-with-explicit-type -->
 <a id='snippet-sample_event-store-start-stream-with-explicit-type'></a>
