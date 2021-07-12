@@ -25,9 +25,59 @@ different queries for "IsBlue()." First, write the method you want to be recogni
  part of a Postgresql "where" clause. The custom Linq parser for `IsBlue()` is shown below:
 
 <!-- snippet: sample_custom-extension-for-linq -->
+<a id='snippet-sample_custom-extension-for-linq'></a>
+```cs
+public static bool IsBlue(this ColorTarget target)
+{
+    return target.Color == "Blue";
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#L75-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, to plug in our new parser, we can add that to the `StoreOptions` object that we use to bootstrap a new `DocumentStore` as shown below:
 
 <!-- snippet: sample_using_custom_linq_parser -->
+<a id='snippet-sample_using_custom_linq_parser'></a>
+```cs
+[Fact]
+public void query_with_custom_parser()
+{
+    using (var store = DocumentStore.For(_ =>
+    {
+        _.Connection(ConnectionSource.ConnectionString);
+
+        // IsBlue is a custom parser I used for testing this
+        _.Linq.MethodCallParsers.Add(new IsBlue());
+        _.AutoCreateSchemaObjects = AutoCreate.All;
+
+        // This is just to isolate the test
+        _.DatabaseSchemaName = "isblue";
+    }))
+    {
+        store.Advanced.Clean.CompletelyRemoveAll();
+
+        var targets = new List<ColorTarget>();
+        for (var i = 0; i < 25; i++)
+        {
+            targets.Add(new ColorTarget {Color = "Blue"});
+            targets.Add(new ColorTarget {Color = "Green"});
+            targets.Add(new ColorTarget {Color = "Red"});
+        }
+
+        var count = targets.Where(x => x.IsBlue()).Count();
+
+        targets.Each(x => x.Id = Guid.NewGuid());
+
+        store.BulkInsert(targets.ToArray());
+
+        using (var session = store.QuerySession())
+        {
+            session.Query<ColorTarget>().Count(x => x.IsBlue())
+                .ShouldBe(count);
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#L22-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

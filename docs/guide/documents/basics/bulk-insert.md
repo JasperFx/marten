@@ -3,6 +3,19 @@
 Marten supports [Postgresql's COPY](http://www.postgresql.org/docs/9.4/static/sql-copy.html) functionality for very efficient insertion of documents like you might need for test data set up or data migrations. Marten calls this feature "Bulk Insert," and it's exposed off the `IDocumentStore` interface as shown below:
 
 <!-- snippet: sample_using_bulk_insert -->
+<a id='snippet-sample_using_bulk_insert'></a>
+```cs
+// This is just creating some randomized
+// document data
+var data = Target.GenerateRandomData(100).ToArray();
+
+// Load all of these into a Marten-ized database
+theStore.BulkInsert(data, batchSize: 500);
+
+// And just checking that the data is actually there;)
+theSession.Query<Target>().Count().ShouldBe(data.Length);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
@@ -18,6 +31,13 @@ If you want to use the bulk insert feature, but you know that you could have dup
 In this case, you only want to insert brand new documents and just throwaway any potential changes to existing documents.
 
 <!-- snippet: sample_bulk_insert_with_IgnoreDuplicates -->
+<a id='snippet-sample_bulk_insert_with_ignoreduplicates'></a>
+```cs
+var data = Target.GenerateRandomData(100).ToArray();
+
+theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L147-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_ignoreduplicates' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
@@ -28,6 +48,13 @@ an INSERT command to copy rows from the temporary table to the real table, filte
 In the second case, you want to use the bulk insert to write a batch of documents and overwrite any existing data with matching id's:
 
 <!-- snippet: sample_bulk_insert_with_OverwriteExisting -->
+<a id='snippet-sample_bulk_insert_with_overwriteexisting'></a>
+```cs
+var data = Target.GenerateRandomData(100).ToArray();
+
+theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L167-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_overwriteexisting' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues

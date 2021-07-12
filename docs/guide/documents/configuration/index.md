@@ -31,6 +31,16 @@ truncates the name of database objects. To guard against this, Marten will now w
 but you do need to tell Marten about any non-default length limit like so:
 
 <!-- snippet: sample_setting-name-data-length -->
+<a id='snippet-sample_setting-name-data-length'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    // If you have overridden NAMEDATALEN in your
+    // Postgresql database to 100
+    _.NameDataLength = 100;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L278-L287' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom StoreOptions
@@ -38,6 +48,26 @@ but you do need to tell Marten about any non-default length limit like so:
 It's perfectly valid to create your own subclass of `StoreOptions` that configures itself, as shown below.
 
 <!-- snippet: sample_custom-store-options -->
+<a id='snippet-sample_custom-store-options'></a>
+```cs
+public class MyStoreOptions: StoreOptions
+{
+    public static IDocumentStore ToStore()
+    {
+        return new DocumentStore(new MyStoreOptions());
+    }
+
+    public MyStoreOptions()
+    {
+        Connection(ConnectionSource.ConnectionString);
+
+        Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString });
+
+        Schema.For<User>().Index(x => x.UserName);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L209-L227' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-store-options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This strategy might be beneficial if you need to share Marten configuration across different applications
@@ -54,6 +84,14 @@ your own subclass of `MartenRegistry` and place declarations in the constructor 
 To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
 
 <!-- snippet: sample_using_marten_registry_to_bootstrap_document_store -->
+<a id='snippet-sample_using_marten_registry_to_bootstrap_document_store'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("your connection string");
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_marten_registry_to_bootstrap_document_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
@@ -71,6 +109,25 @@ If there's some kind of customization you'd like to use attributes for that isn'
 you're still in luck. If you write a subclass of the `MartenAttribute` shown below:
 
 <!-- snippet: sample_MartenAttribute -->
+<a id='snippet-sample_martenattribute'></a>
+```cs
+public abstract class MartenAttribute: Attribute
+{
+    /// <summary>
+    /// Customize Document storage at the document level
+    /// </summary>
+    /// <param name="mapping"></param>
+    public virtual void Modify(DocumentMapping mapping) { }
+
+    /// <summary>
+    /// Customize the Document storage for a single member
+    /// </summary>
+    /// <param name="mapping"></param>
+    /// <param name="member"></param>
+    public virtual void Modify(DocumentMapping mapping, MemberInfo member) { }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/MartenAttribute.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And decorate either classes or individual field or properties on a document type, your custom attribute will be
@@ -81,6 +138,18 @@ As an example, an attribute to add a gin index to the JSONB storage for more eff
 would look like this:
 
 <!-- snippet: sample_GinIndexedAttribute -->
+<a id='snippet-sample_ginindexedattribute'></a>
+```cs
+[AttributeUsage(AttributeTargets.Class)]
+public class GinIndexedAttribute: MartenAttribute
+{
+    public override void Modify(DocumentMapping mapping)
+    {
+        mapping.AddGinIndexToData();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/GinIndexedAttribute.cs#L9-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ginindexedattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Embedding Configuration in Document Types
@@ -90,6 +159,19 @@ and invoke that to let the document type make its own customizations for its sto
 the unit tests:
 
 <!-- snippet: sample_ConfigureMarten-generic -->
+<a id='snippet-sample_configuremarten-generic'></a>
+```cs
+public class ConfiguresItself
+{
+    public Guid Id;
+
+    public static void ConfigureMarten(DocumentMapping mapping)
+    {
+        mapping.Alias = "different";
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentMappingTests.cs#L122-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-generic' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `DocumentMapping` type is the core configuration class representing how a document type is persisted or
@@ -100,4 +182,18 @@ You can optionally take in the more specific `DocumentMapping<T>` for your docum
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:
 
 <!-- snippet: sample_ConfigureMarten-specifically -->
+<a id='snippet-sample_configuremarten-specifically'></a>
+```cs
+public class ConfiguresItselfSpecifically
+{
+    public Guid Id;
+    public string Name;
+
+    public static void ConfigureMarten(DocumentMapping<ConfiguresItselfSpecifically> mapping)
+    {
+        mapping.Duplicate(x => x.Name);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentMappingTests.cs#L135-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-specifically' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

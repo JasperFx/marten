@@ -15,6 +15,19 @@ Marten does need to know what the event types are before you issue queries again
 but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:
 
 <!-- snippet: sample_registering-event-types -->
+<a id='snippet-sample_registering-event-types'></a>
+```cs
+var store2 = DocumentStore.For(_ =>
+{
+    _.DatabaseSchemaName = "samples";
+    _.Connection(ConnectionSource.ConnectionString);
+    _.AutoCreateSchemaObjects = AutoCreate.None;
+
+    _.Events.AddEventType(typeof(QuestStarted));
+    _.Events.AddEventType(typeof(MonsterSlayed));
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/using_the_schema_objects_Tests.cs#L35-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-event-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Stream or Aggregate Types
@@ -28,11 +41,133 @@ As of Marten v0.9, you can **optionally** start a new event stream against some 
 As usual, our sample problem domain is the Lord of the Rings style "Quest." For now, you can either start a new stream and let Marten assign the Guid id for the stream:
 
 <!-- snippet: sample_start-stream-with-aggregate-type -->
+<a id='snippet-sample_start-stream-with-aggregate-type'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream<Quest>(joined, departed).Id;
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L59-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-1'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream<Quest>(joined, departed).Id;
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L90-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-1' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-2'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream<Quest>(joined, departed).Id;
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L121-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-2' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-3'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream<Quest>(joined, departed).Id;
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L153-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-3' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-4'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream(joined, departed).Id;
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L35-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-4' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-5'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream(joined, departed).Id;
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L63-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-5' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-6'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream(joined, departed).Id;
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L91-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-6' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-7'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = session.Events.StartStream(joined, departed).Id;
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L119-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-7' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-8'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = "Second";
+session.Events.StartStream<Quest>(id, joined, departed);
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers.cs#L55-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-8' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-9'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = "Third";
+session.Events.StartStream<Quest>(id, joined, departed);
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers.cs#L83-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-9' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-aggregate-type-10'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = "Fourth";
+session.Events.StartStream<Quest>(id, joined, departed);
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers.cs#L112-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-10' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or have Marten use a Guid value that you provide yourself:
 
 <!-- snippet: sample_start-stream-with-existing-guid -->
+<a id='snippet-sample_start-stream-with-existing-guid'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = Guid.NewGuid();
+session.Events.StartStream<Quest>(id, joined, departed);
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L362-L369' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-existing-guid' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_start-stream-with-existing-guid-1'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+var id = Guid.NewGuid();
+session.Events.StartStream(id, joined, departed);
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L300-L307' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-existing-guid-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For stream identity (strings vs. Guids), see [here](/guide/events/identity).
@@ -44,6 +179,26 @@ Note that `StartStream` checks for an existing stream and throws `ExistingStream
 If you have an existing stream, you can later append additional events with `IEventStore.Append()` as shown below:
 
 <!-- snippet: sample_append-events -->
+<a id='snippet-sample_append-events'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+session.Events.Append(id, joined, departed);
+
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L567-L574' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_append-events-1'></a>
+```cs
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+session.Events.Append(id, joined, departed);
+
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L483-L490' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Appending & Assertions ###
@@ -51,6 +206,36 @@ If you have an existing stream, you can later append additional events with `IEv
 `IEventStore.Append()` supports an overload taking in a parameter `int expectedVersion` that can be used to assert that events are inserted into the event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted and an `EventStreamUnexpectedMaxEventIdException` exception is thrown.
 
 <!-- snippet: sample_append-events-assert-on-eventid -->
+<a id='snippet-sample_append-events-assert-on-eventid'></a>
+```cs
+session.Events.StartStream<Quest>(id, started);
+session.SaveChanges();
+
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+// Events are appended into the stream only if the maximum event id for the stream
+// would be 3 after the append operation.
+session.Events.Append(id, 3, joined, departed);
+
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L606-L618' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-assert-on-eventid' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_append-events-assert-on-eventid-1'></a>
+```cs
+session.Events.StartStream(id, started);
+session.SaveChanges();
+
+var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+// Events are appended into the stream only if the maximum event id for the stream
+// would be 3 after the append operation.
+session.Events.Append(id, 3, joined, departed);
+
+session.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L516-L528' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-assert-on-eventid-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### StartStream vs. Append

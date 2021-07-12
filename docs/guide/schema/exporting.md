@@ -5,6 +5,36 @@ may either not have rights to generate new tables at runtime or simply not wish 
 the SQL for creating these objects for *all the known document types* from `IDocumentStore` like this:
 
 <!-- snippet: sample_export-ddl -->
+<a id='snippet-sample_export-ddl'></a>
+```cs
+public void export_ddl()
+{
+    var store = DocumentStore.For(_ =>
+    {
+        _.Connection("some connection string");
+
+        // If you are depending upon attributes for customization,
+        // you have to help DocumentStore "know" what the document types
+        // are
+        _.Schema.For<User>();
+        _.Schema.For<Company>();
+        _.Schema.For<Issue>();
+    });
+
+    // Export the SQL to a file
+    store.Schema.WriteDatabaseCreationScriptFile("my_database.sql");
+
+    // Or instead, write a separate sql script
+    // to the named directory
+    // for each type of document
+    store.Schema.WriteDatabaseCreationScriptByType("sql");
+
+    // or just see it
+    var sql = store.Schema.ToDatabaseScript();
+    Debug.WriteLine(sql);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExportingDDL.cs#L8-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export-ddl' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of v0.8, this export will include the Hilo id generation table and all the objects necessary to use the event store functionality if that is enabled.

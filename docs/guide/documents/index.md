@@ -9,6 +9,12 @@ To use Marten as a document database, you first need a Postgresql schema that wi
 with Marten can be as simple as opening a `DocumentStore` to your new Postgresql schema:
 
 <!-- snippet: sample_start_a_store -->
+<a id='snippet-sample_start_a_store'></a>
+```cs
+var store = DocumentStore
+    .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L33-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this "quickstart" configuration,
@@ -21,6 +27,21 @@ As of Marten v3.0, document storage tables, by default, are created and updated,
 While the default "auto-create or update" (`AutoCreate.CreateOrUpdate`) database schema management is fantastic for a development time experience, you may not want Marten to be building out new database schema objects at production time. You might also want to override the default JSON serialization, tweak the document storage for performance, or opt into Postgresql 9.5's fancy new "upsert" capability. For customization, you have a different syntax for bootstrapping a `DocumentStore`:
 
 <!-- snippet: sample_start_a_complex_store -->
+<a id='snippet-sample_start_a_complex_store'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    // Turn this off in production
+    _.AutoCreateSchemaObjects = AutoCreate.None;
+
+    // This is still mandatory
+    _.Connection("some connection string");
+
+    // Override the JSON Serialization
+    _.Serializer<TestsSerializer>();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L78-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_complex_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For more information on using the `IDocumentStore` and configuring document storage, see:
@@ -39,6 +60,15 @@ For more information on using the `IDocumentStore` and configuring document stor
 Now that we've got a document store, we can use that to create a new `IQuerySession` object just for querying or loading documents from the database:
 
 <!-- snippet: sample_start_a_query_session -->
+<a id='snippet-sample_start_a_query_session'></a>
+```cs
+using (var session = store.QuerySession())
+{
+    var internalUsers = session
+        .Query<User>().Where(x => x.Internal).ToArray();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L38-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For more information on the query support within Marten, check [document querying](/guide/documents/querying/)
@@ -49,6 +79,36 @@ The main service for updating and persisting documents is the `IDocumentSession`
 in one of three ways:
 
 <!-- snippet: sample_opening_sessions -->
+<a id='snippet-sample_opening_sessions'></a>
+```cs
+// Open a session for querying, loading, and
+// updating documents
+using (var session = store.LightweightSession())
+{
+    var user = new User { FirstName = "Han", LastName = "Solo" };
+    session.Store(user);
+
+    session.SaveChanges();
+}
+
+// Open a session for querying, loading, and
+// updating documents with a backing "Identity Map"
+using (var session = store.OpenSession())
+{
+    var existing = session
+        .Query<User>()
+        .Where(x => x.FirstName == "Han" && x.LastName == "Solo")
+        .Single();
+}
+
+// Open a session for querying, loading, and
+// updating documents that performs automated
+// "dirty" checking of previously loaded documents
+using (var session = store.DirtyTrackedSession())
+{
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L46-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In all cases, `IDocumentSession` has the same query and loading functions as the read only `IQuerySession`.

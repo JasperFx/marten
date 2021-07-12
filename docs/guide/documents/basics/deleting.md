@@ -9,6 +9,22 @@ a document from the database just to turn around and delete it. Deletions are ex
 The usage is shown below:
 
 <!-- snippet: sample_deletes -->
+<a id='snippet-sample_deletes'></a>
+```cs
+public void delete_documents(IDocumentSession session)
+{
+    var user = new User();
+
+    session.Delete(user);
+    session.SaveChanges();
+
+    // OR
+
+    session.Delete(user.Id);
+    session.SaveChanges();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L7-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -17,6 +33,13 @@ The usage is shown below:
 New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new `IDocumentSession.DeleteWhere<T>()` method:
 
 <!-- snippet: sample_DeleteWhere -->
+<a id='snippet-sample_deletewhere'></a>
+```cs
+theSession.DeleteWhere<Target>(x => x.Double == 578);
+
+theSession.SaveChanges();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/delete_many_documents_by_query_Tests.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletewhere' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A couple things to note:

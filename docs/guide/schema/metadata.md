@@ -25,6 +25,35 @@ You can find the metadata values for a given document object with the following 
 on `IDocumentSession`:
 
 <!-- snippet: sample_resolving_metadata -->
+<a id='snippet-sample_resolving_metadata'></a>
+```cs
+[Fact]
+public void hit_returns_values()
+{
+    var shop = new CoffeeShop();
+
+    using (var session = theStore.OpenSession())
+    {
+        session.Store(shop);
+        session.SaveChanges();
+    }
+
+    using (var session = theStore.QuerySession())
+    {
+        var metadata = session.MetadataFor(shop);
+
+        metadata.ShouldNotBeNull();
+        metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
+        metadata.LastModified.ShouldNotBe(default);
+        metadata.DotNetType.ShouldBe(typeof(CoffeeShop).FullName);
+        metadata.DocumentType.ShouldBeNull();
+        metadata.Deleted.ShouldBeFalse();
+        metadata.DeletedAt.ShouldBeNull();
+    }
+
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/fetching_entity_metadata.cs#L22-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_resolving_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Correlation, Causation, and Last Modified By Tracking

@@ -6,6 +6,18 @@ By default, the event store database objects are created in the default schema f
 you can segregate the event store objects into a separate schema with this syntax:
 
 <!-- snippet: sample_setting_event_schema -->
+<a id='snippet-sample_setting_event_schema'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Places all the Event Store schema objects
+    // into the "events" schema
+    _.Events.DatabaseSchemaName = "events";
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L197-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Configuration
@@ -44,6 +56,59 @@ And finally, a couple functions that Marten uses internally:
 Hopefully, it's relatively clear how the fields in `mt_events` map to the `IEvent` interface in Marten:
 
 <!-- snippet: sample_event_metadata -->
+<a id='snippet-sample_event_metadata'></a>
+```cs
+/// <summary>
+///     A reference to the stream that contains
+///     this event
+/// </summary>
+public Guid StreamId { get; set; }
+
+/// <summary>
+///     A reference to the stream if the stream
+///     identifier mode is AsString
+/// </summary>
+public string? StreamKey { get; set; }
+
+/// <summary>
+///     An alternative Guid identifier to identify
+///     events across databases
+/// </summary>
+public Guid Id { get; set; }
+
+/// <summary>
+///     An event's version position within its event stream
+/// </summary>
+public long Version { get; set; }
+
+/// <summary>
+///     A global sequential number identifying the Event
+/// </summary>
+public long Sequence { get; set; }
+
+/// <summary>
+///     The UTC time that this event was originally captured
+/// </summary>
+public DateTimeOffset Timestamp { get; set; }
+
+public string TenantId { get; set; } = Tenancy.DefaultTenantId;
+
+/// <summary>
+/// Optional metadata describing the causation id
+/// </summary>
+public string? CausationId { get; set; }
+
+/// <summary>
+/// Optional metadata describing the correlation id
+/// </summary>
+public string? CorrelationId { get; set; }
+
+/// <summary>
+/// This is meant to be lazy created, and can be null
+/// </summary>
+public Dictionary<string, object>? Headers { get; set; }
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L124-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/guide/documents/diagnostics) for more information on capturing event data in the instrumentation hooks.

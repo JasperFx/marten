@@ -49,6 +49,51 @@ It comes of the way how Marten handles projection mechanism:
 If additional Marten event details are needed, then events can use the `ProjectionEvent<>` generic when setting them up with `ProjectEvent`. `ProjectionEvent` exposes the Marten Id, Version, Timestamp and Data.
 
 <!-- snippet: sample_viewprojection-from-class-with-eventdata -->
+<a id='snippet-sample_viewprojection-from-class-with-eventdata'></a>
+```cs
+public class Lap
+{
+    public Guid Id { get; set; }
+
+    public DateTimeOffset? Start { get; set; }
+
+    public DateTimeOffset? End { get; set; }
+}
+
+public abstract class LapEvent
+{
+    public Guid LapId { get; set; }
+}
+
+public class LapStarted : LapEvent
+{
+
+}
+
+public class LapFinished : LapEvent
+{
+
+}
+
+public class LapViewProjection: ViewProjection<Lap, Guid>
+{
+    public LapViewProjection()
+    {
+        // This tells the projection how to "split" the events
+        // and identify the document. It should be able to use
+        // a base class or interface. Can have multiple Identity()
+        // calls for different events.
+        Identity<LapEvent>(x => x.LapId);
+    }
+
+    public void Apply(Lap view, IEvent<LapStarted> eventData) =>
+        view.Start = eventData.Timestamp;
+
+    public void Apply(Lap view, IEvent<LapFinished> eventData) =>
+        view.End = eventData.Timestamp;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L88-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-from-class-with-eventdata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Injecting helpers classes
@@ -87,4 +132,86 @@ Lets' look on the following scenario of the projection that manages the newslett
 1. User opened newsletter after unsubscribing and _NewsletterOpened_ event was published. As there is no record in database if we use the default behaviour then new record will be created with only data that are applied for the _NewsletterOpened_ event. That's might create views with unexpected state. <u>In that case, **onlyUpdate** set to **true** should be used. Having that, if the view does not exist then the event will not be projected and new view record will not be created in database.</u>
 
 <!-- snippet: sample_viewprojection-with-update-only -->
+<a id='snippet-sample_viewprojection-with-update-only'></a>
+```cs
+public abstract class SubscriptionEvent
+{
+    public Guid SubscriptionId { get; set; }
+}
+
+public class NewsletterSubscription
+{
+    public Guid Id { get; set; }
+
+    public Guid NewsletterId { get; set; }
+
+    public Guid ReaderId { get; set; }
+
+    public string FirstName { get; set; }
+
+    public int OpensCount { get; set; }
+}
+
+public class ReaderSubscribed : SubscriptionEvent
+{
+    public Guid NewsletterId { get; }
+
+    public Guid ReaderId { get; }
+
+    public string FirstName { get; }
+
+    public ReaderSubscribed(Guid subscriptionId, Guid newsletterId, Guid readerId, string firstName)
+    {
+        SubscriptionId = subscriptionId;
+        NewsletterId = newsletterId;
+        ReaderId = readerId;
+        FirstName = firstName;
+    }
+}
+
+public class NewsletterOpened : SubscriptionEvent
+{
+    public DateTime OpenedAt { get; }
+
+    public NewsletterOpened(Guid subscriptionId, DateTime openedAt)
+    {
+        SubscriptionId = subscriptionId;
+        OpenedAt = openedAt;
+    }
+}
+
+public class ReaderUnsubscribed : SubscriptionEvent
+{
+
+    public ReaderUnsubscribed(Guid subscriptionId)
+    {
+        SubscriptionId = subscriptionId;
+    }
+}
+
+public class NewsletterSubscriptionProjection : ViewProjection<NewsletterSubscription, Guid>
+{
+    public NewsletterSubscriptionProjection()
+    {
+        Identity<SubscriptionEvent>(x => x.SubscriptionId);
+
+        DeleteEvent<ReaderUnsubscribed>();
+    }
+
+    public void Apply(NewsletterSubscription view, ReaderSubscribed @event)
+    {
+        view.Id = @event.SubscriptionId;
+        view.NewsletterId = @event.NewsletterId;
+        view.ReaderId = @event.ReaderId;
+        view.FirstName = @event.FirstName;
+        view.OpensCount = 0;
+    }
+
+    public void Apply(NewsletterSubscription view, NewsletterOpened @event)
+    {
+        view.OpensCount++;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L134-L215' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-with-update-only' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

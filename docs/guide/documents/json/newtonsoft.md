@@ -6,11 +6,49 @@ because of its flexibility and ability to handle polymorphism within child colle
 Out of the box, Marten uses this configuration for Newtonsoft.Json:
 
 <!-- snippet: sample_newtonsoft-configuration -->
+<a id='snippet-sample_newtonsoft-configuration'></a>
+```cs
+private readonly JsonSerializer _serializer = new()
+{
+    TypeNameHandling = TypeNameHandling.Auto,
+
+    // ISO 8601 formatting of DateTime's is mandatory
+    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+    MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead,
+    ContractResolver = new JsonNetContractResolver()
+};
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Services/JsonNetSerializer.cs#L39-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_newtonsoft-configuration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To customize the Newtonsoft.Json serialization, you need to explicitly supply an instance of Marten's `JsonNetSerializer` as shown below:
 
 <!-- snippet: sample_customize_json_net_serialization -->
+<a id='snippet-sample_customize_json_net_serialization'></a>
+```cs
+var serializer = new Marten.Services.JsonNetSerializer();
+
+// To change the enum storage policy to store Enum's as strings:
+serializer.EnumStorage = EnumStorage.AsString;
+
+// All other customizations:
+serializer.Customize(_ =>
+{
+    // Code directly against a Newtonsoft.Json JsonSerializer
+    _.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
+    _.ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor;
+});
+
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Replace the default JsonNetSerializer with the one we configured
+    // above
+    _.Serializer(serializer);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L95-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -27,6 +65,18 @@ Marten allows how enum values are being stored. By default, they are stored as i
 To do that you need to change the serialization settings in the `DocumentStore` options.
 
 <!-- snippet: sample_customize_json_net_enum_storage_serialization -->
+<a id='snippet-sample_customize_json_net_enum_storage_serialization'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Replace the default JsonNetSerializer default enum storage
+    // with storing them as string
+    _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L122-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Fields Names Casing
@@ -41,9 +91,33 @@ You can have them also automatically formatted to:
 by changing the serialization settings in the `DocumentStore` options.
 
 <!-- snippet: sample_customize_json_net_camelcase_casing_serialization -->
+<a id='snippet-sample_customize_json_net_camelcase_casing_serialization'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Replace the default (as is) JsonNetSerializer field names casing
+    // with camelCase formatting
+    _.UseDefaultSerialization(casing: Casing.CamelCase);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L137-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_customize_json_net_snakecase_casing_serialization -->
+<a id='snippet-sample_customize_json_net_snakecase_casing_serialization'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Replace the default (as is) JsonNetSerializer field names casing
+    // with snake_case formatting
+    _.UseDefaultSerialization(casing: Casing.SnakeCase);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L152-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Collection Storage
@@ -62,6 +136,18 @@ That improves the nested collections queries handling.
 To do that you need to change the serialization settings in the `DocumentStore` options.
 
 <!-- snippet: sample_customize_json_net_snakecase_collectionstorage -->
+<a id='snippet-sample_customize_json_net_snakecase_collectionstorage'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Replace the default (strongly typed) JsonNetSerializer collection storage
+    // with JSON array formatting
+    _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L167-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Non Public Members Storage
@@ -71,4 +157,16 @@ By default `Newtonsoft.Json` only deserializes properties with public setters.
 You can allow deserialisation of properties with non-public setters by changing the serialization settings in the `DocumentStore` options.
 
 <!-- snippet: sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters -->
+<a id='snippet-sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("some connection string");
+
+    // Replace the default (only public setters) JsonNetSerializer deserialization settings
+    // with allowing to also deserialize using non-public setters
+    _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L182-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

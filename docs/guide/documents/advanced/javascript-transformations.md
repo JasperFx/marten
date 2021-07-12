@@ -29,6 +29,24 @@ To load a Javascript function into your Marten-ized Postgresql database, use thi
 your Marten `IDocumentStore`:
 
 <!-- snippet: sample_loading_js_transform_files -->
+<a id='snippet-sample_loading_js_transform_files'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection(ConnectionSource.ConnectionString);
+
+    _.UseJavascriptTransformsAndPatching(transforms =>
+    {
+        // Let Marten derive the transform name from the filename
+        transforms.LoadFile("get_fullname.js");
+
+        // Explicitly define the transform name yourself
+        transforms.LoadFile("default_username.js", "set_default_username");
+    });
+
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/document_transforms.cs#L36-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_loading_js_transform_files' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Behind the scenes, Marten creates a `TransformFunction` object in the document store that knows how governs the construction and update
@@ -68,12 +86,87 @@ Once you have a Javascript transform loaded into the `IDocumentStore`, you can d
 of Linq queries. If you only care about the transformed JSON, you use this syntax:
 
 <!-- snippet: sample_using_transform_to_json -->
+<a id='snippet-sample_using_transform_to_json'></a>
+```cs
+[Fact]
+public void can_select_a_string_field_in_compiled_query()
+{
+    var user = new User { FirstName = "Eric", LastName = "Berry" };
+
+    using var session = theStore.OpenSession();
+    session.Store(user);
+    session.SaveChanges();
+
+    var name = session.Query<User>().Select(x => x.FirstName)
+        .Single();
+
+    name.ShouldBe("Eric");
+}
+
+[Fact]
+public async Task can_transform_to_json()
+{
+    var user = new User { FirstName = "Eric", LastName = "Berry" };
+
+    using var session = theStore.OpenSession();
+    session.Store(user);
+    await session.SaveChangesAsync();
+
+    var json = await session.Query<User>()
+        .Where(x => x.Id == user.Id)
+        .TransformOneToJson("get_fullname");
+
+    json.ShouldBe("{\"fullname\": \"Eric Berry\"}");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/select_with_transformation.cs#L27-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_transform_to_json' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you want to retrieve the results deserialized to another type, you can use the `TransformTo<T>(transformName)`
 method shown below:
 
 <!-- snippet: sample_transform_to_another_type -->
+<a id='snippet-sample_transform_to_another_type'></a>
+```cs
+public class FullNameView
+{
+    public string fullname { get; set; }
+}
+
+[Fact]
+public async Task can_transform_to_another_doc()
+{
+    var user = new User { FirstName = "Eric", LastName = "Berry" };
+
+    using var session = theStore.OpenSession();
+    session.Store(user);
+    await session.SaveChangesAsync();
+
+    var view = await session.Query<User>()
+        .Where(x => x.Id == user.Id)
+        .TransformOneTo<FullNameView>("get_fullname");
+
+    view.fullname.ShouldBe("Eric Berry");
+}
+
+[Fact]
+public async Task can_write_many_to_json()
+{
+    var user1 = new User { FirstName = "Eric", LastName = "Berry" };
+    var user2 = new User { FirstName = "Derrick", LastName = "Johnson" };
+
+    using var session = theStore.OpenSession();
+    session.Store(user1, user2);
+    await session.SaveChangesAsync();
+
+    var view = await session.Query<User>()
+
+        .TransformManyToJson("get_fullname");
+
+    view.ShouldBe("[{\"fullname\": \"Eric Berry\"},{\"fullname\": \"Derrick Johnson\"}]");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/select_with_transformation.cs#L79-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_transform_to_another_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use `TransformToJson()` inside of a [compiled query](/guide/documents/querying/compiled-queries):
@@ -96,4 +189,29 @@ As a default, we might just assign their user names by combining their first and
 To apply this transformation to existing rows in the database, Marten exposes this syntax:
 
 <!-- snippet: sample_transform_example -->
+<a id='snippet-sample_transform_example'></a>
+```cs
+private static void transform_example(IDocumentStore store)
+{
+    store.Transform(x =>
+    {
+        // Transform User documents with a filter
+        x.Where<User>("default_username", x => x.UserName == null);
+
+        // Transform a single User document by Id
+        x.Document<User>("default_username", Guid.NewGuid());
+
+        // Transform all User documents
+        x.All<User>("default_username");
+
+        // Only transform documents from the "tenant1" tenant
+        x.Tenant<User>("default_username", "tenant1");
+
+        // Only transform documents from the named tenants
+        x.Tenants<User>("default_username", "tenant1", "tenant2");
+    });
+
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/document_transforms.cs#L59-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_transform_example' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

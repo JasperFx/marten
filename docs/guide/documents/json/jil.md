@@ -6,11 +6,92 @@ flexible as Newtonsoft.Json and might be missing support for some scenarios you 
 To use Jil inside of Marten, add a class to your system like this one that implements the `ISerializer` interface:
 
 <!-- snippet: sample_JilSerializer -->
+<a id='snippet-sample_jilserializer'></a>
+```cs
+public class JilSerializer : ISerializer
+{
+    private readonly Options _options
+        = new(dateFormat: DateTimeFormat.ISO8601, includeInherited:true);
+
+    public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
+
+    public string ToJson(object document)
+    {
+        return JSON.Serialize(document, _options);
+    }
+
+    public T FromJson<T>(Stream stream)
+    {
+        return JSON.Deserialize<T>(stream.GetStreamReader(), _options);
+    }
+
+    public T FromJson<T>(DbDataReader reader, int index)
+    {
+        var stream = reader.GetStream(index);
+        return FromJson<T>(stream);
+    }
+
+    public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
+    {
+        return new(FromJson<T>(stream));
+    }
+
+    public ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
+    {
+        return new (FromJson<T>(reader, index));
+    }
+
+    public object FromJson(Type type, Stream stream)
+    {
+        return JSON.Deserialize(stream.GetStreamReader(), type, _options);
+    }
+
+    public object FromJson(Type type, DbDataReader reader, int index)
+    {
+        var stream = reader.GetStream(index);
+        return FromJson(type, stream);
+    }
+
+    public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
+    {
+        return new (FromJson(type, stream));
+    }
+
+    public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
+    {
+        return new (FromJson(type, reader, index));
+    }
+
+    public string ToCleanJson(object document)
+    {
+        return ToJson(document);
+    }
+
+    public EnumStorage EnumStorage => EnumStorage.AsString;
+    public Casing Casing => Casing.Default;
+    public string ToJsonWithTypes(object document)
+    {
+        throw new NotSupportedException();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L13-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
 
 <!-- snippet: sample_replacing_serializer_with_jil -->
+<a id='snippet-sample_replacing_serializer_with_jil'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection("the connection string");
+
+    // Replace the ISerializer w/ the TestsSerializer
+    _.Serializer<TestsSerializer>();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L91-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Optimizing for Performance in Marten](http://jeremydmiller.com/2015/11/09/optimizing-for-performance-in-marten/) 

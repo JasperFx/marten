@@ -22,6 +22,28 @@ When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure 
 You can see some example id usages below:
 
 <!-- snippet: sample_id_samples -->
+<a id='snippet-sample_id_samples'></a>
+```cs
+public class Division
+{
+    // String property as Id
+    public string Id { get; set; }
+}
+
+public class Category
+{
+    // Guid's work, fields too
+    public Guid Id;
+}
+
+public class Invoide
+{
+    // int's and long's can be the Id
+    // "id" is accepted
+    public int id { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdExamples.cs#L5-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_id_samples' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Overriding the Choice of Id Property/Field
@@ -31,9 +53,23 @@ the `[Identity]` attribute to force Marten to use a property or field as the ide
 the "id" or "Id" or "ID" convention:
 
 <!-- snippet: sample_IdentityAttribute -->
+<a id='snippet-sample_identityattribute'></a>
+```cs
+public class NonStandardDoc
+{
+    [Identity]
+    public string Name;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/using_natural_identity_keys.cs#L72-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_identityattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The identity property or field can also be configured through `StoreOptions` by using the `Schema` to obtain a document mapping:
 
 <!-- snippet: sample_sample-override-id-fluent-interance -->
+<a id='snippet-sample_sample-override-id-fluent-interance'></a>
+```cs
+storeOptions.Schema.For<OverriddenIdDoc>().Identity(x => x.Name);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/using_natural_identity_keys.cs#L56-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-override-id-fluent-interance' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

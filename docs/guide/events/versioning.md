@@ -24,16 +24,61 @@ Such mapping needs to be defined manually:
 For the case of namespace migration, it's enough to use `AddEventTypes` method as it's generating mapping based on the event type. As an example, change `OrderStatusChanged` event from:
 
 <!-- snippet: sample_old_event_namespace -->
+<a id='snippet-sample_old_event_namespace'></a>
+```cs
+namespace OldEventNamespace
+{
+    public class OrderStatusChanged
+    {
+        public Guid OrderId { get; }
+        public int Status { get; }
+
+        public OrderStatusChanged(Guid orderId, int status)
+        {
+            OrderId = orderId;
+            Status = status;
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_old_event_namespace' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 to:
 
 <!-- snippet: sample_new_event_namespace -->
+<a id='snippet-sample_new_event_namespace'></a>
+```cs
+namespace NewEventNamespace
+{
+    public class OrderStatusChanged
+    {
+        public Guid OrderId { get; }
+        public int Status { get; }
+
+        public OrderStatusChanged(Guid orderId, int status)
+        {
+            OrderId = orderId;
+            Status = status;
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L31-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_namespace' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It's enough to register new event type as follows:
 
 <!-- snippet: sample_event_namespace_migration_options -->
+<a id='snippet-sample_event_namespace_migration_options'></a>
+```cs
+var options = new StoreOptions();
+
+options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
+
+var store = new DocumentStore(options);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L70-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_namespace_migration_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 After that Marten will automatically perform a matching based on the type name (that didn't change) - `order_status_changed`.
@@ -47,11 +92,39 @@ To do that you need to use `Events.EventMappingFor` method to define the type na
 Eg. for migrating `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`
 
 <!-- snippet: sample_new_event_type_name -->
+<a id='snippet-sample_new_event_type_name'></a>
+```cs
+namespace OldEventNamespace
+{
+    public class ConfirmedOrderStatusChanged
+    {
+        public Guid OrderId { get; }
+        public int Status { get; }
+
+        public ConfirmedOrderStatusChanged(Guid orderId, int status)
+        {
+            OrderId = orderId;
+            Status = status;
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L49-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 it's needed to register mapping using old event type name (`order_status_changed`) as follows:
 
 <!-- snippet: sample_event_type_name_migration_options -->
+<a id='snippet-sample_event_type_name_migration_options'></a>
+```cs
+var options = new StoreOptions();
+
+var orderStatusChangedMapping = options.EventGraph.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
+orderStatusChangedMapping.EventTypeName = "order_status_changed";
+
+var store = new DocumentStore(options);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L81-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_type_name_migration_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

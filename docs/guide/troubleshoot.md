@@ -19,6 +19,14 @@ Marten needs to translate LINQ queries to SQL in order to execute them against t
 While it's possible to accommodate any serialization schemes by implementing a custom `ISerializer`, Marten's built-in serializer (Json.Net) can be set to serialize to Camel case through `StoreOptions.UseDefaultSerialization`:
 
 <!-- snippet: sample_sample-serialize-to-camelcase -->
+<a id='snippet-sample_sample-serialize-to-camelcase'></a>
+```cs
+var store = DocumentStore.For(storeOptions =>
+{
+    // Change default casing to CamelCase
+    storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/CamelCasing.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-serialize-to-camelcase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Disable PLV8
