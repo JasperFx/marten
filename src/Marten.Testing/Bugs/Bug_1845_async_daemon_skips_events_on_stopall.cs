@@ -31,7 +31,7 @@ namespace Marten.Testing.Bugs
 
             StoreOptions(_ =>
             {
-                _.Events.DatabaseSchemaName = "event_store";
+                _.Events.DatabaseSchemaName = "Bug1845";
                 _.Events.StreamIdentity = StreamIdentity.AsString;
             });
 
@@ -45,24 +45,25 @@ namespace Marten.Testing.Bugs
                 LeadingEdgeBuffer = TimeSpan.FromMilliseconds(100)
             };
 
+            const int retryCount = 2;
+
             settings.ExceptionHandling
                 .OnException<Exception>()
-                .Retry(3, TimeSpan.FromSeconds(2))
+                .Retry(retryCount, TimeSpan.FromSeconds(2))
                 .AfterMaxAttempts = new StopAll(x =>
                 {
                     _logger.Error(x);
                 });
 
-            var source = new TaskCompletionSource<bool>();
-            IProjection[] projections = { new ErroringProjection(theStore, source) };
+            var projection = new ErroringProjection(theStore, retryCount);
+            IProjection[] projections = { projection };
 
-            var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: settings, projections: projections);
-
-            daemon.StartAll();
-
-            source.Task.Wait();
-
-            Thread.Sleep(TimeSpan.FromSeconds(10));
+            using (var daemon = theStore.BuildProjectionDaemon(logger: _logger, settings: settings, projections: projections))
+            {
+                daemon.StartAll();
+                projection.task.Wait(TimeSpan.FromSeconds(10));
+                Thread.Sleep(TimeSpan.FromSeconds(10));
+            }
 
             using (var conn = theStore.Tenancy.Default.OpenConnection())
             {
@@ -108,13 +109,14 @@ namespace Marten.Testing.Bugs
     public class ErroringProjection: IProjection
     {
         private readonly DocumentStore store;
-        private readonly TaskCompletionSource<bool> taskCompletion;
-        private int retry = 0;
+        private int retryCount;
+        private readonly TaskCompletionSource<bool> completionSource;
 
-        public ErroringProjection(DocumentStore store, TaskCompletionSource<bool> taskCompletion)
+        public ErroringProjection(DocumentStore store, int retryCount)
         {
             this.store = store;
-            this.taskCompletion = taskCompletion;
+            this.retryCount = retryCount;
+            completionSource = new TaskCompletionSource<bool>();
         }
 
         public Type[] Consumes { get; } = new Type[] { typeof(SomethingHappened), typeof(FailureIntroduced), typeof(Failed) };
@@ -137,15 +139,18 @@ namespace Marten.Testing.Bugs
                         newSession.Events.Append("DeadMessageStream001", new Failed { Id = 100 });
                         newSession.SaveChanges();
                     }
+                    retryCount--;
+                    if (retryCount <= 0)
+                        completionSource.SetResult(true);
 
-                    if (++retry > 2)
-                        taskCompletion.SetResult(true);
                     throw new Exception();
                 }
             }
 
             return Task.CompletedTask;
         }
+
+        public Task task => completionSource.Task;
 
         public void EnsureStorageExists(ITenant tenant)
         {
