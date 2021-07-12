@@ -154,14 +154,6 @@ Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
 > Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
 
-To run the documentation website locally with auto-refresh, refer to the build commands section above. [stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used for documentation system.
-
-If you wish to insert code samples to a documentation page from the tests, wrap the code you wish to insert with
-`// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
-Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
-
-> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
-
 ## License
 
 Copyright © .NET Foundation, Jeremy D. Miller, Babu Annamalai, Oskar Dudycz, Joona-Pekka Kokko and contributors.
