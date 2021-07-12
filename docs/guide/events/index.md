@@ -3,6 +3,8 @@
 Marten's Event Store functionality is a powerful way to utilize Postgresql in the [event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event
 stream data, Marten also helps you create "read side" views of the raw event data through its support for projections.
 
+Please run through the [Getting Started](https://marten-v4.netlify.app/guide/) page prior to running through the quick start in next section.
+
 ## Event Store quick start
 
 There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](/guide/schema/). Marten is just a client library,
@@ -282,6 +284,8 @@ public class MembersEscaped
 <!-- endSnippet -->
 
 Now, let's say that we're starting a new "quest" with the first couple of events, then appending a couple more as other quest party members join up:
+
+Please refer to the [Bootstrapping a Document Store](/guide/#bootstrapping-a-document-store) for setting up and bootstrapping a `DocumentStore`.
 
 <!-- snippet: sample_event-store-quickstart -->
 <a id='snippet-sample_event-store-quickstart'></a>
