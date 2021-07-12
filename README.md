@@ -1,4 +1,4 @@
-# Marten 
+# Marten
 ## .NET Transactional Document DB and Event Store on PostgreSQL
 
 [![Join the chat at https://gitter.im/JasperFx/Marten](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/JasperFx/Marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
@@ -20,7 +20,7 @@ Before getting started you will need the following in your environment:
 
 **1. .NET Core SDK 5.0+ and the .NET Core 3.1 Runtime**
 
-Available [here](https://dotnet.microsoft.com/download) 
+Available [here](https://dotnet.microsoft.com/download)
 
 **2. PostgreSQL 9.6 or above database with PLV8**
 
@@ -63,7 +63,8 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 | Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run -p martenbuild.csproj -- mocha`        |
 | Run StoryTeller tests               | `build.cmd storyteller`  | `build.ps1 storyteller`  | `build.sh storyteller`  | `dotnet run -p martenbuild.csproj -- storyteller`  |
 | Open StoryTeller editor             | `build.cmd open_st`      | `build.ps1 open_st`      | `build.sh open_st`      | `dotnet run -p martenbuild.csproj -- open_st`      |
-| Run documentation website locally   | `build.cmd docs`         | `build.ps1 docs`         | `build.sh docs`         | `dotnet run -p martenbuild.csproj -- docs`         |
+| Run v4.x docs website locally       | `npm run docs`           | `npm run docs`           | `npm run docs`          | `-`         |
+| Run v3.x docs website locally       | `build.cmd docs`         | `build.ps1 docs`         | `build.sh docs`         | `dotnet run -p martenbuild.csproj -- docs`         |
 | Publish docs                        | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run -p martenbuild.csproj -- publish-docs` |
 | Run benchmarks                      | `build.cmd benchmarks`   | `build.ps1 benchmarks`   | `build.sh benchmarks`   | `dotnet run -p martenbuild.csproj -- benchmarks`   |
 
@@ -75,20 +76,20 @@ To aid in integration testing, Marten.Testing has a couple reusable base classes
 to make integration testing through Postgresql be more efficient and allow the xUnit.Net tests
 to run in parallel for better throughput.
 
-* `IntegrationContext` -- if most of the tests will use an out of the box configuration
+- `IntegrationContext` -- if most of the tests will use an out of the box configuration
   (i.e., no fluent interface configuration of any document types), use this base type. Warning though,
   this context type will **not** clean out the main `public` database schema between runs,
   but will delete any existing data
-* `DestructiveIntegrationContext` -- similar to `IntegrationContext`, but will wipe out any and all
+- `DestructiveIntegrationContext` -- similar to `IntegrationContext`, but will wipe out any and all
   Postgresql schema objects in the `public` schema between tests. Use this sparingly please.
-* `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
+- `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
   the `DocumentStore`, this context is appropriate. You will need to decorate any of these
-  test classes with the `[Collection]` attribute, typically using the schema name for the 
+  test classes with the `[Collection]` attribute, typically using the schema name for the
   collection name as a convention
-* `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
+- `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
   configuration, and this context is a specialization of `OneOffConfigurationsContext` for
-  the *bugs* schema. 
-* `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
+  the *bugs* schema.
+- `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
   `DocumentStore` configuration. You'd need to write a subclass of `StoreFixture`, then use
   `StoreContext<YourNewStoreFixture>` as the base class to share the `DocumentStore` between
   test runs with xUnit.Net's shared context (`IClassFixture<T>`)
@@ -96,7 +97,7 @@ to run in parallel for better throughput.
 ### Mocha Specs
 
 Refer to the build commands section to look up the commands to run Mocha tests. There is also `npm run tdd` to run the mocha specifications
-in a watched mode with growl turned on. 
+in a watched mode with growl turned on.
 
 > Note: remember to run `npm install`
 
@@ -104,9 +105,56 @@ in a watched mode with growl turned on.
 
 Refer to build commands section to look up the commands to open the StoryTeller editor or run the StoryTeller specs.
 
-### Documentation
+## Documentation
 
-The documentation content is the markdown files in the `/documentation` directory directly under the project root. To run the documentation website locally with auto-refresh, refer to the build commands section above.
+All the documentation is written in Markdown and the docs are published as a static site hosted in Netlify. v4.x and v3.x use different documentation tools hence are detailed below in separate sub-sections.
+
+### v4.x
+
+[VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with this, [MarkdownSnippets] is used for adding code snippets to docs from source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
+
+The documentation content is the Markdown files in the `/docs` directory directly under the project root. To run the docs locally use `npm run docs` with auto-refresh on any changes.
+
+Note: Preview version of v4 docs can be accessed from [here](https://marten-v4.netlify.app). Once have got all the docs for v4 completed, it will be accessible from <https://martendb.io>
+
+To add code samples/snippets from the tests in docs, follow the steps below:
+
+Use C# named regions to mark a code block as described in the sample below
+
+```csharp
+#region sample_my_snippet
+// code sample/snippet
+// ...
+#endregion sample_my_snippet
+```
+
+All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Use snake case for the identifiers with words in lower case. The snippet identifer/name will need to be added to the `#endregion` as well.
+
+- Use the below steps to include the code snippet in a docs page
+
+```markdown
+<!-- snippet: sample_my_snippet -->
+<!-- endSnippet -->
+```
+
+Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with the actual code snippet from the source code. Please ensure to commit the changes with the inline code snippet intact. This helps with easier change tracking when you send PR's.
+
+Few gotchas:
+
+- Do not edit/update any of the inline code snippet directly in the Markdown files. Any changes to the code snippets will need to done in the source code.
+- Do not worry about the inline code snippet in Markdown file getting out of sync with the snippet in source code. The latest snippet are always pulled into the docs while we publish the docs.
+
+### v3.x
+
+[stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used as documentation tool. The documentation content is the markdown files in the `/documentation` directory directly under the project root. Any updates to v3.x docs will need to done in [3.13 branch](https://github.com/JasperFx/marten/tree/3.13). To run the documentation website locally with auto-refresh, refer to the build commands section above.
+
+If you wish to insert code samples/snippet to a documentation page from the tests, wrap the code you wish to insert with
+`// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
+Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
+
+> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
+
+To run the documentation website locally with auto-refresh, refer to the build commands section above. [stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used for documentation system.
 
 If you wish to insert code samples to a documentation page from the tests, wrap the code you wish to insert with
 `// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
