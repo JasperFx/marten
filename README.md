@@ -134,9 +134,6 @@ All code snippet identifier starts with `sample_` as a convention to clearly ide
 
 ```markdown
 <!-- snippet: sample_my_snippet -->
-```
-** Could not find snippet 'sample_my_snippet' **
-```
 <!-- endSnippet -->
 ```
 
