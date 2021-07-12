@@ -111,7 +111,7 @@ All the documentation is written in Markdown and the docs are published as a sta
 
 ### v4.x
 
-[VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with this, [MarkdownSnippets] is used for adding code snippets to docs from source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
+[VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with this, [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets) is used for adding code snippets to docs from source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
 
 The documentation content is the Markdown files in the `/docs` directory directly under the project root. To run the docs locally use `npm run docs` with auto-refresh on any changes.
 
