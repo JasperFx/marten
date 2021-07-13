@@ -7,11 +7,11 @@ using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Weasel.Postgresql;
 using Marten.Services;
-using Marten.Util;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
+using Weasel.Core;
 
 namespace Marten.AsyncDaemon.Testing
 {
@@ -111,7 +111,7 @@ namespace Marten.AsyncDaemon.Testing
 
             await conn
                 .CreateCommand($"update {theStore.Events.DatabaseSchemaName}.mt_events set timestamp = transaction_timestamp() - interval '1 hour' where seq_id <= :id")
-                .With("id", seqId, NpgsqlDbType.Bigint)
+                .With("id", seqId)
                 .ExecuteNonQueryAsync();
         }
 
@@ -122,7 +122,7 @@ namespace Marten.AsyncDaemon.Testing
 
             await conn
                 .CreateCommand($"update {theStore.Events.DatabaseSchemaName}.mt_events set timestamp = :timestamp where seq_id > :id")
-                .With("id", seqId, NpgsqlDbType.Bigint)
+                .With("id", seqId)
                 .With("timestamp", DateTime.UtcNow.Add(30.Seconds()))
                 .ExecuteNonQueryAsync();
         }

@@ -10,6 +10,7 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Weasel.Core;
 using Timer = System.Timers.Timer;
 
 namespace Marten.Events.Daemon

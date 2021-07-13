@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Baseline;
 using Weasel.Postgresql;
@@ -72,7 +73,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
                 var cmd = session.Connection.CreateCommand()
                     .Sql("update mt_events set timestamp = :time where stream_id = :stream and version = :version")
                     .With("stream", _lastStream)
-                    .With("time", time.ToUniversalTime(), NpgsqlDbType.Timestamp)
+                    .With("time", time.ToUniversalTime(), DbType.DateTime)
                     .With("version", version)
                     ;
 
@@ -203,7 +204,7 @@ namespace Marten.Storyteller.Fixtures.EventStore
         {
             // TODO -- let's rethink this one later
             session.Connection.CreateCommand().Sql("update mt_events set timestamp = :date where id = :id")
-                .With("date", date.ToUniversalTime(), NpgsqlDbType.Timestamp)
+                .With("date", date.ToUniversalTime(), DbType.DateTime)
                 .With("id", id)
                 .ExecuteNonQuery();
 
