@@ -91,6 +91,7 @@ namespace Marten.Internal.CodeGeneration
             var operations = new DocumentOperations(assembly, _mapping, _options);
 
             assembly.Namespaces.Add(typeof(CommandExtensions).Namespace);
+            assembly.Namespaces.Add(typeof(Weasel.Core.CommandExtensions).Namespace);
             assembly.Namespaces.Add(typeof(TenantIdArgument).Namespace);
             assembly.Namespaces.Add(typeof(NpgsqlCommand).Namespace);
 

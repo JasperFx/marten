@@ -17,6 +17,8 @@ using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Util;
 using Npgsql;
+using Weasel.Core;
+
 #nullable enable
 namespace Marten.Events
 {
