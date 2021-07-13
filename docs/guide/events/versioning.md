@@ -13,7 +13,7 @@ Depending on the concrete business case we may use a different technique for han
 
 ## Namespace migration
 
-Marten by default tries to find the event class based on the fully qualified assembly name (it's stored in `mt_dotnet_type` column of `mt_events` table, read more in <[linkto:documentation/events/schema;title=events schema documentation]>).
+Marten by default tries to find the event class based on the fully qualified assembly name (it's stored in `mt_dotnet_type` column of `mt_events` table, read more in [events schema documentation](/guide/events/schema).
 When it is not able to find event type with the same assembly, namespace and type name then it tries to make a lookup for mapping on the event type name (stored in `type` column of `mt_events` table).
 
 Such mapping needs to be defined manually:

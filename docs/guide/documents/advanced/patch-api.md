@@ -180,9 +180,9 @@ public void increment_for_int_with_explicit_increment()
 
 ## Append an Element to a Child Collection
 
-<[warning]>
+::: warning
 Because the Patching API depends on comparisons to the underlying serialized JSON in the database, the `DateTime` or `DateTimeOffset` types will frequently miss on comparisons for timestamps because of insufficient precision.
-<[/warning]>
+:::
 
 The `Patch.Append()` operation adds a new item to the end of a child collection:
 

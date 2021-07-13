@@ -11,8 +11,7 @@
 
 ## Query throws `NotSupportedException` exception
 
-Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider
-<[linkto:documentation/documents/querying/sql;title=hand-crafting the required query]>.
+Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider [hand-crafting the required query](/guide/documents/querying/linq#use-matchessql-sql-to-search-using-raw-sql).
 
 ## Serialize to camel case?
 

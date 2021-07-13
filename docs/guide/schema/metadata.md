@@ -11,9 +11,9 @@ that further describe the document:
 1. `mt_dotnet_type` - The `FullName` property of the actual .Net type persisted. This is strictly for information and is not used by Marten itself.
 1. `mt_version` - A sequential Guid designating the revision of the document. Marten uses
    this column in its optimistic concurrency checks
-1. `mt_doc_type` - document name (_document <[linkto:documentation/documents/advanced/hierarchies;title=hierarchies]> only_)
-1. `mt_deleted` - a boolean flag representing deleted state (_<[linkto:documentation/documents/advanced/soft_deletes;title=soft deletes]> only_)
-1. `mt_deleted_at` - a timestamp of the time the document was deleted (_<[linkto:documentation/documents/advanced/soft_deletes;title=soft deletes]> only_)
+1. `mt_doc_type` - document name ([_hierarchies only_](/guide/documents/advanced/hierarchies))
+1. `mt_deleted` - a boolean flag representing deleted state ([_soft deletes only_](/guide/documents/advanced/soft-deletes))
+1. `mt_deleted_at` - a timestamp of the time the document was deleted ([_soft deletes only_](/guide/documents/advanced/soft-deletes))
 
 ## Finding the Metadata for a Document
 
