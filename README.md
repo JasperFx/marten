@@ -137,12 +137,12 @@ Use the below to include the code snippet in a docs page
 &#60;!-- endSnippet -->
 </pre>
 
-Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with the actual code snippet from the source code. Please ensure to commit the changes with the inline code snippet intact. This helps with easier change tracking when you send PR's.
+Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with the actual code snippet from the source code. Please commit the changes with the auto-generated inline code snippet as-is after you preview the docs page. This helps with easier change tracking when you send PR's.
 
 Few gotchas:
 
-- Do not edit/update any of the inline code snippet directly in the Markdown files. Any changes to the code snippets will need to done in the source code.
-- Do not worry about the inline code snippet in Markdown file getting out of sync with the snippet in source code. The latest snippet are always pulled into the docs while we publish the docs.
+- Any changes to the code snippets will need to done in the source code. Do not edit/update any of the auto-generated inline code snippet directly in the Markdown files.
+- The latest snippet are always pulled into the docs while we publish the docs. Hence do not worry about the inline code snippet in Markdown file getting out of sync with the snippet in source code.
 
 ### v3.x
 
