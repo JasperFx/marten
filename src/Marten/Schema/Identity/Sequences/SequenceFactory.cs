@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Weasel.Postgresql;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
 #nullable enable

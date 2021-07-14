@@ -9,6 +9,7 @@ using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Core;
 
 namespace Marten.Events.Operations
 {

@@ -4,6 +4,7 @@ using Marten.Events.Archiving;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using IndexDefinition = Weasel.Postgresql.Tables.IndexDefinition;
 

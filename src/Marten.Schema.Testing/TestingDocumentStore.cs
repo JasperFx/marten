@@ -46,7 +46,7 @@ namespace Marten.Schema.Testing
             {
                 if (output != null)
                     _.Logger(new TestOutputMartenLogger(output));
-                _.DatabaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
+                _.DatabaseSchemaName = SchemaConstants.DefaultSchema;
             });
             return store;
         }
@@ -59,7 +59,7 @@ namespace Marten.Schema.Testing
         {
             var schemaName = Options.DatabaseSchemaName;
 
-            if (schemaName != DbObjectName.DefaultDatabaseSchemaName)
+            if (schemaName != SchemaConstants.DefaultSchema)
             {
                 var sql = $"DROP SCHEMA {schemaName} CASCADE;";
                 var cmd = new NpgsqlCommand(sql);

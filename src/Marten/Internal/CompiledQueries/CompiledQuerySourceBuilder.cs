@@ -121,11 +121,43 @@ namespace Marten.Internal.CompiledQueries
         private void compileAssembly(GeneratedAssembly assembly)
         {
             var compiler = new AssemblyGenerator();
-            compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
-            compiler.ReferenceAssembly(_plan.QueryType.Assembly);
-            compiler.ReferenceAssembly(_plan.OutputType.Assembly);
+
+            foreach (var referencedAssembly in walkReferencedAssemblies(
+                typeof(IDocumentStorage<>),
+                _plan.QueryType,
+                _plan.OutputType))
+            {
+                compiler.ReferenceAssembly(referencedAssembly);
+            }
 
             compiler.Compile(assembly);
+        }
+
+        private static IEnumerable<Assembly> walkReferencedAssemblies(params Type[] types)
+        {
+            var stack = new Stack<Type>();
+
+            foreach (var type in types)
+            {
+                stack.Push(type);
+
+                while (stack.Count > 0)
+                {
+                    var current = stack.Pop();
+                    yield return current.Assembly;
+
+                    if (!current.IsGenericType || current.IsGenericTypeDefinition)
+                    {
+                        continue;
+                    }
+
+                    var typeArguments = current.GetGenericArguments();
+                    foreach (var typeArgument in typeArguments)
+                    {
+                        stack.Push(typeArgument);
+                    }
+                }
+            }
         }
 
         private GeneratedType buildHandlerType(GeneratedAssembly assembly,

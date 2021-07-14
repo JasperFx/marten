@@ -9,6 +9,7 @@ using Baseline;
 using Marten.Services.Json;
 using Marten.Util;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Services

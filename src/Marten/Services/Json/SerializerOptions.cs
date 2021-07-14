@@ -1,3 +1,4 @@
+using Weasel.Core;
 using Weasel.Postgresql;
 
 #nullable enable

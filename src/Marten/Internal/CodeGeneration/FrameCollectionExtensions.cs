@@ -243,7 +243,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         {
             var member = FindMembers.Determine(memberExpression).Single();
             var memberType = member.GetMemberType();
-            var pgType = TypeMappings.ToDbType(memberType);
+            var pgType = PostgresqlProvider.Instance.ToParameterType(memberType);
 
             if (memberType == typeof(string))
             {

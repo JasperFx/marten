@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Util;
+using Weasel.Core;
 
 namespace Marten.Internal.Operations
 {

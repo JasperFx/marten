@@ -5,6 +5,7 @@ using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql;
 using Marten.Schema;
+using Weasel.Core;
 
 namespace Marten.Events
 {

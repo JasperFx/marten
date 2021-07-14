@@ -11,6 +11,7 @@ using Marten.Testing.Harness;
 using Marten.Testing.Internals;
 using Marten.Util;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -100,8 +101,7 @@ namespace Marten.Testing.Acceptance
 
         private static void userIsNotMarkedAsDeleted(IDocumentSession session, Guid userId)
         {
-            var cmd = session.Connection.CreateCommand()
-                .Sql("select mt_deleted, mt_deleted_at from softdelete.mt_doc_user where id = :id")
+            var cmd = session.Connection.CreateCommand("select mt_deleted, mt_deleted_at from softdelete.mt_doc_user where id = :id")
                 .With("id", userId);
 
             using (var reader = cmd.ExecuteReader())
@@ -118,8 +118,7 @@ namespace Marten.Testing.Acceptance
             var mapping = theStore.Options.Storage.MappingFor(typeof(T));
 
 
-            var cmd = session.Connection.CreateCommand()
-                .Sql($"select count(*) from {mapping.TableName} where id = :id")
+            var cmd = session.Connection.CreateCommand($"select count(*) from {mapping.TableName} where id = :id")
                 .With("id", id);
 
             var count = (long)cmd.ExecuteScalar();

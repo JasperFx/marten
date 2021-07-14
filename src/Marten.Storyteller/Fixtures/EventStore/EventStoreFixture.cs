@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Baseline;
 using Weasel.Postgresql;
@@ -9,6 +10,7 @@ using Marten.Testing.Harness;
 using NpgsqlTypes;
 using StoryTeller;
 using StoryTeller.Grammars.Tables;
+using Weasel.Core;
 
 namespace Marten.Storyteller.Fixtures.EventStore
 {
@@ -69,10 +71,11 @@ namespace Marten.Storyteller.Fixtures.EventStore
             using (var session = store.OpenSession())
             {
                 var cmd = session.Connection.CreateCommand()
-                    .WithText("update mt_events set timestamp = :time where stream_id = :stream and version = :version")
+                    .Sql("update mt_events set timestamp = :time where stream_id = :stream and version = :version")
                     .With("stream", _lastStream)
+                    .With("time", time.ToUniversalTime(), DbType.DateTime)
                     .With("version", version)
-                    .With("time", time.ToUniversalTime());
+                    ;
 
                 cmd.ExecuteNonQuery();
 
@@ -200,8 +203,8 @@ namespace Marten.Storyteller.Fixtures.EventStore
         private static void rewriteEventTime(DateTime date, IDocumentSession session, Guid id)
         {
             // TODO -- let's rethink this one later
-            session.Connection.CreateCommand().WithText("update mt_events set timestamp = :date where id = :id")
-                .With("date", date.ToUniversalTime(), NpgsqlDbType.Timestamp)
+            session.Connection.CreateCommand().Sql("update mt_events set timestamp = :date where id = :id")
+                .With("date", date.ToUniversalTime(), DbType.DateTime)
                 .With("id", id)
                 .ExecuteNonQuery();
 

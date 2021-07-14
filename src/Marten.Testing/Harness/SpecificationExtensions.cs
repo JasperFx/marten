@@ -10,6 +10,7 @@ using Weasel.Postgresql;
 using Marten.Schema;
 using Newtonsoft.Json.Linq;
 using Shouldly;
+using Weasel.Core;
 
 namespace Marten.Testing.Harness
 {
@@ -231,7 +232,7 @@ namespace Marten.Testing.Harness
             if (names == null)
                 throw new ArgumentNullException(nameof(names));
 
-            var function = DbObjectName.Parse(qualifiedName);
+            var function = DbObjectName.Parse(PostgresqlProvider.Instance, qualifiedName);
             names.ShouldContain(function);
         }
     }

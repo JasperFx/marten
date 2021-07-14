@@ -51,21 +51,37 @@ namespace Marten.Linq.QueryHandlers
                 }
             }
 
-            builder.Append(_sql);
+
 
             var firstParameter = _parameters.FirstOrDefault();
 
             if (_parameters.Length == 1 && firstParameter != null && firstParameter.IsAnonymousType())
             {
+                builder.Append(_sql);
                 builder.AddParameters(firstParameter);
             }
             else
             {
-                _parameters.Each(x =>
+                var cmdParameters = builder.AppendWithParameters(_sql);
+                if (cmdParameters.Length != _parameters.Length)
                 {
-                    var param = builder.AddParameter(x);
-                    builder.UseParameter(param);
-                });
+                    throw new InvalidOperationException("Wrong number of supplied parameters");
+                }
+
+                for (int i = 0; i < cmdParameters.Length; i++)
+                {
+                    if (_parameters[i] == null)
+                    {
+                        cmdParameters[i].Value = DBNull.Value;
+                    }
+                    else
+                    {
+                        cmdParameters[i].Value = _parameters[i];
+                        cmdParameters[i].NpgsqlDbType =
+                            PostgresqlProvider.Instance.ToParameterType(_parameters[i].GetType());
+                    }
+                }
+
             }
         }
 

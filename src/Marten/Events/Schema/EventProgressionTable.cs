@@ -1,6 +1,7 @@
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema

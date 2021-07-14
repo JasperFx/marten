@@ -17,5 +17,7 @@ namespace Marten.Schema
         public const string DeletedAtColumn = "mt_deleted_at";
 
         public const string MartenGeneratedNamespace = "Marten.Generated";
+
+        public const string DefaultSchema = "public";
     }
 }

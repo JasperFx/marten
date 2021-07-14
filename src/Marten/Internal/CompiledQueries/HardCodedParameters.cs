@@ -49,6 +49,7 @@ namespace Marten.Internal.CompiledQueries
                 var parameter = parameters[pair.Key];
                 parameter.Value = pair.Value.Value;
                 parameter.NpgsqlValue = pair.Value.NpgsqlValue;
+                parameter.NpgsqlDbType = pair.Value.NpgsqlDbType;
             }
         }
     }

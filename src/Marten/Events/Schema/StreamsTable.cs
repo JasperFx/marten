@@ -13,6 +13,7 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Schema
@@ -90,8 +91,8 @@ namespace Marten.Events.Schema
             _memberExpression = memberExpression;
             _member = FindMembers.Determine(memberExpression).Single();
             var memberType = _member.GetMemberType();
-            Type = TypeMappings.GetPgType(memberType, EnumStorage.AsInteger);
-            NpgsqlDbType = TypeMappings.ToDbType(memberType);
+            Type = PostgresqlProvider.Instance.GetDatabaseType(memberType, EnumStorage.AsInteger);
+            NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(memberType);
         }
 
         public bool Reads { get; set; } = true;

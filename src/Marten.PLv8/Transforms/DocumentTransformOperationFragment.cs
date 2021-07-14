@@ -31,7 +31,7 @@ namespace Marten.PLv8.Transforms
             sql.Append(" = (now() at time zone 'utc'), ");
             sql.Append(SchemaConstants.VersionColumn);
             sql.Append(" = '");
-            sql.Append(version);
+            sql.Append(version.ToString());
             sql.Append("'");
         }
 

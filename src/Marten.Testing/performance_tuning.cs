@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Jil;
 using Marten.Services;
 using Marten.Util;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Testing

@@ -58,7 +58,7 @@ namespace Marten.Schema.Testing
 
         protected void UseDefaultSchema()
         {
-            StoreOptions(x => x.DatabaseSchemaName = "public");
+            StoreOptions(x => x.DatabaseSchemaName = SchemaConstants.DefaultSchema);
         }
 
         protected DocumentStore StoreOptions(Action<StoreOptions> configure)

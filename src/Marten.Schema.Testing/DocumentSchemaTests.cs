@@ -9,6 +9,7 @@ using Marten.Schema.Testing.Documents;
 using Marten.Schema.Testing.Hierarchies;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -341,7 +342,7 @@ namespace Marten.Schema.Testing
                 _.Storage.MappingFor(typeof(IntDoc));
 
                 // this will tell marten to use the default 'public' schema name.
-                _.DatabaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
+                _.DatabaseSchemaName = SchemaConstants.DefaultSchema;
             });
 
             #endregion sample_override_schema_per_table

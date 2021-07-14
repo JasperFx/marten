@@ -143,7 +143,10 @@ namespace Marten.Events.Daemon
             _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
 
             _grouping.LinkTo(_building);
-            _loader.LinkTo(_grouping, e => e.Events.Any());
+
+            // The filter is important. You may need to allow an empty page to go through
+            // just to keep tracking correct
+            _loader.LinkTo(_grouping, e => e.Events != null);
 
             var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation);
 

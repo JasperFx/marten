@@ -6,6 +6,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Remotion.Linq;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Schema

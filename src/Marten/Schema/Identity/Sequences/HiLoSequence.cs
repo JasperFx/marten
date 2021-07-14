@@ -7,6 +7,8 @@ using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
+using Weasel.Core;
+
 #nullable enable
 namespace Marten.Schema.Identity.Sequences
 {

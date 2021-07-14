@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;

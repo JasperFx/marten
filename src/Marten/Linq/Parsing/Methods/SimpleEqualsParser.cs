@@ -30,8 +30,8 @@ namespace Marten.Linq.Parsing.Methods
 
         static SimpleEqualsParser()
         {
-            SupportedTypes.AddRange(TypeMappings.ResolveTypes(NpgsqlTypes.NpgsqlDbType.Timestamp));
-            SupportedTypes.AddRange(TypeMappings.ResolveTypes(NpgsqlTypes.NpgsqlDbType.TimestampTz));
+            SupportedTypes.AddRange(PostgresqlProvider.Instance.ResolveTypes(NpgsqlTypes.NpgsqlDbType.Timestamp));
+            SupportedTypes.AddRange(PostgresqlProvider.Instance.ResolveTypes(NpgsqlTypes.NpgsqlDbType.TimestampTz));
             SupportedTypes.Add(typeof(double));
         }
 

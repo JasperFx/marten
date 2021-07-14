@@ -21,6 +21,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Services.Json;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 #nullable enable
@@ -62,7 +63,7 @@ namespace Marten
 
         private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
 
-        private string _databaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
+        private string _databaseSchemaName = SchemaConstants.DefaultSchema;
 
         private IMartenLogger _logger = new NulloMartenLogger();
 
