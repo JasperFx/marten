@@ -20,7 +20,7 @@ namespace Marten.AsyncDaemon.Testing
             public string Name { get; set; }
         }
 
-        //View 1 
+        //View 1
         public class CarView
         {
             public Guid Id { get; set; }
@@ -96,35 +96,36 @@ namespace Marten.AsyncDaemon.Testing
             using (var session = theStore.LightweightSession())
             {
                 session.Events.StartStream(carStreamId, new CarNamed() { Value = "car-name-1" });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             //Create truck stream - Transaction 2
             using (var session = theStore.LightweightSession())
             {
                 session.Events.StartStream(truckStreamId, new TruckNamed() { Value = "truck-name-1" });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             //Send TruckNamed Event - Transaction 3
             using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(truckStreamId, new TruckNamed() { Value = "truck-name-2" });
-                
-                session.SaveChanges();
+
+                await session.SaveChangesAsync();
             }
 
             //Send CarNamed Event - Transaction 4
             using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(carStreamId, new CarNamed() { Value = "car-name-2" });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             //Wait for shards and highwater agent to catchup on the events
             await agent.Tracker.WaitForShardState(new ShardState("CarView:All", expectedSequence), 15.Seconds());
             await agent.Tracker.WaitForShardState(new ShardState("TruckView:All", expectedSequence), 15.Seconds()); // Will fail on this line
             await agent.Tracker.WaitForHighWaterMark(expectedSequence);
+
 
             //Assert results are latest
             using (var session = theStore.QuerySession())
