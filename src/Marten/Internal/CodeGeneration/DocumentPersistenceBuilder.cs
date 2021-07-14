@@ -33,6 +33,7 @@ namespace Marten.Internal.CodeGeneration
             assembly.Namespaces.Add(typeof(CommandExtensions).Namespace);
             assembly.Namespaces.Add(typeof(TenantIdArgument).Namespace);
             assembly.Namespaces.Add(typeof(NpgsqlCommand).Namespace);
+            assembly.Namespaces.Add(typeof(Weasel.Core.CommandExtensions).Namespace);
 
 
             new DocumentStorageBuilder(_mapping, StorageStyle.QueryOnly, x => x.QueryOnlySelector)
