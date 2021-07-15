@@ -7,6 +7,7 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -23,9 +24,11 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task when_registering_as_disabled()
         {
+            var logger = Substitute.For<ILogger<AsyncProjectionHostedService>>();
             using var container = new Container(x =>
             {
                 x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
+                x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
                 x.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
@@ -38,11 +41,15 @@ namespace Marten.AsyncDaemon.Testing
 
             service.Agent.ShouldBeNull();
 
+            await service.StopAsync(CancellationToken.None);
+
+            logger.DidNotReceive().LogDebug("Stopping the asynchronous projection agent");
         }
 
         [Fact]
         public async Task when_registering_as_solo()
         {
+            var logger = Substitute.For<ILogger<AsyncProjectionHostedService>>();
             var container = new Container(x =>
             {
                 x.AddMarten(opts =>
@@ -50,7 +57,8 @@ namespace Marten.AsyncDaemon.Testing
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.Projections.AsyncMode = DaemonMode.Solo;
                 });
-                x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+                x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
+                x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
             });
 
             var service = container.GetInstance<AsyncProjectionHostedService>();
@@ -60,11 +68,14 @@ namespace Marten.AsyncDaemon.Testing
             service.Coordinator.ShouldBeOfType<SoloCoordinator>();
 
             await service.StopAsync(CancellationToken.None);
+
+            logger.Received().LogDebug("Stopping the asynchronous projection agent");
         }
 
         [Fact]
         public async Task when_registering_as_HotCold()
         {
+            var logger = Substitute.For<ILogger<AsyncProjectionHostedService>>();
             var container = new Container(x =>
             {
                 x.AddMarten(opts =>
@@ -72,7 +83,8 @@ namespace Marten.AsyncDaemon.Testing
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.Projections.AsyncMode = DaemonMode.HotCold;
                 });
-                x.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
+                x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
+                x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
             });
 
             var service = container.GetInstance<AsyncProjectionHostedService>();
@@ -82,6 +94,8 @@ namespace Marten.AsyncDaemon.Testing
             service.Coordinator.ShouldBeOfType<HotColdCoordinator>();
 
             await service.StopAsync(CancellationToken.None);
+
+            logger.Received().LogDebug("Stopping the asynchronous projection agent");
         }
 
     }
