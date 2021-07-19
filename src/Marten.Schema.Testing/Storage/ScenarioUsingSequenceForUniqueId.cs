@@ -43,7 +43,7 @@ namespace Marten.Schema.Testing.Storage
             });
 
             #region sample_scenario-usingsequenceforuniqueid-storesetup-2
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
             #endregion sample_scenario-usingsequenceforuniqueid-storesetup-2
 
             #region sample_scenario-usingsequenceforuniqueid-querymatter

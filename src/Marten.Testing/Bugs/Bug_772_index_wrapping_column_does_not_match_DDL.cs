@@ -18,8 +18,8 @@ namespace Marten.Testing.Bugs
                     .Duplicate(c => c.Name);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            await theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact] // Control
@@ -34,8 +34,8 @@ namespace Marten.Testing.Bugs
                       });
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            await theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact] // Experiment, passed
@@ -53,8 +53,8 @@ namespace Marten.Testing.Bugs
                     });
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            await theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
 

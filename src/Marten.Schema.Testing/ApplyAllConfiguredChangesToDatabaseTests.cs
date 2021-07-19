@@ -21,8 +21,8 @@ namespace Marten.Schema.Testing
 
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                await theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 
@@ -38,8 +38,8 @@ namespace Marten.Schema.Testing
 
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
-                await theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
+                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 

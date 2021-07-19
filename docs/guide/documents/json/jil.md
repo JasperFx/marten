@@ -75,7 +75,7 @@ public class JilSerializer : ISerializer
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L13-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L14-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
@@ -91,7 +91,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer<TestsSerializer>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L91-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L92-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Optimizing for Performance in Marten](http://jeremydmiller.com/2015/11/09/optimizing-for-performance-in-marten/) 

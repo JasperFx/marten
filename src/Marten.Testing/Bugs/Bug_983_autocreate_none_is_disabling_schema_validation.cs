@@ -25,7 +25,7 @@ namespace Marten.Testing.Bugs
 
             await Exception<SchemaValidationException>.ShouldBeThrownByAsync(() =>
             {
-                return theStore.Schema.AssertDatabaseMatchesConfiguration();
+                return theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 

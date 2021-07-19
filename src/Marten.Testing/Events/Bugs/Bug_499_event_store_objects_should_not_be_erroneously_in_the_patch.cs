@@ -12,7 +12,7 @@ namespace Marten.Testing.Events.Bugs
         {
             StoreOptions(_ => _.Schema.For<User>());
 
-            var patch = await theStore.Schema.CreateMigration();
+            var patch = await theStore.Schema.CreateMigrationAsync();
 
             patch.UpdateSql.ShouldNotContain("mt_events");
             patch.UpdateSql.ShouldNotContain("mt_streams");

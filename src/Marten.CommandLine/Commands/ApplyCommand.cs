@@ -11,7 +11,7 @@ namespace Marten.CommandLine.Commands
         {
             try
             {
-                await store.Schema.ApplyAllConfiguredChangesToDatabase();
+                await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
                 input.WriteLine(ConsoleColor.Green, "Successfully applied outstanding database changes");
                 return true;

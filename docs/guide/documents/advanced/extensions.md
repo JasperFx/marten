@@ -72,7 +72,7 @@ public class FakeStorage : FeatureSchemaBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L49-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L50-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, to actually apply this feature to your Marten applications, use this syntax:
@@ -91,7 +91,7 @@ var store = DocumentStore.For(_ =>
     _.Storage.Add(new FakeStorage(_));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L30-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L31-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that when you use the `Add<T>()` syntax, Marten will pass along the current `StoreOptions` to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.
@@ -200,7 +200,7 @@ internal class EventsTable: Table
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Schema/EventsTable.cs#L12-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_eventstable' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Schema/EventsTable.cs#L13-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_eventstable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Function
@@ -222,5 +222,5 @@ var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequ
     OwnerColumn = "seq_id"
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L31-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L32-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

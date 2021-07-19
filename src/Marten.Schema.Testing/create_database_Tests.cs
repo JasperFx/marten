@@ -26,7 +26,7 @@ namespace Marten.Schema.Testing
             {
                 await Should.ThrowAsync<PostgresException>(async () =>
                 {
-                    await store1.Schema.ApplyAllConfiguredChangesToDatabase();
+                    await store1.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
                 });
             }
 
@@ -56,8 +56,8 @@ namespace Marten.Schema.Testing
             {
                 await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-                await store.Schema.ApplyAllConfiguredChangesToDatabase();
-                await store.Schema.AssertDatabaseMatchesConfiguration();
+                await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await store.Schema.AssertDatabaseMatchesConfigurationAsync();
                 Assert.True(dbCreated);
             }
         }

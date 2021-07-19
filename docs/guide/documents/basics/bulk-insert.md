@@ -15,7 +15,7 @@ theStore.BulkInsert(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L95-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
@@ -37,7 +37,7 @@ var data = Target.GenerateRandomData(100).ToArray();
 
 theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L147-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_ignoreduplicates' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L148-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_ignoreduplicates' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
@@ -54,7 +54,7 @@ var data = Target.GenerateRandomData(100).ToArray();
 
 theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L167-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_overwriteexisting' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L168-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_overwriteexisting' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues

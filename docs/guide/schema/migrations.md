@@ -74,7 +74,7 @@ want to update, and use:
 <!-- snippet: sample_WritePatch -->
 <a id='snippet-sample_writepatch'></a>
 ```cs
-await store.Schema.WriteMigrationFile("1.initial.sql");
+await store.Schema.WriteMigrationFileAsync("1.initial.sql");
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L28-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writepatch' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -97,7 +97,7 @@ bootstrapped, you can use this mechanism:
 <!-- snippet: sample_ApplyAllConfiguredChangesToDatabase -->
 <a id='snippet-sample_applyallconfiguredchangestodatabase'></a>
 ```cs
-await store.Schema.ApplyAllConfiguredChangesToDatabase();
+await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L32-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applyallconfiguredchangestodatabase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -110,7 +110,7 @@ by throwing an exception:
 <!-- snippet: sample_AssertDatabaseMatchesConfiguration -->
 <a id='snippet-sample_assertdatabasematchesconfiguration'></a>
 ```cs
-await store.Schema.AssertDatabaseMatchesConfiguration();
+await store.Schema.AssertDatabaseMatchesConfigurationAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L36-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_assertdatabasematchesconfiguration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

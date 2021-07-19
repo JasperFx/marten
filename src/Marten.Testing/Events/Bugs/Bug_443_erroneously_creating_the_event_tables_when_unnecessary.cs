@@ -16,7 +16,7 @@ namespace Marten.Testing.Events.Bugs
         {
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var tables = await theStore.Tenancy.Default.SchemaTables();
 
@@ -36,7 +36,7 @@ namespace Marten.Testing.Events.Bugs
         [Fact]
         public async Task not_part_of_the_patch()
         {
-            var patch = await theStore.Schema.CreateMigration();
+            var patch = await theStore.Schema.CreateMigrationAsync();
 
             SpecificationExtensions.ShouldNotContain(patch.UpdateSql, "mt_events");
             SpecificationExtensions.ShouldNotContain(patch.UpdateSql, "mt_streams");

@@ -31,7 +31,7 @@ var store = DocumentStore.For(_ =>
     _.UseNodaTime();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L23-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_default_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L24-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_default_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default it also sets up the `JsonNetSerializer` options (see more details in [NodaTime documentation](https://nodatime.org/2.4.x/api/NodaTime.Serialization.JsonNet.Extensions.html)).
@@ -51,7 +51,7 @@ var store = DocumentStore.For(_ =>
     _.UseNodaTime(shouldConfigureJsonNetSerializer: false);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L36-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_setup_without_json_net_serializer_configuration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L37-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_setup_without_json_net_serializer_configuration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

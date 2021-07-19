@@ -14,7 +14,7 @@ with Marten can be as simple as opening a `DocumentStore` to your new Postgresql
 var store = DocumentStore
     .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L33-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L34-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The code sample above sets up document storage against the Postgresql at the connection string you supplied. In this "quickstart" configuration,
@@ -41,7 +41,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer<TestsSerializer>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L78-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_complex_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L79-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_complex_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For more information on using the `IDocumentStore` and configuring document storage, see:
@@ -68,7 +68,7 @@ using (var session = store.QuerySession())
         .Query<User>().Where(x => x.Internal).ToArray();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L38-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L39-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For more information on the query support within Marten, check [document querying](/guide/documents/querying/)
@@ -108,7 +108,7 @@ using (var session = store.DirtyTrackedSession())
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L46-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L47-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In all cases, `IDocumentSession` has the same query and loading functions as the read only `IQuerySession`.

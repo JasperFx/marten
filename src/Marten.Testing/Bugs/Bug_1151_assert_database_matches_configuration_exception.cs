@@ -17,8 +17,8 @@ namespace Marten.Testing.Bugs
                     .Duplicate(c => c.Trim);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            await theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
     }

@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
             }))
             {
-                var patch = (await store2.Schema.CreateMigration()).UpdateSql;
+                var patch = (await store2.Schema.CreateMigrationAsync()).UpdateSql;
 
                 // don't patch Target and Company because they don't change
                 patch.ShouldNotContain("mt_doc_company");

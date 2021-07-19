@@ -195,7 +195,7 @@ namespace Marten.Schema.Testing
                 store.Advanced.Clean.CompletelyRemoveAll();
 
 
-                await store.Schema.WriteMigrationFileByType(_binAllsql2);
+                await store.Schema.WriteMigrationFileByTypeAsync(_binAllsql2);
             }
 
             var fileSystem = new FileSystem();

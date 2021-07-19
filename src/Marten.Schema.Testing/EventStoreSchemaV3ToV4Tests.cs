@@ -23,7 +23,7 @@ namespace Marten.Schema.Testing
             // create another store and check if the schema can be be auto updated
             using var store2 = Store(AutoCreate.CreateOrUpdate);
 
-            var sql = (await store2.Schema.CreateMigration()).UpdateSql;
+            var sql = (await store2.Schema.CreateMigrationAsync()).UpdateSql;
             sql.ShouldContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
             sql.ShouldContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
             sql.ShouldContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);
@@ -33,7 +33,7 @@ namespace Marten.Schema.Testing
         public async Task can_auto_update_event_store_schema_changes()
         {
             using var store1 = Store(AutoCreate.All);
-            await store1.Schema.ApplyAllConfiguredChangesToDatabase();
+            await store1.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             SimulateEventStoreV3Schema();
 
@@ -42,13 +42,13 @@ namespace Marten.Schema.Testing
 
             await Should.ThrowAsync<SchemaValidationException>(async () =>
             {
-                await store2.Schema.AssertDatabaseMatchesConfiguration();
+                await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
 
             await Should.NotThrowAsync(async () =>
             {
-                await store2.Schema.ApplyAllConfiguredChangesToDatabase();
-                await store2.Schema.AssertDatabaseMatchesConfiguration();
+                await store2.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 
@@ -61,7 +61,7 @@ namespace Marten.Schema.Testing
             // create another store and check if no v3 to v4 patches are generated
             using var store2 = Store(AutoCreate.CreateOrUpdate);
 
-            var sql = (await store2.Schema.CreateMigration()).UpdateSql;
+            var sql = (await store2.Schema.CreateMigrationAsync()).UpdateSql;
             sql.ShouldNotContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
             sql.ShouldNotContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
             sql.ShouldNotContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);

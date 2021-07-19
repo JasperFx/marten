@@ -228,7 +228,7 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Target>().Index(x => x.Number);
             }))
             {
-                var patch = await store2.Schema.CreateMigration();
+                var patch = await store2.Schema.CreateMigrationAsync();
 
                 patch.UpdateSql.ShouldContain( "mt_doc_target_idx_number", Case.Insensitive);
             }

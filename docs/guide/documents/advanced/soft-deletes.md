@@ -69,7 +69,7 @@ public void query_soft_deleted_docs()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L286-L314' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L285-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The SQL generated for the first call to `Query<User>()` above would be:
@@ -115,7 +115,7 @@ public void query_maybe_soft_deleted_docs()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L316-L346' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L315-L345' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Fetching Only Deleted Documents
@@ -155,7 +155,7 @@ public void query_is_soft_deleted_docs()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L348-L378' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L347-L377' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Fetching Documents Deleted before or after a specific time
@@ -191,7 +191,7 @@ public void query_is_soft_deleted_since_docs()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L380-L406' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L379-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 _Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_
