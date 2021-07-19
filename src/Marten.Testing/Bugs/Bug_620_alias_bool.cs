@@ -16,7 +16,7 @@ namespace Marten.Testing.Bugs
             {
                 store1.Tenancy.Default.EnsureStorageExists(typeof(DocWithBool));
 
-                await store1.Schema.ApplyAllConfiguredChangesToDatabase();
+                await store1.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
             }
 
             using (var store2 = SeparateStore(_ =>
@@ -24,7 +24,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithBool>();
             }))
             {
-                await store2.Schema.AssertDatabaseMatchesConfiguration();
+                await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
             }
         }
     }

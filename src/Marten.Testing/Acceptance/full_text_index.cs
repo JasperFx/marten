@@ -774,10 +774,10 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Look at updates after that
-            var patch = await theStore.Schema.CreateMigration();
+            var patch = await theStore.Schema.CreateMigrationAsync();
 
             Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
@@ -792,10 +792,10 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Look at updates after that
-            var patch = await theStore.Schema.CreateMigration();
+            var patch = await theStore.Schema.CreateMigrationAsync();
 
             Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateSql);
         }
@@ -810,10 +810,10 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Look at updates after that
-            var patch = await theStore.Schema.CreateMigration();
+            var patch = await theStore.Schema.CreateMigrationAsync();
 
             Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
@@ -828,7 +828,7 @@ namespace Marten.Testing.Acceptance
             });
 
             // Apply changes
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             // Change indexed fields
             var store = DocumentStore.For(_ =>
@@ -841,7 +841,7 @@ namespace Marten.Testing.Acceptance
             });
 
             // Look at updates after that
-            var patch = await store.Schema.CreateMigration();
+            var patch = await store.Schema.CreateMigrationAsync();
 
             Assert.Contains("drop index concurrently if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }

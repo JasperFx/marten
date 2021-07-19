@@ -26,8 +26,8 @@ namespace Marten.Testing.Bugs
             });
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                await theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 
@@ -41,8 +41,8 @@ namespace Marten.Testing.Bugs
             });
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                await theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 
@@ -56,8 +56,8 @@ namespace Marten.Testing.Bugs
             });
             await Should.NotThrowAsync(async () =>
             {
-                await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-                await theStore.Schema.AssertDatabaseMatchesConfiguration();
+                await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+                await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
         }
 

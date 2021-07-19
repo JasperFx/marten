@@ -37,40 +37,40 @@ namespace Marten.Schema
         ///     rollback file as well.
         /// </summary>
         /// <param name="filename"></param>
-        Task WriteMigrationFile(string filename);
+        Task WriteMigrationFileAsync(string filename);
 
         /// <summary>
         ///     Tries to write a "patch" SQL text to upgrade the database
         ///     to the current Marten schema configuration
         /// </summary>
         /// <returns></returns>
-        Task<SchemaMigration> CreateMigration();
+        Task<SchemaMigration> CreateMigrationAsync();
 
         /// <summary>
         ///     Validates the Marten configuration of documents and transforms against
         ///     the current database schema. Will throw an exception if any differences are
         ///     detected. Useful for "environment tests"
         /// </summary>
-        Task AssertDatabaseMatchesConfiguration();
+        Task AssertDatabaseMatchesConfigurationAsync();
 
         /// <summary>
         ///     Executes all detected DDL patches to the schema based on current configuration
         ///     upfront at one time
         /// </summary>
-        Task ApplyAllConfiguredChangesToDatabase(AutoCreate? withAutoCreate = null);
+        Task ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? withAutoCreate = null);
 
         /// <summary>
         ///     Generate a DDL patch for one specific document type
         /// </summary>
         /// <param name="documentType"></param>
         /// <returns></returns>
-        Task<SchemaMigration> CreateMigration(Type documentType);
+        Task<SchemaMigration> CreateMigrationAsync(Type documentType);
 
         /// <summary>
         /// Write a migration file for a single document type to the supplied file name
         /// </summary>
         /// <param name="directory"></param>
         /// <returns></returns>
-        Task WriteMigrationFileByType(string directory);
+        Task WriteMigrationFileByTypeAsync(string directory);
     }
 }

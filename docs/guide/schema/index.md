@@ -60,7 +60,7 @@ By default marten will use the default `public` database scheme to create the do
 ```cs
 _.DatabaseSchemaName = "other";
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L495-L499' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L496-L500' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Hilo` sequence table is always created in this document store database schema.
@@ -78,10 +78,10 @@ StoreOptions(_ =>
     _.Storage.MappingFor(typeof(IntDoc));
 
     // this will tell marten to use the default 'public' schema name.
-    _.DatabaseSchemaName = DbObjectName.DefaultDatabaseSchemaName;
+    _.DatabaseSchemaName = SchemaConstants.DefaultSchema;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L334-L347' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L335-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.

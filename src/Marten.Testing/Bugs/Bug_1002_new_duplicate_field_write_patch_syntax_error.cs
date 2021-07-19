@@ -17,7 +17,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Bug_1002>();
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var store = SeparateStore(_ =>
             {
@@ -26,7 +26,7 @@ namespace Marten.Testing.Bugs
                     .Duplicate(x => x.Name); // add a new duplicate column
             });
 
-            (await store.Schema.CreateMigration()).UpdateSql.ShouldNotContain(";;");
+            (await store.Schema.CreateMigrationAsync()).UpdateSql.ShouldNotContain(";;");
         }
 
     }

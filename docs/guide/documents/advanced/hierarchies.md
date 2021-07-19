@@ -89,7 +89,7 @@ public class BrainySmurf: PapaSmurf
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L11-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L12-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to query over one of hierarchy classes and be able to get all of its documents as well as its subclasses,
@@ -119,7 +119,7 @@ public query_with_inheritance(DefaultStoreFixture fixture): base(fixture)
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L85-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L86-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map
@@ -138,7 +138,7 @@ _.Schema.For<ISmurf>()
         typeof(BrainySmurf)
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L49-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L50-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now you can query the "complex" hierarchy in the following ways:
@@ -232,5 +232,5 @@ public void get_all_subclasses_of_an_interface()
     theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L143-L233' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_inheritance.cs#L144-L234' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

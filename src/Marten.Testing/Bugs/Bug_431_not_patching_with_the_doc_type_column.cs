@@ -28,8 +28,8 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<User>().AddSubClass<SuperUser>();
             });
 
-            await store2.Schema.ApplyAllConfiguredChangesToDatabase();
-            await store2.Schema.AssertDatabaseMatchesConfiguration();
+            await store2.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
 
 
 

@@ -76,7 +76,7 @@ namespace Marten.Storage
             system.WriteStringToFile(filename, writer.ToString());
         }
 
-        public async Task<SchemaMigration> CreateMigration()
+        public async Task<SchemaMigration> CreateMigrationAsync()
         {
             var @objects = _features.AllActiveFeatures(_tenant).SelectMany(x => x.Objects).ToArray();
 
@@ -104,14 +104,14 @@ namespace Marten.Storage
             return writer.ToString();
         }
 
-        public async Task WriteMigrationFile(string filename)
+        public async Task WriteMigrationFileAsync(string filename)
         {
             if (!Path.IsPathRooted(filename))
             {
                 filename = AppContext.BaseDirectory.AppendPath(filename);
             }
 
-            var patch = await CreateMigration();
+            var patch = await CreateMigrationAsync();
 
             DdlRules.WriteTemplatedFile(filename, (r, w) =>
             {
@@ -125,22 +125,22 @@ namespace Marten.Storage
             });
         }
 
-        public async Task AssertDatabaseMatchesConfiguration()
+        public async Task AssertDatabaseMatchesConfigurationAsync()
         {
-            var patch = await CreateMigration();
+            var patch = await CreateMigrationAsync();
             if (patch.Difference != SchemaPatchDifference.None)
             {
                 throw new SchemaValidationException(patch.UpdateSql);
             }
         }
 
-        public async Task ApplyAllConfiguredChangesToDatabase(AutoCreate? withCreateSchemaObjects = null)
+        public async Task ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate? withCreateSchemaObjects = null)
         {
             var defaultAutoCreate = StoreOptions.AutoCreateSchemaObjects != AutoCreate.None
                 ? StoreOptions.AutoCreateSchemaObjects
                 : AutoCreate.CreateOrUpdate;
 
-            var patch = await CreateMigration();
+            var patch = await CreateMigrationAsync();
 
             if (patch.Difference == SchemaPatchDifference.None) return;
 
@@ -160,7 +160,7 @@ namespace Marten.Storage
             }
         }
 
-        public async Task<SchemaMigration> CreateMigration(Type documentType)
+        public async Task<SchemaMigration> CreateMigrationAsync(Type documentType)
         {
             var mapping = _features.MappingFor(documentType);
 
@@ -172,7 +172,7 @@ namespace Marten.Storage
             return migration;
         }
 
-        public async Task WriteMigrationFileByType(string directory)
+        public async Task WriteMigrationFileByTypeAsync(string directory)
         {
             var system = new FileSystem();
 

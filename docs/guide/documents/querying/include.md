@@ -31,7 +31,7 @@ public void simple_include_for_a_single_document()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L85-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L86-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The first parameter of the `Include()` method takes an expression that specifies the document properties on which the join will be done (`AssigneeId` in this case). The second parameter is the expression that will assign the fetched related document to a previously declared variable (`included` in our case). By default, Marten will use an inner join. This means that any `Issue` with no corresponding `User` (or no `AssigneeId`), will not be fetched. If you wish to override this behaviour, you can add as a third parameter the enum `JoinType.LeftOuter`.
@@ -71,7 +71,7 @@ public void include_to_dictionary()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L489-L515' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L490-L516' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Include Multiple Document Types
@@ -111,7 +111,7 @@ public void multiple_includes()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L712-L742' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L713-L743' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Chaining other Linq Methods
@@ -143,5 +143,5 @@ var found = batch.Query<Issue>()
     .Where(x => x.Title == issue1.Title)
     .Single();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L47-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L48-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

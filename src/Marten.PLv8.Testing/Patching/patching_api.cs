@@ -33,7 +33,7 @@ namespace Marten.PLv8.Testing.Patching
         [Fact]
         public async Task can_use_patch_api_when_autocreate_is_none()
         {
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var entity = Target.Random();
             theSession.Store(entity);
@@ -787,7 +787,7 @@ namespace Marten.PLv8.Testing.Patching
         {
             var mapping = theStore.Storage.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var entity = Target.Random();
             theSession.Store(entity);
@@ -810,7 +810,7 @@ namespace Marten.PLv8.Testing.Patching
             var mapping = theStore.Storage.MappingFor(typeof(Target));
             var field = mapping.DuplicateField("String");
             var field2 = mapping.DuplicateField(nameof(Target.Number));
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var entity = Target.Random();
             theSession.Store(entity);
@@ -842,7 +842,7 @@ namespace Marten.PLv8.Testing.Patching
                 _.UseJavascriptTransformsAndPatching();
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var aggregateId = Guid.NewGuid();
             var quest = new Quest

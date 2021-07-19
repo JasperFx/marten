@@ -24,9 +24,9 @@ namespace Marten.Testing.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
+            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfiguration();
+            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
@@ -40,9 +40,9 @@ namespace Marten.Testing.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
+            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfiguration();
+            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
@@ -56,9 +56,9 @@ namespace Marten.Testing.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
+            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfiguration();
+            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
@@ -72,9 +72,9 @@ namespace Marten.Testing.Bugs
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await documentStore.Schema.ApplyAllConfiguredChangesToDatabase(AutoCreate.All);
+            await documentStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.All);
 
-            await documentStore.Schema.AssertDatabaseMatchesConfiguration();
+            await documentStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
     }
 }

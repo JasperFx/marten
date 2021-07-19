@@ -19,7 +19,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var store = SeparateStore(_ =>
             {
@@ -27,7 +27,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            var patch = await store.Schema.CreateMigration(typeof(DocWithPrecision));
+            var patch = await store.Schema.CreateMigrationAsync(typeof(DocWithPrecision));
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
 

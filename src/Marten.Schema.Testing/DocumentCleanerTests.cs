@@ -211,7 +211,7 @@ namespace Marten.Schema.Testing
                 opts.Events.AddEventType(typeof(MembersJoined));
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var allSchemas = theStore.Storage.AllSchemaNames();
 

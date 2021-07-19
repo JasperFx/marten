@@ -28,7 +28,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Document>().ForeignKey<FkTarget>(a => a.TargetId);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
         }
 
     }

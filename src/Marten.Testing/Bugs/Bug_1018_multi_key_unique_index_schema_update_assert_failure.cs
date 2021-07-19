@@ -28,8 +28,8 @@ namespace Marten.Testing.Bugs
                     .UniqueIndex(UniqueIndexType.DuplicatedField, x => x.Field1, x => x.Field2);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
-            await theStore.Schema.AssertDatabaseMatchesConfiguration();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await theStore.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
     }

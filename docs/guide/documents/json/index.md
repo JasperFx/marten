@@ -112,7 +112,7 @@ public interface ISerializer
     ValueCasting ValueCasting { get; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L13-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L14-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it

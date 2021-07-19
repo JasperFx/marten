@@ -143,7 +143,7 @@ var results = theSession
     .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
     .ToArray();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L94-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any-query-through-child-collection-with-and' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L95-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any-query-through-child-collection-with-and' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Finally, you can query for child collections that do **not** contain a value:
@@ -362,7 +362,7 @@ public void get_sum_of_integers()
         .ShouldBe(10);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_for_sum_Tests.cs#L13-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_sum' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_for_sum_Tests.cs#L14-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_sum' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ordering Results
@@ -453,7 +453,7 @@ public void query_against_string_array()
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L418-L435' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L419-L436' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
@@ -481,7 +481,7 @@ public void query_against_number_list_with_any()
         .Count(x => x.Numbers.Any()).ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L522-L543' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L523-L544' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
@@ -507,7 +507,7 @@ public void query_against_number_list_with_count_method()
         .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L545-L563' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_against_child_collections_integrated_Tests.cs#L546-L564' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## SelectMany()

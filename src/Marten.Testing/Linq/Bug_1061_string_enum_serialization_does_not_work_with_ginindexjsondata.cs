@@ -36,7 +36,7 @@ namespace Marten.Testing.Linq
                 });
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             using var store = DocumentStore.For(_ =>
             {

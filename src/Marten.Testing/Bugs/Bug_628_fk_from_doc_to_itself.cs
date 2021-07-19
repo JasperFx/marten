@@ -22,7 +22,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<Category>().ForeignKey<Category>(x => x.ParentId);
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
         }
 
     }

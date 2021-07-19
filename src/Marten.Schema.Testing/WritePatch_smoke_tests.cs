@@ -26,15 +26,15 @@ namespace Marten.Schema.Testing
             #endregion sample_configure-document-types-upfront
 
             #region sample_WritePatch
-            await store.Schema.WriteMigrationFile("1.initial.sql");
+            await store.Schema.WriteMigrationFileAsync("1.initial.sql");
             #endregion sample_WritePatch
 
             #region sample_ApplyAllConfiguredChangesToDatabase
-            await store.Schema.ApplyAllConfiguredChangesToDatabase();
+            await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
             #endregion sample_ApplyAllConfiguredChangesToDatabase
 
             #region sample_AssertDatabaseMatchesConfiguration
-            await store.Schema.AssertDatabaseMatchesConfiguration();
+            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
             #endregion sample_AssertDatabaseMatchesConfiguration
             store.Dispose();
         }
@@ -49,7 +49,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<User>();
             });
 
-            var patch = await theStore.Schema.CreateMigration(typeof(User));
+            var patch = await theStore.Schema.CreateMigrationAsync(typeof(User));
 
             patch.UpdateSql.ShouldContain("CREATE OR REPLACE FUNCTION public.mt_upsert_user");
             patch.UpdateSql.ShouldContain("CREATE TABLE public.mt_doc_user");
@@ -70,7 +70,7 @@ namespace Marten.Schema.Testing
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             using (var store = DocumentStore.For(_ =>
             {
@@ -82,7 +82,7 @@ namespace Marten.Schema.Testing
                 var ex = await Exception<SchemaValidationException>.ShouldBeThrownByAsync(async
                     () =>
                 {
-                    await store.Schema.AssertDatabaseMatchesConfiguration();
+                    await store.Schema.AssertDatabaseMatchesConfigurationAsync();
                 });
 
 
@@ -97,7 +97,7 @@ namespace Marten.Schema.Testing
             theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
             theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             using var store = DocumentStore.For(_ =>
             {
@@ -105,7 +105,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<User>();
                 _.Schema.For<Target>();
             });
-            await store.Schema.AssertDatabaseMatchesConfiguration();
+            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact] // -- flakey on ci
@@ -132,7 +132,7 @@ namespace Marten.Schema.Testing
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabase();
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
 
             using var store = DocumentStore.For(_ =>
@@ -141,7 +141,7 @@ namespace Marten.Schema.Testing
                 _.Events.AddEventType(typeof(MembersJoined));
             });
 
-            await store.Schema.AssertDatabaseMatchesConfiguration();
+            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact(Skip = "flakey on ci")]
@@ -167,7 +167,7 @@ namespace Marten.Schema.Testing
 
             #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
-            await theStore.Schema.WriteMigrationFile(directory.AppendPath("1.initial.sql"));
+            await theStore.Schema.WriteMigrationFileAsync(directory.AppendPath("1.initial.sql"));
             #endregion sample_write-patch
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
@@ -191,7 +191,7 @@ namespace Marten.Schema.Testing
 
             #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
-            await theStore.Schema.WriteMigrationFile(directory.AppendPath("1.initial.sql"));
+            await theStore.Schema.WriteMigrationFileAsync(directory.AppendPath("1.initial.sql"));
             #endregion sample_write-patch
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
