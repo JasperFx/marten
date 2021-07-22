@@ -1,5 +1,8 @@
 # Marten as Event Store
 
+## **TODO: Here I'd like to introduce briefly the Event Sourcing conceptc and how to use them with Marten, so: appending, aggregating and projecting events. Stream Identity.**
+
+
 Marten's Event Store functionality is a powerful way to utilize Postgresql in the [event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event
 stream data, Marten also helps you create "read side" views of the raw event data through its support for projections.
 
