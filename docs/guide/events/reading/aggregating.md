@@ -1,0 +1,1 @@
+**TODO: Add here detailed information about the online aggregation process. I think that it should be first than reading&querying events as normally you're reading events to retrieve the entity state.**

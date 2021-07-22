@@ -1,3 +1,5 @@
+**TODO: Content from here should be moved to the other pages. Here we should have Event Slices, IProjections and all the other fun stuff**
+
 # Custom Projections
 
 ## Multistream Projections using ViewProjection
