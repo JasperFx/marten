@@ -350,42 +350,125 @@ function getDocumentDbSidebar() {
 function getEventStoreSidebar() {
   return [
     {
-      text: 'Schema Objects',
-      link: '/guide/events/schema'
-    },
-    {
-      text: 'Stream identity',
-      link: '/guide/events/identity'
+      text: 'Introduction',
+      link: '/guide/events/index'
     },
     {
       text: 'Appending events',
       link: '/guide/events/appending'
     },
     {
-      text: 'Querying events and stream data',
-      link: '/guide/events/streams'
+      text: 'Aggregating events',
+      link: '/guide/events/appending'
+    },
+    {
+      text: 'Reading Events',
+      link: '/guide/events/reading/aggregating',
+      children: [
+        {
+          text: 'Aggregating Stream',
+          link: '/guide/events/reading/aggregating'
+        },
+        {
+          text: 'Querying Events',
+          link: '/guide/events/reading/querying'
+        },
+      ]
     },
     {
       text: 'Projections',
       link: '/guide/events/projections/',
       children: [
         {
-          text: 'Async Daemon',
-          link: '/guide/events/projections/async-daemon'
+          text: 'Introduction',
+          link: '/guide/events/projections/'
         },
         {
-          text: 'Projecting by event type',
-          link: '/guide/events/projections/projection-by-event-type'
+          text: 'Aggregate projections',
+          link: '/guide/events/projections/aggregate-projections'
+        },
+        {
+          text: 'View Projections',
+          link: '/guide/events/projections/view-projections'
+        },
+        {
+          text: 'Event Projections',
+          link: '/guide/events/projections/event-projections'
         },
         {
           text: 'Custom projections',
           link: '/guide/events/projections/custom'
         },
+        {
+          text: 'Inline projections',
+          link: '/guide/events/projections/inline'
+        },
+        {
+          text: 'Async Daemon',
+          link: '/guide/events/projections/async-daemon'
+        },
+        {
+          text: 'Rebuilding projections',
+          link: '/guide/events/projections/rebuilding'
+        }
+      ]
+    },
+    {
+      text: 'Streaming',
+      link: '/guide/events/streaming/',
+      children: [
+        {
+          text: 'Introduction',
+          link: '/guide/events/streaming/'
+        },
+        {
+          text: 'Publishing changes',
+          link: '/guide/events/source/'
+        },
+        {
+          text: 'Receiving events',
+          link: '/guide/events/sink/'
+        },
+      ]
+    },
+    {
+      text: 'Metadata',
+      link: '/guide/metadata/',
+      children: [
+        {
+          text: 'Introduction',
+          link: '/guide/metadata/'
+        },
+        {
+          text: 'Diagnostics',
+          link: 'guide/metadata/diagnostics'
+        }
       ]
     },
     {
       text: 'Event versioning',
       link: '/guide/events/versioning'
+    },
+    {
+      text: 'Storage',
+      link: '/guide/events/storage'
+    },
+    {
+      text: 'Advanced',
+      children: [
+        {
+          text: 'Aggregates, events and repositories',
+          link: '/guide/scenarios/aggregates-events-repositories'
+        },
+        {
+          text: 'Copy and transform stream',
+          link: '/guide/scenarios/copy-and-transform-stream'
+        },
+        {
+          text: 'Immutable projections as read model',
+          link: '/guide/scenarios/immutable-projections-read-model'
+        },
+      ]
     }
   ]
 }

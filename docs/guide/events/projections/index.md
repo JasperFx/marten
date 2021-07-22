@@ -1,3 +1,5 @@
+**Here I'd like to just keep the general introduction explaining what's the projection plus explanation of those we have. Live projections will be took away to the reading event section.**
+
 # Projections
 
 ::: tip INFO

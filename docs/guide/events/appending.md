@@ -1,3 +1,5 @@
+**TODO: Extend with optimistic concurrency**
+
 # Appending Events
 
 Marten's event sourcing support "appends" event data documents to a single table `mt_events.` Events must be captured against a stream id, with a second table called `mt_streams` that Marten uses to
