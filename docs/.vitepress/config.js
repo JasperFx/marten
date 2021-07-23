@@ -454,6 +454,10 @@ function getEventStoreSidebar() {
       link: '/guide/events/storage'
     },
     {
+      text: 'Multitenancy',
+      link: '/guide/events/multitenancy'
+    },
+    {
       text: 'Advanced',
       children: [
         {
