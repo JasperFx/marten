@@ -48,12 +48,21 @@ public class Startup
             {
                 options.AutoCreateSchemaObjects = AutoCreate.All;
             }
+
+            options.Projections.AsyncMode = DaemonMode.HotCold;
+            options.Events.AddEventType(typeof(Event1));
+            options.Events.AddEventType(typeof(Event2));
+            options.Events.AddEventType(typeof(Event3));
+            options.Events.AddEventType(typeof(Event4));
+
+            options.Projections.Add<View1Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
+            options.Projections.Add<View2Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
         });
     }
 
     // and other methods we don't care about right now...
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L12-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `AddMarten()` method will add these service registrations to your application:

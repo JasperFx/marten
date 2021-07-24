@@ -115,7 +115,11 @@ namespace Marten.Events.Daemon.HighWater
         private async Task markProgress(HighWaterStatistics statistics, TimeSpan delayTime)
         {
             // don't bother sending updates if the current position is 0
-            if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark) return;
+            if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark)
+            {
+                await Task.Delay(delayTime, _token);
+                return;
+            }
 
             if (_logger.IsEnabled(LogLevel.Debug))
             {
