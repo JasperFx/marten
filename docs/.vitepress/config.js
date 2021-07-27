@@ -358,10 +358,6 @@ function getEventStoreSidebar() {
       link: '/guide/events/appending'
     },
     {
-      text: 'Aggregating events',
-      link: '/guide/events/appending'
-    },
-    {
       text: 'Reading Events',
       link: '/guide/events/reading/aggregating',
       children: [

@@ -5,106 +5,15 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Storage;
 using Marten.Testing.Harness;
-using Shouldly;
 using Weasel.Postgresql;
+using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Events.Projections
+namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
 {
-    // License events
-    public class LicenseCreated
-    {
-        public Guid LicenseId { get; }
-
-        public string Name { get; }
-
-        public LicenseCreated(Guid licenseId, string name)
-        {
-            LicenseId = licenseId;
-            Name = name;
-        }
-    }
-
-    public class LicenseFeatureToggled
-    {
-        public Guid LicenseId { get; }
-
-        public string FeatureToggleName { get; }
-
-        public LicenseFeatureToggled(Guid licenseId, string featureToggleName)
-        {
-            LicenseId = licenseId;
-            FeatureToggleName = featureToggleName;
-        }
-    }
-
-    // User Groups events
-
-    public class UserGroupCreated
-    {
-        public Guid GroupId { get; }
-
-        public string Name { get; }
-
-        public UserGroupCreated(Guid groupId, string name)
-        {
-            GroupId = groupId;
-            Name = name;
-        }
-    }
-
-    public class UsersAssignedToGroup
-    {
-        public Guid GroupId { get; }
-
-        public List<Guid> UserIds { get; }
-
-        public UsersAssignedToGroup(Guid groupId, List<Guid> userIds)
-        {
-            GroupId = groupId;
-            UserIds = userIds;
-        }
-    }
-
-    // User Events
-    public class UserRegistered
-    {
-        public Guid UserId { get; }
-
-        public string Email { get; }
-
-        public UserRegistered(Guid userId, string email)
-        {
-            UserId = userId;
-            Email = email;
-        }
-    }
-
-    public class UserLicenseAssigned
-    {
-        public Guid UserId { get; }
-
-        public Guid LicenseId { get; }
-
-        public UserLicenseAssigned(Guid userId, Guid licenseId)
-        {
-            UserId = userId;
-            LicenseId = licenseId;
-        }
-    }
-
-    public class UserFeatureToggles
-    {
-        public Guid Id { get; set; }
-
-        public Guid LicenseId { get; set; }
-
-        public List<string> FeatureToggles { get; } = new();
-    }
-
-    public class LicenseFeatureToggledEventGrouper : IAggregateGrouper<Guid>
+    #region sample_view-projection-custom-grouper-with-querysession
+    public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
     {
         public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
         {
@@ -128,8 +37,8 @@ namespace Marten.Testing.Events.Projections
                 .Select(x => new {x.Id, x.LicenseId})
                 .ToListAsync();
 
-            var streamIds = (IDictionary<Guid, List<Guid>>) result.GroupBy(ks => ks.LicenseId, vs=> vs.Id)
-                .ToDictionary(ks=>ks.Key, vs => vs.ToList());
+            var streamIds = (IDictionary<Guid, List<Guid>>)result.GroupBy(ks => ks.LicenseId, vs => vs.Id)
+                .ToDictionary(ks => ks.Key, vs => vs.ToList());
 
             grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenceFeatureTogglesEvents);
         }
@@ -142,7 +51,6 @@ namespace Marten.Testing.Events.Projections
         {
             Identity<UserRegistered>(@event => @event.UserId);
             Identity<UserLicenseAssigned>(@event => @event.UserId);
-
 
             CustomGrouping(new LicenseFeatureToggledEventGrouper());
         }
@@ -163,59 +71,11 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    public class UserGroupsAssignment
+    #endregion sample_view-projection-custom-grouper-with-querysession
+
+    public class custom_grouper_with_document_session: IntegrationContext
     {
-        public Guid Id { get; set; }
-
-        public List<Guid> Groups { get; } = new();
-    }
-
-    public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment, Guid>
-    {
-        public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
-        {
-            public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy)
-            {
-                var allEvents = streams.SelectMany(x => x.Events).ToList();
-                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
-                group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
-                group.AddEvents<UsersAssignedToGroup>(@event => @event.UserIds, allEvents);
-
-                return new(group.Slices.ToList());
-            }
-
-            public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events, ITenancy tenancy)
-            {
-                var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(tenancy.Default);
-                group.AddEvents<UserRegistered>(@event => @event.UserId, events);
-                group.AddEvents<UsersAssignedToGroup>(@event => @event.UserIds, events);
-
-                return new(new List<TenantSliceGroup<UserGroupsAssignment, Guid>>{group});
-            }
-        }
-
-
-        public UserGroupsAssignmentProjection()
-        {
-            CustomGrouping(new CustomSlicer());
-        }
-
-        public void Apply(UserRegistered @event, UserGroupsAssignment view)
-        {
-            view.Id = @event.UserId;
-        }
-
-        public void Apply(UsersAssignedToGroup @event, UserGroupsAssignment view)
-        {
-            view.Groups.Add(@event.GroupId);
-        }
-    }
-
-
-
-    public class multiple_streams_projections: IntegrationContext
-    {
-        //[Fact] -- unreliable in CI
+        [Fact]
         public async Task multi_stream_projections_should_work()
         {
             // --------------------------------
@@ -230,21 +90,6 @@ namespace Marten.Testing.Events.Projections
 
             var premiumLicenseCreated = new LicenseCreated(Guid.NewGuid(), "Premium Licence");
             theSession.Events.Append(premiumLicenseCreated.LicenseId, premiumLicenseCreated);
-
-            await theSession.SaveChangesAsync();
-
-            // --------------------------------
-            // Create Groups
-            // --------------------------------
-            // Regular Users
-            // Admin Users
-            // --------------------------------
-
-            var regularUsersGroupCreated = new UserGroupCreated(Guid.NewGuid(), "Regular Users");
-            theSession.Events.Append(regularUsersGroupCreated.GroupId, regularUsersGroupCreated);
-
-            var adminUsersGroupCreated = new UserGroupCreated(Guid.NewGuid(), "Admin Users");
-            theSession.Events.Append(adminUsersGroupCreated.GroupId, adminUsersGroupCreated);
 
             await theSession.SaveChangesAsync();
 
@@ -350,63 +195,15 @@ namespace Marten.Testing.Events.Projections
             alanFeatureToggles.Id.ShouldBe(alanRegistered.UserId);
             alanFeatureToggles.LicenseId.ShouldBe(freeLicenseCreated.LicenseId);
             alanFeatureToggles.FeatureToggles.ShouldHaveTheSameElementsAs(loginFeatureToggle);
-
-            // --------------------------------
-            // Assign users to Groups
-            // --------------------------------
-            // Anna, Maggie => Admin
-            // John, Alan   => Regular
-            // --------------------------------
-
-            var annaAndMaggieAssignedToAdminUsersGroup = new UsersAssignedToGroup(adminUsersGroupCreated.GroupId,
-                new List<Guid> {annaRegistered.UserId, maggieRegistered.UserId});
-            theSession.Events.Append(annaAndMaggieAssignedToAdminUsersGroup.GroupId,
-                annaAndMaggieAssignedToAdminUsersGroup);
-
-            var johnAndAlanAssignedToRegularUsersGroup = new UsersAssignedToGroup(regularUsersGroupCreated.GroupId,
-                new List<Guid> {johnRegistered.UserId, alanRegistered.UserId});
-            theSession.Events.Append(johnAndAlanAssignedToRegularUsersGroup.GroupId,
-                johnAndAlanAssignedToRegularUsersGroup);
-
-            await theSession.SaveChangesAsync();
-
-            // --------------------------------
-            // Check users' groups assignment
-            // --------------------------------
-            // Anna, Maggie => Admin
-            // John, Alan   => Regular
-            // --------------------------------
-
-            var annaGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(annaRegistered.UserId);
-            annaGroupAssignment.ShouldNotBeNull();
-            annaGroupAssignment.Id.ShouldBe(annaRegistered.UserId);
-            annaGroupAssignment.Groups.ShouldHaveTheSameElementsAs(adminUsersGroupCreated.GroupId);
-
-            var maggieGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(maggieRegistered.UserId);
-            maggieGroupAssignment.ShouldNotBeNull();
-            maggieGroupAssignment.Id.ShouldBe(maggieRegistered.UserId);
-            maggieGroupAssignment.Groups.ShouldHaveTheSameElementsAs(adminUsersGroupCreated.GroupId);
-
-            var johnGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(johnRegistered.UserId);
-            johnGroupAssignment.ShouldNotBeNull();
-            johnGroupAssignment.Id.ShouldBe(johnRegistered.UserId);
-            johnGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
-
-            var alanGroupAssignment = await theSession.LoadAsync<UserGroupsAssignment>(alanRegistered.UserId);
-            alanGroupAssignment.ShouldNotBeNull();
-            alanGroupAssignment.Id.ShouldBe(alanRegistered.UserId);
-            alanGroupAssignment.Groups.ShouldHaveTheSameElementsAs(regularUsersGroupCreated.GroupId);
         }
 
-        public multiple_streams_projections(DefaultStoreFixture fixture): base(fixture)
+        public custom_grouper_with_document_session(DefaultStoreFixture fixture): base(fixture)
         {
             StoreOptions(_ =>
             {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.DatabaseSchemaName = "multi_stream_projections";
+                _.DatabaseSchemaName = "custom_grouper_with_document_session";
 
                 _.Projections.Add<UserFeatureTogglesProjection>(ProjectionLifecycle.Inline);
-                _.Projections.Add<UserGroupsAssignmentProjection>(ProjectionLifecycle.Inline);
             });
         }
     }
