@@ -5,6 +5,7 @@ using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Npgsql;
+using static System.Globalization.CultureInfo;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 using static Westwind.Utilities.FileUtils;
@@ -269,9 +270,9 @@ namespace martenbuild
         private static string GetFramework()
         {
             var frameworkName = Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
-            var version = float.Parse(frameworkName.Split('=')[1].Replace("v",""), System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
+            var version = float.Parse(frameworkName.Split('=')[1].Replace("v",""), InvariantCulture.NumberFormat);
 
-            return version < 5.0 ? $"netcoreapp{version.ToString("N1")}" : $"net{version.ToString("N1")}";
+            return version < 5.0 ? $"netcoreapp{version.ToString("N1", InvariantCulture.NumberFormat)}" : $"net{version.ToString("N1", InvariantCulture.NumberFormat)}";
         }
 
         private static Action IgnoreIfFailed(Action action)
