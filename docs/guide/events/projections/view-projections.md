@@ -1,6 +1,6 @@
 # View Projections
 
-View projections are designed to handled multistream projections.
+View projections are designed to handle multistream projections.
 
 Having defined events and views as:
 
@@ -121,14 +121,14 @@ public class UserFeatureToggles
 
     public Guid LicenseId { get; set; }
 
-    public List<string> FeatureToggles { get; } = new();
+    public List<string> FeatureToggles { get; set; } = new();
 }
 
 public class UserGroupsAssignment
 {
     public Guid Id { get; set; }
 
-    public List<Guid> Groups { get; } = new();
+    public List<Guid> Groups { get; set; } = new();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/ViewProjections/TestClasses.cs#L6-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-test-classes' title='Start of snippet'>anchor</a></sup>
