@@ -118,7 +118,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections
 
         public Guid LicenseId { get; set; }
 
-        public List<string> FeatureToggles { get; } = new();
+        public List<string> FeatureToggles { get; set; } = new();
     }
 
 
@@ -126,7 +126,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections
     {
         public Guid Id { get; set; }
 
-        public List<Guid> Groups { get; } = new();
+        public List<Guid> Groups { get; set; } = new();
     }
 
     #endregion sample_view-projection-test-classes
