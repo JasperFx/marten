@@ -54,7 +54,7 @@ public record InvoiceSent(
     DateTime SentAt
 );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_samples.cs#L10-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_samples.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and following entity class definition:
@@ -111,7 +111,7 @@ public enum InvoiceStatus
     Sent = 3
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_samples.cs#L43-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-invoice-entity' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_samples.cs#L44-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-invoice-entity' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To retrieve the state it's enough to call:
@@ -121,7 +121,7 @@ To retrieve the state it's enough to call:
 ```cs
 var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_samples.cs#L123-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-usage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_samples.cs#L124-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Time Travelling

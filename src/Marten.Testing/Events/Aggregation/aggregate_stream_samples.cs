@@ -4,9 +4,10 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
+#if NET5_0
+#nullable enable
 namespace Marten.Testing.Events.Aggregation
 {
-
     #region sample_aggregate-stream-events
     public record InvoiceInitiated(
         Guid InvoiceId,
@@ -145,4 +146,4 @@ namespace Marten.Testing.Events.Aggregation
         }
     }
 }
-
+#endif
