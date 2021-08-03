@@ -1,17 +1,18 @@
 # Marten as Event Store
 
-## **TODO: Here I'd like to introduce briefly the Event Sourcing conceptc and how to use them with Marten, so: appending, aggregating and projecting events. Stream Identity.**
+##  What is Event Sourcing?
 
+Event Sourcing is a design pattern in which results of business operations are stored as a series of events. 
 
-Marten's Event Store functionality is a powerful way to utilize Postgresql in the [event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event
-stream data, Marten also helps you create "read side" views of the raw event data through its support for projections.
+It is an alternative way to persist data. In contrast with state-oriented persistence that only keeps the latest version of the entity state, Event Sourcing stores each state change as a separate event.
 
-Please run through the [Getting Started](https://marten-v4.netlify.app/guide/) page prior to running through the quick start in next section.
+Thanks for that, no business data is lost. Each operation results in the event stored in the database. That enables extended auditing and diagnostics capabilities (both technically and business-wise). What's more, as events contains the business context, it allows wide business analysis and reporting.
+
+Marten's Event Store functionality is a powerful way to utilize Postgresql in the [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event stream data, Marten also helps you create "read side" views of the raw event data through its support for projections.
 
 ## Event Store quick start
 
-There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](/guide/schema/). Marten is just a client library,
-and there's nothing to install other than the Marten NuGet.
+There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](/guide/schema/). Marten is just a client library, and there's nothing to install other than the Marten NuGet.
 
 Because I’ve read way too much epic fantasy fiction, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest, you may want to record events like:
 
