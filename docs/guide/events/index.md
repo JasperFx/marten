@@ -10,6 +10,8 @@ Thanks for that, no business data is lost. Each operation results in the event s
 
 Marten's Event Store functionality is a powerful way to utilize Postgresql in the [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event stream data, Marten also helps you create "read side" views of the raw event data through its support for projections.
 
+**TODO: Here I'd like to introduce briefly the Event Sourcing conceptc and how to use them with Marten, so: appending, aggregating and projecting events. Stream Identity.**
+
 ## Event Store quick start
 
 There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](/guide/schema/). Marten is just a client library, and there's nothing to install other than the Marten NuGet.
