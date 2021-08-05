@@ -211,26 +211,36 @@ namespace Marten.Events.Daemon
         {
             if (group.Cancellation.IsCancellationRequested) return null; // get out of here early instead of letting it linger
 
-            using var batch = StartNewBatch(group);
+            var batch = StartNewBatch(group);
 
-            await group.ConfigureUpdateBatch(this, batch, group);
-
-            if (group.Cancellation.IsCancellationRequested)
+            try
             {
+                await group.ConfigureUpdateBatch(this, batch, group);
+
+                if (group.Cancellation.IsCancellationRequested)
+                {
+                    if (group.Exception != null)
+                    {
+                        ExceptionDispatchInfo.Capture(group.Exception).Throw();
+                    }
+
+                    return batch; // get out of here early instead of letting it linger
+                }
+
+                batch.Queue.Complete();
+                await batch.Queue.Completion;
+
                 if (group.Exception != null)
                 {
                     ExceptionDispatchInfo.Capture(group.Exception).Throw();
                 }
-
-                return batch; // get out of here early instead of letting it linger
             }
-
-            batch.Queue.Complete();
-            await batch.Queue.Completion;
-
-            if (group.Exception != null)
+            finally
             {
-                ExceptionDispatchInfo.Capture(group.Exception).Throw();
+                if (batch != null)
+                {
+                    await batch.CloseSession();
+                }
             }
 
             return batch;
@@ -395,9 +405,15 @@ namespace Marten.Events.Daemon
                 {
                     if (!_cancellation.IsCancellationRequested)
                     {
-                        _logger.LogError(e, "Failure in shard '{ShardName}' trying to execute an update batch for {Range}", ShardName, batch.Range);
+                        _logger.LogError(e,
+                            "Failure in shard '{ShardName}' trying to execute an update batch for {Range}", ShardName,
+                            batch.Range);
                         throw;
                     }
+                }
+                finally
+                {
+                    batch.Dispose();
                 }
             }
 

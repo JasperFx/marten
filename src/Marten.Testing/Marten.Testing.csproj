@@ -21,6 +21,7 @@
   <ItemGroup>
     <PackageReference Include="Jil" Version="3.0.0-alpha2" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="Lamar" Version="5.0.4" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">

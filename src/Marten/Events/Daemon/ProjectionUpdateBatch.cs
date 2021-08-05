@@ -19,7 +19,7 @@ namespace Marten.Events.Daemon
     public class ProjectionUpdateBatch : IUpdateBatch, IDisposable, ISessionWorkTracker
     {
         public EventRange Range { get; }
-        private readonly DocumentSessionBase _session;
+        private DocumentSessionBase _session;
         private readonly CancellationToken _token;
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
@@ -65,7 +65,7 @@ namespace Marten.Events.Daemon
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
             {
-                page.ApplyChanges(exceptions);
+                page.ApplyChanges(exceptions, session);
 
                 // Wanna fail fast here instead of trying the next batch
                 if (exceptions.Any())
@@ -82,7 +82,7 @@ namespace Marten.Events.Daemon
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
             {
-                await page.ApplyChangesAsync(exceptions, token);
+                await page.ApplyChangesAsync(exceptions, session, token);
 
                 // Wanna fail fast here instead of trying the next batch
                 if (exceptions.Any())
@@ -94,7 +94,7 @@ namespace Marten.Events.Daemon
 
         public class Page
         {
-            private readonly IMartenSession _session;
+            private IMartenSession _session;
             public int Count { get; private set; }
 
             private readonly NpgsqlCommand _command = new NpgsqlCommand();
@@ -116,26 +116,31 @@ namespace Marten.Events.Daemon
                 _operations.Add(operation);
             }
 
-            public void ApplyChanges(IList<Exception> exceptions)
+            public void ApplyChanges(IList<Exception> exceptions, IMartenSession session)
             {
                 _command.CommandText = _builder.ToString();
 
-                using var reader = _session.Database.ExecuteReader(_command);
+                using var reader = session.Database.ExecuteReader(_command);
                 UpdateBatch.ApplyCallbacks(_operations, reader, exceptions);
             }
 
-            public async Task ApplyChangesAsync(IList<Exception> exceptions, CancellationToken token)
+            public async Task ApplyChangesAsync(IList<Exception> exceptions, IMartenSession session, CancellationToken token)
             {
                 _command.CommandText = _builder.ToString();
 
-                using var reader = await _session.Database.ExecuteReaderAsync(_command, token);
+                using var reader = await session.Database.ExecuteReaderAsync(_command, token);
                 await UpdateBatch.ApplyCallbacksAsync(_operations, reader, exceptions, token);
+            }
+
+            public void ReleaseSession()
+            {
+                _session = null;
             }
         }
 
         public void Dispose()
         {
-            _session.Dispose();
+            _session?.Dispose();
             Queue.Complete();
         }
 
@@ -258,6 +263,16 @@ namespace Marten.Events.Daemon
         bool ISessionWorkTracker.HasOutstandingWork()
         {
             throw new NotSupportedException();
+        }
+
+        public async ValueTask CloseSession()
+        {
+            foreach (var page in _pages)
+            {
+                page.ReleaseSession();
+            }
+            await _session.DisposeAsync();
+            _session = null;
         }
     }
 }
