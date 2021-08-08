@@ -1,14 +1,12 @@
 # Stream aggregation
 
-In Event Sourcing, the state is stored in events. Events are logically grouped into streams. Streams can be thought of as the entities' representation. Traditionally (e.g. in relational or document approach), each entity is stored as a separate record.
+In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`.  All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position. 
 
-In Event Sourcing, the entity is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`.  All of those events shares the stream id, and have incremented stream version.
-
-In Event Sourcing entity is represented by stream, so sequence of event correlated by the stream id ordered by stream position.
+Streams can be thought of as the entities' representation. Traditionally (e.g. in relational or document approach), each entity is stored as a separate record.
 
 To get the current state of entity we need to perform the stream aggregation process (called also _state rehydration_ or _state rebuild_). We're translating the set of events into a single entity. This can be done with the following the steps:
 1. Read all events for the specific stream.
-2. Order them ascending in the order of appearance (by the event's stream position).
+2. Order them in ascending order of appearance (by the event's stream position).
 3. Construct the empty object of the entity type (e.g. with default constructor).
 4. Apply each event on the entity.
 
