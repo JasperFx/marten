@@ -29,7 +29,10 @@ namespace Marten.Events
         Task IGeneratesCode.AttachPreBuiltTypes(GenerationRules rules, Assembly assembly, IServiceProvider services)
         {
             var provider = EventDocumentStorageGenerator.BuildProviderFromAssembly(assembly, Options);
-            Options.Providers.Append(provider);
+            if (provider != null)
+            {
+                Options.Providers.Append(provider);
+            }
 
             var projections = Options.Projections.All.OfType<IGeneratedProjection>();
             foreach (var projection in projections)

@@ -87,7 +87,8 @@ namespace Marten.Storage
 
         public IDocumentStorage<T> StorageFor<T>()
         {
-            return Providers.StorageFor<T>().QueryOnly;
+            var documentProvider = Providers.StorageFor<T>();
+            return documentProvider.QueryOnly;
         }
 
         public ISequences Sequences => _sequences.Value;
