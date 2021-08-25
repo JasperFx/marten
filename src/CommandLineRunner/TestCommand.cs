@@ -40,6 +40,9 @@ namespace CommandLineRunner
             Console.WriteLine("Lightweight");
             using (var session2 = store.LightweightSession())
             {
+                (await session2.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
+
+
                 var user = new User {FirstName = "Jeremy", LastName = "Miller", UserName = "jeremydmiller"};
 
 
@@ -60,17 +63,34 @@ namespace CommandLineRunner
             Console.WriteLine("IdentityMap");
             using (var session3 = store.OpenSession())
             {
+                (await session3.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
+
                 var target = Target.Random();
                 session3.Store(target);
                 await session3.SaveChangesAsync();
+
+                // Just a smoke test
+                await session3.QueryAsync(new FindUserByAllTheThings
+                {
+                    FirstName = "Jeremy", LastName = "Miller", Username = "jeremydmiller"
+                });
             }
 
             Console.WriteLine("DirtyChecking");
             using (var session4 = store.OpenSession())
             {
+                (await session4.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
+
+
                 var target = Target.Random();
                 session4.Store(target);
                 await session4.SaveChangesAsync();
+
+                // Just a smoke test
+                await session4.QueryAsync(new FindUserByAllTheThings
+                {
+                    FirstName = "Jeremy", LastName = "Miller", Username = "jeremydmiller"
+                });
             }
 
             Console.WriteLine("Capturing Events");

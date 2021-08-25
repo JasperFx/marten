@@ -60,7 +60,14 @@ namespace Marten
                     var builder = new CompiledQuerySourceBuilder(plan, this);
                     var source = builder.CreateFromPreBuiltType(assembly);
 
-                    _querySources = _querySources.AddOrUpdate(compiledQueryType, source);
+                    if (source == null)
+                    {
+                        Console.WriteLine("Could not find a pre-built compiled query source type for compiled query type " + compiledQueryType.FullNameInCode());
+                    }
+                    else
+                    {
+                        _querySources = _querySources.AddOrUpdate(compiledQueryType, source);
+                    }
                 }
             }
 
@@ -76,8 +83,15 @@ namespace Marten
         {
             public void BuildAndStore(Assembly assembly, DocumentMapping mapping, StoreOptions options)
             {
-                var provider = DocumentPersistenceBuilder.FromPreBuiltTypes<T>(assembly, mapping);
-                options.Providers.Append(provider);
+                try
+                {
+                    var provider = DocumentPersistenceBuilder.FromPreBuiltTypes<T>(assembly, mapping);
+                    options.Providers.Append(provider);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Unable to use pre-built type for " + typeof(T).FullNameInCode());
+                }
             }
         }
 

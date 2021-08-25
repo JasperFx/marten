@@ -48,7 +48,11 @@ namespace Marten.Internal.CompiledQueries
             var hardcoded = new HardCodedParameters(_plan);
 
             var sourceType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _typeName);
-            if (sourceType == null) return null;
+            if (sourceType == null)
+            {
+                Console.WriteLine("Unable to find a pre-built type for compiled query with name " + _typeName);
+                return null;
+            }
 
             return (ICompiledQuerySource)Activator.CreateInstance(sourceType, new object[] {hardcoded, _plan.HandlerPrototype});
         }
