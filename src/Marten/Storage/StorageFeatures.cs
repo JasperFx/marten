@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Baseline;
 using Baseline.ImTools;
 using LamarCodeGeneration;
@@ -34,25 +35,15 @@ namespace Marten.Storage
         private readonly IDictionary<Type, IDocumentMappingBuilder> _builders
             = new Dictionary<Type, IDocumentMappingBuilder>();
 
-        private readonly IList<Type> _buildingList = new List<Type>();
 
         internal DocumentMapping Build(Type type, StoreOptions options)
         {
-            if (_buildingList.Contains(type))
-            {
-                throw new InvalidOperationException($"Cyclic dependency between documents detected. The types are: {_buildingList.Select(x => x.FullNameInCode()).Join(", ")}");
-            }
-
-            _buildingList.Add(type);
-
             if (_builders.TryGetValue(type, out var builder))
             {
                 var mapping = builder.Build(options);
-                _buildingList.Remove(type);
                 return mapping;
             }
 
-            _buildingList.Remove(type);
             return new DocumentMapping(type, options);
         }
 
@@ -130,6 +121,7 @@ namespace Marten.Storage
         {
             if (!_documentMappings.Value.TryFind(documentType, out var value))
             {
+                var buildingList = new List<Type>();
                 value = Build(documentType, _options);
                 _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
             }
