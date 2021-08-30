@@ -39,7 +39,7 @@ namespace Marten.Testing.Events.Aggregation
         InvoiceSendMethod SentVia,
         DateTime SentAt
     );
-    #endregion sample_aggregate-stream-events
+    #endregion
 
     #region sample_aggregate-stream-invoice-entity
     public class Invoice
@@ -91,7 +91,7 @@ namespace Marten.Testing.Events.Aggregation
         Sent = 3
     }
 
-    #endregion sample_aggregate-stream-invoice-entity
+    #endregion
 
     public class aggregate_stream_samples: IntegrationContext
     {
@@ -123,7 +123,7 @@ namespace Marten.Testing.Events.Aggregation
 
             #region sample_aggregate-stream-usage
             var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
-            #endregion sample_aggregate-stream-usage
+            #endregion
 
             invoice.ShouldNotBeNull();
             invoice.Id.ShouldBe(invoiceInitiated.InvoiceId);

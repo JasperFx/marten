@@ -29,7 +29,7 @@ namespace Marten.Testing.CoreFunctionality
             theSession.DeleteWhere<Target>(x => x.Double == 578);
 
             theSession.SaveChanges();
-            #endregion sample_DeleteWhere
+            #endregion
 
             theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
 

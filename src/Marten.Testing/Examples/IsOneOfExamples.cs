@@ -14,7 +14,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<SuperUser>()
                 .Where(x => x.Role.IsOneOf("Admin", "Supervisor", "Director"));
 
-            #endregion sample_is_one_of
+            #endregion
         }
 
         public void is_one_of_list_example(IDocumentSession session)
@@ -27,7 +27,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<SuperUser>()
                 .Where(x => x.Role.IsOneOf(listOfRoles));
 
-            #endregion sample_is_one_of_list
+            #endregion
         }
 
         public void is_one_of_array_example(IDocumentSession session)
@@ -40,7 +40,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<UserWithNicknames>()
                 .Where(x => x.Nicknames.IsOneOf(nickNames));
 
-            #endregion sample_is_one_of_array
+            #endregion
         }
     }
 }

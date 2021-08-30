@@ -129,5 +129,5 @@ namespace Marten.Testing.Events.Projections.ViewProjections
         public List<Guid> Groups { get; set; } = new();
     }
 
-    #endregion sample_view-projection-test-classes
+    #endregion
 }

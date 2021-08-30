@@ -79,7 +79,7 @@ namespace Marten.Schema.Testing
             public Guid? OtherUserId { get; set; }
         }
 
-        #endregion sample_issue-with-fk-attribute
+        #endregion
 
 
         public class Employee

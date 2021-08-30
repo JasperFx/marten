@@ -33,6 +33,6 @@ namespace Marten.Testing.Examples
             Debug.WriteLine(sql);
         }
 
-        #endregion sample_export-ddl
+        #endregion
     }
 }

@@ -957,7 +957,7 @@ namespace Marten.Testing.Acceptance
                 // Select only the raw JSON
                 .ToJsonFirstOrDefault())
                  .ShouldBe("{\"Name\": \"Bill\"}");
-            #endregion sample_AsJson-plus-Select-2
+            #endregion
         }
 
         [Fact]
@@ -982,7 +982,7 @@ namespace Marten.Testing.Acceptance
                 .ToJsonFirst();
 
                 json.ShouldBe("{\"Name\": \"Bill\"}");
-            #endregion sample_AsJson-plus-Select-1
+            #endregion
         }
 
         public class UserName

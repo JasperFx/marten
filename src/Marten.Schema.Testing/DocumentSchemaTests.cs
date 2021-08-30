@@ -345,7 +345,7 @@ namespace Marten.Schema.Testing
                 _.DatabaseSchemaName = SchemaConstants.DefaultSchema;
             });
 
-            #endregion sample_override_schema_per_table
+            #endregion
 
             _schema = theStore.Schema;
             _sql = _schema.ToDatabaseScript();
@@ -497,7 +497,7 @@ namespace Marten.Schema.Testing
 
                 _.DatabaseSchemaName = "other";
 
-                #endregion sample_override_schema_name
+                #endregion
 
                 _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "yet_another";
                 _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";

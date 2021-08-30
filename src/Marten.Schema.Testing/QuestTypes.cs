@@ -141,7 +141,7 @@ namespace Marten.Schema.Testing
         }
     }
 
-    #endregion sample_sample-events
+    #endregion
 
 
     public class IssueCreated

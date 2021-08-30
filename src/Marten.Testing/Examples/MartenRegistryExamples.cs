@@ -13,14 +13,14 @@ namespace Marten.Testing.Examples
             {
                 _.Connection("your connection string");
             });
-            #endregion sample_using_marten_registry_to_bootstrap_document_store
+            #endregion
 
             #region sample_index-last-modified-via-fi
             DocumentStore.For(_ =>
             {
                 _.Schema.For<User>().IndexLastModified();
             });
-            #endregion sample_index-last-modified-via-fi
+            #endregion
         }
     }
 
@@ -41,7 +41,7 @@ namespace Marten.Testing.Examples
         public string Department;
     }
 
-    #endregion sample_using_attributes_on_document
+    #endregion
 
 
     public static class IndexExamples
@@ -84,7 +84,7 @@ namespace Marten.Testing.Examples
                     idx.SortOrder = SortOrder.Desc;
                 });
             });
-            #endregion sample_IndexExamples
+            #endregion
         }
     }
 

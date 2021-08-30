@@ -14,7 +14,7 @@ namespace Marten.Testing.Examples
             var targets = session.Query<Target>().ToArray();
         }
 
-        #endregion sample_query_for_all
+        #endregion
 
         #region sample_query_by_basic_operators
         public void basic_operators(IDocumentSession session)
@@ -32,7 +32,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Number <= 5);
         }
 
-        #endregion sample_query_by_basic_operators
+        #endregion
 
         #region sample_querying_with_and_or_or
         public void and_or(IDocumentSession session)
@@ -44,7 +44,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Number == 5 || x.Date == DateTime.Today);
         }
 
-        #endregion sample_querying_with_and_or_or
+        #endregion
 
         #region sample_deep_nested_properties
         public void deep_queries(IDocumentSession session)
@@ -52,7 +52,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Inner.Number == 3);
         }
 
-        #endregion sample_deep_nested_properties
+        #endregion
 
         #region sample_searching_within_string_fields
         public void string_fields(IDocumentSession session)
@@ -64,7 +64,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.Equals("The same thing"));
         }
 
-        #endregion sample_searching_within_string_fields
+        #endregion
 
         #region sample_searching_within_case_insensitive_string_fields
         public void case_insensitive_string_fields(IDocumentSession session)
@@ -78,7 +78,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.String.Equals("ThE SaMe ThInG", StringComparison.OrdinalIgnoreCase));
         }
 
-        #endregion sample_searching_within_case_insensitive_string_fields
+        #endregion
 
         #region sample_ordering-in-linq
         public void order_by(IDocumentSession session)
@@ -93,7 +93,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().OrderBy(x => x.Date).ThenBy(x => x.Number);
         }
 
-        #endregion sample_ordering-in-linq
+        #endregion
 
         #region sample_using_take_and_skip
         public void using_take_and_skip(IDocumentSession session)
@@ -102,7 +102,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToArray();
         }
 
-        #endregion sample_using_take_and_skip
+        #endregion
 
         #region sample_select_a_single_value
         public void select_a_single_value(IDocumentSession session)
@@ -122,7 +122,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Single(x => x.Number == 5);
         }
 
-        #endregion sample_select_a_single_value
+        #endregion
 
         #region sample_boolean_queries
         public void query_by_booleans(IDocumentSession session)
@@ -140,7 +140,7 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Flag == false).ToArray();
         }
 
-        #endregion sample_boolean_queries
+        #endregion
 
         #region sample_query_by_nullable_types
         public void query_by_nullable_type_nulls(IDocumentSession session)
@@ -153,6 +153,6 @@ namespace Marten.Testing.Examples
             session.Query<Target>().Where(x => x.Inner == null);
         }
 
-        #endregion sample_query_by_nullable_types
+        #endregion
     }
 }

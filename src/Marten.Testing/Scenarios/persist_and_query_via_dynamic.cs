@@ -16,7 +16,7 @@ namespace Marten.Testing.Scenarios
             public int Id { get; set; }
             public dynamic Values { get; set; }
         }
-        #endregion sample_sample-scenarios-dynamic-type
+        #endregion
 
         [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
         public void CanPersistAndQueryDynamic()
@@ -32,7 +32,7 @@ namespace Marten.Testing.Scenarios
                 new {sensor = "aisle-3", timestamp = "2020-01-21 11:15:19.037", temperature = 21.7,},
                 new {detector = "aisle-1", timestamp = "2020-01-21 11:14:19.100", temperature = -1.0}
             };
-            #endregion sample_sample-scenarios-dynamic-records
+            #endregion
 
             #region sample_sample-scenarios-dynamic-insertandquery
             var docs = records.Select(x => new TemperatureData {Values = x}).ToArray();
@@ -52,7 +52,7 @@ namespace Marten.Testing.Scenarios
                 Assert.Equal(15.675m, temperatures.Average());
                 Assert.Equal(4, tempsFromDb.Length);
             }
-            #endregion sample_sample-scenarios-dynamic-insertandquery
+            #endregion
         }
 
         public persist_and_query_via_dynamic(DefaultStoreFixture fixture): base(fixture)

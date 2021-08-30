@@ -27,7 +27,7 @@ namespace Marten.Schema.Testing
 
                 _.Schema.For<User>().DocumentAlias("folks");
             });
-            #endregion sample_marten-registry-to-override-document-alias
+            #endregion
 
             store.Storage.MappingFor(typeof(User)).As<DocumentMapping>().Alias.ShouldBe("folks");
         }
@@ -38,6 +38,6 @@ namespace Marten.Schema.Testing
         {
             public string id;
         }
-        #endregion sample_using-document-alias-attribute
+        #endregion
     }
 }

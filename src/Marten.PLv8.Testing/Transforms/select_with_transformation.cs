@@ -58,7 +58,7 @@ namespace Marten.PLv8.Testing.Transforms
             json.ShouldBe("{\"fullname\": \"Eric Berry\"}");
         }
 
-        #endregion sample_using_transform_to_json
+        #endregion
 
         [Fact]
         public async Task can_transform_to_json_async()
@@ -115,7 +115,7 @@ namespace Marten.PLv8.Testing.Transforms
             view.ShouldBe("[{\"fullname\": \"Eric Berry\"},{\"fullname\": \"Derrick Johnson\"}]");
         }
 
-        #endregion sample_transform_to_another_type
+        #endregion
 
         [Fact]
         public async Task can_transform_to_another_doc_async()

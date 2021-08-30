@@ -21,7 +21,7 @@ namespace Marten.Testing.CoreFunctionality
 
             }
         }
-        #endregion sample_ConfigureCommandTimeout
+        #endregion
 
 
         [Fact]

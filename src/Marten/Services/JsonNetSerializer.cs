@@ -48,7 +48,7 @@ namespace Marten.Services
             ContractResolver = new JsonNetContractResolver()
         };
 
-        #endregion sample_newtonsoft-configuration
+        #endregion
 
         public JsonNetSerializer()
         {

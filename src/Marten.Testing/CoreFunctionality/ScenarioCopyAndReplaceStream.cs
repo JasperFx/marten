@@ -32,7 +32,7 @@ namespace Marten.Testing.CoreFunctionality
 				session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
 				session.SaveChanges();
 			}
-			#endregion sample_scenario-copyandtransformstream-setup
+			#endregion
 
 			#region sample_scenario-copyandtransformstream-transform
 			using (var session = theStore.OpenSession())
@@ -70,7 +70,7 @@ namespace Marten.Testing.CoreFunctionality
 				// Transactionally update the streams.
 				session.SaveChanges();
 			}
-			#endregion sample_scenario-copyandtransformstream-transform
+			#endregion
 		}
 
 		#region sample_scenario-copyandtransformstream-newevent
@@ -96,13 +96,13 @@ namespace Marten.Testing.CoreFunctionality
 				return @event.Members.Select(x => new MemberJoined(@event.Day, @event.Location, x)).ToArray();
 			}
 		}
-		#endregion sample_scenario-copyandtransformstream-newevent
+		#endregion
 
 		#region sample_scenario-copyandtransformstream-streammoved
 		public class StreamMovedTo
 		{
 			public string To { get; set; }
 		}
-		#endregion sample_scenario-copyandtransformstream-streammoved
+		#endregion
 	}
 }

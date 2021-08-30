@@ -102,7 +102,7 @@ namespace Marten.Events
         bool IsArchived { get; set; }
     }
 
-    #endregion sample_IEvent
+    #endregion
 
     public interface IEvent<out T> : IEvent where T : notnull
     {
@@ -171,7 +171,7 @@ namespace Marten.Events
         /// This is meant to be lazy created, and can be null
         /// </summary>
         public Dictionary<string, object>? Headers { get; set; }
-        #endregion sample_event_metadata
+        #endregion
 
         object IEvent.Data => Data;
 

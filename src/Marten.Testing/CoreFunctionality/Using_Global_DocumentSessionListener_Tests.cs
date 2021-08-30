@@ -35,7 +35,7 @@ namespace Marten.Testing.CoreFunctionality
                 _.Listeners.Add(stub1);
                 _.Listeners.Add(stub2);
             }))
-            #endregion sample_registering-a-document-session-listener
+            #endregion
             {
                 store.Advanced.Clean.CompletelyRemoveAll();
 

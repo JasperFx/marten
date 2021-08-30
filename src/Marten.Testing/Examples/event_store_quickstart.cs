@@ -39,7 +39,7 @@ namespace Marten.Testing.Examples
                 session.Events.Append(questId, joined2, joined3, arrived);
                 session.SaveChanges();
             }
-            #endregion sample_event-store-quickstart
+            #endregion
 
 
             #region sample_event-store-start-stream-with-explicit-type
@@ -52,7 +52,7 @@ namespace Marten.Testing.Examples
                 // part of a transaction
                 session.Events.StartStream(typeof(Quest), questId, started, joined1);
             }
-            #endregion sample_event-store-start-stream-with-explicit-type
+            #endregion
 
             #region sample_event-store-start-stream-with-no-type
             using (var session = store.OpenSession())
@@ -65,7 +65,7 @@ namespace Marten.Testing.Examples
                 // no stream type will be stored in database
                 session.Events.StartStream(questId, started, joined1);
             }
-            #endregion sample_event-store-start-stream-with-no-type
+            #endregion
 
             #region sample_events-fetching-stream
             using (var session = store.OpenSession())
@@ -76,7 +76,7 @@ namespace Marten.Testing.Examples
                     Console.WriteLine($"{evt.Version}.) {evt.Data}");
                 });
             }
-            #endregion sample_events-fetching-stream
+            #endregion
 
             #region sample_events-aggregate-on-the-fly
             using (var session = store.OpenSession())
@@ -91,7 +91,7 @@ namespace Marten.Testing.Examples
                 var party_yesterday = session.Events
                     .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
             }
-            #endregion sample_events-aggregate-on-the-fly
+            #endregion
 
             using (var session = store.OpenSession())
             {
@@ -127,7 +127,7 @@ namespace Marten.Testing.Examples
                         .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
         }
 
-        #endregion sample_using-fetch-stream
+        #endregion
 
         #region sample_load-a-single-event
         public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
@@ -148,7 +148,7 @@ namespace Marten.Testing.Examples
             var event2 = await session.Events.LoadAsync(eventId);
         }
 
-        #endregion sample_load-a-single-event
+        #endregion
 
         #region sample_using_live_transformed_events
         public void using_live_transformed_events(IDocumentSession session)
@@ -170,6 +170,6 @@ namespace Marten.Testing.Examples
                 .ShouldBe(2);
         }
 
-        #endregion sample_using_live_transformed_events
+        #endregion
     }
 }

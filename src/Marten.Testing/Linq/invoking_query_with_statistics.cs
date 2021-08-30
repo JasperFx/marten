@@ -43,7 +43,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        #endregion sample_compiled-query-statistics
+        #endregion
 
         [Fact]
         public void can_get_the_total_from_a_compiled_query()
@@ -188,7 +188,7 @@ namespace Marten.Testing.Linq
             stats.TotalResults.ShouldBe(count);
         }
 
-        #endregion sample_using-query-statistics
+        #endregion
 
         [Fact]
         public async Task can_get_the_total_in_results_async()

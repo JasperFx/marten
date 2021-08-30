@@ -30,7 +30,7 @@ namespace Marten.Testing.Linq
 
             users.Single().FirstName.ShouldBe("Sam");
         }
-        #endregion sample_using-to-list-async
+        #endregion
 
         [Fact]
         public async Task should_return_empty_list()

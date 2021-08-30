@@ -128,7 +128,7 @@ namespace Marten.Testing.Services.BatchedQuerying
                 // query for only SuperUser
                 session.Query<SuperUser>().ToList();
             }
-            #endregion sample_configure-hierarchy-of-types
+            #endregion
         }
 
         #region sample_FindByFirstName
@@ -141,7 +141,7 @@ namespace Marten.Testing.Services.BatchedQuerying
                 return q => q.FirstOrDefault(x => x.FirstName == FirstName);
             }
         }
-        #endregion sample_FindByFirstName
+        #endregion
 
         [Fact]
         public async Task can_query_with_compiled_queries()
@@ -156,7 +156,7 @@ namespace Marten.Testing.Services.BatchedQuerying
 
             (await justin).Id.ShouldBe(user1.Id);
             (await tamba).Id.ShouldBe(user2.Id);
-            #endregion sample_batch-query-with-compiled-queries
+            #endregion
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Marten.Testing.Services.BatchedQuerying
 
             justin.Result.Id.ShouldBe(user1.Id);
             tamba.Result.Id.ShouldBe(user2.Id);
-            #endregion sample_batch-query-with-compiled-queries-synchronously
+            #endregion
         }
 
 
@@ -182,7 +182,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             var justin = theSession.Query(new FindByFirstName {FirstName = "Justin"});
 
             var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"});
-            #endregion sample_using-compiled-query
+            #endregion
         }
 
         [Fact]
@@ -572,7 +572,7 @@ namespace Marten.Testing.Services.BatchedQuerying
             // Task's that are completed by the Execute() method above
             var internalUser = await firstInternal;
             Debug.WriteLine($"The first internal user is {internalUser.FirstName} {internalUser.LastName}");
-            #endregion sample_using-batch-query
+            #endregion
         }
     }
 }

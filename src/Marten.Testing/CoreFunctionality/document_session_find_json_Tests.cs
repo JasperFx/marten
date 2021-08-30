@@ -22,7 +22,7 @@ namespace Marten.Testing.CoreFunctionality
             json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
 
-        #endregion sample_find-json-by-id
+        #endregion
 
         [Fact]
         public void when_find_then_a_null_should_be_returned()

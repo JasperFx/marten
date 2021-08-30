@@ -30,7 +30,7 @@ namespace Marten.Testing.Acceptance
                 #region sample_tenancy-configure-override
                 storeOptions.Policies.ForAllDocuments(x => x.TenancyStyle = TenancyStyle.Single);
                 storeOptions.Schema.For<Target>().MultiTenanted();
-                #endregion sample_tenancy-configure-override
+                #endregion
             });
 
             theStore.Storage.MappingFor(typeof(Target))

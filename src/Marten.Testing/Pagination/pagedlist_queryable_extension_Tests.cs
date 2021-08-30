@@ -63,7 +63,7 @@ namespace Marten.Testing.Pagination
             var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
             var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
             var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
-            #endregion sample_to_paged_list
+            #endregion
 
             pagedList.Count.ShouldBe(pageSize);
 
@@ -77,7 +77,7 @@ namespace Marten.Testing.Pagination
             var pageSize = 10;
 
             var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize);
-            #endregion sample_to_paged_list_async
+            #endregion
 
             pagedList.Count.ShouldBe(pageSize);
         }

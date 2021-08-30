@@ -24,7 +24,7 @@ namespace Marten.Schema.Testing
         {
             public Guid Id;
         }
-        #endregion sample_SoftDeletedAttribute
+        #endregion
 
         [Fact]
         public void can_be_configured_by_attribute()
@@ -48,7 +48,7 @@ namespace Marten.Schema.Testing
         {
             public Guid Id;
         }
-        #endregion sample_SoftDeletedWithIndexAttribute
+        #endregion
 
         [Fact(Skip = "sample usage code")]
         public void example_of_using_fi_to_configure()
@@ -58,14 +58,14 @@ namespace Marten.Schema.Testing
             {
                 _.Schema.For<User>().SoftDeleted();
             });
-            #endregion sample_soft-delete-configuration-via-fi
+            #endregion
 
             #region sample_soft-delete-with-index-configuration-via-fi
             DocumentStore.For(_ =>
             {
                 _.Schema.For<User>().SoftDeletedWithIndex();
             });
-            #endregion sample_soft-delete-with-index-configuration-via-fi
+            #endregion
         }
 
         [Fact]

@@ -310,7 +310,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        #endregion sample_query_soft_deleted_docs
+        #endregion
 
         #region sample_query_maybe_soft_deleted_docs
         [Fact]
@@ -342,7 +342,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        #endregion sample_query_maybe_soft_deleted_docs
+        #endregion
 
         #region sample_query_is_soft_deleted_docs
         [Fact]
@@ -374,7 +374,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        #endregion sample_query_is_soft_deleted_docs
+        #endregion
 
         #region sample_query_soft_deleted_since
         [Fact]
@@ -402,7 +402,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        #endregion sample_query_soft_deleted_since
+        #endregion
 
         [Fact]
         public void query_is_soft_deleted_before_docs()

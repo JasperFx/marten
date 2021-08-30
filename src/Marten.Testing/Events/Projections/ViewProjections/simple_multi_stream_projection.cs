@@ -28,7 +28,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.Simple
         }
     }
 
-    #endregion sample_view-projection-simple
+    #endregion
 
     public class simple_multi_stream_projection: IntegrationContext
     {

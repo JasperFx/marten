@@ -29,7 +29,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.SimpleWithOneToMany
         }
     }
 
-    #endregion sample_view-projection-simple-with-one-to-many
+    #endregion
 
     public class simple_multi_stream_projection_with_one_to_many: IntegrationContext
     {

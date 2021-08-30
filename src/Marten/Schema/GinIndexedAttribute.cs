@@ -16,5 +16,5 @@ namespace Marten.Schema
         }
     }
 
-    #endregion sample_GinIndexedAttribute
+    #endregion
 }

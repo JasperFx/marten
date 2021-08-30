@@ -70,7 +70,7 @@ namespace Marten.Testing.CoreFunctionality
                 _.Logger(new ConsoleMartenLogger());
             });
 
-            #endregion sample_plugging-in-marten-logger
+            #endregion
 
             #region sample_plugging-in-session-logger
 
@@ -80,7 +80,7 @@ namespace Marten.Testing.CoreFunctionality
                 session.Logger = new RecordingLogger();
             }
 
-            #endregion sample_plugging-in-session-logger
+            #endregion
         }
 
         [Fact]
@@ -285,7 +285,7 @@ namespace Marten.Testing.CoreFunctionality
                 _.NameDataLength = 100;
             });
 
-            #endregion sample_setting-name-data-length
+            #endregion
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Marten.Schema.Testing.Storage
                 yield return new Sequence(new DbObjectName(_schema, $"mt_{nameof(MatterId).ToLowerInvariant()}"), _startFrom);
             }
         }
-        #endregion sample_scenario-usingsequenceforuniqueid-setup
+        #endregion
 
         [Fact]
         public async Task ScenarioUsingSequenceForUniqueIdScenario()
@@ -39,12 +39,12 @@ namespace Marten.Schema.Testing.Storage
             {
                 #region sample_scenario-usingsequenceforuniqueid-storesetup-1
                 storeOptions.Storage.Add(new MatterId(storeOptions, 10000));
-                #endregion sample_scenario-usingsequenceforuniqueid-storesetup-1
+                #endregion
             });
 
             #region sample_scenario-usingsequenceforuniqueid-storesetup-2
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            #endregion sample_scenario-usingsequenceforuniqueid-storesetup-2
+            #endregion
 
             #region sample_scenario-usingsequenceforuniqueid-querymatter
             var matter = theStore.Storage.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
@@ -71,7 +71,7 @@ namespace Marten.Schema.Testing.Storage
 
                 session.SaveChanges();
             }
-            #endregion sample_scenario-usingsequenceforuniqueid-querymatter
+            #endregion
         }
 
         #region sample_scenario-usingsequenceforuniqueid-setup-types
@@ -87,7 +87,7 @@ namespace Marten.Schema.Testing.Storage
             public int Matter { get; set; }
             // Other fields...
         }
-        #endregion sample_scenario-usingsequenceforuniqueid-setup-types
+        #endregion
 
     }
     #region sample_scenario-usingsequenceforuniqueid-setup-extensions
@@ -99,5 +99,5 @@ namespace Marten.Schema.Testing.Storage
             return session.Query<int>("select nextval(?)", sequence.Identifier.QualifiedName).First();
         }
     }
-    #endregion sample_scenario-usingsequenceforuniqueid-setup-extensions
+    #endregion
 }

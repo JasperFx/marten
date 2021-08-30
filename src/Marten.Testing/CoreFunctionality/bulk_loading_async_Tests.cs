@@ -101,7 +101,7 @@ namespace Marten.Testing.CoreFunctionality
 
             // And just checking that the data is actually there;)
             theSession.Query<Target>().Count().ShouldBe(data.Length);
-            #endregion sample_using_bulk_insert_async
+            #endregion
 
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
         }
@@ -148,7 +148,7 @@ namespace Marten.Testing.CoreFunctionality
             var data = Target.GenerateRandomData(100).ToArray();
 
             await theStore.BulkInsertAsync(data, BulkInsertMode.IgnoreDuplicates);
-            #endregion sample_bulk_insert_async_with_IgnoreDuplicates
+            #endregion
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
 
@@ -168,7 +168,7 @@ namespace Marten.Testing.CoreFunctionality
             var data = Target.GenerateRandomData(100).ToArray();
 
             await theStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting);
-            #endregion sample_bulk_insert_async_with_OverwriteExisting
+            #endregion
 
             theSession.Query<Target>().Count().ShouldBe(data.Length);
 

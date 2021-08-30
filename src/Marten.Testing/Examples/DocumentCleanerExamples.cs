@@ -27,6 +27,6 @@ namespace Marten.Testing.Examples
             store.Advanced.Clean.DeleteDocumentsExcept(typeof(Company), typeof(User));
         }
 
-        #endregion sample_clean_out_documents
+        #endregion
     }
 }

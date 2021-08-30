@@ -26,7 +26,7 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
     }
-    #endregion sample_old_event_namespace
+    #endregion
 
     #region sample_new_event_namespace
     namespace NewEventNamespace
@@ -43,7 +43,7 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
     }
-    #endregion sample_new_event_namespace
+    #endregion
 
 
     #region sample_new_event_type_name
@@ -61,7 +61,7 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
     }
-    #endregion sample_new_event_type_name
+    #endregion
 
     public static class SampleEventsSchemaMigration
     {
@@ -73,7 +73,7 @@ namespace Marten.Testing.Events.SchemaChange
             options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)});
 
             var store = new DocumentStore(options);
-            #endregion sample_event_namespace_migration_options
+            #endregion
         }
 
         public static void SampleEventMappingRegistration()
@@ -85,7 +85,7 @@ namespace Marten.Testing.Events.SchemaChange
             orderStatusChangedMapping.EventTypeName = "order_status_changed";
 
             var store = new DocumentStore(options);
-            #endregion sample_event_type_name_migration_options
+            #endregion
         }
     }
 

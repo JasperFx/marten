@@ -55,7 +55,7 @@ namespace Marten.Testing.Services.Includes
                     .Single(x => x.Title == Title);
             }
         }
-        #endregion sample_compiled_include
+        #endregion
 
 
         #region sample_compiled_include_list
@@ -98,7 +98,7 @@ namespace Marten.Testing.Services.Includes
                 query.Users.Any(x => x.Id == user2.Id);
             }
         }
-        #endregion sample_compiled_include_list
+        #endregion
 
         #region sample_compiled_include_dictionary
         public class IssueWithUsersById : ICompiledListQuery<Issue>
@@ -140,7 +140,7 @@ namespace Marten.Testing.Services.Includes
                 query.UsersById.ContainsKey(user2.Id).ShouldBeTrue();
             }
         }
-        #endregion sample_compiled_include_dictionary
+        #endregion
         public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;

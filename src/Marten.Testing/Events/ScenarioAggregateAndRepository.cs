@@ -35,7 +35,7 @@ namespace Marten.Testing.Events
 
             Assert.Equal(invoice.ToString(), invoiceFromRepository.ToString());
             Assert.Equal(invoice.Total, invoiceFromRepository.Total);
-            #endregion sample_scenario-aggregate-storeandreadinvoice
+            #endregion
         }
 
         [Fact]
@@ -51,7 +51,7 @@ namespace Marten.Testing.Events
             var invoiceFromRepository = repository.Load<Invoice>(invoice.Id, 2);
 
             Assert.Equal(124, invoiceFromRepository.Total);
-            #endregion sample_scenario-aggregate-versionedload
+            #endregion
         }
 
         [Fact]
@@ -69,7 +69,7 @@ namespace Marten.Testing.Events
             {
                 repository.Store(invoiceWithSameIdentity);
             });
-            #endregion sample_scenario-aggregate-conflict
+            #endregion
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace Marten.Testing.Events
 
             invoice.AddLine(100, 24, "Joo Janta 200 Super-Chromatic Peril Sensitive Sunglasses");
             invoice.AddLine(200, 16, "Happy Vertical People Transporter");
-            #endregion sample_scenario-aggregate-createinvoice
+            #endregion
 
             return invoice;
         }
@@ -179,7 +179,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    #endregion sample_scenario-aggregate-invoice
+    #endregion
 
     #region sample_scenario-aggregate-events
     public sealed class InvoiceCreated
@@ -206,7 +206,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    #endregion sample_scenario-aggregate-events
+    #endregion
 
     #region sample_scenario-aggregate-base
     // Infrastructure to capture modifications to state in events
@@ -242,7 +242,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    #endregion sample_scenario-aggregate-base
+    #endregion
 
     #region sample_scenario-aggregate-repository
     public sealed class AggregateRepository
@@ -277,5 +277,5 @@ namespace Marten.Testing.Events
         }
     }
 
-    #endregion sample_scenario-aggregate-repository
+    #endregion
 }

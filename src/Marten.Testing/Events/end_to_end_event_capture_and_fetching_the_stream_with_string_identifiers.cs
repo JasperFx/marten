@@ -59,7 +59,7 @@ namespace Marten.Testing.Events
                 var id = "Second";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
-                #endregion sample_start-stream-with-aggregate-type
+                #endregion
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
@@ -87,7 +87,7 @@ namespace Marten.Testing.Events
                 var id = "Third";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 await session.SaveChangesAsync();
-                #endregion sample_start-stream-with-aggregate-type
+                #endregion
 
                 var streamEvents = await session.Events.QueryAllRawEvents()
                                                 .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToListAsync();
@@ -116,7 +116,7 @@ namespace Marten.Testing.Events
                 var id = "Fourth";
                 session.Events.StartStream<Quest>(id, joined, departed);
                 session.SaveChanges();
-                #endregion sample_start-stream-with-aggregate-type
+                #endregion
 
                 var streamEvents = session.Events.QueryAllRawEvents()
                                           .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToList();

@@ -48,7 +48,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                         m.IdStrategy = new CombGuidIdGeneration();
                     }
                 });
-                #endregion sample_configuring-global-sequentialguid
+                #endregion
             });
 
 
@@ -75,7 +75,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             {
                 #region sample_configuring-mapping-specific-sequentialguid
                 options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
-                #endregion sample_configuring-mapping-specific-sequentialguid
+                #endregion
             });
 
             theStore.Storage.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();

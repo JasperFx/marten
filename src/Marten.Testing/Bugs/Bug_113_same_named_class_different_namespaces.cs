@@ -23,7 +23,7 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        #endregion sample_can_select_from_the_same_table
+        #endregion
 
     }
 
@@ -51,5 +51,5 @@ namespace Marten.Testing.Bugs
         }
     }
 
-    #endregion sample_structural_typing_classes
+    #endregion
 }

@@ -14,7 +14,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<SuperUser>()
                 .Where(x => x.Role.In("Admin", "Supervisor", "Director"));
 
-            #endregion sample_in
+            #endregion
         }
 
         public void in_list_example(IDocumentSession session)
@@ -27,7 +27,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<SuperUser>()
                 .Where(x => x.Role.In(listOfRoles));
 
-            #endregion sample_in_list
+            #endregion
         }
 
         public void in_array_example(IDocumentSession session)
@@ -40,7 +40,7 @@ namespace Marten.Testing.Examples
             var users = session.Query<UserWithNicknames>()
                 .Where(x => x.Nicknames.In(nickNames));
 
-            #endregion sample_in_array
+            #endregion
         }
     }
 }

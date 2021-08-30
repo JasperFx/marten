@@ -62,7 +62,7 @@ namespace Marten.Testing.Events
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     session.SaveChanges();
-                    #endregion sample_start-stream-with-aggregate-type
+                    #endregion
 
                     var streamEvents = session.Events.FetchStream(id);
 
@@ -93,7 +93,7 @@ namespace Marten.Testing.Events
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     await session.SaveChangesAsync();
-                    #endregion sample_start-stream-with-aggregate-type
+                    #endregion
 
                     var streamEvents = await session.Events.FetchStreamAsync(id);
 
@@ -124,7 +124,7 @@ namespace Marten.Testing.Events
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     await session.SaveChangesAsync();
-                    #endregion sample_start-stream-with-aggregate-type
+                    #endregion
 
                     var streamEvents = await session.Events.QueryAllRawEvents()
                         .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
@@ -156,7 +156,7 @@ namespace Marten.Testing.Events
 
                     var id = session.Events.StartStream<Quest>(joined, departed).Id;
                     session.SaveChanges();
-                    #endregion sample_start-stream-with-aggregate-type
+                    #endregion
 
                     var streamEvents = session.Events.QueryAllRawEvents()
                         .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
@@ -366,7 +366,7 @@ namespace Marten.Testing.Events
                     var id = Guid.NewGuid();
                     session.Events.StartStream<Quest>(id, joined, departed);
                     session.SaveChanges();
-                    #endregion sample_start-stream-with-existing-guid
+                    #endregion
 
                     var streamEvents = session.Events.FetchStream(id);
 
@@ -571,7 +571,7 @@ namespace Marten.Testing.Events
                     session.Events.Append(id, joined, departed);
 
                     session.SaveChanges();
-                    #endregion sample_append-events
+                    #endregion
 
                     var streamEvents = session.Events.FetchStream(id);
 
@@ -615,7 +615,7 @@ namespace Marten.Testing.Events
                     session.Events.Append(id, 3, joined, departed);
 
                     session.SaveChanges();
-                    #endregion sample_append-events-assert-on-eventid
+                    #endregion
                 }
             }).ShouldThrowIf(
                 (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) || (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))

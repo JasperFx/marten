@@ -19,7 +19,7 @@ namespace Marten.Testing.Acceptance
             public string Number { get; set; }
         }
 
-        #endregion sample_using_a_single_property_computed_unique_index_through_attribute
+        #endregion
 
         #region sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute
         public class Client
@@ -30,7 +30,7 @@ namespace Marten.Testing.Acceptance
             public string Name { get; set; }
         }
 
-        #endregion sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute
+        #endregion
 
         #region sample_using_a_multiple_properties_computed_unique_index_through_store_attribute
         public class Address
@@ -46,7 +46,7 @@ namespace Marten.Testing.Acceptance
             public string Number { get; set; }
         }
 
-        #endregion sample_using_a_multiple_properties_computed_unique_index_through_store_attribute
+        #endregion
 
         #region sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute
         public class Person
@@ -62,7 +62,7 @@ namespace Marten.Testing.Acceptance
             public string SecondName { get; set; }
         }
 
-        #endregion sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute
+        #endregion
 
         [Fact]
         public void example_using_a_single_property_computed_unique_index()
@@ -76,7 +76,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.UserName);
             });
-            #endregion sample_using_a_single_property_computed_unique_index_through_store_options
+            #endregion
         }
 
         [Fact]
@@ -91,7 +91,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.UserName);
             });
-            #endregion sample_using_a_single_property_duplicate_field_unique_index_through_store_options
+            #endregion
         }
 
         [Fact]
@@ -106,7 +106,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.FirstName, x => x.FullName);
             });
-            #endregion sample_using_a_multiple_properties_computed_unique_index_through_store_options
+            #endregion
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.FirstName, x => x.FullName);
             });
-            #endregion sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options
+            #endregion
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace Marten.Testing.Acceptance
                 // This creates a computed unique index on client name and tenant_id
                 _.Schema.For<Client>().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name);
             });
-            #endregion sample_per-tenant-unique-index
+            #endregion
         }
 
         [Fact]

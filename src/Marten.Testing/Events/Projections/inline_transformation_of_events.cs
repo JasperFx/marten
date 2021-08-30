@@ -87,7 +87,7 @@ namespace Marten.Testing.Events.Projections
 
                 _.Projections.Add(new MonsterDefeatedTransform());
             });
-            #endregion sample_applying-monster-defeated
+            #endregion
 
             // The code below is just customizing the document store
             // used in the tests
@@ -138,5 +138,5 @@ namespace Marten.Testing.Events.Projections
         public string Monster { get; set; }
     }
 
-    #endregion sample_MonsterDefeatedTransform
+    #endregion
 }

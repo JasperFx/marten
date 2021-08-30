@@ -16,7 +16,7 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
     {
         Guid CorrelationId { get; set; }
     }
-    #endregion sample_CorrelationIdWithISession
+    #endregion
 
     #region sample_CorrelatedMartenLogger
     public class CorrelatedMartenLogger: IMartenSessionLogger
@@ -50,7 +50,7 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
 
         }
     }
-    #endregion sample_CorrelatedMartenLogger
+    #endregion
 
 
     #region sample_CustomSessionFactoryByScope
@@ -85,7 +85,7 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
             return session;
         }
     }
-    #endregion sample_CustomSessionFactoryByScope
+    #endregion
 
     #region sample_AddMartenWithCustomSessionCreationByScope
     public class Startup
@@ -121,5 +121,5 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
 
         // And other methods we don't care about here...
     }
-    #endregion sample_AddMartenWithCustomSessionCreationByScope
+    #endregion
 }

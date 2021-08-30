@@ -39,7 +39,7 @@ namespace Marten.Testing.Linq
     {
     }
 
-    #endregion sample_smurfs-hierarchy
+    #endregion
 
     public class query_with_inheritance_and_aliases: IntegrationContext
     {
@@ -58,7 +58,7 @@ namespace Marten.Testing.Linq
                         typeof(BrainySmurf)
                     );
 
-                #endregion sample_add-subclass-hierarchy-with-aliases
+                #endregion
 
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -107,7 +107,7 @@ namespace Marten.Testing.Linq
             });
         }
 
-        #endregion sample_add-subclass-hierarchy
+        #endregion
 
         [Fact]
         public void get_all_subclasses_of_an_interface_and_instantiate_them()
@@ -231,6 +231,6 @@ namespace Marten.Testing.Linq
             theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
         }
 
-        #endregion sample_query-subclass-hierarchy
+        #endregion
     }
 }

@@ -151,5 +151,5 @@ namespace Marten.Testing.Events
         }
     }
 
-    #endregion sample_fetching_stream_state
+    #endregion
 }

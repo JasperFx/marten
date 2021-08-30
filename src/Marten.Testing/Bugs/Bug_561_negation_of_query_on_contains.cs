@@ -27,7 +27,7 @@ namespace Marten.Testing.Bugs
             #region sample_negated-contains
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
-            #endregion sample_negated-contains
+            #endregion
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Marten.Testing.Bugs
             #region sample_negated-contains
             theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
                 .ShouldBe(2);
-            #endregion sample_negated-contains
+            #endregion
         }
 
         [Fact]

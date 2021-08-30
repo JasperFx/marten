@@ -39,7 +39,7 @@ namespace Marten.Testing.CoreFunctionality
                 SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
             }
         }
-        #endregion sample_ejecting_a_document
+        #endregion
 
         [Fact]
         public void eject_a_document_clears_it_from_the_identity_map_regular()

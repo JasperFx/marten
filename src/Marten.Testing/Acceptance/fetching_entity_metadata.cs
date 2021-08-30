@@ -47,7 +47,7 @@ namespace Marten.Testing.Acceptance
 
         }
 
-        #endregion sample_resolving_metadata
+        #endregion
 
         [Fact]
         public async Task async_hit_returns_values()

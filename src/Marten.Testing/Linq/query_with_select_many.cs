@@ -42,7 +42,7 @@ namespace Marten.Testing.Linq
                     .Count().ShouldBe(9);
             }
         }
-        #endregion sample_can_do_simple_select_many_against_simple_array
+        #endregion
 
         [Fact]
         public void distinct_and_count()
@@ -399,7 +399,7 @@ namespace Marten.Testing.Linq
                     .Skip(20)
                     .Take(15)
                     .ToList();
-                #endregion sample_using-select-many
+                #endregion
 
                 results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
             }

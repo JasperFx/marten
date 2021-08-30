@@ -2,4 +2,4 @@
 module.exports = function (doc) {
     return {fullname: doc.FirstName + ' ' + doc.LastName};
 }
-// #endregion sample_get_fullname
+// #endregion

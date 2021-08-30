@@ -78,7 +78,7 @@ namespace Marten.Testing
             throw new NotSupportedException();
         }
     }
-    #endregion sample_JilSerializer
+    #endregion
 
     public class TestsSerializer : JsonNetSerializer
     {
@@ -97,7 +97,7 @@ namespace Marten.Testing
                 // Replace the ISerializer w/ the TestsSerializer
                 _.Serializer<TestsSerializer>();
             });
-            #endregion sample_replacing_serializer_with_jil
+            #endregion
         }
 
     }

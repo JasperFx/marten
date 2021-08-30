@@ -76,7 +76,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_set_an_immediate_property_by_id
+        #endregion
 
         [Fact]
         public void initialise_a_new_property_by_expression()
@@ -94,7 +94,7 @@ namespace Marten.PLv8.Testing.Patching
             {
                 query.Query<Target>(where).Count.ShouldBe(0);
             }
-            #endregion sample_initialise_a_new_property_by_expression
+            #endregion
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace Marten.PLv8.Testing.Patching
             #region sample_set_an_immediate_property_by_where_clause
             // Change every Target document where the Color is Blue
             theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
-            #endregion sample_set_an_immediate_property_by_where_clause
+            #endregion
 
             theSession.SaveChanges();
 
@@ -166,7 +166,7 @@ namespace Marten.PLv8.Testing.Patching
                 var result = query.Load<Target>(target.Id);
                 result.AnotherString.ShouldBe(target.String);
             }
-            #endregion sample_duplicate_to_new_field
+            #endregion
         }
 
         [Fact]
@@ -183,7 +183,7 @@ namespace Marten.PLv8.Testing.Patching
                 t => t.StringField,
                 t => t.Inner.String,
                 t => t.Inner.AnotherString);
-            #endregion sample_duplicate_to_multiple_new_fields
+            #endregion
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -216,7 +216,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_increment_for_int
+        #endregion
 
         #region sample_increment_for_int_with_explicit_increment
         [Fact]
@@ -237,7 +237,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_increment_for_int_with_explicit_increment
+        #endregion
 
         [Fact]
         public void increment_for_long()
@@ -364,7 +364,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_append_complex_element
+        #endregion
 
         [Fact]
         public void append_if_not_exists_complex_element()
@@ -520,7 +520,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_insert_first_complex_element
+        #endregion
 
         [Fact]
         public void insert_if_not_exists_first_complex_element()
@@ -610,7 +610,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_rename_deep_prop
+        #endregion
 
         #region sample_remove_primitive_element
         [Fact]
@@ -637,7 +637,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_remove_primitive_element
+        #endregion
 
         #region sample_remove_repeated_primitive_element
         [Fact]
@@ -671,7 +671,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_remove_repeated_primitive_element
+        #endregion
 
         #region sample_remove_complex_element
         [Fact]
@@ -698,7 +698,7 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
-        #endregion sample_remove_complex_element
+        #endregion
 
         [Fact]
         public void delete_redundant_property()
@@ -709,7 +709,7 @@ namespace Marten.PLv8.Testing.Patching
 
             #region sample_delete_redundant_property
             theSession.Patch<Target>(target.Id).Delete("String");
-            #endregion sample_delete_redundant_property
+            #endregion
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -729,7 +729,7 @@ namespace Marten.PLv8.Testing.Patching
 
             #region sample_delete_redundant_nested_property
             theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
-            #endregion sample_delete_redundant_nested_property
+            #endregion
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -749,7 +749,7 @@ namespace Marten.PLv8.Testing.Patching
 
             #region sample_delete_existing_property
             theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
-            #endregion sample_delete_existing_property
+            #endregion
             theSession.SaveChanges();
 
             using (var query = theStore.QuerySession())
@@ -779,7 +779,7 @@ namespace Marten.PLv8.Testing.Patching
             {
                 query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
             }
-            #endregion sample_delete_property_from_many_documents
+            #endregion
         }
 
         [Fact]

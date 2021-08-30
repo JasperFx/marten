@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
             await store.Tenancy.Default.ResetHiloSequenceFloor<IntDoc>(2500);
-            #endregion sample_ResetHiloSequenceFloor
+            #endregion
 
             using (var session = store.OpenSession())
             {
@@ -67,7 +67,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 _.Connection(ConnectionSource.ConnectionString);
                 _.DatabaseSchemaName = "sequences";
             });
-            #endregion sample_configuring-global-hilo-defaults
+            #endregion
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(55);
@@ -87,7 +87,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
                 _.DatabaseSchemaName = "sequences";
             });
-            #endregion sample_overriding-hilo-with-marten-registry
+            #endregion
 
             store.Tenancy.Default.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(66);
@@ -154,7 +154,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
                 _.DatabaseSchemaName = "sequences";
             });
-            #endregion sample_configuring-global-hilo-defaults-sequencename
+            #endregion
             using (var session = store.OpenSession())
             {
                 var doc1 = new IntDoc();
@@ -190,5 +190,5 @@ namespace Marten.Schema.Testing.Identity.Sequences
     {
         public int Id { get; set; }
     }
-    #endregion sample_overriding-hilo-with-attribute
+    #endregion
 }

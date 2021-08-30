@@ -22,5 +22,5 @@ namespace Marten.Testing.Examples
         public int id { get; set; }
     }
 
-    #endregion sample_id_samples
+    #endregion
 }

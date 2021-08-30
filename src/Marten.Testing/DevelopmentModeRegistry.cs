@@ -32,5 +32,5 @@ namespace Marten.Testing
                 .Scoped();
         }
     }
-    #endregion sample_MartenServices
+    #endregion
 }

@@ -21,6 +21,6 @@ namespace Marten.Schema.Testing
         public class Customer
         {
         }
-        #endregion sample_index-last-modified-via-attribute
+        #endregion
     }
 }

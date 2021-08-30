@@ -130,7 +130,7 @@ namespace Marten.Testing.CoreFunctionality
                             "Miller")
                         .Single();
 
-                #endregion sample_using_parameterized_sql
+                #endregion
 
                 user.ShouldNotBeNull();
             }
@@ -157,7 +157,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        #endregion sample_query_by_two_named_parameters
+        #endregion
 
         [Fact]
         public void query_two_fields_by_one_named_parameter()
@@ -241,7 +241,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        #endregion sample_query_with_only_the_where_clause
+        #endregion
 
         [Fact]
         public void query_for_single_document_where_clause_trimmed()
@@ -276,7 +276,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
             }
         }
 
-        #endregion sample_query_with_matches_sql
+        #endregion
 
         [Fact]
         public void query_with_select_in_query()
@@ -293,7 +293,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
                     session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
                         .Single();
 
-                #endregion sample_use_all_your_own_sql
+                #endregion
 
                 user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
@@ -317,7 +317,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
                             "select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'");
                 var user = users.Single();
 
-                #endregion sample_using-queryasync
+                #endregion
 
                 user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);

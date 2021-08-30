@@ -18,7 +18,7 @@ namespace Marten.Testing.Examples
                 };
                 _.Schema.For<User>().Index(columns);
             });
-            #endregion sample_multi-property-calculated-index
+            #endregion
         }
     }
 }

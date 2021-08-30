@@ -37,7 +37,7 @@ namespace Marten.Testing.Acceptance
                     .Query<User>()
                     .FirstOrDefault(x => x.UserName == "somebody");
             }
-            #endregion sample_using-a-simple-calculated-index
+            #endregion
 
             store.Dispose();
         }
@@ -71,7 +71,7 @@ namespace Marten.Testing.Acceptance
 
                 _.Schema.For<Target>().Index(x => x.Inner.Color);
             });
-            #endregion sample_deep-calculated-index
+            #endregion
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Marten.Testing.Acceptance
                             x.SortOrder = SortOrder.Desc;
                         });
             });
-            #endregion sample_customizing-calculated-index
+            #endregion
         }
 
 

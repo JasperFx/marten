@@ -51,5 +51,5 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    #endregion sample_QuestPartyWithEvents
+    #endregion
 }

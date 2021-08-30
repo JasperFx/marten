@@ -90,7 +90,7 @@ namespace Marten
         /// <returns></returns>
         IMartenQueryable<T> Query<T>();
 
-        #endregion sample_querying_with_linq
+        #endregion
 
         /// <summary>
         /// Queries the document storage table for the document type T by supplied SQL. See http://jasperfx.github.io/marten/documentation/documents/querying/sql/ for more information on usage.

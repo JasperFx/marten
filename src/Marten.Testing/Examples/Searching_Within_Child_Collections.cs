@@ -50,6 +50,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_searching_within_child_collections
+        #endregion
     }
 }

@@ -71,7 +71,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
         }
     }
 
-    #endregion sample_view-projection-custom-grouper-with-querysession
+    #endregion
 
     public class custom_grouper_with_document_session: IntegrationContext
     {

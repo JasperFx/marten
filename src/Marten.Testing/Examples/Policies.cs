@@ -21,7 +21,7 @@ namespace Marten.Testing.Examples
             {
                 // Apply custom policy
                 storeOptions.Policies.OnDocuments<TenancyPolicy>();
-                #endregion sample_sample-policy-configure
+                #endregion
                 storeOptions.Connection("");
             });
 
@@ -44,6 +44,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_sample-policy-implementation
+        #endregion
     }
 }

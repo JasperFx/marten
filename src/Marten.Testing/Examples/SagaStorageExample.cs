@@ -25,6 +25,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_serializable-saga-transaction
+        #endregion
     }
 }

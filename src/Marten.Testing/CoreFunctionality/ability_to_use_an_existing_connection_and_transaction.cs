@@ -62,7 +62,7 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
-        #endregion sample_passing-in-existing-connections-and-transactions
+        #endregion
 
 
         [Fact]

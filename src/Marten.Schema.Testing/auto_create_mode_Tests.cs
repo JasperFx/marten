@@ -36,7 +36,7 @@ namespace Marten.Schema.Testing
                 // not reflecting the Marten configuration
                 _.AutoCreateSchemaObjects = AutoCreate.None;
             });
-            #endregion sample_AutoCreateSchemaObjects
+            #endregion
         }
 
 	    [Fact]

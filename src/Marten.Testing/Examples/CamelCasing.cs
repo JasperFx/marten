@@ -13,7 +13,7 @@ namespace Marten.Testing.Examples
             {
                 // Change default casing to CamelCase
                 storeOptions.UseDefaultSerialization(casing: Casing.CamelCase);
-            #endregion sample_sample-serialize-to-camelcase
+            #endregion
                 storeOptions.Connection("");
             });
 

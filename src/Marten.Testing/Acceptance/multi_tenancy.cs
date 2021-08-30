@@ -327,7 +327,7 @@ namespace Marten.Testing.Acceptance
                 session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
             }
 
-            #endregion sample_tenancy-mixed-tenancy-non-tenancy-sample
+            #endregion
         }
 
 
@@ -353,7 +353,7 @@ namespace Marten.Testing.Acceptance
                 // query data across all tenants
                 var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
                     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
-                #endregion sample_any_tenant
+                #endregion
 
                 actual.ShouldHaveTheSameElementsAs(expected);
             }
@@ -381,7 +381,7 @@ namespace Marten.Testing.Acceptance
                 // query data for a selected list of tenants
                 var actual = query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
                     .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
-                #endregion sample_tenant_is_one_of
+                #endregion
 
                 actual.ShouldHaveTheSameElementsAs(expected);
             }
@@ -456,7 +456,7 @@ namespace Marten.Testing.Acceptance
                 query.Load<User>(user.Id).UserName.ShouldBe("Me");
             }
         }
-        
+
         [Fact]
         public void bulk_insert_respects_tenancy()
         {
