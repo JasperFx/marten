@@ -19,7 +19,7 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_using-identity-map
+        #endregion
         public IdentityMapTests(DefaultStoreFixture fixture) : base(fixture)
         {
         }

@@ -141,7 +141,7 @@ namespace Marten.Testing.Events
         }
     }
 
-    #endregion sample_sample-events
+    #endregion
 
     public class Issue
     {

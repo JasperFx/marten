@@ -30,7 +30,7 @@ namespace Marten.Testing.Examples
             var users2 = session.LoadMany<User>(ids);
         }
 
-        #endregion sample_load_by_id
+        #endregion
 
         #region sample_async_load_by_id
         public async Task LoadByIdAsync(IQuerySession session, CancellationToken token = default (CancellationToken))
@@ -54,6 +54,6 @@ namespace Marten.Testing.Examples
             // If you already have an array of id values
             var users2 = await session.LoadManyAsync<User>(token, ids);
         }
-        #endregion sample_async_load_by_id
+        #endregion
     }
 }

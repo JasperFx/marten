@@ -54,7 +54,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
         }
     }
 
-    #endregion sample_view-projection-custom-slicer
+    #endregion
 
     public class custom_slicer: IntegrationContext
     {

@@ -38,7 +38,7 @@ namespace Marten.Testing.Events
                 .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
         }
 
-        #endregion sample_query-against-event-data
+        #endregion
 
         [Fact]
         public void can_query_against_event_type_with_camel_casing()
@@ -164,7 +164,7 @@ namespace Marten.Testing.Events
                 .ToList();
         }
 
-        #endregion sample_example_of_querying_for_event_data
+        #endregion
 
         [Fact]
         public void can_fetch_all_events_after_now()

@@ -115,7 +115,7 @@ namespace Marten.Testing.Linq
             theSession.Query<Target>().Count(x => x.Number > 3).ShouldBe(3);
         }
 
-        #endregion sample_using_count
+        #endregion
         public invoking_queryable_count_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }

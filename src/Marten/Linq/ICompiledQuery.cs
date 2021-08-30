@@ -16,7 +16,7 @@ namespace Marten.Linq
         Expression<Func<IMartenQueryable<TDoc>, TOut>> QueryIs();
     }
 
-    #endregion sample_ICompiledQuery
+    #endregion
 
     /// <summary>
     /// A *temporary* marker interface that for now is necessary to express enumerable result sets
@@ -28,7 +28,7 @@ namespace Marten.Linq
     {
     }
 
-    #endregion sample_ICompiledListQuery-with-no-select
+    #endregion
 
     /// <summary>
     /// A temporary marker interface that for now is necessary to express enumerable result sets
@@ -40,7 +40,7 @@ namespace Marten.Linq
     {
     }
 
-    #endregion sample_ICompiledListQuery-with-select
+    #endregion
 
     /// <summary>
     /// Used to express a query expression that when used will be cached by class type implementing this interface
@@ -51,5 +51,5 @@ namespace Marten.Linq
     {
     }
 
-    #endregion sample_ICompiledQuery-for-single-doc
+    #endregion
 }

@@ -52,7 +52,7 @@ namespace Marten.Testing.Services.Includes
                     .Include<User>(x => x.AssigneeId, x => included = x)
                     .Where(x => x.Title == issue1.Title)
                     .Single();
-                #endregion sample_batch_include
+                #endregion
 
                 var toList = batch.Query<Issue>()
                     .Include<User>(x => x.AssigneeId, list).ToList();
@@ -107,7 +107,7 @@ namespace Marten.Testing.Services.Includes
                 SpecificationExtensions.ShouldNotBeNull(issue2);
             }
         }
-        #endregion sample_simple_include
+        #endregion
 
         [Fact]
         public void include_with_containment_where_for_a_single_document()
@@ -513,7 +513,7 @@ namespace Marten.Testing.Services.Includes
                 dict.ContainsKey(user2.Id).ShouldBeTrue();
             }
         }
-        #endregion sample_dictionary_include
+        #endregion
 
         [Fact]
         public void include_to_dictionary_using_inner_join()
@@ -740,7 +740,7 @@ namespace Marten.Testing.Services.Includes
 
             }
         }
-        #endregion sample_multiple_include
+        #endregion
 
         [Fact]
         public void include_many_to_list()

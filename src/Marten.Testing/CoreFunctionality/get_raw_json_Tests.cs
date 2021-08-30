@@ -27,7 +27,7 @@ namespace Marten.Testing.CoreFunctionality
             json = await theSession.Query<Issue>().ToJsonSingle();
             json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
         }
-        #endregion sample_get-raw-json
+        #endregion
 
         #region sample_get-raw-json-async
         [Fact]
@@ -45,7 +45,7 @@ namespace Marten.Testing.CoreFunctionality
             json = await theSession.Query<Issue>().ToJsonSingle();
             json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
         }
-        #endregion sample_get-raw-json-async
+        #endregion
         public get_raw_json_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
         }

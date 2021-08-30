@@ -35,7 +35,7 @@ namespace Marten.Testing.Linq
 
             SpecificationExtensions.ShouldNotBeNull(theSession.Query<Target>().SingleOrDefault(x => x.Number == 3));
         }
-        #endregion sample_single_and_single_or_default
+        #endregion
 
         [Fact]
         public void single_or_default_miss()

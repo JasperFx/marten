@@ -10,7 +10,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             #region sample_get_postgres_version
             var pgVersion = theStore.Diagnostics.GetPostgresVersion();
-            #endregion sample_get_postgres_version
+            #endregion
             pgVersion.ShouldNotBeNull();
         }
 

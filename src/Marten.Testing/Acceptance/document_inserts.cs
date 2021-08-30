@@ -84,7 +84,7 @@ namespace Marten.Testing.Acceptance
                 session.Insert(target);
                 session.SaveChanges();
             }
-            #endregion sample_sample-document-insertonly
+            #endregion
 
             using (var session = theStore.OpenSession())
             {

@@ -24,7 +24,7 @@ namespace Marten.Testing.Examples
         public string Department { get; set; }
     }
 
-    #endregion sample_user_document
+    #endregion
     */
 
 
@@ -35,7 +35,7 @@ namespace Marten.Testing.Examples
             #region sample_start_a_store
             var store = DocumentStore
                 .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
-            #endregion sample_start_a_store
+            #endregion
 
             #region sample_start_a_query_session
             using (var session = store.QuerySession())
@@ -43,7 +43,7 @@ namespace Marten.Testing.Examples
                 var internalUsers = session
                     .Query<User>().Where(x => x.Internal).ToArray();
             }
-            #endregion sample_start_a_query_session
+            #endregion
 
             #region sample_opening_sessions
             // Open a session for querying, loading, and
@@ -64,7 +64,7 @@ namespace Marten.Testing.Examples
                     .Query<User>()
                     .SingleAsync(x => x.FirstName == "Han" && x.LastName == "Solo");
             }
-            #endregion sample_opening_sessions
+            #endregion
         }
 
         public void start_a_complex_store()
@@ -81,7 +81,7 @@ namespace Marten.Testing.Examples
                 // Override the JSON Serialization
                 _.Serializer<TestsSerializer>();
             });
-            #endregion sample_start_a_complex_store
+            #endregion
         }
 
         public void customize_json_net_serialization()
@@ -108,7 +108,7 @@ namespace Marten.Testing.Examples
                 // above
                 _.Serializer(serializer);
             });
-            #endregion sample_customize_json_net_serialization
+            #endregion
         }
 
         public void customize_json_net_enum_storage_serialization()
@@ -123,7 +123,7 @@ namespace Marten.Testing.Examples
                 // with storing them as string
                 _.UseDefaultSerialization(enumStorage: EnumStorage.AsString);
             });
-            #endregion sample_customize_json_net_enum_storage_serialization
+            #endregion
         }
 
         public void customize_json_net_camelcase_casing_serialization()
@@ -138,7 +138,7 @@ namespace Marten.Testing.Examples
                 // with camelCase formatting
                 _.UseDefaultSerialization(casing: Casing.CamelCase);
             });
-            #endregion sample_customize_json_net_camelcase_casing_serialization
+            #endregion
         }
 
         public void customize_json_net_snakecase_casing_serialization()
@@ -153,7 +153,7 @@ namespace Marten.Testing.Examples
                 // with snake_case formatting
                 _.UseDefaultSerialization(casing: Casing.SnakeCase);
             });
-            #endregion sample_customize_json_net_snakecase_casing_serialization
+            #endregion
         }
 
         public void customize_json_net_snakecase_collectionstorage()
@@ -168,7 +168,7 @@ namespace Marten.Testing.Examples
                 // with JSON array formatting
                 _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
             });
-            #endregion sample_customize_json_net_snakecase_collectionstorage
+            #endregion
         }
 
         public void customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters()
@@ -183,7 +183,7 @@ namespace Marten.Testing.Examples
                 // with allowing to also deserialize using non-public setters
                 _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
             });
-            #endregion sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters
+            #endregion
         }
 
         public void setting_event_schema()
@@ -197,7 +197,7 @@ namespace Marten.Testing.Examples
                 // into the "events" schema
                 _.Events.DatabaseSchemaName = "events";
             });
-            #endregion sample_setting_event_schema
+            #endregion
         }
 
         #region sample_custom-store-options
@@ -218,6 +218,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_custom-store-options
+        #endregion
     }
 }

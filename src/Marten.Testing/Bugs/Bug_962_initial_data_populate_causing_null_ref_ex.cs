@@ -24,7 +24,7 @@ namespace Marten.Testing.Bugs
                 _.InitialData.Add(new InitialData(InitialDatasets.Companies));
                 _.InitialData.Add(new InitialData(InitialDatasets.Users));
             });
-            #endregion sample_configuring-initial-data
+            #endregion
 
             using (var session = store.QuerySession())
             {
@@ -80,5 +80,5 @@ namespace Marten.Testing.Bugs
         };
     }
 
-    #endregion sample_initial-data
+    #endregion
 }

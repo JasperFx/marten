@@ -18,7 +18,7 @@ namespace Marten.Testing.Examples
         public double Value { get; set; }
     }
 
-    #endregion sample_trade_document_type
+    #endregion
 
     public class DiagnosticsExamples: IntegrationContext
     {
@@ -33,7 +33,7 @@ namespace Marten.Testing.Examples
             var cmd = queryable.ToCommand(FetchType.FetchMany);
 
             Debug.WriteLine(cmd.CommandText);
-            #endregion sample_preview_linq_command
+            #endregion
 
             #region sample_preview_linq_explain_plan
             // Explain() is an extension method off of IQueryable<T>
@@ -45,7 +45,7 @@ namespace Marten.Testing.Examples
             Console.WriteLine($"TotalCost: {plan.TotalCost}");
             Console.WriteLine($"PlanRows: {plan.PlanRows}");
             Console.WriteLine($"PlanWidth: {plan.PlanWidth}");
-            #endregion sample_preview_linq_explain_plan
+            #endregion
         }
 
         public void use_request_count()
@@ -59,7 +59,7 @@ namespace Marten.Testing.Examples
 
                 session.RequestCount.ShouldBe(3);
             }
-            #endregion sample_using_request_count
+            #endregion
         }
 
         public DiagnosticsExamples(DefaultStoreFixture fixture) : base(fixture)

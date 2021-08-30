@@ -116,7 +116,7 @@ namespace Marten
         ValueCasting ValueCasting { get; }
     }
 
-    #endregion sample_ISerializer
+    #endregion
 
     /// <summary>
     /// Governs the JSON serialization behavior of how .Net

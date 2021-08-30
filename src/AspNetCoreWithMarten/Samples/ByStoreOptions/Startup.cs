@@ -45,7 +45,7 @@ namespace AspNetCoreWithMarten.Samples.ByStoreOptions
 
         // And other methods we don't care about here...
     }
-    #endregion sample_AddMartenByStoreOptions
+    #endregion
 
 
 }

@@ -29,7 +29,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 // sets up NodaTime handling
                 _.UseNodaTime();
             });
-            #endregion sample_noda_time_default_setup
+            #endregion
         }
 
         public void noda_time_setup_without_json_net_serializer_configuration()
@@ -44,7 +44,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                 // sets up NodaTime handling
                 _.UseNodaTime(shouldConfigureJsonNetSerializer: false);
             });
-            #endregion sample_noda_time_setup_without_json_net_serializer_configuration
+            #endregion
         }
 
         [Fact]

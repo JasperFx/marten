@@ -55,7 +55,7 @@ namespace Marten
         void DocumentAddedForStorage(object id, object document);
     }
 
-    #endregion sample_IDocumentSessionListener
+    #endregion
 
     /// <summary>
     /// Base class to help create custom IDocumentSessionListener classes

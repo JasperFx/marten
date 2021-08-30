@@ -28,7 +28,7 @@ namespace Marten.Testing.Linq
             user4 = new User {FirstName = "Corey"};
 
             theSession.Store(user1, user2, user3, user4);
-            #endregion sample_using-store-with-multiple-docs
+            #endregion
 
             theSession.SaveChanges();
 

@@ -49,7 +49,7 @@ namespace Marten.PLv8.Testing.Transforms
 
 
             });
-            #endregion sample_loading_js_transform_files
+            #endregion
 
             transform_example(store);
 
@@ -80,7 +80,7 @@ namespace Marten.PLv8.Testing.Transforms
 
         }
 
-        #endregion sample_transform_example
+        #endregion
 
         [Fact] //-- Unreliable on CI
         public async Task use_transform_in_production_mode()

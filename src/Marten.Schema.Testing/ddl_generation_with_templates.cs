@@ -73,7 +73,7 @@ public class BlueDoc
 
     public Guid id;
 }
-#endregion sample_configure_template_with_configure_marten
+#endregion
 
 #region sample_configure_template_with_attribute
 [DdlTemplate("ReadOnly")]
@@ -81,5 +81,5 @@ public class ReadOnlyDoc
 {
     public Guid id;
 }
-#endregion sample_configure_template_with_attribute
+#endregion
 }

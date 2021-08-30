@@ -47,5 +47,5 @@ namespace Marten.Testing.Examples
         }
     }
 
-    #endregion sample_writing_custom_session_listener
+    #endregion
 }

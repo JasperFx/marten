@@ -18,6 +18,6 @@ namespace Marten.Testing.Examples
             session.SaveChanges();
         }
 
-        #endregion sample_deletes
+        #endregion
     }
 }

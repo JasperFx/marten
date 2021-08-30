@@ -35,7 +35,7 @@ namespace Marten.Events
                     Owner = eventsTable.Identifier,
                     OwnerColumn = "seq_id"
                 };
-                #endregion sample_using-sequence
+                #endregion
 
                 // compute the args for mt_append_event function
                 var streamIdTypeArg = StreamIdentity == StreamIdentity.AsGuid ? "uuid" : "varchar";

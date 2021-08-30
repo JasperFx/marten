@@ -23,7 +23,7 @@ namespace Marten.Testing.CoreFunctionality
             var company3 = new Company{Name = "SmallCo"};
 
             theSession.Store<object>(user1, issue1, company1, company2, company3);
-            #endregion sample_mixed-docs-to-store
+            #endregion
 
             theSession.SaveChanges();
 

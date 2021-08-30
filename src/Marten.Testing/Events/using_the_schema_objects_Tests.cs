@@ -42,7 +42,7 @@ namespace Marten.Testing.Events
                 _.Events.AddEventType(typeof(QuestStarted));
                 _.Events.AddEventType(typeof(MonsterSlayed));
             });
-            #endregion sample_registering-event-types
+            #endregion
 
             using (var session = store2.OpenSession())
             {
@@ -59,7 +59,7 @@ namespace Marten.Testing.Events
             {
                 #region sample_override_schema_name_event_store
                 _.Events.DatabaseSchemaName = "event_store";
-                #endregion sample_override_schema_name_event_store
+                #endregion
             });
 
             store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));

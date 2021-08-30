@@ -48,7 +48,7 @@ namespace Marten.Testing.Linq
 
             queryable.ToList().Count.ShouldBe(4);
         }
-        #endregion sample_get_distinct_numbers
+        #endregion
 
         #region sample_get_distinct_strings
         [Fact]
@@ -68,7 +68,7 @@ namespace Marten.Testing.Linq
             queryable.ToList().Count.ShouldBe(3);
         }
 
-        #endregion sample_get_distinct_strings
+        #endregion
 
         [Fact]
         public void get_distinct_strings()

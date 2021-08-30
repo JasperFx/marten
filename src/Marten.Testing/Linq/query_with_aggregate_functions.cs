@@ -26,7 +26,7 @@ namespace Marten.Testing.Linq
             var maxNumber = theSession.Query<Target>().Max(t => t.Number);
             maxNumber.ShouldBe(42);
         }
-        #endregion sample_using_max
+        #endregion
 
         [Fact]
         public async Task get_max_async()
@@ -54,7 +54,7 @@ namespace Marten.Testing.Linq
             var minNumber = theSession.Query<Target>().Min(t => t.Number);
             minNumber.ShouldBe(-5);
         }
-        #endregion sample_using_min
+        #endregion
 
         [Fact]
         public async Task get_min_async()
@@ -82,7 +82,7 @@ namespace Marten.Testing.Linq
             var average = theSession.Query<Target>().Average(t => t.Number);
             average.ShouldBe(10);
         }
-        #endregion sample_using_average
+        #endregion
 
         [Fact]
         public async Task get_average_async()

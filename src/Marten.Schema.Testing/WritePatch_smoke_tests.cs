@@ -23,19 +23,19 @@ namespace Marten.Schema.Testing
                 // Lets Marten know that the event store is active
                 _.Events.AddEventType(typeof(MembersJoined));
             });
-            #endregion sample_configure-document-types-upfront
+            #endregion
 
             #region sample_WritePatch
             await store.Schema.WriteMigrationFileAsync("1.initial.sql");
-            #endregion sample_WritePatch
+            #endregion
 
             #region sample_ApplyAllConfiguredChangesToDatabase
             await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            #endregion sample_ApplyAllConfiguredChangesToDatabase
+            #endregion
 
             #region sample_AssertDatabaseMatchesConfiguration
             await store.Schema.AssertDatabaseMatchesConfigurationAsync();
-            #endregion sample_AssertDatabaseMatchesConfiguration
+            #endregion
             store.Dispose();
         }
 
@@ -168,7 +168,7 @@ namespace Marten.Schema.Testing
             #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
             await theStore.Schema.WriteMigrationFileAsync(directory.AppendPath("1.initial.sql"));
-            #endregion sample_write-patch
+            #endregion
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
             fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));
@@ -192,7 +192,7 @@ namespace Marten.Schema.Testing
             #region sample_write-patch
             // Write the patch SQL file to the @"bin\patches" directory
             await theStore.Schema.WriteMigrationFileAsync(directory.AppendPath("1.initial.sql"));
-            #endregion sample_write-patch
+            #endregion
 
             fileSystem.FileExists(directory.AppendPath("1.initial.sql"));
             fileSystem.FileExists(directory.AppendPath("1.initial.drop.sql"));

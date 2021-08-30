@@ -129,7 +129,7 @@ namespace Marten.Testing.Events.Projections
             view.End = eventData.Timestamp;
     }
 
-    #endregion sample_viewprojection-from-class-with-eventdata
+    #endregion
 
     #region sample_viewprojection-with-update-only
 
@@ -212,7 +212,7 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    #endregion sample_viewprojection-with-update-only
+    #endregion
 
     public class Project
     {

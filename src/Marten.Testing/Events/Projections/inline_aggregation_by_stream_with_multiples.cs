@@ -35,7 +35,7 @@ namespace Marten.Testing.Events.Projections
                 // view
                 _.Projections.SelfAggregate<QuestParty>();
             });
-            #endregion sample_registering-quest-party
+            #endregion
 
             StoreOptions(_ =>
             {

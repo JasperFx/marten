@@ -63,7 +63,7 @@ namespace Marten
 
     }
 
-    #endregion sample_IMartenLogger
+    #endregion
 
     #region sample_ConsoleMartenLogger
     public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
@@ -120,5 +120,5 @@ namespace Marten
         }
     }
 
-    #endregion sample_ConsoleMartenLogger
+    #endregion
 }

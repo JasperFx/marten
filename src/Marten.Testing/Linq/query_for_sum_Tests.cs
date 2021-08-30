@@ -25,7 +25,7 @@ namespace Marten.Testing.Linq
                 .ShouldBe(10);
         }
 
-        #endregion sample_using_sum
+        #endregion
 
         [Fact]
         public void get_sum_of_decimals()

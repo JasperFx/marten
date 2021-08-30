@@ -24,7 +24,7 @@ namespace Marten.Testing.Acceptance
                 // Adds optimistic concurrency checking to Issue
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             });
-            #endregion sample_configuring-optimistic-concurrency
+            #endregion
         }
 
         [Fact]
@@ -171,7 +171,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        #endregion sample_update_with_stale_version_standard
+        #endregion
 
         [Fact]
         public void overwrite_with_stale_version_standard()
@@ -188,7 +188,7 @@ namespace Marten.Testing.Acceptance
                 ConcurrencyChecks = ConcurrencyChecks.Disabled,
                 Tracking = DocumentTracking.DirtyTracking
             });
-            #endregion sample_sample-override-optimistic-concurrency
+            #endregion
 
             var session2 = theStore.DirtyTrackedSession();
 
@@ -482,7 +482,7 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        #endregion sample_store_with_the_right_version
+        #endregion
 
         [Fact]
         public async Task store_with_the_right_version_async()
@@ -648,7 +648,7 @@ namespace Marten.Testing.Acceptance
         public ICollection<Guid> Employees { get; set; } = new List<Guid>();
     }
 
-    #endregion sample_UseOptimisticConcurrencyAttribute
+    #endregion
 
     [SoftDeleted]
     [UseOptimisticConcurrency]

@@ -35,7 +35,7 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
         }
     }
 
-    #endregion sample_CustomSessionFactory
+    #endregion
 
     #region sample_AddMartenWithCustomSessionCreation
 
@@ -74,7 +74,7 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
         // And other methods we don't care about here...
     }
 
-    #endregion sample_AddMartenWithCustomSessionCreation
+    #endregion
 }
 
 

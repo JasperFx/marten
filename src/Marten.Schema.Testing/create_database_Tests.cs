@@ -51,7 +51,7 @@ namespace Marten.Schema.Testing
                             dbCreated = true;
                         });
                 });
-                #endregion sample_marten_create_database
+                #endregion
             }))
             {
                 await store.Advanced.Clean.CompletelyRemoveAllAsync();

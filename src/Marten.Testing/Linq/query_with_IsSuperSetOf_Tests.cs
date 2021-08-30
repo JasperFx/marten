@@ -19,7 +19,7 @@ namespace Marten.Testing.Linq
             var posts = theSession.Query<Post>()
                 .Where(x => x.Tags.IsSupersetOf("c#", "json", "postgres"));
 
-            #endregion sample_is_superset_of
+            #endregion
         }
 
         private readonly Target[] _allTargets;

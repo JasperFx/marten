@@ -25,7 +25,7 @@ namespace Marten.Testing.Examples
                 storeOptions.Policies.AllDocumentsAreMultiTenanted();
                 // Shorthand for
                 // storeOptions.Policies.ForAllDocuments(_ => _.TenancyStyle = TenancyStyle.Conjoined);
-                #endregion sample_tenancy-configure-through-policy
+                #endregion
             });
 
             store.Advanced.Clean.CompletelyRemoveAll();
@@ -38,7 +38,7 @@ namespace Marten.Testing.Examples
                 session.Store(new User { UserName = "Lindsey" });
                 session.SaveChanges();
             }
-            #endregion sample_tenancy-scoping-session-write
+            #endregion
 
             // Write some User documents to tenant "tenant2"
             using (var session = store.OpenSession("tenant2"))
@@ -58,7 +58,7 @@ namespace Marten.Testing.Examples
                     .ToList()
                     .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
             }
-            #endregion sample_tenancy-scoping-session-read
+            #endregion
 
             using (var query = store.QuerySession("tenant2"))
             {

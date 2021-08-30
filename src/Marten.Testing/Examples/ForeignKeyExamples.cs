@@ -18,7 +18,7 @@ namespace Marten.Testing.Examples
                          // up a foreign key relationship to the User document
                          _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
                      });
-            #endregion sample_configure-foreign-key
+            #endregion
 
             //var sql = store.Schema.ToDDL();
             //Console.WriteLine(sql);
@@ -36,7 +36,7 @@ namespace Marten.Testing.Examples
                          // created or managed by marten
                          _.Schema.For<Issue>().ForeignKey(i => i.BugId, "bugtracker", "bugs", "id");
                      });
-            #endregion sample_configure-external-foreign-key
+            #endregion
         }
 
         public void cascade_deletes_with_config_func()
@@ -49,7 +49,7 @@ namespace Marten.Testing.Examples
 
                          _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = CascadeAction.Cascade);
                      });
-            #endregion sample_cascade_deletes_with_config_func
+            #endregion
         }
     }
 }

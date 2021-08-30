@@ -16,7 +16,7 @@ namespace Marten.Testing.Examples
 
                 _.Advanced.DdlRules.TableCreation = CreationStyle.DropThenCreate;
             });
-            #endregion sample_customizing_table_creation
+            #endregion
         }
 
         public void use_security_definer()
@@ -30,7 +30,7 @@ namespace Marten.Testing.Examples
                 // The default SECURITY INVOKER permissions
                 _.Advanced.DdlRules.UpsertRights = SecurityRights.Invoker;
             });
-            #endregion sample_customizing_upsert_rights
+            #endregion
         }
 
         public void configure_role()
@@ -41,7 +41,7 @@ namespace Marten.Testing.Examples
                 _.Advanced.DdlRules.Role = "ROLE1";
             });
 
-            #endregion sample_customizing_role
+            #endregion
         }
 
         public void read_templates()
@@ -57,7 +57,7 @@ namespace Marten.Testing.Examples
                 // Or just sweep the base directory of your application
                 _.Advanced.DdlRules.ReadTemplates();
             });
-            #endregion sample_using_ddl_templates
+            #endregion
         }
 
         public void specify_template_in_fi()
@@ -67,7 +67,7 @@ namespace Marten.Testing.Examples
             {
                 _.Schema.For<User>().DdlTemplate("readonly");
             });
-            #endregion sample_configure_ddl_template_by_fi
+            #endregion
         }
     }
 }

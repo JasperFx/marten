@@ -24,7 +24,7 @@ namespace Marten.Testing.Acceptance
         public string Information { get; set; }
     }
 
-    #endregion sample_using_a_full_text_index_through_attribute_on_class_with_default
+    #endregion
 
     #region sample_using_a_single_property_full_text_index_through_attribute_with_default
     public class UserProfile
@@ -35,7 +35,7 @@ namespace Marten.Testing.Acceptance
         public string Information { get; set; }
     }
 
-    #endregion sample_using_a_single_property_full_text_index_through_attribute_with_default
+    #endregion
 
     #region sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings
     public class UserDetails
@@ -48,7 +48,7 @@ namespace Marten.Testing.Acceptance
         public string Details { get; set; }
     }
 
-    #endregion sample_using_a_single_property_full_text_index_through_attribute_with_custom_settings
+    #endregion
 
     #region sample_using_multiple_properties_full_text_index_through_attribute_with_default
     public class Article
@@ -62,7 +62,7 @@ namespace Marten.Testing.Acceptance
         public string Text { get; set; }
     }
 
-    #endregion sample_using_multiple_properties_full_text_index_through_attribute_with_default
+    #endregion
 
     #region sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings
     public class BlogPost
@@ -81,7 +81,7 @@ namespace Marten.Testing.Acceptance
         public string FrenchText { get; set; }
     }
 
-    #endregion sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings
+    #endregion
 
     [Collection("fulltext")]
     public class full_text_index: OneOffConfigurationsContext
@@ -100,7 +100,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().FullTextIndex();
             });
-            #endregion sample_using_whole_document_full_text_index_through_store_options_with_default
+            #endregion
         }
 
         public void using_a_single_property_full_text_index_through_store_options_with_default()
@@ -113,7 +113,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().FullTextIndex(d => d.FirstName);
             });
-            #endregion sample_using_a_single_property_full_text_index_through_store_options_with_default
+            #endregion
         }
 
         public void using_a_single_property_full_text_index_through_store_options_with_custom_settings()
@@ -132,7 +132,7 @@ namespace Marten.Testing.Acceptance
                     },
                     d => d.FirstName);
             });
-            #endregion sample_using_a_single_property_full_text_index_through_store_options_with_custom_settings
+            #endregion
         }
 
         public void using_multiple_properties_full_text_index_through_store_options_with_default()
@@ -145,7 +145,7 @@ namespace Marten.Testing.Acceptance
                 // This creates
                 _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName);
             });
-            #endregion sample_using_multiple_properties_full_text_index_through_store_options_with_default
+            #endregion
         }
 
         public void using_multiple_properties_full_text_index_through_store_options_with_custom_settings()
@@ -164,7 +164,7 @@ namespace Marten.Testing.Acceptance
                     },
                     d => d.FirstName, d => d.LastName);
             });
-            #endregion sample_using_multiple_properties_full_text_index_through_store_options_with_custom_settings
+            #endregion
         }
 
         public void using_more_than_one_full_text_index_through_store_options_with_different_reg_config()
@@ -179,7 +179,7 @@ namespace Marten.Testing.Acceptance
                     .FullTextIndex(d => d.FirstName) //by default it will use "english"
                     .FullTextIndex("italian", d => d.LastName);
             });
-            #endregion sample_using_more_than_one_full_text_index_through_store_options_with_different_reg_config
+            #endregion
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -211,7 +211,7 @@ namespace Marten.Testing.Acceptance
 
             store.Dispose();
 
-            #endregion sample_using_full_text_query_through_query_session
+            #endregion
 
             result.Count().ShouldBe(1);
         }
@@ -236,7 +236,7 @@ namespace Marten.Testing.Acceptance
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.Search("somefilter"))
                     .ToList();
-                #endregion sample_search_in_query_sample
+                #endregion
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -263,7 +263,7 @@ namespace Marten.Testing.Acceptance
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.PlainTextSearch("somefilter"))
                     .ToList();
-                #endregion sample_plain_search_in_query_sample
+                #endregion
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -290,7 +290,7 @@ namespace Marten.Testing.Acceptance
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.PhraseSearch("somefilter"))
                     .ToList();
-                #endregion sample_phrase_search_in_query_sample
+                #endregion
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -317,7 +317,7 @@ namespace Marten.Testing.Acceptance
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.WebStyleSearch("somefilter"))
                     .ToList();
-                #endregion sample_web_search_in_query_sample
+                #endregion
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -346,7 +346,7 @@ namespace Marten.Testing.Acceptance
                     .Where(x => x.Category == "LifeStyle")
                     .Where(x => x.PhraseSearch("somefilter"))
                     .ToList();
-                #endregion sample_text_search_combined_with_other_query_sample
+                #endregion
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);
@@ -373,7 +373,7 @@ namespace Marten.Testing.Acceptance
                 var posts = session.Query<BlogPost>()
                     .Where(x => x.PhraseSearch("somefilter", "italian"))
                     .ToList();
-                #endregion sample_text_search_with_non_default_regConfig_sample
+                #endregion
 
                 posts.Count.ShouldBe(1);
                 posts.Single().Id.ShouldBe(expectedId);

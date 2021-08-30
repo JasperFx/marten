@@ -29,7 +29,7 @@ namespace Marten.Testing.CoreFunctionality
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
             }))
-            #endregion sample_registering-a-document-session-listener
+            #endregion
             {
                 store.Advanced.Clean.CompletelyRemoveAll();
 

@@ -79,7 +79,7 @@ namespace Marten.Testing.Linq
             var results = theSession.Query<Target>()
                 .Where(x => x.Children.Any(_ => _.Number == 6))
                 .ToArray();
-            #endregion sample_any-query-through-child-collections
+            #endregion
 
             results
                 .Select(x => x.Id)
@@ -97,7 +97,7 @@ namespace Marten.Testing.Linq
                 .Query<Target>()
                 .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
                 .ToArray();
-            #endregion sample_any-query-through-child-collection-with-and
+            #endregion
 
             results
                 .Select(x => x.Id)
@@ -433,7 +433,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
         }
 
-        #endregion sample_query_against_string_array
+        #endregion
 
         [Fact]
         public void query_against_string_array_with_Any()
@@ -541,7 +541,7 @@ namespace Marten.Testing.Linq
                 .Count(x => x.Numbers.Any()).ShouldBe(3);
         }
 
-        #endregion sample_query_any_string_array
+        #endregion
 
         #region sample_query_against_number_list_with_count_method
         [Fact]
@@ -561,7 +561,7 @@ namespace Marten.Testing.Linq
                 .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
         }
 
-        #endregion sample_query_against_number_list_with_count_method
+        #endregion
 
         [Fact]
         public void query_against_number_list_with_count_property()

@@ -26,7 +26,7 @@ namespace Marten.Testing.Linq
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(2, 4);
         }
-        #endregion sample_querying-with-modulo
+        #endregion
 
         [Fact]
         public void use_modulo_operands_reversed()

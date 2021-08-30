@@ -61,7 +61,7 @@ namespace Marten.Testing.Linq
             }
         }
 
-        #endregion sample_using_custom_linq_parser
+        #endregion
     }
 
     public class ColorTarget
@@ -79,7 +79,7 @@ namespace Marten.Testing.Linq
             return target.Color == "Blue";
         }
 
-        #endregion sample_custom-extension-for-linq
+        #endregion
     }
 
     #region sample_IsBlue
@@ -101,5 +101,5 @@ namespace Marten.Testing.Linq
         }
     }
 
-    #endregion sample_IsBlue
+    #endregion
 }

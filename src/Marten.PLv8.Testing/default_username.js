@@ -4,4 +4,4 @@ module.exports = function (doc) {
 
     return doc;
 }
-// #endregion sample_default_username
+// #endregion

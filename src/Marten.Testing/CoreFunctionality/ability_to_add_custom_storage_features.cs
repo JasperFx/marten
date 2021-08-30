@@ -39,7 +39,7 @@ namespace Marten.Testing.CoreFunctionality
 
                 _.Storage.Add(new FakeStorage(_));
             });
-            #endregion sample_adding-schema-feature
+            #endregion
         }
 
         public ability_to_add_custom_storage_features(DefaultStoreFixture fixture) : base(fixture)
@@ -66,5 +66,5 @@ namespace Marten.Testing.CoreFunctionality
         }
     }
 
-    #endregion sample_creating-a-fake-schema-feature
+    #endregion
 }

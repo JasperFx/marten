@@ -48,7 +48,7 @@ namespace Marten.Storage
         void WritePermissions(DdlRules rules, TextWriter writer);
     }
 
-    #endregion sample_IFeatureSchema
+    #endregion
 
     /// <summary>
     /// Base class for easier creation of custom IFeatureSchema objects

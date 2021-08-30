@@ -104,5 +104,5 @@ namespace Marten.Events.Schema
         }
     }
 
-    #endregion sample_EventsTable
+    #endregion
 }

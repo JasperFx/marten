@@ -28,7 +28,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-        #endregion sample_one_field_projection
+        #endregion
 
         [Fact]
         public void use_select_in_query_for_one_field_and_first()
@@ -91,7 +91,7 @@ namespace Marten.Testing.Linq
                 ?.Name.ShouldBe("Bill");
         }
 
-        #endregion sample_get_first_projection
+        #endregion
 
 
 
@@ -164,7 +164,7 @@ namespace Marten.Testing.Linq
                 .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
         }
 
-        #endregion sample_anonymous_type_projection
+        #endregion
 
         [Fact]
         public void use_select_with_multiple_fields_in_anonymous()
@@ -209,7 +209,7 @@ namespace Marten.Testing.Linq
             });
         }
 
-        #endregion sample_other_type_projection
+        #endregion
 
         public class User2
         {
@@ -314,7 +314,7 @@ namespace Marten.Testing.Linq
             actual.ShouldHaveTheSameElementsAs(expected);
         }
 
-        #endregion sample_deep_properties_projection
+        #endregion
 
 
         [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]

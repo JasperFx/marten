@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
         }
 
     }
-    #endregion sample_custom-id-generation
+    #endregion
 
     public class CustomKeyGenerationTests : IntegrationContext
     {
@@ -42,7 +42,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                         m.IdStrategy = new CustomdIdGeneration();
                     }
                 });
-                #endregion sample_configuring-global-custom
+                #endregion
             });
 
             #region sample_configuring-global-custom-test
@@ -57,7 +57,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 var users = session1.Query<UserWithString>().ToArray<UserWithString>();
                 users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
             }
-            #endregion sample_configuring-global-custom-test
+            #endregion
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             {
                 #region sample_configuring-mapping-specific-custom
                 options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration());
-                #endregion sample_configuring-mapping-specific-custom
+                #endregion
             });
 
             theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();

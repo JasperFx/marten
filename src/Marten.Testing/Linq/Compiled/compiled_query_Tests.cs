@@ -299,7 +299,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    #endregion sample_FindUserByAllTheThings
+    #endregion
 
     #region sample_CompiledAsJson
     public class FindJsonUserByUsername: ICompiledQuery<User>
@@ -313,7 +313,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    #endregion sample_CompiledAsJson
+    #endregion
 
     #region sample_CompiledToJsonArray
     public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
@@ -330,7 +330,7 @@ namespace Marten.Testing.Linq.Compiled
 
     }
 
-    #endregion sample_CompiledToJsonArray
+    #endregion
 
     public class FindJsonUsersByUsername: ICompiledListQuery<User>
     {
@@ -415,7 +415,7 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    #endregion sample_UsersByFirstName-Query
+    #endregion
 
     public class UsersByFirstNameWithFields: ICompiledListQuery<User>
     {
@@ -440,7 +440,7 @@ namespace Marten.Testing.Linq.Compiled
         public string FirstName { get; set; }
     }
 
-    #endregion sample_UserNamesForFirstName
+    #endregion
 
     public class CompiledQuery1 : ICompiledQuery<Target, bool>
     {

@@ -131,7 +131,7 @@ namespace Marten.Schema.Testing
             }
         }
 
-        #endregion sample_ConfigureMarten-generic
+        #endregion
 
         #region sample_ConfigureMarten-specifically
         public class ConfiguresItselfSpecifically
@@ -145,7 +145,7 @@ namespace Marten.Schema.Testing
             }
         }
 
-        #endregion sample_ConfigureMarten-specifically
+        #endregion
 
         [Fact]
         public void can_replace_hilo_def_settings()

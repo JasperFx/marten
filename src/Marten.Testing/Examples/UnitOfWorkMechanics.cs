@@ -30,7 +30,7 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_lightweight_document_session_uow
+        #endregion
 
         #region sample_tracking_document_session_uow
         public void tracking_document_session(IDocumentStore store)
@@ -53,6 +53,6 @@ namespace Marten.Testing.Examples
             }
         }
 
-        #endregion sample_tracking_document_session_uow
+        #endregion
     }
 }

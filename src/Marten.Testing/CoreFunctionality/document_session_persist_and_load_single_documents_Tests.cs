@@ -151,7 +151,7 @@ namespace Marten.Testing.CoreFunctionality
             theSession.Store(user5);
 
             await theSession.SaveChangesAsync();
-            #endregion sample_saving-changes-async
+            #endregion
 
             var store = theStore;
 
@@ -161,7 +161,7 @@ namespace Marten.Testing.CoreFunctionality
                 var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
-            #endregion sample_load_by_id_array_async
+            #endregion
         }
     }
 }

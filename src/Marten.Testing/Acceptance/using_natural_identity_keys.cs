@@ -55,7 +55,7 @@ namespace Marten.Testing.Acceptance
             {
                 #region sample_sample-override-id-fluent-interance
                 storeOptions.Schema.For<OverriddenIdDoc>().Identity(x => x.Name);
-                #endregion sample_sample-override-id-fluent-interance
+                #endregion
             });
 
             var mapping = theStore.Storage.MappingFor(typeof(OverriddenIdDoc)).As<DocumentMapping>();
@@ -76,7 +76,7 @@ namespace Marten.Testing.Acceptance
         public string Name;
     }
 
-    #endregion sample_IdentityAttribute
+    #endregion
 
     public class NonStandardWithProp
     {

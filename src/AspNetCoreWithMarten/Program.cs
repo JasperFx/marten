@@ -32,5 +32,5 @@ namespace AspNetCoreWithMarten
                     webBuilder.UseStartup<Startup>();
                 });
     }
-    #endregion sample_SampleConsoleApp
+    #endregion
 }

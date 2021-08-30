@@ -29,5 +29,5 @@ namespace AspNetCoreWithMarten.Samples.EagerInitialization
 
         // And other methods we don't care about here...
     }
-    #endregion sample_AddMartenWithEagerInitialization
+    #endregion
 }

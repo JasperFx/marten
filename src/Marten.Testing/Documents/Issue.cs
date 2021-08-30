@@ -25,7 +25,7 @@ namespace Marten.Testing.Documents
         public Guid? BugId { get; set; }
     }
 
-    #endregion sample_Issue
+    #endregion
 
     #region sample_Bug
     public class Bug
@@ -44,5 +44,5 @@ namespace Marten.Testing.Documents
         public int IssueTrackerId { get; set; }
     }
 
-    #endregion sample_Bug
+    #endregion
 }

@@ -35,5 +35,5 @@ namespace Marten.Linq.Parsing
         ISqlFragment Parse(IFieldMapping mapping, ISerializer serializer, MethodCallExpression expression);
     }
 
-    #endregion sample_IMethodCallParser
+    #endregion
 }
