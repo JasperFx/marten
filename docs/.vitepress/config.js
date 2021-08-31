@@ -32,8 +32,9 @@ module.exports = {
     ],
 
     algolia: {
-      apiKey: 'your_api_key',
-      indexName: 'index_name'
+      appId: '9S7KY0SIDO',
+      apiKey: '5b95a0e704fcf10d97ae621741cd907d',
+      indexName: 'marten_index'
     },
 
     sidebar: [

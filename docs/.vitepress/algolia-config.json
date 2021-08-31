@@ -1,0 +1,21 @@
+{
+  "index_name": "marten_index",
+  "start_urls": [
+    "https://marten-v4.netlify.app/guide/",
+    "https://marten-v4.netlify.app/migration-guide.html"
+  ],
+  "stop_urls": [],
+  "selectors": {
+    "lvl0": {
+      "selector": ".sidebar > .sidebar-links > .sidebar-link .sidebar-link-item.active",
+      "global": true,
+      "default_value": "guide"
+    },
+    "lvl1": ".content h1",
+    "lvl2": ".content h2",
+    "lvl3": ".content h3",
+    "lvl4": ".content h4",
+    "lvl5": ".content h5",
+    "text": ".content p, .content li"
+  }
+}
