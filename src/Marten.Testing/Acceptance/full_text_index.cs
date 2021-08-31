@@ -843,7 +843,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await store.Schema.CreateMigrationAsync();
 
-            Assert.Contains("drop index concurrently if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
+            Assert.Contains("drop index if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
 
     }

@@ -35,15 +35,32 @@ namespace Marten.Storage
         private readonly IDictionary<Type, IDocumentMappingBuilder> _builders
             = new Dictionary<Type, IDocumentMappingBuilder>();
 
+        private readonly ThreadLocal<IList<Type>> _buildingList = new ThreadLocal<IList<Type>>();
 
         internal DocumentMapping Build(Type type, StoreOptions options)
         {
+            if (_buildingList.IsValueCreated)
+            {
+                if (_buildingList.Value.Contains(type))
+                {
+                    throw new InvalidOperationException($"Cyclic dependency between documents detected. The types are: {_buildingList.Value.Select(x => x.FullNameInCode()).Join(", ")}");
+                }
+            }
+            else
+            {
+                _buildingList.Value = new List<Type>();
+            }
+
+            _buildingList.Value.Add(type);
+
             if (_builders.TryGetValue(type, out var builder))
             {
                 var mapping = builder.Build(options);
+                _buildingList.Value.Remove(type);
                 return mapping;
             }
 
+            _buildingList.Value.Remove(type);
             return new DocumentMapping(type, options);
         }
 
