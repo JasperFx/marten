@@ -40,15 +40,6 @@ namespace AspNetCoreWithMarten
                 {
                     options.AutoCreateSchemaObjects = AutoCreate.All;
                 }
-
-                options.Projections.AsyncMode = DaemonMode.HotCold;
-                options.Events.AddEventType(typeof(Event1));
-                options.Events.AddEventType(typeof(Event2));
-                options.Events.AddEventType(typeof(Event3));
-                options.Events.AddEventType(typeof(Event4));
-
-                options.Projections.Add<View1Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
-                options.Projections.Add<View2Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
             });
         }
 

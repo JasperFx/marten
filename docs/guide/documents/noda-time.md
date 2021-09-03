@@ -1,4 +1,4 @@
-# Noda Time support
+# Noda Time Support
 
 Noda Time is an alternative date and time API for .NET. It was written by Jon Skeet to solve many flaws of original .NET api. Since version 4.0 Npgsql supports and suggests it as recommended way of working with Date and Time.
 

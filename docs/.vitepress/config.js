@@ -38,24 +38,25 @@ module.exports = {
 
     sidebar: [
       {
-        text: 'Getting Started',
-        link: '/guide/'
+        text: 'Introduction',
+        link: `/guide/`
       },
       {
-        text: 'Integration',
-        link: '/guide/integration'
+        text:'Integration and Configuration',
+        link: '/guide/configuration/',
+          children: [
+              {text: 'Bootstrap with HostBuilder', link: '/guide/configuration/hostbuilder'},
+              {text: 'Do It Yourself IoC Integration', link: '/guide/configuration/ioc'},
+              {text: 'Command Line Tooling', link: '/guide/configuration/cli'},
+              {text: 'Working with StoreOptions', link: '/guide/configuration/storeoptions'},
+              {text: 'Json Serialization', link: '/guide/configuration/json'},
+              {text: 'Retry Policies', link:'/guide/configuration/retries'}
+
+          ]
       },
+
       {
-        text: 'Postgres Schema',
-        link: '/guide/schema/',
-        children: getMartenPGSchemaSidebar()
-      },
-      {
-        text: 'Commandline Tooling',
-        link: '/guide/cli'
-      },
-      {
-        text: 'Document DB',
+        text: 'Document Storage',
         link: '/guide/documents/',
         children: getDocumentDbSidebar()
       },
@@ -64,6 +65,22 @@ module.exports = {
         link: '/guide/events/',
         children: getEventStoreSidebar()
       },
+        {
+            text: 'Diagnostics and Instrumentation',
+            link: '/guide/diagnostics/',
+            children: [
+                {text: 'Logging', link: '/guide/diagnostics/logging'},
+                {text: 'Document and Event Metadata', link: '/guide/diagnostics/metadata'},
+                {text: 'Linq Query Diagnostics', link: '/guide/diagnostics/linq'},
+                {text: 'PostgreSQL Server Version', link: '/guide/diagnostics/postgres-version'},
+                {text: 'Request Counts and Thresholds', link: '/guide/diagnostics/request-count'}
+            ]
+        },
+        {
+            text: 'Database Management',
+            link: '/guide/schema/',
+            children: getMartenPGSchemaSidebar()
+        },
       {
         text: 'FAQ & Troubleshooting',
         link: '/guide/troubleshoot'
@@ -114,236 +131,46 @@ function getMartenPGSchemaSidebar() {
 
 function getDocumentDbSidebar() {
   return [
-    {
-      text: 'Document identity',
-      link: '/guide/documents/identity/',
-      children: [
-        {
-          text: 'GUID identifiers',
-          link: '/guide/documents/identity/guid'
-        },
-        {
-          text: 'Sequential Identifiers with Hilo',
-          link: '/guide/documents/identity/sequential'
-        },
-        {
-          text: 'Custom identity strategies',
-          link: '/guide/documents/identity/custom'
-        },
-      ]
-    },
-    {
-      text: 'Document basics',
-      link: '/guide/documents/basics/',
-      children: [
-        {
-          text: 'Storing Documents and Unit Of Work',
-          link: '/guide/documents/basics/persisting'
-        },
-        {
-          text: 'Loading documents',
-          link: '/guide/documents/basics/loading'
-        },
-        {
-          text: 'Bulk insert documents',
-          link: '/guide/documents/basics/bulk-insert'
-        },
-        {
-          text: 'Initial data',
-          link: '/guide/documents/basics/initial-data'
-        }
-      ]
-    },
-    {
-      text: 'Querying',
-      link: '/guide/documents/querying/',
-      children: [
-        {
-          text: 'Querying document with Linq',
-          link: '/guide/documents/querying/linq'
-        },
-        {
-          text: 'Asynchronous querying',
-          link: '/guide/documents/querying/async'
-        },
-        {
-          text: 'Querying with Postgres SQL',
-          link: '/guide/documents/querying/sql'
-        },
-        {
-          text: 'Document projections',
-          link: '/guide/documents/querying/projections'
-        },
-        {
-          text: 'Query for raw JSON',
-          link: '/guide/documents/querying/query-json'
-        },
-        {
-          text: 'Including related documents',
-          link: '/guide/documents/querying/include'
-        },
-        {
-          text: 'Compiled queries',
-          link: '/guide/documents/querying/compiled-queries'
-        },
-        {
-          text: 'Batched queries',
-          link: '/guide/documents/querying/batched-queries'
-        },
-        {
-          text: 'Metadata queries',
-          link: '/guide/documents/querying/metadata-queries'
-        },
-        {
-          text: 'Paging',
-          link: '/guide/documents/querying/paging'
-        }
-      ]
-    },
-    {
-      text: 'Tenancy',
-      link: '/guide/documents/tenancy/',
-      children: [
-        {
-          text: 'Configuring tenancy',
-          link: '/guide/documents/tenancy/configuring'
-        },
-        {
-          text: 'Basic operations',
-          link: '/guide/documents/tenancy/basic-operations'
-        },
-        {
-          text: 'Implementation details',
-          link: '/guide/documents/tenancy/implementation-details'
-        }
-      ]
-    },
-    {
-      text: 'Configuration',
-      link: '/guide/documents/configuration/',
-      children: [
-        {
-          text: 'Calculated index',
-          link: '/guide/documents/configuration/computed-indexes'
-        },
-        {
-          text: 'Document policies',
-          link: '/guide/documents/configuration/document-policies'
-        },
-        {
-          text: 'Duplicated fields',
-          link: '/guide/documents/configuration/duplicated-fields'
-        },
-        {
-          text: 'Foreign keys',
-          link: '/guide/documents/configuration/foreign-keys'
-        },
-        {
-          text: 'Full text indexes',
-          link: '/guide/documents/configuration/full-text'
-        },
-        {
-          text: 'GIN or GiST indexes',
-          link: '/guide/documents/configuration/gin-gist-indexes'
-        },
-        {
-          text: 'Metadata indexes',
-          link: '/guide/documents/configuration/metadata-indexes'
-        },
-        {
-          text: 'Noda Time support',
-          link: '/guide/documents/configuration/noda-time'
-        },
-        {
-          text: 'Unique indexes',
-          link: '/guide/documents/configuration/unique'
-        },
-      ]
-    },
-    {
-      text: 'JSON serialization',
-      link: '/guide/documents/json/',
-      children: [
-        {
-          text: 'Newtonsoft.Json',
-          link: '/guide/documents/json/newtonsoft'
-        },
-        {
-          text: 'Jil',
-          link: '/guide/documents/json/jil'
-        }
-      ]
-    },
-    {
-      text: 'Advanced topics',
-      link: '/guide/documents/advanced/',
-      children: [
-        {
-          text: 'Tearing down document storage',
-          link: '/guide/documents/advanced/cleaning'
-        },
-        {
-          text: 'Extend Linq support',
-          link: '/guide/documents/advanced/customizing-linq'
-        },
-        {
-          text: 'Ejecting documents from session',
-          link: '/guide/documents/advanced/eject'
-        },
-        {
-          text: 'Enlisting in existing transactions',
-          link: '/guide/documents/advanced/existing-transactions'
-        },
-        {
-          text: 'Schema feature extensions',
-          link: '/guide/documents/advanced/extensions'
-        },
-        {
-          text: 'Document hierarchies',
-          link: '/guide/documents/advanced/hierarchies'
-        },
-        {
-          text: 'Identity map mechanics',
-          link: '/guide/documents/advanced/identity-map'
-        },
-        {
-          text: 'Javascript transformations',
-          link: '/guide/documents/advanced/javascript-transformations'
-        },
-        {
-          text: 'Optimistic concurrency',
-          link: '/guide/documents/advanced/optimistic-concurrency'
-        },
-        {
-          text: 'Patch API',
-          link: '/guide/documents/advanced/patch-api'
-        },
-        {
-          text: 'Retry Policies',
-          link: '/guide/documents/advanced/retry-policy'
-        },
-        {
-          text: 'Soft deletes',
-          link: '/guide/documents/advanced/soft-deletes'
-        },
-        {
-          text: 'Structural typing',
-          link: '/guide/documents/advanced/structural-typing'
-        }
-      ]
-    },
-    {
-      text: 'Diagnostics and instrumentation',
-      link: '/guide/documents/diagnostics'
-    },
-    {
-      text: 'Command timeouts',
-      link: '/guide/documents/command-timeouts'
-    },
-    {
-      text: 'Connection handling',
-      link: '/guide/documents/connections'
-    }
+    {text: 'Document Identity', link: '/guide/documents/identity'},
+    {text: 'Document Storage', link: '/guide/documents/storage'},
+    {text: 'Document Sessions', link: '/guide/documents/sessions'},
+    {text: 'Storing Documents', link: '/guide/documents/storing'},
+    {text: 'Deleting Documents', link: '/guide/documents/deletes'},
+      {
+          text: 'Querying',
+          link: '/guide/documents/querying/',
+          children: [
+              {text: 'Load Documents by Id', link: '/guide/documents/querying/byid'},
+              {text: 'Querying with Linq', link: '/guide/documents/querying/linq'},
+              {text: 'Querying with Postgres SQL', link: '/guide/documents/querying/sql'},
+              {text: 'Query for Raw JSON', link: '/guide/documents/querying/query-json'},
+              {text: 'Including Related Documents', link: '/guide/documents/querying/include'},
+              {text: 'Compiled Queries', link: '/guide/documents/querying/compiled-queries'},
+              {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'},
+              {text: 'Metadata Queries', link: '/guide/documents/querying/metadata-queries'},
+              {text: 'Paging', link: '/guide/documents/querying/paging'},
+              {text: 'Full Text Searching', link: '/guide/documents/querying/paging'}
+          ]
+      },
+      {
+          text: 'Indexing',
+          link: '/guide/documents/indexing/',
+          children: [
+              {text: 'Calculated Indexes', link: '/guide/documents/indexing/computed-indexes'},
+              {text: 'Duplicated Fields', link: '/guide/documents/indexing/duplicated-fields'},
+              {text: 'Unique Indexes', link: '/guide/documents/indexing/unique'},
+              {text: 'Foreign Keys', link: '/guide/documents/indexing/foreign-keys'},
+              {text: 'Full Text Indexes', link: '/guide/documents/indexing/full-text'},
+              {text: 'GIN or GiST Indexes', link: '/guide/documents/indexing/gin-gist-indexes'},
+              {text: 'Metadata Indexes', link: '/guide/documents/indexing/metadata-indexes'}
+          ]
+      },
+      {text:'Document Type Hierarchies', link: '/guide/documents/hierarchies'},
+      {text:'Multi-Tenanted Documents', link: '/guide/documents/multi-tenancy'},
+      {text: 'Initial Baseline Data', link: '/guide/documents/initial-data'},
+      {text: 'Optimistic Concurrency', link: '/guide/documents/concurrency'},
+      {text: 'Noda Time Support', link: '/guide/documents/noda-time'},
+      {text: 'PLv8 Support', link: '/guide/documents/plv8'}
   ]
 }
 

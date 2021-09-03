@@ -1,4 +1,4 @@
-# Integrating Marten into .Net Core Applications
+# Bootstrapping with HostBuilder
 
 ::: tip INFO
 The built in DI service registration helpers were introduced in Marten v3.12.
@@ -48,21 +48,12 @@ public class Startup
             {
                 options.AutoCreateSchemaObjects = AutoCreate.All;
             }
-
-            options.Projections.AsyncMode = DaemonMode.HotCold;
-            options.Events.AddEventType(typeof(Event1));
-            options.Events.AddEventType(typeof(Event2));
-            options.Events.AddEventType(typeof(Event3));
-            options.Events.AddEventType(typeof(Event4));
-
-            options.Projections.Add<View1Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
-            options.Projections.Add<View2Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
         });
     }
 
     // and other methods we don't care about right now...
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `AddMarten()` method will add these service registrations to your application:
@@ -77,7 +68,7 @@ For more information, see:
 * Check [identity map mechanics](/guide/documents/advanced/identity-map) for an explanation of Marten session behavior
 * Check [storing documents and unit of work](/guide/documents/basics/persisting) for session basics
 
-## AddMarten() Usages
+## AddMarten() Options
 
 ::: tip INFO
 All the examples in this page are assuming the usage of the `IServiceCollection` interface for service
@@ -200,7 +191,6 @@ public class Startup
 <!-- endSnippet -->
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
-
 
 ## Customizing Session Creation Globally
 
@@ -430,6 +420,10 @@ public class Startup
 This correlation tracking might be better with structural logging with something like [Serilog](https://serilog.net), but we'll leave that to users.
 :::
 
+
+
+
+
 ## Eager Initialization of the DocumentStore
 
 Lastly, if desirable, you can force Marten to initialize the applications document store as part of bootstrapping instead of waiting for it to be initialized on the first usage with this syntax:
@@ -463,3 +457,4 @@ public class Startup
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L7-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+

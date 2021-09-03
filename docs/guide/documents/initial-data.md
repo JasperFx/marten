@@ -1,4 +1,4 @@
-# Initial Data
+# Initial Baseline Data
 
 Marten supports seeding your database with initial data via the `IInitialData` interface. For example:
 

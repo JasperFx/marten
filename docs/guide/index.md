@@ -1,31 +1,32 @@
-# Getting Started
+# Introduction
 
 Click this [link](https://sec.ch9.ms/ch9/2d29/a281311a-76bb-4573-a2a0-2dd7affc2d29/S315dotNETconf_high.mp4) to watch an introductory video on Marten.
 
-First, go get the Marten library from Nuget:
+## What is Marten?
 
-Using .NET CLI
+Marten is a library distributed by Nuget that allows .Net developers to use the Postgresql database as both a
+document database and a full-featured [event store](https://martinfowler.com/eaaDev/EventSourcing.html) -- with the document database features being the out of the box
+mechanism for projected "read side" views of your events. There is absolutely nothing else to install in your application
+other than the Nuget or process to run other than Postgresql itself.
 
-```shell
-dotnet add package Marten
-```
+The developers behind Marten strongly feel that [document databases](https://en.wikipedia.org/wiki/Document-oriented_database) are oftn more efficient
+for many software development projects than using the more common RDBMS with an ORM
+tool like Entity Framework Core or Dapper. We also like having a solution for event sourcing that is all "in the box" with both event
+capture and integrated read-side projection support in one tool.
 
-Or, using PowerShell
+Postgresql v9.4 added very strong support for efficiently storing, querying, and manipulating JSON data. At about the same time, the original
+Marten shop was struggling with an early version of RavenDb in production. After familiarizing ourselves with Postgresql's new
+[JSONB](https://www.postgresql.org/docs/current/datatype-json.html) support, we conceived of what became Marten as a library that would
+mimic the basic RavenDb API usage, but sit on top of the very robust Postgresql database engine.
 
-```powershell
-PM> Install-Package Marten
-```
+The project name came from a quick Google search one day for "what are the natural predators of ravens?" -- which led to us
+using the [marten](https://en.wikipedia.org/wiki/Marten) as our project codename and avatar.
 
-Or, using paket:
+![A Marten](/images/marten.jpeg)
 
-```shell
-paket add nuget Marten
-```
+When we announced the project publicly in late 2015, it quickly gained a solid community of interested developers. An event sourcing feature set was
+added early on, which helped Marten attract many more developers. Marten first went into a production system in 2016 and has been going strong ever since.
 
-The next step is to get access to a PostgreSQL **9.6+** database schema. If you want to let Marten build database schema objects on the fly at development time,
-make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements.
-
-Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
 
 
 ## .NET version compatibility
@@ -38,7 +39,7 @@ Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.co
 .NET Framework support was dropped as part of the v4 release, if you require .NET Framework support, please use the latest Marten 3.xx release.
 :::
 
-## .Net Core app integration
+## Marten Quickstart
 
 ::: tip INFO
 There's a very small [sample project in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten) that shows the mechanics for wiring
@@ -80,39 +81,23 @@ public class Startup
             {
                 options.AutoCreateSchemaObjects = AutoCreate.All;
             }
-
-            options.Projections.AsyncMode = DaemonMode.HotCold;
-            options.Events.AddEventType(typeof(Event1));
-            options.Events.AddEventType(typeof(Event2));
-            options.Events.AddEventType(typeof(Event3));
-            options.Events.AddEventType(typeof(Event4));
-
-            options.Projections.Add<View1Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
-            options.Projections.Add<View2Projection>(Marten.Events.Projections.ProjectionLifecycle.Async);
         });
     }
 
     // and other methods we don't care about right now...
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+TODO -- reference DocumentStore and IDocumentSession / IQuerySession
 
 See [integrating Marten in .NET Core applications](/guide/integration) for more information and options about this integration.
 
+Also see the blog post [Marten, the Generic Host Builder in .Net Core, and why this could be the golden age for OSS in .Net](https://jeremydmiller.com/2021/07/29/marten-the-generic-host-builder-in-net-core-and-why-this-could-be-the-golden-age-for-oss-in-net/) for more background about how Marten is fully embracing
+the generic host in .Net. 
 
-## Bootstrapping a Document Store
 
-To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with
-all the default behavior and a connection string:
-
-<!-- snippet: sample_start_a_store -->
-<a id='snippet-sample_start_a_store'></a>
-```cs
-var store = DocumentStore
-    .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L34-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+## Working with Documents
 
 Now, for your first document type, let's represent the users in our system:
 
@@ -169,86 +154,10 @@ using (var session = store.DirtyTrackedSession())
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L47-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## IoC container integration
 
-::: tip INFO
-Lamar supports the .Net Core abstractions for IoC service registrations, so you *could* happily
-use the `AddMarten()` method directly with Lamar.
-:::
-
-The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to
-use an IoC container specifically to manage dependencies and the life cycle of Marten objects.
-
-Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we recommend registering Marten something like this:
-
-<!-- snippet: sample_MartenServices -->
-<a id='snippet-sample_martenservices'></a>
-```cs
-public class MartenServices : ServiceRegistry
-{
-    public MartenServices()
-    {
-        ForSingletonOf<IDocumentStore>().Use(c =>
-        {
-            return DocumentStore.For(options =>
-            {
-                options.Connection("your connection string");
-                options.AutoCreateSchemaObjects = AutoCreate.None;
-
-                // other Marten configuration options
-            });
-        });
-
-        // Register IDocumentSession as Scoped
-        For<IDocumentSession>()
-            .Use(c => c.GetInstance<IDocumentStore>().LightweightSession())
-            .Scoped();
-
-        // Register IQuerySession as Scoped
-        For<IQuerySession>()
-            .Use(c => c.GetInstance<IDocumentStore>().QuerySession())
-            .Scoped();
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/DevelopmentModeRegistry.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenservices' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-There are really only two key points here:
-
-1. There should only be one `IDocumentStore` object instance created in your application, so I scoped it as a "Singleton" in the StructureMap container
-1. The `IDocumentSession` service that you use to read and write documents should be scoped as "one per transaction." In typical usage, this
-   ends up meaning that an `IDocumentSession` should be scoped to a single HTTP request in web applications or a single message being handled in service
-   bus applications.
 
 There is a lot more capabilities than what we're showing here, so head on over to the table of contents on the sidebar to see what else Marten offers.
 
-## Create database
+## Working with Events
 
-Marten can be configured to create (or drop & create) databases in case they do not exist. This is done via store options, through `StoreOptions.CreateDatabasesForTenants`.
-
-<!-- snippet: sample_marten_create_database -->
-<a id='snippet-sample_marten_create_database'></a>
-```cs
-storeOptions.CreateDatabasesForTenants(c =>
-{
-    // Specify a db to which to connect in case database needs to be created.
-    // If not specified, defaults to 'postgres' on the connection for a tenant.
-    c.MaintenanceDatabase(cstring);
-    c.ForTenant()
-        .CheckAgainstPgDatabase()
-        .WithOwner("postgres")
-        .WithEncoding("UTF-8")
-        .ConnectionLimit(-1)
-        .OnDatabaseCreated(_ =>
-        {
-            dbCreated = true;
-        });
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/create_database_Tests.cs#L38-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behaviour to check for database existence from `pg_database`.
-
-Note that database creation requires the CREATEDB privilege. See PostgreSQL [CREATE DATABASE](https://www.postgresql.org/docs/current/static/sql-createdatabase.html) documentation for more.
+TODO -- just a quickstart!

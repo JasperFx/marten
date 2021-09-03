@@ -1,4 +1,4 @@
-# Command Line Tooling for Marten Management
+# Command Line Tooling
 
 ::: warning
 As of v4.0, the usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the .Net Core / .Net 5.0
@@ -102,20 +102,3 @@ marten marten-patch patch1.sql --drop patch1.drop.sql
 ```
 
 In all cases, the commands expose usage help through "marten help [command]." Each of the commands also exposes a "--conn" (or "-c" if you prefer) flag to override the database connection string and a "--log" flag to record all the command output to a file.
-
-## Current Thinking about Marten + Sqitch
-Our team doing the RavenDB-to-Marten transition work has turned us on to using [Sqitch](http://sqitch.org/) for database migrations. From my point of view, I like this choice because Sqitch just uses script files in whatever the underlying database's SQL dialect is. That means that Marten can use our existing `WritePatch()` [schema management](/guide/schema/migrations) to tie into Sqitch's migration scheme.
-
-The way that I think this could work for us is first to have a Sqitch project established in our codebase with its folders for updates, rollbacks, and verify's. In our build script that runs in our master continuous integration (CI) build, we would:
-
-1. Call sqitch to update the CI database (or whatever database we declare to be the source of truth) with the latest known migrations
-2. Call the `marten-assert` command shown above to detect if there are outstanding differences between the application configuration and the database by examining the exit code from that command
-3. If there are any differences detected, figure out what the next migration name would be based on our naming convention and use sqitch to start a new migration with that name
-4. Run the `marten-patch` command to write the update and rollback scripts to the file locations previously determined in steps 2 & 3
-5. Commit the new migration file back to the underlying Git repository
-
-I'm insisting on doing this on our CI server instead of making developers do it locally because I think it'll lead to less duplicated work and fewer problems from these migrations being created against work in progress feature branches.
-
-For production (and staging/QA) deployments, we'd just use sqitch out of the box to bring the databases up to date.
-
-I like this approach because it keeps the monotony of repetitive database change tracking out of our developer's hair, while also allowing them to integrate database changes from outside of Marten objects into the database versioning.
