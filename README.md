@@ -14,6 +14,8 @@ The Marten library provides .NET developers with the ability to use the proven [
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
+Access v3.x docs [here](https://martendb.io/) and v4.x docs [here](https://marten-v4.netlify.app/).
+
 ## Working with the Code
 
 Before getting started you will need the following in your environment:
