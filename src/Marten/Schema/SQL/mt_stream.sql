@@ -7,7 +7,7 @@ CREATE TABLE {databaseSchema}.mt_streams (
 	version				integer NOT NULL,
 	timestamp			timestamptz default (now()) NOT NULL,
 	snapshot			jsonb,
-	snapshot_version	integer
+	snapshot_version	integer 
 );
 
 DROP SEQUENCE IF EXISTS {databaseSchema}.mt_events_sequence;
@@ -22,7 +22,7 @@ CREATE TABLE {databaseSchema}.mt_events (
 	data		jsonb NOT NULL,
 	type 		varchar(100) NOT NULL,
 	timestamp	timestamptz default (now()) NOT NULL,
-    tx_id bigint DEFAULT 0 NOT NULL,
+	tx_id bigint DEFAULT 0 NOT NULL,
 	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version),
 	CONSTRAINT pk_mt_events_id_unique UNIQUE(id)
 );
@@ -63,6 +63,7 @@ BEGIN
 			(seq_id, id, stream_id, version, data, type, tx_id)
 		values
 			(seq, event_id, stream, event_version, body, event_type, txid_current());
+
 
 
 		index := index + 1;
