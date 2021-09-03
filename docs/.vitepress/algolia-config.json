@@ -7,7 +7,7 @@
   "selectors": {
     "lvl0": {
       "selector": ".sidebar > .sidebar-links > .sidebar-link .sidebar-link-item.active",
-      "global": true,
+      "global": true
     },
     "lvl1": ".content h1",
     "lvl2": ".content h2",
