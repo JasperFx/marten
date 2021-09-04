@@ -34,8 +34,8 @@ development time database changes and also stores all the dynamically created ru
 Marten needs to use at runtime.
 :::
 
-To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest way is to start with
-all the default behavior and a connection string:
+To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest possible way is to start with
+all the default behavior and a connection string to a Posgresql database:
 
 <!-- snippet: sample_start_a_store -->
 <a id='snippet-sample_start_a_store'></a>
@@ -46,8 +46,9 @@ var store = DocumentStore
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L34-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+Most of the time however, you'll need to configure more options and integrate Marten
+into a .Net application. For most applications, you'll want to use Marten's 
+[IServiceCollection extensions](/guide/configuration/hostbuilder) to integrate with your application. 
+If you're eschewing the .Net `HostBuilder`/`WebHostBuilder`, see [Do It Yourself IoC Integration](/guide/configuration/ioc).
 
-
-* TODO -- explain `StoreOptions` a little bit.
-* TODO -- Link to major sections for with and without the HostBuilder
-
+For more information about Marten's configuration options, see [Working with StoreOptions](/guide/configuration/storeoptions).

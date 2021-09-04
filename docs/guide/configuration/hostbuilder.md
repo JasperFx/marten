@@ -4,17 +4,13 @@
 The built in DI service registration helpers were introduced in Marten v3.12.
 :::
 
-If your application uses an [IoC container](https://en.wikipedia.org/wiki/Inversion_of_control),
-the easiest way to integrate Marten into a .Net application is to add the key Marten services to
-the underlying IoC container for the application.
-
 As briefly shown in the [getting started](/guide/) page, Marten comes with extension methods
-for the .Net Core standard `IServiceCollection` to quickly add Marten services to any .Net Core application that is bootstrapped by
-either the [Generic IHostBuilder abstraction](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) or the slightly older [ASP.Net Core IWebHostBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder?view=aspnetcore-3.1)
+for the .Net Core standard `IServiceCollection` to quickly add Marten services to any .Net application that is bootstrapped by
+either the [Generic IHostBuilder abstraction](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) or the [ASP.Net Core IWebHostBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder?view=aspnetcore-3.1)
 hosting models.
 
-Jumping right into a basic ASP.Net MVC Core application using the out of the box Web API template, you'd have a class called `Startup` that holds most of the configuration for your application including
-the IoC service registrations for your application in the `ConfigureServices()` method. To add Marten
+Jumping right into a basic ASP.Net Core application using the out of the box Web API template, you'd have a class called `Startup` that holds most of the configuration for your application including
+the IoC service registrations for your application in the `Startup.ConfigureServices()` method. To add Marten
 to your application, use the `AddMarten()` method as shown below:
 
 <!-- snippet: sample_StartupConfigureServices -->
@@ -59,7 +55,7 @@ public class Startup
 The `AddMarten()` method will add these service registrations to your application:
 
 1. `IDocumentStore` with a *Singleton* lifetime. The document store can be used to create sessions, query the configuration of Marten, generate schema migrations, and do bulk inserts.
-1. `IDocumentSession` with a *Scoped* lifetime for all read and write operations. By default, this is done with the `IDocumentStore.OpenSession()` method and the session created will have the identity map behavior
+1. `IDocumentSession` with a *Scoped* lifetime for all read and write operations. **By default**, this is done with the `IDocumentStore.OpenSession()` method and the session created will have the identity map behavior
 1. `IQuerySession` with a *Scoped* lifetime for all read operations against the document store.
 
 For more information, see:

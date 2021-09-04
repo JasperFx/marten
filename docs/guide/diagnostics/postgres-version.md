@@ -1,3 +1,0 @@
-# PostgreSQL Server Version
-
-TODO

@@ -1,1 +1,0 @@
-# Document and Event Metadata
