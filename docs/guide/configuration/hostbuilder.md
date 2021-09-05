@@ -100,6 +100,7 @@ public class Startup
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByConnectionString/Startup.cs#L7-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbyconnectionstring' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+
 The second option is to supply a [nested closure](https://martinfowler.com/dslCatalog/nestedClosure.html) to configure Marten inline like so:
 
 <!-- snippet: sample_AddMartenByNestedClosure -->
@@ -187,6 +188,52 @@ public class Startup
 <!-- endSnippet -->
 
 The last option may be best for more complicated Marten configuration just to keep the configuration code cleaner as `Startup` classes can become convoluted.
+
+## Using Lightweight Sessions
+
+::: tip
+Most new usages of Marten should default to the lightweight sessions for better performance
+:::
+
+The default registration for `IDocumentSession` added by `AddMarten()` is a session with
+[identity map](/guide/documents/sessions.html#identity-map-mechanics) mechanics. That might be unnecessary
+overhead in most cases where the sessions are short-lived, but we keep this behavior for backward
+compatibility with early Marten and RavenDb behavior before that. To opt into using lightweight sessions
+without the identity map behavior, use this syntax:
+
+<!-- snippet: sample_AddMartenWithLightweightSessions -->
+<a id='snippet-sample_addmartenwithlightweightsessions'></a>
+```cs
+public class Startup
+{
+    public Startup(IConfiguration configuration, IHostEnvironment hosting)
+    {
+        Configuration = configuration;
+        Hosting = hosting;
+    }
+
+    public IConfiguration Configuration { get; }
+    public IHostEnvironment Hosting { get; }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+        var connectionString = Configuration.GetConnectionString("postgres");
+
+        services.AddMarten(opts =>
+        {
+            opts.Connection(connectionString);
+        })
+
+        // Chained helper to replace the built in
+        // session factory behavior
+        .UseLightweightSessions();
+    }
+
+    // And other methods we don't care about here...
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/LightweightSessions/Startup.cs#L11-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithlightweightsessions' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Customizing Session Creation Globally
 
@@ -401,15 +448,14 @@ public class Startup
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
             }
         })
-
-            // Chained helper to replace the CustomSessionFactory
-            .BuildSessionsPerScopeWith<ScopedSessionFactory>();
+        // Chained helper to replace the CustomSessionFactory
+        .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
     }
 
     // And other methods we don't care about here...
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L90-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/PerScopeSessionCreation/Startup.cs#L90-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreationbyscope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip

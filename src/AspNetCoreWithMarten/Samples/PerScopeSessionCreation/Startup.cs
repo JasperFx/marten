@@ -114,9 +114,8 @@ namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                 }
             })
-
-                // Chained helper to replace the CustomSessionFactory
-                .BuildSessionsPerScopeWith<ScopedSessionFactory>();
+            // Chained helper to replace the CustomSessionFactory
+            .BuildSessionsWith<ScopedSessionFactory>(ServiceLifetime.Scoped);
         }
 
         // And other methods we don't care about here...
