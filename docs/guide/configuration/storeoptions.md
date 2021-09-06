@@ -1,49 +1,49 @@
-# Working with StoreOptions
+# Configuring Document Storage with StoreOptions
 
-## Customizing Document Storage
+The `StoreOptions` object in Marten is the root of all of the configuration for a `DocumentStore` object.
+The static builder methods like `DocumentStore.For(configuration)` or `IServiceCollection.AddMarten(configuration)` are just
+syntactic sugar around building up a `StoreOptions` object and passing that to the constructor function of a `DocumentStore`:
 
-::: warning
-To enable Marten's built in schema comparison and data migration tools to work properly, all indexes must
-start with the "mt_" prefix. This limitation may be removed in the future, but for now, Marten will throw
-an exception if you leave off the required prefix in index definitions.
+<!-- snippet: sample_DocumentStore.For -->
+<a id='snippet-sample_documentstore.for'></a>
+```cs
+public static DocumentStore For(Action<StoreOptions> configure)
+{
+    var options = new StoreOptions();
+    configure(options);
+
+    return new DocumentStore(options);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L288-L298' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The major parts of `StoreOptions` are shown in the class diagram below:
+
+![StoreOptions](/images/StoreOptions.png)
+
+For some explanation, the major pieces are:
+
+* `EventGraph` -- The configuration for the Event Store functionality is all on the `StoreOptions.Events` property. See the [Event Store documentation](/guide/events/) for more information.
+* `DocumentMapping` -- This is the configuration for a specific document type including all indexes and rules for multi-tenancy, deletes, and metadata usage
+* `MartenRegistry` -- The `StoreOptions.Schema` property is a `MartenRegistry` that provides a fluent interface to explicitly configure document storage by document type
+* `IDocumentPolicy` -- Registered policies on a `StoreOptions` object that apply to all document types. An example would be "all document types are soft deleted."
+* `MartenAttribute` -- Document type configuration can also be done with attributes on the actual document types
+
+To be clear, the configuration on a single document type is applied in order by:
+
+1. Calling the static `ConfigureMarten(DocumentMapping)` method on the document type. See the section below on _Embedding Configuration in Document Types_
+1. Any policies at the `StoreOptions` level
+1. Attributes on the specific document type 
+1. Explicit configuration through `MartenRegistry`
+
+The order of precedence is in the reverse order, such that explicit configuration takes precedence over policies or attributes. 
+
+::: tip
+While it is possible to mix and match configuration styles, the Marten team recommends being consistent in your approach to prevent
+confusion later.
 :::
 
-While you can certainly write your own [DDL](https://en.wikipedia.org/wiki/Data_definition_language)
-and SQL queries for optimizing data fetching, Marten gives you a couple options for speeding up queries --
-which all come at the cost of slower inserts because it's an imperfect world. Marten supports the ability to configure:
-
-* Indexes on the JSONB data field itself
-* Duplicate properties into separate database fields with a matching index for optimized querying
-* Choose how Postgresql will search within JSONB documents
-* DDL generation rules
-* How documents will be deleted
-
-My own personal bias is to avoid adding persistence concerns directly to the document types, but other developers
-will prefer to use either attributes or the new embedded configuration option with the thinking that it's
-better to keep the persistence configuration on the document type itself for easier traceability. Either way,
-Marten has you covered with the various configuration options shown here.
-
-## Postgres Limits on Naming
-
-Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
-Postgresql database by [setting the NAMEDATALEN property](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
-
-This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
-truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the `NAMEDATALEN` value,
-but you do need to tell Marten about any non-default length limit like so:
-
-<!-- snippet: sample_setting-name-data-length -->
-<a id='snippet-sample_setting-name-data-length'></a>
-```cs
-var store = DocumentStore.For(_ =>
-{
-    // If you have overridden NAMEDATALEN in your
-    // Postgresql database to 100
-    _.NameDataLength = 100;
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L279-L288' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 ## Custom StoreOptions
 
@@ -75,35 +75,65 @@ public class MyStoreOptions: StoreOptions
 This strategy might be beneficial if you need to share Marten configuration across different applications
 or testing harnesses or custom migration tooling.
 
-## MartenRegistry
+## Explicit Document Configuration with MartenRegistry
 
 While there are some limited abilities to configure storage with attributes, the most complete option right now
-is a fluent interface implemented by the `MartenRegistry`. To configure a Marten document store, first write
-your own subclass of `MartenRegistry` and place declarations in the constructor function like this example:
+is a fluent interface implemented by the `MartenRegistry` that is exposed from the `StoreOptions.Schema` property, or you can choose
+to compose your document type configuration in additional `MartenRegistry` objects.
 
-<[sample:MyMartenRegistry]>
+To use your own subclass of `MartenRegistry` and place declarations in the constructor function like this example:
+
+<!-- snippet: sample_OrganizationRegistry -->
+<a id='snippet-sample_organizationregistry'></a>
+```cs
+public class OrganizationRegistry: MartenRegistry
+{
+    public OrganizationRegistry()
+    {
+        For<Organization>().Duplicate(x => x.OtherName);
+        For<User>().Duplicate(x => x.UserName);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/MartenRegistryTests.cs#L137-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_organizationregistry' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
 
-<!-- snippet: sample_using_marten_registry_to_bootstrap_document_store -->
-<a id='snippet-sample_using_marten_registry_to_bootstrap_document_store'></a>
+<!-- snippet: sample_including_a_custom_MartenRegistry -->
+<a id='snippet-sample_including_a_custom_martenregistry'></a>
 ```cs
-var store = DocumentStore.For(_ =>
+var store = DocumentStore.For(opts =>
 {
-    _.Connection("your connection string");
+    opts.Schema.For<Organization>().Duplicate(x => x.Name);
+    opts.Schema.Include<OrganizationRegistry>();
+    opts.Connection(ConnectionSource.ConnectionString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_marten_registry_to_bootstrap_document_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/MartenRegistryTests.cs#L170-L179' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_including_a_custom_martenregistry' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
 
 If you dislike using infrastructure attributes in your application code, you will probably prefer to use MartenRegistry.
 
-## Custom Indexes
+Lastly, note that you can use `StoreOptions.Schema` property for all configuration like this:
 
-If you intend to write your own indexes against Marten document tables, just ensure that the index names are **not** prefixed with "mt_" so
-that Marten will ignore your manual indexes when calculating schema differences.
+<!-- snippet: sample_using_storeoptions_schema -->
+<a id='snippet-sample_using_storeoptions_schema'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection(ConnectionSource.ConnectionString);
+    opts.Schema.For<Organization>()
+        .Duplicate(x => x.OtherName);
+
+    opts.Schema
+        .For<User>().Duplicate(x => x.UserName);
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/MartenRegistryTests.cs#L152-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_storeoptions_schema' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Custom Attributes
 
@@ -218,6 +248,8 @@ var store = DocumentStore.For(storeOptions =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Policies.cs#L19-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-policy-configure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+The actual policy is shown below:
+
 <!-- snippet: sample_sample-policy-implementation -->
 <a id='snippet-sample_sample-policy-implementation'></a>
 ```cs
@@ -243,3 +275,64 @@ To set all types to be multi-tenanted, the pre-baked `Policies.AllDocumentsAreMu
 
 Remarks: Given the sample, you might not want to let tenancy concerns propagate to your types in a real data model.
 
+## Configuring the Database Schema
+
+By default, Marten will put all database schema objects into the main _public_ schema. If you want to override this behavior,
+use the `StoreOptions.DocumentSchemaName` property when configuring your `IDocumentStore`:
+
+<!-- snippet: sample_setting_database_schema_name -->
+<a id='snippet-sample_setting_database_schema_name'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+    opts.DatabaseSchemaName = "other";
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDatabaseSchemaName.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_database_schema_name' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+If you have some reason to place different document types into separate schemas, that is 
+also supported and the document type specific configuration will override the `StoreOptions.DatabaseSchemaName`
+value as shown below:
+
+<!-- snippet: sample_configure_schema_by_document_type -->
+<a id='snippet-sample_configure_schema_by_document_type'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+    opts.DatabaseSchemaName = "other";
+
+    // This would take precedence for the
+    // User document type storage
+    opts.Schema.For<User>()
+        .DatabaseSchemaName("users");
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDatabaseSchemaName.cs#L22-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_schema_by_document_type' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+
+## Postgres Limits on Naming
+
+Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
+Postgresql database by [setting the NAMEDATALEN property](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
+
+This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly
+truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the `NAMEDATALEN` value,
+but you do need to tell Marten about any non-default length limit like so:
+
+<!-- snippet: sample_setting-name-data-length -->
+<a id='snippet-sample_setting-name-data-length'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    // If you have overridden NAMEDATALEN in your
+    // Postgresql database to 100
+    _.NameDataLength = 100;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L279-L288' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

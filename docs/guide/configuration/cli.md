@@ -6,7 +6,8 @@ As of v4.0, the usage of Marten.CommandLine shown in this document is only valid
 :::
 
 There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
-your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton).
+your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
+is the actual command line parser in this case.
 
 To use the expanded command line options to a .Net Core application bootstrapped by `IHostBuilder`, add a reference to the _Marten.CommandLine_ Nuget and ever so slightly change your `Program.Main()` entry point as shown below:
 
@@ -102,3 +103,7 @@ marten marten-patch patch1.sql --drop patch1.drop.sql
 ```
 
 In all cases, the commands expose usage help through "marten help [command]." Each of the commands also exposes a "--conn" (or "-c" if you prefer) flag to override the database connection string and a "--log" flag to record all the command output to a file.
+
+## Projections Support
+
+TODO -- link to a new page in teh events documentation for the command line runner

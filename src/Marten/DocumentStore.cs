@@ -284,6 +284,9 @@ namespace Marten
         /// </summary>
         /// <param name="configure"></param>
         /// <returns></returns>
+
+        #region sample_DocumentStore.For
+
         public static DocumentStore For(Action<StoreOptions> configure)
         {
             var options = new StoreOptions();
@@ -291,6 +294,8 @@ namespace Marten
 
             return new DocumentStore(options);
         }
+
+        #endregion
 
         private IDocumentSession openSession(SessionOptions options)
         {

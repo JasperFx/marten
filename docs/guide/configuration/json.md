@@ -1,5 +1,12 @@
 # Json Serialization
 
+::: tip
+Newtonsoft.Json is still the default JSON serializer in Marten for backwards compatibility
+with previous Marten versions and because it is the most battle-hardened JSON serializer
+in the .Net space that "just works." Other, more performant serializers can also
+be used with Marten.
+:::
+
 An absolutely essential ingredient in Marten's persistence strategy is JSON serialization of the document objects. Marten aims to make the
 JSON serialization extensible and configurable through the native mechanisms in each JSON serialization library. For the purposes of having
 a smooth "getting started" story, Marten comes out of the box with support for a very basic usage of Newtonsoft.Json as the main JSON serializer.
@@ -117,6 +124,13 @@ public interface ISerializer
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it
 into the `DocumentStore` (there's an example of doing that in the section on using Jil).
+
+::: tip
+Regardless of which JSON serializer you use, make sure to set the `Casing` property
+on the Marten `ISerializer` interface instead of directly overriding the member
+naming on the underlying JSON serializer. The Linq querying support needs this information
+in order to create the correct SQL queries within JSON bodies.
+:::
 
 ## Serializing with Newtonsoft.Json
 
@@ -293,7 +307,34 @@ var store = DocumentStore.For(_ =>
 
 ## Serialization with System.Text.Json
 
-TODO
+::: tip
+The Marten team only recommends using the System.Text.Json serializer in new systems.
+The behavior is different enough from Newtonsoft.Json that conversions of existing Marten
+applications to System.Text.Json should be done with quite a bit of caution and testing.
+:::
+
+New in Marten V4 is support for the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/api/system.text.json?view=net-5.0) serializer. 
+
+<!-- snippet: sample_using_STJ_serialization -->
+<a id='snippet-sample_using_stj_serialization'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Opt into System.Text.Json serialization
+    opts.Serializer(new SystemTextJsonSerializer
+    {
+        // Optionally override the enum storage
+        EnumStorage = EnumStorage.AsString,
+
+        // Optionally override the member casing
+        Casing = Casing.CamelCase
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UsingSystemTextJsonSerializer.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stj_serialization' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Serializing with Jil
 

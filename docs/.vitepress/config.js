@@ -48,7 +48,7 @@ module.exports = {
               {text: 'Bootstrap with HostBuilder', link: '/guide/configuration/hostbuilder'},
               {text: 'Do It Yourself IoC Integration', link: '/guide/configuration/ioc'},
               {text: 'Command Line Tooling', link: '/guide/configuration/cli'},
-              {text: 'Working with StoreOptions', link: '/guide/configuration/storeoptions'},
+              {text: 'Configuring Document Storage with StoreOptions', link: '/guide/configuration/storeoptions'},
               {text: 'Json Serialization', link: '/guide/configuration/json'},
               {text: 'Retry Policies', link:'/guide/configuration/retries'},
               {text: 'Pre-Building Generated Types', link: '/guide/configuration/prebuilding'}
@@ -96,7 +96,6 @@ function getMartenPGSchemaSidebar() {
   return [
     {text: 'How documents are stored', link: '/guide/schema/storage'},
     {text: 'Metadata', link: '/guide/schema/metadata'},
-    {text: 'Schema', link: '/guide/schema/schema'},
     {text: 'Schema Migrations', link: '/guide/schema/migrations'},
     {text: 'Exporting Schema Definition', link: '/guide/schema/exporting'},
     {text: 'Schema Feature Extensions', link: '/guide/schema/extensions'},
