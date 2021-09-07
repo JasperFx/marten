@@ -11,10 +11,15 @@ namespace Marten.Schema.Testing
             DocumentMapping.For<Customer>().DatabaseSchemaName.ShouldBe("organization");
         }
 
+        #region sample_using_DatabaseSchemaName_attribute
+
         [DatabaseSchemaName("organization")]
         public class Customer
         {
+            [Identity]
             public string Name { get; set; }
         }
+
+        #endregion
     }
 }
