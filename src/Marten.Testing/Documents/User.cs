@@ -5,6 +5,20 @@ using Baseline;
 
 namespace Marten.Testing.Documents
 {
+    #region sample_NoSetterDocument
+
+    public class NoSetterDocument
+    {
+        public NoSetterDocument(Guid id)
+        {
+            Id = id;
+        }
+
+        public Guid Id { get; }
+    }
+
+    #endregion
+
     public class User
     {
         public User()

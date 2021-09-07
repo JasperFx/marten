@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -29,7 +30,7 @@ namespace Marten.Testing.Examples
 
     public class ConfiguringDocumentStore
     {
-        public void start_a_basic_store()
+        public async Task start_a_basic_store()
         {
             #region sample_start_a_store
             var store = DocumentStore
@@ -52,24 +53,16 @@ namespace Marten.Testing.Examples
                 var user = new User { FirstName = "Han", LastName = "Solo" };
                 session.Store(user);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             // Open a session for querying, loading, and
             // updating documents with a backing "Identity Map"
-            using (var session = store.OpenSession())
+            using (var session = store.QuerySession())
             {
-                var existing = session
+                var existing = await session
                     .Query<User>()
-                    .Where(x => x.FirstName == "Han" && x.LastName == "Solo")
-                    .Single();
-            }
-
-            // Open a session for querying, loading, and
-            // updating documents that performs automated
-            // "dirty" checking of previously loaded documents
-            using (var session = store.DirtyTrackedSession())
-            {
+                    .SingleAsync(x => x.FirstName == "Han" && x.LastName == "Solo");
             }
             #endregion sample_opening_sessions
         }

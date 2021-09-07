@@ -104,14 +104,12 @@ public class User
     public string Department { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L15-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_user_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L16-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_user_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 _For more information on document identity, see [identity](/guide/documents/identity/)._
 
-And now that we've got a PostgreSQL schema and an `IDocumentStore`, let's start persisting and loading user documents:
-
-**TODO -- replace this with a smaller sample**
+And now that we've got a PostgreSQL schema and an `IDocumentStore` variable called `store`, let's start persisting and loading user documents:
 
 <!-- snippet: sample_opening_sessions -->
 <a id='snippet-sample_opening_sessions'></a>
@@ -123,28 +121,36 @@ using (var session = store.LightweightSession())
     var user = new User { FirstName = "Han", LastName = "Solo" };
     session.Store(user);
 
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 
 // Open a session for querying, loading, and
 // updating documents with a backing "Identity Map"
-using (var session = store.OpenSession())
+using (var session = store.QuerySession())
 {
-    var existing = session
+    var existing = await session
         .Query<User>()
-        .Where(x => x.FirstName == "Han" && x.LastName == "Solo")
-        .Single();
-}
-
-// Open a session for querying, loading, and
-// updating documents that performs automated
-// "dirty" checking of previously loaded documents
-using (var session = store.DirtyTrackedSession())
-{
+        .SingleAsync(x => x.FirstName == "Han" && x.LastName == "Solo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L47-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L48-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_sessions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+Now that we've got a document store, we can use that to create a new `IQuerySession` object just for querying or loading documents from the database:
+
+<!-- snippet: sample_start_a_query_session -->
+<a id='snippet-sample_start_a_query_session'></a>
+```cs
+using (var session = store.QuerySession())
+{
+    var internalUsers = session
+        .Query<User>().Where(x => x.Internal).ToArray();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L40-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_query_session' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+For more information on the query support within Marten, check [document querying](/guide/documents/querying/)
 
 
 

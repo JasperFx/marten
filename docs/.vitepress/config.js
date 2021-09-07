@@ -57,7 +57,7 @@ module.exports = {
       },
 
       {
-        text: 'Document Storage',
+        text: 'Document Database',
         link: '/guide/documents/',
         children: getDocumentDbSidebar()
       },
@@ -105,11 +105,11 @@ function getMartenPGSchemaSidebar() {
 
 function getDocumentDbSidebar() {
   return [
-    {text: 'Document Identity', link: '/guide/documents/identity'},
-    {text: 'Document Storage', link: '/guide/documents/storage'},
-    {text: 'Document Sessions', link: '/guide/documents/sessions'},
-    {text: 'Storing Documents', link: '/guide/documents/storing'},
-    {text: 'Deleting Documents', link: '/guide/documents/deletes'},
+    {text: 'Identity', link: '/guide/documents/identity'},
+    {text: 'Storage', link: '/guide/documents/storage'},
+    {text: 'Sessions', link: '/guide/documents/sessions'},
+    {text: 'Storing', link: '/guide/documents/storing'},
+    {text: 'Deleting', link: '/guide/documents/deletes'},
     {
       text: 'Querying',
       link: '/guide/documents/querying/',

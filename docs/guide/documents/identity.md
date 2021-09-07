@@ -200,17 +200,52 @@ This functionality was added specifically to aid in importing data from an exist
 that all new id's assigned for the document type will be higher than the new floor. It is perfectly possible and even likely that there will be some
 gaps in the id sequence.
 
-## Identity Key
-
-TODO
-
 ## String Identity
 
-TODO
+If you use a document type with a `string` identity member, you will be responsible for supplying the
+identity value to Marten on any object passed to any storage API like `IDocumentSession.Store()`. You can
+choose to use the _Identity Key_ option for automatic identity generation as shown in the next section.
 
-## User Supplied Identity
+## Identity Key
 
-TODO
+::: warning
+The document alias is also used to name the underlying Postgresql table and functions for this document type,
+so you will not be able to use any kind of punctuation characters or spaces.
+:::
+
+Let's say you have a document type with a `string` for the identity member like this one:
+
+<!-- snippet: sample_DocumentWithStringId -->
+<a id='snippet-sample_documentwithstringid'></a>
+```cs
+public class DocumentWithStringId
+{
+    public string Id { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/IdentityKeyGenerationTests.cs#L28-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can use the *identity keyI option for identity generation that would create string values
+of the pattern *[type alias]/[sequence]* where the type alias is typically the document class name
+in all lower case and the sequence is a *HiLo* sequence number.
+
+You can opt into the *identity key* strategy for identity and even override the document alias name with this syntax:
+
+<!-- snippet: sample_using_IdentityKey -->
+<a id='snippet-sample_using_identitykey'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+    opts.Schema.For<DocumentWithStringId>()
+        .UseIdentityKey()
+        .DocumentAlias("doc");
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/IdentityKeyGenerationTests.cs#L39-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 ## Custom Identity Strategies
 
