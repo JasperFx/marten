@@ -22,7 +22,7 @@ CREATE TABLE {databaseSchema}.mt_events (
 	data		jsonb NOT NULL,
 	type 		varchar(100) NOT NULL,
 	timestamp	timestamptz default (now()) NOT NULL,
-	tx_id bigint DEFAULT 0 NOT NULL,
+	tx_id		bigint DEFAULT 0 NOT NULL,
 	CONSTRAINT pk_mt_events_stream_and_version UNIQUE(stream_id, version),
 	CONSTRAINT pk_mt_events_id_unique UNIQUE(id)
 );
