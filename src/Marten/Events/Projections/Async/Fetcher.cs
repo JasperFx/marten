@@ -56,7 +56,7 @@ namespace Marten.Events.Projections.Async
 select seq_id from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :last and seq_id <= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer and tx_id < txid_snapshot_xmin(txid_current_snapshot()) order by seq_id;
 {_selector.ToSelectClause(null)} where seq_id > :last and seq_id <= :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer and tx_id < txid_snapshot_xmin(txid_current_snapshot()) order by seq_id;
 select min(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id > :limit and type = ANY(:types) and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer and tx_id < txid_snapshot_xmin(txid_current_snapshot());
-select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer tx_id < txid_snapshot_xmin(txid_current_snapshot());
+select max(seq_id) from {_selector.Events.DatabaseSchemaName}.mt_events where seq_id >= :limit and extract(epoch from age(transaction_timestamp(), {_selector.Events.DatabaseSchemaName}.mt_events.timestamp)) >= :buffer and tx_id < txid_snapshot_xmin(txid_current_snapshot());
 ".Replace(" as d", "");
         }
 
