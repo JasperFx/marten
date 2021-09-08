@@ -10,4 +10,4 @@ elseif ($version.StartsWith("5.")) {
     exit 1
 }
 
-dotnet run -p martenbuild.csproj -f $target_framework -c Release -- $args
+dotnet run -p build/build.csproj -f $target_framework -c Release -- $args

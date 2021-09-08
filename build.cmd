@@ -9,4 +9,4 @@ IF [%target_framework%]==[] (
     exit /b 1
 )
 
-dotnet run -p martenbuild.csproj -f %target_framework% -c Release -- %*
+dotnet run -p build/build.csproj -f %target_framework% -c Release -- %*
