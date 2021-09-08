@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="martenbuild.cs" />
+    <Compile Include="build.cs" />
   </ItemGroup>
 
   <ItemGroup>
