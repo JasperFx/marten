@@ -1,12 +1,147 @@
-TODO -- brief description of sessions
-TODO -- talk about connection lifecycle here?
 
-## Opening Sessions
+# Opening Sessions
 
-TODO -- show shortcuts to lightweight, identity map, query session, dirty checking
-TODO -- link to AddMarten() options for session creation
+`IDocumentStore` is the root of Marten usage, but most Marten usage in code will
+start with one of the session types that can be created from an `IDocumentStore`. The following
+diagram explains the relationship between the different flavors of session and the 
+root store:
 
-TODO -- explain SessionOptions
+![DocumentStore and Session Types](/images/DocumentStore.png)
+
+While there are sections below describing each session in more detail, at a high level the different
+types of sessions are:
+
+|**Creation**|**Read/Write**|**Identity Map**|**Dirty Checking**|
+|------------|--------------|----------------|------------------|
+|`IDocumentStore.QuerySession()`|Read Only|No|No|
+|`IDocumentStore.OpenSession()`|Read/Write|Yes|No|
+|`IDocumentStore.DirtyTrackedSession()`|Read/Write|Yes|Yes|
+|`IDocumentStore.LightweightSession()`|Read/Write|No|No|
+
+
+## Read Only QuerySession
+
+For strictly read-only querying, the `QuerySession` is a lightweight session that is optimized
+for reading. The `IServiceCollection.AddMarten()` configuration will set up a DI registration for
+`IQuerySession`, so you can inject that into classes like this sample MVC controller:
+
+<!-- snippet: sample_GetIssueController -->
+<a id='snippet-sample_getissuecontroller'></a>
+```cs
+public class GetIssueController: ControllerBase
+{
+    private readonly IQuerySession _session;
+
+    public GetIssueController(IQuerySession session)
+    {
+        _session = session;
+    }
+
+    [HttpGet("/issue/{issueId}")]
+    public Task<Issue> Get(Guid issueId)
+    {
+        return _session.LoadAsync<Issue>(issueId);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/IssueController.cs#L53-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_getissuecontroller' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+If you have an `IDocumentStore` object though, you can open a query session like this:
+
+<!-- snippet: sample_opening_querysession -->
+<a id='snippet-sample_opening_querysession'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+});
+
+using var session = store.QuerySession();
+
+var badIssues = await session.Query<Issue>()
+    .Where(x => x.Tags.Contains("bad"))
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OpeningAQuerySession.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_opening_querysession' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Identity Map Mechanics
+
+**Identity Map:**
+
+> Ensures that each object gets loaded only once by keeping every loaded object in a map. Looks up objects using the map when referring to them.
+>
+>-- <cite>[Martin Fowler](http://martinfowler.com/eaaCatalog/identityMap.html)</cite>
+
+Marten's `IDocumentSession` implements the [_Identity Map_](https://en.wikipedia.org/wiki/Identity_map_pattern) pattern that seeks to cache documents loaded by id. This behavior can be very valuable, for example, in handling web requests or service bus messages when many different objects or functions may need to access the same logical document. Using the identity map mechanics allows the application to easily share data and avoid the extra database access hits -- as long as the `IDocumentSession` is scoped to the web request.
+
+<!-- snippet: sample_using-identity-map -->
+<a id='snippet-sample_using-identity-map'></a>
+```cs
+public void using_identity_map()
+{
+    var user = new User { FirstName = "Tamba", LastName = "Hali" };
+    theStore.BulkInsert(new[] { user });
+
+    // Open a document session with the identity map
+    using (var session = theStore.OpenSession())
+    {
+        session.Load<User>(user.Id)
+            .ShouldBeTheSameAs(session.Load<User>(user.Id));
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L8-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.
+
+The Identity Map functionality is applied to all documents loaded by Id or Linq queries with `IQuerySession/IDocumentSession.Query<T>()`. **Documents loaded by user-supplied SQL in the `IQuerySession.Query<T>(sql)` mechanism bypass the Identity Map functionality.**
+
+## Ejecting Documents from a Session
+
+If for some reason you need to completely remove a document from a session's [identity map](/guide/documents/advanced/identity-map) and [unit of work tracking](/guide/documents/basics/persisting), as of Marten 2.4.0 you can use the
+`IDocumentSession.Eject<T>(T document)` syntax shown below in one of the tests:
+
+<!-- snippet: sample_ejecting_a_document -->
+<a id='snippet-sample_ejecting_a_document'></a>
+```cs
+[Fact]
+public void demonstrate_eject()
+{
+    var target1 = Target.Random();
+    var target2 = Target.Random();
+
+    using (var session = theStore.OpenSession())
+    {
+        session.Store(target1, target2);
+
+        // Both documents are in the identity map
+        session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
+        session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+
+        // Eject the 2nd document
+        session.Eject(target2);
+
+        // Now that 2nd document is no longer in the identity map
+        SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
+
+        session.SaveChanges();
+    }
+
+    using (var session = theStore.QuerySession())
+    {
+        // The 2nd document was ejected before the session
+        // was saved, so it was never persisted
+        SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ejecting_a_document.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
 
 ## Connection Handling
 
@@ -42,9 +177,6 @@ public void ConfigureCommandTimeout(IDocumentStore store)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/SessionOptionsTests.cs#L14-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Adding Listeners
-
-## Read Only QuerySession
 
 ## Unit of Work Mechanics
 
@@ -64,6 +196,10 @@ When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure 
 :::
 
 TODO -- Need to talk about SaveChanges / SaveChangesAsync here!
+
+## Adding Listeners
+
+See [Diagnostics and Instrumentation](/guide/diagnostics) for information about using document session listeners.
 
 ## Enlisting in Existing Transactions
 
@@ -153,38 +289,6 @@ public void execute_saga(IDocumentStore store, Guid sagaId)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L8-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_serializable-saga-transaction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Identity Map Mechanics
-
-**Identity Map:**
-
-> Ensures that each object gets loaded only once by keeping every loaded object in a map. Looks up objects using the map when referring to them.
->
->-- <cite>[Martin Fowler](http://martinfowler.com/eaaCatalog/identityMap.html)</cite>
-
-Marten's `IDocumentSession` implements the [_Identity Map_](https://en.wikipedia.org/wiki/Identity_map_pattern) pattern that seeks to cache documents loaded by id. This behavior can be very valuable, for example, in handling web requests or service bus messages when many different objects or functions may need to access the same logical document. Using the identity map mechanics allows the application to easily share data and avoid the extra database access hits -- as long as the `IDocumentSession` is scoped to the web request.
-
-<!-- snippet: sample_using-identity-map -->
-<a id='snippet-sample_using-identity-map'></a>
-```cs
-public void using_identity_map()
-{
-    var user = new User { FirstName = "Tamba", LastName = "Hali" };
-    theStore.BulkInsert(new[] { user });
-
-    // Open a document session with the identity map
-    using (var session = theStore.OpenSession())
-    {
-        session.Load<User>(user.Id)
-            .ShouldBeTheSameAs(session.Load<User>(user.Id));
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L8-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.
-
-The Identity Map functionality is applied to all documents loaded by Id or Linq queries with `IQuerySession/IDocumentSession.Query<T>()`. **Documents loaded by user-supplied SQL in the `IQuerySession.Query<T>(sql)` mechanism bypass the Identity Map functionality.**
 
 
 ## Manual Change Tracking
@@ -260,48 +364,6 @@ public void tracking_document_session(IDocumentStore store)
 
 Do be aware that the automated dirty checking comes with some mechanical cost in memory and runtime performance.
 
-
-## Ejecting Documents from a Session
-
-If for some reason you need to completely remove a document from a session's [identity map](/guide/documents/advanced/identity-map) and [unit of work tracking](/guide/documents/basics/persisting), as of Marten 2.4.0 you can use the
-`IDocumentSession.Eject<T>(T document)` syntax shown below in one of the tests:
-
-<!-- snippet: sample_ejecting_a_document -->
-<a id='snippet-sample_ejecting_a_document'></a>
-```cs
-[Fact]
-public void demonstrate_eject()
-{
-    var target1 = Target.Random();
-    var target2 = Target.Random();
-
-    using (var session = theStore.OpenSession())
-    {
-        session.Store(target1, target2);
-
-        // Both documents are in the identity map
-        session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-        session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
-
-        // Eject the 2nd document
-        session.Eject(target2);
-
-        // Now that 2nd document is no longer in the identity map
-        SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
-
-        session.SaveChanges();
-    }
-
-    using (var session = theStore.QuerySession())
-    {
-        // The 2nd document was ejected before the session
-        // was saved, so it was never persisted
-        SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ejecting_a_document.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 
 

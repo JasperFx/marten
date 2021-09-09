@@ -50,9 +50,32 @@ namespace AspNetCoreWithMarten
     }
 
 
+    #region sample_GetIssueController
+
+    public class GetIssueController: ControllerBase
+    {
+        private readonly IQuerySession _session;
+
+        public GetIssueController(IQuerySession session)
+        {
+            _session = session;
+        }
+
+        [HttpGet("/issue/{issueId}")]
+        public Task<Issue> Get(Guid issueId)
+        {
+            return _session.LoadAsync<Issue>(issueId);
+        }
+    }
+
+    #endregion
 
     public class IssueController
     {
+
+
+
+
         [HttpPost("/issue")]
         public async Task<IssueCreated> PostIssue(
             [FromBody] CreateIssue command,
