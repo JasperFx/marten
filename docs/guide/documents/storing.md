@@ -1,6 +1,72 @@
 # Storing Documents
 
+The primary function of Marten is to store and retrieve documents to a Postgresql database, so here's
+all the ways that Marten enables you to write to the document storage.
+
 ## "Upsert" with Store()
+
+Postgresql has an efficient _[upsert](https://wiki.postgresql.org/wiki/UPSERT)_ capability that we
+exploit in Marten to let users just say "this document has changed" with the `IDocumentSession.Store()`
+method and not have to worry about whether or not the document is brand new or is replacing
+a previously persisted document with the same identity. Here's that method in action
+with a sample that shows storing both a brand new document and a modified document:
+
+<!-- snippet: sample_using_DocumentSession_Store -->
+<a id='snippet-sample_using_documentsession_store'></a>
+```cs
+using var store = DocumentStore.For("some connection string");
+
+using var session = store.LightweightSession();
+
+var newUser = new User
+{
+    UserName = "travis.kelce"
+};
+
+var existingUser = await session.Query<User>()
+    .SingleAsync(x => x.UserName == "patrick.mahomes");
+
+existingUser.Roles = new[] {"admin"};
+
+// We're storing one brand new document, and one
+// existing document that will just be replaced
+// upon SaveChangesAsync()
+session.Store(newUser, existingUser);
+
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StoringDocuments.cs#L37-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_documentsession_store' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The `Store()` method can happily take a mixed bag of document types at one time, but you'll
+need to tell Marten to use `Store<object>()` instead of letting it infer the document type 
+as shown below:
+
+<!-- snippet: sample_store_mixed_bag_of_document_types -->
+<a id='snippet-sample_store_mixed_bag_of_document_types'></a>
+```cs
+using var store = DocumentStore.For("some connection string");
+var user1 = new User();
+var user2 = new User();
+var issue1 = new Issue();
+var issue2 = new Issue();
+var company1 = new Company();
+var company2 = new Company();
+
+using var session = store.LightweightSession();
+
+session.Store<object>(user1, user2, issue1, issue2, company1, company2);
+await session.SaveChangesAsync();
+
+// Or this usage:
+var documents = new object[] {user1, user2, issue1, issue2, company1, company2};
+
+// The argument here is any kind of IEnumerable<object>
+session.StoreObjects(documents);
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StoringDocuments.cs#L10-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_store_mixed_bag_of_document_types' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Insert & Update
 
@@ -42,45 +108,74 @@ theSession.Query<Target>().Count().ShouldBe(data.Length);
 
 The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
 
-::: warning
-By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data.
-::::
+And new with Marten v4.0 is an asynchronous version:
 
-If you want to use the bulk insert feature, but you know that you could have duplicate documents, you can use one of the two following optional modes:
+::: tip
+If you are concerned with server resource utilization, you probably want to be using
+the asynchronous versions of Marten APIs.
+:::
 
-## Ignore Duplicate Values
-
-In this case, you only want to insert brand new documents and just throwaway any potential changes to existing documents.
-
-<!-- snippet: sample_bulk_insert_with_IgnoreDuplicates -->
-<a id='snippet-sample_bulk_insert_with_ignoreduplicates'></a>
+<!-- snippet: sample_using_bulk_insert_async -->
+<a id='snippet-sample_using_bulk_insert_async'></a>
 ```cs
+// This is just creating some randomized
+// document data
 var data = Target.GenerateRandomData(100).ToArray();
 
-theStore.BulkInsert(data, BulkInsertMode.IgnoreDuplicates);
+// Load all of these into a Marten-ized database
+await theStore.BulkInsertAsync(data, batchSize: 500);
+
+// And just checking that the data is actually there;)
+theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L148-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_ignoreduplicates' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
-an INSERT command to copy rows from the temporary table to the real table, filtering out any matches in existing id's.
+By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and 
+the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration
+as shown below:
 
-## Overwrite Duplicates
-
-In the second case, you want to use the bulk insert to write a batch of documents and overwrite any existing data with matching id's:
-
-<!-- snippet: sample_bulk_insert_with_OverwriteExisting -->
-<a id='snippet-sample_bulk_insert_with_overwriteexisting'></a>
+<!-- snippet: sample_BulkInsertMode_usages -->
+<a id='snippet-sample_bulkinsertmode_usages'></a>
 ```cs
+// Just say we have an array of documents we want to bulk insert
 var data = Target.GenerateRandomData(100).ToArray();
 
-theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting);
+using var store = DocumentStore.For("some connection string");
+
+// Discard any documents that match the identity of an existing document
+// in the database
+await store.BulkInsertDocumentsAsync(data, BulkInsertMode.IgnoreDuplicates);
+
+// This is the default mode, the bulk insert will fail if any duplicate
+// identities with existing data or within the data set being loaded are detected
+await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
+
+// Overwrite any existing documents with the same identity as the documents
+// being loaded
+await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L168-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_overwriteexisting' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L146-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Internally, Marten creates a temporary table matching the targeted document table and inserts the new values into that table. After writing those documents, Marten issues
-an INSERT command to copy rows from the temporary table to the real table, filtering out any matches in existing id's, then a second UPDATE command to overwrite data from
-the matching id's.
+The bulk insert feature can also be used with multi-tenanted documents, but in that
+case you are limited to only loading documents to a single tenant at a time as
+shown below:
 
-TODO -- show async bulk inserts
+<!-- snippet: sample_MultiTenancyWithBulkInsert -->
+<a id='snippet-sample_multitenancywithbulkinsert'></a>
+```cs
+// Just say we have an array of documents we want to bulk insert
+var data = Target.GenerateRandomData(100).ToArray();
+
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+    opts.Policies.AllDocumentsAreMultiTenanted();
+});
+
+// If multi-tenanted
+await store.BulkInsertDocumentsAsync("a tenant id", data);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L170-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

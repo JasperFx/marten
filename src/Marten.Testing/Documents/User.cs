@@ -26,6 +26,8 @@ namespace Marten.Testing.Documents
             Id = Guid.NewGuid();
         }
 
+        public string[] Roles { get; set; }
+
         public Guid Id { get; set; }
 
         public string UserName { get; set; }
