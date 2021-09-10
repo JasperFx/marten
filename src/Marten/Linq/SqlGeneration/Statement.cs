@@ -3,10 +3,8 @@ using System.Linq;
 using Baseline;
 using Marten.Internal;
 using Marten.Linq.Fields;
-using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql;
-using Marten.Util;
 using Npgsql;
 using Remotion.Linq.Clauses;
 using Weasel.Postgresql.SqlGeneration;
@@ -135,7 +133,6 @@ namespace Marten.Linq.SqlGeneration
             CompileLocal(session);
             Next?.CompileStructure(session);
         }
-
 
         public virtual void CompileLocal(IMartenSession session)
         {

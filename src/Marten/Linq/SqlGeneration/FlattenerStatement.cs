@@ -2,7 +2,6 @@ using System;
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Weasel.Postgresql;
-using Marten.Util;
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -26,13 +25,26 @@ namespace Marten.Linq.SqlGeneration
         {
             startCommonTableExpression(sql);
 
-            sql.Append("select id, ");
+            sql.Append("select ctid, ");
             sql.Append(_field.LocatorForFlattenedElements);
             sql.Append(" as data from ");
 
             sql.Append(_sourceTable);
 
-            endCommonTableExpression(sql, " as d");
+
+            if (Where != null)
+            {
+                sql.Append(" as d WHERE ");
+                Where.Apply(sql);
+
+                endCommonTableExpression(sql);
+            }
+            else
+            {
+                endCommonTableExpression(sql, " as d");
+            }
+
+
         }
     }
 }

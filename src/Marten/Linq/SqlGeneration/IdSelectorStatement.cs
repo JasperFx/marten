@@ -2,6 +2,7 @@ using Marten.Internal;
 using Marten.Linq.Fields;
 using Weasel.Postgresql;
 using Marten.Util;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration
 {
@@ -25,11 +26,27 @@ namespace Marten.Linq.SqlGeneration
         protected override void configure(CommandBuilder sql)
         {
             startCommonTableExpression(sql);
-            sql.Append("select id, data from ");
+            sql.Append("select ctid, data from ");
             sql.Append(FromObject);
             sql.Append(" as d");
             writeWhereClause(sql);
             endCommonTableExpression(sql);
         }
+    }
+
+    public class WhereCtIdInSubQuery : ISqlFragment
+    {
+        private readonly string _tableName;
+
+        public WhereCtIdInSubQuery(string tableName) => this._tableName = tableName;
+
+        public void Apply(CommandBuilder builder)
+        {
+            builder.Append("ctid in (select ctid from ");
+            builder.Append(this._tableName);
+            builder.Append(")");
+        }
+
+        public bool Contains(string sqlText) => false;
     }
 }

@@ -159,11 +159,11 @@ namespace Marten.Testing.Linq
             {
                 // This works
                 var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
-                SpecificationExtensions.ShouldNotBeNull(o1);
+                o1.ShouldNotBeNull();
 
                 var o2 = session2.Query(new FindOuterByInner("T1", "V12"));
 
-                SpecificationExtensions.ShouldNotBeNull(o2);
+                o2.ShouldNotBeNull();
 
                 o2.Id.ShouldBe(o1.Id);
             }

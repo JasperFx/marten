@@ -1,7 +1,6 @@
 using System.Linq;
 using Marten.Internal;
 using Marten.Internal.Storage;
-using Marten.Linq.Filters;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;
@@ -10,17 +9,17 @@ namespace Marten.Linq.SqlGeneration
 {
     internal class DocumentStatement : SelectorStatement
     {
-        private readonly IDocumentStorage _storage;
-
         public DocumentStatement(IDocumentStorage storage): base(storage, storage.Fields)
         {
-            _storage = storage;
+            Storage = storage;
         }
+
+        public IDocumentStorage Storage { get; }
 
         protected override ISqlFragment buildWhereFragment(IMartenSession session)
         {
             if (WhereClauses.Count == 0)
-                return _storage.DefaultWhereFragment();
+                return Storage.DefaultWhereFragment();
 
             var parser = new WhereClauseParser(session, this);
 
@@ -29,7 +28,7 @@ namespace Marten.Linq.SqlGeneration
             switch (WhereClauses.Count)
             {
                 case 0:
-                    where = _storage.DefaultWhereFragment();
+                    where = Storage.DefaultWhereFragment();
                     break;
 
                 case 1:
@@ -45,12 +44,12 @@ namespace Marten.Linq.SqlGeneration
 
             }
 
-            return _storage.FilterDocuments(null, where);
+            return Storage.FilterDocuments(null, where);
         }
 
         public override SelectorStatement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
         {
-            var clone = new DocumentStatement(_storage)
+            var clone = new DocumentStatement(Storage)
             {
                 SelectClause = SelectClause,
                 Orderings = Orderings,

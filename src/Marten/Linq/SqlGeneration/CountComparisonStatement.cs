@@ -34,7 +34,7 @@ namespace Marten.Linq.SqlGeneration
         {
             Value = new CommandParameter(value);
             Operator = op;
-            return new WhereInSubQuery(ExportName);
+            return new WhereCtIdInSubQuery(ExportName);
         }
 
         protected override void configure(CommandBuilder sql)
@@ -42,11 +42,11 @@ namespace Marten.Linq.SqlGeneration
             startCommonTableExpression(sql);
 
 
-            sql.Append("select id, count(*) as data from ");
+            sql.Append("select ctid, count(*) as data from ");
             sql.Append(_tableName);
             sql.Append(" as d");
             writeWhereClause(sql);
-            sql.Append(" group by id having count(*) ");
+            sql.Append(" group by ctid having count(*) ");
             sql.Append(Operator);
 
             Value.Apply(sql);
