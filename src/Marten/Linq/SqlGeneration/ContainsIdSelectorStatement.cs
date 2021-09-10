@@ -27,7 +27,7 @@ namespace Marten.Linq.SqlGeneration
         {
             startCommonTableExpression(sql);
 
-            sql.Append("select id from ");
+            sql.Append("select ctid from ");
             sql.Append(_from);
             sql.Append(" where data = ");
             _parameter.Apply(sql);
