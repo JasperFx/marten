@@ -1,36 +1,60 @@
 # Deleting Documents
 
-## Delete by Id or by Document
-
 You can register document deletions with an active `IDocumentSession` by either the document itself or just by the document id to avoid having to fetch
-a document from the database just to turn around and delete it. Deletions are executed within the single database transaction when you call
-`IDocumentSession.SaveChanges()`.
+a document from the database just to turn around and delete it. Keep in mind that using any of the methods
+around deleting a document or specifying a criteria for deleting documents in an `IDocumentSession`,
+you're really just queueing up a pending operation to the current `IDocumentSession` that is executed
+in a single database transaction by calling the `IDocumentSession.SaveChanges()/SaveChangesAsync()` method.
 
-The usage is shown below:
+As explained later in this page, Marten supports both "hard" deletes where the underlying database row is permanently deleted
+and "soft" deletes where the underlying database row is just marked as deleted with a timestamp.
 
-<!-- snippet: sample_deletes -->
-<a id='snippet-sample_deletes'></a>
+ 
+
+## Delete a Single Document by Id
+
+A single document can be deleted by either telling Marten the identity and the document type
+as shown below:
+
+<!-- snippet: sample_delete_by_document_id -->
+<a id='snippet-sample_delete_by_document_id'></a>
 ```cs
-public void delete_documents(IDocumentSession session)
+internal Task DeleteByDocumentId(IDocumentSession session, Guid userId)
 {
-    var user = new User();
+    // Tell Marten the type and identity of a document to
+    // delete
+    session.Delete<User>(userId);
 
-    session.Delete(user);
-    session.SaveChanges();
-
-    // OR
-
-    session.Delete(user.Id);
-    session.SaveChanges();
+    return session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L7-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_by_document_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+
+## Delete by Document
+
+If you already have a document in memory and determine that you want that document to be 
+deleted, you can pass that document directly to `IDocumentSession.Delete<T>(T document)` as 
+shown below:
+
+<!-- snippet: sample_delete_by_document -->
+<a id='snippet-sample_delete_by_document'></a>
+```cs
+public Task DeleteByDocument(IDocumentSession session, User user)
+{
+    session.Delete(user);
+    return session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L69-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_by_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 
 ## Delete by Criteria
 
-New for Marten v0.8 is the ability to delete any documents of a certain type meeting a Linq expression using the new `IDocumentSession.DeleteWhere<T>()` method:
+Marten also provides the ability to delete any documents of a certain type meeting a Linq expression using the `IDocumentSession.DeleteWhere<T>()` method:
 
 <!-- snippet: sample_DeleteWhere -->
 <a id='snippet-sample_deletewhere'></a>
@@ -84,6 +108,49 @@ DocumentStore.For(_ =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L56-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft-delete-configuration-via-fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+With Marten v4.0, you can also opt into soft-deleted mechanics by having your document type implement the Marten `ISoftDeleted`
+interface as shown below:
+
+<!-- snippet: sample_implementing_ISoftDeleted -->
+<a id='snippet-sample_implementing_isoftdeleted'></a>
+```cs
+public class MySoftDeletedDoc: ISoftDeleted
+{
+    // Always have to have an identity of some sort
+    public Guid Id { get; set; }
+
+    // Is the document deleted? From ISoftDeleted
+    public bool Deleted { get; set; }
+
+    // When was the document deleted? From ISoftDeleted
+    public DateTimeOffset? DeletedAt { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L126-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_isoftdeleted' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+More on `ISoftDeleted` in a later section on exposing soft-deleted metadata directly
+on documents.
+
+Also starting in Marten v4.0, you can also say globally that you want all document types
+to be soft-deleted unless explicitly configured otherwise like this:
+
+<!-- snippet: sample_AllDocumentTypesShouldBeSoftDeleted -->
+<a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
+```cs
+internal void AllDocumentTypesShouldBeSoftDeleted()
+{
+    using var store = DocumentStore.For(opts =>
+    {
+        opts.Connection("some connection string");
+        opts.Policies.AllDocumentsSoftDeleted();
+    });
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 ### Querying a "Soft Deleted" Document Type
 
@@ -209,7 +276,7 @@ public void query_is_soft_deleted_docs()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L347-L377' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Fetching Documents Deleted before or after a specific time
+### Fetching Documents Deleted Before or After a Specific Time
 
 To search for documents that have been deleted before a specific time use Marten's `DeletedBefore(DateTimeOffset)` method
 and the counterpart `DeletedSince(DateTimeOffset)` as show below:
@@ -245,18 +312,125 @@ public void query_is_soft_deleted_since_docs()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L379-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-_Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_
+_Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:
+
+<!-- snippet: sample_AllDocumentTypesShouldBeSoftDeleted -->
+<a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
+```cs
+internal void AllDocumentTypesShouldBeSoftDeleted()
+{
+    using var store = DocumentStore.For(opts =>
+    {
+        opts.Connection("some connection string");
+        opts.Policies.AllDocumentsSoftDeleted();
+    });
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 
-### Un-Delete Documents
+### Undoing Soft-Deleted Documents
 
-TODO
+New in Marten v4.0 is a mechanism to mark any soft-deleted documents matching a supplied criteria
+as not being deleted. The only usage so far is using a Linq expression as shown below:
 
-### Explicit Hard Delete
+<!-- snippet: sample_UndoDeletion -->
+<a id='snippet-sample_undodeletion'></a>
+```cs
+internal Task UndoDeletion(IDocumentSession session, Guid userId)
+{
+    // Tell Marten the type and identity of a document to
+    // delete
+    session.UndoDeleteWhere<User>(x => x.Id == userId);
 
-TODO
+    return session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_undodeletion' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-### Deletion Status on Documents
+### Explicit Hard Deletes
 
-TODO
+New in v4.0 is the ability to force Marten to perform hard deletes even on document types
+that are normally soft-deleted:
+
+<!-- snippet: sample_HardDeletes -->
+<a id='snippet-sample_harddeletes'></a>
+```cs
+internal void ExplicitlyHardDelete(IDocumentSession session, User document)
+{
+    // By document
+    session.HardDelete(document);
+
+    // By type and identity
+    session.HardDelete<User>(document.Id);
+
+    // By type and criteria
+    session.HardDeleteWhere<User>(x => x.Roles.Contains("admin"));
+
+    // And you still have to call SaveChanges()/SaveChangesAsync()
+    // to actually perform the operations
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_harddeletes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Deletion Metadata on Documents
+
+The easiest way to expose the metadata about whether or not a document is deleted
+and when it was deleted is to implement the `ISoftDeleted` interface as shown
+in this sample document:
+
+sample_implementing_ISoftDeleted
+
+Implementing `ISoftDeleted` on your document means that:
+
+* The `IsDeleted` and `DeletedAt` properties will reflect the database state any time
+  you load a document of a type that is configured as soft-deleted
+* Those same properties will be updated when you delete a document that is in memory
+  if you call `IDocumentSession.Delete<T>(T document)`
+
+Any document type that implements `ISoftDeleted` will automatically be configured as
+soft-deleted by Marten when a `DocumentStore` is initialized. 
+
+Now, if you don't want to couple your document types to Marten by implementing that interface,
+you're still in business. Let's say you have this document type:
+
+<!-- snippet: sample_ASoftDeletedDoc -->
+<a id='snippet-sample_asoftdeleteddoc'></a>
+```cs
+public class ASoftDeletedDoc
+{
+    // Always have to have an identity of some sort
+    public Guid Id { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTimeOffset? DeletedWhen { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L142-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asoftdeleteddoc' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can manually -- and independently -- map the `IsDeleted` and `DeletedWhen` properties
+on your document type to the Marten metadata like this:
+
+<!-- snippet: sample_manually_wire_soft_deleted_metadata -->
+<a id='snippet-sample_manually_wire_soft_deleted_metadata'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    opts.Schema.For<ASoftDeletedDoc>().Metadata(m =>
+    {
+        m.IsSoftDeleted.MapTo(x => x.IsDeleted);
+        m.SoftDeletedAt.MapTo(x => x.DeletedWhen);
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L20-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_manually_wire_soft_deleted_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
