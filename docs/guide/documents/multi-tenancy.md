@@ -14,6 +14,28 @@ The following sample demonstrates scoping a document session to tenancy idenfiti
 <a id='snippet-sample_tenancy-scoping-session-write'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
+using (var session = theStore.OpenSession("tenant1"))
+{
+    session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
+    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
+    session.SaveChanges();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L73-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_tenancy-scoping-session-write-1'></a>
+```cs
+// Write some User documents to tenant "tenant1"
+using (var session = theStore.OpenSession("tenant1"))
+{
+    session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
+    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
+    session.SaveChanges();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L118-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_tenancy-scoping-session-write-2'></a>
+```cs
+// Write some User documents to tenant "tenant1"
 using (var session = store.OpenSession("tenant1"))
 {
     session.Store(new User { UserName = "Bill" });
@@ -21,7 +43,7 @@ using (var session = store.OpenSession("tenant1"))
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L33-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L33-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As with storing, the load operations respect tenancy of the session.
