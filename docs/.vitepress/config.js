@@ -71,13 +71,13 @@ module.exports = {
                 {text: 'Load Documents by Id', link: '/guide/documents/querying/byid'},
                 {text: 'Querying with Linq', link: '/guide/documents/querying/linq'},
                 {text: 'Querying with Postgres SQL', link: '/guide/documents/querying/sql'},
-                {text: 'Query for Raw JSON', link: '/guide/documents/querying/query-json'},
+                {text: 'Retrieving or Streaming JSON', link: '/guide/documents/querying/query-json'},
                 {text: 'Including Related Documents', link: '/guide/documents/querying/include'},
                 {text: 'Compiled Queries', link: '/guide/documents/querying/compiled-queries'},
                 {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'},
                 {text: 'Metadata Queries', link: '/guide/documents/querying/metadata-queries'},
                 {text: 'Paging', link: '/guide/documents/querying/paging'},
-                {text: 'Full Text Searching', link: '/guide/documents/querying/paging'}
+                {text: 'Full Text Searching', link: '/guide/documents/querying/full-text'}
             ]
           },
           {

@@ -321,12 +321,17 @@ namespace Marten.Internal.Sessions
             return StreamJson<T>(destination, CancellationToken.None, sql, parameters);
         }
 
-        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token = default, params object[] parameters)
+        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
         {
             assertNotDisposed();
             var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
             var provider = new MartenLinqQueryProvider(this);
             return provider.ExecuteHandlerAsync(handler, token);
+        }
+
+        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters)
+        {
+            return QueryAsync<T>(sql, CancellationToken.None, parameters);
         }
 
         public IBatchedQuery CreateBatchQuery()

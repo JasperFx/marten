@@ -9,9 +9,9 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    public class query_by_sql_where_clause_Tests: IntegrationContext
+    public class query_by_sql: IntegrationContext
     {
-        public query_by_sql_where_clause_Tests(DefaultStoreFixture fixture): base(fixture)
+        public query_by_sql(DefaultStoreFixture fixture): base(fixture)
         {
         }
 
@@ -174,7 +174,7 @@ namespace Marten.Testing.CoreFunctionality
                             new {Name = "Jeremy"})
                         .Single();
 
-                SpecificationExtensions.ShouldNotBeNull(user);
+                user.ShouldNotBeNull();
             }
         }
 
@@ -323,5 +323,41 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
                 user.Id.ShouldBe(u.Id);
             }
         }
+
+        [Fact]
+        public async Task get_sum_of_integers_asynchronously()
+        {
+            theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+            theSession.Store(new Target { Color = Colors.Red, Number = 2 });
+            theSession.Store(new Target { Color = Colors.Green, Number = 3 });
+            theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+
+            await theSession.SaveChangesAsync();
+            var sumResults = await theSession.QueryAsync<int>("select sum(CAST(d.data ->> 'Number' as integer)) as number from mt_doc_target as d");
+            var sum = sumResults.Single();
+            sum.ShouldBe(10);
+        }
+
+        [Fact]
+        public async Task get_count_asynchronously()
+        {
+            var session = theSession;
+            theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+            theSession.Store(new Target { Color = Colors.Red, Number = 2 });
+            theSession.Store(new Target { Color = Colors.Green, Number = 3 });
+            theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+
+            await theSession.SaveChangesAsync();
+
+            #region sample_query_by_full_sql
+
+            var sumResults = await session
+                .QueryAsync<int>("select count(*) from mt_doc_target");
+
+            #endregion
+            var sum = sumResults.Single();
+            sum.ShouldBe(4);
+        }
+
     }
 }
