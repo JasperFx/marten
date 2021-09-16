@@ -40,6 +40,24 @@ namespace Marten.Testing
         }
 
         [Fact]
+        public void add_marten_by_store_options_with_custom_logger()
+        {
+            using (var container = Container.For(x =>
+            {
+                x.AddMarten(provider => {
+                    var options = new StoreOptions();
+                    options.Connection(ConnectionSource.ConnectionString);
+                    options.Logger(new TestOutputMartenLogger(null));
+                    return options;
+                });
+            }))
+            {
+                var store = container.GetRequiredService<IDocumentStore>();
+                store.Options.Logger().ShouldBeOfType<TestOutputMartenLogger>();
+            }
+        }
+
+        [Fact]
         public void add_marten_by_configure_lambda()
         {
             using (var container = Container.For(x =>

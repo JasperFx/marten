@@ -54,8 +54,9 @@ namespace Marten
 
             services.AddSingleton<IDocumentStore>(s =>
             {
-                var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
                 var options = s.GetRequiredService<StoreOptions>();
+                if (options.Logger().GetType() != typeof(NulloMartenLogger)) return new DocumentStore(options);
+                var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
                 options.Logger(new DefaultMartenLogger(logger));
 
                 return new DocumentStore(options);
