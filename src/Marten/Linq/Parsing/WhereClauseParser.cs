@@ -274,7 +274,7 @@ namespace Marten.Linq.Parsing
                 {
                     var flattened = new FlattenerStatement(field, _parent._session, _parent._statement);
                     var idSelectorStatement = new ContainsIdSelectorStatement(flattened, _parent._session, c);
-                    return new WhereCtIdInSubQuery(idSelectorStatement.ExportName);
+                    return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
                 }
 
                 throw new NotSupportedException();
@@ -295,7 +295,7 @@ namespace Marten.Linq.Parsing
                     idSelectorStatement.WhereClauses.AddRange(_wheres);
                     idSelectorStatement.CompileLocal(_parent._session);
 
-                    return new WhereCtIdInSubQuery(idSelectorStatement.ExportName);
+                    return new WhereCtIdInSubQuery(idSelectorStatement.ExportName, flattened);
                 }
 
                 return new CollectionIsNotEmpty(field);
