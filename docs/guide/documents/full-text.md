@@ -1,4 +1,4 @@
-# Full Text Indexes
+# Full Text Searching
 
 Full Text Indexes in Marten are built based on [GIN or GiST indexes](/guide/documents/configuration/gin-gist-indexes) utilizing [Postgres built in Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). This enables the possibility to do more sophisticated searching through text fields.
 
@@ -231,4 +231,82 @@ public class BlogPost
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L67-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Text Search
+
+Postgres contains built in [Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define (full text indexes)(/guide/documents/configuration/full_text) and perform queries on them.
+Currently three types of full Text Search functions are supported:
+
+* regular Search (to_tsquery)
+
+<!-- snippet: sample_search_in_query_sample -->
+<a id='snippet-sample_search_in_query_sample'></a>
+```cs
+var posts = session.Query<BlogPost>()
+    .Where(x => x.Search("somefilter"))
+    .ToList();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L235-L239' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+* plain text Search (plainto_tsquery)
+
+<!-- snippet: sample_plain_search_in_query_sample -->
+<a id='snippet-sample_plain_search_in_query_sample'></a>
+```cs
+var posts = session.Query<BlogPost>()
+    .Where(x => x.PlainTextSearch("somefilter"))
+    .ToList();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L262-L266' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plain_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+* phrase Search (phraseto_tsquery)
+
+<!-- snippet: sample_phrase_search_in_query_sample -->
+<a id='snippet-sample_phrase_search_in_query_sample'></a>
+```cs
+var posts = session.Query<BlogPost>()
+    .Where(x => x.PhraseSearch("somefilter"))
+    .ToList();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L289-L293' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_phrase_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+* web-style Search (websearch_to_tsquery, [supported from Postgres 11+](https://www.postgresql.org/docs/11/textsearch-controls.html)
+
+<!-- snippet: sample_web_search_in_query_sample -->
+<a id='snippet-sample_web_search_in_query_sample'></a>
+```cs
+var posts = session.Query<BlogPost>()
+    .Where(x => x.WebStyleSearch("somefilter"))
+    .ToList();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L316-L320' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_web_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+All types of Text Searches can be combined with other Linq queries
+
+<!-- snippet: sample_text_search_combined_with_other_query_sample -->
+<a id='snippet-sample_text_search_combined_with_other_query_sample'></a>
+```cs
+var posts = session.Query<BlogPost>()
+    .Where(x => x.Category == "LifeStyle")
+    .Where(x => x.PhraseSearch("somefilter"))
+    .ToList();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L344-L349' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_combined_with_other_query_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+They allow also to specify language (regConfig) of the text search query (by default `english` is being used)
+
+<!-- snippet: sample_text_search_with_non_default_regConfig_sample -->
+<a id='snippet-sample_text_search_with_non_default_regconfig_sample'></a>
+```cs
+var posts = session.Query<BlogPost>()
+    .Where(x => x.PhraseSearch("somefilter", "italian"))
+    .ToList();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/full_text_index.cs#L372-L376' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

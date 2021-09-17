@@ -76,8 +76,8 @@ module.exports = {
                 {text: 'Compiled Queries', link: '/guide/documents/querying/compiled-queries'},
                 {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'},
                 {text: 'Metadata Queries', link: '/guide/documents/querying/metadata-queries'},
-                {text: 'Paging', link: '/guide/documents/querying/paging'},
-                {text: 'Full Text Searching', link: '/guide/documents/querying/full-text'}
+                {text: 'Paging', link: '/guide/documents/querying/paging'}
+
             ]
           },
           {
@@ -88,7 +88,6 @@ module.exports = {
                 {text: 'Duplicated Fields', link: '/guide/documents/indexing/duplicated-fields'},
                 {text: 'Unique Indexes', link: '/guide/documents/indexing/unique'},
                 {text: 'Foreign Keys', link: '/guide/documents/indexing/foreign-keys'},
-                {text: 'Full Text Indexes', link: '/guide/documents/indexing/full-text'},
                 {text: 'GIN or GiST Indexes', link: '/guide/documents/indexing/gin-gist-indexes'},
                 {text: 'Metadata Indexes', link: '/guide/documents/indexing/metadata-indexes'}
             ]
@@ -97,6 +96,7 @@ module.exports = {
           {text:'Multi-Tenanted Documents', link: '/guide/documents/multi-tenancy'},
           {text: 'Initial Baseline Data', link: '/guide/documents/initial-data'},
           {text: 'Optimistic Concurrency', link: '/guide/documents/concurrency'},
+          {text: 'Full Text Searching', link: '/guide/documents/full-text'},
           {text: 'Noda Time Support', link: '/guide/documents/noda-time'},
           {text: 'PLv8 Support', link: '/guide/documents/plv8'}
         ]
