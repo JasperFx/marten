@@ -57,7 +57,22 @@ namespace Marten.Linq.SqlGeneration
             {
                 var fragments = whereFragments().ToList();
                 var subQueries = fragments.OfType<WhereCtIdInSubQuery>().ToArray();
-                fragments.RemoveAll(x => x is WhereCtIdInSubQuery);
+                // TODO -- combine the sub queries here if it's the same collection!!!
+
+                if (subQueries.Length == 1)
+                {
+                    // Need to set the remaining Where filters on DocumentStatement
+                    Where = subQueries.CombineFragments();
+
+                    fragments.RemoveAll(x => x is WhereCtIdInSubQuery);
+
+                    var topLevelWhere = fragments.CombineFragments();
+                    foreach (var subQuery in subQueries)
+                    {
+                        subQuery.Flattener.Where = topLevelWhere;
+                    }
+                }
+
 
             }
         }
@@ -66,6 +81,7 @@ namespace Marten.Linq.SqlGeneration
         private IEnumerable<ISqlFragment> whereFragments()
         {
             if (Where == null) yield break;
+
             if (Where is CompoundWhereFragment c)
             {
                 foreach (var fragment in c.Children)
@@ -73,8 +89,10 @@ namespace Marten.Linq.SqlGeneration
                     yield return fragment;
                 }
             }
-
-            yield return Where;
+            else
+            {
+                yield return Where;
+            }
         }
 
         public override SelectorStatement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)
