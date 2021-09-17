@@ -138,6 +138,8 @@ namespace Marten.Linq.SqlGeneration
         {
             // Where clauses are pre-built in the case of includes
             Where ??= buildWhereFragment(session);
+
+
         }
 
 

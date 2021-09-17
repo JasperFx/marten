@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal;
 using Marten.Internal.Storage;
@@ -16,6 +18,7 @@ namespace Marten.Linq.SqlGeneration
 
         public IDocumentStorage Storage { get; }
 
+        // TODO -- return IEnumerable<ISqlFragment> instead
         protected override ISqlFragment buildWhereFragment(IMartenSession session)
         {
             if (WhereClauses.Count == 0)
@@ -45,6 +48,33 @@ namespace Marten.Linq.SqlGeneration
             }
 
             return Storage.FilterDocuments(null, where);
+        }
+
+        public override void CompileLocal(IMartenSession session)
+        {
+            base.CompileLocal(session);
+            if (whereFragments().OfType<WhereCtIdInSubQuery>().Any())
+            {
+                var fragments = whereFragments().ToList();
+                var subQueries = fragments.OfType<WhereCtIdInSubQuery>().ToArray();
+                fragments.RemoveAll(x => x is WhereCtIdInSubQuery);
+
+            }
+        }
+
+        [Obsolete("return an enumeration instead")]
+        private IEnumerable<ISqlFragment> whereFragments()
+        {
+            if (Where == null) yield break;
+            if (Where is CompoundWhereFragment c)
+            {
+                foreach (var fragment in c.Children)
+                {
+                    yield return fragment;
+                }
+            }
+
+            yield return Where;
         }
 
         public override SelectorStatement UseAsEndOfTempTableAndClone(IncludeIdentitySelectorStatement includeIdentitySelectorStatement)

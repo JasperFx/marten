@@ -34,11 +34,17 @@ namespace Marten.Linq.SqlGeneration
         }
     }
 
-    public class WhereCtIdInSubQuery : ISqlFragment
+    internal class WhereCtIdInSubQuery : ISqlFragment
     {
         private readonly string _tableName;
 
-        public WhereCtIdInSubQuery(string tableName) => this._tableName = tableName;
+        internal WhereCtIdInSubQuery(string tableName, FlattenerStatement flattenerStatement)
+        {
+            _tableName = tableName;
+            Flattener = flattenerStatement;
+        }
+
+        public FlattenerStatement Flattener { get; }
 
         public void Apply(CommandBuilder builder)
         {
