@@ -8,6 +8,7 @@ using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
@@ -74,6 +75,8 @@ namespace Marten.Testing.Linq
     [ControlledQueryStoryteller]
     public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
+
         private static readonly TypeWithInnerCollectionsWithJsonConverterAttribute[] TestData = new TypeWithInnerCollectionsWithJsonConverterAttribute[]
         {
             TypeWithInnerCollectionsWithJsonConverterAttribute.Create("one", "two"),
@@ -103,28 +106,26 @@ namespace Marten.Testing.Linq
         {
             SetupTestData();
 
-            using (var query = theStore.QuerySession())
-            {
-                var results = await query.Query<TypeWithInnerCollectionsWithJsonConverterAttribute>()
-                    .Where(predicate)
-                    .ToListAsync();
+            using var query = theStore.QuerySession();
+            query.Logger = new TestOutputMartenLogger(_output);
+            var results = await query.Query<TypeWithInnerCollectionsWithJsonConverterAttribute>()
+                .Where(predicate)
+                .ToListAsync();
 
-                results.Count.ShouldBe(2);
-                results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
-            }
+            results.Count.ShouldBe(2);
+            results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
         }
 
         private void SetupTestData()
         {
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(TestData);
-                session.SaveChanges();
-            }
+            using var session = theStore.OpenSession();
+            session.Store(TestData);
+            session.SaveChanges();
         }
 
-        public query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty(DefaultStoreFixture fixture) : base(fixture)
+        public query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
         }
     }
 }
