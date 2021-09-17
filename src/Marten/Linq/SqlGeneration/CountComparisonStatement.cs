@@ -14,14 +14,17 @@ namespace Marten.Linq.SqlGeneration
     internal class CountComparisonStatement: JsonStatement, IComparableFragment
     {
         private readonly string _tableName;
+        private readonly FlattenerStatement _flattened;
 
         public CountComparisonStatement(IMartenSession session, Type documentType, IFieldMapping fields,
-            Statement parent): base(documentType, fields, parent)
+            FlattenerStatement parent): base(documentType, fields, parent)
         {
             ConvertToCommonTableExpression(session);
             parent.InsertAfter(this);
 
             _tableName = parent.ExportName;
+
+            _flattened = parent;
         }
 
         protected override bool IsSubQuery => true;
@@ -34,7 +37,7 @@ namespace Marten.Linq.SqlGeneration
         {
             Value = new CommandParameter(value);
             Operator = op;
-            return new WhereCtIdInSubQuery(ExportName);
+            return new WhereCtIdInSubQuery(ExportName, _flattened);
         }
 
         protected override void configure(CommandBuilder sql)
