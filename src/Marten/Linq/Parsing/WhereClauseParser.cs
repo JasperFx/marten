@@ -134,12 +134,25 @@ namespace Marten.Linq.Parsing
             if (node.NodeType == ExpressionType.Not)
             {
                 var original = _holder;
-                _holder = new NotWhereFragment(original);
-                var returnValue = Visit(node.Operand);
 
-                _holder = original;
+                if (original is IReversibleWhereFragment r)
+                {
+                    _holder.Register(r.Reverse());
+                    return Visit(node.Operand);
+                }
+                else
+                {
+                    _holder = new NotWhereFragment(original);
+                    var returnValue = Visit(node.Operand);
 
-                return returnValue;
+                    _holder = original;
+
+                    return returnValue;
+                }
+
+
+
+
             }
 
             return base.VisitUnary(node);
