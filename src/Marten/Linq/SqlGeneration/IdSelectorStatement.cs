@@ -34,7 +34,7 @@ namespace Marten.Linq.SqlGeneration
         }
     }
 
-    internal class WhereCtIdInSubQuery : ISqlFragment
+    internal class WhereCtIdInSubQuery : ISqlFragment, IReversibleWhereFragment
     {
         private readonly string _tableName;
 
@@ -48,11 +48,31 @@ namespace Marten.Linq.SqlGeneration
 
         public void Apply(CommandBuilder builder)
         {
+            if (Not)
+            {
+                builder.Append("NOT(");
+            }
+
             builder.Append("ctid in (select ctid from ");
             builder.Append(this._tableName);
             builder.Append(")");
+
+            if (Not)
+            {
+                builder.Append(")");
+            }
         }
 
         public bool Contains(string sqlText) => false;
+        public ISqlFragment Reverse()
+        {
+            Not = !Not;
+            return this;
+        }
+
+        /// <summary>
+        /// Psych! Should there be a NOT in front of the sub query
+        /// </summary>
+        public bool Not { get; set; }
     }
 }
