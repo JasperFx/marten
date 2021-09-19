@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
@@ -42,8 +43,6 @@ namespace Marten.Internal.CompiledQueries
 
         public void TryMatch(NpgsqlCommand command, StoreOptions storeOptions)
         {
-            ParameterIndex = -1;
-
             if (Type.IsEnum)
             {
                 var parameterValue = storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger
@@ -76,14 +75,14 @@ namespace Marten.Internal.CompiledQueries
 
         private bool tryToFind(NpgsqlCommand command, object value)
         {
-            var parameter = command.Parameters.FirstOrDefault(x => value.Equals(x.Value));
-            if (parameter != null)
+            var parameters = command.Parameters.Where(x => value.Equals(x.Value));
+            foreach (var parameter in parameters)
             {
-                ParameterIndex = command.Parameters.IndexOf(parameter);
-                return true;
+                var index = command.Parameters.IndexOf(parameter);
+                ParameterIndexes.Add(index);
             }
 
-            return false;
+            return ParameterIndexes.Any();
         }
 
         public string Mask { get; set; }
@@ -104,26 +103,13 @@ namespace Marten.Internal.CompiledQueries
 
         public MemberInfo Member { get; }
 
-        public int ParameterIndex { get; set; }
+        public IList<int> ParameterIndexes { get; } = new List<int>();
 
         public void GenerateCode(GeneratedMethod method, StoreOptions storeOptions)
         {
             if (Type.IsEnum)
             {
-                if (storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger)
-                {
-                    method.Frames.Code($@"
-parameters[{ParameterIndex}].NpgsqlDbType = {{0}};
-parameters[{ParameterIndex}].Value = (int)_query.{Member.Name};
-", NpgsqlDbType.Integer);
-                }
-                else
-                {
-                    method.Frames.Code($@"
-parameters[{ParameterIndex}].NpgsqlDbType = {{0}};
-parameters[{ParameterIndex}].Value = _query.{Member.Name}.ToString();
-", NpgsqlDbType.Varchar);
-                }
+                generateEnumSetter(method, storeOptions);
             }
             else if (Mask == null)
             {
@@ -137,22 +123,49 @@ parameters[{ParameterIndex}].Value = _query.{Member.Name}.ToString();
 
         }
 
+        private void generateEnumSetter(GeneratedMethod method, StoreOptions storeOptions)
+        {
+            foreach (var index in ParameterIndexes)
+            {
+                if (storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger)
+                {
+                    method.Frames.Code($@"
+parameters[{index}].NpgsqlDbType = {{0}};
+parameters[{index}].Value = (int)_query.{Member.Name};
+", NpgsqlDbType.Integer);
+                }
+                else
+                {
+                    method.Frames.Code($@"
+parameters[{index}].NpgsqlDbType = {{0}};
+parameters[{index}].Value = _query.{Member.Name}.ToString();
+", NpgsqlDbType.Varchar);
+                }
+            }
+        }
+
         private void generateMaskedStringCode(GeneratedMethod method)
         {
             var maskedValue = Mask.ToFormat($"_query.{Member.Name}");
 
-            method.Frames.Code($@"
-parameters[{ParameterIndex}].NpgsqlDbType = {{0}};
-parameters[{ParameterIndex}].Value = {maskedValue};
+            foreach (var index in ParameterIndexes)
+            {
+                method.Frames.Code($@"
+parameters[{index}].NpgsqlDbType = {{0}};
+parameters[{index}].Value = {maskedValue};
 ", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
+            }
         }
 
         private void generateBasicSetter(GeneratedMethod method)
         {
-            method.Frames.Code($@"
-parameters[{ParameterIndex}].NpgsqlDbType = {{0}};
-parameters[{ParameterIndex}].Value = _query.{Member.Name};
+            foreach (var index in ParameterIndexes)
+            {
+                method.Frames.Code($@"
+parameters[{index}].NpgsqlDbType = {{0}};
+parameters[{index}].Value = _query.{Member.Name};
 ", PostgresqlProvider.Instance.ToParameterType(Member.GetMemberType()));
+            }
         }
     }
 }

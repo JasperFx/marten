@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using LamarCodeGeneration;
 using Npgsql;
@@ -11,7 +12,7 @@ namespace Marten.Internal.CompiledQueries
         bool CanWrite();
 
         MemberInfo Member { get; }
-        int ParameterIndex { get; set; }
+        IList<int> ParameterIndexes { get; }
         void GenerateCode(GeneratedMethod method, StoreOptions storeOptions);
         void StoreValue(object query);
         void TryMatch(NpgsqlCommand command, StoreOptions storeOptions);
