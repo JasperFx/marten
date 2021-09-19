@@ -8,7 +8,6 @@ using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema.Arguments;
 using Marten.Util;
 using Npgsql;
 
@@ -93,7 +92,7 @@ namespace Marten.Internal.CompiledQueries
         {
             var text = Command.CommandText;
 
-            for (var i = 0; i < Command.Parameters.Count; i++)
+            for (var i = Command.Parameters.Count - 1; i >= 0 ; i--)
             {
                 text = text.Replace(":p" + i, "?");
             }
@@ -153,7 +152,6 @@ namespace Marten.Internal.CompiledQueries
                 .FirstOrDefault();
 
 
-
             if (constructor == null)
             {
                 throw new InvalidOperationException("Cannot find a suitable constructor for query planning for type " + type.FullNameInCode());
@@ -191,11 +189,13 @@ namespace Marten.Internal.CompiledQueries
                 parameter.TryMatch(command, storeOptions);
             }
 
-            var missing = Parameters.Where(x => x.ParameterIndex < 0);
+            var missing = Parameters.Where(x => !x.ParameterIndexes.Any());
             if (missing.Any())
             {
                 throw new  InvalidCompiledQueryException($"Unable to match compiled query member(s) {missing.Select(x => x.Member.Name).Join(", ")} with a command parameter");
             }
         }
+
+
     }
 }

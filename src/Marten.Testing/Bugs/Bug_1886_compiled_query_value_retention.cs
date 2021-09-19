@@ -54,7 +54,7 @@ namespace Marten.Testing.Bugs
                         {
                             NormalizedName = "ADMIN",
                         });
-                Assert.NotNull(foundUser);
+                foundUser.ShouldNotBeNull();
             }
 
             var session2 = theStore.QuerySession();
@@ -66,7 +66,7 @@ namespace Marten.Testing.Bugs
                         {
                             NormalizedName = "TEST@EXAMPLE.COM",
                         });
-                Assert.NotNull(foundUser);
+                foundUser.ShouldNotBeNull();
             }
         }
     }

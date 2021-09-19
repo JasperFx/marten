@@ -13,7 +13,7 @@ namespace Marten.Internal.CompiledQueries
         {
             for (int i = 0; i < plan.Command.Parameters.Count; i++)
             {
-                if (plan.Parameters.All(x => x.ParameterIndex != i))
+                if (plan.Parameters.All(x => !x.ParameterIndexes.Contains(i)))
                 {
                     Record(i, plan.Command.Parameters[i]);
                 }
