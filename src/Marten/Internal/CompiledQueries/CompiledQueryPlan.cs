@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Baseline;
+using Baseline.Reflection;
 using LamarCodeGeneration;
+using Marten.Events.CodeGeneration;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
@@ -69,12 +71,12 @@ namespace Marten.Internal.CompiledQueries
 
         private IEnumerable<MemberInfo> findMembers()
         {
-            foreach (var field in QueryType.GetFields(BindingFlags.Instance | BindingFlags.Public))
+            foreach (var field in QueryType.GetFields(BindingFlags.Instance | BindingFlags.Public).Where(x => !x.HasAttribute<MartenIgnoreAttribute>()))
             {
                 yield return field;
             }
 
-            foreach (var property in QueryType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+            foreach (var property in QueryType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => !x.HasAttribute<MartenIgnoreAttribute>()))
             {
                 yield return property;
             }
@@ -125,7 +127,7 @@ namespace Marten.Internal.CompiledQueries
                 parameter.StoreValue(query);
             }
 
-            if (AreAllMemberValuesUnique(query))
+            if (!(query is IQueryPlanning) && AreAllMemberValuesUnique(query))
             {
                 return query;
             }
@@ -161,6 +163,14 @@ namespace Marten.Internal.CompiledQueries
 
             var ctorArgs = valueSource.ArgsFor(constructor);
             var query = Activator.CreateInstance(type, ctorArgs);
+            if (query is IQueryPlanning planning)
+            {
+                planning.SetUniqueValuesForQueryPlanning();
+                foreach (var member in Parameters)
+                {
+                    member.StoreValue(query);
+                }
+            }
 
             if (AreAllMemberValuesUnique(query))
             {

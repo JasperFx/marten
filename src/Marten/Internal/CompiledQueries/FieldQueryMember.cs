@@ -25,5 +25,10 @@ namespace Marten.Internal.CompiledQueries
         {
             return _field.IsPublic;
         }
+
+        public override string ToString()
+        {
+            return $"Field: {_field}";
+        }
     }
 }

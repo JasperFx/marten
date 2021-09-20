@@ -5,6 +5,17 @@ using System.Linq.Expressions;
 #nullable enable
 namespace Marten.Linq
 {
+
+    /// <summary>
+    /// To "help" out the compiled query planning, you may need to implement this interface
+    /// to create meaningful, unique values for each query parameter. NOTE: a value for Take()
+    /// and Skip() must be greater than zero for query planning to work!
+    /// </summary>
+    public interface IQueryPlanning
+    {
+        void SetUniqueValuesForQueryPlanning();
+    }
+
     /// <summary>
     /// Used to express a query expression that when used will be cached by class type implementing this interface
     /// </summary>

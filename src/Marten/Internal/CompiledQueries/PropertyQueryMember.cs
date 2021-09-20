@@ -25,5 +25,10 @@ namespace Marten.Internal.CompiledQueries
         {
             _property.SetValue(query, value);
         }
+
+        public override string ToString()
+        {
+            return $"Property: {_property}";
+        }
     }
 }
