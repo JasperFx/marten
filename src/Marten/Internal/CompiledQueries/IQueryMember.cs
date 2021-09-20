@@ -15,7 +15,7 @@ namespace Marten.Internal.CompiledQueries
         IList<int> ParameterIndexes { get; }
         void GenerateCode(GeneratedMethod method, StoreOptions storeOptions);
         void StoreValue(object query);
-        void TryMatch(NpgsqlCommand command, StoreOptions storeOptions);
+        void TryMatch(List<NpgsqlParameter> parameters, StoreOptions storeOptions);
         void TryWriteValue(UniqueValueSource valueSource, object query);
         object GetValueAsObject(object query);
     }

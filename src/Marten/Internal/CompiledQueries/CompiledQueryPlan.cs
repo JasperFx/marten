@@ -10,8 +10,11 @@ using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
+using Marten.Schema;
+using Marten.Schema.Arguments;
 using Marten.Util;
 using Npgsql;
+using CommandExtensions = Weasel.Core.CommandExtensions;
 
 namespace Marten.Internal.CompiledQueries
 {
@@ -96,7 +99,10 @@ namespace Marten.Internal.CompiledQueries
 
             for (var i = Command.Parameters.Count - 1; i >= 0 ; i--)
             {
-                text = text.Replace(":p" + i, "?");
+                var parameterName = Command.Parameters[i].ParameterName;
+                if (parameterName == TenantIdArgument.ArgName) continue;
+
+                text = text.Replace(":" + parameterName, "?");
             }
 
             return text;
@@ -194,9 +200,11 @@ namespace Marten.Internal.CompiledQueries
         {
             Command = command;
 
+            var parameters = command.Parameters.ToList();
+            parameters.RemoveAll(x => x.ParameterName == TenantIdArgument.ArgName);
             foreach (var parameter in Parameters)
             {
-                parameter.TryMatch(command, storeOptions);
+                parameter.TryMatch(parameters, storeOptions);
             }
 
             var missing = Parameters.Where(x => !x.ParameterIndexes.Any());

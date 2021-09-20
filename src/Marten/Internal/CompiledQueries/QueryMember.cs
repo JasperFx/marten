@@ -33,6 +33,8 @@ namespace Marten.Internal.CompiledQueries
             return GetValue(query);
         }
 
+
+
         public abstract T GetValue(object query);
         public abstract void SetValue(object query, T value);
 
@@ -41,7 +43,7 @@ namespace Marten.Internal.CompiledQueries
             Value = GetValue(query);
         }
 
-        public void TryMatch(NpgsqlCommand command, StoreOptions storeOptions)
+        public void TryMatch(List<NpgsqlParameter> parameters, StoreOptions storeOptions)
         {
             if (Type.IsEnum)
             {
@@ -49,22 +51,22 @@ namespace Marten.Internal.CompiledQueries
                     ? Value.As<int>()
                     : (object)Value.ToString();
 
-                tryToFind(command, parameterValue);
+                tryToFind(parameters, parameterValue);
             }
 
             // These methods are on the ClonedCompiledQuery base class, and are
             // used to set the right parameters
-            if (!tryToFind(command, Value) && Type == typeof(string))
+            if (!tryToFind(parameters, Value) && Type == typeof(string))
             {
-                if (tryToFind(command, $"%{Value}"))
+                if (tryToFind(parameters, $"%{Value}"))
                 {
                     Mask = "StartsWith({0})";
                 }
-                else if (tryToFind(command, $"%{Value}%"))
+                else if (tryToFind(parameters, $"%{Value}%"))
                 {
                     Mask = "ContainsString({0})";
                 }
-                else if (tryToFind(command, $"{Value}%"))
+                else if (tryToFind(parameters, $"{Value}%"))
                 {
                     Mask = "EndsWith({0})";
                 }
@@ -73,12 +75,12 @@ namespace Marten.Internal.CompiledQueries
 
         }
 
-        private bool tryToFind(NpgsqlCommand command, object value)
+        private bool tryToFind(List<NpgsqlParameter> parameters, object value)
         {
-            var parameters = command.Parameters.Where(x => value.Equals(x.Value));
-            foreach (var parameter in parameters)
+            var matching = parameters.Where(x => value.Equals(x.Value));
+            foreach (var parameter in matching)
             {
-                var index = command.Parameters.IndexOf(parameter);
+                var index = parameters.IndexOf(parameter);
                 ParameterIndexes.Add(index);
             }
 

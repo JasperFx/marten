@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Baseline;
 using Marten.Schema.Arguments;
 using Npgsql;
 
@@ -11,14 +12,24 @@ namespace Marten.Internal.CompiledQueries
 
         public HardCodedParameters(CompiledQueryPlan plan)
         {
-            for (int i = 0; i < plan.Command.Parameters.Count; i++)
+            var parameters = plan.Command.Parameters;
+            HasTenantId = parameters.Any(x => x.ParameterName == TenantIdArgument.ArgName);
+            if (HasTenantId)
+            {
+                parameters.RemoveAll(x => x.ParameterName == TenantIdArgument.ArgName);
+            }
+
+
+            for (int i = 0; i < parameters.Count; i++)
             {
                 if (plan.Parameters.All(x => !x.ParameterIndexes.Contains(i)))
                 {
-                    Record(i, plan.Command.Parameters[i]);
+                    Record(i, parameters[i]);
                 }
             }
         }
+
+        public bool HasTenantId { get; private set; }
 
         public bool HasAny()
         {
@@ -27,20 +38,8 @@ namespace Marten.Internal.CompiledQueries
 
         public void Record(int index, NpgsqlParameter parameter)
         {
-            // Ignore :tenantid
-            if (parameter.ParameterName == TenantIdArgument.ArgName)
-            {
-                HasTenantId = true;
-                return;
-            }
-
-            // May need to skip tenantid
-            var i = HasTenantId ? index - 1 : index;
-
-            _parameters[i] = parameter;
+            _parameters[index] = parameter;
         }
-
-        public bool HasTenantId { get; private set; }
 
         public void Apply(NpgsqlParameter[] parameters)
         {

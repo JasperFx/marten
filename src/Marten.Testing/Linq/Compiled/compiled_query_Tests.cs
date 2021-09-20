@@ -11,6 +11,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq.Compiled
 {
@@ -341,6 +342,52 @@ namespace Marten.Testing.Linq.Compiled
             return query =>
                 query.Where(x => FirstName == x.FirstName);
         }
+    }
+
+    [Collection("multi_tenancy")]
+    public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfigurationsContext
+    {
+        private readonly ITestOutputHelper _output;
+
+        public when_compiled_queries_are_used_in_multi_tenancy(ITestOutputHelper output) : base("multi_tenancy")
+        {
+            _output = output;
+        }
+
+        [Fact]
+        public async Task compile_query_honors_the_current_tenant()
+        {
+            StoreOptions(opts => opts.Schema.For<User>().MultiTenanted());
+
+            var hanOne = new User{UserName = "han"};
+            using (var session = theStore.LightweightSession("one"))
+            {
+                session.Store(hanOne);
+                session.Store(new User{UserName = "luke"});
+                session.Store(new User{UserName = "leia"});
+
+                await session.SaveChangesAsync();
+            }
+
+            var hanTwo = new User{UserName = "han"};
+            using (var session = theStore.LightweightSession("two"))
+            {
+
+                session.Store(hanTwo);
+                session.Store(new User{UserName = "luke"});
+                session.Store(new User{UserName = "vader"});
+                session.Store(new User{UserName = "yoda"});
+
+                await session.SaveChangesAsync();
+            }
+
+            using var query = theStore.QuerySession("one");
+            query.Logger = new TestOutputMartenLogger(_output);
+            var user = await query.QueryAsync(new UserByUsernameWithFields {UserName = "han"});
+            user.Id.ShouldBe(hanOne.Id);
+        }
+
+
     }
 
     public class UserProjectionToLoginPayload: ICompiledQuery<User, LoginPayload>
