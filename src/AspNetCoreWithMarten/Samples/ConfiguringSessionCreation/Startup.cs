@@ -76,3 +76,5 @@ namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation
 
     #endregion
 }
+
+

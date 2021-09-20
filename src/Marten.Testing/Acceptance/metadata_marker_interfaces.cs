@@ -15,6 +15,24 @@ namespace Marten.Testing.Acceptance
         {
         }
 
+        internal static void manually_wire_soft_deleted_metadata()
+        {
+            #region sample_manually_wire_soft_deleted_metadata
+
+            using var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("some connection string");
+
+                opts.Schema.For<ASoftDeletedDoc>().Metadata(m =>
+                {
+                    m.IsSoftDeleted.MapTo(x => x.IsDeleted);
+                    m.SoftDeletedAt.MapTo(x => x.DeletedWhen);
+                });
+            });
+
+            #endregion
+        }
+
         [Fact]
         public void implementing_ITenanted_makes_a_document_conjoined_tenanted()
         {
@@ -105,12 +123,37 @@ namespace Marten.Testing.Acceptance
         public Guid Version { get; set; }
     }
 
+    #region sample_implementing_ISoftDeleted
+
     public class MySoftDeletedDoc: ISoftDeleted
     {
+        // Always have to have an identity of some sort
         public Guid Id { get; set; }
+
+        // Is the document deleted? From ISoftDeleted
         public bool Deleted { get; set; }
+
+        // When was the document deleted? From ISoftDeleted
         public DateTimeOffset? DeletedAt { get; set; }
     }
+
+    #endregion
+
+    #region sample_ASoftDeletedDoc
+
+    public class ASoftDeletedDoc
+    {
+        // Always have to have an identity of some sort
+        public Guid Id { get; set; }
+
+        public bool IsDeleted { get; set; }
+
+        public DateTimeOffset? DeletedWhen { get; set; }
+    }
+
+    #endregion
+
+
 
     public class MyTrackedDoc: ITracked
     {

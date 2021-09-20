@@ -1,8 +1,10 @@
 using System;
+using System.Composition.Hosting.Core;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Resiliency;
+using Marten.Events.Projections;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,8 +47,7 @@ namespace Marten
         /// Add Marten IDocumentStore, IDocumentSession, and IQuerySession service registrations
         /// to your application by configuring a StoreOptions using services in your DI container
         /// </summary>
-        /// <param name="services"></param>
-        /// <param name="options">The Marten configuration for this application</param>
+        /// <param name="optionSource">Func that will build out a StoreOptions with the applications IServiceProvider as the input</param>
         /// <returns></returns>
         public static MartenConfigurationExpression AddMarten(this IServiceCollection services, Func<IServiceProvider, StoreOptions> optionSource)
         {
@@ -114,26 +115,22 @@ namespace Marten
             /// Use an alternative strategy / configuration for opening IDocumentSession or IQuerySession
             /// objects in the application with a custom ISessionFactory type registered as a singleton
             /// </summary>
+            /// <param name="lifetime">IoC service lifetime for the session factory. Default is Singleton, but use Scoped if you need to reference per-scope services</param>
             /// <typeparam name="T"></typeparam>
             /// <returns></returns>
-            public MartenConfigurationExpression BuildSessionsWith<T>() where T : class, ISessionFactory
+            public MartenConfigurationExpression BuildSessionsWith<T>(ServiceLifetime lifetime = ServiceLifetime.Singleton ) where T : class, ISessionFactory
             {
-                _services.AddSingleton<ISessionFactory, T>();
+                _services.Add(new ServiceDescriptor(typeof(ISessionFactory), typeof(T), lifetime));
                 return this;
             }
 
             /// <summary>
-            /// Use an alternative strategy / configuration for opening IDocumentSession or IQuerySession
-            /// objects in the application with a custom ISessionFactory type registered as scoped.
-            ///
-            /// Use this overload if the session creation needs to vary by application scope such as
-            /// using a different tenant per HTTP request or if using some kind of scoped logging
+            /// Use lightweight sessions by default for the injected IDocumentSession objects. Equivalent to IDocumentStore.LightweightSession();
             /// </summary>
-            /// <typeparam name="T"></typeparam>
             /// <returns></returns>
-            public MartenConfigurationExpression BuildSessionsPerScopeWith<T>() where T : class, ISessionFactory
+            public MartenConfigurationExpression UseLightweightSessions()
             {
-                _services.AddScoped<ISessionFactory, T>();
+                BuildSessionsWith<LightweightSessionFactory>();
                 return this;
             }
 
@@ -194,6 +191,26 @@ namespace Marten
         public IDocumentSession OpenSession()
         {
             return _store.OpenSession();
+        }
+    }
+
+    internal class LightweightSessionFactory: ISessionFactory
+    {
+        private readonly IDocumentStore _store;
+
+        public LightweightSessionFactory(IDocumentStore store)
+        {
+            _store = store;
+        }
+
+        public IQuerySession QuerySession()
+        {
+            return _store.QuerySession();
+        }
+
+        public IDocumentSession OpenSession()
+        {
+            return _store.LightweightSession();
         }
     }
 }

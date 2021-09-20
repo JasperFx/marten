@@ -494,6 +494,16 @@ namespace Marten
             }
 
             /// <summary>
+            /// Unless explicitly marked otherwise, all documents should
+            /// be soft-deleted
+            /// </summary>
+            /// <returns></returns>
+            public PoliciesExpression AllDocumentsSoftDeleted()
+            {
+                return ForAllDocuments(_ => _.DeleteStyle = DeleteStyle.SoftDelete);
+            }
+
+            /// <summary>
             ///     Turn off the informational metadata columns
             ///     in storage like the last modified, version, and
             ///     dot net type for leaner storage

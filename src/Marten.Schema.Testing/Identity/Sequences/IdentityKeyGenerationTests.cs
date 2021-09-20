@@ -25,6 +25,30 @@ namespace Marten.Schema.Testing.Identity.Sequences
             GetId(users, "User3").ShouldBe("userwithstring/3");
         }
 
+        #region sample_DocumentWithStringId
+
+        public class DocumentWithStringId
+        {
+            public string Id { get; set; }
+        }
+
+        #endregion
+
+        private void sample_usage()
+        {
+            #region sample_using_IdentityKey
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("some connection string");
+                opts.Schema.For<DocumentWithStringId>()
+                    .UseIdentityKey()
+                    .DocumentAlias("doc");
+            });
+
+            #endregion
+        }
+
         private static string GetId(UserWithString[] users, string user1)
         {
             return users.Single(user => user.LastName == user1).Id;

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -9,6 +10,8 @@ namespace Marten.Testing.CoreFunctionality
 {
     public class store_and_bulk_insert_by_mixed_bag_of_document_types_Tests : IntegrationContext
     {
+
+
         [Fact]
         public void store_multiple_types_of_documents_at_one_time()
         {

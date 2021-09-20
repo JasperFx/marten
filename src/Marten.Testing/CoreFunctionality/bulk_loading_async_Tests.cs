@@ -141,6 +141,49 @@ namespace Marten.Testing.CoreFunctionality
                 .ShouldBeTrue();
         }
 
+        internal async Task BulkInsertModeSamples()
+        {
+            #region sample_BulkInsertMode_usages
+
+            // Just say we have an array of documents we want to bulk insert
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            using var store = DocumentStore.For("some connection string");
+
+            // Discard any documents that match the identity of an existing document
+            // in the database
+            await store.BulkInsertDocumentsAsync(data, BulkInsertMode.IgnoreDuplicates);
+
+            // This is the default mode, the bulk insert will fail if any duplicate
+            // identities with existing data or within the data set being loaded are detected
+            await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
+
+            // Overwrite any existing documents with the same identity as the documents
+            // being loaded
+            await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
+
+            #endregion
+        }
+
+        internal async Task MultiTenancySample()
+        {
+            #region sample_MultiTenancyWithBulkInsert
+
+            // Just say we have an array of documents we want to bulk insert
+            var data = Target.GenerateRandomData(100).ToArray();
+
+            using var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("some connection string");
+                opts.Policies.AllDocumentsAreMultiTenanted();
+            });
+
+            // If multi-tenanted
+            await store.BulkInsertDocumentsAsync("a tenant id", data);
+
+            #endregion
+        }
+
         [Fact]
         public async Task load_with_small_batch_and_ignore_duplicates_smoke_test()
         {

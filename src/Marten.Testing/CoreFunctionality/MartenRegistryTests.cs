@@ -134,6 +134,8 @@ namespace Marten.Testing.CoreFunctionality
             public string OtherField { get; set; }
         }
 
+        #region sample_OrganizationRegistry
+
         public class OrganizationRegistry: MartenRegistry
         {
             public OrganizationRegistry()
@@ -143,15 +145,38 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
+        #endregion
+
+        internal static void sample_storeoptions_schema()
+        {
+            #region sample_using_storeoptions_schema
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.Schema.For<Organization>()
+                    .Duplicate(x => x.OtherName);
+
+                opts.Schema
+                    .For<User>().Duplicate(x => x.UserName);
+            });
+
+            #endregion
+        }
+
         [Fact]
         public void using_registry_include()
         {
+            #region sample_including_a_custom_MartenRegistry
+
             var store = DocumentStore.For(opts =>
             {
                 opts.Schema.For<Organization>().Duplicate(x => x.Name);
                 opts.Schema.Include<OrganizationRegistry>();
                 opts.Connection(ConnectionSource.ConnectionString);
             });
+
+            #endregion
 
             var organizations = store
                 .Options.Storage.MappingFor(typeof(Organization));

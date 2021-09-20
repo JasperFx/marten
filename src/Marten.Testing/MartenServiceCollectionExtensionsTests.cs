@@ -1,4 +1,5 @@
 using Lamar;
+using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -107,17 +108,35 @@ namespace Marten.Testing
         [Fact]
         public void can_vary_the_scope_of_the_builder()
         {
-            using (var container = Container.For(x =>
+            using var container = Container.For(x =>
             {
                 x.AddMarten(ConnectionSource.ConnectionString)
-                    .BuildSessionsPerScopeWith<SpecialBuilder>();
-            }))
-            {
-                ShouldHaveAllTheExpectedRegistrations(container);
+                    .BuildSessionsWith<SpecialBuilder>(ServiceLifetime.Scoped);
+            });
 
-                container.Model.For<ISessionFactory>()
-                    .Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
-            }
+            ShouldHaveAllTheExpectedRegistrations(container);
+
+            container.Model.For<ISessionFactory>()
+                .Default.Lifetime.ShouldBe(ServiceLifetime.Scoped);
+        }
+
+
+        [Fact]
+        public void use_lightweight_sessions()
+        {
+            using var container = Container.For(x =>
+            {
+                x.AddMarten(ConnectionSource.ConnectionString)
+                    .UseLightweightSessions();
+            });
+
+            ShouldHaveAllTheExpectedRegistrations(container);
+
+            container.Model.For<ISessionFactory>()
+                .Default.ImplementationType.ShouldBe(typeof(LightweightSessionFactory));
+
+            using var session = container.GetInstance<IDocumentSession>();
+            session.ShouldBeOfType<LightweightSession>();
         }
 
         public class SpecialBuilder: ISessionFactory

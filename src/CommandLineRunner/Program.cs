@@ -16,6 +16,8 @@ using Weasel.Postgresql;
 
 namespace CommandLineRunner
 {
+    #region sample_configuring_pre_build_types
+
     public class Program
     {
         public static Task<int> Main(string[] args)
@@ -34,13 +36,21 @@ namespace CommandLineRunner
                         opts.DatabaseSchemaName = "cli";
                         opts.Connection(ConnectionSource.ConnectionString);
 
+                        // This is important, setting this option tells Marten to
+                        // *try* to use pre-generated code at runtime
                         opts.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly;
 
+                        // You have to register all persisted document types ahead of time
+                        // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
+                        // just to let Marten know that document type exists
                         opts.RegisterDocumentType<Target>();
                         opts.RegisterDocumentType<User>();
 
+                        // If you use compiled queries, you will need to register the
+                        // compiled query types with Marten ahead of time
                         opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
+                        // Register all event store projections ahead of time
                         opts.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
                         opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
                         opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
@@ -52,6 +62,8 @@ namespace CommandLineRunner
                 });
         }
     }
+
+    #endregion
 
     public class SimpleAggregate: AggregateProjection<MyAggregate>
     {

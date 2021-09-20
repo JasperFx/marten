@@ -7,6 +7,9 @@ namespace Marten.Metadata
     /// types to opt into "soft delete" mechanics with the deletion
     /// information tracked directly on the documents
     /// </summary>
+
+    #region sample_ISoftDeleted
+
     public interface ISoftDeleted
     {
         /// <summary>
@@ -19,4 +22,6 @@ namespace Marten.Metadata
         /// </summary>
         DateTimeOffset? DeletedAt {get;set;}
     }
+
+    #endregion
 }
