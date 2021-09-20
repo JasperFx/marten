@@ -75,9 +75,9 @@ namespace Marten.Storyteller.Fixtures.EventStore
         }
 
         [FormatAs("Members should be {Members}")]
-        public List<string> Members()
+        public string[] Members()
         {
-            return CurrentObject.As<QuestParty>().Members;
+            return CurrentObject.As<QuestParty>().Members.ToArray();
         }
     }
 }
