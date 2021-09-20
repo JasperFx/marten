@@ -15,7 +15,7 @@ namespace Marten.Testing.Examples
         public Guid Id;
     }
 
-    public class Invoide
+    public class Invoice
     {
         // int's and long's can be the Id
         // "id" is accepted
