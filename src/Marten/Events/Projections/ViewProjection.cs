@@ -91,8 +91,6 @@ namespace Marten.Events.Projections
 
             var group = await groupSingleTenant(tenancy.Default, querySession, events);
 
-
-
             return new List<TenantSliceGroup<TDoc, TId>> {group};
         }
 
