@@ -9,6 +9,7 @@ namespace Marten.Events.Aggregation
     public partial class AggregateProjection<T>: IAggregateProjection
     {
         internal IList<Type> DeleteEvents { get; } = new List<Type>();
+        internal IList<Type> TransformedEvents { get; } = new List<Type>();
 
         public AggregateProjection<T> CreateEvent<TEvent>(Func<TEvent, T> creator) where TEvent : class
         {
@@ -86,6 +87,12 @@ namespace Marten.Events.Aggregation
         public AggregateProjection<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler)
         {
             _applyMethods.AddLambda(handler, typeof(TEvent));
+            return this;
+        }
+
+        public AggregateProjection<T> TransformsEvent<TEvent>() where TEvent : class
+        {
+            TransformedEvents.Add(typeof(TEvent));
             return this;
         }
 

@@ -47,12 +47,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
         public MonthlyAllocationProjection()
         {
             CustomGrouping(new MonthlyAllocationGrouper());
-        }
-
-        public void Apply(MonthlyAllocation allocation, EmployeeAllocated @event)
-        {
-            // Do nothing, this won't be triggered, it's just to satisify Marten selection logic
-            throw new NotImplementedException();
+            TransformsEvent<EmployeeAllocated>();
         }
 
         public void Apply(MonthlyAllocation allocation, EmployeeAllocatedInMonth @event)
@@ -70,9 +65,14 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
 
     public class MonthlyAllocationGrouper: IAggregateGrouper<string>
     {
-        public Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<string> grouping)
+        public Task Group(
+            IQuerySession session,
+            IEnumerable<IEvent> events,
+            ITenantSliceGroup<string> grouping
+        )
         {
-            var monthlyEvents = events.OfType<IEvent<EmployeeAllocated>>()
+            var monthlyEvents = events
+                .OfType<IEvent<EmployeeAllocated>>()
                 .SelectMany(@event =>
                     @event.Data.Allocations.Select(allocation => new
                     {
@@ -82,26 +82,23 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
                         Event = @event
                     })
                 )
-                .GroupBy(ks => new { ks.EmployeeId, ks.Month, Source = ks.Event }, vs => vs.Allocation)
+                .GroupBy(
+                    ks => new { ks.EmployeeId, ks.Month, Source = ks.Event },
+                    vs => vs.Allocation
+                )
                 .Select(g => new
                 {
                     NewEventData = new EmployeeAllocatedInMonth(g.Key.EmployeeId, g.Key.Month, g.ToList()),
                     g.Key.Source,
                 })
-                .Select(x => new Event<EmployeeAllocatedInMonth>(x.NewEventData)
-                {
-                    Id = x.Source.Id,
-                    Sequence = x.Source.Sequence,
-                    TenantId = x.Source.TenantId,
-                    Version = x.Source.Version,
-                    StreamId = x.Source.StreamId,
-                    StreamKey = x.Source.StreamKey,
-                    Timestamp = x.Source.Timestamp
-                }).ToList();
+                .Select(x => x.Source.WithData(x.NewEventData)).ToList();
 
             foreach (var @event in monthlyEvents)
             {
-                grouping.AddEvents($"{@event.Data.EmployeeId}|{@event.Data.Month:yyyy-MM-dd}", new[] { @event });
+                grouping.AddEvents(
+                    $"{@event.Data.EmployeeId}|{@event.Data.Month:yyyy-MM-dd}",
+                    new[] { @event }
+                );
             }
 
             return Task.CompletedTask;

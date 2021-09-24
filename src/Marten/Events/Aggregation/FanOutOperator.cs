@@ -24,16 +24,7 @@ namespace Marten.Events.Projections
             foreach (var source in matches)
             {
                 var index = events.IndexOf(source, starting);
-                var range = _fanOutFunc(source.Data).Select(x => new Event<TTarget>(x)
-                {
-                    Id = source.Id,
-                    Sequence = source.Sequence,
-                    TenantId = source.TenantId,
-                    Version = source.Version,
-                    StreamId = source.StreamId,
-                    StreamKey = source.StreamKey,
-                    Timestamp = source.Timestamp
-                }).ToArray();
+                var range = _fanOutFunc(source.Data).Select(x => source.WithData(x)).ToArray();
 
                 events.InsertRange(index + 1, range);
 
