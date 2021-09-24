@@ -24,6 +24,8 @@ namespace Marten.Testing.Bugs
         }
     }
 
+    #region sample_implementing_iqueryplanning
+
     public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
     {
         public int PageSize { get; set; } = 20;
@@ -34,14 +36,15 @@ namespace Marten.Testing.Bugs
         public Expression<Func<IMartenQueryable<TimelineItem>, IEnumerable<TimelineItem>>> QueryIs() =>
             query => query.Where(i => i.Event == Type).Skip(SkipCount).Take(PageSize);
 
-
         public void SetUniqueValuesForQueryPlanning()
         {
-            Page = 3;
-            PageSize = 20;
+            Page = 3; // Setting Page to 3 forces the SkipCount and PageSize to be different values
+            PageSize = 20; // This has to be a positive value, or the Take() operator has no effect
             Type = Guid.NewGuid().ToString();
         }
     }
+
+    #endregion
 
     public record TimelineItem(Guid Id, string Event, User Raised);
 #endif

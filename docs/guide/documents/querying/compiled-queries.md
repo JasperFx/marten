@@ -1,7 +1,14 @@
 # Compiled Queries
 
+::: tip
+The compiled query support was completely rewritten for Marten V4, and the signature changed somewhat. The new signature depends
+on `IMartenQueryable<T>` instead of `IQueryable<T>`, and most Marten specific Linq usages are available.
+:::
+
+
 Linq is easily one of the most popular features in .Net and arguably the one thing that other platforms strive to copy. We generally like being able
-to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting [Expression trees](https://msdn.microsoft.com/en-us/library/bb397951.aspx) and then using plenty of string concatenation to build up the matching SQL query. Fortunately, as of v0.8.10, Marten supports the concept of a _Compiled Query_ that you can use to reuse the SQL template for a given Linq query and bypass the performance cost of continuously parsing Linq expressions.
+to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting [Expression trees](https://msdn.microsoft.com/en-us/library/bb397951.aspx) and then using plenty of string concatenation to build up the matching SQL query. 
+Fortunately, Marten supports the concept of a _Compiled Query_ that you can use to reuse the SQL template for a given Linq query and bypass the performance cost of continuously parsing Linq expressions.
 
 All compiled queries are classes that implement the `ICompiledQuery<TDoc, TResult>` interface shown below:
 
@@ -33,6 +40,10 @@ public class FindByFirstName : ICompiledQuery<User, User>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L134-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+::: tip
+There are many more example compiled query classes in the [acceptance tests for compiled queries](https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs) within the Marten codebase.
+:::
 
 So a couple things to note in the class above:
 
@@ -70,20 +81,38 @@ await batch.Execute();
 <!-- endSnippet -->
 
 
-## How does it work?
+## How Does It Work?
 
-The first time that Marten encounters a new type of `ICompiledQuery`, it executes the `QueryIs()` method and:
+The first time that Marten encounters a new type of `ICompiledQuery`, it has to create a new "plan" for the compiled query by:
 
-1. Parses the Expression just to find which property getters or fields are used within the expression as input parameters
-1. Parses the Expression with our standard Linq support and to create a template database command and the internal query handler
-1. Builds up an object with compiled Func's that "knows" how to read a query model object and set the command parameters for the query
-1. Caches the resulting "plan" for how to execute a compiled query
+1. Finding all public _readable_ properties or fields on the compiled query type that would be potential parameters. Members
+   marked with `[MartenIgnore]` attribute are ignored.
+1. Marten either insures that the query object being passed in has unique values for each parameter member, or tries to create
+   a new object of the same type and tries to set all unique values
+1. Parse the Expression returned from `QueryIs()` with the underlying Linq expression to determine the proper result handling 
+   and underlying database command with parameters
+1. Attempts to match the unique member values to the command parameter values to map query members to the database parameters by index
+1. Assuming the previous steps succeeded, Marten generates and dynamically compiles code at runtime to efficiently execute the compiled
+   query objects at runtime and caches the dynamic query executors.
 
 On subsequent usages, Marten will just reuse the existing SQL command and remembered handlers to execute the query.
 
-## What is supported?
+TODO -- link to the docs on pre-generating types
+TODO -- talk about the diagnostic view of the source code
 
-To the best of our knowledge and testing, you may use any [Linq feature that Marten supports](/guide/documents/querying/linq) within a compiled query. So any combination of:
+You may need to help Marten out a little bit with the compiled query support in determining unique parameter values to use
+during query planning by implementing the new `Marten.Linq.IQueryPlanning` interface on your compiled query type. Consider this
+example query that uses paging:
+
+snippet: sample_implementing_iqueryplanning
+
+Pay close attention to the `SetUniqueValuesForQueryPlanning()` method. That has absolutely no other purpose but to help Marten
+create a compiled query plan for the `CompiledTimeline` type.
+
+
+## What is Supported?
+
+To the best of our knowledge and testing, you may use any [Linq feature that Marten supports](/guide/documents/querying/linq/) within a compiled query. So any combination of:
 
 * `Select()` transforms
 * `First/FirstOrDefault()`
@@ -95,12 +124,16 @@ To the best of our knowledge and testing, you may use any [Linq feature that Mar
 * `Any()`
 * `AsJson()`
 * `ToJsonArray()`
-* `ToJsonArrayAsync()`
 * `Skip()`, `Take()` and `Stats()` for pagination
 
-At this point (v0.9), the only limitation is that you cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results.
+As for limitations, 
 
-## Querying for multiple results
+* You cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results with `ICompiledListQuery`.
+* The compiled query planning just cannot match Boolean fields or properties to command arguments, so Boolean flags cannot be used
+* You cannot use any asynchronous operators. So in all cases, use the synchronous operator equivalent. So `FirstOrDefault()`, but not `FirstOrDefaultAsync()`. 
+  **This does not preclude you from using compiled queries in asynchronous querying**
+
+## Querying for Multiple Results
 
 To query for multiple results, you need to just return the raw `IQueryable<T>` as `IEnumerable<T>` as the result type. You cannot use the `ToArray()` or `ToList()` operators (it'll throw exceptions from the Relinq library if you try). As a convenience mechanism, Marten supplies these helper interfaces:
 
@@ -167,7 +200,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L477-L490' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Querying for included documents
+## Querying for Related Documents with Include()
 
 If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the (Include())(/guide/documents/querying/include) method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
 on the query:
@@ -219,7 +252,7 @@ you can simply remove the `JoinType` parameter like so: `.Include<Issue, IssueBy
 
 You can also chain `Include` methods if you need more than one `JOIN`s.
 
-### Querying for multiple included documents
+## Querying for Multiple Related Documents
 
 Fetching "included" documents could also be done when you wish to include multiple documents.
 So picking up the same example, if you wish to get a list of `Issue`s and for every Issue you wish to retrieve
@@ -321,7 +354,7 @@ public void compiled_include_to_dictionary()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#L103-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_dictionary' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Querying for paginated results
+## Querying for Paginated Results
 
 Marten compiled queries also support queries for paginated results, where you could specify the page number and size, as well as getting the total count.
 A simple example of how this can be achieved as follows:
@@ -357,7 +390,7 @@ public class TargetPaginationQuery: ICompiledListQuery<Target>
 Note that the way to get the `QueryStatistics` out is done by having a property on the query, which we specify in the `Stats()` method, similarly to the way
 we handle Include queries.
 
-## Querying for a single document
+## Querying for a Single Document
 
 If you are querying for a single document with no transformation, you can use this interface as a convenience:
 
@@ -394,7 +427,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L287-L303' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Querying for multiple results as Json
+## Querying for Multiple Results as JSON
 
 To query for multiple results and have them returned as a Json string, you may run any query on your `IQueryable<T>` (be it ordering or filtering) and then simply finalize the query with `ToJsonArray();` like so:
 
@@ -425,7 +458,7 @@ A sample usage of this type of query is shown below:
 
 Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
 
-## Querying for a single document as JSON
+## Querying for a Single Document as JSON
 
 Finally, if you are querying for a single document as json, you will need to prepend your call to `Single()`, `First()` and so on with a call to `AsJson()`:
 
