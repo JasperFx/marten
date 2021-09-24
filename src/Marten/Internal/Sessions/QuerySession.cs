@@ -30,13 +30,16 @@ namespace Marten.Internal.Sessions
     {
         private readonly IProviderGraph _providers;
         private bool _disposed;
-        public VersionTracker Versions { get; internal set; } = new VersionTracker();
+        public VersionTracker Versions { get; internal set; } = new();
         public IManagedConnection Database { get; }
         public ISerializer Serializer { get; }
-        public Dictionary<Type, object> ItemMap { get; internal set; } = new Dictionary<Type, object>();
+        public Dictionary<Type, object> ItemMap { get; internal set; } = new();
         public ITenant Tenant { get; }
         public StoreOptions Options { get; }
+        public IQueryEventStore Events { get; }
 
+        protected virtual IQueryEventStore CreateEventStore(DocumentStore store, ITenant tenant)
+            => new QueryEventStore(this, store, tenant);
 
         public void MarkAsAddedForStorage(object id, object document)
         {
@@ -71,8 +74,12 @@ namespace Marten.Internal.Sessions
         }
 
 
-        public QuerySession(DocumentStore store, SessionOptions? sessionOptions, IManagedConnection database,
-            ITenant tenant)
+        public QuerySession(
+            DocumentStore store,
+            SessionOptions? sessionOptions,
+            IManagedConnection database,
+            ITenant tenant
+        )
         {
             DocumentStore = store;
 
@@ -95,6 +102,8 @@ namespace Marten.Internal.Sessions
             Serializer = store.Serializer;
             Tenant = tenant;
             Options = store.Options;
+
+            Events = CreateEventStore(store, tenant);
         }
 
         protected internal virtual IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider) where T : notnull

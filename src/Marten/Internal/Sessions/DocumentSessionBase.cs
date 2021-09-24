@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseline;
-using Baseline.ImTools;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
@@ -27,19 +26,12 @@ namespace Marten.Internal.Sessions
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
             _workTracker = new UnitOfWork(this);
-
-            Events = new EventStore(this, store, tenant);
-            _workTracker = new UnitOfWork(this);
         }
 
         internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
             ITenant tenant, ISessionWorkTracker workTracker): base(store, sessionOptions, database, tenant)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
-            _workTracker = new UnitOfWork(this);
-
-            Events = new EventStore(this, store, tenant);
-
             _workTracker = workTracker;
         }
 
@@ -182,7 +174,10 @@ namespace Marten.Internal.Sessions
             }
         }
 
-        public IEventStore Events { get; }
+        public new IEventStore Events => (IEventStore)base.Events;
+
+        protected override IQueryEventStore CreateEventStore(DocumentStore store, ITenant tenant)
+            => new EventStore(this, store, tenant);
 
 
         public void QueueOperation(IStorageOperation storageOperation)

@@ -32,7 +32,7 @@ namespace Marten
         /// <summary>
         /// Access to the event store functionality
         /// </summary>
-        IEventStore Events { get; }
+        new IEventStore Events { get; }
 
         /// <summary>
         /// Override whether or not this session honors optimistic concurrency checks

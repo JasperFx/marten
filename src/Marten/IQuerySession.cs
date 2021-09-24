@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;
@@ -143,7 +144,6 @@ namespace Marten
         /// <returns></returns>
         Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters);
 
-
         /// <summary>
         /// Define a batch of deferred queries and load operations to be conducted in one asynchronous request to the
         /// database for potentially performance
@@ -173,6 +173,11 @@ namespace Marten
         IDocumentStore DocumentStore { get; }
 
         /// <summary>
+        /// Access to the event store functionality
+        /// </summary>
+        IQueryEventStore Events { get; }
+
+        /// <summary>
         /// A query that is compiled so a copy of the DbCommand can be used directly in subsequent requests.
         /// </summary>
         /// <typeparam name="TDoc">The document</typeparam>
@@ -191,7 +196,6 @@ namespace Marten
         /// <returns>A task for a single item query result</returns>
         Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
 
-
         /// <summary>
         /// Stream a single JSON document to the destination using a compiled query
         /// </summary>
@@ -202,7 +206,6 @@ namespace Marten
         /// <typeparam name="TOut"></typeparam>
         /// <returns></returns>
         Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination, CancellationToken token = default);
-
 
         /// <summary>
         /// Stream many documents as a JSON array to the destination using a compiled query
@@ -215,7 +218,6 @@ namespace Marten
         /// <returns></returns>
         Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
             CancellationToken token = default);
-
 
         /// <summary>
         /// Fetch the JSON representation of a single document using a compiled query
@@ -236,8 +238,6 @@ namespace Marten
         /// <typeparam name="TOut"></typeparam>
         /// <returns></returns>
         Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
-
-
 
         /// <summary>
         /// Load or find multiple documents by id
