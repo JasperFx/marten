@@ -15,6 +15,8 @@ namespace Marten.Testing.Linq
         {
         }
 
+        #region sample_query_to_async_enumerable
+
         [Fact]
         public async Task query_to_async_enumerable()
         {
@@ -22,7 +24,9 @@ namespace Marten.Testing.Linq
             await theStore.BulkInsertAsync(targets);
 
             var ids = new List<Guid>();
-            var results = theSession.Query<Target>().ToAsyncEnumerable();
+
+            var results = theSession.Query<Target>()
+                .ToAsyncEnumerable();
 
             await foreach (var target in results)
             {
@@ -35,5 +39,7 @@ namespace Marten.Testing.Linq
                 ids.ShouldContain(target.Id);
             }
         }
+
+        #endregion
     }
 }
