@@ -52,7 +52,7 @@ namespace Marten.Events.Aggregation
             _allEventTypes = new Lazy<Type[]>(() =>
             {
                 return _createMethods.Methods.Concat(_applyMethods.Methods).Concat(_shouldDeleteMethods.Methods)
-                    .Select(x => x.EventType).Concat(DeleteEvents).Distinct().ToArray();
+                    .Select(x => x.EventType).Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
             });
 
 
@@ -402,7 +402,7 @@ namespace Marten.Events.Aggregation
         protected virtual Type[] determineEventTypes()
         {
             var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
-                .Concat(DeleteEvents).Distinct().ToArray();
+                .Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
             return eventTypes;
         }
 
