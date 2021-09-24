@@ -12,31 +12,27 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
 {
-    public static class DateTimeExtensionMethods
-    {
-        public static DateTime ToStartOfMonth(this DateTime date)
-        {
-            return new DateTime(date.Year, date.Month, 1);
-        }
-
-        public static DateTime ToEndOfMonth(this DateTime date)
-        {
-            return date.ToStartOfMonth().AddMonths(1).AddSeconds(-1);
-        }
-    }
-
     #region sample_view-custom-grouper-with-multiple-result-records
 
-    public record Allocation(DateTime Day, double Hours);
+    public record Allocation(
+        DateTime Day,
+        double Hours
+    );
 
-    public record EmployeeAllocated(Guid EmployeeId, List<Allocation> Allocations);
+    public record EmployeeAllocated(
+        Guid EmployeeId,
+        List<Allocation> Allocations
+    );
 
-    public record EmployeeAllocatedInMonth(Guid EmployeeId, DateTime Month, List<Allocation> Allocations);
+    public record EmployeeAllocatedInMonth(
+        Guid EmployeeId,
+        DateTime Month,
+        List<Allocation> Allocations
+    );
 
     public class MonthlyAllocation
     {
         public string Id { get; set; }
-
         public Guid EmployeeId { get; set; }
         public DateTime Month { get; set; }
         public double Hours { get; set; }
@@ -71,33 +67,42 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             ITenantSliceGroup<string> grouping
         )
         {
-            var monthlyEvents = events
-                .OfType<IEvent<EmployeeAllocated>>()
-                .SelectMany(@event =>
-                    @event.Data.Allocations.Select(allocation => new
-                    {
-                        Allocation = allocation,
-                        @event.Data.EmployeeId,
-                        Month = allocation.Day.ToStartOfMonth(),
-                        Event = @event
-                    })
-                )
-                .GroupBy(
-                    ks => new { ks.EmployeeId, ks.Month, Source = ks.Event },
-                    vs => vs.Allocation
-                )
-                .Select(g => new
-                {
-                    NewEventData = new EmployeeAllocatedInMonth(g.Key.EmployeeId, g.Key.Month, g.ToList()),
-                    g.Key.Source,
-                })
-                .Select(x => x.Source.WithData(x.NewEventData)).ToList();
+            var allocations = events
+                .OfType<IEvent<EmployeeAllocated>>();
 
-            foreach (var @event in monthlyEvents)
+            var monthlyAllocations = allocations
+                .SelectMany(@event =>
+                    @event.Data.Allocations.Select(
+                        allocation => new
+                        {
+                            @event.Data.EmployeeId,
+                            Allocation = allocation,
+                            Month = allocation.Day.ToStartOfMonth(),
+                            Source = @event
+                        }
+                    )
+                )
+                .GroupBy(allocation =>
+                    new { allocation.EmployeeId, allocation.Month, allocation.Source }
+                )
+                .Select(monthlyAllocation =>
+                    new
+                    {
+                        Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
+                        Event = monthlyAllocation.Key.Source.WithData(
+                            new EmployeeAllocatedInMonth(
+                                monthlyAllocation.Key.EmployeeId,
+                                monthlyAllocation.Key.Month,
+                                monthlyAllocation.Select(a => a.Allocation).ToList())
+                        )
+                    }
+                );
+
+            foreach (var monthlyAllocation in monthlyAllocations)
             {
                 grouping.AddEvents(
-                    $"{@event.Data.EmployeeId}|{@event.Data.Month:yyyy-MM-dd}",
-                    new[] { @event }
+                    monthlyAllocation.Key,
+                    new[] { monthlyAllocation.Event }
                 );
             }
 
@@ -107,7 +112,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
 
     #endregion
 
-    public class custom_grouper_with_multiple_result_records: IntegrationContext
+    public class custom_grouper_with_events_transformation: IntegrationContext
     {
         [Fact]
         public async Task multi_stream_projections_should_work()
@@ -136,8 +141,6 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             await theSession.SaveChangesAsync();
 
             var firstEmployeeSeptemberId = $"{firstEmployeeId}|2021-09-01";
-
-            var res = theSession.Query<MonthlyAllocation>().ToList();
 
             var firstEmployeeSeptemberAllocations =
                 await theSession.LoadAsync<MonthlyAllocation>(firstEmployeeSeptemberId);
@@ -190,7 +193,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             );
         }
 
-        public custom_grouper_with_multiple_result_records(DefaultStoreFixture fixture):
+        public custom_grouper_with_events_transformation(DefaultStoreFixture fixture):
             base(fixture)
         {
             StoreOptions(_ =>
@@ -199,6 +202,14 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
 
                 _.Projections.Add<MonthlyAllocationProjection>(ProjectionLifecycle.Inline);
             });
+        }
+    }
+
+    public static class DateTimeExtensionMethods
+    {
+        public static DateTime ToStartOfMonth(this DateTime date)
+        {
+            return new DateTime(date.Year, date.Month, 1);
         }
     }
 }
