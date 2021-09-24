@@ -102,12 +102,11 @@ namespace Marten
 
         public class MartenConfigurationExpression
         {
-            private readonly IServiceCollection _services;
             private readonly StoreOptions? _options;
 
             internal MartenConfigurationExpression(IServiceCollection services, StoreOptions? options)
             {
-                _services = services;
+                Services = services;
                 _options = options;
             }
 
@@ -120,9 +119,14 @@ namespace Marten
             /// <returns></returns>
             public MartenConfigurationExpression BuildSessionsWith<T>(ServiceLifetime lifetime = ServiceLifetime.Singleton ) where T : class, ISessionFactory
             {
-                _services.Add(new ServiceDescriptor(typeof(ISessionFactory), typeof(T), lifetime));
+                Services.Add(new ServiceDescriptor(typeof(ISessionFactory), typeof(T), lifetime));
                 return this;
             }
+
+            /// <summary>
+            /// Gets the IServiceCollection
+            /// </summary>
+            public IServiceCollection Services { get; }
 
             /// <summary>
             /// Use lightweight sessions by default for the injected IDocumentSession objects. Equivalent to IDocumentStore.LightweightSession();
@@ -147,7 +151,7 @@ namespace Marten
                         "This operation is not valid when the StoreOptions is built by Func<IServiceProvider, StoreOptions>");
 
                 var store = new DocumentStore(_options);
-                _services.AddSingleton<IDocumentStore>(store);
+                Services.AddSingleton<IDocumentStore>(store);
 
                 return store;
             }
