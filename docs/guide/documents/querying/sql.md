@@ -1,4 +1,4 @@
-## Querying with SQL
+# Querying with Postgresql SQL
 
 ::: tip
 In all the code samples on this page, the `session` variable is of type

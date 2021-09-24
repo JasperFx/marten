@@ -69,14 +69,25 @@ module.exports = {
             link: '/guide/documents/querying/',
             children: [
                 {text: 'Load Documents by Id', link: '/guide/documents/querying/byid'},
-                {text: 'Querying with Linq', link: '/guide/documents/querying/linq'},
+                {text: 'Querying with Linq', link: '/guide/documents/querying/linq/', children: [
+                        {text: 'Supported Linq Operators', link: '/guide/documents/querying/linq/operators'},
+                        {text: 'Querying within Child Collections', link: '/guide/documents/querying/linq/child-collections'},
+                        {text: 'Including Related Documents', link: '/guide/documents/querying/linq/include'},
+                        {text: 'Querying to IAsyncEnumerable', link: '/guide/documents/querying/linq/async-enumerable'},
+                        {text: 'Extending Marten\'s Linq Support', link: '/guide/documents/querying/linq/extending'},
+                        {text: 'Searching on String Fields', link: '/guide/documents/querying/linq/strings'},
+                        {text: 'Projection Operators', link: '/guide/documents/querying/linq/projections'},
+                        {text: 'Paging', link: '/guide/documents/querying/linq/paging'},
+                        {text: 'Mixing Raw SQL with Linq', link: '/guide/documents/querying/linq/sql'},
+                        {text: 'Searching with Boolean Flags', link: '/guide/documents/querying/linq/booleans'},
+                        {text: 'Searching for NULL Values', link: '/guide/documents/querying/linq/nulls'},
+                    ]},
                 {text: 'Querying with Postgres SQL', link: '/guide/documents/querying/sql'},
                 {text: 'Retrieving or Streaming JSON', link: '/guide/documents/querying/query-json'},
-                {text: 'Including Related Documents', link: '/guide/documents/querying/include'},
                 {text: 'Compiled Queries', link: '/guide/documents/querying/compiled-queries'},
                 {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'},
                 {text: 'Metadata Queries', link: '/guide/documents/querying/metadata-queries'},
-                {text: 'Paging', link: '/guide/documents/querying/paging'}
+
 
             ]
           },

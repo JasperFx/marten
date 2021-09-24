@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Util;
 
@@ -8,28 +9,28 @@ namespace Marten.Testing.Examples
     public class LinqExamples
     {
         #region sample_query_for_all
-        public void get_all_documents_of_a_type(IDocumentSession session)
+        public async Task get_all_documents_of_a_type(IDocumentSession session)
         {
             // Calling ToArray() just forces the query to be executed
-            var targets = session.Query<Target>().ToArray();
+            var targets = await session.Query<Target>().ToListAsync();
         }
 
         #endregion
 
         #region sample_query_by_basic_operators
-        public void basic_operators(IDocumentSession session)
+        public async Task basic_operators(IDocumentSession session)
         {
             // Field equals a value
-            session.Query<Target>().Where(x => x.Number == 5);
+            await session.Query<Target>().Where(x => x.Number == 5).ToListAsync();
 
             // Field does not equal a value
-            session.Query<Target>().Where(x => x.Number != 5);
+            session.Query<Target>().Where(x => x.Number != 5).ToListAsync();
 
             // Field compared to values
-            session.Query<Target>().Where(x => x.Number > 5);
-            session.Query<Target>().Where(x => x.Number >= 5);
-            session.Query<Target>().Where(x => x.Number < 5);
-            session.Query<Target>().Where(x => x.Number <= 5);
+            session.Query<Target>().Where(x => x.Number > 5).ToListAsync();
+            session.Query<Target>().Where(x => x.Number >= 5).ToListAsync();
+            session.Query<Target>().Where(x => x.Number < 5).ToListAsync();
+            session.Query<Target>().Where(x => x.Number <= 5).ToListAsync();
         }
 
         #endregion
@@ -151,6 +152,24 @@ namespace Marten.Testing.Examples
 
             // You can always search by field is NULL
             session.Query<Target>().Where(x => x.Inner == null);
+        }
+
+        #endregion
+
+
+        #region sample_aggregation_operations
+
+        public async Task sample_aggregation_operations(IQuerySession session)
+        {
+            var count = session.Query<Target>().Count();
+            var count2 = await session.Query<Target>().CountAsync();
+            var count3 = session.Query<Target>().LongCount();
+            var count4 = await session.Query<Target>().LongCountAsync();
+
+            var min = await session.Query<Target>().MinAsync(x => x.Number);
+            var max = await session.Query<Target>().MaxAsync(x => x.Number);
+            var sum = await session.Query<Target>().SumAsync(x => x.Number);
+            var average = await session.Query<Target>().AverageAsync(x => x.Number);
         }
 
         #endregion
