@@ -104,7 +104,29 @@ You may need to help Marten out a little bit with the compiled query support in 
 during query planning by implementing the new `Marten.Linq.IQueryPlanning` interface on your compiled query type. Consider this
 example query that uses paging:
 
-snippet: sample_implementing_iqueryplanning
+<!-- snippet: sample_implementing_iqueryplanning -->
+<a id='snippet-sample_implementing_iqueryplanning'></a>
+```cs
+public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
+{
+    public int PageSize { get; set; } = 20;
+
+    [MartenIgnore] public int Page { private get; set; } = 1;
+    public int SkipCount => (Page - 1) * PageSize;
+    public string Type { get; set; }
+    public Expression<Func<IMartenQueryable<TimelineItem>, IEnumerable<TimelineItem>>> QueryIs() =>
+        query => query.Where(i => i.Event == Type).Skip(SkipCount).Take(PageSize);
+
+    public void SetUniqueValuesForQueryPlanning()
+    {
+        Page = 3; // Setting Page to 3 forces the SkipCount and PageSize to be different values
+        PageSize = 20; // This has to be a positive value, or the Take() operator has no effect
+        Type = Guid.NewGuid().ToString();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_1891_compiled_query_problem.cs#L27-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_iqueryplanning' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Pay close attention to the `SetUniqueValuesForQueryPlanning()` method. That has absolutely no other purpose but to help Marten
 create a compiled query plan for the `CompiledTimeline` type.

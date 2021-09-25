@@ -46,7 +46,7 @@ It comes of the way how Marten handles projection mechanism:
 1. Created or updated document is upserted to database.
 :::
 
-### Using event meta data
+## Using event meta data
 
 If additional Marten event details are needed, then events can use the `ProjectionEvent<>` generic when setting them up with `ProjectEvent`. `ProjectionEvent` exposes the Marten Id, Version, Timestamp and Data.
 
@@ -98,7 +98,7 @@ public class LapViewProjection: ViewProjection<Lap, Guid>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L88-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-from-class-with-eventdata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Injecting helpers classes
+## Injecting helpers classes
 
 ViewProjections instances are created (by default) during the `DocumentStore` initialization. Marten gives also possible to register them with factory method. With such registration projections are created on runtime during the events application. Thanks to that it's possible to setup custom creation logic or event connect dependency injection mechanism.
 
@@ -108,7 +108,7 @@ By convention it's needed to provide the default constructor with projections de
 
 <[sample:viewprojection-from-class-with-injection]>
 
-### Using async projections
+## Using async projections
 
 It's also possible to use async version of `ProjectEvent`. Using `ProjectEventAsync` gives possibility to call the async apis (from Marten or other frameworks) to get better resources utilization.
 
@@ -122,7 +122,7 @@ Note the "async projections" term in this context means that they are using the 
 It does not refer to async projections as eventually consistent. Such option provides [Async Daemon](/guide/events/projections/async-daemon).
 :::
 
-### Update only projection
+## Update only projection
 
 ProjectEvent overloads contain additional boolean parameter **onlyUpdate**. By default, it's set to false which mean that Marten will do create or update operation with projection view.
 

@@ -25,6 +25,8 @@ module.exports = {
         ]
       },
       { text: 'Guide', link: '/guide/' },
+      { text: 'Document Database', link: '/guide/documents/' },
+      { text: 'Event Store', link: '/guide/events/' },
       { text: 'Migration', link: '/migration-guide' },
       { text: 'Release Notes', link: 'https://github.com/JasperFx/marten/releases' },
       { text: 'Gitter | Join Chat', link: 'https://gitter.im/jasperfx/marten?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge' },
