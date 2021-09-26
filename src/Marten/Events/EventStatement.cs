@@ -4,11 +4,9 @@ using System.Linq;
 using Baseline;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
-using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Storage;
-using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events
@@ -68,6 +66,11 @@ namespace Marten.Events
                 yield return new WhereFragment("d.version <= ?", Version);
             }
 
+            if (FromVersion != 0)
+            {
+                yield return new WhereFragment("d.version >= ?", FromVersion);
+            }
+
             if (Timestamp.HasValue)
             {
                 yield return new WhereFragment("d.timestamp <= ?", Timestamp);
@@ -103,6 +106,9 @@ namespace Marten.Events
         public string TenantId { get; set; } = ALL_TENANTS;
 
         public string StreamKey { get; set; }
+
         public Guid StreamId { get; set; } = Guid.Empty;
+
+        public long FromVersion { get; set; }
     }
 }

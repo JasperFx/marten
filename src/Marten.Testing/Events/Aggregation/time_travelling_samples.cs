@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+#nullable enable
 
 namespace Marten.Testing.Events.Aggregation
 {
@@ -41,7 +42,7 @@ namespace Marten.Testing.Events.Aggregation
         public int AvailableDoubleRooms => roomTypeCounts[RoomType.Double];
         public int AvailableKingRooms => roomTypeCounts[RoomType.King];
 
-        private Dictionary<RoomType, int> roomTypeCounts { get; set; }
+        private Dictionary<RoomType, int> roomTypeCounts = new ();
 
         public void Apply(HotelRoomsDefined @event)
         {

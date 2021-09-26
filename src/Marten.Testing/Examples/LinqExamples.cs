@@ -24,13 +24,13 @@ namespace Marten.Testing.Examples
             await session.Query<Target>().Where(x => x.Number == 5).ToListAsync();
 
             // Field does not equal a value
-            session.Query<Target>().Where(x => x.Number != 5).ToListAsync();
+            await session.Query<Target>().Where(x => x.Number != 5).ToListAsync();
 
             // Field compared to values
-            session.Query<Target>().Where(x => x.Number > 5).ToListAsync();
-            session.Query<Target>().Where(x => x.Number >= 5).ToListAsync();
-            session.Query<Target>().Where(x => x.Number < 5).ToListAsync();
-            session.Query<Target>().Where(x => x.Number <= 5).ToListAsync();
+            await session.Query<Target>().Where(x => x.Number > 5).ToListAsync();
+            await session.Query<Target>().Where(x => x.Number >= 5).ToListAsync();
+            await session.Query<Target>().Where(x => x.Number < 5).ToListAsync();
+            await session.Query<Target>().Where(x => x.Number <= 5).ToListAsync();
         }
 
         #endregion

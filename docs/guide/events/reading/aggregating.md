@@ -166,7 +166,7 @@ public class RoomsAvailability
     public int AvailableDoubleRooms => roomTypeCounts[RoomType.Double];
     public int AvailableKingRooms => roomTypeCounts[RoomType.King];
 
-    private Dictionary<RoomType, int> roomTypeCounts { get; set; }
+    private Dictionary<RoomType, int> roomTypeCounts = new ();
 
     public void Apply(HotelRoomsDefined @event)
     {
@@ -185,7 +185,7 @@ public class RoomsAvailability
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L11-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-definition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L12-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-definition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **You can get the stream state at the point of time, providing a timestamp:**
@@ -197,7 +197,7 @@ var roomsAvailabilityAtPointOfTime =
     await theSession.Events
         .AggregateStreamAsync<RoomsAvailability>(hotelId, timestamp: pointOfTime);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L122-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-point-of-time' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L123-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-point-of-time' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -210,10 +210,190 @@ var roomsAvailabilityAtVersion =
     await theSession.Events
         .AggregateStreamAsync<RoomsAvailability>(hotelId, version: specificVersion);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L136-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-specific-version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L137-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-specific-version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
-## Aggregating state into
+## Aggregating stream into state
 
-TO DO
+Marten also allows aggregating the stream into a specific entity instance. That means that it will take a particular set of events and apply it one by one to an object. To achieve that, you should pass the base entity state as a `state` parameter into the `AggregateStream` method.
+
+<!-- snippet: sample_aggregate-stream-into-state-default -->
+<a id='snippet-sample_aggregate-stream-into-state-default'></a>
+```cs
+await theSession.Events.AggregateStreamAsync(
+    streamId,
+    state: baseState,
+    fromVersion: baseStateVersion
+);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L141-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-default' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It can be helpful, for instance, in snapshotting. Snapshot is a state of the stream at a specific point of time (version). It is a performance optimisation that shouldn't be your first choice, but it's an option to consider for performance-critical computations. As you're optimising your processing, you usually don't want to store a snapshot after each event not to increase the number of writes. Usually, you'd like to do a snapshot on the specific interval or specific event type.
+
+Let's take the financial account as an example.
+
+<!-- snippet: sample_aggregate-stream-into-state-definition -->
+<a id='snippet-sample_aggregate-stream-into-state-definition'></a>
+```cs
+public record AccountingMonthOpened(
+    Guid FinancialAccountId,
+    int Month,
+    int Year,
+    decimal StartingBalance
+);
+
+public record InflowRecorded(
+    Guid FinancialAccountId,
+    decimal TransactionAmount
+);
+
+public record CashWithdrawnFromATM(
+    Guid FinancialAccountId,
+    decimal CashAmount
+);
+
+public record AccountingMonthClosed(
+    Guid FinancialAccountId,
+    int Month,
+    int Year,
+    decimal FinalBalance
+);
+
+public class FinancialAccount
+{
+    public Guid Id { get; private set; }
+    public int CurrentMonth { get; private set; }
+    public int CurrentYear { get; private set; }
+    public bool IsOpened { get; private set; }
+    public decimal Balance { get; private set; }
+    public int Version { get; private set; }
+
+    public void Apply(AccountingMonthOpened @event)
+    {
+        Id = @event.FinancialAccountId;
+        CurrentMonth = @event.Month;
+        CurrentYear = @event.Year;
+        Balance = @event.StartingBalance;
+        IsOpened = true;
+        Version++;
+    }
+
+    public void Apply(InflowRecorded @event)
+    {
+        Balance += @event.TransactionAmount;
+
+        Version++;
+    }
+
+    public void Apply(CashWithdrawnFromATM @event)
+    {
+        Balance -= @event.CashAmount;
+        Version++;
+    }
+
+    public void Apply(AccountingMonthClosed @event)
+    {
+        IsOpened = false;
+        Version++;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L13-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-definition' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+For the daily operations, you don't need to know its whole history. It's enough to have information about the current accounting period, e.g. month. It might be worth doing a snapshot of the current state at opening accounting and then loading the following events with the transactions. We could do it by defining such a wrapper class:
+
+
+<!-- snippet: sample_aggregate-stream-into-state-wrapper -->
+<a id='snippet-sample_aggregate-stream-into-state-wrapper'></a>
+```cs
+public class CashRegisterRepository
+{
+    private IDocumentSession session;
+
+    public CashRegisterRepository(IDocumentSession session)
+    {
+        this.session = session;
+    }
+
+    public Task Store(
+        FinancialAccount financialAccount,
+        object @event,
+        CancellationToken ct = default
+    )
+    {
+        if (@event is AccountingMonthOpened)
+        {
+            session.Store(financialAccount);
+        }
+
+        session.Events.Append(financialAccount.Id, @event);
+
+        return session.SaveChangesAsync(ct);
+    }
+
+    public async Task<FinancialAccount?> Get(
+        Guid cashRegisterId,
+        CancellationToken ct = default
+    )
+    {
+        var cashRegister =
+            await session.LoadAsync<FinancialAccount>(cashRegisterId, ct);
+
+        var fromVersion = cashRegister != null
+            ?
+            // incrementing version to not apply the same event twice
+            cashRegister.Version + 1
+            : 0;
+
+        return await session.Events.AggregateStreamAsync(
+            cashRegisterId,
+            state: cashRegister,
+            fromVersion: fromVersion,
+            token: ct
+        );
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L81-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-wrapper' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Then append event and store snapshot on opening accounting month:
+
+<!-- snippet: sample_aggregate-stream-into-state-store -->
+<a id='snippet-sample_aggregate-stream-into-state-store'></a>
+```cs
+(FinancialAccount, AccountingMonthOpened) OpenAccountingMonth(FinancialAccount cashRegister)
+{
+    var @event = new AccountingMonthOpened(cashRegister.Id, 11, 2021, 300);
+
+    cashRegister.Apply(@event);
+    return (cashRegister, @event);
+}
+
+var closedCashierShift =
+    await theSession.Events.AggregateStreamAsync<FinancialAccount>(
+        financialAccountId
+    );
+
+var (openedCashierShift, cashierShiftOpened) =
+    OpenAccountingMonth(closedCashierShift!);
+
+var repository = new CashRegisterRepository(_session);
+
+await repository.Store(openedCashierShift, cashierShiftOpened);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L164-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+and read snapshot and following event with:
+
+<!-- snippet: sample_aggregate-stream-into-state-get -->
+<a id='snippet-sample_aggregate-stream-into-state-get'></a>
+```cs
+var currentState = await repository.Get(financialAccountId);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L205-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
