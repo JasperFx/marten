@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Marten.Testing.Harness
@@ -44,6 +45,12 @@ namespace Marten.Testing.Harness
 
                 return _session;
             }
+        }
+
+        protected async Task AppendEvent(Guid streamId, params object[] events)
+        {
+            theSession.Events.Append(streamId, events);
+            await theSession.SaveChangesAsync();
         }
     }
 }

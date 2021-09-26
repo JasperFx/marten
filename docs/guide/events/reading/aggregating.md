@@ -124,7 +124,95 @@ var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
 
 ## Time Travelling
 
-TO DO
+One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. Thank that you can do time travelling to get the state at a specific date or stream version. 
+
+That capability enables rich diagnostics business and technical wise. You can precisely verify what has happened in your system and troubleshoot the failing scenario.
+
+You can also do business reports analysing the state at a particular time and make predictions based on that.
+
+For example, having a stream representing the rooms' availability in hotel defined as:
+
+<!-- snippet: sample_aggregate-stream-time-travelling-definition -->
+<a id='snippet-sample_aggregate-stream-time-travelling-definition'></a>
+```cs
+public enum RoomType
+{
+    Single,
+    Double,
+    King
+}
+
+public record HotelRoomsDefined(
+    Guid HotelId,
+    Dictionary<RoomType, int> RoomTypeCounts
+);
+
+public record RoomBooked(
+    Guid HotelId,
+    RoomType RoomType
+);
+
+public record GuestCheckedOut(
+    Guid HotelId,
+    Guid GuestId,
+    RoomType RoomType
+);
+
+public class RoomsAvailability
+{
+    public Guid Id { get; private set; }
+
+    public int AvailableSingleRooms => roomTypeCounts[RoomType.Single];
+    public int AvailableDoubleRooms => roomTypeCounts[RoomType.Double];
+    public int AvailableKingRooms => roomTypeCounts[RoomType.King];
+
+    private Dictionary<RoomType, int> roomTypeCounts { get; set; }
+
+    public void Apply(HotelRoomsDefined @event)
+    {
+        Id = @event.HotelId;
+        roomTypeCounts = @event.RoomTypeCounts;
+    }
+
+    public void Apply(RoomBooked @event)
+    {
+        roomTypeCounts[@event.RoomType] -= 1;
+    }
+
+    public void Apply(GuestCheckedOut @event)
+    {
+        roomTypeCounts[@event.RoomType] += 1;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L11-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-definition' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+**You can get the stream state at the point of time, providing a timestamp:**
+
+<!-- snippet: sample_aggregate-stream-time-travelling-by-point-of-time -->
+<a id='snippet-sample_aggregate-stream-time-travelling-by-point-of-time'></a>
+```cs
+var roomsAvailabilityAtPointOfTime =
+    await theSession.Events
+        .AggregateStreamAsync<RoomsAvailability>(hotelId, timestamp: pointOfTime);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L122-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-point-of-time' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+
+**Or specific version:**
+
+<!-- snippet: sample_aggregate-stream-time-travelling-by-specific-version -->
+<a id='snippet-sample_aggregate-stream-time-travelling-by-specific-version'></a>
+```cs
+var roomsAvailabilityAtVersion =
+    await theSession.Events
+        .AggregateStreamAsync<RoomsAvailability>(hotelId, version: specificVersion);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L136-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-specific-version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 
 ## Aggregating state into
 
