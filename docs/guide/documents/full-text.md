@@ -1,6 +1,6 @@
 # Full Text Searching
 
-Full Text Indexes in Marten are built based on [GIN or GiST indexes](/guide/documents/configuration/gin-gist-indexes) utilizing [Postgres built in Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). This enables the possibility to do more sophisticated searching through text fields.
+Full Text Indexes in Marten are built based on [GIN or GiST indexes](/guide/documents/indexing/gin-gist-indexes) utilizing [Postgres built in Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). This enables the possibility to do more sophisticated searching through text fields.
 
 ::: warning
 To use this feature, you will need to use PostgreSQL version 10.0 or above, as this is the first version that support text search function on jsonb column - this is also the data type that Marten use to store it's data.

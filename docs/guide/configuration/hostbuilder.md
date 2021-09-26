@@ -61,8 +61,8 @@ The `AddMarten()` method will add these service registrations to your applicatio
 For more information, see:
 
 * [Dependency injection in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-3.1) for more explanation about the service lifetime behavior.
-* Check [identity map mechanics](/guide/documents/advanced/identity-map) for an explanation of Marten session behavior
-* Check [storing documents and unit of work](/guide/documents/basics/persisting) for session basics
+* Check [identity map mechanics](/guide/documents/identity) for an explanation of Marten session behavior
+* Check [storing documents and unit of work](/guide/documents/sessions) for session basics
 
 ## AddMarten() Options
 
@@ -317,7 +317,7 @@ public class Startup
 
 The session factories can also be used to build out and attach custom `IDocumentSessionListener` objects or replace the logging as we'll see in the next section.
 
-See [diagnostics and instrumentation](/guide/documents/diagnostics) for more information.
+See [diagnostics and instrumentation](/guide/diagnostics) for more information.
 
 ## Customizing Session Creation by Scope
 

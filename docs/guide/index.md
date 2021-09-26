@@ -81,7 +81,7 @@ public class Startup
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-See [integrating Marten in .NET Core applications](/guide/integration) for more information and options about this integration.
+See [integrating Marten in .NET Core applications](/guide/configuration/) for more information and options about this integration.
 
 Also see the blog post [Marten, the Generic Host Builder in .Net Core, and why this could be the golden age for OSS in .Net](https://jeremydmiller.com/2021/07/29/marten-the-generic-host-builder-in-net-core-and-why-this-could-be-the-golden-age-for-oss-in-net/) for more background about how Marten is fully embracing
 the generic host in .Net. 
@@ -107,7 +107,7 @@ public class User
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L16-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_user_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-_For more information on document identity, see [identity](/guide/documents/identity/)._
+_For more information on document identity, see [identity](/guide/documents/identity)._
 
 And now that we've got a PostgreSQL schema and an `IDocumentStore` variable called `store`, let's start persisting and loading user documents:
 

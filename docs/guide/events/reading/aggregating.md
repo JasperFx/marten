@@ -124,9 +124,9 @@ var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
 
 ## Time Travelling
 
-One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. Thank that you can do time travelling to get the state at a specific date or stream version. 
+One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. Thanks to that, you can do time travelling to get the state at a specific date or stream version. 
 
-That capability enables rich diagnostics business and technical wise. You can precisely verify what has happened in your system and troubleshoot the failing scenario.
+This capability enables rich diagnostics business and technical wise. You can precisely verify what has happened in your system and troubleshoot the failing scenario.
 
 You can also do business reports analysing the state at a particular time and make predictions based on that.
 

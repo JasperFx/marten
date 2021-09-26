@@ -224,7 +224,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
 
 ## Querying for Related Documents with Include()
 
-If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the (Include())(/guide/documents/querying/include) method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
+If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the (Include())(/guide/documents/querying/linq/include) method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
 on the query:
 
 <!-- snippet: sample_compiled_include -->

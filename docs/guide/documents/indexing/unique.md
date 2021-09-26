@@ -2,7 +2,7 @@
 
 [Unique Indexes](https://www.postgresql.org/docs/current/static/indexes-unique.html) are used to enforce uniqueness of property value. They can be combined to handle also uniqueness of multiple properties.
 
-Marten supports both [duplicate fields](/guide/documents/configuration/duplicated-fields) and [calculated indexes](/guide/documents/configuration/computed-indexes) uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.
+Marten supports both [duplicate fields](/guide/documents/indexing/duplicated-fields) and [calculated indexes](/guide/documents/indexing/computed-indexes) uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.
 
 ## Defining Unique Index through Store options
 
@@ -274,7 +274,7 @@ var store = DocumentStore.For(options =>
 
 ## Unique Index per Tenant
 
-For tables which have been configured for [tenancy](/guide/documents/tenancy/index), index definitions may also be scoped per tenant.
+For tables which have been configured for [tenancy](/guide/documents/multi-tenancy), index definitions may also be scoped per tenant.
 
 <!-- snippet: sample_per-tenant-unique-index -->
 <a id='snippet-sample_per-tenant-unique-index'></a>

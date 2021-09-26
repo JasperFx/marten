@@ -4,7 +4,7 @@
 
 Marten's event sourcing support "appends" event data documents to a single table `mt_events.` Events must be captured against a stream id, with a second table called `mt_streams` that Marten uses to
 keep metadata describing the state of an individual stream. Appending events to either a new or existing stream is done within the same Marten transaction as any other document updates or deletions. See
-[persisting documents](/guide/documents/basics/persisting) for more information on Marten transactions.
+[persisting documents](/guide/documents/sessions) for more information on Marten transactions.
 
 ## Event Types
 

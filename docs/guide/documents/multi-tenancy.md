@@ -185,7 +185,7 @@ storeOptions.Schema.For<Target>().MultiTenanted();
 
 ## Implementation Details
 
-At the moment, Marten implements two modes of tenancy, namely single tenancy and conjoined multi-tenancy (see [tenancy](/guide/documents/tenancy/)).
+At the moment, Marten implements two modes of tenancy, namely single tenancy and conjoined multi-tenancy.
 
 ### Conjoined Tenancy
 
@@ -195,4 +195,4 @@ The conjoined (`TenancyStyle.Conjoined`) multi-tenancy in Marten is implemented 
 
 Once enabled, `TenancyStyle.Conjoined` introduces a `tenant_id` column to Marten tables. This column, of type `varchar` with the default value of `*DEFAULT*` (default tenancy), holds the tenant identifier associated with the record. Furthermore, Marten creates an index on this column by default.
 
-A unique index may optionally be scoped per tenant (see [unique indexes](/guide/documents/configuration/unique)).
+A unique index may optionally be scoped per tenant (see [unique indexes](/guide/documents/indexing/unique)).

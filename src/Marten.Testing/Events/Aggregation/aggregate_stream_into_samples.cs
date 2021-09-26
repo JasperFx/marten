@@ -163,9 +163,11 @@ namespace Marten.Testing.Events.Aggregation
 
             #region sample_aggregate-stream-into-state-store
 
-            (FinancialAccount, AccountingMonthOpened) OpenAccountingMonth(FinancialAccount cashRegister)
+            (FinancialAccount, AccountingMonthOpened) OpenAccountingMonth(
+                FinancialAccount cashRegister)
             {
-                var @event = new AccountingMonthOpened(cashRegister.Id, 11, 2021, 300);
+                var @event = new AccountingMonthOpened(
+                    cashRegister.Id, 11, 2021, 300);
 
                 cashRegister.Apply(@event);
                 return (cashRegister, @event);
