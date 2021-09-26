@@ -2,10 +2,10 @@ name: Docs build and deploy
 
 on:
   # run it on push to the default repository branch
-  # push:
-  #   branches: [master]
+  push:
+     branches: [master]
   # run it during pull request
-  # pull_request_target:
+  pull_request_target:
   workflow_dispatch:
 
 env:
@@ -57,6 +57,7 @@ jobs:
 
       - name: Generate Algolia DocSearch index
         uses: darrenjennings/algolia-docsearch-action@master
+        if: ${{ github.ref != 'refs/heads/master' }}
         with:
           algolia_application_id: ${{ secrets.ALGOLIA_APPLICATION_ID }}
           algolia_api_key: ${{ secrets.ALGOLIA_API_KEY }}
