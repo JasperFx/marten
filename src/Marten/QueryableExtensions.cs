@@ -356,7 +356,7 @@ namespace Marten
         /// <param name="destination"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Task StreamJsonArray<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
+        public static Task<int> StreamJsonArray<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
         {
             return queryable.As<MartenLinqQueryable<T>>().StreamJsonArray(destination, token);
         }

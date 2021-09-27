@@ -42,9 +42,15 @@ public class GetIssueController: ControllerBase
     {
         return _session.LoadAsync<Issue>(issueId);
     }
+
+    [HttpGet("/issue/fast/{issueId}")]
+    public Task GetFast(Guid issueId)
+    {
+        return _session.Json.StreamById<Issue>(issueId, HttpContext);
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/IssueController.cs#L53-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_getissuecontroller' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/IssueController.cs#L54-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_getissuecontroller' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you have an `IDocumentStore` object though, you can open a query session like this:

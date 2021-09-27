@@ -122,7 +122,7 @@ namespace Marten.Linq
             }
         }
 
-        public Task StreamMany(Expression expression, Stream destination, CancellationToken token)
+        public Task<int> StreamMany(Expression expression, Stream destination, CancellationToken token)
         {
             var builder = BuildLinqHandler(expression);
 

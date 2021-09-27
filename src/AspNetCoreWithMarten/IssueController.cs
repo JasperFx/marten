@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCoreWithMarten
@@ -66,6 +68,13 @@ namespace AspNetCoreWithMarten
         {
             return _session.LoadAsync<Issue>(issueId);
         }
+
+        [HttpGet("/issue/fast/{issueId}")]
+        public Task GetFast(Guid issueId)
+        {
+            return _session.Json.WriteToHttpById<Issue>(issueId, HttpContext);
+        }
+
     }
 
     #endregion
