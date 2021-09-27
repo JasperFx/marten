@@ -124,7 +124,7 @@ var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
 
 ## Time Travelling
 
-One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. Thanks to that, you can do time travelling to get the state at a specific date or stream version. 
+One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. This allows you to do time travelling to get the state at a specific date or stream version. 
 
 This capability enables rich diagnostics business and technical wise. You can precisely verify what has happened in your system and troubleshoot the failing scenario.
 
@@ -216,7 +216,7 @@ var roomsAvailabilityAtVersion =
 
 ## Aggregating stream into state
 
-Marten also allows aggregating the stream into a specific entity instance. That means that it will take a particular set of events and apply it one by one to an object. To achieve that, you should pass the base entity state as a `state` parameter into the `AggregateStream` method.
+Marten also allows aggregating the stream into a specific entity instance. This means that a particular set of events are taken and applied to an object one by one in the same order of occurrence. To achieve it, you should pass the base entity state as a `state` parameter into the `AggregateStream` method.
 
 <!-- snippet: sample_aggregate-stream-into-state-default -->
 <a id='snippet-sample_aggregate-stream-into-state-default'></a>
