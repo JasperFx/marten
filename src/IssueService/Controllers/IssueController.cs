@@ -34,21 +34,30 @@ namespace IssueService.Controllers
         [HttpGet("/issue/{issueId}")]
         public Task Get(Guid issueId)
         {
-            return _session.Json.WriteToHttpById<Issue>(issueId, HttpContext);
+            // This "streams" the raw JSON to the HttpResponse
+            // w/o ever having to read the full JSON string or
+            // deserialize/serialize within the HTTP request
+            return _session.Json
+                .WriteById<Issue>(issueId, HttpContext);
         }
 
         [HttpGet("/issue2/{issueId}")]
         public Task Get2(Guid issueId)
         {
             return _session.Query<Issue>().Where(x => x.Id == issueId)
-                .WriteJsonDocumentToHttp(HttpContext);
+                .WriteSingle(HttpContext);
         }
 
 
         [HttpGet("/issue/open")]
         public Task OpenIssues()
         {
-            return _session.Query<Issue>().Where(x => x.Open).WriteJsonArrayToHttp(HttpContext);
+            // This "streams" the raw JSON to the HttpResponse
+            // w/o ever having to read the full JSON string or
+            // deserialize/serialize within the HTTP request
+            return _session.Query<Issue>()
+                .Where(x => x.Open)
+                .WriteArray(HttpContext);
         }
     }
 

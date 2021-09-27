@@ -72,7 +72,7 @@ namespace AspNetCoreWithMarten
         [HttpGet("/issue/fast/{issueId}")]
         public Task GetFast(Guid issueId)
         {
-            return _session.Json.WriteToHttpById<Issue>(issueId, HttpContext);
+            return _session.Json.WriteById<Issue>(issueId, HttpContext);
         }
 
     }
