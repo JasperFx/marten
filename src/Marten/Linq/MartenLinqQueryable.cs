@@ -84,7 +84,7 @@ namespace Marten.Linq
             return MartenProvider.ExecuteAsyncEnumerable<T>(Expression, token);
         }
 
-        public Task StreamJsonArray(Stream destination, CancellationToken token)
+        public Task<int> StreamJsonArray(Stream destination, CancellationToken token)
         {
             return MartenProvider.StreamMany(Expression, destination, token);
         }

@@ -59,6 +59,14 @@ namespace martenbuild
             Target("test-noda-time", DependsOn("compile-noda-time"), () =>
                 Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
+            Target("compile-aspnetcore", DependsOn("clean"), () =>
+                Run("dotnet", $"build src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --configuration {configuration}"));
+
+
+            Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
+                Run("dotnet", $"test src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+
+
             Target("test-schema", () =>
                 Run("dotnet", $"test src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
@@ -80,7 +88,7 @@ namespace martenbuild
                 Run("dotnet", $"test src/Marten.PLv8.Testing/Marten.PLv8.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
 
-            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema", "test-plv8", "test-codegen"));
+            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-commands", "test-schema", "test-plv8", "test-codegen", "test-aspnetcore"));
 
             Target("storyteller", DependsOn("compile"), () =>
                 Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
