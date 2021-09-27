@@ -17,7 +17,7 @@ namespace Marten.AspNetCore
         /// <param name="contentType"></param>
         /// <param name="onFoundStatus"></param>
         /// <typeparam name="T"></typeparam>
-        public static async Task WriteJsonDocumentToHttp<T>(this IQueryable<T> queryable, HttpContext context, string contentType = "application/json", int onFoundStatus = 200)
+        public static async Task WriteSingle<T>(this IQueryable<T> queryable, HttpContext context, string contentType = "application/json", int onFoundStatus = 200)
         {
             var stream = new MemoryStream();
             var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted);
@@ -45,7 +45,7 @@ namespace Marten.AspNetCore
         /// <param name="context"></param>
         /// <param name="contentType"></param>
         /// <typeparam name="T"></typeparam>
-        public static async Task WriteJsonArrayToHttp<T>(this IQueryable<T> queryable, HttpContext context,
+        public static async Task WriteArray<T>(this IQueryable<T> queryable, HttpContext context,
             string contentType = "application/json")
         {
             var stream = new MemoryStream();
@@ -67,7 +67,7 @@ namespace Marten.AspNetCore
         /// <param name="context"></param>
         /// <param name="contentType"></param>
         /// <typeparam name="T"></typeparam>
-        public static async Task WriteToHttpById<T>(this IJsonLoader json, string id, HttpContext context, string contentType = "application/json") where T : class
+        public static async Task WriteById<T>(this IJsonLoader json, string id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
             var found = await json.StreamById<T>(id, stream);
@@ -95,7 +95,7 @@ namespace Marten.AspNetCore
         /// <param name="context"></param>
         /// <param name="contentType"></param>
         /// <typeparam name="T"></typeparam>
-        public static async Task WriteToHttpById<T>(this IJsonLoader json, Guid id, HttpContext context, string contentType = "application/json") where T : class
+        public static async Task WriteById<T>(this IJsonLoader json, Guid id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
             var found = await json.StreamById<T>(id, stream);
@@ -123,7 +123,7 @@ namespace Marten.AspNetCore
         /// <param name="context"></param>
         /// <param name="contentType"></param>
         /// <typeparam name="T"></typeparam>
-        public static async Task WriteToHttpById<T>(this IJsonLoader json, int id, HttpContext context, string contentType = "application/json") where T : class
+        public static async Task WriteById<T>(this IJsonLoader json, int id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
             var found = await json.StreamById<T>(id, stream);
@@ -151,7 +151,7 @@ namespace Marten.AspNetCore
         /// <param name="context"></param>
         /// <param name="contentType"></param>
         /// <typeparam name="T"></typeparam>
-        public static async Task WriteToHttpById<T>(this IJsonLoader json, long id, HttpContext context, string contentType = "application/json") where T : class
+        public static async Task WriteById<T>(this IJsonLoader json, long id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
             var found = await json.StreamById<T>(id, stream);
