@@ -50,11 +50,11 @@ namespace Marten
         {
             _stopwatch?.Stop();
 
-            var message = "Marten encountered an exception executing \n{SQL}\n" + command.Parameters
-                .OfType<NpgsqlParameter>()
+            var message = "Marten encountered an exception executing \n{SQL}\n{PARAMS}";
+            var parameters = command.Parameters.OfType<NpgsqlParameter>()
                 .Select(p => $"  {p.ParameterName}: {p.Value}")
                 .Join(Environment.NewLine);
-            _logger.LogError(ex, message, command.CommandText);
+            _logger.LogError(ex, message, command.CommandText, parameters);
 
         }
 
