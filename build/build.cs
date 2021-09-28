@@ -60,11 +60,11 @@ namespace martenbuild
                 Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
 
             Target("compile-aspnetcore", DependsOn("clean"), () =>
-                Run("dotnet", $"build src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --configuration {configuration}"));
+                Run("dotnet", $"build src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj"));
 
 
             Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
-                Run("dotnet", $"test src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+                Run("dotnet", $"test src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --framework {framework} --no-build"));
 
 
             Target("test-schema", () =>
