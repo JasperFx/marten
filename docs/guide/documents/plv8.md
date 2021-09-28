@@ -1,6 +1,6 @@
 # Marten.PLv8
 
-Marten provides **Marten.PLv8** plugin to use [PLV8](https://plv8.github.io/) based Patch and Transform operations on stored documents. Install it through the [NuGet package](Install-Package Marten.PLv8).
+Marten provides **Marten.PLv8** plugin to use [PLV8](https://plv8.github.io/) based Patch and Transform operations on stored documents. Install it through the [NuGet package](https://www.nuget.org/packages/Marten.PLv8).
 
 ```powershell
 Install-Package Marten.PLv8
