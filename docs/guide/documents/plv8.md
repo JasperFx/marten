@@ -1,6 +1,34 @@
 # Marten.PLv8
 
-TODO -- talk about installing the separate nuget
+Marten provides **Marten.PLv8** plugin to use [PLV8](https://plv8.github.io/) based Patch and Transform operations on stored documents. Install it through the [NuGet package](Install-Package Marten.PLv8).
+
+```powershell
+Install-Package Marten.PLv8
+```
+
+Call `UseJavascriptTransformsAndPatching()` as part of `DocumentStore` setup to enable it. You can also optionally configure custom JavaScript transformations as part of this method.
+
+A sample setup is shown below:
+<!-- snippet: sample_loading_js_transform_files -->
+<a id='snippet-sample_loading_js_transform_files'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+    _.Connection(ConnectionSource.ConnectionString);
+
+    _.UseJavascriptTransformsAndPatching(transforms =>
+    {
+        // Let Marten derive the transform name from the filename
+        transforms.LoadFile("get_fullname.js");
+
+        // Explicitly define the transform name yourself
+        transforms.LoadFile("default_username.js", "set_default_username");
+    });
+
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/document_transforms.cs#L36-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_loading_js_transform_files' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## The Patching API
 
