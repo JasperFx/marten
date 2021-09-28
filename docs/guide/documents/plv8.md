@@ -457,14 +457,14 @@ using (var query = theStore.QuerySession())
 
 ## Javascript Transformations
 
-The [patch API](/guide/documents/advanced/patch-api) provides some out of the box recipes for common document transforms and the [document projections](/guide/documents/querying/projections) in the Linq support gives you the ability to do some basic transformations of the persisted JSON data in the database as part of querying. If your needs fall outside of these simple built in mechanism, you're still in luck because you can resort to using custom Javascript functions that will run inside of Postgresql itself to do more advanced document transformations.
+The patch API provides some out of the box recipes for common document transforms and the [document projections](/guide/documents/querying/linq/projections) in the Linq support gives you the ability to do some basic transformations of the persisted JSON data in the database as part of querying. If your needs fall outside of these simple built in mechanism, you're still in luck because you can resort to using custom Javascript functions that will run inside of Postgresql itself to do more advanced document transformations.
 
 At this point, Marten supports these use cases:
 
 1. Transforming the data in one or more documents to apply some kind of structural migration to persisted documents, like you would need to do if
    the application code no longer matches the JSON previously stored
-1. Creating a "readside" view of a persisted document as part of a Linq query.
-1. Transform the raw document data to a completely different .Net type as part of a Linq query
+2. Creating a "readside" view of a persisted document as part of a Linq query.
+3. Transform the raw document data to a completely different .Net type as part of a Linq query
 
 ### Creating and Loading a Javascript Function
 

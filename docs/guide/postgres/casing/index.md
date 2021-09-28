@@ -1,6 +1,6 @@
 # Case Sensitivity
 
-String comparisons in PostgreSQL are case sensitive* (unless a case-insensitive collation were to be introduced). To work around this, PostgreSQL has several methods to match strings in a case-insensitive manner. Consequently, Marten also makes use of these methods to translate case-insensitive queries to pgSQL. See [querying document with Linq](/guide/documents/querying/linq) for querying by strings.
+String comparisons in PostgreSQL are case sensitive* (unless a case-insensitive collation were to be introduced). To work around this, PostgreSQL has several methods to match strings in a case-insensitive manner. Consequently, Marten also makes use of these methods to translate case-insensitive queries to pgSQL. See [querying document with Linq](/guide/documents/querying/linq/) for querying by strings.
 
 ::: tip INFO
 Databases, tables, fields and column names are case-independent, unless created with double quotes.

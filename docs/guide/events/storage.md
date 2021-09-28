@@ -111,4 +111,4 @@ public Dictionary<string, object>? Headers { get; set; }
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L124-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/guide/documents/diagnostics) for more information on capturing event data in the instrumentation hooks.
+The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/guide/diagnostics) for more information on capturing event data in the instrumentation hooks.

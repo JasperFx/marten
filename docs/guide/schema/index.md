@@ -1,6 +1,6 @@
 # Marten and the PostgreSQL Schema
 
-Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a PostgreSQL schema. Marten will generate and add a table and matching `upsert` function for each unique document type as needed. It also adds some other tables and functions for the [event store functionality](/guide/events/) and [HiLo id generation](/guide/documents/identity/sequential)
+Marten works by adding tables and functions (yes, Virginia, we've let stored procedures creep back into our life) to a PostgreSQL schema. Marten will generate and add a table and matching `upsert` function for each unique document type as needed. It also adds some other tables and functions for the [event store functionality](/guide/events/) and [HiLo id generation](/guide/documents/identity)
 
 In all cases, the Marten schema objects are all prefixed with `mt_.`
 
@@ -38,9 +38,9 @@ var store = DocumentStore.For(_ =>
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
 
 1. Compare the current schema table to what's configured for that document type
-1. If the table matches, do nothing
-1. If the table is missing, try to create the table depending on the auto create schema setting shown above
-1. If the table has new, searchable columns, adds the new column and runs an "UPDATE" command to duplicate the
+2. If the table matches, do nothing
+3. If the table is missing, try to create the table depending on the auto create schema setting shown above
+4. If the table has new, searchable columns, adds the new column and runs an "UPDATE" command to duplicate the
    information in the JsonB data field. Do note that this could be expensive for large tables. This is also impacted
    by the auto create schema mode shown above.
 

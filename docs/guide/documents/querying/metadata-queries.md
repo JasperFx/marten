@@ -4,7 +4,7 @@ All documents stored by Marten have [metadata](/guide/schema/metadata) attribute
 These could of course be queried using [Postgres SQL](/guide/documents/querying/sql) but there are some Linq
 methods predefined.
 
-You could also define your own, see extending [Marten's Linq support](/guide/documents/advanced/customizing-linq)
+You could also define your own, see extending [Marten's Linq support](/guide/documents/querying/linq/extending)
 
 ## Last Modified
 
@@ -15,7 +15,7 @@ Queries utilising `mt_last_modified`
 
 ## Deleted
 
-See [soft deletes](/guide/documents/advanced/soft-deletes) for further details
+See [soft deletes](/guide/documents/deletes) for further details
 
 Queries utilising `mt_deleted`
 
@@ -29,5 +29,5 @@ Queries utilising `mt_deleted_at`
 
 ## Indexing
 
-See [metadata index](/guide/documents/configuration/metadata-indexes) for information on how to enable predefined
+See [metadata index](/guide/documents/indexing/metadata-indexes) for information on how to enable predefined
 indexing

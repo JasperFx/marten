@@ -49,7 +49,7 @@ will dump a SQL file with all the [Data Definition Language](https://en.wikipedi
 to bring a database schema into alignment with the current Marten configuration.
 
 In usage, you would need to tell Marten about every possible document type, any event store usage, and any
-[javascript transforms](/guide/documents/advanced/javascript-transformations) so that Marten
+[javascript transforms](/guide/documents/plv8) so that Marten
 "knows" how to make the full comparison:
 
 <!-- snippet: sample_configure-document-types-upfront -->

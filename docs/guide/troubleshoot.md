@@ -11,7 +11,7 @@
 
 ## Query throws `NotSupportedException` exception
 
-Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider [hand-crafting the required query](/guide/documents/querying/linq#use-matchessql-sql-to-search-using-raw-sql).
+Marten needs to translate LINQ queries to SQL in order to execute them against the database. This translation requires explicit support for all the query operators that are used. If your query operation is not covered, Marten will throw a `NotSupportedException`. In such a case, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new). Lastly, as a mitigation, consider [hand-crafting the required query](/guide/documents/querying/linq/#use-matchessql-sql-to-search-using-raw-sql).
 
 ## Serialize to camel case?
 
@@ -34,7 +34,7 @@ If you don't want PLV8 (required for JavaScript transformations) related items i
 
 ## More diagnostics data outside of Marten
 
-If you cannot obtain the desired diagnostic data through Marten's [diagnostics](/guide/documents/diagnostics), consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).
+If you cannot obtain the desired diagnostic data through Marten's [diagnostics](/guide/diagnostics), consider using the [Npgsql logging facilities](https://www.npgsql.org/doc/logging.html), by hooking into `NpgsqlLogManager.Provider`, or by using the [performance counters exposed by Npgsql](https://www.npgsql.org/doc/performance.html).
 
 Lastly, if you feel that exposing the data should be the responsibility of Marten, consider [filing a feature request](https://github.com/JasperFx/marten/issues/new).
 

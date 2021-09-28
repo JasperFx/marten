@@ -50,13 +50,13 @@ public async Task basic_operators(IDocumentSession session)
     await session.Query<Target>().Where(x => x.Number == 5).ToListAsync();
 
     // Field does not equal a value
-    session.Query<Target>().Where(x => x.Number != 5).ToListAsync();
+    await session.Query<Target>().Where(x => x.Number != 5).ToListAsync();
 
     // Field compared to values
-    session.Query<Target>().Where(x => x.Number > 5).ToListAsync();
-    session.Query<Target>().Where(x => x.Number >= 5).ToListAsync();
-    session.Query<Target>().Where(x => x.Number < 5).ToListAsync();
-    session.Query<Target>().Where(x => x.Number <= 5).ToListAsync();
+    await session.Query<Target>().Where(x => x.Number > 5).ToListAsync();
+    await session.Query<Target>().Where(x => x.Number >= 5).ToListAsync();
+    await session.Query<Target>().Where(x => x.Number < 5).ToListAsync();
+    await session.Query<Target>().Where(x => x.Number <= 5).ToListAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L20-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_basic_operators' title='Start of snippet'>anchor</a></sup>

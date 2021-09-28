@@ -28,10 +28,11 @@ namespace Marten.Services.BatchQuerying
         /// Fetch all the events for a single event stream
         /// </summary>
         /// <param name="streamId"></param>
-        /// <param name="version"></param>
-        /// <param name="timestamp"></param>
+        /// <param name="version">If set, queries for events up to and including this version</param>
+        /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
+        /// <param name="fromVersion">If set, queries for events on or from this version</param>
         /// <returns></returns>
-        Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null);
+        Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null, long fromVersion = 0);
     }
 
     public interface IBatchedQuery

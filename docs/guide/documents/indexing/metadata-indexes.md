@@ -36,7 +36,7 @@ DocumentStore.For(_ =>
 
 ## Soft Delete
 
-If using the [soft deletes](/guide/documents/advanced/soft-deletes) functionality you can ask Marten
+If using the [soft deletes](/guide/documents/deletes) functionality you can ask Marten
 to create a partial index on the deleted documents either using `SoftDeletedAttribute`:
 
 <!-- snippet: sample_SoftDeletedWithIndexAttribute -->
