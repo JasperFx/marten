@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Microsoft.AspNetCore.Http;
 
 namespace Marten.AspNetCore
@@ -171,5 +172,57 @@ namespace Marten.AspNetCore
             }
         }
 
+        /// <summary>
+        /// Write a single document returned from a compiled query to the
+        /// given HttpContext
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="query"></param>
+        /// <param name="context"></param>
+        /// <param name="contentType"></param>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TOut"></typeparam>
+        public static async Task WriteOne<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context, string contentType = "application/json")
+        {
+            var stream = new MemoryStream();
+            var found = await session.StreamJsonOne(query, stream, context.RequestAborted);
+            if (found)
+            {
+                context.Response.StatusCode = 200;
+                context.Response.ContentLength = stream.Length;
+                context.Response.ContentType = contentType;
+
+                stream.Position = 0;
+                await stream.CopyToAsync(context.Response.Body);
+            }
+            else
+            {
+                context.Response.StatusCode = 404;
+                context.Response.ContentLength = 0;
+            }
+        }
+
+        /// <summary>
+        /// Write an array of documents as a JSON array from a compiled query
+        /// to the HttpContext
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="query"></param>
+        /// <param name="context"></param>
+        /// <param name="contentType"></param>
+        /// <typeparam name="TDoc"></typeparam>
+        /// <typeparam name="TOut"></typeparam>
+        public static async Task WriteArray<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context, string contentType = "application/json")
+        {
+            var stream = new MemoryStream();
+            await session.StreamJsonMany(query, stream, context.RequestAborted);
+
+            context.Response.StatusCode = 200;
+            context.Response.ContentLength = stream.Length;
+            context.Response.ContentType = contentType;
+
+            stream.Position = 0;
+            await stream.CopyToAsync(context.Response.Body);
+        }
     }
 }

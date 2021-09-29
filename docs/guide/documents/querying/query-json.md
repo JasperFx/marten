@@ -1,8 +1,8 @@
 # Query for Raw JSON
 
-Added in Marten v0.6 is the ability to retrieve just the raw JSON string for a document. The point is to be able to fetch the raw JSON from the database for a document and immediately stream that data to a web client without having to take the performance hit of deserializing and serializing the object to and from JSON.
-
-As of v0.6, Marten supplies the `IQuerySession/IDocumentSession.FindById<T>()` mechanism as shown below:
+Marten stores documents as JSON, and sometimes it might be valuable to access the raw JSON representation of the 
+stored documents. To that end, the `IQuerySession.Json` property gives you access to several helper methods to load
+JSON strings.
 
 <!-- snippet: sample_find-json-by-id -->
 <a id='snippet-sample_find-json-by-id'></a>
@@ -42,7 +42,7 @@ public async Task when_find_then_a_json_should_be_returned()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/document_session_find_json_async_Tests.cs#L13-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_find-json-by-id-async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-As of v0.9, Marten supplies the following functionality to retrieve the raw JSON strings:
+Marten supplies the following functionality to retrieve the raw JSON strings:
 
 <!-- snippet: sample_get-raw-json -->
 <a id='snippet-sample_get-raw-json'></a>
@@ -92,7 +92,7 @@ public async Task when_get_json_then_raw_json_should_be_returned_async()
 
 ## Using AsJson() with Select() Transforms
 
-New for Marten v0.9.1 is the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
+Marten has the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
 
 <!-- snippet: sample_AsJson-plus-Select-1 -->
 <a id='snippet-sample_asjson-plus-select-1'></a>

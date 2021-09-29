@@ -30,11 +30,16 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/document_transforms.cs#L36-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_loading_js_transform_files' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## The Patching API
+To enable these features, Marten provides **Marten.PLv8** plugin. 
 
-::: tip INFO
-Using the Patching API in Marten requires the usage of Postgresql's [PLV8 extension](https://github.com/plv8/plv8).
-:::
+Install it through the [Nuget package](https://www.nuget.org/packages/Marten.PLv8/).
+
+```powershell
+PM> Install-Package Marten.PLv8
+```
+
+
+## The Patching API
 
 Marten's Patching API is a mechanism to update persisted documents without having to first load the document into memory.
 "Patching" can be much more efficient at runtime in some scenarios because you avoid the "deserialize from JSON, edit, serialize

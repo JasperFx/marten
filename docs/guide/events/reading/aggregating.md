@@ -365,9 +365,11 @@ Then append event and store snapshot on opening accounting month:
 <!-- snippet: sample_aggregate-stream-into-state-store -->
 <a id='snippet-sample_aggregate-stream-into-state-store'></a>
 ```cs
-(FinancialAccount, AccountingMonthOpened) OpenAccountingMonth(FinancialAccount cashRegister)
+(FinancialAccount, AccountingMonthOpened) OpenAccountingMonth(
+    FinancialAccount cashRegister)
 {
-    var @event = new AccountingMonthOpened(cashRegister.Id, 11, 2021, 300);
+    var @event = new AccountingMonthOpened(
+        cashRegister.Id, 11, 2021, 300);
 
     cashRegister.Apply(@event);
     return (cashRegister, @event);
@@ -385,7 +387,7 @@ var repository = new CashRegisterRepository(_session);
 
 await repository.Store(openedCashierShift, cashierShiftOpened);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L164-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L164-L188' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and read snapshot and following event with:
@@ -395,5 +397,5 @@ and read snapshot and following event with:
 ```cs
 var currentState = await repository.Get(financialAccountId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L205-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L207-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

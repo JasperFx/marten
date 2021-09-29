@@ -85,7 +85,7 @@ module.exports = {
                         {text: 'Searching for NULL Values', link: '/guide/documents/querying/linq/nulls'},
                     ]},
                 {text: 'Querying with Postgres SQL', link: '/guide/documents/querying/sql'},
-                {text: 'Retrieving or Streaming JSON', link: '/guide/documents/querying/query-json'},
+                {text: 'Querying for Raw JSON', link: '/guide/documents/querying/query-json'},
                 {text: 'Compiled Queries', link: '/guide/documents/querying/compiled-queries'},
                 {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'},
                 {text: 'Metadata Queries', link: '/guide/documents/querying/metadata-queries'},
@@ -111,7 +111,8 @@ module.exports = {
           {text: 'Optimistic Concurrency', link: '/guide/documents/concurrency'},
           {text: 'Full Text Searching', link: '/guide/documents/full-text'},
           {text: 'Noda Time Support', link: '/guide/documents/noda-time'},
-          {text: 'PLv8 Support', link: '/guide/documents/plv8'}
+          {text: 'PLv8 Support', link: '/guide/documents/plv8'},
+          {text: 'AspNetCore Support', link: '/guide/documents/aspnetcore'}
         ]
       },
       {
