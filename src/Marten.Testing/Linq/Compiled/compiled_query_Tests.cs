@@ -20,7 +20,7 @@ namespace Marten.Testing.Linq.Compiled
         private readonly User _user1;
         private readonly User _user5;
 
-        public compiled_query_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public compiled_query_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _user1 = new User { FirstName = "Jeremy", UserName = "jdm", LastName = "Miller" };
             var user2 = new User { FirstName = "Jens" };
@@ -412,6 +412,16 @@ namespace Marten.Testing.Linq.Compiled
         }
 
         #endregion
+
+        [Fact]
+        public void can_preview_generated_source_code()
+        {
+            var sourceCode = theStore.Advanced
+                .SourceCodeForCompiledQuery(typeof(FindJsonUserByUsername));
+
+            // xunit output helper
+            _output.WriteLine(sourceCode);
+        }
     }
 
     public class UserProjectionToLoginPayload: ICompiledQuery<User, LoginPayload>

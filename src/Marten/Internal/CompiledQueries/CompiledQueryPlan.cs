@@ -10,24 +10,37 @@ using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Util;
 using Npgsql;
-using CommandExtensions = Weasel.Core.CommandExtensions;
 
 namespace Marten.Internal.CompiledQueries
 {
     public class CompiledQueryPlan
     {
-        public Type QueryType { get; }
-        public Type OutputType { get; }
-
         public CompiledQueryPlan(Type queryType, Type outputType)
         {
             QueryType = queryType;
             OutputType = outputType;
         }
+
+        public Type QueryType { get; }
+        public Type OutputType { get; }
+
+        public IList<MemberInfo> InvalidMembers { get; } = new List<MemberInfo>();
+
+        public IList<IQueryMember> Parameters { get; } = new List<IQueryMember>();
+
+
+        public NpgsqlCommand Command { get; set; }
+
+        public IQueryHandler HandlerPrototype { get; set; }
+
+        public MemberInfo StatisticsMember { get; set; }
+
+        public IList<MemberInfo> IncludeMembers { get; } = new List<MemberInfo>();
+
+        internal IList<IIncludePlan> IncludePlans { get; } = new List<IIncludePlan>();
 
         public void FindMembers()
         {
@@ -74,33 +87,24 @@ namespace Marten.Internal.CompiledQueries
 
         private IEnumerable<MemberInfo> findMembers()
         {
-            foreach (var field in QueryType.GetFields(BindingFlags.Instance | BindingFlags.Public).Where(x => !x.HasAttribute<MartenIgnoreAttribute>()))
-            {
-                yield return field;
-            }
+            foreach (var field in QueryType.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())) yield return field;
 
-            foreach (var property in QueryType.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(x => !x.HasAttribute<MartenIgnoreAttribute>()))
-            {
-                yield return property;
-            }
+            foreach (var property in QueryType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())) yield return property;
         }
-
-        public IList<MemberInfo> InvalidMembers { get; } = new List<MemberInfo>();
-
-        public IList<IQueryMember> Parameters { get; } = new List<IQueryMember>();
-
-
-
-        public NpgsqlCommand Command { get; set; }
 
         public string CorrectedCommandText()
         {
             var text = Command.CommandText;
 
-            for (var i = Command.Parameters.Count - 1; i >= 0 ; i--)
+            for (var i = Command.Parameters.Count - 1; i >= 0; i--)
             {
                 var parameterName = Command.Parameters[i].ParameterName;
-                if (parameterName == TenantIdArgument.ArgName) continue;
+                if (parameterName == TenantIdArgument.ArgName)
+                {
+                    continue;
+                }
 
                 text = text.Replace(":" + parameterName, "?");
             }
@@ -108,30 +112,25 @@ namespace Marten.Internal.CompiledQueries
             return text;
         }
 
-        public IQueryHandler HandlerPrototype { get; set; }
-
-        public MemberInfo StatisticsMember { get; set; }
-
-        public IList<MemberInfo> IncludeMembers { get; } = new List<MemberInfo>();
-
-        internal IList<IIncludePlan> IncludePlans { get; } = new List<IIncludePlan>();
-
 
         public QueryStatistics GetStatisticsIfAny(object query)
         {
-            if (StatisticsMember is PropertyInfo p) return (QueryStatistics)p.GetValue(query) ?? new QueryStatistics();
+            if (StatisticsMember is PropertyInfo p)
+            {
+                return (QueryStatistics)p.GetValue(query) ?? new QueryStatistics();
+            }
 
-            if (StatisticsMember is FieldInfo f) return (QueryStatistics)f.GetValue(query) ?? new QueryStatistics();
+            if (StatisticsMember is FieldInfo f)
+            {
+                return (QueryStatistics)f.GetValue(query) ?? new QueryStatistics();
+            }
 
             return null;
         }
 
-        public ICompiledQuery<TDoc,TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc,TOut> query)
+        public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
         {
-            foreach (var parameter in Parameters)
-            {
-                parameter.StoreValue(query);
-            }
+            foreach (var parameter in Parameters) parameter.StoreValue(query);
 
             if (!(query is IQueryPlanning) && AreAllMemberValuesUnique(query))
             {
@@ -140,7 +139,7 @@ namespace Marten.Internal.CompiledQueries
 
             try
             {
-                return (ICompiledQuery<TDoc,TOut>)TryCreateUniqueTemplate(query.GetType());
+                return (ICompiledQuery<TDoc, TOut>)TryCreateUniqueTemplate(query.GetType());
             }
             catch (Exception e)
             {
@@ -162,7 +161,8 @@ namespace Marten.Internal.CompiledQueries
 
             if (constructor == null)
             {
-                throw new InvalidOperationException("Cannot find a suitable constructor for query planning for type " + type.FullNameInCode());
+                throw new InvalidOperationException("Cannot find a suitable constructor for query planning for type " +
+                                                    type.FullNameInCode());
             }
 
             var valueSource = new UniqueValueSource();
@@ -172,10 +172,7 @@ namespace Marten.Internal.CompiledQueries
             if (query is IQueryPlanning planning)
             {
                 planning.SetUniqueValuesForQueryPlanning();
-                foreach (var member in Parameters)
-                {
-                    member.StoreValue(query);
-                }
+                foreach (var member in Parameters) member.StoreValue(query);
             }
 
             if (AreAllMemberValuesUnique(query))
@@ -183,17 +180,15 @@ namespace Marten.Internal.CompiledQueries
                 return query;
             }
 
-            foreach (var queryMember in Parameters)
-            {
-                queryMember.TryWriteValue(valueSource, query);
-            }
+            foreach (var queryMember in Parameters) queryMember.TryWriteValue(valueSource, query);
 
             if (AreAllMemberValuesUnique(query))
             {
                 return query;
             }
 
-            throw new InvalidCompiledQueryException("Marten is unable to create a compiled query plan for type " + type.FullNameInCode());
+            throw new InvalidCompiledQueryException("Marten is unable to create a compiled query plan for type " +
+                                                    type.FullNameInCode());
         }
 
         public void ReadCommand(NpgsqlCommand command, StoreOptions storeOptions)
@@ -202,18 +197,14 @@ namespace Marten.Internal.CompiledQueries
 
             var parameters = command.Parameters.ToList();
             parameters.RemoveAll(x => x.ParameterName == TenantIdArgument.ArgName);
-            foreach (var parameter in Parameters)
-            {
-                parameter.TryMatch(parameters, storeOptions);
-            }
+            foreach (var parameter in Parameters) parameter.TryMatch(parameters, storeOptions);
 
             var missing = Parameters.Where(x => !x.ParameterIndexes.Any());
             if (missing.Any())
             {
-                throw new  InvalidCompiledQueryException($"Unable to match compiled query member(s) {missing.Select(x => x.Member.Name).Join(", ")} with a command parameter");
+                throw new InvalidCompiledQueryException(
+                    $"Unable to match compiled query member(s) {missing.Select(x => x.Member.Name).Join(", ")} with a command parameter");
             }
         }
-
-
     }
 }

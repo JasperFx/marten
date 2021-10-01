@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
+using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.TestSupport;
 using Marten.Internal;
+using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Weasel.Postgresql;
@@ -143,6 +146,28 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         }
 
 
+        /// <summary>
+        /// Calculate the source code that would be generated to handle
+        /// a compiled query class
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public string SourceCodeForCompiledQuery(Type type)
+        {
+            if (!type.Closes(typeof(ICompiledQuery<,>)))
+            {
+                throw new ArgumentOutOfRangeException(nameof(type), "Not a compiled query type");
+            }
+
+            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
+            using var session = _store.LightweightSession();
+            var plan = QueryCompiler.BuildPlan((IMartenSession) session, type, _store.Options);
+            var builder = new CompiledQuerySourceBuilder(plan, _store.Options);
+            var (sourceType, handlerType) = builder.AssemblyType(assembly);
+
+            return assembly.GenerateCode();
+
+        }
 
         /// <summary>
         /// Access the generated source code Marten is using for a given

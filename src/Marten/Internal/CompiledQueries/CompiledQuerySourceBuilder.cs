@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Baseline;
@@ -31,7 +30,7 @@ namespace Marten.Internal.CompiledQueries
             _typeName = _plan.QueryType.Name + "CompiledQuerySource";
         }
 
-        public void AssemblyType(GeneratedAssembly assembly)
+        public (GeneratedType, GeneratedType) AssemblyType(GeneratedAssembly assembly)
         {
             assembly.Namespaces.Fill("System");
 
@@ -40,7 +39,9 @@ namespace Marten.Internal.CompiledQueries
             var hardcoded = new HardCodedParameters(_plan);
             var compiledHandlerType = buildHandlerType(assembly, handlerType, hardcoded);
 
-            buildSourceType(assembly, handlerType, compiledHandlerType);
+            var sourceType = buildSourceType(assembly, handlerType, compiledHandlerType);
+
+            return (sourceType, compiledHandlerType);
         }
 
         public ICompiledQuerySource CreateFromPreBuiltType(Assembly assembly)
@@ -298,5 +299,6 @@ namespace Marten.Internal.CompiledQueries
 
             return CompiledSourceType.Stateless;
         }
+
     }
 }
