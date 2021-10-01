@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Xunit;
@@ -22,7 +23,8 @@ namespace Marten.Testing.Logging
                 }
             };
             logger.LogFailure(command, new Exception());
-            Assert.Equal("Marten encountered an exception executing \nselect * from users where id = @id\n  id: {1}\n", sb.ToString());
+
+            Assert.Equal("Marten encountered an exception executing \nselect * from users where id = @id\n  id: {1}", sb.ToString().Trim());
         }
     }
 
