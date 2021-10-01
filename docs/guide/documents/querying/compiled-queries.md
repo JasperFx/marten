@@ -123,9 +123,13 @@ public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
         PageSize = 20; // This has to be a positive value, or the Take() operator has no effect
         Type = Guid.NewGuid().ToString();
     }
+
+    // And hey, if you have a public QueryStatistics member on your compiled
+    // query class, you'll get the total number of records
+    public QueryStatistics Statistics { get; } = new QueryStatistics();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_1891_compiled_query_problem.cs#L27-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_iqueryplanning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_1891_compiled_query_problem.cs#L28-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_iqueryplanning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Pay close attention to the `SetUniqueValuesForQueryPlanning()` method. That has absolutely no other purpose but to help Marten
@@ -187,7 +191,7 @@ public class UsersByFirstName: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L453-L465' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L497-L509' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you do want to use a `Select()` transform, use this interface:
@@ -219,7 +223,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
     public string FirstName { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L477-L490' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L521-L534' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Related Documents with Include()
@@ -506,3 +510,60 @@ And an example:
 <[sample:sample_FindJsonUserByUsername]>
 
 (our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)
+
+## Using with QueryStatistics
+
+Compiled queries can be used with the `QueryStatistics` paging helper. You just need to have a public member
+on your compiled query class of type `QueryStatistics` with a value. Marten will do the rest and use that
+object to collect the total number of rows in the database when the query is executed. Here's an example
+from the Marten tests:
+
+<!-- snippet: sample_TargetsInOrder -->
+<a id='snippet-sample_targetsinorder'></a>
+```cs
+public class TargetsInOrder: ICompiledListQuery<Target>
+{
+    // This is all you need to do
+    public QueryStatistics Statistics { get; } = new QueryStatistics();
+
+    public int PageSize { get; set; } = 20;
+    public int Start { get; set; } = 5;
+
+    Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> ICompiledQuery<Target, IEnumerable<Target>>.QueryIs()
+    {
+        return q => q
+            .OrderBy(x => x.Id).Skip(Start).Take(PageSize);
+    }
+
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L433-L451' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_targetsinorder' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And when used in the actual test:
+
+<!-- snippet: sample_using_QueryStatistics_with_compiled_query -->
+<a id='snippet-sample_using_querystatistics_with_compiled_query'></a>
+```cs
+[Fact]
+public async Task use_compiled_query_with_statistics()
+{
+    await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+    var targets = Target.GenerateRandomData(100).ToArray();
+    await theStore.BulkInsertAsync(targets);
+
+    var query = new TargetsInOrder
+    {
+        PageSize = 10,
+        Start = 20
+    };
+
+    var results = await theSession.QueryAsync(query);
+
+    // Verifying that the total record count in the database matching
+    // the query is determined when this is executed
+    query.Statistics.TotalResults.ShouldBe(100);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs#L392-L414' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

@@ -21,6 +21,7 @@ namespace Marten.Testing.Bugs
             {
                 Type = "foo"
             });
+
         }
     }
 
@@ -42,6 +43,10 @@ namespace Marten.Testing.Bugs
             PageSize = 20; // This has to be a positive value, or the Take() operator has no effect
             Type = Guid.NewGuid().ToString();
         }
+
+        // And hey, if you have a public QueryStatistics member on your compiled
+        // query class, you'll get the total number of records
+        public QueryStatistics Statistics { get; } = new QueryStatistics();
     }
 
     #endregion
