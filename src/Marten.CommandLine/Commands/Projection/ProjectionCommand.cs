@@ -69,7 +69,7 @@ namespace Marten.CommandLine.Commands.Projection
             }
 
             var daemon = store.BuildProjectionDaemon();
-            await daemon.StartAllShards();
+            await daemon.StartDaemon();
 
             var highWater = daemon.Tracker.HighWaterMark;
             var watcher = new RebuildWatcher(highWater, _completion.Task);

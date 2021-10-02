@@ -124,6 +124,11 @@ namespace Marten.Events.Daemon
 
         public async Task StartShard(AsyncProjectionShard shard, CancellationToken cancellationToken)
         {
+            if (!_highWater.IsRunning)
+            {
+                await StartDaemon();
+            }
+
             // Don't duplicate the shard
             if (_agents.ContainsKey(shard.Name.Identity)) return;
 
