@@ -22,7 +22,7 @@ namespace Marten.NodaTime.Testing.TestData
         {
             var dateTime = defaultDateTime ?? DateTime.UtcNow;
             var localDateTime = LocalDateTime.FromDateTime(dateTime);
-            var instant = Instant.FromDateTimeUtc(dateTime);
+            var instant = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
 
             return new TargetWithDates
             {
