@@ -189,25 +189,25 @@ module.exports = {
               },
               {
                 text: 'Publishing changes',
-                link: '/guide/events/source/'
+                link: '/guide/events/streaming/source'
               },
               {
                 text: 'Receiving events',
-                link: '/guide/events/sink/'
+                link: '/guide/events/streaming/sink'
               },
             ]
           },
           {
             text: 'Metadata',
-            link: '/guide/metadata/',
+            link: '/guide/events/metadata/',
             children: [
               {
                 text: 'Introduction',
-                link: '/guide/metadata/'
+                link: '/guide/events/metadata/'
               },
               {
                 text: 'Diagnostics',
-                link: 'guide/metadata/diagnostics'
+                link: 'guide/events/metadata/diagnostics'
               }
             ]
           },

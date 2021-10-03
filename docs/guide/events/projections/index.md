@@ -215,14 +215,14 @@ public class QuestPartyWithEvents
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestPartyWithEvents.cs#L9-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Aggregates Across Multiple Streams
+## Aggregates Across Multiple Streams
 
 Example coming soon, and check [Jeremy's blog](http://jeremydmiller.com) for a sample soon.
 
 It's possible currently by using either a custom `IProjection` or using the existing aggregation capabilities with a
 custom `IAggregateFinder<T>`, where `T` is the projected view document type.
 
-### Aggregator Lookup
+## Aggregator Lookup
 
 `EventGraph.UseAggregatorLookup(IAggregatorLookup aggregatorLookup)` can be used to register an `IAggregatorLookup` that is used to look up `IAggregator<T>` for aggregations. This allows a generic aggregation strategy to be used, rather than registering aggregators case-by-case through `EventGraphAddAggregator<T>(IAggregator<T> aggregator)`.
 
@@ -237,7 +237,7 @@ The aggregation lookup can also be set in the `StoreOptions.Events.UserAggregato
 // TODO: fix this sample
 <[sample:register-custom-aggregator-lookup]>
 
-### Live Aggregation via .Net
+## Live Aggregation via .Net
 
 You can always fetch a stream of events and build an aggregate completely live from the current event data by using this syntax:
 
