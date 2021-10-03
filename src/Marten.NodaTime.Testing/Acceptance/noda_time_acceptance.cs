@@ -6,12 +6,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.NodaTime.Testing.TestData;
+using Marten.Services.Json;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using NodaTime;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.NodaTime.Testing.Acceptance
@@ -47,10 +47,17 @@ namespace Marten.NodaTime.Testing.Acceptance
             #endregion
         }
 
-        [Fact]
-        public void can_insert_document()
+       
+        [Theory]
+        [InlineData(SerializerType.SystemTextJson)]
+        [InlineData(SerializerType.Newtonsoft)]
+        public void can_insert_document(SerializerType serializerType)
         {
-            StoreOptions(_ => _.UseNodaTime());
+            StoreOptions(_ =>
+            {
+                _.UseDefaultSerialization(serializerType: serializerType);
+                _.UseNodaTime();
+            });
 
             var testDoc = TargetWithDates.Generate();
 
@@ -70,11 +77,14 @@ namespace Marten.NodaTime.Testing.Acceptance
 
         }
 
-        //[Fact]
-        public void can_query_document_with_noda_time_types()
+        [Theory]
+        [InlineData(SerializerType.SystemTextJson)]
+        [InlineData(SerializerType.Newtonsoft)]
+        public void can_query_document_with_noda_time_types(SerializerType serializerType)
         {
             StoreOptions(_ =>
             {
+                _.UseDefaultSerialization(serializerType: serializerType);
                 _.UseNodaTime();
                 _.DatabaseSchemaName = "NodaTime";
             });
@@ -107,45 +117,51 @@ namespace Marten.NodaTime.Testing.Acceptance
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate <= localDateTime.Date.PlusDays(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate > localDateTime.Date.PlusDays(-1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate >= localDateTime.Date.PlusDays(-1)),
-/*
+
                     //// LocalDateTime
-                    query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime < localDateTime.PlusSeconds(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime <= localDateTime.PlusSeconds(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime > localDateTime.PlusSeconds(-1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime >= localDateTime.PlusSeconds(-1)),
 
                     //// Nullable LocalDateTime
-                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime == localDateTime),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime == localDateTime),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime < localDateTime.PlusSeconds(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime <= localDateTime.PlusSeconds(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime > localDateTime.PlusSeconds(-1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime >= localDateTime.PlusSeconds(-1)),
 
                     //// Instant UTC
-                    query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC < instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC <= instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC > instantUTC.PlusTicks(-1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC >= instantUTC.PlusTicks(-1000)),
 
                     // Nullable Instant UTC
-                    query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
+                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000))
-                    */
+                    
                 };
 
                 results.ToArray().ShouldAllBe(x => x.Equals(testDoc));
             }
         }
 
-        [Fact]
-        public async Task can_append_and_query_events()
+        [Theory]
+        [InlineData(SerializerType.SystemTextJson)]
+        [InlineData(SerializerType.Newtonsoft)]
+        public async Task can_append_and_query_events(SerializerType serializerType)
         {
-            StoreOptions(_ => _.UseNodaTime());
+            StoreOptions(_ =>
+            {
+                _.UseDefaultSerialization(serializerType: serializerType);
+                _.UseNodaTime();
+            });
 
             var startDate = DateTime.UtcNow;
 
@@ -168,8 +184,10 @@ namespace Marten.NodaTime.Testing.Acceptance
             }
         }
 
-        [Fact]
-        public void bug_1276_can_select_instant()
+        [Theory]
+        [InlineData(SerializerType.SystemTextJson)]
+        [InlineData(SerializerType.Newtonsoft)]
+        public void bug_1276_can_select_instant(SerializerType serializerType)
         {
             StoreOptions(_ => _.UseNodaTime());
 

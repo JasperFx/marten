@@ -1,6 +1,7 @@
 using Marten.Services;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using NodaTime.Serialization.SystemTextJson;
 using Npgsql;
 
 namespace Marten.NodaTime
@@ -21,10 +22,21 @@ namespace Marten.NodaTime
             if (shouldConfigureJsonNetSerializer)
             {
                 var serializer = storeOptions.Serializer();
-                (serializer as JsonNetSerializer)?.Customize(s =>
+                if(serializer is JsonNetSerializer jsonNetSerializer)
                 {
-                    s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-                });
+                    jsonNetSerializer.Customize(s =>
+                    {
+                        s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                    });
+                }
+                else if (serializer is SystemTextJsonSerializer systemTextJsonSerializer)
+                {
+                    systemTextJsonSerializer.Customize(s =>
+                    {
+                        s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                    });
+                }
+                
                 storeOptions.Serializer(serializer);
             }
         }
