@@ -42,12 +42,24 @@ namespace Marten.NodaTime.Testing.Acceptance
                 _.Serializer<CustomJsonSerializer>();
 
                 // sets up NodaTime handling
-                _.UseNodaTime(shouldConfigureJsonNetSerializer: false);
+                _.UseNodaTime(shouldConfigureJsonSerializer: false);
             });
             #endregion
         }
 
-       
+        [Fact]
+        public void throws_on_unsupported_serializer()
+        {
+            Assert.Throws<NotSupportedException>(() =>
+                StoreOptions(_ =>
+                {
+                     _.Serializer<CustomJsonSerializer>();
+
+                     _.UseNodaTime();
+                }));
+        }
+
+
         [Theory]
         [InlineData(SerializerType.SystemTextJson)]
         [InlineData(SerializerType.Newtonsoft)]
@@ -119,7 +131,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDate >= localDateTime.Date.PlusDays(-1)),
 
                     //// LocalDateTime
-                    //query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
+                    query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime < localDateTime.PlusSeconds(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime <= localDateTime.PlusSeconds(1)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime > localDateTime.PlusSeconds(-1)),
@@ -145,7 +157,7 @@ namespace Marten.NodaTime.Testing.Acceptance
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000)),
                     query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000))
-                    
+
                 };
 
                 results.ToArray().ShouldAllBe(x => x.Equals(testDoc));

@@ -1,3 +1,4 @@
+using System;
 using Marten.Services;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
@@ -10,16 +11,16 @@ namespace Marten.NodaTime
     {
         /// <summary>
         /// Sets up NodaTime mappings for the PostgreSQL date/time types.
-        ///
-        /// By setting up NodaTime mappings - you're opting out of DateTime type handling. Using DateTime in your Document will end up getting NotSupportedException exception.
+        /// By default it will configure either the underlying JSON.NET or System.Text.Json serializers.
         /// </summary>
-        /// <param name="storeOptions">store options that you're extending</param>
-        /// <param name="shouldConfigureJsonNetSerializer">sets if NodaTime configuration should be setup for JsonNetSerializer. Set value to false if you're using different serializer type or you'd like to maintain your own configuration.</param>
-        public static void UseNodaTime(this StoreOptions storeOptions, bool shouldConfigureJsonNetSerializer = true)
+        /// <param name="storeOptions">Store options that you're extending</param>
+        /// <param name="shouldConfigureJsonSerializer">Sets if NodaTime configuration should be setup for the current serializer. Set value to false if you're using a different serializer type or you'd like to maintain your own configuration.</param>
+        /// <exception cref="NotSupportedException">Thrown if the current serializer is not supported for automatic configuration.</exception>
+        public static void UseNodaTime(this StoreOptions storeOptions, bool shouldConfigureJsonSerializer = true)
         {
             NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
 
-            if (shouldConfigureJsonNetSerializer)
+            if (shouldConfigureJsonSerializer)
             {
                 var serializer = storeOptions.Serializer();
                 if(serializer is JsonNetSerializer jsonNetSerializer)
@@ -36,6 +37,8 @@ namespace Marten.NodaTime
                         s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
                     });
                 }
+                else
+                    throw new NotSupportedException("Current serializer cannot be automatically configured for Nodatime. Set shouldConfigureJsonSerializer to false if you're using your own serializer.");
                 
                 storeOptions.Serializer(serializer);
             }
