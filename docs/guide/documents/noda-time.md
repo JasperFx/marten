@@ -34,9 +34,9 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L24-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_default_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-By default it also sets up the `JsonNetSerializer` options (see more details in [NodaTime documentation](https://nodatime.org/2.4.x/api/NodaTime.Serialization.JsonNet.Extensions.html)).
+By default it also sets up the `JsonNetSerializer` or `SystemTextJsonSerializer` options (see more details in [NodaTime documentation](https://nodatime.org/2.4.x/api/NodaTime.Serialization.JsonNet.Extensions.html)).
 
-If you're using custom Json serializer or you'd like to maintain fully its configuration then you can set disable default configuration by setting `shouldConfigureJsonNetSerializer` parameter to `false`. By changing this setting you need to configure NodaTime Json serialization by yourself.
+If you're using custom Json serializer or you'd like to maintain fully its configuration then you can set disable default configuration by setting `shouldConfigureJsonSerializer` parameter to `false`. By changing this setting you need to configure NodaTime Json serialization by yourself.
 
 <!-- snippet: sample_noda_time_setup_without_json_net_serializer_configuration -->
 <a id='snippet-sample_noda_time_setup_without_json_net_serializer_configuration'></a>
@@ -48,7 +48,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer<CustomJsonSerializer>();
 
     // sets up NodaTime handling
-    _.UseNodaTime(shouldConfigureJsonNetSerializer: false);
+    _.UseNodaTime(shouldConfigureJsonSerializer: false);
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L37-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_setup_without_json_net_serializer_configuration' title='Start of snippet'>anchor</a></sup>
