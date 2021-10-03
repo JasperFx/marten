@@ -233,7 +233,7 @@ END; $$;
         {
             using var connection = _tenant.CreateConnection();
             await connection.OpenAsync();
-#if NET5_0
+#if NET
             var tx = await connection.BeginTransactionAsync();
             #else
             var tx = connection.BeginTransaction();

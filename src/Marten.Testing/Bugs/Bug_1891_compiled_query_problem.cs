@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-#if NET5_0
+#if NET
     public class Bug_1891_compiled_query_problem : BugIntegrationContext
     {
         [Fact]

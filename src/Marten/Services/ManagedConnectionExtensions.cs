@@ -51,13 +51,13 @@ namespace Marten.Services
         internal static readonly byte[] RightBracket = Encoding.Default.GetBytes("]");
         internal static readonly byte[] Comma = Encoding.Default.GetBytes(",");
 
-#if NET5_0
+#if NET
         internal static ValueTask WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)
         #else
         internal static Task WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)
 #endif
         {
-#if NET5_0
+#if NET
             return stream.WriteAsync(bytes, token);
 #else
             return stream.WriteAsync(bytes, 0, bytes.Length, token);
