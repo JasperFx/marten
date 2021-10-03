@@ -34,7 +34,7 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.NodaTime.Testing/Acceptance/noda_time_acceptance.cs#L24-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_noda_time_default_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-By default it also sets up the `JsonNetSerializer` or `SystemTextJsonSerializer` options (see more details in [NodaTime documentation](https://nodatime.org/2.4.x/api/NodaTime.Serialization.JsonNet.Extensions.html)).
+By default it also sets up the `JsonNetSerializer` or `SystemTextJsonSerializer` options (see more details in [NodaTime documentation](https://nodatime.org/3.0.x/userguide/serialization)).
 
 If you're using custom Json serializer or you'd like to maintain fully its configuration then you can set disable default configuration by setting `shouldConfigureJsonSerializer` parameter to `false`. By changing this setting you need to configure NodaTime Json serialization by yourself.
 
