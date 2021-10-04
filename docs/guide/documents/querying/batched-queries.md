@@ -1,5 +1,11 @@
 # Batched Queries
 
+::: tip
+Batched query support was optimized quite a bit in the Marten V4 release. It's now possible to work with the results of the earliest
+queries in the batch before the later queries are completely processed in a background thread to enable you to optimize **your**
+code that uses batch querying.
+:::
+
 For the sake of performance, if you have a case where you may need to fetch several sets of document data from Marten
 at one time, you can opt to batch those queries into a single request to the underlying database to reduce network round trips.
 

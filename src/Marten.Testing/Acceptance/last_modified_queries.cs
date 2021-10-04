@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.LastModified;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -9,6 +11,24 @@ namespace Marten.Testing.Acceptance
 {
     public class last_modified_queries: IntegrationContext
     {
+
+        #region sample_last_modified_queries
+
+        public async Task sample_usage(IQuerySession session)
+        {
+            var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+            var tenMinutesAgo = DateTime.UtcNow.AddMinutes(-10);
+
+            // Query for documents modified between 5 and 10 minutes ago
+            var recents = session.Query<Target>()
+                .Where(x => x.ModifiedSince(tenMinutesAgo))
+                .Where(x => x.ModifiedBefore(fiveMinutesAgo))
+                .ToListAsync();
+        }
+
+        #endregion
+
+
         [Fact]
         public void query_modified_since_docs()
         {
@@ -27,7 +47,8 @@ namespace Marten.Testing.Acceptance
                 session.SaveChanges();
 
                 // no where clause
-                session.Query<User>().Where(x => x.ModifiedSince(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
+                session.Query<User>().Where(x => x.ModifiedSince(epoch))
+                    .OrderBy(x => x.UserName).Select(x => x.UserName)
                     .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
 
                 // with a where clause

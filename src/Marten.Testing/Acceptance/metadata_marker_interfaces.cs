@@ -117,11 +117,15 @@ namespace Marten.Testing.Acceptance
         }
     }
 
+    #region sample_MyVersionedDoc
+
     public class MyVersionedDoc: IVersioned
     {
         public Guid Id { get; set; }
         public Guid Version { get; set; }
     }
+
+    #endregion
 
     #region sample_implementing_ISoftDeleted
 
@@ -155,6 +159,8 @@ namespace Marten.Testing.Acceptance
 
 
 
+    #region sample_MyTrackedDoc
+
     public class MyTrackedDoc: ITracked
     {
         public Guid Id { get; set; }
@@ -162,6 +168,8 @@ namespace Marten.Testing.Acceptance
         public string CausationId { get; set; }
         public string LastModifiedBy { get; set; }
     }
+
+    #endregion
 
     public class MyTenantedDoc: ITenanted
     {

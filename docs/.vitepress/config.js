@@ -87,8 +87,7 @@ module.exports = {
                 {text: 'Querying with Postgres SQL', link: '/guide/documents/querying/sql'},
                 {text: 'Querying for Raw JSON', link: '/guide/documents/querying/query-json'},
                 {text: 'Compiled Queries', link: '/guide/documents/querying/compiled-queries'},
-                {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'},
-                {text: 'Metadata Queries', link: '/guide/documents/querying/metadata-queries'},
+                {text: 'Batched Queries', link: '/guide/documents/querying/batched-queries'}
 
 
             ]
@@ -247,7 +246,7 @@ module.exports = {
         text: 'Database Management',
         link: '/guide/schema/',
         children: [
-          {text: 'How documents are stored', link: '/guide/schema/storage'},
+          {text: 'How Documents are Stored', link: '/guide/schema/storage'},
           {text: 'Metadata', link: '/guide/schema/metadata'},
           {text: 'Schema Migrations', link: '/guide/schema/migrations'},
           {text: 'Exporting Schema Definition', link: '/guide/schema/exporting'},

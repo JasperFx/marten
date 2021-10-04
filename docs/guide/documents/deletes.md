@@ -127,7 +127,7 @@ public class MySoftDeletedDoc: ISoftDeleted
     public DateTimeOffset? DeletedAt { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L126-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_isoftdeleted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L130-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_isoftdeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 More on `ISoftDeleted` in a later section on exposing soft-deleted metadata directly
@@ -410,7 +410,7 @@ public class ASoftDeletedDoc
     public DateTimeOffset? DeletedWhen { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L142-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asoftdeleteddoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L146-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asoftdeleteddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can manually -- and independently -- map the `IsDeleted` and `DeletedWhen` properties
