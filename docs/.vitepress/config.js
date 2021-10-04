@@ -198,17 +198,7 @@ module.exports = {
           },
           {
             text: 'Metadata',
-            link: '/guide/events/metadata/',
-            children: [
-              {
-                text: 'Introduction',
-                link: '/guide/events/metadata/'
-              },
-              {
-                text: 'Diagnostics',
-                link: 'guide/events/metadata/diagnostics'
-              }
-            ]
+            link: '/guide/events/metadata'
           },
           {
             text: 'Event versioning',

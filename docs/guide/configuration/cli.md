@@ -106,4 +106,4 @@ In all cases, the commands expose usage help through "marten help [command]." Ea
 
 ## Projections Support
 
-TODO -- link to a new page in teh events documentation for the command line runner
+See [the Async Daemon documentation]() for more information about the newly improved `projections` command.

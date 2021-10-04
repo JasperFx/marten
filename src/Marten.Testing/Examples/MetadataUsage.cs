@@ -109,5 +109,23 @@ namespace Marten.Testing.Examples
 
             #endregion
         }
+
+        public void ConfigureEventMetadata()
+        {
+            #region sample_ConfigureEventMetadata
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("connection string");
+
+                // This adds additional metadata tracking to the
+                // event store tables
+                opts.Events.MetadataConfig.HeadersEnabled = true;
+                opts.Events.MetadataConfig.CausationIdEnabled = true;
+                opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+            });
+
+            #endregion
+        }
     }
 }

@@ -57,6 +57,9 @@ namespace CommandLineRunner
 
                         opts.Projections.Add(new SimpleAggregate(), ProjectionLifecycle.Inline);
 
+                        // This is actually important to register "live" aggregations too for the code generation
+                        opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
+
                         opts.Projections.AsyncMode = DaemonMode.Solo;
                     });
                 });
@@ -64,6 +67,25 @@ namespace CommandLineRunner
     }
 
     #endregion
+
+    public class SelfAggregatingTrip
+    {
+        public void Apply(Arrival e) => State = e.State;
+        public string State { get; set; }
+
+        public void Apply(Travel e) => Traveled += e.TotalDistance();
+        public double Traveled { get; set; }
+
+        public void Apply(TripEnded e)
+        {
+            Active = false;
+            EndedOn = e.Day;
+        }
+
+        public int EndedOn { get; set; }
+
+        public bool Active { get; set; }
+    }
 
     public class SimpleAggregate: AggregateProjection<MyAggregate>
     {
