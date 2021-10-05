@@ -22,6 +22,16 @@ namespace Marten.Testing.Events
             _output = output;
         }
 
+        #region sample_archive_stream_usage
+
+        public async Task SampleArchive(IDocumentSession session, string streamId)
+        {
+            session.Events.ArchiveStream(streamId);
+            await session.SaveChangesAsync();
+        }
+
+        #endregion
+
         [Fact]
         public async Task archive_stream_by_guid()
         {
@@ -152,10 +162,14 @@ namespace Marten.Testing.Events
             theSession.Events.ArchiveStream(stream2);
             await theSession.SaveChangesAsync();
 
+            #region sample_querying_for_archived_events
+
             var events = await theSession.Events
                 .QueryAllRawEvents()
                 .Where(x => x.IsArchived)
                 .ToListAsync();
+
+            #endregion
 
             events.Count.ShouldBe(3);
             events.All(x => x.StreamId == stream2).ShouldBeTrue();
@@ -179,7 +193,12 @@ namespace Marten.Testing.Events
             theSession.Events.ArchiveStream(stream2);
             await theSession.SaveChangesAsync();
 
-            var events = await theSession.Events.QueryAllRawEvents().Where(x => x.MaybeArchived()).ToListAsync();
+            #region sample_query_for_maybe_archived_events
+
+            var events = await theSession.Events.QueryAllRawEvents()
+                .Where(x => x.MaybeArchived()).ToListAsync();
+
+            #endregion
 
             events.Count(x => x.IsArchived).ShouldBe(3);
             events.Count(x => !x.IsArchived).ShouldBe(6);

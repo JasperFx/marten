@@ -96,6 +96,11 @@ namespace Marten.Events
                 if (@event.Id == Guid.Empty) @event.Id = CombGuidIdGeneration.NewGuid();
                 @event.StreamId = Id;
                 @event.StreamKey = Key;
+
+                if (ExpectedVersionOnServer.HasValue)
+                {
+                    ExpectedVersionOnServer++;
+                }
             }
 
             return this;

@@ -8,337 +8,47 @@ It is an alternative way to persist data. In contrast with state-oriented persis
 
 Thanks for that, no business data is lost. Each operation results in the event stored in the database. That enables extended auditing and diagnostics capabilities (both technically and business-wise). What's more, as events contains the business context, it allows business wide analysis and reporting.
 
-Marten's Event Store functionality is a powerful way to utilize Postgresql in the [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event stream data, Marten also helps you create "read side" views of the raw event data through its support for projections.
+Marten's Event Store functionality is a powerful way to utilize Postgresql in the [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) style of persistence in your application. Beyond simple event capture and access to the raw event stream data, Marten also helps you create "read side" views of the raw event data through its rich support for [projections](/guide/events/projections).
 
-**TODO: Here I'd like to introduce briefly the Event Sourcing conceptc and how to use them with Marten, so: appending, aggregating and projecting events. Stream Identity.**
+## Terminology and Concepts
 
-## Event Store quick start
+First, some terminology that we're going to use throughout this section:
 
-There is not anything special you need to do to enable the event store functionality in Marten, and it obeys the same rules about automatic schema generation described in [schema](/guide/schema/). Marten is just a client library, and there's nothing to install other than the Marten NuGet.
+* _Event_ - a persisted business event representing a change in state or record of an action taken in the system
+* _Stream_ - a related "stream" of events representing a single aggregate
+* _Aggregate_ - a type of projection that "aggregates" data from multiple events to create a single read-side view document
+* _Projection_ - any strategy for generating "read side" views from the raw events
+* _Inline Projections_ - a projection that executes "inline" as part of any event capture transaction to build read-side views that are persisted as a document
+* _Async Projections_ - a projection that runs in a background process using an [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency) strategy, and is stored as a document
+* _Live Projections_ - evaluates a projected view from the raw event data on demand within Marten without persisting the created view
 
-Because I’ve read way too much epic fantasy fiction, my sample problem domain is an application that records, analyses, and visualizes the status of quests. During a quest, you may want to record events like:
+## Event Types
 
-<!-- snippet: sample_sample-events -->
-<a id='snippet-sample_sample-events'></a>
+The only requirement that Marten makes on types used as events is that they are:
+
+1. Public, concrete types
+1. Can be bidirectionally serialized and deserialized with a tool like Newtonsoft.Json
+
+Marten does need to know what the event types are before you issue queries against the event data (it's just to handle the de-serialization from JSON). The event registration will happen automatically when you append events,
+but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:
+
+<!-- snippet: sample_registering-event-types -->
+<a id='snippet-sample_registering-event-types'></a>
 ```cs
-public class ArrivedAtLocation
+var store2 = DocumentStore.For(_ =>
 {
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public override string ToString()
-    {
-        return $"Arrived at {Location} on Day {Day}";
-    }
-}
-
-public class MembersJoined
-{
-    public MembersJoined()
-    {
-    }
-
-    public MembersJoined(int day, string location, params string[] members)
-    {
-        Day = day;
-        Location = location;
-        Members = members;
-    }
-
-    public Guid QuestId { get; set; }
-
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public string[] Members { get; set; }
-
-    public override string ToString()
-    {
-        return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
-    }
-
-    protected bool Equals(MembersJoined other)
-    {
-        return QuestId.Equals(other.QuestId) && Day == other.Day && Location == other.Location && Members.SequenceEqual(other.Members);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((MembersJoined) obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(QuestId, Day, Location, Members);
-    }
-}
-
-public class QuestStarted
-{
-    public string Name { get; set; }
-    public Guid Id { get; set; }
-
-    public override string ToString()
-    {
-        return $"Quest {Name} started";
-    }
-
-    protected bool Equals(QuestStarted other)
-    {
-        return Name == other.Name && Id.Equals(other.Id);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((QuestStarted) obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Name, Id);
-    }
-}
-
-public class QuestEnded
-{
-    public string Name { get; set; }
-    public Guid Id { get; set; }
-
-    public override string ToString()
-    {
-        return $"Quest {Name} ended";
-    }
-}
-
-public class MembersDeparted
-{
-    public Guid Id { get; set; }
-
-    public Guid QuestId { get; set; }
-
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public string[] Members { get; set; }
-
-    public override string ToString()
-    {
-        return $"Members {Members.Join(", ")} departed at {Location} on Day {Day}";
-    }
-}
-
-public class MembersEscaped
-{
-    public Guid Id { get; set; }
-
-    public Guid QuestId { get; set; }
-
-    public string Location { get; set; }
-
-    public string[] Members { get; set; }
-
-    public override string ToString()
-    {
-        return $"Members {Members.Join(", ")} escaped from {Location}";
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/QuestTypes.cs#L12-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_sample-events-1'></a>
-```cs
-public class ArrivedAtLocation
-{
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public override string ToString()
-    {
-        return $"Arrived at {Location} on Day {Day}";
-    }
-}
-
-public class MembersJoined
-{
-    public MembersJoined()
-    {
-    }
-
-    public MembersJoined(int day, string location, params string[] members)
-    {
-        Day = day;
-        Location = location;
-        Members = members;
-    }
-
-    public Guid QuestId { get; set; }
-
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public string[] Members { get; set; }
-
-    public override string ToString()
-    {
-        return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
-    }
-
-    protected bool Equals(MembersJoined other)
-    {
-        return QuestId.Equals(other.QuestId) && Day == other.Day && Location == other.Location && Members.SequenceEqual(other.Members);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((MembersJoined) obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(QuestId, Day, Location, Members);
-    }
-}
-
-public class QuestStarted
-{
-    public string Name { get; set; }
-    public Guid Id { get; set; }
-
-    public override string ToString()
-    {
-        return $"Quest {Name} started";
-    }
-
-    protected bool Equals(QuestStarted other)
-    {
-        return Name == other.Name && Id.Equals(other.Id);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((QuestStarted) obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Name, Id);
-    }
-}
-
-public class QuestEnded
-{
-    public string Name { get; set; }
-    public Guid Id { get; set; }
-
-    public override string ToString()
-    {
-        return $"Quest {Name} ended";
-    }
-}
-
-public class MembersDeparted
-{
-    public Guid Id { get; set; }
-
-    public Guid QuestId { get; set; }
-
-    public int Day { get; set; }
-
-    public string Location { get; set; }
-
-    public string[] Members { get; set; }
-
-    public override string ToString()
-    {
-        return $"Members {Members.Join(", ")} departed at {Location} on Day {Day}";
-    }
-}
-
-public class MembersEscaped
-{
-    public Guid Id { get; set; }
-
-    public Guid QuestId { get; set; }
-
-    public string Location { get; set; }
-
-    public string[] Members { get; set; }
-
-    public override string ToString()
-    {
-        return $"Members {Members.Join(", ")} escaped from {Location}";
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/QuestTypes.cs#L12-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events-1' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Now, let's say that we're starting a new "quest" with the first couple of events, then appending a couple more as other quest party members join up:
-
-Please refer to the [Bootstrapping a Document Store](/guide/#bootstrapping-a-document-store) for setting up and bootstrapping a `DocumentStore`.
-
-<!-- snippet: sample_event-store-quickstart -->
-<a id='snippet-sample_event-store-quickstart'></a>
-```cs
-var store = DocumentStore.For(_ =>
-{
+    _.DatabaseSchemaName = "samples";
     _.Connection(ConnectionSource.ConnectionString);
-    _.Projections.SelfAggregate<QuestParty>();
+    _.AutoCreateSchemaObjects = AutoCreate.None;
+
+    _.Events.AddEventType(typeof(QuestStarted));
+    _.Events.AddEventType(typeof(MonsterSlayed));
 });
-
-var questId = Guid.NewGuid();
-
-using (var session = store.OpenSession())
-{
-    var started = new QuestStarted { Name = "Destroy the One Ring" };
-    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
-
-    // Start a brand new stream and commit the new events as
-    // part of a transaction
-    session.Events.StartStream<Quest>(questId, started, joined1);
-    session.SaveChanges();
-
-    // Append more events to the same stream
-    var joined2 = new MembersJoined(3, "Buckland", "Merry", "Pippen");
-    var joined3 = new MembersJoined(10, "Bree", "Aragorn");
-    var arrived = new ArrivedAtLocation { Day = 15, Location = "Rivendell" };
-    session.Events.Append(questId, joined2, joined3, arrived);
-    session.SaveChanges();
-}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L16-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/using_the_schema_objects_Tests.cs#L35-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-event-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
+## Stream or Aggregate Types
 
-<!-- snippet: sample_event-store-start-stream-with-explicit-type -->
-<a id='snippet-sample_event-store-start-stream-with-explicit-type'></a>
-```cs
-using (var session = store.OpenSession())
-{
-    var started = new QuestStarted { Name = "Destroy the One Ring" };
-    var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Sam");
+At this point there are no specific requirements about stream aggregate types as they are purely marker types. In the future we will probably support aggregating events via snapshot caching using the aggregate type.
 
-    // Start a brand new stream and commit the new events as
-    // part of a transaction
-    session.Events.StartStream(typeof(Quest), questId, started, joined1);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L45-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-start-stream-with-explicit-type' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->

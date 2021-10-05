@@ -6,14 +6,6 @@
 The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime, don't forget to just look through the code and our unit tests.
 :::
 
-First, some terminology that we're going to use throughout this section:
-
-* _Projection_ - any strategy for generating "read side" views from the raw event streams
-* _Transformation_ - a type of projection that generates or updates a single read side view for a single event
-* _Aggregate_ - a type of projection that "aggregates" data from multiple events to create a single readside view document
-* _Inline Projections_ - a type of projection that executes as part of any event capture transaction and is stored as a document
-* _Async Projections_ - a type of projection that runs in a background process using an [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency) strategy, and is stored as a document
-* _Live Projections_ - evaluates a projected view from the raw event data on demand within Marten
 
 ## Transformations
 
@@ -250,11 +242,11 @@ using (var session = store.OpenSession())
     var party = session.Events.AggregateStream<QuestParty>(questId);
     Console.WriteLine(party);
 
-    var party_at_version_3 = session.Events
-        .AggregateStream<QuestParty>(questId, 3);
+    var party_at_version_3 = await session.Events
+        .AggregateStreamAsync<QuestParty>(questId, 3);
 
-    var party_yesterday = session.Events
-        .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+    var party_yesterday = await session.Events
+        .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L81-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>

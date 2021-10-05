@@ -20,7 +20,7 @@ namespace Marten.Testing.Acceptance
             var tenMinutesAgo = DateTime.UtcNow.AddMinutes(-10);
 
             // Query for documents modified between 5 and 10 minutes ago
-            var recents = session.Query<Target>()
+            var recents = await session.Query<Target>()
                 .Where(x => x.ModifiedSince(tenMinutesAgo))
                 .Where(x => x.ModifiedBefore(fiveMinutesAgo))
                 .ToListAsync();

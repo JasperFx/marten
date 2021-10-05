@@ -11,7 +11,7 @@ namespace Marten.Testing.Examples
 {
     public class event_store_quickstart
     {
-        public void capture_events()
+        public async Task capture_events()
         {
             #region sample_event-store-quickstart
             var store = DocumentStore.For(_ =>
@@ -30,14 +30,14 @@ namespace Marten.Testing.Examples
                 // Start a brand new stream and commit the new events as
                 // part of a transaction
                 session.Events.StartStream<Quest>(questId, started, joined1);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 // Append more events to the same stream
                 var joined2 = new MembersJoined(3, "Buckland", "Merry", "Pippen");
                 var joined3 = new MembersJoined(10, "Bree", "Aragorn");
                 var arrived = new ArrivedAtLocation { Day = 15, Location = "Rivendell" };
                 session.Events.Append(questId, joined2, joined3, arrived);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
             #endregion
 
@@ -70,7 +70,7 @@ namespace Marten.Testing.Examples
             #region sample_events-fetching-stream
             using (var session = store.OpenSession())
             {
-                var events = session.Events.FetchStream(questId);
+                var events = await session.Events.FetchStreamAsync(questId);
                 events.Each(evt =>
                 {
                     Console.WriteLine($"{evt.Version}.) {evt.Data}");
@@ -85,11 +85,11 @@ namespace Marten.Testing.Examples
                 var party = session.Events.AggregateStream<QuestParty>(questId);
                 Console.WriteLine(party);
 
-                var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
+                var party_at_version_3 = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, 3);
 
-                var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+                var party_yesterday = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
             }
             #endregion
 
