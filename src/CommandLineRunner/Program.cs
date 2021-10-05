@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten;
@@ -70,6 +71,7 @@ namespace CommandLineRunner
 
     public class SelfAggregatingTrip
     {
+        public Guid Id { get; set; }
         public void Apply(Arrival e) => State = e.State;
         public string State { get; set; }
 
