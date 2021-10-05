@@ -91,3 +91,23 @@ public void update_with_stale_version_standard()
 <!-- endSnippet -->
 
 Marten is throwing an AggregateException for the entire batch of chang
+
+## Using IVersioned
+
+A new feature in Marten V4 is the `IVersioned` marker interface. If your document type implements this interface as shown below:
+
+<!-- snippet: sample_MyVersionedDoc -->
+<a id='snippet-sample_myversioneddoc'></a>
+```cs
+public class MyVersionedDoc: IVersioned
+{
+    public Guid Id { get; set; }
+    public Guid Version { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L120-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myversioneddoc' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Your document type will have the optimistic concurrency checks applied to updates *when* the current version is given to Marten. Moreover, the current version
+will always be written to the `IVersioned.Version` property when the document is modified or loaded by Marten. This makes `IVersioned` an easy strategy to track
+the current version of documents in web applications.

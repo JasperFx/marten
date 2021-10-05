@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
+using Marten.Events.Projections;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ using Spectre.Console;
 
 namespace Marten.CommandLine.Commands.Projection
 {
-    [Description("Rebuilds all projections of specified kind")]
+    [Description("Marten's asynchronous projection and projection rebuilds")]
     public class ProjectionsCommand: OaktonAsyncCommand<ProjectionInput>
     {
         private TaskCompletionSource<bool> _completion = new TaskCompletionSource<bool>();
@@ -48,7 +49,7 @@ namespace Marten.CommandLine.Commands.Projection
 
             if (input.InteractiveFlag)
             {
-                var projectionNames = store.Options.Projections.All.Select(x => x.ProjectionName).ToArray();
+                var projectionNames = store.Options.Projections.All.Where(x => x.Lifecycle != ProjectionLifecycle.Live).Select(x => x.ProjectionName).ToArray();
                 var names = AnsiConsole.Prompt(new MultiSelectionPrompt<string>()
                     .Title("Choose projections to rebuild")
                     .AddChoices(projectionNames));
@@ -95,7 +96,7 @@ namespace Marten.CommandLine.Commands.Projection
 
             if (input.InteractiveFlag)
             {
-                var all = store.Options.Projections.All.SelectMany(x => x.AsyncProjectionShards(store))
+                var all = store.Options.Projections.All.Where(x => x.Lifecycle != ProjectionLifecycle.Live).SelectMany(x => x.AsyncProjectionShards(store))
                     .Select(x => x.Name.Identity).ToArray();
 
                 var prompt = new MultiSelectionPrompt<string>()

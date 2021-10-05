@@ -47,6 +47,8 @@ namespace Marten.Events.Daemon
     {
         public DaemonSettings()
         {
+            #region sample_default_daemon_exception_policies
+
             OnException<EventFetcherException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
                 .Then.Pause(30.Seconds());
 
@@ -61,7 +63,12 @@ namespace Marten.Events.Daemon
             OnException<MartenCommandException>().RetryLater(250.Milliseconds(), 500.Milliseconds(), 1.Seconds())
                 .Then.Pause(30.Seconds());
 
+            // This exception means that the daemon has detected that another process
+            // has updated the current projection shard. When this happens, Marten will stop
+            // and restart the projection from its last known "good" point in 10 seconds
             OnException<ProgressionProgressOutOfOrderException>().Pause(10.Seconds());
+
+            #endregion
 
             BaselinePolicies.AddRange(Policies);
             Policies.Clear();
