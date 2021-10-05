@@ -1,182 +1,72 @@
-**TODO: Extend with optimistic concurrency**
-
 # Appending Events
 
-Marten's event sourcing support "appends" event data documents to a single table `mt_events.` Events must be captured against a stream id, with a second table called `mt_streams` that Marten uses to
-keep metadata describing the state of an individual stream. Appending events to either a new or existing stream is done within the same Marten transaction as any other document updates or deletions. See
-[persisting documents](/guide/documents/sessions) for more information on Marten transactions.
+With Marten, events are captured and appended to logical "streams" of events. Marten provides
+methods to create a new stream with the initial events, append events to an existing stream, and
+also to append events with some protection for concurrent access to single streams.
 
-## Event Types
+The event data is persisted to two tables:
 
-The only requirement that Marten makes on types used as events is that they are:
+1. `mt_events` -- stores the actual event data and some metadata that describes the event
+1. `mt_streams` -- stores information about the current state of an event stream. There is a foreign key
+   relationship from `mt_events` to `mt_streams`
 
-1. Public, concrete types
-1. Can be bidirectionally serialized and deserialized with a tool like Newtonsoft.Json
-
-Marten does need to know what the event types are before you issue queries against the event data (it's just to handle the de-serialization from JSON). The event registration will happen automatically when you append events,
-but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:
-
-<!-- snippet: sample_registering-event-types -->
-<a id='snippet-sample_registering-event-types'></a>
-```cs
-var store2 = DocumentStore.For(_ =>
-{
-    _.DatabaseSchemaName = "samples";
-    _.Connection(ConnectionSource.ConnectionString);
-    _.AutoCreateSchemaObjects = AutoCreate.None;
-
-    _.Events.AddEventType(typeof(QuestStarted));
-    _.Events.AddEventType(typeof(MonsterSlayed));
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/using_the_schema_objects_Tests.cs#L35-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-event-types' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-## Stream or Aggregate Types
-
-At this point there are no specific requirements about stream aggregate types as they are purely marker types. In the future we will probably support aggregating events via snapshot caching using the aggregate type.
+Events can be captured by either starting a new stream or by appending events to an existing stream. In addition, Marten has some tricks up its sleeve for dealing
+with concurrency issues that may result from multiple transactions trying to simultaneously append events to the same stream.
 
 ## Starting a new Stream
 
-As of Marten v0.9, you can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing. Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that you could just supply either a string to mark the "stream type" or work without a stream type.
+You can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing. 
+Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information 
+and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type 
+optional so that you could just supply either a string to mark the "stream type" or work without a stream type.
 
 As usual, our sample problem domain is the Lord of the Rings style "Quest." For now, you can either start a new stream and let Marten assign the Guid id for the stream:
 
-<!-- snippet: sample_start-stream-with-aggregate-type -->
-<a id='snippet-sample_start-stream-with-aggregate-type'></a>
+<!-- snippet: sample_start_stream_with_guid_identifier -->
+<a id='snippet-sample_start_stream_with_guid_identifier'></a>
 ```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+public async Task start_stream_with_guid_stream_identifiers(IDocumentSession session)
+{
+    var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+    var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-var id = session.Events.StartStream<Quest>(joined, departed).Id;
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L59-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-1'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Let Marten assign a new Stream Id, and mark the stream with an aggregate type
+    // 'Quest'
+    var streamId1 = session.Events.StartStream<Quest>(joined, departed).Id;
 
-var id = session.Events.StartStream<Quest>(joined, departed).Id;
-await session.SaveChangesAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L90-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-1' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-2'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Or pass the aggregate type in without generics
+    var streamId2 = session.Events.StartStream(typeof(Quest), joined, departed);
 
-var id = session.Events.StartStream<Quest>(joined, departed).Id;
-await session.SaveChangesAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L121-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-2' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-3'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Or instead, you tell Marten what the stream id should be
+    var userDefinedStreamId = Guid.NewGuid();
+    session.Events.StartStream<Quest>(userDefinedStreamId, joined, departed);
 
-var id = session.Events.StartStream<Quest>(joined, departed).Id;
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L153-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-3' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-4'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Or pass the aggregate type in without generics
+    session.Events.StartStream(typeof(Quest), userDefinedStreamId, joined, departed);
 
-var id = session.Events.StartStream(joined, departed).Id;
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L35-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-4' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-5'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Or forget about the aggregate type whatsoever
+    var streamId4 = session.Events.StartStream(joined, departed);
 
-var id = session.Events.StartStream(joined, departed).Id;
-await session.SaveChangesAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L63-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-5' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-6'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Or start with a known stream id and no aggregate type
+    session.Events.StartStream(userDefinedStreamId, joined, departed);
 
-var id = session.Events.StartStream(joined, departed).Id;
-await session.SaveChangesAsync();
+    // And persist the new stream of course
+    await session.SaveChangesAsync();
+}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L91-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-6' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-7'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-var id = session.Events.StartStream(joined, departed).Id;
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L119-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-7' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-8'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-var id = "Second";
-session.Events.StartStream<Quest>(id, joined, departed);
-await session.SaveChangesAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers.cs#L55-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-8' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-9'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-var id = "Third";
-session.Events.StartStream<Quest>(id, joined, departed);
-await session.SaveChangesAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers.cs#L83-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-9' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-aggregate-type-10'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-var id = "Fourth";
-session.Events.StartStream<Quest>(id, joined, departed);
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers.cs#L112-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-aggregate-type-10' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StartStreamSamples.cs#L40-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_stream_with_guid_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Or have Marten use a Guid value that you provide yourself:
-
-<!-- snippet: sample_start-stream-with-existing-guid -->
-<a id='snippet-sample_start-stream-with-existing-guid'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-var id = Guid.NewGuid();
-session.Events.StartStream<Quest>(id, joined, departed);
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L362-L369' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-existing-guid' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_start-stream-with-existing-guid-1'></a>
-```cs
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-var id = Guid.NewGuid();
-session.Events.StartStream(id, joined, departed);
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L300-L307' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start-stream-with-existing-guid-1' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-For stream identity (strings vs. Guids), see [here](/guide/events/identity).
+For stream identity (strings vs. Guids), see [here](/guide/events/configuration).
 
 Note that `StartStream` checks for an existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
 
 ## Appending Events
+
+::: tip
+`AppendEvent()` will create a new stream for the stream id if it does not already exist at the time that 
+`IDocumentSession.SaveChanges()` is called.
+:::
 
 If you have an existing stream, you can later append additional events with `IEventStore.Append()` as shown below:
 
@@ -203,43 +93,57 @@ session.SaveChanges();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L483-L490' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Appending & Assertions ###
+## Optimistic Versioned Append
 
-`IEventStore.Append()` supports an overload taking in a parameter `int expectedVersion` that can be used to assert that events are inserted into the event stream if and only if the maximum event id for the stream matches the expected version after event insertions. Otherwise the transaction is aborted and an `EventStreamUnexpectedMaxEventIdException` exception is thrown.
+::: tip
+This may not be very effective as it only helps you detect changes between calling `AppendOptimistic()`
+and `SaveChangesAsync()`.
+:::
 
-<!-- snippet: sample_append-events-assert-on-eventid -->
-<a id='snippet-sample_append-events-assert-on-eventid'></a>
+You can also use the new `AppendOptimistic()` method to do optimistic concurrency with the event
+stream version with an automatic stream version lookup like this:
+
+<!-- snippet: sample_append_optimistic_event -->
+<a id='snippet-sample_append_optimistic_event'></a>
 ```cs
-session.Events.StartStream<Quest>(id, started);
-session.SaveChanges();
+public async Task append_optimistic(IDocumentSession session, Guid streamId, object[] events)
+{
+    // This is doing data access, so it's an async method
+    await session.Events.AppendOptimistic(streamId, events);
 
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
+    // Assume that there is other work happening right here...
 
-// Events are appended into the stream only if the maximum event id for the stream
-// would be 3 after the append operation.
-session.Events.Append(id, 3, joined, departed);
-
-session.SaveChanges();
+    await session.SaveChangesAsync();
+}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L606-L618' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-assert-on-eventid' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_append-events-assert-on-eventid-1'></a>
-```cs
-session.Events.StartStream(id, started);
-session.SaveChanges();
-
-var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-// Events are appended into the stream only if the maximum event id for the stream
-// would be 3 after the append operation.
-session.Events.Append(id, 3, joined, departed);
-
-session.SaveChanges();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L516-L528' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-assert-on-eventid-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StartStreamSamples.cs#L75-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_optimistic_event' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### StartStream vs. Append
+## Serialized Access to the Stream
 
-Both `StartStream` and `Append` can be used to start a new event stream. The difference with the methods is that `StartStream` always checks for existing stream and throws `ExistingStreamIdCollisionException` in case the stream already exists.
+The `AppendExclusive()` method will actually reserve a database lock on the stream itself until the
+`IDocumentSession` is saved or disposed. That usage is shown below:
+
+<!-- snippet: sample_append_exclusive_events -->
+<a id='snippet-sample_append_exclusive_events'></a>
+```cs
+public async Task append_exclusive(IDocumentSession session, Guid streamId)
+{
+    // You *could* pass in events here too, but doing this establishes a transaction
+    // lock on the stream.
+    await session.Events.AppendExclusive(streamId);
+
+    var events = determineNewEvents(streamId);
+
+    // The next call can just be Append()
+    session.Events.Append(streamId, events);
+
+    // This will commit the unit of work and release the
+    // lock on the event stream
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StartStreamSamples.cs#L89-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_exclusive_events' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+This usage will in effect serialize access to a single event stream.

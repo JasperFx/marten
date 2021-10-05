@@ -118,64 +118,24 @@ module.exports = {
         text: 'Event Store',
         link: '/guide/events/',
         children: [
-          {
-            text: 'Introduction',
-            link: '/guide/events/index'
-          },
-          {
-            text: 'Appending events',
-            link: '/guide/events/appending'
-          },
-          {
-            text: 'Reading Events',
-            link: '/guide/events/reading/aggregating',
-            children: [
-              {
-                text: 'Aggregating Stream',
-                link: '/guide/events/reading/aggregating'
-              },
-              {
-                text: 'Querying Events',
-                link: '/guide/events/reading/querying'
-              },
-            ]
-          },
+          {text: 'Introduction', link: '/guide/events/index'},
+          {text: 'Quick Start', link: '/guide/events/quickstart'},
+          {text: 'Configuration', link: '/guide/events/configuration'},
+          {text: 'Appending Events', link: '/guide/events/appending'},
+          {text: 'Querying Events', link: '/guide/events/querying'},
+          {text: 'Archiving Streams', link: '/guide/events/archiving'},
           {
             text: 'Projections',
             link: '/guide/events/projections/',
             children: [
-              {
-                text: 'Introduction',
-                link: '/guide/events/projections/'
-              },
-              {
-                text: 'Aggregate projections',
-                link: '/guide/events/projections/aggregate-projections'
-              },
-              {
-                text: 'View Projections',
-                link: '/guide/events/projections/view-projections'
-              },
-              {
-                text: 'Event Projections',
-                link: '/guide/events/projections/event-projections'
-              },
-              {
-                text: 'Custom projections',
-                link: '/guide/events/projections/custom'
-              },
-              {
-                text: 'Inline projections',
-                link: '/guide/events/projections/inline'
-              },
-              {
-                text: 'Async Daemon',
-                link: '/guide/events/projections/async-daemon'
-              },
-              {
-                text: 'Rebuilding projections',
-                link: '/guide/events/projections/rebuilding'
-              }
+              {text: 'Aggregate projections', link: '/guide/events/projections/aggregate-projections'},
+              {text: 'Live Aggregations', link: '/guide/events/projections/live-aggregates'},
+              {text: 'View Projections', link: '/guide/events/projections/view-projections'},
+              {text: 'Event Projections', link: '/guide/events/projections/event-projections'},
+              {text: 'Custom projections', link: '/guide/events/projections/custom'},
+              {text: 'Inline projections', link: '/guide/events/projections/inline'},
+              {text: 'Async Daemon',link: '/guide/events/projections/async-daemon'},
+              {text: 'Rebuilding projections', link: '/guide/events/projections/rebuilding'}
             ]
           },
           {
