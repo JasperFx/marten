@@ -128,14 +128,14 @@ module.exports = {
             text: 'Projections',
             link: '/guide/events/projections/',
             children: [
-              {text: 'Aggregate projections', link: '/guide/events/projections/aggregate-projections'},
+              {text: 'Aggregate Projections', link: '/guide/events/projections/aggregate-projections'},
               {text: 'Live Aggregations', link: '/guide/events/projections/live-aggregates'},
               {text: 'View Projections', link: '/guide/events/projections/view-projections'},
               {text: 'Event Projections', link: '/guide/events/projections/event-projections'},
-              {text: 'Custom projections', link: '/guide/events/projections/custom'},
-              {text: 'Inline projections', link: '/guide/events/projections/inline'},
-              {text: 'Async Daemon',link: '/guide/events/projections/async-daemon'},
-              {text: 'Rebuilding projections', link: '/guide/events/projections/rebuilding'}
+              {text: 'Custom Projections', link: '/guide/events/projections/custom'},
+              {text: 'Inline Projections', link: '/guide/events/projections/inline'},
+              {text: 'Asynchronous Projections',link: '/guide/events/projections/async-daemon'},
+              {text: 'Rebuilding Projections', link: '/guide/events/projections/rebuilding'}
             ]
           },
           {

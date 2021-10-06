@@ -6,6 +6,8 @@ using Marten.Storage;
 #nullable enable
 namespace Marten.Events.Projections
 {
+    #region sample_IProjection
+
     /// <summary>
     /// Interface for all event projections
     /// </summary>
@@ -28,5 +30,7 @@ namespace Marten.Events.Projections
         Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
             CancellationToken cancellation);
     }
+
+    #endregion
 
 }

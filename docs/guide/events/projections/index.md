@@ -1,85 +1,40 @@
-**Here I'd like to just keep the general introduction explaining what's the projection plus explanation of those we have. Live projections will be took away to the reading event section.**
-
 # Projections
 
-::: tip INFO
-The Marten community is working to create more samples of event store projections. Check this page again soon. In the meantime, don't forget to just look through the code and our unit tests.
+::: warning
+The programming model for projections was completely rewritten for Marten V4
 :::
 
+Marten has a (we hope) strong model for user-defined projections of the raw event data. Projections are used within Marten to create
+read-side views of the raw event data. The basics of the Marten projection model are shown below:
 
-## Transformations
+![Projection Class Diagram](/images/Projections.png)
 
-Transformations project from one event type to one document. If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net `ITransform` interface:
+Do note that all the various types of aggregated projections all inherit from a common base and have the same core set of conventions.
 
-<[sample:ITransform]>
+## Projection Types
 
-As a sample problem, let's say that we're constantly capturing `MonsterSlayed` events and our system needs to query just this data. You could query directly against the large `mt_events` table with
-`IEventStore.Query<MonsterSlayed>()`, but it would be more efficient to keep a separate "read side" copy of this data in a new data collection. We could build a new transform class and readside document like this:
 
-<!-- snippet: sample_MonsterDefeatedTransform -->
-<a id='snippet-sample_monsterdefeatedtransform'></a>
-```cs
-public class MonsterDefeatedTransform: EventProjection
-{
-    public MonsterDefeated Transform(IEvent<MonsterSlayed> input)
-    {
-        return new MonsterDefeated
-        {
-            Id = input.Id,
-            Monster = input.Data.Name
-        };
-    }
-}
+1. [Aggregate Projections](/guide/events/projections/aggregate-projections) combine either a stream or some other related set of events into a single view. 
+1. [View Projections](/guide/events/projections/view-projections) are a specialized form of aggregate projections that allow you to aggregate against arbitrary groupings of events across streams.
+1. [Event Projections](/guide/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
+1. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/guide/events/projections/custom)
 
-public class MonsterDefeated
-{
-    public Guid Id { get; set; }
-    public string Monster { get; set; }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#L122-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monsterdefeatedtransform' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
-Now, we can plug our new transform type above as a projection when we configure our document store like this:
+## Projection Lifecycles
 
-<!-- snippet: sample_applying-monster-defeated -->
-<a id='snippet-sample_applying-monster-defeated'></a>
-```cs
-var store = DocumentStore.For(_ =>
-{
-    _.Connection(ConnectionSource.ConnectionString);
-    _.DatabaseSchemaName = "monster_defeated";
+Marten varies a little bit in that projections can be executed with three different lifecycles:
 
-    _.Projections.Add(new MonsterDefeatedTransform());
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#L82-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applying-monster-defeated' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+1. [Inline Projections](/guide/events/projections/inline) are executed at the time of event capture and in the same unit of work to persist the projected documents
+1. [Live Aggregations](/guide/events/projections/live-aggregates) are executed on demand by loading event data and creating the projected view in memory without persisting the projected documents
+1. [Asynchronous Projections](/guide/events/projections/async-daemon) are executed by a background process
 
-<!-- snippet: sample_using_live_transformed_events -->
-<a id='snippet-sample_using_live_transformed_events'></a>
-```cs
-public void using_live_transformed_events(IDocumentSession session)
-{
-    var started = new QuestStarted { Name = "Find the Orb" };
-    var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" } };
-    var slayed1 = new MonsterSlayed { Name = "Troll" };
-    var slayed2 = new MonsterSlayed { Name = "Dragon" };
 
-    MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+For other descriptions of the _Projections_ pattern inside of Event Sourcing architectures, see:
 
-    session.Events.StartStream<Quest>(started, joined, slayed1, slayed2);
-    session.SaveChanges();
+* [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
+* [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
 
-    // Our MonsterDefeated documents are created inline
-    // with the SaveChanges() call above and are available
-    // for querying
-    session.Query<MonsterDefeated>().Count()
-        .ShouldBe(2);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L153-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_live_transformed_events' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+
 
 ## Aggregates
 
@@ -95,61 +50,25 @@ Sticking with the fantasy theme, the `QuestParty` class shown below could be use
 public class QuestParty
 {
     public List<string> Members { get; set; } = new();
-
     public IList<string> Slayed { get; } = new List<string>();
-
-    public void Apply(MembersJoined joined)
-    {
-        Members.Fill(joined.Members);
-    }
-
-    public void Apply(MembersDeparted departed)
-    {
-        Members.RemoveAll(x => departed.Members.Contains(x));
-    }
-
-    public void Apply(QuestStarted started)
-    {
-        Name = started.Name;
-    }
-
     public string Key { get; set; }
-
     public string Name { get; set; }
 
+    // In this particular case, this is also the stream id for the quest events
     public Guid Id { get; set; }
+
+    // These methods take in events and update the QuestParty
+    public void Apply(MembersJoined joined) => Members.Fill(joined.Members);
+    public void Apply(MembersDeparted departed) => Members.RemoveAll(x => departed.Members.Contains(x));
+    public void Apply(QuestStarted started) => Name = started.Name;
 
     public override string ToString()
     {
         return $"Quest party '{Name}' is {Members.Join(", ")}";
     }
 }
-
-public class QuestFinishingParty: QuestParty
-{
-    private readonly string _exMachina;
-
-    public QuestFinishingParty()
-    {
-    }
-
-    public QuestFinishingParty(string exMachina)
-    {
-        _exMachina = exMachina;
-    }
-
-    public void Apply(MembersEscaped escaped)
-    {
-        if (_exMachina == null)
-        {
-            throw new NullReferenceException("Can't escape w/o an Ex Machina");
-        }
-
-        Members.RemoveAll(x => escaped.Members.Contains(x));
-    }
-}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestParty.cs#L8-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.

@@ -45,3 +45,20 @@ var store = DocumentStore.For(opts =>
 
 Stream identity effects the underlying database schema of the Event Store related tables. Namely, using string identities configures `stream_id` in the `mt_events` table to be `varchar`, whereas `uuid` would be used for GUIDs. The same applies to the `id` column in `mt_streams` table.
 
+## Multi-Tenancy
+
+The event storage can opt into conjoined multi-tenancy with this syntax:
+
+<!-- snippet: sample_making_the_events_multi_tenanted -->
+<a id='snippet-sample_making_the_events_multi_tenanted'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // And that's all it takes, the events are now multi-tenanted
+    opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L227-L237' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

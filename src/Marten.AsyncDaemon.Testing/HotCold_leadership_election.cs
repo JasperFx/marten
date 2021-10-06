@@ -52,7 +52,7 @@ namespace Marten.AsyncDaemon.Testing
 
             StoreOptions(x =>
             {
-                x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
                 x.Logger(new TestOutputMartenLogger(_output));
             }, true);
 
@@ -76,7 +76,7 @@ namespace Marten.AsyncDaemon.Testing
 
             StoreOptions(x =>
             {
-                x.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                x.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
             }, true);
 
             var agent = await StartDaemonInHotColdMode();

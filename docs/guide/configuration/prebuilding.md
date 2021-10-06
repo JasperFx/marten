@@ -65,7 +65,7 @@ public class Program
                     opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
                     // Register all event store projections ahead of time
-                    opts.Projections.Add(new TripAggregation(), ProjectionLifecycle.Async);
+                    opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
                     opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
                     opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
 

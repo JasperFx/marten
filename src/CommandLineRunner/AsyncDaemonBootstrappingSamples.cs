@@ -31,7 +31,7 @@ namespace CommandLineRunner
                         opts.Projections.AsyncMode = DaemonMode.Solo;
 
                         // Register any projections you need to run asynchronously
-                        opts.Projections.Add<TripAggregation>(ProjectionLifecycle.Async);
+                        opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
                     });
                 })
                 .StartAsync();
@@ -54,7 +54,7 @@ namespace CommandLineRunner
                         opts.Projections.AsyncMode = DaemonMode.Solo;
 
                         // Register any projections you need to run asynchronously
-                        opts.Projections.Add<TripAggregation>(ProjectionLifecycle.Async);
+                        opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
 
                         #region sample_stop_shard_on_exception
 
@@ -111,7 +111,7 @@ namespace CommandLineRunner
                         opts.Projections.AsyncMode = DaemonMode.HotCold;
 
                         // Register any projections you need to run asynchronously
-                        opts.Projections.Add<TripAggregation>(ProjectionLifecycle.Async);
+                        opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
                     });
                 })
                 .StartAsync();
@@ -159,7 +159,7 @@ namespace CommandLineRunner
             await daemon.RebuildProjection("a projection name", cancellation);
 
             // or a single projection by its type
-            await daemon.RebuildProjection<TripAggregation>(cancellation);
+            await daemon.RebuildProjection<TripAggregationWithCustomName>(cancellation);
 
             // Be careful with this. Wait until the async daemon has completely
             // caught up with the currently known high water mark

@@ -16,6 +16,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         public bool Active { get; set; }
 
         public int StartedOn { get; set; }
+        public Guid? RepairShopId { get; set; }
 
         protected bool Equals(Trip other)
         {
