@@ -118,17 +118,17 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
         public async Task multi_stream_projections_should_work()
         {
             var firstEmployeeId = Guid.NewGuid();
-            var firstEmployeeAlocated = new EmployeeAllocated(firstEmployeeId, new List<Allocation>()
+            var firstEmployeeAllocated = new EmployeeAllocated(firstEmployeeId, new List<Allocation>()
             {
                 new(new DateTime(2021, 9, 3), 9),
                 new(new DateTime(2021, 9, 4), 4),
                 new(new DateTime(2021, 10, 3), 10),
                 new(new DateTime(2021, 10, 4), 7),
             });
-            theSession.Events.Append(firstEmployeeId, firstEmployeeAlocated);
+            theSession.Events.Append(firstEmployeeId, firstEmployeeAllocated);
 
             var secondEmployeeId = Guid.NewGuid();
-            var secondEmployeeAlocated = new EmployeeAllocated(secondEmployeeId, new List<Allocation>()
+            var secondEmployeeAllocated = new EmployeeAllocated(secondEmployeeId, new List<Allocation>()
             {
                 new(new DateTime(2021, 9, 3), 1),
                 new(new DateTime(2021, 9, 4), 2),
@@ -136,7 +136,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
                 new(new DateTime(2021, 10, 4), 8),
             });
 
-            theSession.Events.Append(secondEmployeeId, secondEmployeeAlocated);
+            theSession.Events.Append(secondEmployeeId, secondEmployeeAllocated);
 
             await theSession.SaveChangesAsync();
 
@@ -148,7 +148,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             firstEmployeeSeptemberAllocations.Id.ShouldBe(firstEmployeeSeptemberId);
             firstEmployeeSeptemberAllocations.EmployeeId.ShouldBe(firstEmployeeId);
             firstEmployeeSeptemberAllocations.Hours.ShouldBe(
-                firstEmployeeAlocated.Allocations
+                firstEmployeeAllocated.Allocations
                     .Where(a => a.Day.Month == 9)
                     .Sum(a => a.Hours)
             );
@@ -160,7 +160,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             firstEmployeeOctoberAllocations.Id.ShouldBe(firstEmployeeOctoberId);
             firstEmployeeOctoberAllocations.EmployeeId.ShouldBe(firstEmployeeId);
             firstEmployeeOctoberAllocations.Hours.ShouldBe(
-                firstEmployeeAlocated.Allocations
+                firstEmployeeAllocated.Allocations
                     .Where(a => a.Day.Month == 10)
                     .Sum(a => a.Hours)
             );
@@ -174,7 +174,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             secondEmployeeSeptemberAllocations.Id.ShouldBe(secondEmployeeSeptemberId);
             secondEmployeeSeptemberAllocations.EmployeeId.ShouldBe(secondEmployeeId);
             secondEmployeeSeptemberAllocations.Hours.ShouldBe(
-                secondEmployeeAlocated.Allocations
+                secondEmployeeAllocated.Allocations
                     .Where(a => a.Day.Month == 9)
                     .Sum(a => a.Hours)
             );
@@ -187,7 +187,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections.CustomGroupers
             secondEmployeeOctoberAllocations.Id.ShouldBe(secondEmployeeOctoberId);
             secondEmployeeOctoberAllocations.EmployeeId.ShouldBe(secondEmployeeId);
             secondEmployeeOctoberAllocations.Hours.ShouldBe(
-                secondEmployeeAlocated.Allocations
+                secondEmployeeAllocated.Allocations
                     .Where(a => a.Day.Month == 10)
                     .Sum(a => a.Hours)
             );
