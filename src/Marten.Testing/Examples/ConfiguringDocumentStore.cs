@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
@@ -219,5 +220,21 @@ namespace Marten.Testing.Examples
         }
 
         #endregion
+
+
+        public void set_multi_tenancy_on_events()
+        {
+            #region sample_making_the_events_multi_tenanted
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("some connection string");
+
+                // And that's all it takes, the events are now multi-tenanted
+                opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            });
+
+            #endregion
+        }
     }
 }

@@ -43,7 +43,7 @@ all the default behavior and a connection string to a Posgresql database:
 var store = DocumentStore
     .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L35-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L36-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Most of the time however, you'll need to configure more options and integrate Marten

@@ -827,6 +827,27 @@ namespace Marten.PLv8.Testing.Patching
             count.ShouldBe(1);
         }
 
+        public void SampleSetup()
+        {
+            #region sample_registering_custom_projection
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("some connection string");
+
+                // Marten.PLv8 is necessary for patching
+                opts.UseJavascriptTransformsAndPatching();
+
+                // The default lifecycle is inline
+                opts.Projections.Add(new QuestPatchTestProjection());
+
+                // Or use this as an asychronous projection
+                opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
+            });
+
+            #endregion
+        }
+
         [Theory]
         [InlineData(TenancyStyle.Single)]
         [InlineData(TenancyStyle.Conjoined)]
@@ -861,6 +882,8 @@ namespace Marten.PLv8.Testing.Patching
             (await theSession.Events.FetchStreamStateAsync(aggregateId)).Version.ShouldBe(2);
         }
 
+        #region sample_QuestPatchTestProjection
+
         public class QuestPatchTestProjection: IProjection
         {
             public Guid Id { get; set; }
@@ -887,9 +910,12 @@ namespace Marten.PLv8.Testing.Patching
             public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
                 CancellationToken cancellation)
             {
+                Apply(operations, streams);
                 return Task.CompletedTask;
             }
         }
+
+        #endregion
 
 
 

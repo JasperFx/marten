@@ -9,35 +9,25 @@ namespace Marten.Testing.Events.Projections
     public class QuestParty
     {
         public List<string> Members { get; set; } = new();
-
         public IList<string> Slayed { get; } = new List<string>();
-
-        public void Apply(MembersJoined joined)
-        {
-            Members.Fill(joined.Members);
-        }
-
-        public void Apply(MembersDeparted departed)
-        {
-            Members.RemoveAll(x => departed.Members.Contains(x));
-        }
-
-        public void Apply(QuestStarted started)
-        {
-            Name = started.Name;
-        }
-
         public string Key { get; set; }
-
         public string Name { get; set; }
 
+        // In this particular case, this is also the stream id for the quest events
         public Guid Id { get; set; }
+
+
+        // These methods take in events and update the QuestParty
+        public void Apply(MembersJoined joined) => Members.Fill(joined.Members);
+        public void Apply(MembersDeparted departed) => Members.RemoveAll(x => departed.Members.Contains(x));
+        public void Apply(QuestStarted started) => Name = started.Name;
 
         public override string ToString()
         {
             return $"Quest party '{Name}' is {Members.Join(", ")}";
         }
     }
+    #endregion
 
     public class QuestFinishingParty: QuestParty
     {
@@ -63,5 +53,5 @@ namespace Marten.Testing.Events.Projections
         }
     }
 
-    #endregion
+
 }
