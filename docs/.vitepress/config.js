@@ -211,16 +211,6 @@ module.exports = {
         ]
       },
       {
-        text: 'Managing Postgres Instance',
-        link: '/guide/admin/',
-        children: [
-          {
-            text: 'Installing plv8 on Windows',
-            link: '/guide/admin/installing-plv8-windows'
-          }
-        ]
-      },
-      {
         text: 'Postgres for SQL Server users',
         link: '/guide/postgres/',
         children: [

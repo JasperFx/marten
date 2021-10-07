@@ -119,6 +119,8 @@ namespace Marten.AsyncDaemon.Testing
         public double South { get; set; }
     }
 
+    #region sample_showing_fanout_rules
+
     public class DayProjection: ViewProjection<Day, int>
     {
         public DayProjection()
@@ -160,4 +162,6 @@ namespace Marten.AsyncDaemon.Testing
             }
         }
     }
+
+    #endregion
 }

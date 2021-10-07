@@ -5,6 +5,11 @@ The compiled query support was completely rewritten for Marten V4, and the signa
 on `IMartenQueryable<T>` instead of `IQueryable<T>`, and most Marten specific Linq usages are available.
 :::
 
+::: warning
+Don't use asynchronous Linq operators in the expression body of a compiled query. This will not impact your ability to use compiled queries
+in asynchronous querying.
+:::
+
 
 Linq is easily one of the most popular features in .Net and arguably the one thing that other platforms strive to copy. We generally like being able
 to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting [Expression trees](https://msdn.microsoft.com/en-us/library/bb397951.aspx) and then using plenty of string concatenation to build up the matching SQL query. 

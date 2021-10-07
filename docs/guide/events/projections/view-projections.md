@@ -375,3 +375,65 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
 <!-- endSnippet -->
 
 
+## Event "Fan Out" Rules
+
+The `ViewProjection` also provides the ability to "fan out" child events from a parent event into the segment of events being used to
+create an aggregated view. As an example, a `Travel` event we use in Marten testing contains a list of `Movement` objects:
+
+<!-- snippet: sample_Travel_Movements -->
+<a id='snippet-sample_travel_movements'></a>
+```cs
+public IList<Movement> Movements { get; set; } = new List<Movement>();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/Travel.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:
+
+<!-- snippet: sample_showing_fanout_rules -->
+<a id='snippet-sample_showing_fanout_rules'></a>
+```cs
+public class DayProjection: ViewProjection<Day, int>
+{
+    public DayProjection()
+    {
+        // Tell the projection how to group the events
+        // by Day document
+        Identity<IDayEvent>(x => x.Day);
+
+        // This just lets the projection work independently
+        // on each Movement child of the Travel event
+        // as if it were its own event
+        FanOut<Travel, Movement>(x => x.Movements);
+
+        ProjectionName = "Day";
+    }
+
+    public void Apply(Day day, TripStarted e) => day.Started++;
+    public void Apply(Day day, TripEnded e) => day.Ended++;
+
+    public void Apply(Day day, Movement e)
+    {
+        switch (e.Direction)
+        {
+            case Direction.East:
+                day.East += e.Distance;
+                break;
+            case Direction.North:
+                day.North += e.Distance;
+                break;
+            case Direction.South:
+                day.South += e.Distance;
+                break;
+            case Direction.West:
+                day.West += e.Distance;
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/ViewProjectionTests.cs#L122-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
