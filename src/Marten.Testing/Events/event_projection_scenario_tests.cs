@@ -231,6 +231,8 @@ namespace Marten.Testing.Events
         public Guid UserId { get; set; }
     }
 
+    #region sample_user_projection_of_event_projection
+
     public class UserProjection: EventProjection
     {
         public User Create(CreateUser create)
@@ -246,4 +248,6 @@ namespace Marten.Testing.Events
             operations.Delete<User>(deletion.UserId);
         }
     }
+
+    #endregion
 }

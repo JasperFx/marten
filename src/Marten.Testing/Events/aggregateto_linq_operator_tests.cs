@@ -22,7 +22,8 @@ namespace Marten.Testing.Events
             theSession.Events.StartStream<Quest>(_joined2, _departed2);
             theSession.SaveChanges();
 
-            var questParty = theSession.Events.QueryAllRawEvents().AggregateTo<QuestParty>();
+            var questParty = theSession.Events.QueryAllRawEvents()
+                .AggregateTo<QuestParty>();
 
             questParty.Members.ShouldHaveTheSameElementsAs("Rand", "Matrim", "Perrin", "Elayne", "Elmindreda");
         }
@@ -34,9 +35,21 @@ namespace Marten.Testing.Events
             theSession.Events.StartStream<Quest>(_joined2, _departed2);
             await theSession.SaveChangesAsync();
 
-            var questParty = await theSession.Events.QueryAllRawEvents().AggregateToAsync<QuestParty>();
+            #region sample_aggregateto_async_usage_with_linq
 
-            questParty.Members.ShouldHaveTheSameElementsAs("Rand", "Matrim", "Perrin", "Elayne", "Elmindreda");
+            var questParty = await theSession.Events
+                .QueryAllRawEvents()
+
+                // You could of course chain all the Linq
+                // Where()/OrderBy()/Take()/Skip() operators
+                // you need here
+
+                .AggregateToAsync<QuestParty>();
+
+            #endregion
+
+            questParty.Members
+                .ShouldHaveTheSameElementsAs("Rand", "Matrim", "Perrin", "Elayne", "Elmindreda");
         }
 
         [Fact]

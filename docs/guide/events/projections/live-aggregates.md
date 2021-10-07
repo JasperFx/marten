@@ -1,5 +1,10 @@
 # Live Aggregation
 
+::: tip
+For information on how to create aggregated projection or "self-aggregates," see [Aggregate Projections](/guide/events/projections/aggregate-projections).
+:::
+
+
 In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`.  All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position. 
 
 Streams can be thought of as the entities' representation. Traditionally (e.g. in relational or document approach), each entity is stored as a separate record.
@@ -214,7 +219,7 @@ var roomsAvailabilityAtVersion =
 <!-- endSnippet -->
 
 
-## Aggregating stream into state
+## Aggregating Events into Existing State
 
 Marten also allows aggregating the stream into a specific entity instance. This means that a particular set of events are taken and applied to an object one by one in the same order of occurrence. To achieve it, you should pass the base entity state as a `state` parameter into the `AggregateStream` method.
 
@@ -399,3 +404,26 @@ var currentState = await repository.Get(financialAccountId);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L207-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+
+## Live Aggregation from Linq Queries
+
+Marten V4 introduces a mechanism to run a live aggregation to any arbitrary segment of events through
+a Linq operator in Marten called `AggregateTo()` or `AggregateToAsync()` as shown below:
+
+<!-- snippet: sample_aggregateto_async_usage_with_linq -->
+<a id='snippet-sample_aggregateto_async_usage_with_linq'></a>
+```cs
+var questParty = await theSession.Events
+    .QueryAllRawEvents()
+
+    // You could of course chain all the Linq
+    // Where()/OrderBy()/Take()/Skip() operators
+    // you need here
+
+    .AggregateToAsync<QuestParty>();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/aggregateto_linq_operator_tests.cs#L38-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+These methods are extension methods in the `Marten.Events` namespace.
