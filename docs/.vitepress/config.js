@@ -120,9 +120,10 @@ module.exports = {
         children: [
           {text: 'Introduction', link: '/guide/events/index'},
           {text: 'Quick Start', link: '/guide/events/quickstart'},
-          {text: 'Configuration', link: '/guide/events/configuration'},
+          {text: 'Storage',link: '/guide/events/storage'},
           {text: 'Appending Events', link: '/guide/events/appending'},
           {text: 'Querying Events', link: '/guide/events/querying'},
+          {text: 'Metadata', link: '/guide/events/metadata'},
           {text: 'Archiving Streams', link: '/guide/events/archiving'},
           {
             text: 'Projections',
@@ -138,36 +139,14 @@ module.exports = {
               {text: 'Rebuilding Projections', link: '/guide/events/projections/rebuilding'}
             ]
           },
+
           {
-            text: 'Streaming',
-            link: '/guide/events/streaming/',
-            children: [
-              {
-                text: 'Introduction',
-                link: '/guide/events/streaming/'
-              },
-              {
-                text: 'Publishing changes',
-                link: '/guide/events/streaming/source'
-              },
-              {
-                text: 'Receiving events',
-                link: '/guide/events/streaming/sink'
-              },
-            ]
-          },
-          {
-            text: 'Metadata',
-            link: '/guide/events/metadata'
-          },
-          {
-            text: 'Event versioning',
+            text: 'Event Versioning',
             link: '/guide/events/versioning'
           },
-          {
-            text: 'Storage',
-            link: '/guide/events/storage'
-          },
+
+
+
           {
             text: 'Multitenancy',
             link: '/guide/events/multitenancy'
