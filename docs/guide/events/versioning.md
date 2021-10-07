@@ -11,7 +11,7 @@ However, in practice, it's unavoidable in the living system to not have the even
 
 Depending on the concrete business case we may use a different technique for handling such event migrations.
 
-## Namespace migration
+## Namespace Migration
 
 Marten by default tries to find the event class based on the fully qualified assembly name (it's stored in `mt_dotnet_type` column of `mt_events` table, read more in [events schema documentation](/guide/events/storage).
 When it is not able to find event type with the same assembly, namespace and type name then it tries to make a lookup for mapping on the event type name (stored in `type` column of `mt_events` table).
@@ -83,7 +83,7 @@ var store = new DocumentStore(options);
 
 After that Marten will automatically perform a matching based on the type name (that didn't change) - `order_status_changed`.
 
-## Event type name migration
+## Event Type Name Migration
 
 When the event class type name has changed, Marten does not perform automatic mapping but allows to define a custom one.
 
