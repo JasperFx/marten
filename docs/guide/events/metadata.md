@@ -1,6 +1,6 @@
 # Event Metadata
 
-See [Marten Metadata](/guide/schema/metadata) for more information and examples
+See [Marten Metadata](/guide/documents/metadata) for more information and examples
 about capturing metadata as part of `IDocumentSession` unit of work operations.
 
 The metadata tracking for events can be extended in Marten by opting into extra fields

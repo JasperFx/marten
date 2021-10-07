@@ -1,9 +1,9 @@
 # Metadata Indexes
 
-The performance of specific queries that include [document and event metadata](/guide/schema/metadata) columns
+The performance of specific queries that include [document and event metadata](/guide/documents/metadata) columns
 Marten provides some predefined indexes you may optionally enable
 
-See also [metadata queries](/guide/documents/querying/metadata-queries)
+
 
 ## Last Modified
 

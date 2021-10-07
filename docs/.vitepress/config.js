@@ -63,6 +63,7 @@ module.exports = {
         children: [
           {text: 'Identity', link: '/guide/documents/identity'},
           {text: 'Storage', link: '/guide/documents/storage'},
+          {text: 'Metadata', link: '/guide/documents/metadata'},
           {text: 'Sessions', link: '/guide/documents/sessions'},
           {text: 'Storing', link: '/guide/documents/storing'},
           {text: 'Deleting', link: '/guide/documents/deletes'},
@@ -176,7 +177,6 @@ module.exports = {
         link: '/guide/schema/',
         children: [
           {text: 'How Documents are Stored', link: '/guide/schema/storage'},
-          {text: 'Metadata', link: '/guide/schema/metadata'},
           {text: 'Schema Migrations', link: '/guide/schema/migrations'},
           {text: 'Exporting Schema Definition', link: '/guide/schema/exporting'},
           {text: 'Schema Feature Extensions', link: '/guide/schema/extensions'},
