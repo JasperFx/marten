@@ -61,9 +61,6 @@ namespace Marten.Storage
 
             Indexes.AddRange(mapping.Indexes);
             ForeignKeys.AddRange(mapping.ForeignKeys);
-
-            // Compatibility with Marten rules
-            PrimaryKeyName = $"{Identifier.Name}_pkey";
         }
 
         public void AddIfActive(MetadataColumn column)
