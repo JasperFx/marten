@@ -21,6 +21,32 @@ namespace Marten.Testing.Events.Projections
 
         private MembersJoined joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
+        private async Task sample_usage()
+        {
+            #region sample_usage_of_inline_projection
+
+            var store = DocumentStore.For(opts =>
+            {
+                opts.Connection("some connection string");
+
+                opts.Projections.Add(new MonsterDefeatedTransform(),
+                    ProjectionLifecycle.Inline);
+            });
+
+            using var session = store.LightweightSession();
+
+            var streamId = session.Events
+                .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
+
+            // The projection is going to be applied right here during
+            // the call to SaveChangesAsync() and the resulting document update
+            // of the new MonsterDefeated document will happen in the same database
+            // transaction
+            await theSession.SaveChangesAsync();
+
+            #endregion
+        }
+
         [Theory]
         [InlineData(TenancyStyle.Single)]
         [InlineData(TenancyStyle.Conjoined)]
@@ -122,7 +148,7 @@ namespace Marten.Testing.Events.Projections
     #region sample_MonsterDefeatedTransform
     public class MonsterDefeatedTransform: EventProjection
     {
-        public MonsterDefeated Transform(IEvent<MonsterSlayed> input)
+        public MonsterDefeated Create(IEvent<MonsterSlayed> input)
         {
             return new MonsterDefeated
             {
