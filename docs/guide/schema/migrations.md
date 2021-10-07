@@ -1,10 +1,19 @@
 # Schema Migrations and Patches
 
+::: tip
+All of the schema migration functionality is surfaced through Marten's [command line support](/guide/configuration/cli) and that is the Marten team's
+recommended approach for using the schema migration functionality described in this page.
+:::
+
 While it's going to be far less mechanical work than persisting an application via relational tables, Marten still needs to create
 matching schema objects in your Postgresql database and you'll need some mechanism for keeping your database schema up to date
 with the Marten `StoreOptions` configuration in your system.
 
 ## Development Time with "Auto Create" Mode
+
+::: warning
+Heads up, all the API methods for invoking schema checks or patches or migrations are now asynchronous as of Marten V4.
+:::
 
 As long as you have rights to alter your Postgresql database, you can happily set up Marten in one of the permissive "AutoCreate"
 modes and not worry about schema changes at all as you happily code new features and change existing document types:
