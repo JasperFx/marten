@@ -24,7 +24,12 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         }
 
         public int Day { get; set; }
+
+        #region sample_Travel_Movements
+
         public IList<Movement> Movements { get; set; } = new List<Movement>();
+
+        #endregion
 
         public double TotalDistance()
         {

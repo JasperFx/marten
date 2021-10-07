@@ -1,5 +1,10 @@
 # Appending Events
 
+::: tip
+Marten V4 improved the event capture process by introducing the concept of "tombstone" events that are just 
+markers in the event sequence to reflect events that failed to be captured for any reason.
+:::
+
 With Marten, events are captured and appended to logical "streams" of events. Marten provides
 methods to create a new stream with the initial events, append events to an existing stream, and
 also to append events with some protection for concurrent access to single streams.
