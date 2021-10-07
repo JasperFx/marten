@@ -222,10 +222,16 @@ public class TripProjection: AggregateProjection<Trip>
 
 The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be 
 an argument for the specific event type or `Event<T>` where `T` is the event type if you need access to event metadata. You can also take in
-an `IQuerySession` if you need to look up additional data as part of the transformation.
+an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get
+at event metadata.
 
 
 ## Applying Changes to the Aggregate Document
+
+::: tip
+`Apply()` methods or `ProjectEvent<T>()` method calls can also use interfaces or abstract types that are implemented by specific event types, and
+Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
+:::
 
 To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the 
 overloads of `ProjectEvent()`:
@@ -303,6 +309,7 @@ The `Apply()` methods can accept any combination of these arguments:
 
 1. The actual event type
 1. `Event<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/guide/events/metadata) like versions or timestamps.
+1. `IEvent` access the event metadata. It's perfectly valid to accept both `IEvent` for the metadata and the specific event type just out of convenience.
 1. `IQuerySession` if you need to do additional data lookups
 1. The aggregate type
 

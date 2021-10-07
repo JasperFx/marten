@@ -149,6 +149,8 @@ namespace Marten.AsyncDaemon.Testing
         }
     }
 
+    #region sample_using_create_in_event_projection
+
     public class DistanceProjection: EventProjection
     {
         public DistanceProjection()
@@ -156,11 +158,14 @@ namespace Marten.AsyncDaemon.Testing
             ProjectionName = "Distance";
         }
 
+        // Create a new Distance document based on a Travel event
         public Distance Create(Travel travel, IEvent e)
         {
             return new Distance {Id = e.Id, Day = travel.Day, Total = travel.TotalDistance()};
         }
     }
+
+    #endregion
 
     public class DistanceProjection2: SyncProjectionBase
     {

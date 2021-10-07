@@ -240,6 +240,8 @@ namespace Marten.Testing.Events.Projections
             operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
     }
 
+    #region sample_lambda_definition_of_event_projection
+
     public class LambdaProjection: EventProjection
     {
         public LambdaProjection()
@@ -251,6 +253,8 @@ namespace Marten.Testing.Events.Projections
                 ops.DeleteWhere<User>(x => x.UserName == e.UserName));
         }
     }
+
+    #endregion
 
     public class UserCreated
     {
