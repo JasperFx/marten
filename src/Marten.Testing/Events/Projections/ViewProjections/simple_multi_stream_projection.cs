@@ -13,19 +13,42 @@ namespace Marten.Testing.Events.Projections.ViewProjections.Simple
     {
         public UserGroupsAssignmentProjection()
         {
+            // This is just specifying the aggregate document id
+            // per event type. This assumes that each event
+            // applies to only one aggregated view document
             Identity<UserRegistered>(x => x.UserId);
             Identity<SingleUserAssignedToGroup>(x => x.UserId);
         }
 
         public void Apply(UserRegistered @event, UserGroupsAssignment view)
-        {
-            view.Id = @event.UserId;
-        }
+            => view.Id = @event.UserId;
 
         public void Apply(SingleUserAssignedToGroup @event, UserGroupsAssignment view)
+            => view.Groups.Add(@event.GroupId);
+    }
+
+    #endregion
+
+    #region sample_view-projection-simple-2
+    public class UserGroupsAssignmentProjection2: ViewProjection<UserGroupsAssignment, Guid>
+    {
+        public UserGroupsAssignmentProjection2()
         {
-            view.Groups.Add(@event.GroupId);
+            // This is just specifying the aggregate document id
+            // per event type. This assumes that each event
+            // applies to only one aggregated view document
+
+            // The easiest possible way to do this is to use
+            // a common interface or base type, and specify
+            // the identity rule on that common type
+            Identity<IUserEvent>(x => x.UserId);
         }
+
+        public void Apply(UserRegistered @event, UserGroupsAssignment view)
+            => view.Id = @event.UserId;
+
+        public void Apply(SingleUserAssignedToGroup @event, UserGroupsAssignment view)
+            => view.Groups.Add(@event.GroupId);
     }
 
     #endregion

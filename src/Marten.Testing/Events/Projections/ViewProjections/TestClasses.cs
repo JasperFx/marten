@@ -4,6 +4,12 @@ using System.Collections.Generic;
 namespace Marten.Testing.Events.Projections.ViewProjections
 {
     #region sample_view-projection-test-classes
+
+    public interface IUserEvent
+    {
+        Guid UserId { get; }
+    }
+
     // License events
     public class LicenseCreated
     {
@@ -59,7 +65,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections
         }
     }
 
-    public class SingleUserAssignedToGroup
+    public class SingleUserAssignedToGroup : IUserEvent
     {
         public Guid GroupId { get; }
 
@@ -86,7 +92,7 @@ namespace Marten.Testing.Events.Projections.ViewProjections
     }
 
     // User Events
-    public class UserRegistered
+    public class UserRegistered : IUserEvent
     {
         public Guid UserId { get; }
 
