@@ -1,6 +1,26 @@
 # Migration Guide
 
-## Key changes in 3.0.0
+
+## Key Changes in 4.0.0
+
+V4 was a very large release for Marten, and basically every subsystem was touched at some point. When you are upgrading from V2/3 to V4 -- and even
+earlier alphas or RC releases of 4.0 -- you will need to run a [database migration](/guide/schema/migrations) as part of your migration to V4. 
+
+Other key, breaking changes:
+
+* All schema management methods, including assertions on the schema, are now asynchronous. We had to do this for Npgsql connection multiplexing.
+* The [compiled query](/guide/documents/querying/compiled-queries) syntax changed
+* The [event store](/guide/events/) support has quite a few additions
+* [Projections](/guide/events/projections/) in Marten have moved to an all new programming model. Some of it is at least similar, but read the documentation on projection types before moving a Marten application over
+* The [async daemon](/guide/events/projections/async-daemon) was completely rewritten, and is now about to run in application clusters and handle multi-tenancy
+* A few diagnostic methods moved within the API
+* Document types need to be public now, and Marten will alert you if document types are not public
+* The dynamic code in Marten moved to a runtime code generation model. If this is causing you any issues with cold start times or memory usage due to Roslyn misbehaving (this is **not** consistent), there is the new ["generate ahead model"](/guide/configuration/prebuilding) as a workaround.
+* If an application bootstraps Marten throught the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
+  `ILogger` of the application
+
+
+## Key Changes in 3.0.0
 
 Main goal of this release was to accommodate the **Npgsql 4.*** dependency.
 
