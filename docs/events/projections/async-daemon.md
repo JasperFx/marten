@@ -81,7 +81,7 @@ var host = await Host.CreateDefaultBuilder()
 ## Solo vs. HotCold
 
 ::: tip
-Marten's leader election is done with Posgresql advisory locks, so there is no additional software infrastructure necessary other than
+Marten's leader election is done with Postgresql advisory locks, so there is no additional software infrastructure necessary other than
 Postgresql and Marten itself.
 :::
 

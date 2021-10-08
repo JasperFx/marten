@@ -98,7 +98,7 @@ var store = DocumentStore.For(opts =>
 TODO -- see if any of this is useful somewhere else
 
 
-## Multistream Projections using ViewProjection
+## Multi-stream Projections using ViewProjection
 
 The `ViewProjection` class is an implementation of the `IProjection` that can handle building a projection from multiple streams.
 
