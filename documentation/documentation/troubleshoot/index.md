@@ -18,7 +18,7 @@ Marten needs to translate LINQ queries to SQL in order to execute them against t
 
 While it's possible to accommodate any serialization schemes by implementing a custom `ISerializer`, Marten's built-in serializer (Json.Net) can be set to serialize to Camel case through `StoreOptions.UseDefaultSerialization`:
 
-<[sample:sample-serialize-to-camelcase]> 	
+<[sample:sample-serialize-to-camelcase]>     
 
 **How do I disable PLV8?**
 
