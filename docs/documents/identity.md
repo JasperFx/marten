@@ -254,7 +254,7 @@ A custom ID generator strategy should implement [IIdGeneration](https://github.c
 <!-- snippet: sample_custom-id-generation -->
 <a id='snippet-sample_custom-id-generation'></a>
 ```cs
-public class CustomdIdGeneration : IIdGeneration
+public class CustomIdGeneration : IIdGeneration
 {
     public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
@@ -284,7 +284,7 @@ options.Policies.ForAllDocuments(m =>
 {
     if (m.IdType == typeof(string))
     {
-        m.IdStrategy = new CustomdIdGeneration();
+        m.IdStrategy = new CustomIdGeneration();
     }
 });
 ```
@@ -296,7 +296,7 @@ It is also possible define a custom id generation algorithm for a specific docum
 <!-- snippet: sample_configuring-mapping-specific-custom -->
 <a id='snippet-sample_configuring-mapping-specific-custom'></a>
 ```cs
-options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration());
+options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/CustomKeyGenerationTests.cs#L68-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

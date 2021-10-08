@@ -12,7 +12,7 @@ using Xunit;
 namespace Marten.Schema.Testing.Identity.Sequences
 {
     #region sample_custom-id-generation
-    public class CustomdIdGeneration : IIdGeneration
+    public class CustomIdGeneration : IIdGeneration
     {
         public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
 
@@ -39,7 +39,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 {
                     if (m.IdType == typeof(string))
                     {
-                        m.IdStrategy = new CustomdIdGeneration();
+                        m.IdStrategy = new CustomIdGeneration();
                     }
                 });
                 #endregion
@@ -66,11 +66,11 @@ namespace Marten.Schema.Testing.Identity.Sequences
             StoreOptions(options =>
             {
                 #region sample_configuring-mapping-specific-custom
-                options.Schema.For<UserWithString>().IdStrategy(new CustomdIdGeneration());
+                options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
                 #endregion
             });
 
-            theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomdIdGeneration>();
+            theStore.Storage.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomIdGeneration>();
         }
     }
 }
