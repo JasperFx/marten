@@ -10,7 +10,7 @@ See more in:
 
 ## Setup
 
-Marten provides **Marten.NodaTime** plugin. That provides nessesary setup.
+Marten provides **Marten.NodaTime** plugin. That provides necessary setup.
 
 Install it through the [Nuget package](https://www.nuget.org/packages/Marten.NodaTime/).
 
