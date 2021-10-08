@@ -2,7 +2,7 @@
 
 Marten can be configured to retry failing database operations by implementing an `IRetryPolicy`. Such policy is plugged into the `StoreOptions` when the `DocumentStore` is configured and bootstrapped.
 
-The sample below demonstrates an `IRetryPolicy` implementation that retries any failing operation preconfigured number of times with an optional predicate on the thrown exception(s).
+The sample below demonstrates an `IRetryPolicy` implementation that retries any failing operation pre-configured number of times with an optional predicate on the thrown exception(s).
 
 <!-- snippet: sample_retrypolicy-samplepolicy -->
 <a id='snippet-sample_retrypolicy-samplepolicy'></a>
