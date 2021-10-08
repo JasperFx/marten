@@ -41,7 +41,7 @@ Once again, here's the class diagram of the key projection types inside of Marte
 Marten supports a few different types of aggregated projections:
 
 * **Aggregates by Stream** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a *self-aggregate* or by using `AggregateStream<T>` as a base class for your projection.
-* **Aggregates across Streams** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by subclassing the `ViewProjection<TDoc, TId>` class and is further described in [View Projections](/events/projections/view-projections).
+* **Aggregates across Streams** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `ViewProjection<TDoc, TId>` class and is further described in [View Projections](/events/projections/view-projections).
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
 
@@ -54,7 +54,7 @@ discovered by the method conventions can be internal or private, but the holding
 :::
 
 The easiest type of aggregate to create is a document that rolls up the state of a single event stream. You can do that by either creating a public aggregate
-document that directly mutates itself through method conventions or by subclassing the `AggregateProjection<T>` class like this sample for a 
+document that directly mutates itself through method conventions or by sub-classing the `AggregateProjection<T>` class like this sample for a 
 fictional `Trip` aggregate document:
 
 <!-- snippet: sample_TripProjection_aggregate -->

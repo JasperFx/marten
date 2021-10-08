@@ -1,6 +1,6 @@
 ## Event Projections
 
-Subclassing the `Marten.Events.EventProjection` class will let you efficiently write a projection where you can explicitly define document operations
+sub-classing the `Marten.Events.EventProjection` class will let you efficiently write a projection where you can explicitly define document operations
 on individual events. In essence, the `EventProjection` recipe effectively does pattern matching for you. 
 
 To show off what `EventProjection` does, here's a sample that uses pretty well everything that `EventProjection` supports:

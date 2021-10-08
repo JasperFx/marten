@@ -19,7 +19,8 @@
         "Npgsql",
         "enumerables",
         "RDBMS",
-        "Gitter"
+        "Gitter",
+        "refactorings"
     ],
     "ignoreWords": [
         "JSONB",
@@ -45,7 +46,8 @@
         "Norrland",
         "ized",
         "Noda",
-        "PEAA"
+        "PEAA",
+        "snapshotting"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
