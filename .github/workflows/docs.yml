@@ -43,21 +43,20 @@ jobs:
 
       - name: Build & Deploy docs preview
         run: ./build.sh --no-color publish-docs-preview
-        if: ${{ github.ref != 'refs/heads/master' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Build & Deploy docs
         run: ./build.sh --no-color publish-docs
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Generate Algolia DocSearch index
         uses: darrenjennings/algolia-docsearch-action@master
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         with:
           algolia_application_id: ${{ secrets.ALGOLIA_APPLICATION_ID }}
           algolia_api_key: ${{ secrets.ALGOLIA_API_KEY }}
