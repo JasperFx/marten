@@ -14,7 +14,7 @@ This can be done in the store configuration as follows:
 
 <[sample:scenarios-immutableprojections-storesetup]>
 
-The serializer contract applied customises the default behavior of the Json.NET serializer:
+The serializer contract applied customizes the default behavior of the Json.NET serializer:
 
 <[sample:scenarios-immutableprojections-serializer]>
  
