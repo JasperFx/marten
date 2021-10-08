@@ -35,7 +35,7 @@ Marten needs to use at runtime.
 :::
 
 To start up Marten in a running application, you need to create a single `IDocumentStore` object. The quickest possible way is to start with
-all the default behavior and a connection string to a Posgresql database:
+all the default behavior and a connection string to a Postgresql database:
 
 <!-- snippet: sample_start_a_store -->
 <a id='snippet-sample_start_a_store'></a>

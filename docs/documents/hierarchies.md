@@ -47,7 +47,7 @@ There's a couple things to be aware of with type hierarchies:
 * If you want to use a concrete type as the base class for a hierarchy, you will need to explicitly configure
   that by adding the subclasses as shown above
 * At this point, you can only specify "Searchable" fields on the top, base type
-* The subclass document types must be convertable to the top level type. As of right now, Marten does not support "structural typing",
+* The subclass document types must be convertible to the top level type. As of right now, Marten does not support "structural typing",
   but may in the future
 * Internally, the subclass type documents are also stored as the parent type in the Identity Map mechanics. Many, many hours of
   banging my head on my desk were required to add this feature.

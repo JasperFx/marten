@@ -288,7 +288,7 @@ var store = DocumentStore.For(_ =>
 
 By default `Newtonsoft.Json` only deserializes properties with public setters.
 
-You can allow deserialisation of properties with non-public setters by changing the serialization settings in the `DocumentStore` options.
+You can allow deserialization of properties with non-public setters by changing the serialization settings in the `DocumentStore` options.
 
 <!-- snippet: sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters -->
 <a id='snippet-sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters'></a>
