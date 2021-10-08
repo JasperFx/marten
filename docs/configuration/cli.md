@@ -106,4 +106,4 @@ In all cases, the commands expose usage help through "marten help [command]." Ea
 
 ## Projections Support
 
-See [the Async Daemon documentation]() for more information about the newly improved `projections` command.
+See [the Async Daemon documentation](/events/projections/async-daemon.md) for more information about the newly improved `projections` command.
