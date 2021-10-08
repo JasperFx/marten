@@ -138,17 +138,17 @@ opts.Projections
 <!-- endSnippet -->
 
 For retry mechanics, you can specify a finite number of retries, then chain
-an additional action as shown below in this [exponential backoff error handling strategy](https://en.wikipedia.org/wiki/Exponential_backoff):
+an additional action as shown below in this [exponential back-off error handling strategy](https://en.wikipedia.org/wiki/Exponential_back-off):
 
-<!-- snippet: sample_exponential_backoff_strategy -->
-<a id='snippet-sample_exponential_backoff_strategy'></a>
+<!-- snippet: sample_exponential_back-off_strategy -->
+<a id='snippet-sample_exponential_back-off_strategy'></a>
 ```cs
 opts.Projections.OnException<NpgsqlException>()
     .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
     .Then
     .Pause(1.Minutes());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L81-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exponential_backoff_strategy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L81-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exponential_back-off_strategy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Default Error Handling Policies
