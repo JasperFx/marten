@@ -1,10 +1,9 @@
 # Migration Guide
 
-
 ## Key Changes in 4.0.0
 
 V4 was a very large release for Marten, and basically every subsystem was touched at some point. When you are upgrading from V2/3 to V4 -- and even
-earlier alphas or RC releases of 4.0 -- you will need to run a [database migration](/schema/migrations) as part of your migration to V4. 
+earlier alphas or RC releases of 4.0 -- you will need to run a [database migration](/schema/migrations) as part of your migration to V4.
 
 Other key, breaking changes:
 
@@ -18,7 +17,6 @@ Other key, breaking changes:
 * The dynamic code in Marten moved to a runtime code generation model. If this is causing you any issues with cold start times or memory usage due to Roslyn misbehaving (this is **not** consistent), there is the new ["generate ahead model"](/configuration/prebuilding) as a workaround.
 * If an application bootstraps Marten through the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
   `ILogger` of the application
-
 
 ## Key Changes in 3.0.0
 

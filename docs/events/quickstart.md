@@ -326,8 +326,7 @@ public class QuestParty
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And next, we'll use a live projection to build an aggregate for a single 
-quest party like this:
+And next, we'll use a live projection to build an aggregate for a single quest party like this:
 
 <!-- snippet: sample_events-aggregate-on-the-fly -->
 <a id='snippet-sample_events-aggregate-on-the-fly'></a>
