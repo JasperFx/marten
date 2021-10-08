@@ -31,7 +31,7 @@ Marten v4 targets `netstandard2.0` & `net5.0` and is compatible with `.NET Core 
 
 For enhanced developer ergonomics, Marten [supports NRTs](https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references). For users of `.NET 6` or later, this is automatically enabled in new projects. In previous versions of .NET, this can be opted-into via `<Nullable>enable</Nullable>` within your `.csproj`.
 
-## Marten Quickstart
+## Marten Quick Start
 
 Following the common .Net idiom, Marten supplies extension methods to quickly integrate Marten into any .Net application that uses the `IServiceCollection` abstractions to register IoC services.
 
