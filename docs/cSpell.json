@@ -57,7 +57,11 @@
         "isblue",
         "Jims",
         "recents",
-        "uidx"
+        "uidx",
+        "btree",
+        "firstname",
+        "lastname",
+        "fkey"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
