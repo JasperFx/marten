@@ -20,7 +20,8 @@
         "enumerables",
         "RDBMS",
         "Gitter",
-        "refactorings"
+        "refactorings",
+        "upserted"
     ],
     "ignoreWords": [
         "JSONB",
