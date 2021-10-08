@@ -208,7 +208,7 @@ By convention it's needed to provide the default constructor with projections de
 
 It's also possible to use async version of `ProjectEvent`. Using `ProjectEventAsync` gives possibility to call the async apis (from Marten or other frameworks) to get better resources utilization.
 
-Sample usage could be loading other document/projection to create denormalized view.
+Sample usage could be loading other document/projection to create de-normalized view.
 
 <[sample:viewprojection-from-class-async-with-load]>
 

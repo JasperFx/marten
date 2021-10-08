@@ -133,7 +133,7 @@ One of the most significant advantages of Event Sourcing is that you're not losi
 
 This capability enables rich diagnostics business and technical wise. You can precisely verify what has happened in your system and troubleshoot the failing scenario.
 
-You can also do business reports analysing the state at a particular time and make predictions based on that.
+You can also do business reports analyzing the state at a particular time and make predictions based on that.
 
 For example, having a stream representing the rooms' availability in hotel defined as:
 
