@@ -50,4 +50,4 @@ When we query the table definition:
 
 You can see from the screen grab that the table and columns are stored lowercase.
 
-![](/content/images/postgres-table-definition.png)
+![The screenshot of the table and columns](/content/images/postgres-table-definition.png)

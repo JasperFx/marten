@@ -36,7 +36,7 @@ You can then query for sequences in Postgres by selecting from the `information_
 
 There will be an entry for the sequence created by the table definition above.
 
-![](/images/postgres-sequence.png)
+![The sequence entry](/images/postgres-sequence.png)
 
 The naming is: table_column_seq
 
