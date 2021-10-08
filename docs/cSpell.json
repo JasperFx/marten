@@ -21,7 +21,8 @@
         "RDBMS",
         "Gitter",
         "refactorings",
-        "upserted"
+        "upserted",
+        "Netstandard"
     ],
     "ignoreWords": [
         "JSONB",
@@ -48,7 +49,12 @@
         "ized",
         "Noda",
         "PEAA",
-        "snapshotting"
+        "snapshotting",
+        "Tamba",
+        "Hali",
+        "kelce",
+        "typeparam",
+        "isblue"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
