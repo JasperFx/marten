@@ -10,7 +10,7 @@ For example:
     DO %%
     BEGIN
 
-    		// your sql here…
+            // your sql here…
 
     END
     %%;
@@ -55,7 +55,7 @@ or
 
     IF NOT EXISTS (….)
     BEGIN
-    		CREATE TABLE Product (…
+            CREATE TABLE Product (…
 
 These would be written in Postgres like so:
 

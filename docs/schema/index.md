@@ -50,7 +50,6 @@ Our thought is that in development you probably run in the "All" mode, but in pr
 what is configured in the document store, and attempts to update these objects if necessary based on the same
 All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
 
-
 ## Overriding Schema Name
 
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
@@ -87,6 +86,7 @@ StoreOptions(_ =>
 This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
 
 ### Event Store
+
 The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.
 
 <!-- snippet: sample_override_schema_name_event_store -->
