@@ -12,26 +12,6 @@
         "Linq",
     ],
     "ignoreWords": [
-        "sampleconsoleapp",
-        "startupconfigureservices",
-        "addmartenbyconnectionstring",
-        "addmartenbynestedenclosure",
-        "addmartenbystoreoptions",
-        "addmartenwithlightweightsessions",
-        "customsessionfactory",
-        "addmartenwithcustomsessioncreation",
-        "correlationidwithisession",
-        "correlatedmartenlogger",
-        "customsessionfactorybyscope",
-        "addmartenwitheagerinitialization",
-        "martenservices",
-        "iserializer",
-        "camelcase",
-        "snakecase",
-        "collectionstorage",
-        "nonpublicmembersstorage",
-        "nonpublicsetters",
-        "jilserializer"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
