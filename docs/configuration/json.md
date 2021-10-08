@@ -323,6 +323,9 @@ var store = DocumentStore.For(opts =>
     opts.Connection("some connection string");
 
     // Opt into System.Text.Json serialization
+    opts.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+    // Optionally add the serializer directly
     opts.Serializer(new SystemTextJsonSerializer
     {
         // Optionally override the enum storage
@@ -333,7 +336,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UsingSystemTextJsonSerializer.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stj_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/UsingSystemTextJsonSerializer.cs#L11-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stj_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Serializing with Jil

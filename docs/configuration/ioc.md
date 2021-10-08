@@ -2,7 +2,7 @@
 
 ::: tip
 The Marten team recommends using the `IServiceCollection.AddMarten()` extension method
-for IoC integration out of the box, but Marten is usable without that.
+for IoC integration out of the box.
 :::
 
 The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to
