@@ -43,7 +43,8 @@
         "Melinder",
         "Norrland",
         "ized",
-        "Noda"
+        "Noda",
+        "PEAA"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
