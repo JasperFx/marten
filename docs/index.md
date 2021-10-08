@@ -2,7 +2,7 @@
 home: true
 heroImage: /logo.png
 actionText: Get Started
-actionLink: /guide/
+actionLink: /introduction
 
 features:
   - title: 💪 PostgreSQL
