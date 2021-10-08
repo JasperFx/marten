@@ -16,7 +16,9 @@
         "templating",
         "Transactionally",
         "deserialization",
-        "Npgsql"
+        "Npgsql",
+        "enumerables",
+        "RDBMS"
     ],
     "ignoreWords": [
         "JSONB",
@@ -36,7 +38,12 @@
         "Kokko",
         "Thom",
         "lifecycles",
-        "lifecycle"
+        "lifecycle",
+        "Relinq",
+        "Melinder",
+        "Norrland",
+        "ized",
+        "Noda"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
