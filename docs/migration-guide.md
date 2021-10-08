@@ -16,7 +16,7 @@ Other key, breaking changes:
 * A few diagnostic methods moved within the API
 * Document types need to be public now, and Marten will alert you if document types are not public
 * The dynamic code in Marten moved to a runtime code generation model. If this is causing you any issues with cold start times or memory usage due to Roslyn misbehaving (this is **not** consistent), there is the new ["generate ahead model"](/configuration/prebuilding) as a workaround.
-* If an application bootstraps Marten throught the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
+* If an application bootstraps Marten through the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
   `ILogger` of the application
 
 
