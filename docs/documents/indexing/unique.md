@@ -177,7 +177,7 @@ To group multiple properties into single index you need to specify the same valu
 ## Defining Unique Index through Index customization
 
 You have some ability to extend to Computed Index definition to be unique index by passing a second Lambda `Action` into
-the `Index()` method and definining `IsUnique` property as `true` as shown below:
+the `Index()` method and defining `IsUnique` property as `true` as shown below:
 
 <!-- snippet: sample_customizing-calculated-index -->
 <a id='snippet-sample_customizing-calculated-index'></a>
