@@ -8,7 +8,7 @@ Once configured for multi-tenancy, Marten exposes it via sessions (`IQuerySessio
 
 ## Scoping Sessions to Tenancy
 
-The following sample demonstrates scoping a document session to tenancy idenfitied as *tenant1*. With multi-tenancy enabled, the persisted `User` objects are then associated with the tenancy of the session.
+The following sample demonstrates scoping a document session to tenancy identified as *tenant1*. With multi-tenancy enabled, the persisted `User` objects are then associated with the tenancy of the session.
 
 <!-- snippet: sample_tenancy-scoping-session-write -->
 <a id='snippet-sample_tenancy-scoping-session-write'></a>
@@ -157,7 +157,7 @@ Tenancy can be configured at the store level, applying to all documents or, at t
 
 ### Tenancy Through Policies
 
-Tenancy can be configured through Document Policies, accesible via `StoreOptions.Policies`. The following sample demonstrates setting the default tenancy to `TenancyStyle.Conjoined` for all documents.
+Tenancy can be configured through Document Policies, accessible via `StoreOptions.Policies`. The following sample demonstrates setting the default tenancy to `TenancyStyle.Conjoined` for all documents.
 
 <!-- snippet: sample_tenancy-configure-through-policy -->
 <a id='snippet-sample_tenancy-configure-through-policy'></a>
