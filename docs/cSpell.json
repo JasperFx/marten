@@ -13,10 +13,19 @@
         "hilo",
         "upsert",
         "varchar",
+        "templating",
+        "Transactionally",
+        "deserialization"
     ],
     "ignoreWords": [
         "JSONB",
-        "plpgsql"
+        "plpgsql",
+        "TABLENAME",
+        "FUNCTIONNAME",
+        "Faldor's",
+        "Garion",
+        "Polgara",
+        "Belgarath"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
