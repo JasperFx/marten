@@ -50,4 +50,4 @@ where table_name = 'product';
 
 You can see from the screen grab that the table and columns are stored lowercase.
 
-![](/images/postgres-table-definition.png)
+![The screenshot of the table and columns](/images/postgres-table-definition.png)

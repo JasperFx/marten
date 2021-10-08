@@ -119,7 +119,7 @@ For functions, you have:
 * %FUNCTION% - the name of the function
 * %SIGNATURE% - a comma delimited string of all the declared input types for the function. Since Postgresql supports function overloading, you will frequently need to use the function signature to uniquely identify a function.
 
-To apply the templating, first put all your *.table and *.function files in a single directory or the base directory of your application and use code
+To apply the templating, first put all your `*.table` and `*.function` files in a single directory or the base directory of your application and use code
 like that shown below in your `IDocumentStore` initialization:
 
 <!-- snippet: sample_using_ddl_templates -->
