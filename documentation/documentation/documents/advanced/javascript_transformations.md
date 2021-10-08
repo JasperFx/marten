@@ -12,7 +12,7 @@ At this point, Marten supports these use cases:
 
 1. Transforming the data in one or more documents to apply some kind of structural migration to persisted documents, like you would need to do if 
    the application code no longer matches the JSON previously stored
-1. Creating a "readside" view of a persisted document as part of a Linq query. 
+1. Creating a "read-side" view of a persisted document as part of a Linq query. 
 1. Transform the raw document data to a completely different .Net type as part of a Linq query
 
 

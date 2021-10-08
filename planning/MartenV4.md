@@ -153,7 +153,7 @@ This is also covered by the [Linq Overhaul](https://github.com/JasperFx/marten/i
 
 * Consider replacing the `SelectMany()` implementation with *Common Table Expression* sql statements. That might do a lot to simplify the internal mechanics. Could definitely get us to an n-deep model.
 
-* Do the [Json streaming story](https://github.com/JasperFx/marten/issues/585) because it should be compelling, especially as part of the readside of a CQRS architecture using Marten's event store functionality. 
+* Do the [Json streaming story](https://github.com/JasperFx/marten/issues/585) because it should be compelling, especially as part of the read-side of a CQRS architecture using Marten's event store functionality. 
 
 * *Possibly* use a PLV8-based [JsonPath](https://goessner.net/articles/JsonPath/) polyfill so we could use sql/json immediately in the Linq support. More research necessary.
 
