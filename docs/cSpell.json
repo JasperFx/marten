@@ -22,7 +22,9 @@
         "Gitter",
         "refactorings",
         "upserted",
-        "Netstandard"
+        "Netstandard",
+        "Guid",
+        "Guids"
     ],
     "ignoreWords": [
         "JSONB",
@@ -61,7 +63,10 @@
         "btree",
         "firstname",
         "lastname",
-        "fkey"
+        "fkey",
+        "Netram",
+        "namelast",
+        "gwid"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
