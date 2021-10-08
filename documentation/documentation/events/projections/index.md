@@ -9,19 +9,19 @@ First, some terminology that we're going to use throughout this section:
 
 * _Projection_ - any strategy for generating "read side" views from the raw event streams
 * _Transformation_ - a type of projection that generates or updates a single read side view for a single event
-* _Aggregate_ - a type of projection that "aggregates" data from multiple events to create a single readside view document
+* _Aggregate_ - a type of projection that "aggregates" data from multiple events to create a single read-side view document
 * _Inline Projections_ - a type of projection that executes as part of any event capture transaction and is stored as a document
 * _Async Projections_ - a type of projection that runs in a background process using an [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency) strategy, and is stored as a document
 * _Live Projections_ - evaluates a projected view from the raw event data on demand within Marten
 
 ## Transformations
 
-Transformations project from one event type to one document. If you want to have certain events projected to a readside document and the relationship is one to one, Marten supports this pattern today with the .Net `ITransform` interface:
+Transformations project from one event type to one document. If you want to have certain events projected to a read-side document and the relationship is one to one, Marten supports this pattern today with the .Net `ITransform` interface:
 
 <[sample:ITransform]>
 
 As a sample problem, let's say that we're constantly capturing `MonsterSlayed` events and our system needs to query just this data. You could query directly against the large `mt_events` table with 
-`IEventStore.Query<MonsterSlayed>()`, but it would be more efficient to keep a separate "read side" copy of this data in a new data collection. We could build a new transform class and readside document like this:
+`IEventStore.Query<MonsterSlayed>()`, but it would be more efficient to keep a separate "read side" copy of this data in a new data collection. We could build a new transform class and read-side document like this:
 
 <[sample:MonsterDefeatedTransform]>
 
