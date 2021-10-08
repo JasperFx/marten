@@ -54,7 +54,10 @@
         "Hali",
         "kelce",
         "typeparam",
-        "isblue"
+        "isblue",
+        "Jims",
+        "recents",
+        "uidx"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
