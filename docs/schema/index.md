@@ -127,4 +127,4 @@ storeOptions.CreateDatabasesForTenants(c =>
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behaviour to check for database existence from `pg_database`.
 
-Note that database creation requires the CREATEDB privilege. See PostgreSQL [CREATE DATABASE](https://www.postgresql.org/docs/current/static/sql-createdatabase.html) documentation for more.
+Note that database creation requires the `CREATEDB` privilege. See PostgreSQL [CREATE DATABASE](https://www.postgresql.org/docs/current/static/sql-createdatabase.html) documentation for more.
