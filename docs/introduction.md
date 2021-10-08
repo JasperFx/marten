@@ -18,7 +18,6 @@ The Marten project was publicly announced in late 2015 and quickly gained a soli
 added, which proved popular with our users. Marten first went into a production system in 2016 and has been going strong ever since. The v4
 release in 2021 marks a massive overhaul of Marten's internals, and introduces new functionality requested by our users to better position Marten for the future.
 
-
 ## .NET Version Compatibility
 
 Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform compatibility.
@@ -27,7 +26,7 @@ Marten v4 targets `netstandard2.0` & `net5.0` and is compatible with `.NET Core 
 
 .NET Framework support was dropped as part of the v4 release. If you require .NET Framework support, please use the latest Marten v3 release.
 
-#### Nullable Reference Types
+### Nullable Reference Types
 
 For enhanced developer ergonomics, Marten [supports NRTs](https://docs.microsoft.com/en-us/dotnet/csharp/nullable-references). For users of `.NET 6` or later, this is automatically enabled in new projects. In previous versions of .NET, this can be opted-into via `<Nullable>enable</Nullable>` within your `.csproj`.
 
@@ -65,7 +64,7 @@ public void ConfigureServices(IServiceCollection services)
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.
 
 Also see the blog post [Marten, the Generic Host Builder in .Net Core, and why this could be the golden age for OSS in .Net](https://jeremydmiller.com/2021/07/29/marten-the-generic-host-builder-in-net-core-and-why-this-could-be-the-golden-age-for-oss-in-net/) for more background about how Marten is fully embracing
-the generic host in .Net. 
+the generic host in .Net.
 
 ::: tip INFO
 The complete ASP<span/>.NET Core sample project is [available in the Marten codebase](https://github.com/JasperFx/marten/tree/master/src/AspNetCoreWithMarten)
@@ -135,8 +134,6 @@ using (var session = store.QuerySession())
 <!-- endSnippet -->
 
 For more information on the query support within Marten, check [document querying](/documents/querying/)
-
-
 
 There is a lot more capabilities than what we're showing here, so head on over to the table of contents on the sidebar to see what else Marten offers.
 

@@ -215,7 +215,6 @@ public class UserGroupsAssignmentProjection2: ViewProjection<UserGroupsAssignmen
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/ViewProjections/simple_multi_stream_projection.cs#L32-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Simple Example of Events Updating Multiple Views
 
 In the following projection, we apply the `MultipleUsersAssignedToGroup` event to multiple
@@ -315,8 +314,6 @@ public class UserFeatureTogglesProjection: ViewProjection<UserFeatureToggles, Gu
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/ViewProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
 
 ## View Projection with Custom Slicer
 
