@@ -10,8 +10,11 @@
         "Newtonsoft",
         "serializers",
         "Linq",
+        "hilo",
+        "upsert"
     ],
     "ignoreWords": [
+        "JSONB"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
