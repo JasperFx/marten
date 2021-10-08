@@ -15,7 +15,8 @@
         "varchar",
         "templating",
         "Transactionally",
-        "deserialization"
+        "deserialization",
+        "Npgsql"
     ],
     "ignoreWords": [
         "JSONB",
@@ -25,7 +26,17 @@
         "Faldor's",
         "Garion",
         "Polgara",
-        "Belgarath"
+        "Belgarath",
+        "TSQL",
+        "Annamalai",
+        "Oskar",
+        "Dudycz",
+        "Joona",
+        "Pekka",
+        "Kokko",
+        "Thom",
+        "lifecycles",
+        "lifecycle"
     ],
     "ignoreRegExpList": [
         "\\((.*)\\)", // Markdown links
