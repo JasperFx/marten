@@ -227,7 +227,7 @@ Lets' look on the following scenario of the projection that manages the newslett
 1. New reader subscribed to newsletter and _ReaderSubscribed_ event was published. Projection handles the event and creates new view record in database.
 1. User opened newsletter and _NewsletterOpened_ event was published. Projection handles the event and updates view in database with incremented opens count.
 1. User unsubscribed from newsletter and _ReaderUnsubscribed_ event was published. Projection removed the view from database (because we market it with `DeleteEvent`).
-1. User opened newsletter after unsubscribing and _NewsletterOpened_ event was published. As there is no record in database if we use the default behaviour then new record will be created with only data that are applied for the _NewsletterOpened_ event. That's might create views with unexpected state. <u>In that case, **onlyUpdate** set to **true** should be used. Having that, if the view does not exist then the event will not be projected and new view record will not be created in database.</u>
+1. User opened newsletter after unsubscribing and _NewsletterOpened_ event was published. As there is no record in database if we use the default behavior then new record will be created with only data that are applied for the _NewsletterOpened_ event. That's might create views with unexpected state. <u>In that case, **onlyUpdate** set to **true** should be used. Having that, if the view does not exist then the event will not be projected and new view record will not be created in database.</u>
 
 <!-- snippet: sample_viewprojection-with-update-only -->
 <a id='snippet-sample_viewprojection-with-update-only'></a>
