@@ -18,7 +18,8 @@
         "deserialization",
         "Npgsql",
         "enumerables",
-        "RDBMS"
+        "RDBMS",
+        "Gitter"
     ],
     "ignoreWords": [
         "JSONB",
