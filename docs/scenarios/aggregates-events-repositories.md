@@ -240,7 +240,7 @@ Assert.Equal(124, invoiceFromRepository.Total);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/ScenarioAggregateAndRepository.cs#L50-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-versionedload' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Lastly, to prevent our invoice from getting into a conflited state, the version attribute of the item is used to assert that the state of the object has not changed between replaying its state and introducing new deltas:
+Lastly, to prevent our invoice from getting into a conflicted state, the version attribute of the item is used to assert that the state of the object has not changed between replaying its state and introducing new deltas:
 
 <!-- snippet: sample_scenario-aggregate-conflict -->
 <a id='snippet-sample_scenario-aggregate-conflict'></a>
