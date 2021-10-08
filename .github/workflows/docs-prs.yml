@@ -31,5 +31,5 @@ on:
           node-version: "12"
       - run: npm install -g cspell
         name: Install cSpell
-      - run: cspell --config ./cSpell.json "docs/**/*.md"
+      - run: cspell --config ./docs/cSpell.json "docs/**/*.md"
         name: run cSpell
