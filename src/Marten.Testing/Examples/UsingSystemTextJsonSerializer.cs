@@ -1,4 +1,5 @@
 using Marten.Services;
+using Marten.Services.Json;
 using Weasel.Core;
 
 namespace Marten.Testing.Examples
@@ -14,6 +15,9 @@ namespace Marten.Testing.Examples
                 opts.Connection("some connection string");
 
                 // Opt into System.Text.Json serialization
+                opts.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+
+                // Optionally configure the serializer directly
                 opts.Serializer(new SystemTextJsonSerializer
                 {
                     // Optionally override the enum storage

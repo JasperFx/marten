@@ -313,11 +313,9 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDatabaseSchemaName.cs#L22-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_schema_by_document_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
-
 ## Postgres Limits on Naming
 
-Postgresql out of the box has a limitation on the length of database object names to 64. This can be overridden in a
+Postgresql has a default limitation on the length of database object names (64). This can be overridden in a
 Postgresql database by [setting the NAMEDATALEN property](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
 
 This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when Postgresql quietly

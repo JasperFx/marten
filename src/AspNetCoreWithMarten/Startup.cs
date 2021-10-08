@@ -9,9 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten
-{
-    #region sample_StartupConfigureServices
-
+{    
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -22,9 +20,8 @@ namespace AspNetCoreWithMarten
             Configuration = configuration;
             Environment = environment;
         }
+      #region sample_StartupConfigureServices
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
             // This is the absolute, simplest way to integrate Marten into your
@@ -42,12 +39,11 @@ namespace AspNetCoreWithMarten
                 }
             });
         }
-
         // and other methods we don't care about right now...
 
         #endregion
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+      
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())

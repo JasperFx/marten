@@ -1,55 +1,37 @@
 # Bootstrapping with HostBuilder
 
-::: tip INFO
-The built in DI service registration helpers were introduced in Marten v3.12.
-:::
-
 As briefly shown in the [getting started](/) page, Marten comes with extension methods
 for the .Net Core standard `IServiceCollection` to quickly add Marten services to any .Net application that is bootstrapped by
-either the [Generic IHostBuilder abstraction](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1) or the [ASP.Net Core IWebHostBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder?view=aspnetcore-3.1)
+either the [Generic IHostBuilder abstraction](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) or the [ASP.Net Core IWebHostBuilder](https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder)
 hosting models.
 
-Jumping right into a basic ASP.Net Core application using the out of the box Web API template, you'd have a class called `Startup` that holds most of the configuration for your application including
+Jumping right into a basic ASP&#46;NET Core application using the out of the box Web API template, you'd have a class called `Startup` that holds most of the configuration for your application including
 the IoC service registrations for your application in the `Startup.ConfigureServices()` method. To add Marten
 to your application, use the `AddMarten()` method as shown below:
 
 <!-- snippet: sample_StartupConfigureServices -->
 <a id='snippet-sample_startupconfigureservices'></a>
 ```cs
-public class Startup
+public void ConfigureServices(IServiceCollection services)
 {
-    public IConfiguration Configuration { get; }
-    public IHostEnvironment Environment { get; }
-
-    public Startup(IConfiguration configuration, IHostEnvironment environment)
+    // This is the absolute, simplest way to integrate Marten into your
+    // .Net Core application with Marten's default configuration
+    services.AddMarten(options =>
     {
-        Configuration = configuration;
-        Environment = environment;
-    }
+        // Establish the connection string to your Marten database
+        options.Connection(Configuration.GetConnectionString("Marten"));
 
-    // This method gets called by the runtime. Use this method to add services to the container.
-    // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
-    public void ConfigureServices(IServiceCollection services)
-    {
-        // This is the absolute, simplest way to integrate Marten into your
-        // .Net Core application with Marten's default configuration
-        services.AddMarten(options =>
+        // If we're running in development mode, let Marten just take care
+        // of all necessary schema building and patching behind the scenes
+        if (Environment.IsDevelopment())
         {
-            // Establish the connection string to your Marten database
-            options.Connection(Configuration.GetConnectionString("Marten"));
-
-            // If we're running in development mode, let Marten just take care
-            // of all necessary schema building and patching behind the scenes
-            if (Environment.IsDevelopment())
-            {
-                options.AutoCreateSchemaObjects = AutoCreate.All;
-            }
-        });
-    }
-
-    // and other methods we don't care about right now...
+            options.AutoCreateSchemaObjects = AutoCreate.All;
+        }
+    });
+}
+// and other methods we don't care about right now...
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L13-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L23-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `AddMarten()` method will add these service registrations to your application:
@@ -67,8 +49,7 @@ For more information, see:
 ## AddMarten() Options
 
 ::: tip INFO
-All the examples in this page are assuming the usage of the `IServiceCollection` interface for service
-registrations within a `Startup` class, but Marten can be used with any IoC container or with no IoC container whatsoever.
+All the examples in this page are assuming the usage of the default IoC container `Microsoft.Extensions.DependencyInjection`, but Marten can be used with any IoC container or with no IoC container whatsoever.
 :::
 
 First, if you are using Marten completely out of the box with no customizations (besides attributes on your documents), you can just supply a connection string to the underlying Postgresql database like this:
@@ -192,7 +173,7 @@ The last option may be best for more complicated Marten configuration just to ke
 ## Using Lightweight Sessions
 
 ::: tip
-Most new usages of Marten should default to the lightweight sessions for better performance
+Most usages of Marten should default to the lightweight sessions for better performance
 :::
 
 The default registration for `IDocumentSession` added by `AddMarten()` is a session with
@@ -324,7 +305,7 @@ See [diagnostics and instrumentation](/diagnostics) for more information.
 From a recent user request to Marten, what if you want to log the database statement activity in Marten with some kind of correlation to the active HTTP request or service bus message or some other logical
 session identification in your application? That's now possible by using a custom `ISessionFactory`.
 
-Taking the example of an ASP.Net Core application, let's say that you have a small service scoped to an HTTP request that tracks a correlation identifier for the request like this:
+Taking the example of an ASP&#46;NET Core application, let's say that you have a small service scoped to an HTTP request that tracks a correlation identifier for the request like this:
 
 <!-- snippet: sample_CorrelationIdWithISession -->
 <a id='snippet-sample_correlationidwithisession'></a>
