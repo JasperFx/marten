@@ -21,7 +21,7 @@ module.exports = {
     nav: [
       { text: 'v4.x',
         items: [
-          { text: 'v3.x', link: 'https://martendb.io'}
+          { text: 'v3.x', link: '/v3/index.html', target:"_blank"}
         ]
       },
       { text: 'Intro', link: '/introduction' },
