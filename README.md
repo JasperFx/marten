@@ -14,7 +14,7 @@ The Marten library provides .NET developers with the ability to use the proven [
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
-Access v3.x docs [here](https://martendb.io/) and v4.x docs [here](https://marten-v4.netlify.app/).
+Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.io/v3).
 
 ## Working with the Code
 
@@ -65,8 +65,7 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 | Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run -p build/build.csproj -- mocha`        |
 | Run StoryTeller tests               | `build.cmd storyteller`  | `build.ps1 storyteller`  | `build.sh storyteller`  | `dotnet run -p build/build.csproj -- storyteller`  |
 | Open StoryTeller editor             | `build.cmd open_st`      | `build.ps1 open_st`      | `build.sh open_st`      | `dotnet run -p build/build.csproj -- open_st`      |
-| Run v4.x docs website locally       | `npm run docs`           | `npm run docs`           | `npm run docs`          | `-`         |
-| Run v3.x docs website locally       | `build.cmd docs`         | `build.ps1 docs`         | `build.sh docs`         | `dotnet run -p build/build.csproj -- docs`         |
+| Run docs website locally            | `build.cmd docs`         | `build.ps1 docs`         | `build.ps1 docs`        | `dotnet run -p build/build.csproj -- docs`         |
 | Publish docs                        | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run -p build/build.csproj -- publish-docs` |
 | Run benchmarks                      | `build.cmd benchmarks`   | `build.ps1 benchmarks`   | `build.sh benchmarks`   | `dotnet run -p build/build.csproj -- benchmarks`   |
 
@@ -116,8 +115,6 @@ All the documentation is written in Markdown and the docs are published as a sta
 [VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with this, [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets) is used for adding code snippets to docs from source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
 
 The documentation content is the Markdown files in the `/docs` directory directly under the project root. To run the docs locally use `npm run docs` with auto-refresh on any changes.
-
-Note: Preview version of v4 docs can be accessed from [here](https://marten-v4.netlify.app). Once have got all the docs for v4 completed, it will be accessible from <https://martendb.io>
 
 To add code samples/snippets from the tests in docs, follow the steps below:
 
