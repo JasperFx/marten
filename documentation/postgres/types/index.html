@@ -6,9 +6,9 @@
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Marten - Types</title>
-    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/theme.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
     <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
     <!-- CSS code from Bootply.com editor -->
-    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/affix.css" rel="stylesheet" type="text/css" />
 </head>
 
 <!-- HTML code from Bootply.com editor -->
@@ -32,13 +32,13 @@
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
                     <li>
-                        <a href="/marten/getting_started">Getting Started</a>
+                        <a href="/v3/getting_started">Getting Started</a>
                     </li>
                     <li>
-                        <a href="/marten/documentation">Documentation</a>
+                        <a href="/v3/documentation">Documentation</a>
                     </li>
                     <li>
-                        <a href="/marten/migration_guide">Migration Guide</a>
+                        <a href="/v3/migration_guide">Migration Guide</a>
                     </li>
                     <li>
                         <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation/postgres/escaping" title="Escaping">Previous</a></li>
-                <li><a href="/marten/documentation/postgres/casting" title="Casting (under construction)">Next</a></li>
+                    <li><a href="/v3/documentation/postgres/escaping" title="Escaping">Previous</a></li>
+                <li><a href="/v3/documentation/postgres/casting" title="Casting (under construction)">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/postgres">Postgres for SQL Server users</a></li><li class="active">Types</li></ol>
+            <ol class="breadcrumb"><li><a href="/v3/">Marten</a></li><li><a href="/v3/documentation">Documentation</a></li><li><a href="/v3/documentation/postgres">Postgres for SQL Server users</a></li><li class="active">Types</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -70,11 +70,11 @@
 
             <div class="col-md-3" id="leftCol">
 
-                <img src="/content/images/emblem.png" width="80%" align="middle" />
+                <img src="/v3/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/postgres/casting">Casting (under construction)</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/postgres/escaping">Escaping</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/v3/documentation/postgres/casting">Casting (under construction)</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/v3/documentation/postgres/escaping">Escaping</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
@@ -111,7 +111,7 @@ select * from serial_one;
 <pre><code>select * from information_schema.sequences;
 </code></pre>
 <p>There will be an entry for the sequence created by the table definition above.</p>
-<p><img src="/content/images/postgres-sequence.png" alt="" /></p>
+<p><img src="/v3/content/images/postgres-sequence.png" alt="" /></p>
 <p>The naming is: table_column_seq</p>
 <p>In this instance, the table is <code>serial_one</code>, the column is <code>id</code>, and the suffix is <code>seq</code></p>
 <p>If you look at the table schema you can see the column is created with a default value of <code>nextval('serial_one_id_seq'::regclass)</code></p>
@@ -156,10 +156,10 @@ select * from users where active is not false;
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation/postgres/escaping">Escaping</a>
+                        <strong>Previous: </strong><a href="/v3/documentation/postgres/escaping">Escaping</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/postgres/casting">Casting (under construction)</a>
+                        <strong>Next: </strong><a href="/v3/documentation/postgres/casting">Casting (under construction)</a>
                     </span>
                 </nav>
             </div><!--/right-->
@@ -180,9 +180,9 @@ select * from users where active is not false;
 <foot>
     <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/marten/content/prism.js"></script>
-    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-    <script type="text/javascript" src="/marten/content/affix.js"></script>
+    <script type="text/javascript" src="/v3/content/prism.js"></script>
+    <script type="text/javascript" src="/v3/content/sidebar.js"></script>
+    <script type="text/javascript" src="/v3/content/affix.js"></script>
 
     <script>
         $('#search').keyup(function (e) {

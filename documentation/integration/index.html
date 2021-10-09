@@ -6,9 +6,9 @@
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Marten - Integrating Marten into .Net Core Applications</title>
-    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/theme.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
     <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
     <!-- CSS code from Bootply.com editor -->
-    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/affix.css" rel="stylesheet" type="text/css" />
 </head>
 
 <!-- HTML code from Bootply.com editor -->
@@ -32,13 +32,13 @@
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
                     <li>
-                        <a href="/marten/getting_started">Getting Started</a>
+                        <a href="/v3/getting_started">Getting Started</a>
                     </li>
                     <li>
-                        <a href="/marten/documentation">Documentation</a>
+                        <a href="/v3/documentation">Documentation</a>
                     </li>
                     <li>
-                        <a href="/marten/migration_guide">Migration Guide</a>
+                        <a href="/v3/migration_guide">Migration Guide</a>
                     </li>
                     <li>
                         <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation" title="Documentation">Previous</a></li>
-                <li><a href="/marten/documentation/schema" title="Marten and the Postgresql Schema">Next</a></li>
+                    <li><a href="/v3/documentation" title="Documentation">Previous</a></li>
+                <li><a href="/v3/documentation/schema" title="Marten and the Postgresql Schema">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li class="active">Integrating Marten into .Net Core Applications</li></ol>
+            <ol class="breadcrumb"><li><a href="/v3/">Marten</a></li><li><a href="/v3/documentation">Documentation</a></li><li class="active">Integrating Marten into .Net Core Applications</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -70,11 +70,11 @@
 
             <div class="col-md-3" id="leftCol">
 
-                <img src="/content/images/emblem.png" width="80%" align="middle" />
+                <img src="/v3/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation">Documentation</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/v3/documentation/schema">Marten and the Postgresql Schema</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/v3/documentation">Documentation</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
@@ -90,7 +90,7 @@ The built in DI service registration helpers were introduced in Marten v3.12.</p
 <p>If your application uses an <a href="https://en.wikipedia.org/wiki/Inversion_of_control">IoC container</a>,
 the easiest way to integrate Marten into a .Net application is to add the key Marten services to
 the underlying IoC container for the application.</p>
-<p>As briefly shown in the <a href="/marten/getting_started">Getting Started</a> page, Marten comes with extension methods
+<p>As briefly shown in the <a href="/v3/getting_started">Getting Started</a> page, Marten comes with extension methods
 for the .Net Core standard <code>IServiceCollection</code> to quickly add Marten services to any .Net Core application that is bootstrapped by
 either the <a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-3.1">Generic IHostBuilder abstraction</a> or the slightly older <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.hosting.iwebhostbuilder?view=aspnetcore-3.1">ASP.Net Core IWebHostBuilder</a>
 hosting models.</p>
@@ -107,8 +107,8 @@ to your application, use the <code>AddMarten()</code> method as shown below:</p>
 <p>For more information, see:</p>
 <ul>
 <li><a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-3.1">Dependency injection in ASP.NET Core</a> for more explanation about the service lifetime behavior.</li>
-<li><a href="/marten/documentation/documents/advanced/identitymap">Identity Map Mechanics</a> for an explanation of Marten session behavior</li>
-<li><a href="/marten/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a> for session basics</li>
+<li><a href="/v3/documentation/documents/advanced/identitymap">Identity Map Mechanics</a> for an explanation of Marten session behavior</li>
+<li><a href="/v3/documentation/documents/basics/persisting">Storing Documents and Unit Of Work</a> for session basics</li>
 </ul>
 <h2 id="addmarten-usages">AddMarten() Usages</h2>
 <div class="alert-info alert"><p><strong>Note!</strong>
@@ -129,7 +129,7 @@ as shown in this example:</p>
 <p>To register the custom session factory, use the <code>BuildSessionsWith()</code> method as shown in this example:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class Startup&#xD;&#xA;{&#xD;&#xA;    public IConfiguration Configuration { get; }&#xD;&#xA;    public IHostEnvironment Hosting { get; }&#xD;&#xA;&#xD;&#xA;    public Startup(IConfiguration configuration, IHostEnvironment hosting)&#xD;&#xA;    {&#xD;&#xA;        Configuration = configuration;&#xD;&#xA;        Hosting = hosting;&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    public void ConfigureServices(IServiceCollection services)&#xD;&#xA;    {&#xD;&#xA;        var connectionString = Configuration.GetConnectionString(&quot;postgres&quot;);&#xD;&#xA;&#xD;&#xA;        services.AddMarten(opts =&gt;&#xD;&#xA;        {&#xD;&#xA;            opts.Connection(connectionString);&#xD;&#xA;&#xD;&#xA;            // Use the more permissive schema auto create behavior&#xD;&#xA;            // while in development&#xD;&#xA;            if (Hosting.IsDevelopment())&#xD;&#xA;            {&#xD;&#xA;                opts.AutoCreateSchemaObjects = AutoCreate.All;&#xD;&#xA;            }&#xD;&#xA;        })&#xD;&#xA;&#xD;&#xA;            // Chained helper to replace the built in&#xD;&#xA;            // session factory behavior&#xD;&#xA;            .BuildSessionsWith&lt;CustomSessionFactory&gt;();&#xD;&#xA;    }&#xD;&#xA;&#xD;&#xA;    // And other methods we don&#x27;t care about here...&#xD;&#xA;}&#xD;&#xA;</code></pre>
 <p>The session factories can also be used to build out and attach custom <code>IDocumentSessionListener</code> objects or replace the logging as we'll see in the next section.</p>
-<p>See <a href="/marten/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information.</p>
+<p>See <a href="/v3/documentation/documents/diagnostics">Diagnostics and Instrumentation</a> for more information.</p>
 <h2 id="customizing-session-creation-by-scope">Customizing Session Creation by Scope</h2>
 <p>From a recent user request to Marten, what if you want to log the database statement activity in Marten with some kind of correlation to the active HTTP request or service bus message or some other logical
 session identification in your application? That's now possible by using a custom <code>ISessionFactory</code>.</p>
@@ -150,10 +150,10 @@ session identification in your application? That's now possible by using a custo
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation">Documentation</a>
+                        <strong>Previous: </strong><a href="/v3/documentation">Documentation</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/schema">Marten and the Postgresql Schema</a>
+                        <strong>Next: </strong><a href="/v3/documentation/schema">Marten and the Postgresql Schema</a>
                     </span>
                 </nav>
             </div><!--/right-->
@@ -174,9 +174,9 @@ session identification in your application? That's now possible by using a custo
 <foot>
     <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/marten/content/prism.js"></script>
-    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-    <script type="text/javascript" src="/marten/content/affix.js"></script>
+    <script type="text/javascript" src="/v3/content/prism.js"></script>
+    <script type="text/javascript" src="/v3/content/sidebar.js"></script>
+    <script type="text/javascript" src="/v3/content/affix.js"></script>
 
     <script>
         $('#search').keyup(function (e) {

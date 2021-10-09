@@ -6,9 +6,9 @@
     <meta name="generator" content="Bootply" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>Marten - Unique Indexes</title>
-    <link href="/marten/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/prism.css" rel="stylesheet" type="text/css" />
-    <link href="/marten/content/theme.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/prism.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/theme.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />
 
     <link rel="apple-touch-icon" href="/bootstrap/img/apple-touch-icon.png">
@@ -16,7 +16,7 @@
     <link rel="apple-touch-icon" sizes="114x114" href="/bootstrap/img/apple-touch-icon-114x114.png">
 
     <!-- CSS code from Bootply.com editor -->
-    <link href="/marten/content/affix.css" rel="stylesheet" type="text/css" />
+    <link href="/v3/content/affix.css" rel="stylesheet" type="text/css" />
 </head>
 
 <!-- HTML code from Bootply.com editor -->
@@ -32,13 +32,13 @@
             <nav class="collapse navbar-collapse" role="navigation">
                 <ul class="nav navbar-nav pull-right">
                     <li>
-                        <a href="/marten/getting_started">Getting Started</a>
+                        <a href="/v3/getting_started">Getting Started</a>
                     </li>
                     <li>
-                        <a href="/marten/documentation">Documentation</a>
+                        <a href="/v3/documentation">Documentation</a>
                     </li>
                     <li>
-                        <a href="/marten/migration_guide">Migration Guide</a>
+                        <a href="/v3/migration_guide">Migration Guide</a>
                     </li>
                     <li>
                         <a href="https://gitter.im/jasperfx/marten?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://camo.githubusercontent.com/da2edb525cde1455a622c58c0effc3a90b9a181c/68747470733a2f2f6261646765732e6769747465722e696d2f4a6f696e253230436861742e737667" alt="Join the chat at https://gitter.im/jasperfx/marten" data-canonical-src="https://badges.gitter.im/Join%20Chat.svg" style="max-width:100%;"></a>
@@ -47,8 +47,8 @@
                         <a href="https://twitter.com/marten_lib?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @marten_lib</a>
                         <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                     </li>
-                    <li><a href="/marten/documentation/documents/customizing/noda_time" title="Noda Time support">Previous</a></li>
-                <li><a href="/marten/documentation/documents/json" title="Json Serialization">Next</a></li>
+                    <li><a href="/v3/documentation/documents/customizing/noda_time" title="Noda Time support">Previous</a></li>
+                <li><a href="/v3/documentation/documents/json" title="Json Serialization">Next</a></li>
                 </ul>
                 <div class="navbar-form navbar-left" role="search">
                     <div class="form-group">
@@ -60,7 +60,7 @@
     </nav>
     <div class="container">
         <nav class="navbar-inverse">
-            <ol class="breadcrumb"><li><a href="/marten/">Marten</a></li><li><a href="/marten/documentation">Documentation</a></li><li><a href="/marten/documentation/documents">Marten as Document Db</a></li><li><a href="/marten/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Unique Indexes</li></ol>
+            <ol class="breadcrumb"><li><a href="/v3/">Marten</a></li><li><a href="/v3/documentation">Documentation</a></li><li><a href="/v3/documentation/documents">Marten as Document Db</a></li><li><a href="/v3/documentation/documents/customizing">Customizing Document Storage</a></li><li class="active">Unique Indexes</li></ol>
         </nav>
     </div>
     <!--main-->
@@ -70,11 +70,11 @@
 
             <div class="col-md-3" id="leftCol">
 
-                <img src="/content/images/emblem.png" width="80%" align="middle" />
+                <img src="/v3/content/images/emblem.png" width="80%" align="middle" />
                 <br />
                 <ul class="nav nav-stacked affix" id="sidebar"></ul>
-                <h3 class="no-margin">Next</h3><p><a href="/marten/documentation/documents/json">Json Serialization</a></p>
-                    <h3 class="no-margin">Previous</h3><a href="/marten/documentation/documents/customizing/noda_time">Noda Time support</a></p>
+                <h3 class="no-margin">Next</h3><p><a href="/v3/documentation/documents/json">Json Serialization</a></p>
+                    <h3 class="no-margin">Previous</h3><a href="/v3/documentation/documents/customizing/noda_time">Noda Time support</a></p>
                 </ul>
             </div><!--/left-->
             <!--right-->
@@ -85,7 +85,7 @@
                 <div id="main-pane">
                     <!--title:Unique Indexes-->
 <p><a href="https://www.postgresql.org/docs/current/static/indexes-unique.html">Unique Indexes</a> are used to enforce uniqueness of property value. They can be combined to handle also uniqueness of multiple properties.</p>
-<p>Marten supports both <a href="/marten/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a> and <a href="/marten/documentation/documents/customizing/computed_index">Calculated Index</a> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.</p>
+<p>Marten supports both <a href="/v3/documentation/documents/customizing/duplicated_fields">Duplicated Fields for Faster Querying</a> and <a href="/v3/documentation/documents/customizing/computed_index">Calculated Index</a> uniqueness. Using Duplicated Field brings benefits to queries but brings additional complexity, while Computed Index reuses current JSON structure without adding additional db column.</p>
 <h2 id="definining-unique-index-through-store-options">Definining Unique Index through Store options</h2>
 <p>Unique Indexes can be created using the fluent interface of <code>StoreOptions</code> like this:</p>
 <ol>
@@ -150,17 +150,17 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 <p>Same can be configured for Duplicated Field:</p>
 <pre><code class="language-csharp">&#xD;&#xA;public class IndexExamples: MartenRegistry&#xD;&#xA;{&#xD;&#xA;    public IndexExamples()&#xD;&#xA;    {&#xD;&#xA;        // Add a gin index to the User document type&#xD;&#xA;        For&lt;User&gt;().GinIndexJsonData();&#xD;&#xA;&#xD;&#xA;        // Adds a basic btree index to the duplicated&#xD;&#xA;        // field for this property that also overrides&#xD;&#xA;        // the Postgresql database type for the column&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, pgType: &quot;varchar(50)&quot;);&#xD;&#xA;&#xD;&#xA;        // Defining a duplicate column with not null constraint&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.Department, pgType: &quot;varchar(50)&quot;, notNull: true);&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for FirstName&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.FirstName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IndexName = &quot;idx_special&quot;;&#xD;&#xA;            idx.Method = IndexMethod.hash;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for UserName to be unique&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.UserName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.IsUnique = true;&#xD;&#xA;        });&#xD;&#xA;&#xD;&#xA;        // Customize the index on the duplicated field&#xD;&#xA;        // for LastName to be in descending order&#xD;&#xA;        For&lt;User&gt;().Duplicate(x =&gt; x.LastName, configure: idx =&gt;&#xD;&#xA;        {&#xD;&#xA;            idx.SortOrder = SortOrder.Desc;&#xD;&#xA;        });&#xD;&#xA;    }&#xD;&#xA;}&#xD;&#xA;&#xD;&#xA;</code></pre>
 <h2 id="unique-index-per-tenant">Unique Index per Tenant</h2>
-<p>For tables which have been configured for <a href="/marten/documentation/documents/tenancy">Tenancy</a>, index definitions may also be scoped per tenant.</p>
+<p>For tables which have been configured for <a href="/v3/documentation/documents/tenancy">Tenancy</a>, index definitions may also be scoped per tenant.</p>
 <pre><code class="language-csharp">&#xD;&#xA;var store = DocumentStore.For(_ =&gt;&#xD;&#xA;{&#xD;&#xA;    _.Connection(ConnectionSource.ConnectionString);&#xD;&#xA;    _.DatabaseSchemaName = &quot;unique_text&quot;;&#xD;&#xA;&#xD;&#xA;    // This creates a duplicated field unique index on firstname, lastname and tenant_id&#xD;&#xA;    _.Schema.For&lt;User&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.DuplicatedField, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.FirstName, x =&gt; x.LastName);&#xD;&#xA;&#xD;&#xA;    // This creates a computed unique index on client name and tenant_id&#xD;&#xA;    _.Schema.For&lt;Client&gt;().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, &quot;index_name&quot;, TenancyScope.PerTenant, x =&gt; x.Name);&#xD;&#xA;});&#xD;&#xA;</code></pre>
 
                 </div>
                 <hr />
                 <nav class="related-links">
                     <span>
-                        <strong>Previous: </strong><a href="/marten/documentation/documents/customizing/noda_time">Noda Time support</a>
+                        <strong>Previous: </strong><a href="/v3/documentation/documents/customizing/noda_time">Noda Time support</a>
                     </span>
                     <span class="pull-right">
-                        <strong>Next: </strong><a href="/marten/documentation/documents/json">Json Serialization</a>
+                        <strong>Next: </strong><a href="/v3/documentation/documents/json">Json Serialization</a>
                     </span>
                 </nav>
             </div><!--/right-->
@@ -181,9 +181,9 @@ the <code>Index()</code> method and definining <code>IsUnique</code> property as
 <foot>
     <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type='text/javascript' src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/marten/content/prism.js"></script>
-    <script type="text/javascript" src="/marten/content/sidebar.js"></script>
-    <script type="text/javascript" src="/marten/content/affix.js"></script>
+    <script type="text/javascript" src="/v3/content/prism.js"></script>
+    <script type="text/javascript" src="/v3/content/sidebar.js"></script>
+    <script type="text/javascript" src="/v3/content/affix.js"></script>
 
     <script>
         $('#search').keyup(function (e) {
