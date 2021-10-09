@@ -137,7 +137,7 @@ namespace martenbuild
             // Run("git", "config user.name user_name", docTargetDir);
 
             if (exportWithGithubProjectPrefix)
-                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
+                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project v3");
             else
                 Run("dotnet", $"stdocs export {docTargetDir} Website -d documentation -c src -v {BUILD_VERSION}");
 
