@@ -110,6 +110,13 @@ namespace martenbuild
                 RunNpm("run docs-build");
             });
 
+            Target("docs-import-v3", DependsOn("docs-build"), () =>
+            {
+                const string branchName = "gh-pages";
+                const string docTargetDir = "docs/.vitepress/dist/v3";
+                Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
+            });
+
             Target("clear-inline-samples", () => {
                 var files = Directory.GetFiles("./docs", "*.md", SearchOption.AllDirectories);
                 var pattern = @"<!-- snippet:(.+)-->[\s\S]*?<!-- endSnippet -->";
@@ -129,10 +136,10 @@ namespace martenbuild
             });
 
 
-            Target("publish-docs-preview", DependsOn("docs-build"), () =>
+            Target("publish-docs-preview", DependsOn("docs-import-v3"), () =>
                 RunNpm("run deploy"));
 
-            Target("publish-docs", DependsOn("docs-build"), () =>
+            Target("publish-docs", DependsOn("docs-import-v3"), () =>
                 RunNpm("run deploy:prod"));
 
             Target("benchmarks", () =>
@@ -205,23 +212,6 @@ namespace martenbuild
                     Thread.Sleep(250);
                     attempt++;
                 }
-        }
-
-        private static void PublishDocs(string branchName, bool exportWithGithubProjectPrefix, string docTargetDir = "doc-target")
-        {
-            Run("git", $"clone -b {branchName} https://github.com/jasperfx/marten.git {InitializeDirectory(docTargetDir)}");
-            // if you are not using git --global config, un-comment the block below, update and use it
-            // Run("git", "config user.email user_email", docTargetDir);
-            // Run("git", "config user.name user_name", docTargetDir);
-
-            if (exportWithGithubProjectPrefix)
-                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
-            else
-                Run("dotnet", $"stdocs export {docTargetDir} Website -d documentation -c src -v {BUILD_VERSION}");
-
-            Run("git", "add --all", docTargetDir);
-            Run("git", $"commit -a -m \"Documentation Update for {BUILD_VERSION}\" --allow-empty", docTargetDir);
-            Run("git", $"push origin {branchName}", docTargetDir);
         }
 
         private static string InitializeDirectory(string path)
