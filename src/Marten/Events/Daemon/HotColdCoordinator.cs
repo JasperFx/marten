@@ -74,7 +74,7 @@ namespace Marten.Events.Daemon
             {
                 conn?.SafeDispose();
 
-                _logger.LogError("Error trying to attain the async daemon lock", e);
+                _logger.LogError(e, "Error trying to attain the async daemon lock");
                 return false;
             }
 
@@ -91,7 +91,7 @@ namespace Marten.Events.Daemon
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError("Failure while trying to start all async projection shards", ex);
+                    _logger.LogError(ex, "Failure while trying to start all async projection shards");
                 }
             }
             else
