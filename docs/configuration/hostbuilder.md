@@ -81,7 +81,6 @@ public class Startup
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByConnectionString/Startup.cs#L7-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbyconnectionstring' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 The second option is to supply a [nested closure](https://martinfowler.com/dslCatalog/nestedClosure.html) to configure Marten inline like so:
 
 <!-- snippet: sample_AddMartenByNestedClosure -->
@@ -443,10 +442,6 @@ public class Startup
 This correlation tracking might be better with structural logging with something like [Serilog](https://serilog.net), but we'll leave that to users.
 :::
 
-
-
-
-
 ## Eager Initialization of the DocumentStore
 
 Lastly, if desirable, you can force Marten to initialize the applications document store as part of bootstrapping instead of waiting for it to be initialized on the first usage with this syntax:
@@ -480,4 +475,3 @@ public class Startup
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L7-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
