@@ -124,7 +124,6 @@ public void use_select_to_another_type_with_first()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#L78-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_first_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## SelectMany()
 
 ::: top
@@ -189,7 +188,3 @@ A few notes on the `SelectMany()` usage and limitations:
 * `Take()` and `Skip()` operators in a Linq query that contains a `SelectMany()` operator will always apply to the child collection database
   rather than the parent document regardless of the order in which the operators appear in the Linq query
 * You cannot use `SelectMany()` with both a `Distinct()` and a `Count()` operator at this point.
-
-
-
-
