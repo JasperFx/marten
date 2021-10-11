@@ -10,9 +10,9 @@ Don't use asynchronous Linq operators in the expression body of a compiled query
 in asynchronous querying.
 :::
 
-
 Linq is easily one of the most popular features in .Net and arguably the one thing that other platforms strive to copy. We generally like being able
-to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting [Expression trees](https://msdn.microsoft.com/en-us/library/bb397951.aspx) and then using plenty of string concatenation to build up the matching SQL query. 
+to express document queries in compiler-safe manner, but there is a non-trivial cost in parsing the resulting [Expression trees](https://msdn.microsoft.com/en-us/library/bb397951.aspx) and then using plenty of string concatenation to build up the matching SQL query.
+
 Fortunately, Marten supports the concept of a _Compiled Query_ that you can use to reuse the SQL template for a given Linq query and bypass the performance cost of continuously parsing Linq expressions.
 
 All compiled queries are classes that implement the `ICompiledQuery<TDoc, TResult>` interface shown below:
@@ -85,20 +85,15 @@ await batch.Execute();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L149-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## How Does It Work?
 
 The first time that Marten encounters a new type of `ICompiledQuery`, it has to create a new "plan" for the compiled query by:
 
-1. Finding all public _readable_ properties or fields on the compiled query type that would be potential parameters. Members
-   marked with `[MartenIgnore]` attribute are ignored.
-1. Marten either insures that the query object being passed in has unique values for each parameter member, or tries to create
-   a new object of the same type and tries to set all unique values
-1. Parse the Expression returned from `QueryIs()` with the underlying Linq expression to determine the proper result handling 
-   and underlying database command with parameters
+1. Finding all public _readable_ properties or fields on the compiled query type that would be potential parameters. Members marked with `[MartenIgnore]` attribute are ignored.
+1. Marten either insures that the query object being passed in has unique values for each parameter member, or tries to create a new object of the same type and tries to set all unique values
+1. Parse the Expression returned from `QueryIs()` with the underlying Linq expression to determine the proper result handling and underlying database command with parameters
 1. Attempts to match the unique member values to the command parameter values to map query members to the database parameters by index
-1. Assuming the previous steps succeeded, Marten generates and dynamically compiles code at runtime to efficiently execute the compiled
-   query objects at runtime and caches the dynamic query executors.
+1. Assuming the previous steps succeeded, Marten generates and dynamically compiles code at runtime to efficiently execute the compiled query objects at runtime and caches the dynamic query executors.
 
 On subsequent usages, Marten will just reuse the existing SQL command and remembered handlers to execute the query.
 
@@ -140,7 +135,6 @@ public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
 Pay close attention to the `SetUniqueValuesForQueryPlanning()` method. That has absolutely no other purpose but to help Marten
 create a compiled query plan for the `CompiledTimeline` type.
 
-
 ## What is Supported?
 
 To the best of our knowledge and testing, you may use any [Linq feature that Marten supports](/documents/querying/linq/) within a compiled query. So any combination of:
@@ -157,12 +151,11 @@ To the best of our knowledge and testing, you may use any [Linq feature that Mar
 * `ToJsonArray()`
 * `Skip()`, `Take()` and `Stats()` for pagination
 
-As for limitations, 
+As for limitations,
 
 * You cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results with `ICompiledListQuery`.
 * The compiled query planning just cannot match Boolean fields or properties to command arguments, so Boolean flags cannot be used
-* You cannot use any asynchronous operators. So in all cases, use the synchronous operator equivalent. So `FirstOrDefault()`, but not `FirstOrDefaultAsync()`. 
-  **This does not preclude you from using compiled queries in asynchronous querying**
+* You cannot use any asynchronous operators. So in all cases, use the synchronous operator equivalent. So `FirstOrDefault()`, but not `FirstOrDefaultAsync()`. **This does not preclude you from using compiled queries in asynchronous querying**
 
 ## Querying for Multiple Results
 
