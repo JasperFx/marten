@@ -4,21 +4,22 @@
 For information on how to create aggregated projection or "self-aggregates," see [Aggregate Projections](/events/projections/aggregate-projections).
 :::
 
-
-In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`.  All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position. 
+In Event Sourcing, the entity state is stored as the series of events that happened for this specific object, e.g. `InvoiceInitiated`, `InvoiceIssued`, `InvoiceSent`.  All of those events shares the stream id, and have incremented stream version. In other words, they're correlated by the stream id ordered by stream position.
 
 Streams can be thought of as the entities' representation. Traditionally (e.g. in relational or document approach), each entity is stored as a separate record.
 
 To get the current state of entity we need to perform the stream aggregation process (called also _state rehydration_ or _state rebuild_). We're translating the set of events into a single entity. This can be done with the following the steps:
+
 1. Read all events for the specific stream.
 2. Order them in ascending order of appearance (by the event's stream position).
 3. Construct the empty object of the entity type (e.g. with default constructor).
 4. Apply each event on the entity.
 
- Marten handles this process internally with the `AggregateStreamAsync` method.
- 
- The class representing the stream (entity) state has to follow the naming convention. For each event have `Apply` method with:
-- single parameter with event object,
+Marten handles this process internally with the `AggregateStreamAsync` method.
+
+The class representing the stream (entity) state has to follow the naming convention. For each event have `Apply` method with:
+
+- single parameter with event object
 - `void` type as the result.
 
 For example, having the Invoice events stream with following events:
@@ -129,7 +130,7 @@ var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
 
 ## Time Travelling
 
-One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. This allows you to do time travelling to get the state at a specific date or stream version. 
+One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. This allows you to do time travelling to get the state at a specific date or stream version.
 
 This capability enables rich diagnostics business and technical wise. You can precisely verify what has happened in your system and troubleshoot the failing scenario.
 
@@ -205,7 +206,6 @@ var roomsAvailabilityAtPointOfTime =
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L123-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-point-of-time' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 **Or specific version:**
 
 <!-- snippet: sample_aggregate-stream-time-travelling-by-specific-version -->
@@ -217,7 +217,6 @@ var roomsAvailabilityAtVersion =
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/time_travelling_samples.cs#L137-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-specific-version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Aggregating Events into Existing State
 
@@ -309,7 +308,6 @@ public class FinancialAccount
 <!-- endSnippet -->
 
 For the daily operations, you don't need to know its whole history. It's enough to have information about the current accounting period, e.g. month. It might be worth doing a snapshot of the current state at opening accounting and then loading the following events with the transactions. We could do it by defining such a wrapper class:
-
 
 <!-- snippet: sample_aggregate-stream-into-state-wrapper -->
 <a id='snippet-sample_aggregate-stream-into-state-wrapper'></a>
@@ -404,7 +402,6 @@ var currentState = await repository.Get(financialAccountId);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Aggregation/aggregate_stream_into_samples.cs#L207-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Live Aggregation from Linq Queries
 
