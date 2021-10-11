@@ -1,8 +1,8 @@
 # Marten as Event Store
 
-##  What is Event Sourcing?
+## What is Event Sourcing?
 
-Event Sourcing is a design pattern in which results of business operations are stored as a series of events. 
+Event Sourcing is a design pattern in which results of business operations are stored as a series of events.
 
 It is an alternative way to persist data. In contrast with state-oriented persistence that only keeps the latest version of the entity state, Event Sourcing stores each state change as a separate event.
 
@@ -51,4 +51,3 @@ var store2 = DocumentStore.For(_ =>
 ## Stream or Aggregate Types
 
 At this point there are no specific requirements about stream aggregate types as they are purely marker types. In the future we will probably support aggregating events via snapshot caching using the aggregate type.
-
