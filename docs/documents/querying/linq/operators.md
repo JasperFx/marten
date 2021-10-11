@@ -1,7 +1,6 @@
 # Supported Linq Operators
 
-
-### Element Operations
+## Element Operations
 
 Marten has been successfully tested with these [element operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/element-operations):
 
@@ -96,7 +95,7 @@ public void and_or(IDocumentSession session)
 <!-- endSnippet -->
 
 
-### Ordering Results
+## Ordering Results
 
 Marten contains support for expressing ordering in both ascending and descending order in Linq queries:
 
@@ -119,7 +118,7 @@ public void order_by(IDocumentSession session)
 <!-- endSnippet -->
 
 
-### Aggregate Functions
+## Aggregate Functions
 
 :::
 In many cases the asynchronous versions of these operators are extension methods within Marten itself as these were not present
@@ -175,13 +174,13 @@ public void using_take_and_skip(IDocumentSession session)
 
 TODO -- link to the paging support
 
-### Grouping Operators
+## Grouping Operators
 
 Sorry, but Marten does not yet support `GroupBy()`. You can track [this GitHub issue](https://github.com/JasperFx/marten/issues/569) to follow
 any future work on this Linq operator. 
 
 
-### Distinct()
+## Distinct()
 
 New in Marten 1.2 is support for the Linq `Distinct()` operator:
 
@@ -238,7 +237,7 @@ public void get_distinct_numbers()
 <!-- endSnippet -->
 
 
-### Modulo Queries
+## Modulo Queries
 
 Marten has the ability to use the modulo operator in Linq queries:
 
