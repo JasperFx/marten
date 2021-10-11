@@ -182,7 +182,6 @@ storeOptions.Schema.For<Target>().MultiTenanted();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/document_policies_can_be_overridden_by_attributes.cs#L30-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-override' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Implementation Details
 
 At the moment, Marten implements two modes of tenancy, namely single tenancy and conjoined multi-tenancy.
@@ -191,7 +190,7 @@ At the moment, Marten implements two modes of tenancy, namely single tenancy and
 
 The conjoined (`TenancyStyle.Conjoined`) multi-tenancy in Marten is implemented by associating each record with a tenant identifier. As such, Marten does not guarantee or enforce data isolation via database access privileges.
 
-**Effects On Schema**
+#### Effects On Schema
 
 Once enabled, `TenancyStyle.Conjoined` introduces a `tenant_id` column to Marten tables. This column, of type `varchar` with the default value of `*DEFAULT*` (default tenancy), holds the tenant identifier associated with the record. Furthermore, Marten creates an index on this column by default.
 
