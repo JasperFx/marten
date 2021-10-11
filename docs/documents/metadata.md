@@ -2,7 +2,7 @@
 
 A major goal of the Marten V4 release was to enable much richer document and event metadata collection based
 on user requests. To that end, Marten still supports the same basic metadata columns
-as Marten V2/V3, but adds other **opt in** columns. 
+as Marten V2/V3, but adds other **opt in** columns.
 
 The available columns for document storage are:
 
@@ -17,14 +17,12 @@ The available columns for document storage are:
 |`mt_deleted`|Boolean flag noting whether the document is soft-deleted|Only if the document type is configured as soft-deleted|
 |`mt_deleted_at`|Timestamp marking when a document was soft-deleted|Only if the document type is configured as soft-deleted|
 
-
 ## Correlation Id, Causation Id, and Headers
 
 ::: tip
 At this point, the Marten team thinks that using a custom `ISessionFactory` to set
 correlation and causation data is the most likely usage for this feature. The Marten team
-plans to build a sample application showing Marten being used with [Open Telemetry](https://opentelemetry.io/) 
-tracing soon.
+plans to build a sample application showing Marten being used with [Open Telemetry](https://opentelemetry.io/) tracing soon.
 :::
 
 The first step is to enable these columns on the document types in your system:
@@ -87,7 +85,6 @@ public void SetHeader(IDocumentSession session, string sagaId)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L68-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_header' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Tracking Metadata on Documents
 
 Marten can now set metadata values directly on the documents persisted by Marten,
@@ -135,8 +132,7 @@ var store = DocumentStore.For(opts =>
 <!-- endSnippet -->
 
 ::: tip
-Note that mapping a document member to a metadata column will implicitly enable that 
-metadata column collection.
+Note that mapping a document member to a metadata column will implicitly enable that metadata column collection.
 :::
 
 For correlation, causation, and last modified tracking, an easy way to do this is to
@@ -156,9 +152,7 @@ public class MyTrackedDoc: ITracked
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L162-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mytrackeddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-If your document type implements this interface, Marten will automatically enable the 
-correlation and causation tracking, and set values for correlation, causation, and the last
-modified data on documents anytime they are loaded or persisted by Marten.
+If your document type implements this interface, Marten will automatically enable the correlation and causation tracking, and set values for correlation, causation, and the last modified data on documents anytime they are loaded or persisted by Marten.
 
 Likewise, version tracking directly on the document is probably easiest with the `IVersioned`
 interface as shown below:
@@ -197,9 +191,7 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L11-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disableallinformationalfields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Querying by Last Modified
-
 
 Documents can be queried by the last modified time using these custom extension methods in Marten:
 
@@ -225,7 +217,6 @@ public async Task sample_usage(IQuerySession session)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/last_modified_queries.cs#L15-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_last_modified_queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Indexing
 
