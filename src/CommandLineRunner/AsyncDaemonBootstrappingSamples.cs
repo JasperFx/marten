@@ -78,7 +78,7 @@ namespace CommandLineRunner
 
                         #endregion
 
-                        #region sample_exponential_backoff_strategy
+                        #region sample_exponential_back-off_strategy
 
                         opts.Projections.OnException<NpgsqlException>()
                             .RetryLater(50.Milliseconds(), 250.Milliseconds(), 500.Milliseconds())
