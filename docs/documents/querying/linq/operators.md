@@ -74,9 +74,6 @@ public void deep_queries(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L50-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_nested_properties' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
-
-
 Right now, Marten supports both _and_ and _or_ queries with Linq:
 
 <!-- snippet: sample_querying_with_and_or_or -->
@@ -93,7 +90,6 @@ public void and_or(IDocumentSession session)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L38-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_and_or_or' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Ordering Results
 
@@ -116,7 +112,6 @@ public void order_by(IDocumentSession session)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L84-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Aggregate Functions
 
@@ -177,8 +172,7 @@ TODO -- link to the paging support
 ## Grouping Operators
 
 Sorry, but Marten does not yet support `GroupBy()`. You can track [this GitHub issue](https://github.com/JasperFx/marten/issues/569) to follow
-any future work on this Linq operator. 
-
+any future work on this Linq operator.
 
 ## Distinct()
 
@@ -236,7 +230,6 @@ public void get_distinct_numbers()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_distinct_Tests.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Modulo Queries
 
 Marten has the ability to use the modulo operator in Linq queries:
@@ -263,4 +256,3 @@ public void use_modulo()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_modulo_Tests.cs#L12-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
