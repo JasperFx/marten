@@ -13,12 +13,10 @@ Do note that all the various types of aggregated projections all inherit from a 
 
 ## Projection Types
 
-
-1. [Aggregate Projections](/events/projections/aggregate-projections) combine either a stream or some other related set of events into a single view. 
+1. [Aggregate Projections](/events/projections/aggregate-projections) combine either a stream or some other related set of events into a single view.
 1. [View Projections](/events/projections/view-projections) are a specialized form of aggregate projections that allow you to aggregate against arbitrary groupings of events across streams.
 1. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
 1. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
-
 
 ## Projection Lifecycles
 
@@ -28,13 +26,10 @@ Marten varies a little bit in that projections can be executed with three differ
 1. [Live Aggregations](/events/projections/live-aggregates) are executed on demand by loading event data and creating the projected view in memory without persisting the projected documents
 1. [Asynchronous Projections](/events/projections/async-daemon) are executed by a background process
 
-
 For other descriptions of the _Projections_ pattern inside of Event Sourcing architectures, see:
 
 * [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
 * [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
-
-
 
 ## Aggregates
 
