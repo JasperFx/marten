@@ -1,6 +1,6 @@
 # Including Related Documents
 
-### Join a Single Document
+## Join a Single Document
 
 Marten supports the ability to run include queries that execute a `join` SQL query behind the curtains, in order to fetch a referenced document as well as the queried document. Suppose you are querying for a github `Issue` that contains a property `AssigneeId`, which references the Id of the `User` assigned to the Issue. If you wish to fetch the `User` as well in one trip to the database, you can use the `.Include()` method like so:
 
@@ -74,7 +74,7 @@ public void include_to_dictionary()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L490-L516' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Include Multiple Document Types
+## Include Multiple Document Types
 
 Marten also allows you to chain multiple `Include()` calls:
 
