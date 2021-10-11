@@ -1,8 +1,7 @@
 # Appending Events
 
 ::: tip
-Marten V4 improved the event capture process by introducing the concept of "tombstone" events that are just 
-markers in the event sequence to reflect events that failed to be captured for any reason.
+Marten V4 improved the event capture process by introducing the concept of "tombstone" events that are just markers in the event sequence to reflect events that failed to be captured for any reason.
 :::
 
 With Marten, events are captured and appended to logical "streams" of events. Marten provides
@@ -20,10 +19,8 @@ with concurrency issues that may result from multiple transactions trying to sim
 
 ## Starting a new Stream
 
-You can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing. 
-Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information 
-and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type 
-optional so that you could just supply either a string to mark the "stream type" or work without a stream type.
+You can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing.
+Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that you could just supply either a string to mark the "stream type" or work without a stream type.
 
 As usual, our sample problem domain is the Lord of the Rings style "Quest." For now, you can either start a new stream and let Marten assign the Guid id for the stream:
 
@@ -69,8 +66,7 @@ Note that `StartStream` checks for an existing stream and throws `ExistingStream
 ## Appending Events
 
 ::: tip
-`AppendEvent()` will create a new stream for the stream id if it does not already exist at the time that 
-`IDocumentSession.SaveChanges()` is called.
+`AppendEvent()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChanges()` is called.
 :::
 
 If you have an existing stream, you can later append additional events with `IEventStore.Append()` as shown below:
