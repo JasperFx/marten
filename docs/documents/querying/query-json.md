@@ -1,8 +1,6 @@
 # Query for Raw JSON
 
-Marten stores documents as JSON, and sometimes it might be valuable to access the raw JSON representation of the 
-stored documents. To that end, the `IQuerySession.Json` property gives you access to several helper methods to load
-JSON strings.
+Marten stores documents as JSON, and sometimes it might be valuable to access the raw JSON representation of the stored documents. To that end, the `IQuerySession.Json` property gives you access to several helper methods to load JSON strings.
 
 <!-- snippet: sample_find-json-by-id -->
 <a id='snippet-sample_find-json-by-id'></a>

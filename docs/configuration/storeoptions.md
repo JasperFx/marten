@@ -34,16 +34,15 @@ To be clear, the configuration on a single document type is applied in order by:
 
 1. Calling the static `ConfigureMarten(DocumentMapping)` method on the document type. See the section below on _Embedding Configuration in Document Types_
 1. Any policies at the `StoreOptions` level
-1. Attributes on the specific document type 
+1. Attributes on the specific document type
 1. Explicit configuration through `MartenRegistry`
 
-The order of precedence is in the reverse order, such that explicit configuration takes precedence over policies or attributes. 
+The order of precedence is in the reverse order, such that explicit configuration takes precedence over policies or attributes.
 
 ::: tip
 While it is possible to mix and match configuration styles, the Marten team recommends being consistent in your approach to prevent
 confusion later.
 :::
-
 
 ## Custom StoreOptions
 
@@ -230,7 +229,6 @@ public class ConfiguresItselfSpecifically
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentMappingTests.cs#L136-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-specifically' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Document Policies
 
 Document Policies enable convention-based customizations to be applied across the Document Store. While Marten has some existing policies that can be enabled, any custom policy can be introduced  through implementing the `IDocumentPolicy` interface and applying it on `StoreOptions.Policies` or through using the `Policies.ForAllDocuments(Action<DocumentMapping> configure)` shorthand.
@@ -292,9 +290,7 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDatabaseSchemaName.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_database_schema_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-If you have some reason to place different document types into separate schemas, that is 
-also supported and the document type specific configuration will override the `StoreOptions.DatabaseSchemaName`
-value as shown below:
+If you have some reason to place different document types into separate schemas, that is also supported and the document type specific configuration will override the `StoreOptions.DatabaseSchemaName` value as shown below:
 
 <!-- snippet: sample_configure_schema_by_document_type -->
 <a id='snippet-sample_configure_schema_by_document_type'></a>
