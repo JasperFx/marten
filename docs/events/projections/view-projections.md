@@ -8,11 +8,9 @@ For simple event to aggregate groupings, you can use the:
 
 * `Identity<TEvent>(Func<TEvent, TId> func)` method to assign an incoming event to a single aggregate by the aggregate id. Do note that this method works
   with common base classes or common interfaces so you don't have to specify this for every single event type
-* `Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)` method to assign an incoming event to multiple aggregates 
-* For grouping rules that fall outside the simpler `Identity()` or `Identities()` methods, supply a custom `IAggregateGrouper` that will sort events into    
-  aggregate groups of events by aggregate id
-* For advanced usages, supply a custom `IEventSlicer` that let's you write your own mechanism to divide an incoming segment of events to 
-  aggregated view documents
+* `Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)` method to assign an incoming event to multiple aggregates
+* For grouping rules that fall outside the simpler `Identity()` or `Identities()` methods, supply a custom `IAggregateGrouper` that will sort events into aggregate groups of events by aggregate id
+* For advanced usages, supply a custom `IEventSlicer` that let's you write your own mechanism to divide an incoming segment of events to aggregated view documents
 
 It's important to note that the first three options (`Identity()`, `Identities()`, and custom `IAggregateGrouping`) are completely additive, while
 using a custom `IEventSlicer` is a complete replacement for the first three approaches and cannot be used simultaneously.
@@ -323,7 +321,7 @@ document view type should be multi-tenanted.
 :::
 
 If `Identity()` or `Identities()` is too limiting for your event aggregation rules, you can drop down and implement your
-own `IEventSlicer` that can split and assign events to any number of aggregated document views. Below is an example: 
+own `IEventSlicer` that can split and assign events to any number of aggregated document views. Below is an example:
 
 <!-- snippet: sample_view-projection-custom-slicer -->
 <a id='snippet-sample_view-projection-custom-slicer'></a>
