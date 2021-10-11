@@ -9,8 +9,6 @@ in a single database transaction by calling the `IDocumentSession.SaveChanges()/
 As explained later in this page, Marten supports both "hard" deletes where the underlying database row is permanently deleted
 and "soft" deletes where the underlying database row is just marked as deleted with a timestamp.
 
- 
-
 ## Delete a Single Document by Id
 
 A single document can be deleted by either telling Marten the identity and the document type
@@ -31,12 +29,9 @@ internal Task DeleteByDocumentId(IDocumentSession session, Guid userId)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_by_document_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Delete by Document
 
-If you already have a document in memory and determine that you want that document to be 
-deleted, you can pass that document directly to `IDocumentSession.Delete<T>(T document)` as 
-shown below:
+If you already have a document in memory and determine that you want that document to be deleted, you can pass that document directly to `IDocumentSession.Delete<T>(T document)` as shown below:
 
 <!-- snippet: sample_delete_by_document -->
 <a id='snippet-sample_delete_by_document'></a>
@@ -49,8 +44,6 @@ public Task DeleteByDocument(IDocumentSession session, User user)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L69-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_by_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
 
 ## Delete by Criteria
 
@@ -71,7 +64,6 @@ A couple things to note:
 1. The actual Sql command to delete documents by a query is not executed until `IDocumentSession.SaveChanges()` is called
 1. The bulk delete command runs in the same batched sql command and transaction as any other document updates or deletes
    in the session
-
 
 ## Soft Deletes
 
@@ -150,7 +142,6 @@ internal void AllDocumentTypesShouldBeSoftDeleted()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ### Querying a "Soft Deleted" Document Type
 
@@ -329,7 +320,6 @@ internal void AllDocumentTypesShouldBeSoftDeleted()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ### Undoing Soft-Deleted Documents
 
 New in Marten v4.0 is a mechanism to mark any soft-deleted documents matching a supplied criteria
@@ -392,7 +382,7 @@ Implementing `ISoftDeleted` on your document means that:
   if you call `IDocumentSession.Delete<T>(T document)`
 
 Any document type that implements `ISoftDeleted` will automatically be configured as
-soft-deleted by Marten when a `DocumentStore` is initialized. 
+soft-deleted by Marten when a `DocumentStore` is initialized.
 
 Now, if you don't want to couple your document types to Marten by implementing that interface,
 you're still in business. Let's say you have this document type:
@@ -432,5 +422,3 @@ using var store = DocumentStore.For(opts =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L20-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_manually_wire_soft_deleted_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
