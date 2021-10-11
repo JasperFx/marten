@@ -114,7 +114,6 @@ public void multiple_includes()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_include_Tests.cs#L713-L743' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ### Asynchronous Support
 
 Marten supports Include within an asynchronous context. The query will be run asynchronously when you append your query with the corresponding Async method, like:
