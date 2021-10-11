@@ -49,4 +49,3 @@ var events = await theSession.Events.QueryAllRawEvents()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/archiving_events.cs#L196-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-

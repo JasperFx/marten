@@ -38,9 +38,7 @@ await session.SaveChangesAsync();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StoringDocuments.cs#L37-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_documentsession_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `Store()` method can happily take a mixed bag of document types at one time, but you'll
-need to tell Marten to use `Store<object>()` instead of letting it infer the document type 
-as shown below:
+The `Store()` method can happily take a mixed bag of document types at one time, but you'll need to tell Marten to use `Store<object>()` instead of letting it infer the document type as shown below:
 
 <!-- snippet: sample_store_mixed_bag_of_document_types -->
 <a id='snippet-sample_store_mixed_bag_of_document_types'></a>
@@ -131,9 +129,7 @@ theSession.Query<Target>().Count().ShouldBe(data.Length);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and 
-the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration
-as shown below:
+By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
 
 <!-- snippet: sample_BulkInsertMode_usages -->
 <a id='snippet-sample_bulkinsertmode_usages'></a>

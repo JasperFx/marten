@@ -1,6 +1,6 @@
 # Event Store Configuration
 
-## Specifying the Schema 
+## Specifying the Schema
 
 The database schema name for the event store tables is by default, the same schema as the document store
 itself. The event storage can be explicitly moved to a separate schema as shown below:

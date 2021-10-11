@@ -48,4 +48,3 @@ query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(
 <!-- endSnippet -->
 
 This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type.
-

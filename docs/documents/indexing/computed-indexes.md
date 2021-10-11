@@ -84,7 +84,7 @@ var store = DocumentStore.For(_ =>
 
 The configuration above creates an index like this:
 
-```
+```sql
 CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
 ```
 
