@@ -1,4 +1,4 @@
-# Marten.AspNetCore 
+# Marten.AspNetCore
 
 ::: tip
 For a little more context, see the blog post [Efficient Web Services with Marten V4](https://jeremydmiller.com/2021/09/28/efficient-web-services-with-marten-v4/).
@@ -58,7 +58,6 @@ public Task Get2(Guid issueId, [FromServices] IQuerySession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L53-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_linq_to_write_single_document_to_httpcontext' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Multiple Documents
 
 The `WriteArray()` extension method will allow you to write an array of documents in
@@ -84,11 +83,9 @@ public Task OpenIssues([FromServices] IQuerySession session)
 ## Compiled Query Support
 
 The absolute fastest way to invoke querying in Marten is by using [compiled queries](/documents/querying/compiled-queries)
-that allow you to use Linq queries without the runtime overhead of continuously 
-parsing Linq expressions every time.
+that allow you to use Linq queries without the runtime overhead of continuously parsing Linq expressions every time.
 
-Back to the sample endpoint above where we write an array of all the open issues. We 
-can express the same query in a simple compiled query like this:
+Back to the sample endpoint above where we write an array of all the open issues. We can express the same query in a simple compiled query like this:
 
 <!-- snippet: sample_OpenIssues -->
 <a id='snippet-sample_openissues'></a>
@@ -152,4 +149,3 @@ public Task Get3(Guid issueId, [FromServices] IQuerySession session)
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L64-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_to_httpcontext_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
