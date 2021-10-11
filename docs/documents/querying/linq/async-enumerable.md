@@ -9,7 +9,7 @@ Marten V4.0 introduced a custom Linq operator to return the results of Linq quer
 an `IAsyncEnumerable<T>`. This can be very valuable when you expect large data sets because
 it allows you to process the documents being read by Marten in memory **while** Marten
 is still fetching additional results and avoids the need to ever put the entire document
-result set into memory. 
+result set into memory.
 
 The simple addition to Marten is the `IQueryable<T>.ToAsyncEnumerable()` and `IMartenQueryable<T>`.ToAsyncEnumerable()`
 extension methods. Below is a sample usage of this new operator from the Marten tests:
@@ -42,6 +42,3 @@ public async Task query_to_async_enumerable()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_ToAsyncEnumerable.cs#L18-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_to_async_enumerable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
-
