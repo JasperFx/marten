@@ -364,7 +364,6 @@ theSession.Logger = new TestOutputMartenLogger(_output);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/archiving_events.cs#L230-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Previewing the PostgreSQL Query Plan
 
 Marten has a helper to find and preview the [PostgreSQL EXPLAIN plan](http://www.postgresql.org/docs/9.5/static/using-explain.html) for a Linq query. Our hope is that this will be a valuable aid to teams who need face performance problems while using Marten. The syntax for fetching the EXPLAIN plan for the Linq query from the previous section is shown below:

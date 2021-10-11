@@ -18,4 +18,3 @@ My own personal bias is to avoid adding persistence concerns directly to the doc
 will prefer to use either attributes or the new embedded configuration option with the thinking that it's
 better to keep the persistence configuration on the document type itself for easier traceability. Either way,
 Marten has you covered with the various configuration options shown here.
-

@@ -5,9 +5,7 @@ In all the code samples on this page, the `session` variable is of type
 `IQuerySession`.
 :::
 
-The Marten project strives to make the Linq provider robust and performant,
-but if there's ever a time when the Linq support is insufficient, you can 
-drop down to using raw SQL to query documents in Marten.
+The Marten project strives to make the Linq provider robust and performant, but if there's ever a time when the Linq support is insufficient, you can drop down to using raw SQL to query documents in Marten.
 
 Here's the simplest possible usage to query for `User` documents with a `WHERE` clause:
 
