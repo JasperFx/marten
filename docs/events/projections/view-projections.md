@@ -244,7 +244,6 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/ViewProjections/simple_multi_stream_projection_wih_one_to_many.cs#L12-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## View Projection with Custom Grouper
 
 As simpler mechanism to group events to aggregate documents is to supply a custom `IAggregatorGrouper<TId>` as shown below:
@@ -368,7 +367,6 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/ViewProjections/CustomGroupers/custom_slicer.cs#L16-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Event "Fan Out" Rules
 
