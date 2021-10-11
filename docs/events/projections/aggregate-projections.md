@@ -1,10 +1,8 @@
 # Aggregate Projections
 
-
 _Aggregate Projections_ in Marten combine some sort of grouping of events and process them to create a single
 aggregated document representing the state of those events. To jump into a simple example, here's a simple aggregated
-view called `QuestParty` that creates an aggregated view of `MembersJoined`, `MembersDeparted`, and `QuestStarted` events related 
-to a group of heroes traveling on a quest in your favorite fantasy novel:
+view called `QuestParty` that creates an aggregated view of `MembersJoined`, `MembersDeparted`, and `QuestStarted` events related to a group of heroes traveling on a quest in your favorite fantasy novel:
 
 <!-- snippet: sample_QuestParty -->
 <a id='snippet-sample_questparty'></a>
@@ -33,7 +31,6 @@ public class QuestParty
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 Once again, here's the class diagram of the key projection types inside of Marten, but please note the `AggregationProjection<T>`:
 
 ![Projection Class Diagram](/images/Projections.png)
@@ -45,7 +42,6 @@ Marten supports a few different types of aggregated projections:
 
 Please note that all aggregated projections share the same set of method conventions described in this page.
 
-
 ## Aggregate by Stream
 
 ::: tip
@@ -54,8 +50,7 @@ discovered by the method conventions can be internal or private, but the holding
 :::
 
 The easiest type of aggregate to create is a document that rolls up the state of a single event stream. You can do that by either creating a public aggregate
-document that directly mutates itself through method conventions or by sub-classing the `AggregateProjection<T>` class like this sample for a 
-fictional `Trip` aggregate document:
+document that directly mutates itself through method conventions or by sub-classing the `AggregateProjection<T>` class like this sample for a fictional `Trip` aggregate document:
 
 <!-- snippet: sample_TripProjection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
@@ -113,14 +108,12 @@ var store = DocumentStore.For(opts =>
 <!-- endSnippet -->
 
 Any projection based on `AggregateProjection<T>` will allow you to define steps by event type to either create, delete, or mutate an aggregate
-document through a mix of inline Lambda expressions in the constructor function of the projection class or by using specially named methods on the 
+document through a mix of inline Lambda expressions in the constructor function of the projection class or by using specially named methods on the
 projection class. It's completely up to your preference to decide which to use.
 
 Alternatively, if your aggregate will never be deleted you can use a "self-aggregate" as explained in the last section of this page.
 
 To create aggregate projections that include events in multiple streams, see [View Projections](/events/projections/view-projections).
-
-
 
 ## Aggregate Creation
 
@@ -220,11 +213,7 @@ public class TripProjection: AggregateProjection<Trip>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L44-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be 
-an argument for the specific event type or `Event<T>` where `T` is the event type if you need access to event metadata. You can also take in
-an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get
-at event metadata.
-
+The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `Event<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
 
 ## Applying Changes to the Aggregate Document
 
@@ -233,8 +222,7 @@ at event metadata.
 Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
 :::
 
-To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the 
-overloads of `ProjectEvent()`:
+To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the overloads of `ProjectEvent()`:
 
 <!-- snippet: sample_using_ProjectEvent_in_aggregate_projection -->
 <a id='snippet-sample_using_projectevent_in_aggregate_projection'></a>
@@ -303,9 +291,7 @@ public class TripProjection: AggregateProjection<Trip>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L44-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 The `Apply()` methods can accept any combination of these arguments:
-
 
 1. The actual event type
 1. `Event<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
@@ -319,8 +305,6 @@ The valid return types are:
 1. The aggregate type itself, and this allows you to use immutable aggregate types
 1. `Task` if you are mutating the aggregate document with the use of external data read through `IQuerySession`
 1. `Task<T>` where `T` is the aggregate type. This allows you to use immutable aggregate types while also using external data read through `IQuerySession`
-
-
 
 ## Deleting the Aggregate Document
 
@@ -416,14 +400,7 @@ The `ShouldDelete()` method can take any combination of these arguments:
 1. `IQuerySession` if you need to do additional data lookups
 1. The aggregate type
 
-Additionally, `ShouldDelete()` methods should return either a `Boolean` or `Task<Boolean>` if doing data lookups with `IQuerySession` -- and we'very 
-strongly recommend using strictly asynchronous APIs if running the projection asynchronously or using `SaveChangesAsync()` when executing projections
-inline.
-
-
-
-
-
+Additionally, `ShouldDelete()` methods should return either a `Boolean` or `Task<Boolean>` if doing data lookups with `IQuerySession` -- and we'very strongly recommend using strictly asynchronous APIs if running the projection asynchronously or using `SaveChangesAsync()` when executing projections inline.
 
 ## "Self-Aggregates"
 
@@ -517,4 +494,3 @@ internal async Task use_a_self_aggregate()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AsyncDaemon.Testing/TestingSupport/TripAggregationWithCustomName.cs#L83-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_self_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
