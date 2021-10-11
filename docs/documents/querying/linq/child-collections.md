@@ -6,7 +6,6 @@ Marten V4 greatly improved Marten's abilities to query within child collections 
 
 ## Quantifier Operations within Child Collections
 
-
 Marten supports the `Any()` and `Contains()` [quantifier operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/quantifier-operations) within child collections.
 
 The following code sample demonstrates the supported Linq patterns for collection searching:
@@ -89,7 +88,6 @@ theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_561_negation_of_query_on_contains.cs#L67-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Querying within Value IEnumerables
 
@@ -287,5 +285,3 @@ var posts = theSession.Query<Post>()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_IsSubsetOf_Tests.cs#L31-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_subset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
