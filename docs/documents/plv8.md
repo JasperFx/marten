@@ -30,14 +30,13 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/document_transforms.cs#L36-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_loading_js_transform_files' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-To enable these features, Marten provides **Marten.PLv8** plugin. 
+To enable these features, Marten provides **Marten.PLv8** plugin.
 
 Install it through the [Nuget package](https://www.nuget.org/packages/Marten.PLv8/).
 
 ```powershell
 PM> Install-Package Marten.PLv8
 ```
-
 
 ## The Patching API
 
@@ -486,8 +485,6 @@ using (var query = theStore.QuerySession())
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L772-L782' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_delete_property_from_many_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
-
 ## Javascript Transformations
 
 The patch API provides some out of the box recipes for common document transforms and the [document projections](/documents/querying/linq/projections) in the Linq support gives you the ability to do some basic transformations of the persisted JSON data in the database as part of querying. If your needs fall outside of these simple built in mechanism, you're still in luck because you can resort to using custom Javascript functions that will run inside of Postgresql itself to do more advanced document transformations.
@@ -706,8 +703,6 @@ private static void transform_example(IDocumentStore store)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Transforms/document_transforms.cs#L59-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_transform_example' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
-
 ## Installing plv8 on Windows
 
 In order to use the JavaScript functions, you need to install plv8. The Windows install of PostgreSQL 9.5 / 9.6, and possibly future versions, do not come with plv8 installed.
@@ -745,9 +740,9 @@ Download the version that corresponds to the version of PostgreSQL you installed
 
 The zip should contain 3 folders:
 
-- bin
-- lib
-- share
+* bin
+* lib
+* share
 
 Move the contents of bin to:
 
