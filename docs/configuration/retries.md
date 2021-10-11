@@ -115,4 +115,3 @@ c.RetryPolicy(DefaultRetryPolicy.Twice());
 <!-- endSnippet -->
 
 Also you could use the fantastic [Polly](https://www.nuget.org/packages/polly) library to easily build more resilient and expressive retry policies by implementing `IRetryPolicy`.
-

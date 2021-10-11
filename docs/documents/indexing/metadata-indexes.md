@@ -3,8 +3,6 @@
 The performance of specific queries that include [document and event metadata](/documents/metadata) columns
 Marten provides some predefined indexes you may optionally enable
 
-
-
 ## Last Modified
 
 Should you be using the `ModifiedSince(DateTimeOffset)` or `ModifiedBefore(DateTimeOffset)` you can ask Marten to create

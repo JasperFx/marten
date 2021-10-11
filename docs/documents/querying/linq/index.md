@@ -44,4 +44,3 @@ At this point, Marten's Linq support has been tested against these .Net types:
 1. `Boolean`
 1. `Double`
 1. `Float`
-

@@ -313,7 +313,7 @@ The behavior is different enough from Newtonsoft.Json that conversions of existi
 applications to System.Text.Json should be done with quite a bit of caution and testing.
 :::
 
-New in Marten V4 is support for the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/api/system.text.json?view=net-5.0) serializer. 
+New in Marten V4 is support for the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/api/system.text.json?view=net-5.0) serializer.
 
 <!-- snippet: sample_using_STJ_serialization -->
 <a id='snippet-sample_using_stj_serialization'></a>
@@ -438,4 +438,3 @@ var store = DocumentStore.For(_ =>
 See [Optimizing for Performance in Marten](http://jeremydmiller.com/2015/11/09/optimizing-for-performance-in-marten/)
 and [Optimizing Marten Part 2](http://jeremydmiller.com/2015/11/30/optimizing-marten-part-2/) for some performance comparisons
 of using Jil versus Newtonsoft.Json for serialization within Marten operations.
-

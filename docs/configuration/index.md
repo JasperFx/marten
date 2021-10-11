@@ -26,7 +26,6 @@ make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` s
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
 
-
 ::: tip
 Remember the movie Highlander? In the case of `DocumentStore`, there should be only one.
 `DocumentStore` is an expensive object to create that tracks any necessary
@@ -47,8 +46,6 @@ var store = DocumentStore
 <!-- endSnippet -->
 
 Most of the time however, you'll need to configure more options and integrate Marten
-into a .Net application. For most applications, you'll want to use Marten's 
-[IServiceCollection extensions](/configuration/hostbuilder) to integrate with your application. 
-If you're eschewing the .Net `HostBuilder`/`WebHostBuilder`, see [Do It Yourself IoC Integration](/configuration/ioc).
+into a .Net application. For most applications, you'll want to use Marten's [IServiceCollection extensions](/configuration/hostbuilder) to integrate with your application. If you're eschewing the .Net `HostBuilder`/`WebHostBuilder`, see [Do It Yourself IoC Integration](/configuration/ioc).
 
 For more information about Marten's configuration options, see [Working with StoreOptions](/configuration/storeoptions).
