@@ -4,8 +4,7 @@
 Marten V4 greatly improved Marten's abilities to query within child collections of documents
 :::
 
-
-### Quantifier Operations within Child Collections
+## Quantifier Operations within Child Collections
 
 
 Marten supports the `Any()` and `Contains()` [quantifier operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/quantifier-operations) within child collections.
@@ -92,7 +91,7 @@ theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
 <!-- endSnippet -->
 
 
-### Querying within Value IEnumerables
+## Querying within Value IEnumerables
 
 As of now, Marten allows you to do "contains" searches within Arrays, Lists & ILists of primitive values like string or numbers:
 
@@ -218,7 +217,7 @@ var users = session.Query<SuperUser>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IsOneOfExamples.cs#L22-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_one_of_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### In
+## In
 
 `In()` extension works exactly the same as `IsOneOf()`. It was introduced as syntactic sugar to ease RavenDB transition:
 
@@ -263,7 +262,7 @@ var users = session.Query<SuperUser>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/InExamples.cs#L22-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_in_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### IsSupersetOf
+## IsSupersetOf
 
 <!-- snippet: sample_is_superset_of -->
 <a id='snippet-sample_is_superset_of'></a>
@@ -276,7 +275,7 @@ var posts = theSession.Query<Post>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_IsSuperSetOf_Tests.cs#L16-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_superset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### IsSubsetOf
+## IsSubsetOf
 
 <!-- snippet: sample_is_subset_of -->
 <a id='snippet-sample_is_subset_of'></a>
