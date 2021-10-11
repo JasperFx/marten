@@ -2,17 +2,12 @@
 
 ::: tip
 Marten will fall back to generating dynamic types at runtime if the pre-generated type cannot be found
-in the entry assembly of the application. Marten will write warning to the `Console` when this happens if 
-the `TypeLoadMode.LoadFromPreBuiltAssembly` option is configured.
+in the entry assembly of the application. Marten will write warning to the `Console` when this happens if the `TypeLoadMode.LoadFromPreBuiltAssembly` option is configured.
 :::
 
 Also see the blog post [Dynamic Code Generation in Marten V4](https://jeremydmiller.com/2021/08/04/dynamic-code-generation-in-marten-v4/).
 
-Marten V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code. 
-This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have 
-significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not 
-a given that you’ll have these issues). Fear not though, Marten v4 introduced a facility to “generate ahead” 
-the code to greatly optimize the "cold start" and memory usage in production scenarios.
+Marten V4 extensively uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code. This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues). Fear not though, Marten v4 introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
 
 To enable the optimized cold start, there are a couple steps:
 
@@ -93,9 +88,7 @@ dotnet run -- codegen preview
 ```
 
 ::: tip
-Because the generated code can easily get out of sync with the Marten configuration at 
-development time, the Marten team recommends ignoring the generated code files in your source
-control so that stale generated code is never accidentally migrated to production.
+Because the generated code can easily get out of sync with the Marten configuration at development time, the Marten team recommends ignoring the generated code files in your source control so that stale generated code is never accidentally migrated to production.
 :::
 
 To write the generated code to your project directory, use:
@@ -120,5 +113,3 @@ To just prove out that the code generation is valid, use this command:
 ```bash
 dotnet run -- codegen test
 ```
-
-
