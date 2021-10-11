@@ -226,9 +226,7 @@ public class DocumentWithStringId
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/IdentityKeyGenerationTests.cs#L28-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-You can use the *identity keyI option for identity generation that would create string values
-of the pattern *[type alias]/[sequence]* where the type alias is typically the document class name
-in all lower case and the sequence is a *HiLo* sequence number.
+You can use the "identity key" option for identity generation that would create string values of the pattern `[type alias]/[sequence]` where the type alias is typically the document class name in all lower case and the sequence is a *HiLo* sequence number.
 
 You can opt into the *identity key* strategy for identity and even override the document alias name with this syntax:
 
@@ -245,7 +243,6 @@ var store = DocumentStore.For(opts =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/IdentityKeyGenerationTests.cs#L39-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
 
 ## Custom Identity Strategies
 
@@ -300,4 +297,3 @@ options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/CustomKeyGenerationTests.cs#L68-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
