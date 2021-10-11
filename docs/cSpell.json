@@ -76,6 +76,7 @@
         "\\`([^\\`].*?)\\`", // inline code blocks. h/t https://stackoverflow.com/questions/41274241/how-to-capture-inline-markdown-code-but-not-a-markdown-code-fence-with-regex
         "\\<a(.*)\\>", // link contents
         "-- snippet:(.*)", // snippet references
-        "\\<\\[sample:(.*)" // another kind of snippet reference
+        "\\<\\[sample:(.*)", // another kind of snippet reference
+        "/^\\s*```[\\s\\S]*?^\\s*```/gm" // ignoring multi-line code blocks
     ]
 }
