@@ -94,9 +94,7 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PLv8.Testing/Patching/patching_api.cs#L832-L848' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 TODO -- see if any of this is useful somewhere else
-
 
 ## Multi-stream Projections using ViewProjection
 

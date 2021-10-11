@@ -12,17 +12,13 @@ The *Async Daemon* is the nickname for Marten's built in asynchronous projection
 besides Postgresql and Marten itself. The daemon itself runs inside an [IHostedService](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-5.0&tabs=visual-studio) implementation in your application. The **daemon is disabled by default**.
 
 The *Async Daemon* will process events **in order** through all projections registered with an
-asynchronous lifecycle. 
+asynchronous lifecycle.
 
 First, some terminology:
 
 * *Projection* -- a projected view defined by the `IProjection` interface and registered with Marten. See also [Projections](/events/projections/).
 * *Projection Shard* -- a logical segment of events that are executed separately by the async daemon
-* *High Water Mark* -- the furthest known event sequence that the daemon "knows" that all events with 
-  that sequence or lower can be safely processed in order by projections. The high water mark will
-  frequently be a little behind the highest known event sequence number if outstanding gaps
-  in the event sequence are detected. 
-
+* *High Water Mark* -- the furthest known event sequence that the daemon "knows" that all events with that sequence or lower can be safely processed in order by projections. The high water mark will frequently be a little behind the highest known event sequence number if outstanding gaps in the event sequence are detected.
 
 There are only two basic things to configure the *Async Daemon*:
 
@@ -91,9 +87,8 @@ As of right now, the daemon can run as one of two modes:
    is that there is never more than one running system node for your application.
 1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function to guarantee that the daemon is only running on
    one active node
-   
-Regardless of how things are configured, the daemon is designed to detect when multiple running processes are updating the same projection shard and will shut down 
-the process if concurrency issues persist. 
+
+Regardless of how things are configured, the daemon is designed to detect when multiple running processes are updating the same projection shard and will shut down the process if concurrency issues persist.
 
 ## Daemon Logging
 
@@ -186,7 +181,7 @@ Any user supplied policies would take precedence over the default policies.
 
 Occasionally there might be some kind of error applying a specific event in an asynchronous projection
 where the event data itself is problematic. In this case, you may want to treat it as a *poison pill message*
-and teach the daemon to ignore that event and continue without it in the sequence. 
+and teach the daemon to ignore that event and continue without it in the sequence.
 
 Here's an example of teaching the daemon to ignore and skip events that encounter a certain type of exception:
 
@@ -230,11 +225,10 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L124-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 ## Command Line Support
 
 If you're using [Marten's command line support](/configuration/cli), you have the new `projections` command to help
-manage the daemon at development or even deployment time. 
+manage the daemon at development or even deployment time.
 
 To just start up and run the async daemon for your application in a console window, use:
 
@@ -248,7 +242,7 @@ To interactively select which projections to run, use:
 dotnet run -- projections -i
 ```
 
-or 
+or
 
 ```bash
 dotnet run -- projections --interactive
@@ -290,7 +284,6 @@ And lastly, to rebuild a single projection at a time, use:
 dotnet run -- projections --rebuild -p [shard name]
 ```
 
-
 ## Using the Async Daemon from DocumentStore
 
 All of the samples so far assumed that your application used the `AddMarten()` extension
@@ -329,5 +322,3 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L148-L178' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
