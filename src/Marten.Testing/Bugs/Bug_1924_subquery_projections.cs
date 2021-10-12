@@ -32,6 +32,7 @@ namespace Marten.Testing.Bugs
 
             var retrievedUser = await theSession
                 .Query<Bug1924User>()
+                .Select(x => new { x.Id, x.RoleIds })
                 .Select(x => new
                 {
                     x.Id,
