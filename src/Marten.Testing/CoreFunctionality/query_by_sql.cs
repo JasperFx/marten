@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq.MatchesSql;
+using Marten.Linq.SqlProjection;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -321,6 +322,51 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
 
                 user.LastName.ShouldBe("Miller");
                 user.Id.ShouldBe(u.Id);
+            }
+        }
+
+        [Fact]
+        public async Task query_with_select_sql_projection_async()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var u = new User {FirstName = "Jeremy", LastName = "Miller", Age = 1337};
+                session.Store(u);
+                session.SaveChanges();
+
+                #region sample_using-sql-projection-queryasync
+
+                var users = await session.Query<User>()
+                    .Select(x => new { Age = x.SqlProjection<int>("(data->>'Age')::integer") })
+                    .OrderBy(x => x.Age)
+                    .ToListAsync();
+                var user = users.Single();
+
+                #endregion
+
+                user.Age.ShouldBe(1337);
+            }
+        }
+
+        [Fact]
+        public async Task query_with_order_by_sql_projection_async()
+        {
+            using (var session = theStore.OpenSession())
+            {
+                var u = new User {FirstName = "Jeremy", LastName = "Miller"};
+                session.Store(u);
+                session.SaveChanges();
+
+                #region sample_using-sql-projection-queryasync
+
+                var users = await session.Query<User>()
+                    .OrderBy(x => (object)x.SqlProjection<string>("data->>'FirstName'"))
+                    .ToListAsync();
+                var user = users.Single();
+
+                #endregion
+
+                user.FirstName.ShouldBe("Jeremy");
             }
         }
 

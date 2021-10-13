@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Baseline;
 using Marten.Internal;
 using Marten.Linq.Fields;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlProjection;
 using Weasel.Postgresql;
 using Npgsql;
 using Remotion.Linq.Clauses;
@@ -95,9 +98,19 @@ namespace Marten.Linq.SqlGeneration
 
         protected void writeOrderByFragment(CommandBuilder sql, Ordering clause)
         {
-            var field = Fields.FieldFor(clause.Expression);
-            var locator = field.ToOrderExpression(clause.Expression);
-            sql.Append(locator);
+            var expression = clause.Expression;
+
+            var sqlProjectionFragment = SqlProjectionSqlFragment.TryParse(expression);
+            if (sqlProjectionFragment != null)
+            {
+                sqlProjectionFragment.Apply(sql);
+            }
+            else
+            {
+                var field = Fields.FieldFor(expression);
+                var locator = field.ToOrderExpression(expression);
+                sql.Append(locator);
+            }
 
             if (clause.OrderingDirection == OrderingDirection.Desc) sql.Append(" desc");
         }
