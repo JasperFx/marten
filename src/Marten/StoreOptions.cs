@@ -157,6 +157,13 @@ namespace Marten
         [Obsolete("Please use only for migration from Marten 2.*. It might be removed in the next major versions")]
         public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
 
+        /// <summary>
+        /// Ensures the projection daemon runs without event loss.
+        /// Requires db migrations for existing databases.
+        /// See https://github.com/JasperFx/marten/pull/1880 for details
+        /// </summary>
+        public bool UseTransactionIdFixToAvoidEventLossInProjectionDaemon => false;
+
         internal void CreatePatching()
         {
             if (PLV8Enabled)

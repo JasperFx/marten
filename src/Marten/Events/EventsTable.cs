@@ -19,7 +19,11 @@ namespace Marten.Events
             AddColumn("timestamp", "timestamptz", "default (now()) NOT NULL");
             AddColumn<TenantIdColumn>();
             AddColumn(new DotNetTypeColumn { Directive = "NULL" });
-            AddColumn("tx_id", "bigint", "default 0 NOT NULL");
+
+            if (events.Options.UseTransactionIdFixToAvoidEventLossInProjectionDaemon)
+            {
+                AddColumn("tx_id", "bigint", "default 0 NOT NULL");
+            }
 
             if (events.TenancyStyle == TenancyStyle.Conjoined)
             {
