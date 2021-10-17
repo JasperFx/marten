@@ -74,7 +74,7 @@ namespace Marten.Storage
                 return;
             }
 
-            ensureStorageExists(new List<Type>(), featureType).GetAwaiter().GetResult();
+            Task.Run(() => ensureStorageExists(new List<Type>(), featureType)).GetAwaiter().GetResult();
         }
 
         public Task EnsureStorageExistsAsync(Type featureType, CancellationToken token)
