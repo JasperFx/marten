@@ -131,16 +131,20 @@ namespace Marten.Testing.Events.Projections
         [Fact]
         public void use_event_metadata_with_string_stream_identity()
         {
-            StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
+            StoreOptions(x =>
+            {
+                x.Events.StreamIdentity = StreamIdentity.AsString;
+                x.Projections.Add(new SimpleTransformProjectionUsingMetadata());
+            });
 
-            UseProjection<SimpleTransformProjectionUsingMetadata>();
-
-            var stream = Guid.NewGuid();
+            var stream = Guid.NewGuid().ToString();
             theSession.Events.StartStream(stream, new UserCreated {UserName = "one"},
                 new UserCreated {UserName = "two"});
 
             theSession.SaveChanges();
 
+            theSession.Events.Append(stream, new UserCreated { UserName = "three" });
+            theSession.SaveChanges();
         }
 
         [Fact]
