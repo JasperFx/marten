@@ -18,7 +18,7 @@ namespace Marten.PLv8.Patching
         private readonly ISqlFragment? _filter;
         private readonly Expression<Func<T, bool>>? _filterExpression;
         private readonly DocumentSessionBase _session;
-        public readonly IDictionary<string, object> Patch = new Dictionary<string, object>();
+        public readonly IDictionary<string, object?> Patch = new Dictionary<string, object?>();
 
         public PatchExpression(ISqlFragment filter, DocumentSessionBase session)
         {
@@ -32,23 +32,22 @@ namespace Marten.PLv8.Patching
             _session = session;
         }
 
-        public void Set<TValue>(string name, TValue value) where TValue : notnull
+        public void Set<TValue>(string name, TValue value)
         {
             set(name, value);
         }
 
-        public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value) where TValue : notnull
+        public void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value)
         {
             set(toPath(expression) + $".{name}", value);
         }
 
-        public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value) where TValue : notnull
+        public void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value)
         {
             set(toPath(expression), value);
         }
 
-        public void Duplicate<TElement>(Expression<Func<T, TElement>> expression,
-            params Expression<Func<T, TElement>>[] destinations)
+        public void Duplicate<TElement>(Expression<Func<T, TElement>> expression, params Expression<Func<T, TElement>>[] destinations)
         {
             if (destinations.Length == 0)
                 throw new ArgumentException("At least one destination must be given");
@@ -96,7 +95,7 @@ namespace Marten.PLv8.Patching
             apply();
         }
 
-        public void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element) where TElement : notnull
+        public void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
         {
             Patch.Add("type", "append");
             Patch.Add("value", element);
@@ -107,7 +106,7 @@ namespace Marten.PLv8.Patching
             apply();
         }
 
-        public void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element) where TElement : notnull
+        public void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
         {
             Patch.Add("type", "append_if_not_exists");
             Patch.Add("value", element);
@@ -118,8 +117,7 @@ namespace Marten.PLv8.Patching
             apply();
         }
 
-        public void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
-            int index = 0) where TElement : notnull
+        public void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0)
         {
             Patch.Add("type", "insert");
             Patch.Add("value", element);
@@ -131,8 +129,7 @@ namespace Marten.PLv8.Patching
             apply();
         }
 
-        public void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
-            int index = 0) where TElement : notnull
+        public void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0)
         {
             Patch.Add("type", "insert_if_not_exists");
             Patch.Add("value", element);
@@ -144,8 +141,7 @@ namespace Marten.PLv8.Patching
             apply();
         }
 
-        public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element,
-            RemoveAction action = RemoveAction.RemoveFirst) where TElement : notnull
+        public void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst)
         {
             Patch.Add("type", "remove");
             Patch.Add("value", element);
@@ -190,7 +186,7 @@ namespace Marten.PLv8.Patching
             delete(toPath(expression));
         }
 
-        private void set<TValue>(string path, TValue value) where TValue : notnull
+        private void set<TValue>(string path, TValue value)
         {
             Patch.Add("type", "set");
             Patch.Add("value", value);

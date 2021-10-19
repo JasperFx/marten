@@ -628,6 +628,32 @@ namespace Marten.PLv8.Testing.Patching
             }
         }
 
+        [Fact]
+        public void can_patch_nullable_field()
+        {
+            var model = new TestModel7();
+            var nullModel = new TestModel7() { NullableObjectId = Guid.NewGuid()};
+            theSession.Store(model, nullModel);
+            theSession.SaveChanges();
+
+            var id = Guid.NewGuid();
+            using (var session = theStore.OpenSession())
+            {
+                session.Patch<TestModel7>(model.Id).Set(x => x.NullableObjectId, id);
+                session.Patch<TestModel7>(nullModel.Id).Set(x => x.NullableObjectId, null);
+                session.SaveChanges();
+            }
+
+            using (var query = theStore.QuerySession())
+            {
+                var model1 = query.Load<TestModel7>(model.Id);
+                Assert.Equal(id, model1.NullableObjectId);
+
+                var model2 = query.Load<TestModel7>(nullModel.Id);
+                Assert.Null(model2.NullableObjectId);
+            }
+        }
+
         [DocumentAlias("testmodel1")]
         public class TestModel1
         {
@@ -693,6 +719,12 @@ namespace Marten.PLv8.Testing.Patching
             public int DefinitionId { get; set; }
             public int Stage { get; set; }
             public string Text { get; set; }
+        }
+        [DocumentAlias("testmodel7")]
+        public class TestModel7
+        {
+            public Guid Id { get; set; }
+            public Guid? NullableObjectId { get; set; }
         }
 
     }
