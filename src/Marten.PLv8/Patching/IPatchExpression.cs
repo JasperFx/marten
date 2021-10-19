@@ -13,7 +13,7 @@ namespace Marten.PLv8.Patching
         /// <typeparam name="TValue"></typeparam>
         /// <param name="name"></param>
         /// <param name="value"></param>
-        void Set<TValue>(string name, TValue value) where TValue : notnull;
+        void Set<TValue>(string name, TValue value);
 
         /// <summary>
         /// Set a single field or property value within the persisted JSON data
@@ -23,7 +23,7 @@ namespace Marten.PLv8.Patching
         /// <param name="name"></param>
         /// <param name="expression">Path to the parent location</param>
         /// <param name="value"></param>
-        void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value) where TValue : notnull;
+        void Set<TParent, TValue>(string name, Expression<Func<T, TParent>> expression, TValue value);
 
         /// <summary>
         /// Set a single field or property value within the persisted JSON data
@@ -31,7 +31,7 @@ namespace Marten.PLv8.Patching
         /// <typeparam name="TValue"></typeparam>
         /// <param name="expression"></param>
         /// <param name="value"></param>
-        void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value) where TValue : notnull;
+        void Set<TValue>(Expression<Func<T, TValue>> expression, TValue value);
 
         /// <summary>
         /// Copy a single field or property value within the persisted JSON data to one or more destinations
@@ -80,7 +80,7 @@ namespace Marten.PLv8.Patching
         /// <typeparam name="TElement"></typeparam>
         /// <param name="expression"></param>
         /// <param name="element"></param>
-        void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element) where TElement : notnull;
+        void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
 
         /// <summary>
         /// Append an element to the end of a child collection on the persisted
@@ -89,7 +89,7 @@ namespace Marten.PLv8.Patching
         /// <typeparam name="TElement"></typeparam>
         /// <param name="expression"></param>
         /// <param name="element"></param>
-        void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element) where TElement : notnull;
+        void AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
 
         /// <summary>
         /// Insert an element at the designated index to a child collection on the persisted document
@@ -98,8 +98,7 @@ namespace Marten.PLv8.Patching
         /// <param name="expression"></param>
         /// <param name="element"></param>
         /// <param name="index"></param>
-        void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0)
-            where TElement : notnull;
+        void Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0);
 
         /// <summary>
         /// Insert an element at the designated index to a child collection on the persisted document
@@ -109,7 +108,7 @@ namespace Marten.PLv8.Patching
         /// <param name="expression"></param>
         /// <param name="element"></param>
         /// <param name="index"></param>
-        void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0) where TElement : notnull;
+        void InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int index = 0);
 
         /// <summary>
         /// Remove element from a child collection on the persisted document
@@ -118,7 +117,7 @@ namespace Marten.PLv8.Patching
         /// <param name="expression"></param>
         /// <param name="element"></param>
         /// <param name="action"></param>
-        void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst) where TElement : notnull;
+        void Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst);
 
         /// <summary>
         /// Rename a property or field in the persisted JSON document
