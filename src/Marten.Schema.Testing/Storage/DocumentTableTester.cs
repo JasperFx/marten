@@ -193,6 +193,20 @@ namespace Marten.Schema.Testing.Storage
         }
 
 
+        [Fact]
+        public async Task can_migrate_pk_index_name()
+        {
+            theTable.PrimaryKeyName = "pk_someothername";
+            writeTable();
+
+            var newTable = new DocumentTable(theMapping);
+
+            await writeAndApplyPatch(AutoCreate.CreateOrUpdate, newTable);
+
+            var theActual = await theTable.FetchExisting(_conn);
+
+            theActual!.PrimaryKeyName.ShouldBe($"pkey_{SchemaConstants.TablePrefix}{theMapping.Alias}_{theMapping.IdMember.Name.ToLower()}");
+        }
 
         [Fact]
         public void can_write_the_basic_table()
