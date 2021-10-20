@@ -43,7 +43,7 @@ namespace AspNetCoreWithMarten
             {
                 return _session.SaveChangesAsync();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // handle the exception
                 return Task.CompletedTask;

@@ -73,7 +73,7 @@ namespace Marten.Internal.Storage
             UseOptimisticConcurrency = document.UseOptimisticConcurrency;
 
 
-            _setter = LambdaBuilder.Setter<T, TId>(document.IdMember);
+            _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
 
             DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
                 ? (IOperationFragment) new HardDelete(this)

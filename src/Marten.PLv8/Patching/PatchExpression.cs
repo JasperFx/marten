@@ -94,14 +94,14 @@ namespace Marten.PLv8.Patching
 
             apply();
         }
-
+        //TODO NRT - Annotations are currently inaccurate here due to lack of null guards. Replace with guards in .NET 6+
         public void Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
         {
             Patch.Add("type", "append");
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
 
-            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+            PossiblyPolymorphic = element!.GetType() != typeof(TElement);
 
             apply();
         }
@@ -112,7 +112,7 @@ namespace Marten.PLv8.Patching
             Patch.Add("value", element);
             Patch.Add("path", toPath(expression));
 
-            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+            PossiblyPolymorphic = element!.GetType() != typeof(TElement);
 
             apply();
         }
@@ -124,7 +124,7 @@ namespace Marten.PLv8.Patching
             Patch.Add("path", toPath(expression));
             Patch.Add("index", index);
 
-            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+            PossiblyPolymorphic = element!.GetType() != typeof(TElement);
 
             apply();
         }
@@ -136,7 +136,7 @@ namespace Marten.PLv8.Patching
             Patch.Add("path", toPath(expression));
             Patch.Add("index", index);
 
-            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+            PossiblyPolymorphic = element!.GetType() != typeof(TElement);
 
             apply();
         }
@@ -148,7 +148,7 @@ namespace Marten.PLv8.Patching
             Patch.Add("path", toPath(expression));
             Patch.Add("action", (int)action);
 
-            PossiblyPolymorphic = element.GetType() != typeof(TElement);
+            PossiblyPolymorphic = element!.GetType() != typeof(TElement);
 
             apply();
         }

@@ -32,7 +32,7 @@ namespace Marten.Events
 
         public StreamAction Append(Guid stream, IEnumerable<object> events)
         {
-            // NRT: We're ignoring null here as to not unintentionally change any downstream behaviour - Replace with null guards in the future.
+            //TODO NRT: We're ignoring null here as to not unintentionally change any downstream behaviour - Replace with null guards in the future.
             return Append(stream, events?.ToArray()!);
         }
 

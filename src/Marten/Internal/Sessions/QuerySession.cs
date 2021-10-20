@@ -65,6 +65,10 @@ namespace Marten.Internal.Sessions
 
         internal SessionOptions? SessionOptions { get; }
 
+        /// <summary>
+        /// Used for code generation
+        /// </summary>
+#nullable disable
         protected QuerySession(StoreOptions options)
         {
             Serializer = options.Serializer();
@@ -72,6 +76,7 @@ namespace Marten.Internal.Sessions
             Options = options;
             _providers = options.Providers;
         }
+#nullable enable
 
 
         public QuerySession(
