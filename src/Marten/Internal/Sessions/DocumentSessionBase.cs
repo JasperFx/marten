@@ -16,10 +16,15 @@ namespace Marten.Internal.Sessions
 
         private Dictionary<string, NestedTenantSession>? _byTenant;
 
+        /// <summary>
+        /// Used for code generation
+        /// </summary>
+#nullable disable
         protected DocumentSessionBase(StoreOptions options): base(options)
         {
 
         }
+#nullable enable
 
         protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
             ITenant tenant): base(store, sessionOptions, database, tenant)

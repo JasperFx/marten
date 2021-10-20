@@ -14,7 +14,7 @@ namespace Marten.Linq.QueryHandlers
         internal static readonly string IdListTableName = "mt_temp_id_list";
 
         internal static readonly ISelector<string> StringValueSelector =
-            new ScalarStringSelectClause(String.Empty, String.Empty);
+            new ScalarStringSelectClause(string.Empty, string.Empty);
 
         internal static readonly ResultOperatorBase AnyOperator = new AnyResultOperator();
         internal static readonly ResultOperatorBase CountOperator = new CountResultOperator();

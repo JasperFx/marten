@@ -73,7 +73,7 @@ namespace CommandLineRunner
     {
         public Guid Id { get; set; }
         public void Apply(Arrival e) => State = e.State;
-        public string State { get; set; }
+        public string State { get; set; } = null!;
 
         public void Apply(Travel e) => Traveled += e.TotalDistance();
         public double Traveled { get; set; }

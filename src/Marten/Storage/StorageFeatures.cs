@@ -41,7 +41,7 @@ namespace Marten.Storage
         {
             if (_buildingList.IsValueCreated)
             {
-                if (_buildingList.Value.Contains(type))
+                if (_buildingList.Value!.Contains(type))
                 {
                     throw new InvalidOperationException($"Cyclic dependency between documents detected. The types are: {_buildingList.Value.Select(x => x.FullNameInCode()).Join(", ")}");
                 }
@@ -119,12 +119,12 @@ namespace Marten.Storage
             IFeatureSchema feature;
             if (ctor != null)
             {
-                feature = Activator.CreateInstance(typeof(T), _options)
+                feature = Activator.CreateInstance(typeof(T), _options)!
                     .As<IFeatureSchema>();
             }
             else
             {
-                feature = Activator.CreateInstance(typeof(T)).As<IFeatureSchema>();
+                feature = Activator.CreateInstance(typeof(T))!.As<IFeatureSchema>();
             }
 
             Add(feature);
@@ -182,7 +182,7 @@ namespace Marten.Storage
                 var message = duplicates.Select(group =>
                 {
                     return
-                        $"Document types {group.Select(x => x.DocumentType.FullName).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
+                        $"Document types {group.Select(x => x.DocumentType.FullName!).Join(", ")} all have the same document alias '{group.Key}'. You must explicitly make document type aliases to disambiguate the database schema objects";
                 }).Join("\n");
 
                 throw new AmbiguousDocumentTypeAliasesException(message);
