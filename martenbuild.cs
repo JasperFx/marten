@@ -12,7 +12,7 @@ namespace martenbuild
 {
     internal class MartenBuild
     {
-        private const string BUILD_VERSION = "3.13.5";
+        private const string BUILD_VERSION = "3.14.0";
 
         private const string DockerConnectionString =
             "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
@@ -137,7 +137,7 @@ namespace martenbuild
             // Run("git", "config user.name user_name", docTargetDir);
 
             if (exportWithGithubProjectPrefix)
-                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project v3");
+                Run("dotnet", $"stdocs export {docTargetDir} ProjectWebsite -d documentation -c src -v {BUILD_VERSION} --project marten");
             else
                 Run("dotnet", $"stdocs export {docTargetDir} Website -d documentation -c src -v {BUILD_VERSION}");
 
