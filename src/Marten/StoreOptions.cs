@@ -162,7 +162,7 @@ namespace Marten
         /// Requires db migrations for existing databases.
         /// See https://github.com/JasperFx/marten/pull/1880 for details
         /// </summary>
-        public bool UseTransactionIdFixToAvoidEventLossInProjectionDaemon => false;
+        public bool UseTransactionIdFixToAvoidEventLossInProjectionDaemon { get; set; } =  false;
 
         internal void CreatePatching()
         {
