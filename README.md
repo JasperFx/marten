@@ -145,7 +145,7 @@ Few gotchas:
 
 ### v3.x
 
-[stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used as documentation tool. The documentation content is the markdown files in the `/documentation` directory directly under the project root. Any updates to v3.x docs will need to done in [3.13 branch](https://github.com/JasperFx/marten/tree/3.13). To run the documentation website locally with auto-refresh, refer to the build commands section above.
+[stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used as documentation tool. The documentation content is the markdown files in the `/documentation` directory directly under the project root. Any updates to v3.x docs will need to done in [3.14 branch](https://github.com/JasperFx/marten/tree/3.14). To run the documentation website locally with auto-refresh, refer to the build commands section above.
 
 If you wish to insert code samples/snippet to a documentation page from the tests, wrap the code you wish to insert with
 `// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
