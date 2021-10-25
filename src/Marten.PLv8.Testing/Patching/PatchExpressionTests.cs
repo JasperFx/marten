@@ -627,7 +627,7 @@ namespace Marten.PLv8.Testing.Patching
                 session.SaveChanges();
             }
         }
-
+#nullable enable
         [Fact]
         public void can_patch_nullable_field()
         {
@@ -647,12 +647,13 @@ namespace Marten.PLv8.Testing.Patching
             using (var query = theStore.QuerySession())
             {
                 var model1 = query.Load<TestModel7>(model.Id);
-                Assert.Equal(id, model1.NullableObjectId);
+                Assert.Equal(id, model1!.NullableObjectId);
 
                 var model2 = query.Load<TestModel7>(nullModel.Id);
-                Assert.Null(model2.NullableObjectId);
+                Assert.Null(model2!.NullableObjectId);
             }
         }
+#nullable disable
 
         [DocumentAlias("testmodel1")]
         public class TestModel1
