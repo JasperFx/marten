@@ -69,5 +69,28 @@ namespace Marten.Testing.Bugs
                 query.Users.Any(x => x.Id == user2.Id);
             }
         }
+
+        [Fact]
+        public void can_get_includes_with_multiple_instances_of_same_compiled_query_in_a_session()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue {AssigneeId = user1.Id, Title = "Garage Door is busted"};
+            var issue2 = new Issue {AssigneeId = user2.Id, Title = "Garage Door is busted"};
+            var issue3 = new Issue {AssigneeId = user2.Id, Title = "Garage Door is busted"};
+
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3);
+            theSession.SaveChanges();
+
+            using var session = theStore.QuerySession();
+            var issues1 = session.Query(new IssueWithUsers()).ToArray();
+
+            Should.NotThrow(() =>
+            {
+                var issues2 = session.Query(new IssueWithUsers()).ToArray();
+            });
+        }
     }
 }
