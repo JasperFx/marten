@@ -13,7 +13,12 @@ namespace Marten.Events
             if (stream == Guid.Empty)
                 throw new ArgumentOutOfRangeException(nameof(stream), "Cannot use an empty Guid as the stream id");
 
-            var wrapped = events.Select(BuildEvent).ToArray();
+            var wrapped = events.Select(o =>
+            {
+                var e = BuildEvent(o);
+                e.StreamId = stream;
+                return e;
+            }).ToArray();
 
             if (session.WorkTracker.TryFindStream(stream, out var eventStream))
             {
@@ -35,7 +40,12 @@ namespace Marten.Events
             if (stream.IsEmpty())
                 throw new ArgumentOutOfRangeException(nameof(stream), "The stream key cannot be null or empty");
 
-            var wrapped = events.Select(BuildEvent).ToArray();
+            var wrapped = events.Select(o =>
+            {
+                var e = BuildEvent(o);
+                e.StreamKey = stream;
+                return e;
+            }).ToArray();
 
             if (session.WorkTracker.TryFindStream(stream, out var eventStream))
             {
