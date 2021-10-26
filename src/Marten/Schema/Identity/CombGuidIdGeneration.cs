@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -44,58 +45,49 @@ namespace Marten.Schema.Identity
 
         public static Guid NewGuid() => Create(Guid.NewGuid(), DateTimeOffset.UtcNow);
 
-        private static byte[] DateTimeToBytes(DateTimeOffset timestamp)
+        private static void WriteDateTime(Span<byte> destination, DateTimeOffset timestamp)
         {
             var unixTime = timestamp.ToUnixTimeMilliseconds();
-            var unixTimeBytes = BitConverter.GetBytes(unixTime);
+            Span<byte> unixTimeBytes = stackalloc byte[8];
+            BinaryPrimitives.WriteInt64LittleEndian(unixTimeBytes, unixTime);
 
-            var result = new byte[NumDateBytes];
-
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Copy(unixTimeBytes, 2, result, 0, 4);
-                Array.Copy(unixTimeBytes, 0, result, 4, 2);
-            }
-            else
-            {
-                Array.Copy(unixTimeBytes, 2, result, 0, 6);
-            }
-
-            return result;
+            unixTimeBytes.Slice(2, 4).CopyTo(destination);
+            unixTimeBytes.Slice(0, 2).CopyTo(destination.Slice(4));
         }
 
-        private static DateTimeOffset BytesToDateTime(byte[] value)
+        private static DateTimeOffset BytesToDateTime(ReadOnlySpan<byte> value)
         {
-            var unixTimeBytes = new byte[8];
+            Span<byte> unixTimeBytes = stackalloc byte[8];
+            value.Slice(4, 2).CopyTo(unixTimeBytes);
+            value.Slice(0, 4).CopyTo(unixTimeBytes.Slice(2));
+            unixTimeBytes.Slice(6).Clear();
+            var unixTime = BinaryPrimitives.ReadInt64LittleEndian(unixTimeBytes);
 
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Copy(value, 4, unixTimeBytes, 0, 2);
-                Array.Copy(value, 0, unixTimeBytes, 2, 4);
-            }
-            else
-            {
-                Array.Copy(value, 0, unixTimeBytes, 2, 6);
-            }
-
-            var unixTime = BitConverter.ToInt64(unixTimeBytes, 0);
-            var timestamp = DateTimeOffset.FromUnixTimeMilliseconds(0).AddMilliseconds(unixTime);
-            return timestamp;
+            return DateTimeOffset.FromUnixTimeMilliseconds(unixTime);
         }
 
         public static Guid Create(Guid value, DateTimeOffset timestamp)
         {
+#if NET5_0_OR_GREATER
+            Span<byte> bytes = stackalloc byte[16];
+            value.TryWriteBytes(bytes);
+#else
             var bytes = value.ToByteArray();
-            var dtbytes = DateTimeToBytes(timestamp);
+#endif
 
             // Overwrite the first six bytes with unix time
-            Array.Copy(dtbytes, 0, bytes, 0, NumDateBytes);
+            WriteDateTime(bytes, timestamp);
             return new Guid(bytes);
         }
 
         public static DateTimeOffset GetTimestamp(Guid comb)
         {
+#if NET5_0_OR_GREATER
+            Span<byte> bytes = stackalloc byte[16];
+            comb.TryWriteBytes(bytes);
+#else
             var bytes = comb.ToByteArray();
+#endif
             return BytesToDateTime(bytes);
         }
     }
