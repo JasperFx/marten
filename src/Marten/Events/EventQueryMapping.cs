@@ -33,6 +33,10 @@ namespace Marten.Events
             duplicateField(x => x.Timestamp, "timestamp");
             duplicateField(x => x.IsArchived, "is_archived");
 
+            duplicateField(x => x.EventTypeName, "type");
+            duplicateField(x => x.DotNetTypeName, SchemaConstants.DotNetTypeColumn);
+
+
             if (storeOptions.EventGraph.Metadata.CorrelationId.Enabled)
             {
                 duplicateField(x => x.CorrelationId, storeOptions.EventGraph.Metadata.CorrelationId.Name);
