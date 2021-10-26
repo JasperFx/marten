@@ -26,6 +26,19 @@ namespace Marten.Testing.Bugs
             }
         }
 
+        public class IssueWithUsersAndParam: ICompiledListQuery<Issue>
+        {
+            public List<User> Users { get; set; } = new();
+            public Guid UserId { get; set; }
+
+            public Expression<Func<IMartenQueryable<Issue>, IEnumerable<Issue>>> QueryIs()
+            {
+                return query => query
+                    .Where(x => x.AssigneeId == UserId)
+                    .Include(x => x.AssigneeId, Users);
+            }
+        }
+
         [Fact]
         public void can_get_includes_with_compiled_queries()
         {
@@ -68,6 +81,38 @@ namespace Marten.Testing.Bugs
                 query.Users.Any(x => x.Id == user1.Id);
                 query.Users.Any(x => x.Id == user2.Id);
             }
+        }
+
+        [Fact]
+        public void can_get_includes_with_multiple_instances_of_same_compiled_query_in_a_session()
+        {
+            var user1 = new User();
+            var user2 = new User();
+
+            var issue1 = new Issue {AssigneeId = user1.Id, Title = "Garage Door is busted 1"};
+            var issue2 = new Issue {AssigneeId = user2.Id, Title = "Garage Door is busted 2"};
+            var issue3 = new Issue {AssigneeId = user2.Id, Title = "Garage Door is busted 3"};
+
+            theSession.Store(user1, user2);
+            theSession.Store(issue1, issue2, issue3);
+            theSession.SaveChanges();
+
+            using var session = theStore.QuerySession();
+
+            var issuesWithUsersQry1 = new IssueWithUsersAndParam { UserId = user1.Id};
+            var issues1 = session.Query(issuesWithUsersQry1).ToArray();
+            issuesWithUsersQry1.Users.Count.ShouldBe(1);
+            issues1.Count().ShouldBe(1);
+            issuesWithUsersQry1.Users.Any(x => x.Id == user1.Id).ShouldBeTrue();
+            issuesWithUsersQry1.Users.Any(x => x.Id == user2.Id).ShouldBeFalse();
+
+            // query using another instance of compiled query `IssueWithUsers`
+            var issuesWithUsersQry2 = new IssueWithUsersAndParam { UserId = user2.Id};
+            var issues2 = session.Query(issuesWithUsersQry2).ToArray();
+            issuesWithUsersQry2.Users.Count.ShouldBe(1);
+            issues2.Count().ShouldBe(2);
+            issuesWithUsersQry2.Users.Any(x => x.Id == user2.Id).ShouldBeTrue();
+            issuesWithUsersQry2.Users.Any(x => x.Id == user1.Id).ShouldBeFalse();
         }
     }
 }

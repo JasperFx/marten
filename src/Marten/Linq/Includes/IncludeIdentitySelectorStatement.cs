@@ -60,6 +60,9 @@ namespace Marten.Linq.Includes
 
         protected override void configure(CommandBuilder sql)
         {
+            sql.Append("drop table if exists ");
+            sql.Append(ExportName);
+            sql.Append(";\n");
             sql.Append("create temp table ");
             sql.Append(ExportName);
             sql.Append(" as (\n");
