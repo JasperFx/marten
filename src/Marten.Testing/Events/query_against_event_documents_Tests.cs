@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -55,8 +56,24 @@ namespace Marten.Testing.Events
                 .OrderBy(x => x)
                 .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-            theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
-                .Single().Id.ShouldBe(departed2.Id);
+            theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+                .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
+        }
+
+        [Fact]
+        public async Task can_query_against_event_metadata()
+        {
+            var sql = theSession.Events
+                .QueryAllRawEvents()
+                .Where(x => x.Sequence >= 123)
+                .Where(x => x.EventTypeName == "SomethingHappenedEvent")
+                .Where(x => x.DotNetTypeName == "AlsoWrong")
+                .OrderBy(x => x.EventTypeName)
+                .Take(3)
+                .ToCommand().CommandText;
+
+            sql.ShouldNotContain("d.data ->> 'EventTypeName' = :p1", StringComparisonOption.Default);
+            sql.ShouldNotContain("d.data ->> 'DotNetTypeName' = :p2", StringComparisonOption.Default);
         }
 
         [Fact]
