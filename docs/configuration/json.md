@@ -325,7 +325,7 @@ var store = DocumentStore.For(opts =>
     // Opt into System.Text.Json serialization
     opts.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
 
-    // Optionally add the serializer directly
+    // Optionally configure the serializer directly
     opts.Serializer(new SystemTextJsonSerializer
     {
         // Optionally override the enum storage
