@@ -371,11 +371,11 @@ public void remove_repeated_primitive_elements()
 
     var random = new Random();
     var child = target.NumberArray[random.Next(0, initialCount)];
-    var occurences = target.NumberArray.Count(e => e == child);
-    if (occurences < 2)
+    var occurances = target.NumberArray.Count(e => e == child);
+    if (occurances < 2)
     {
         target.NumberArray = target.NumberArray.Concat(new[] { child }).ToArray();
-        ++occurences;
+        ++occurances;
         ++initialCount;
     }
 
@@ -388,7 +388,7 @@ public void remove_repeated_primitive_elements()
     using (var query = theStore.QuerySession())
     {
         var target2 = query.Load<Target>(target.Id);
-        target2.NumberArray.Length.ShouldBe(initialCount - occurences);
+        target2.NumberArray.Length.ShouldBe(initialCount - occurances);
 
         target2.NumberArray.ShouldHaveTheSameElementsAs(target.NumberArray.Except(new[] { child }));
     }

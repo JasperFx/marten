@@ -15,9 +15,9 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing
 {
-    public class ViewProjectionTests : DaemonContext
+    public class ViewProjectionTests: DaemonContext
     {
-        public ViewProjectionTests(ITestOutputHelper output) : base(output)
+        public ViewProjectionTests(ITestOutputHelper output): base(output)
         {
         }
 
@@ -66,7 +66,7 @@ namespace Marten.AsyncDaemon.Testing
         {
             StoreOptions(x => x.Projections.Add(new DayProjection()));
 
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(Day));
+            await theStore.Tenancy.Default.EnsureStorageExistsAsync(typeof(Day));
 
             using var agent = await StartDaemon();
 
@@ -164,4 +164,7 @@ namespace Marten.AsyncDaemon.Testing
     }
 
     #endregion
+
+
+
 }

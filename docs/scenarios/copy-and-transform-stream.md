@@ -19,8 +19,8 @@ var slayed2 = new MonsterSlayed { Name = "Dragon" };
 
 using (var session = theStore.OpenSession())
 {
-    session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
-    session.SaveChanges();
+	session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
+	session.SaveChanges();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ScenarioCopyAndReplaceStream.cs#L24-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-setup' title='Start of snippet'>anchor</a></sup>
@@ -33,25 +33,25 @@ Next, we introduce a new event type to expand the `MembersJoined` to a series of
 ```cs
 public class MemberJoined
 {
-    public int Day { get; set; }
-    public string Location { get; set; }
-    public string Name { get; set; }
+	public int Day { get; set; }
+	public string Location { get; set; }
+	public string Name { get; set; }
 
-    public MemberJoined()
-    {
-    }
+	public MemberJoined()
+	{
+	}
 
-    public MemberJoined(int day, string location, string name)
-    {
-        Day = day;
-        Location = location;
-        Name = name;
-    }
+	public MemberJoined(int day, string location, string name)
+	{
+		Day = day;
+		Location = location;
+		Name = name;
+	}
 
-    public static MemberJoined[] From(MembersJoined @event)
-    {
-        return @event.Members.Select(x => new MemberJoined(@event.Day, @event.Location, x)).ToArray();
-    }
+	public static MemberJoined[] From(MembersJoined @event)
+	{
+		return @event.Members.Select(x => new MemberJoined(@event.Day, @event.Location, x)).ToArray();
+	}
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ScenarioCopyAndReplaceStream.cs#L76-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-newevent' title='Start of snippet'>anchor</a></sup>
@@ -64,38 +64,38 @@ Lastly, we want trolls (`MonsterSlayed`) removed from our stream. However, the s
 ```cs
 using (var session = theStore.OpenSession())
 {
-    var events = session.Events.FetchStream(started.Name);
+	var events = session.Events.FetchStream(started.Name);
 
-    var transformedEvents = events.SelectMany(x =>
-    {
-        switch (x.Data)
-        {
-            case MonsterSlayed monster:
-            {
-                // Trolls we remove from our transformed stream
-                return monster.Name.Equals("Troll") ? new object[] { } : new[] { monster };
-            }
-            case MembersJoined members:
-            {
-                // MembersJoined events we transform into a series of events
-                return MemberJoined.From(members);
-            }
-        }
+	var transformedEvents = events.SelectMany(x =>
+	{
+		switch (x.Data)
+		{
+			case MonsterSlayed monster:
+			{
+				// Trolls we remove from our transformed stream
+				return monster.Name.Equals("Troll") ? new object[] { } : new[] { monster };
+			}
+			case MembersJoined members:
+			{
+				// MembersJoined events we transform into a series of events
+				return MemberJoined.From(members);
+			}
+		}
 
-        return new[] { x.Data };
-    }).Where(x => x != null).ToArray();
+		return new[] { x.Data };
+	}).Where(x => x != null).ToArray();
 
-    var moveTo = $"{started.Name} without Trolls";
-    // We copy the transformed events to a new stream
-    session.Events.StartStream<Quest>(moveTo, transformedEvents);
-    // And additionally mark the old stream as moved. Furthermore, we assert on the new expected stream version to guard against any racing updates
-    session.Events.Append(started.Name, events.Count + 1, new StreamMovedTo
-    {
-        To = moveTo
-    });
+	var moveTo = $"{started.Name} without Trolls";
+	// We copy the transformed events to a new stream
+	session.Events.StartStream<Quest>(moveTo, transformedEvents);
+	// And additionally mark the old stream as moved. Furthermore, we assert on the new expected stream version to guard against any racing updates
+	session.Events.Append(started.Name, events.Count + 1, new StreamMovedTo
+	{
+		To = moveTo
+	});
 
-    // Transactionally update the streams.
-    session.SaveChanges();
+	// Transactionally update the streams.
+	session.SaveChanges();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ScenarioCopyAndReplaceStream.cs#L37-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-transform' title='Start of snippet'>anchor</a></sup>
@@ -108,7 +108,7 @@ As the new stream is produced, within the same transaction we introduce an event
 ```cs
 public class StreamMovedTo
 {
-    public string To { get; set; }
+	public string To { get; set; }
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ScenarioCopyAndReplaceStream.cs#L101-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-streammoved' title='Start of snippet'>anchor</a></sup>

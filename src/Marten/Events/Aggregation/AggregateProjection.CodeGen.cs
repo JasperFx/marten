@@ -224,6 +224,11 @@ namespace Marten.Events.Aggregation
             return assembly;
         }
 
+        protected virtual Type baseTypeForAggregationRuntime()
+        {
+            return typeof(AggregationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
+        }
+
         private void buildInlineAggregationType(GeneratedAssembly assembly)
         {
             var inlineBaseType =

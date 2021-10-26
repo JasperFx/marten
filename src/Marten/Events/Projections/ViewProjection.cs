@@ -207,5 +207,10 @@ namespace Marten.Events.Projections
         {
             yield break;
         }
+
+        protected override Type baseTypeForAggregationRuntime()
+        {
+            return typeof(CrossStreamAggregationRuntime<,>).MakeGenericType(typeof(TDoc), typeof(TId));
+        }
     }
 }
