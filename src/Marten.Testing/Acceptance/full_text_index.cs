@@ -667,6 +667,25 @@ namespace Marten.Testing.Acceptance
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
+        public void creating_full_text_index_no_parameters_should_include_regconfig_in_sql_command_and_schemadiff_should_match()
+        {
+            StoreOptions(_ =>
+            {
+                _.Schema.For<Target>()
+                    .FullTextIndex();
+            });
+
+            var data = Target.GenerateRandomData(1).ToArray();
+            theStore.BulkInsert(data);
+
+            theStore.Storage
+                .ShouldContainIndexDefinitionFor<Target>(
+                    indexName: $"mt_doc_target_idx_fts",
+                    dataConfig: "data"
+                );
+        }
+
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
         public void using_a_full_text_index_through_attribute_on_class_with_default()
         {
             StoreOptions(_ => _.RegisterDocumentType<Book>());
@@ -868,7 +887,7 @@ namespace Marten.Testing.Acceptance
 
             SpecificationExtensions.ShouldContain(ddl, $"CREATE INDEX {indexName}");
             SpecificationExtensions.ShouldContain(ddl, $"ON {tableName}");
-            SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}', {dataConfig})");
+            SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}'::regconfig, {dataConfig})");
 
             if (regConfig != null)
             {
