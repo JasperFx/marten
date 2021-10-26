@@ -39,4 +39,5 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
         <PackageReference Include="Oakton" Version="3.1.0" />
     </ItemGroup>
+    <Import Project="../../Analysis.Build.props" />
 </Project>
