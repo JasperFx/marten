@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Internal.Storage;
 using Marten.Schema.BulkLoading;
 using Marten.Storage;
@@ -15,6 +17,20 @@ namespace Marten.Internal.CodeGeneration
         public BulkLoader(IDocumentStorage<T, TId> storage)
         {
             _storage = storage;
+        }
+
+        public int GetEnumIntValue<TEnum>(TEnum? value) where TEnum : struct
+        {
+            if (value.HasValue) return value.Value.As<int>();
+
+            return 0;
+        }
+
+        public string GetEnumStringValue<TEnum>(TEnum? value) where TEnum : struct
+        {
+            if (value.HasValue) return value.Value.ToString();
+
+            return "EMPTY";
         }
 
         public void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
