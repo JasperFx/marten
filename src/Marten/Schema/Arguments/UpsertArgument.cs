@@ -7,6 +7,7 @@ using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Internal.CodeGeneration;
 using Marten.Services;
 using Marten.Util;
 using Npgsql;
@@ -178,29 +179,45 @@ END
                 : Constant.ForEnum(DbType).Usage;
 
 
-
-            if (DotNetType.IsEnum)
+            var memberPath = _members.Select(x => x.Name).Join("?.");
+            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
             {
-                if (mapping.EnumStorage == EnumStorage.AsInteger)
-                {
-                    load.Frames.Code($"writer.Write((int)document.{_members.Last().Name}, {{0}});", NpgsqlDbType.Integer);
-                }
-                else if (DotNetType.IsNullable())
-                {
+                var isDeep = _members.Length > 0;
+                var memberType = _members.Last().GetMemberType();
+                var isNullable = memberType.IsNullable();
 
-                    load.Frames.Code($"writer.Write(document.{_members.Last().Name}?.ToString(), {{0}});", NpgsqlDbType.Varchar);
+                var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
+
+                var accessor = memberPath;
+
+                if (DbType == NpgsqlDbType.Integer)
+                {
+                    if (isNullable || isDeep)
+                    {
+                        accessor =
+                            $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
+                    }
+
+                    load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Integer);
                 }
                 else
                 {
-                    load.Frames.Code($"writer.Write(document.{_members.Last().Name}.ToString(), {{0}});", NpgsqlDbType.Varchar);
+                    if (isNullable || isDeep)
+                    {
+                        accessor =
+                            $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
+                    }
+
+                    load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Varchar);
                 }
             }
             else
             {
-                load.Frames.Code($"writer.Write(document.{_members.Last().Name}, {dbTypeString});");
+                load.Frames.Code($"writer.Write(document.{memberPath}, {dbTypeString});");
             }
 
         }
+
 
         public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {
@@ -212,26 +229,44 @@ END
                 : Constant.ForEnum(DbType).Usage;
 
 
-
-            if (DotNetType.IsEnum)
+            var memberPath = _members.Select(x => x.Name).Join("?.");
+            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
             {
-                if (mapping.EnumStorage == EnumStorage.AsInteger)
-                {
-                    load.Frames.CodeAsync($"await writer.WriteAsync((int)document.{_members.Last().Name}, {{0}}, {{1}});", NpgsqlDbType.Integer, Use.Type<CancellationToken>());
-                }
-                else if (DotNetType.IsNullable())
-                {
+                var isDeep = _members.Length > 0;
+                var memberType = _members.Last().GetMemberType();
+                var isNullable = memberType.IsNullable();
 
-                    load.Frames.CodeAsync($"await writer.WriteAsync(document.{_members.Last().Name}?.ToString(), {{0}}, {{1}});", NpgsqlDbType.Varchar, Use.Type<CancellationToken>());
+                var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
+                var accessor = memberPath;
+
+                if (DbType == NpgsqlDbType.Integer)
+                {
+                    if (isNullable || isDeep)
+                    {
+                        accessor =
+                            $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{memberPath})";
+                    }
+
+                    load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Integer, Use.Type<CancellationToken>());
                 }
                 else
                 {
-                    load.Frames.CodeAsync($"await writer.WriteAsync(document.{_members.Last().Name}.ToString(), {{0}}, {{1}});", NpgsqlDbType.Varchar, Use.Type<CancellationToken>());
+                    if (isNullable || isDeep)
+                    {
+                        accessor =
+                            $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
+                    }
+                    else
+                    {
+                        accessor = $"document.{memberPath}.ToString()";
+                    }
+
+                    load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Varchar, Use.Type<CancellationToken>());
                 }
             }
             else
             {
-                load.Frames.CodeAsync($"await writer.WriteAsync(document.{_members.Last().Name}, {dbTypeString}, {{0}});", Use.Type<CancellationToken>());
+                load.Frames.CodeAsync($"await writer.WriteAsync(document.{memberPath}, {dbTypeString}, {{0}});", Use.Type<CancellationToken>());
             }
         }
     }
