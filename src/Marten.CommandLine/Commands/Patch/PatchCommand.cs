@@ -42,7 +42,7 @@ namespace Marten.CommandLine.Commands.Patch
 
                 input.WriteLine(ConsoleColor.Green, "Wrote the drop file to " + dropFile);
 
-                rules.WriteTemplatedFile(input.FileName, (r, w) => patch.WriteAllRollbacks(w, r));
+                rules.WriteTemplatedFile(dropFile, (r, w) => patch.WriteAllRollbacks(w, r));
 
                 return true;
             }
