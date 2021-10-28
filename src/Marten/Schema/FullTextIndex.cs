@@ -63,7 +63,7 @@ namespace Marten.Schema
         {
             get
             {
-                return new string[] { $"( to_tsvector('{_regConfig}', {_dataConfig}) )"};
+                return new string[] { $"to_tsvector('{_regConfig}',{_dataConfig.Trim()})"};
             }
             set
             {

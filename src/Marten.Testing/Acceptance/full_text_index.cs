@@ -6,7 +6,9 @@ using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Acceptance
@@ -846,6 +848,38 @@ namespace Marten.Testing.Acceptance
             Assert.Contains("drop index if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
         }
 
+        [PgVersionTargetedFact(MinimumVersion = "10.0")]
+        public async Task migration_from_v3_to_v4_should_not_result_in_schema_difference()
+        {
+            // setup/simulate a full text index as in v3
+            StoreOptions(_ =>
+            {
+                _.Schema.For<User>().FullTextIndex();
+            });
+
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            // drop and recreate index with a sql statement not containing `::regconfig`
+            await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+            {
+                await conn.OpenAsync();
+                await conn.CreateCommand("DROP INDEX if exists fulltext.mt_doc_user_idx_fts")
+                    .ExecuteNonQueryAsync();
+                await conn.CreateCommand("CREATE INDEX mt_doc_user_idx_fts ON fulltext.mt_doc_user USING gin (( to_tsvector('english', data) ))")
+                    .ExecuteNonQueryAsync();
+            }
+
+            // create another store and check if there is no schema difference
+            var store2 = DocumentStore.For(_ =>
+            {
+                _.Connection(ConnectionSource.ConnectionString);
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+                _.DatabaseSchemaName = "fulltext";
+
+                _.Schema.For<User>().FullTextIndex();
+            });
+            await Should.NotThrowAsync(async () => await store2.Schema.AssertDatabaseMatchesConfigurationAsync());
+        }
     }
 
     public static class FullTextIndexTestsExtension
@@ -868,7 +902,7 @@ namespace Marten.Testing.Acceptance
 
             SpecificationExtensions.ShouldContain(ddl, $"CREATE INDEX {indexName}");
             SpecificationExtensions.ShouldContain(ddl, $"ON {tableName}");
-            SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}', {dataConfig})");
+            SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}',{dataConfig})");
 
             if (regConfig != null)
             {
