@@ -66,7 +66,8 @@ namespace Marten
             if (_logger.IsEnabled(LogLevel.Debug))
             {
                 _logger.LogDebug(
-                    $"Persisted {lastCommit.Updated.Count()} updates in {_stopwatch?.ElapsedMilliseconds ?? 0} ms, {lastCommit.Inserted.Count()} inserts, and {lastCommit.Deleted.Count()} deletions");
+                    "Persisted {UpdateCount} updates in {ElapsedMilliseconds} ms, {InsertedCount} inserts, and {DeletedCount} deletions",
+                    lastCommit.Updated.Count(), _stopwatch?.ElapsedMilliseconds ?? 0, lastCommit.Inserted.Count(), lastCommit.Deleted.Count());
             }
         }
 

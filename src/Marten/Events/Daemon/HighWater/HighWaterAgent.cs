@@ -174,7 +174,7 @@ namespace Marten.Events.Daemon.HighWater
             }
             catch (Exception e)
             {
-                _logger.LogError("Error trying to stop the HighWaterAgent", e);
+                _logger.LogError(e, "Error trying to stop the HighWaterAgent");
             }
 
             return Task.CompletedTask;
