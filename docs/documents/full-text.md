@@ -236,7 +236,7 @@ public class BlogPost
 ## Text Search
 
 Postgres contains built in [Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define (full text indexes)(/documents/configuration/full_text) and perform queries on them.
-Currently three types of full Text Search functions are supported:
+Currently four types of full Text Search functions are supported:
 
 * regular Search (to_tsquery)
 
