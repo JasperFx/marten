@@ -28,7 +28,7 @@ namespace Marten.Events.Querying
 
         public async Task<StreamState> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            return (await reader.ReadAsync(token)) ? await ResolveAsync(session, reader, token) : null;
+            return (await reader.ReadAsync(token).ConfigureAwait(false)) ? await ResolveAsync(session, reader, token).ConfigureAwait(false) : null;
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
@@ -46,7 +46,7 @@ namespace Marten.Events.Querying
 
         public async Task SetAggregateTypeAsync(StreamState state, DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var typeName = await reader.IsDBNullAsync(2, token) ? null : await reader.GetFieldValueAsync<string>(2, token);
+            var typeName = await reader.IsDBNullAsync(2, token).ConfigureAwait(false) ? null : await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             if (typeName.IsNotEmpty()) state.AggregateType = session.Options.EventGraph.AggregateTypeFor(typeName);
         }
     }

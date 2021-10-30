@@ -64,7 +64,7 @@ namespace Marten.Events.Aggregation
 
             if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline)
             {
-                aggregate = await Storage.LoadAsync(slice.Id, session, cancellation);
+                aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
             }
 
             var exists = aggregate != null;
@@ -73,7 +73,7 @@ namespace Marten.Events.Aggregation
             {
                 try
                 {
-                    aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation);
+                    aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation).ConfigureAwait(false);
                 }
                 catch (MartenCommandException)
                 {
@@ -126,7 +126,7 @@ namespace Marten.Events.Aggregation
                 .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
                 .ToArray();
 
-            var slices = await Slicer.SliceInlineActions(operations, filteredStreams, Tenancy);
+            var slices = await Slicer.SliceInlineActions(operations, filteredStreams, Tenancy).ConfigureAwait(false);
 
             var martenSession = (DocumentSessionBase)operations;
             foreach (var slice in slices)
@@ -139,7 +139,7 @@ namespace Marten.Events.Aggregation
                 }
                 else
                 {
-                    operation = await DetermineOperation(martenSession, slice, cancellation);
+                    operation = await DetermineOperation(martenSession, slice, cancellation).ConfigureAwait(false);
                 }
 
                 if (operation != null) operations.QueueOperation(operation);
@@ -152,7 +152,7 @@ namespace Marten.Events.Aggregation
 
             using (var session = store.QuerySession())
             {
-                groups = await Slicer.SliceAsyncEvents(session, range.Events, store.Tenancy);
+                groups = await Slicer.SliceAsyncEvents(session, range.Events, store.Tenancy).ConfigureAwait(false);
             }
 
             return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);

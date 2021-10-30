@@ -43,7 +43,7 @@ namespace Marten.Events.Daemon
             try
             {
                 Agent = _store.BuildProjectionDaemon(_logger);
-                await Coordinator.Start(Agent, cancellationToken);
+                await Coordinator.Start(Agent, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -62,8 +62,8 @@ namespace Marten.Events.Daemon
             try
             {
                 _logger.LogDebug("Stopping the asynchronous projection agent");
-                await Coordinator.Stop();
-                await Agent.StopAll();
+                await Coordinator.Stop().ConfigureAwait(false);
+                await Agent.StopAll().ConfigureAwait(false);
             }
             catch (Exception e)
             {

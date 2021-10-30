@@ -37,7 +37,7 @@ namespace Marten.Events.Daemon.HighWater
         {
             IsRunning = true;
 
-            _current = await _detector.Detect(_token);
+            _current = await _detector.Detect(_token).ConfigureAwait(false);
 
             _tracker.Publish(new ShardState(ShardState.HighWaterMark, _current.CurrentMark){Action = ShardAction.Started});
 
@@ -55,7 +55,7 @@ namespace Marten.Events.Daemon.HighWater
         {
             try
             {
-                _current = await _detector.Detect(_token);
+                _current = await _detector.Detect(_token).ConfigureAwait(false);
 
                 if (_current.CurrentMark > 0)
                 {
@@ -67,19 +67,19 @@ namespace Marten.Events.Daemon.HighWater
                 _logger.LogError(e, "Failed while making the initial determination of the high water mark");
             }
 
-            await Task.Delay(_settings.FastPollingTime, _token);
+            await Task.Delay(_settings.FastPollingTime, _token).ConfigureAwait(false);
 
             while (!_token.IsCancellationRequested)
             {
                 HighWaterStatistics statistics = null;
                 try
                 {
-                    statistics = await _detector.Detect(_token);
+                    statistics = await _detector.Detect(_token).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "Failed while trying to detect high water statistics");
-                    await Task.Delay(_settings.SlowPollingTime, _token);
+                    await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
                     continue;
                 }
 
@@ -88,11 +88,11 @@ namespace Marten.Events.Daemon.HighWater
                 switch (status)
                 {
                     case HighWaterStatus.Changed:
-                        await markProgress(statistics, _settings.FastPollingTime);
+                        await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
                         break;
 
                     case HighWaterStatus.CaughtUp:
-                        await markProgress(statistics, _settings.SlowPollingTime);
+                        await markProgress(statistics, _settings.SlowPollingTime).ConfigureAwait(false);
                         break;
 
                     case HighWaterStatus.Stale:
@@ -100,11 +100,11 @@ namespace Marten.Events.Daemon.HighWater
                         var delayTime = safeHarborTime.Subtract(statistics.Timestamp);
                         if (delayTime.TotalSeconds > 0)
                         {
-                            await Task.Delay(delayTime, _token);
+                            await Task.Delay(delayTime, _token).ConfigureAwait(false);
                         }
 
-                        statistics = await _detector.DetectInSafeZone(safeHarborTime, _token);
-                        await markProgress(statistics, _settings.FastPollingTime);
+                        statistics = await _detector.DetectInSafeZone(safeHarborTime, _token).ConfigureAwait(false);
+                        await markProgress(statistics, _settings.FastPollingTime).ConfigureAwait(false);
                         break;
                 }
             }
@@ -117,7 +117,7 @@ namespace Marten.Events.Daemon.HighWater
             // don't bother sending updates if the current position is 0
             if (statistics.CurrentMark == 0 || statistics.CurrentMark == _tracker.HighWaterMark)
             {
-                await Task.Delay(delayTime, _token);
+                await Task.Delay(delayTime, _token).ConfigureAwait(false);
                 return;
             }
 
@@ -127,7 +127,7 @@ namespace Marten.Events.Daemon.HighWater
             }
             _current = statistics;
             _tracker.MarkHighWater(statistics.CurrentMark);
-            await Task.Delay(delayTime, _token);
+            await Task.Delay(delayTime, _token).ConfigureAwait(false);
         }
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
@@ -159,7 +159,7 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task CheckNow()
         {
-            var statistics = await _detector.Detect(_token);
+            var statistics = await _detector.Detect(_token).ConfigureAwait(false);
             _tracker.MarkHighWater(statistics.CurrentMark);
         }
 

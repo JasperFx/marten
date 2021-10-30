@@ -36,7 +36,7 @@ namespace Marten
         public static async Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql, CancellationToken token = default, params object[] parameters)
         {
             var task = (Task)QueryMethodAsync.MakeGenericMethod(type).Invoke(session, new object[] { sql, token, parameters });
-            await task;
+            await task.ConfigureAwait(false);
             return (IReadOnlyList<object>)task.GetType().GetProperty("Result").GetValue(task);
         }
     }

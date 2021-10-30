@@ -126,11 +126,11 @@ namespace Marten.Events.Aggregation
                 {
                     using var session = (DocumentSessionBase) store.LightweightSession(slice.Tenant.TenantId);
 
-                    operation = await runtime.DetermineOperation(session, slice, parent.Cancellation, ProjectionLifecycle.Async);
-                }, parent.Cancellation, group:parent, logException: (l, e) =>
+                    operation = await runtime.DetermineOperation(session, slice, parent.Cancellation, ProjectionLifecycle.Async).ConfigureAwait(false);
+                }, parent.Cancellation, @group:parent, logException: (l, e) =>
                 {
                     l.LogError(e, "Failure trying to build a storage operation to update {DocumentType} with {Id}", typeof(TDoc).FullNameInCode(), slice.Id);
-                }, actionMode:GroupActionMode.Child);
+                }, actionMode:GroupActionMode.Child).ConfigureAwait(false);
 
                 return operation;
             }, new ExecutionDataflowBlockOptions
@@ -179,9 +179,9 @@ namespace Marten.Events.Aggregation
                 using (var session = (IMartenSession) store.LightweightSession(Tenant.TenantId))
                 {
                     aggregates = await runtime.Storage
-                        .LoadManyAsync(ids, session, token);
+                        .LoadManyAsync(ids, session, token).ConfigureAwait(false);
                 }
-            }, token);
+            }, token).ConfigureAwait(false);
 
             if (token.IsCancellationRequested || aggregates == null) return;
 
@@ -202,14 +202,14 @@ namespace Marten.Events.Aggregation
         {
             if (_application != null)
             {
-                await (await _application);
+                await (await _application.ConfigureAwait(false)).ConfigureAwait(false);
             }
 
             // This can happen if one group fails early
             if (_builder != null)
             {
                 _builder.Complete();
-                await _builder.Completion;
+                await _builder.Completion.ConfigureAwait(false);
             }
         }
 

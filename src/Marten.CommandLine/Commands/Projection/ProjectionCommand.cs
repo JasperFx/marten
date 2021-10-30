@@ -37,10 +37,10 @@ namespace Marten.CommandLine.Commands.Projection
 
             if (input.RebuildFlag)
             {
-                return await Rebuild(input, store);
+                return await Rebuild(input, store).ConfigureAwait(false);
             }
 
-            return await RunContinuously(input, store);
+            return await RunContinuously(input, store).ConfigureAwait(false);
         }
 
         private async Task<bool> Rebuild(ProjectionInput input, DocumentStore store)
@@ -70,17 +70,17 @@ namespace Marten.CommandLine.Commands.Projection
             }
 
             var daemon = store.BuildProjectionDaemon();
-            await daemon.StartDaemon();
+            await daemon.StartDaemon().ConfigureAwait(false);
 
             var highWater = daemon.Tracker.HighWaterMark;
             var watcher = new RebuildWatcher(highWater, _completion.Task);
             using var unsubscribe = daemon.Tracker.Subscribe(watcher);
 
             var tasks = projections
-                .Select(x => Task.Run(async () => await daemon.RebuildProjection(x.ProjectionName, _cancellation.Token)))
+                .Select(x => Task.Run(async () => await daemon.RebuildProjection(x.ProjectionName, _cancellation.Token).ConfigureAwait(false)))
                 .ToArray();
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
             _completion.SetResult(true);
 
@@ -139,11 +139,11 @@ namespace Marten.CommandLine.Commands.Projection
 
             foreach (var shard in shards)
             {
-                await daemon.StartShard(shard, _cancellation.Token);
+                await daemon.StartShard(shard, _cancellation.Token).ConfigureAwait(false);
             }
 
 
-            await _completion.Task;
+            await _completion.Task.ConfigureAwait(false);
             return false;
         }
 

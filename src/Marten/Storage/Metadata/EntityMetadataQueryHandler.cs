@@ -71,16 +71,16 @@ namespace Marten.Storage.Metadata
         public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IMartenSession session,
             CancellationToken token)
         {
-            var hasAny = await reader.ReadAsync(token);
+            var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasAny)
                 return null;
 
-            var id = await reader.GetFieldValueAsync<object>(0, token);
+            var id = await reader.GetFieldValueAsync<object>(0, token).ConfigureAwait(false);
             var metadata = new DocumentMetadata(id);
 
             for (var i = 0; i < _columns.Length; i++)
             {
-                await _columns[i].ApplyAsync(session, metadata, i + 1, reader, token);
+                await _columns[i].ApplyAsync(session, metadata, i + 1, reader, token).ConfigureAwait(false);
             }
 
             return metadata;

@@ -58,30 +58,30 @@ namespace Marten.Storage
         {
             if (typeof(T) == typeof(object))
             {
-                await BulkInsertDocumentsAsync(documents.OfType<object>(), mode, batchSize, cancellation);
+                await BulkInsertDocumentsAsync(documents.OfType<object>(), mode, batchSize, cancellation).ConfigureAwait(false);
             }
             else
             {
-                await using var conn = _tenant.CreateConnection();
-                await conn.OpenAsync(cancellation);
+                using var conn = _tenant.CreateConnection();
+                await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
 #if NETSTANDARD2_0
                 var tx = conn.BeginTransaction();
 
                 #else
-                var tx = await conn.BeginTransactionAsync(cancellation);
+                var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
 
 #endif
 
                 try
                 {
-                    await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation);
+                    await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
 
-                    await tx.CommitAsync(cancellation);
+                    await tx.CommitAsync(cancellation).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
-                    await tx.RollbackAsync(cancellation);
+                    await tx.RollbackAsync(cancellation).ConfigureAwait(false);
                     throw;
                 }
             }
@@ -126,25 +126,25 @@ namespace Marten.Storage
 
             using var conn = _tenant.CreateConnection();
 
-            await conn.OpenAsync(cancellation);
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
 #if NETSTANDARD2_0
             var tx = conn.BeginTransaction();
             #else
-            var tx = await conn.BeginTransactionAsync(cancellation);
+            var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
 #endif
 
             try
             {
                 foreach (var group in groups)
                 {
-                    await @group.BulkInsertAsync(batchSize, conn, this, mode, cancellation);
+                    await @group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
                 }
 
-                await tx.CommitAsync(cancellation);
+                await tx.CommitAsync(cancellation).ConfigureAwait(false);
             }
             catch (Exception)
             {
-                await tx.RollbackAsync(cancellation);
+                await tx.RollbackAsync(cancellation).ConfigureAwait(false);
                 throw;
             }
         }
@@ -205,12 +205,12 @@ namespace Marten.Storage
             if (mode != BulkInsertMode.InsertsOnly)
             {
                 var sql = loader.CreateTempTableForCopying();
-                await conn.CreateCommand(sql).ExecuteNonQueryAsync(cancellation);
+                await conn.CreateCommand(sql).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
             }
 
             if (documents.Count <= batchSize)
             {
-                await loadDocumentsAsync(documents, loader, mode, conn, cancellation);
+                await loadDocumentsAsync(documents, loader, mode, conn, cancellation).ConfigureAwait(false);
             }
             else
             {
@@ -222,18 +222,18 @@ namespace Marten.Storage
 
                     if (batch.Count < batchSize) continue;
 
-                    await loadDocumentsAsync(batch, loader, mode, conn, cancellation);
+                    await loadDocumentsAsync(batch, loader, mode, conn, cancellation).ConfigureAwait(false);
                     batch.Clear();
                 }
 
-                await loadDocumentsAsync(batch, loader, mode, conn, cancellation);
+                await loadDocumentsAsync(batch, loader, mode, conn, cancellation).ConfigureAwait(false);
             }
 
             if (mode == BulkInsertMode.IgnoreDuplicates)
             {
                 var copy = loader.CopyNewDocumentsFromTempTable();
 
-                await conn.CreateCommand(copy).ExecuteNonQueryAsync(cancellation);
+                await conn.CreateCommand(copy).ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
             }
             else if (mode == BulkInsertMode.OverwriteExisting)
             {
@@ -241,7 +241,7 @@ namespace Marten.Storage
                 var copy = loader.CopyNewDocumentsFromTempTable();
 
                 await conn.CreateCommand(overwrite + ";" + copy)
-                    .ExecuteNonQueryAsync(cancellation);
+                    .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
             }
         }
 
@@ -264,11 +264,11 @@ namespace Marten.Storage
         {
             if (mode == BulkInsertMode.InsertsOnly)
             {
-                await loader.LoadAsync(_tenant, Serializer, conn, documents, cancellation);
+                await loader.LoadAsync(_tenant, Serializer, conn, documents, cancellation).ConfigureAwait(false);
             }
             else
             {
-                await loader.LoadIntoTempTableAsync(_tenant, Serializer, conn, documents, cancellation);
+                await loader.LoadIntoTempTableAsync(_tenant, Serializer, conn, documents, cancellation).ConfigureAwait(false);
             }
         }
 

@@ -72,7 +72,7 @@ namespace Marten.PLv8.Transforms
             var session = martenQueryable.Session;
             var tenant = session.Tenant;
 
-            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token);
+            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
             var transform = tenant.TransformFor(transformName);
 
@@ -83,7 +83,7 @@ namespace Marten.PLv8.Transforms
             statement.Current().Limit = 1;
             var command = statement.BuildCommand();
 
-            await session.Database.StreamOne(command, destination, token);
+            await session.Database.StreamOne(command, destination, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Marten.PLv8.Transforms
             var session = martenQueryable.Session;
             var tenant = session.Tenant;
 
-            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token);
+            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
             var transform = tenant.TransformFor(transformName);
 
@@ -119,7 +119,7 @@ namespace Marten.PLv8.Transforms
             var statement = builder.TopStatement;
             var command = statement.BuildCommand();
 
-            await session.Database.StreamMany(command, destination, token);
+            await session.Database.StreamMany(command, destination, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -134,9 +134,9 @@ namespace Marten.PLv8.Transforms
             CancellationToken token = default)
         {
             var stream = new MemoryStream();
-            await queryable.StreamOneTransformed(transformName, stream, token);
+            await queryable.StreamOneTransformed(transformName, stream, token).ConfigureAwait(false);
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -151,9 +151,9 @@ namespace Marten.PLv8.Transforms
             CancellationToken token = default)
         {
             var stream = new MemoryStream();
-            await queryable.StreamManyTransformed(transformName, stream, token);
+            await queryable.StreamManyTransformed(transformName, stream, token).ConfigureAwait(false);
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Marten.PLv8.Transforms
             var stream = new MemoryStream();
             var martenQueryable = queryable.As<IMartenLinqQueryable>();
 
-            await martenQueryable.StreamOneTransformed(transformName, stream, token);
+            await martenQueryable.StreamOneTransformed(transformName, stream, token).ConfigureAwait(false);
             stream.Position = 0;
 
             return martenQueryable.Session.Serializer.FromJson<T>(stream);
@@ -189,7 +189,7 @@ namespace Marten.PLv8.Transforms
         {
             var stream = new MemoryStream();
             var martenQueryable = queryable.As<IMartenLinqQueryable>();
-            await martenQueryable.StreamManyTransformed(transformName, stream, token);
+            await martenQueryable.StreamManyTransformed(transformName, stream, token).ConfigureAwait(false);
 
             stream.Position = 0;
 

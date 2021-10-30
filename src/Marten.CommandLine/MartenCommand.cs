@@ -12,7 +12,7 @@ namespace Marten.CommandLine
             {
                 using var host = input.BuildHost();
                 var store = host.Services.GetRequiredService<IDocumentStore>();
-                return await execute(store, input);
+                return await execute(store, input).ConfigureAwait(false);
             }
             finally
             {

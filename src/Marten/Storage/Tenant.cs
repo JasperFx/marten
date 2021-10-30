@@ -177,10 +177,10 @@ namespace Marten.Storage
 
             foreach (var dependentType in feature.DependentTypes())
             {
-                await ensureStorageExists(types, dependentType, token);
+                await ensureStorageExists(types, dependentType, token).ConfigureAwait(false);
             }
 
-            await generateOrUpdateFeature(featureType, feature, token);
+            await generateOrUpdateFeature(featureType, feature, token).ConfigureAwait(false);
         }
 
 
@@ -197,7 +197,7 @@ namespace Marten.Storage
             var schemaObjects = feature.Objects;
             schemaObjects.AssertValidNames(_options);
 
-            using (await _migrateLocker.Lock(5.Seconds()))
+            using (await _migrateLocker.Lock(5.Seconds()).ConfigureAwait(false))
             {
                 if (_checks.ContainsKey(featureType))
                 {
@@ -205,7 +205,7 @@ namespace Marten.Storage
                     return;
                 }
 
-                await executeMigration(schemaObjects, token);
+                await executeMigration(schemaObjects, token).ConfigureAwait(false);
                 RegisterCheck(featureType, feature);
             }
         }
@@ -213,9 +213,9 @@ namespace Marten.Storage
         private async Task executeMigration(ISchemaObject[] schemaObjects, CancellationToken token = default)
         {
             using var conn = _factory.Create();
-            await conn.OpenAsync(token);
+            await conn.OpenAsync(token).ConfigureAwait(false);
 
-            var migration = await SchemaMigration.Determine(conn, schemaObjects);
+            var migration = await SchemaMigration.Determine(conn, schemaObjects).ConfigureAwait(false);
 
             if (migration.Difference == SchemaPatchDifference.None) return;
 
@@ -226,7 +226,8 @@ namespace Marten.Storage
                 _options.Advanced.DdlRules,
                 _options.AutoCreateSchemaObjects,
                 sql => _options.Logger().SchemaChange(sql),
-                MartenExceptionTransformer.WrapAndThrow);
+                MartenExceptionTransformer.WrapAndThrow)
+                .ConfigureAwait(false);
 
         }
 
@@ -245,32 +246,33 @@ namespace Marten.Storage
             var schemaNames = _features.AllSchemaNames();
 
             using var conn = CreateConnection();
-            await conn.OpenAsync();
 
-            return await conn.ExistingTables(schemas:schemaNames);
+            await conn.OpenAsync().ConfigureAwait(false);
+
+            return await conn.ExistingTables(schemas: schemaNames).ConfigureAwait(false);
         }
 
         public async Task<IReadOnlyList<DbObjectName>> DocumentTables()
         {
-            var tables = await SchemaTables();
+            var tables = await SchemaTables().ConfigureAwait(false);
             return tables.Where(x => x.Name.StartsWith(SchemaConstants.TablePrefix)).ToList();
         }
 
         public async Task<IReadOnlyList<DbObjectName>> Functions()
         {
             using var conn = CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             var schemaNames = _features.AllSchemaNames();
-            return await conn.ExistingFunctions(namePattern:"mt_%", schemas:schemaNames);
+            return await conn.ExistingFunctions(namePattern:"mt_%", schemas:schemaNames).ConfigureAwait(false);
         }
 
         public async Task<Function> DefinitionForFunction(DbObjectName function)
         {
             using var conn = CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
-            return await conn.FindExistingFunction(function);
+            return await conn.FindExistingFunction(function).ConfigureAwait(false);
         }
 
         public async Task<Table> ExistingTableFor(Type type)
@@ -279,9 +281,9 @@ namespace Marten.Storage
             var expected = mapping.Schema.Table;
 
             using var conn = CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
-            return await expected.FetchExisting(conn);
+            return await expected.FetchExisting(conn).ConfigureAwait(false);
         }
     }
 }

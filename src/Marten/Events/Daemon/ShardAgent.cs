@@ -63,7 +63,7 @@ namespace Marten.Events.Daemon
         {
             var parameters = new ActionParameters(this, async () =>
             {
-                await _fetcher.Load(_projectionShard.Name, range, _cancellation);
+                await _fetcher.Load(_projectionShard.Name, range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
@@ -78,7 +78,7 @@ namespace Marten.Events.Daemon
             };
 
 
-            await _daemon.TryAction(parameters);
+            await _daemon.TryAction(parameters).ConfigureAwait(false);
 
             return range;
         }
@@ -148,11 +148,11 @@ namespace Marten.Events.Daemon
             // just to keep tracking correct
             _loader.LinkTo(_grouping, e => e.Events != null);
 
-            var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation);
+            var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation).ConfigureAwait(false);
 
             foreach (var storageType in _source.Options.StorageTypes)
             {
-                await _store.Tenancy.Default.EnsureStorageExistsAsync(storageType, _cancellation);
+                await _store.Tenancy.Default.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
             }
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));
@@ -184,27 +184,27 @@ namespace Marten.Events.Daemon
             // Building the ProjectionUpdateBatch
             await TryAction(async () =>
             {
-                batch = await buildUpdateBatch(@group);
+                batch = await buildUpdateBatch(@group).ConfigureAwait(false);
 
-                group.Dispose();
+                @group.Dispose();
             }, _cancellation, (logger, e) =>
             {
-                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
-            }, group:group);
+                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", @group, Name);
+            }, @group:@group).ConfigureAwait(false);
 
             // Executing the SQL commands for the ProjectionUpdateBatch
             await TryAction(async () =>
             {
-                await ExecuteBatch(batch);
+                await ExecuteBatch(batch).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, group);
+                    _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, @group);
                 }
             }, _cancellation, (logger, e) =>
             {
-                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", group, Name);
-            });
+                logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", @group, Name);
+            }).ConfigureAwait(false);
         }
 
         private async Task<ProjectionUpdateBatch> buildUpdateBatch(EventRangeGroup @group)
@@ -215,7 +215,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                await group.ConfigureUpdateBatch(this, batch, group);
+                await @group.ConfigureUpdateBatch(this, batch, @group).ConfigureAwait(false);
 
                 if (group.Cancellation.IsCancellationRequested)
                 {
@@ -228,7 +228,7 @@ namespace Marten.Events.Daemon
                 }
 
                 batch.Queue.Complete();
-                await batch.Queue.Completion;
+                await batch.Queue.Completion.ConfigureAwait(false);
 
                 if (group.Exception != null)
                 {
@@ -239,7 +239,7 @@ namespace Marten.Events.Daemon
             {
                 if (batch != null)
                 {
-                    await batch.CloseSession();
+                    await batch.CloseSession().ConfigureAwait(false);
                 }
             }
 
@@ -259,7 +259,7 @@ namespace Marten.Events.Daemon
                     _logger.LogDebug("Shard '{ShardName}':Starting to group {Range}", Name, range);
                 }
 
-                group = await _source.GroupEvents(_store, range, _cancellation);
+                @group = await _source.GroupEvents(_store, range, _cancellation).ConfigureAwait(false);
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
@@ -269,7 +269,7 @@ namespace Marten.Events.Daemon
             }, _cancellation, (logger, e) =>
             {
                 logger.LogError(e, "Error while trying to group event range {EventRange} for projection shard {ShardName}", range, Name);
-            });
+            }).ConfigureAwait(false);
 
 
 
@@ -315,7 +315,7 @@ namespace Marten.Events.Daemon
 
         public async Task Pause(TimeSpan timeout)
         {
-            await Stop();
+            await Stop().ConfigureAwait(false);
 
             Status = AgentStatus.Paused;
             _tracker.Publish(new ShardState(_projectionShard, ShardAction.Paused));
@@ -326,7 +326,7 @@ namespace Marten.Events.Daemon
 #pragma warning restore 4014
             {
                 // ReSharper disable once MethodSupportsCancellation
-                await Task.Delay(timeout);
+                await Task.Delay(timeout).ConfigureAwait(false);
                 _cancellationSource = new CancellationTokenSource();
                 _cancellation = _cancellationSource.Token;
 
@@ -334,7 +334,7 @@ namespace Marten.Events.Daemon
                 {
                     try
                     {
-                        await Start(_daemon);
+                        await Start(_daemon).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -348,7 +348,7 @@ namespace Marten.Events.Daemon
                         _projectionShard.Name);
                 };
 
-                await _daemon.TryAction(parameters);
+                await _daemon.TryAction(parameters).ConfigureAwait(false);
             });
         }
 
@@ -389,15 +389,16 @@ namespace Marten.Events.Daemon
         {
             if (_cancellation.IsCancellationRequested) return;
 
-            await batch.Queue.Completion;
+            await batch.Queue.Completion.ConfigureAwait(false);
 
             if (_cancellation.IsCancellationRequested) return;
 
-            await using (var session = (DocumentSessionBase)_store.LightweightSession())
+            var session = (DocumentSessionBase)_store.LightweightSession();
+            await using (session.ConfigureAwait(false))
             {
                 try
                 {
-                    await session.ExecuteBatchAsync(batch, _cancellation);
+                    await session.ExecuteBatchAsync(batch, _cancellation).ConfigureAwait(false);
 
                     _logger.LogInformation("Shard '{ShardName}': Executed updates for {Range}", ShardName, batch.Range);
                 }

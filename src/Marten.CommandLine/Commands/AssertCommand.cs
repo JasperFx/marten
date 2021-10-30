@@ -13,7 +13,7 @@ namespace Marten.CommandLine.Commands
         {
             try
             {
-                await store.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await store.Schema.AssertDatabaseMatchesConfigurationAsync().ConfigureAwait(false);
 
                 input.WriteLine(ConsoleColor.Green, "No database differences detected.");
 

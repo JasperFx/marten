@@ -23,26 +23,26 @@ namespace Marten.Services
 
         internal static async Task<T?> LoadOneAsync<T>(this IManagedConnection connection, NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
         {
-            using var reader = await connection.ExecuteReaderAsync(command, token);
-            if (!await reader.ReadAsync(token)) return default;
+            using var reader = await connection.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            if (!await reader.ReadAsync(token).ConfigureAwait(false)) return default;
 
-            return await selector.ResolveAsync(reader, token);
+            return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
         }
 
         internal static async Task<bool> StreamOne(this IManagedConnection connection, NpgsqlCommand command, Stream stream, CancellationToken token)
         {
-            await using var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token);
-            return (await StreamOne(reader, stream, token) == 1);
+            using var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            return (await StreamOne(reader, stream, token).ConfigureAwait(false) == 1);
         }
 
         internal static async Task<int> StreamOne(this NpgsqlDataReader reader, Stream stream, CancellationToken token)
         {
-            if (!await reader.ReadAsync(token)) return 0;
+            if (!await reader.ReadAsync(token).ConfigureAwait(false)) return 0;
 
             var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
-            var source = await reader.GetStreamAsync(ordinal, token);
-            await source.CopyStreamSkippingSOHAsync(stream, token);
+            var source = await reader.GetStreamAsync(ordinal, token).ConfigureAwait(false);
+            await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
 
             return 1;
         }
@@ -66,9 +66,9 @@ namespace Marten.Services
 
         internal static async Task<int> StreamMany(this IManagedConnection connection, NpgsqlCommand command, Stream stream, CancellationToken token)
         {
-            await using var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token);
+            using var reader = (NpgsqlDataReader)await connection.ExecuteReaderAsync(command, token).ConfigureAwait(false);
 
-            return await reader.StreamMany(stream, token);
+            return await reader.StreamMany(stream, token).ConfigureAwait(false);
         }
 
         internal static async Task<int> StreamMany(this NpgsqlDataReader reader, Stream stream, CancellationToken token)
@@ -76,25 +76,25 @@ namespace Marten.Services
             var count = 0;
             var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
-            await stream.WriteBytes(LeftBracket, token);
+            await stream.WriteBytes(LeftBracket, token).ConfigureAwait(false);
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 count++;
-                var source = await reader.GetStreamAsync(ordinal, token);
-                await source.CopyStreamSkippingSOHAsync(stream, token);
+                var source = await reader.GetStreamAsync(ordinal, token).ConfigureAwait(false);
+                await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
             }
 
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 count++;
-                await stream.WriteBytes(Comma, token);
+                await stream.WriteBytes(Comma, token).ConfigureAwait(false);
 
-                var source = await reader.GetStreamAsync(ordinal, token);
-                await source.CopyStreamSkippingSOHAsync(stream, token);
+                var source = await reader.GetStreamAsync(ordinal, token).ConfigureAwait(false);
+                await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
             }
 
-            await stream.WriteBytes(RightBracket, token);
+            await stream.WriteBytes(RightBracket, token).ConfigureAwait(false);
 
             return count;
         }

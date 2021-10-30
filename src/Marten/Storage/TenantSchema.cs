@@ -81,9 +81,9 @@ namespace Marten.Storage
             var @objects = _features.AllActiveFeatures(_tenant).SelectMany(x => x.Objects).ToArray();
 
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
-            return await SchemaMigration.Determine(conn, @objects);
+            return await SchemaMigration.Determine(conn, @objects).ConfigureAwait(false);
         }
 
         public string ToDatabaseScript()
@@ -111,7 +111,7 @@ namespace Marten.Storage
                 filename = AppContext.BaseDirectory.AppendPath(filename);
             }
 
-            var patch = await CreateMigrationAsync();
+            var patch = await CreateMigrationAsync().ConfigureAwait(false);
 
             DdlRules.WriteTemplatedFile(filename, (r, w) =>
             {
@@ -127,7 +127,7 @@ namespace Marten.Storage
 
         public async Task AssertDatabaseMatchesConfigurationAsync()
         {
-            var patch = await CreateMigrationAsync();
+            var patch = await CreateMigrationAsync().ConfigureAwait(false);
             if (patch.Difference != SchemaPatchDifference.None)
             {
                 throw new SchemaValidationException(patch.UpdateSql);
@@ -140,17 +140,17 @@ namespace Marten.Storage
                 ? StoreOptions.AutoCreateSchemaObjects
                 : AutoCreate.CreateOrUpdate;
 
-            var patch = await CreateMigrationAsync();
+            var patch = await CreateMigrationAsync().ConfigureAwait(false);
 
             if (patch.Difference == SchemaPatchDifference.None) return;
 
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             try
             {
                 var martenLogger = StoreOptions.Logger();
-                await patch.ApplyAll(conn, DdlRules, withCreateSchemaObjects ?? defaultAutoCreate, sql => martenLogger.SchemaChange(sql));
+                await patch.ApplyAll(conn, DdlRules, withCreateSchemaObjects ?? defaultAutoCreate, sql => martenLogger.SchemaChange(sql)).ConfigureAwait(false);
 
                 _tenant.MarkAllFeaturesAsChecked();
             }
@@ -165,9 +165,9 @@ namespace Marten.Storage
             var mapping = _features.MappingFor(documentType);
 
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
-            var migration = await SchemaMigration.Determine(conn, mapping.Schema.Objects);
+            var migration = await SchemaMigration.Determine(conn, mapping.Schema.Objects).ConfigureAwait(false);
 
             return migration;
         }
@@ -182,11 +182,11 @@ namespace Marten.Storage
             writeDatabaseSchemaGenerationScript(directory, system, features);
 
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             foreach (var feature in features)
             {
-                var migration = await SchemaMigration.Determine(conn, feature.Objects);
+                var migration = await SchemaMigration.Determine(conn, feature.Objects).ConfigureAwait(false);
 
                 if (migration.Difference == SchemaPatchDifference.None)
                 {

@@ -74,32 +74,33 @@ select count(*) from {_store.Events.DatabaseSchemaName}.mt_streams;
 select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
 ";
 
-            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token);
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var statistics = new EventStoreStatistics();
 
-            await using var conn = _store.Tenancy.Default.CreateConnection();
-            await conn.OpenAsync(token);
+            using var conn = _store.Tenancy.Default.CreateConnection();
 
-            await using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token);
+            await conn.OpenAsync(token).ConfigureAwait(false);
 
-            if (await reader.ReadAsync(token))
+            using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token).ConfigureAwait(false);
+
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token);
+                statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
-            await reader.NextResultAsync(token);
+            await reader.NextResultAsync(token).ConfigureAwait(false);
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token);
+                statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
-            await reader.NextResultAsync(token);
+            await reader.NextResultAsync(token).ConfigureAwait(false);
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token);
+                statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
             return statistics;
@@ -112,13 +113,14 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// <returns></returns>
         public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(CancellationToken token = default)
         {
-            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token);
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(new ProjectionProgressStatement(_store.Events),
                 new ShardStateSelector());
 
-            await using var session = (QuerySession)_store.QuerySession();
-            return await session.ExecuteHandlerAsync(handler, token);
+            var session = (QuerySession)_store.QuerySession();
+            await using var _ = session.ConfigureAwait(false);
+            return await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -128,7 +130,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// <returns></returns>
         public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default)
         {
-            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token);
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var statement = new ProjectionProgressStatement(_store.Events)
             {
@@ -138,9 +140,10 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             var handler = new OneResultHandler<ShardState>(statement,
                 new ShardStateSelector(), true, false);
 
-            await using var session = (QuerySession)_store.QuerySession();
+            var session = (QuerySession)_store.QuerySession();
+            await using var _ = session.ConfigureAwait(false);
 
-            var progress = await session.ExecuteHandlerAsync(handler, token);
+            var progress = await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
 
             return progress?.Sequence ?? 0;
         }

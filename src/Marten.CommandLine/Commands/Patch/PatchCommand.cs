@@ -21,7 +21,7 @@ namespace Marten.CommandLine.Commands.Patch
         {
             try
             {
-                await store.Schema.AssertDatabaseMatchesConfigurationAsync();
+                await store.Schema.AssertDatabaseMatchesConfigurationAsync().ConfigureAwait(false);
 
                 input.WriteLine(ConsoleColor.Green, "No differences were detected between the Marten configuration and the database");
 
@@ -29,7 +29,7 @@ namespace Marten.CommandLine.Commands.Patch
             }
             catch (SchemaValidationException)
             {
-                var patch = await store.Schema.CreateMigrationAsync();
+                var patch = await store.Schema.CreateMigrationAsync().ConfigureAwait(false);
 
                 input.WriteLine(ConsoleColor.Green, "Wrote a patch file to " + input.FileName);
 

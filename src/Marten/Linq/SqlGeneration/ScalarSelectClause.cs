@@ -91,12 +91,12 @@ namespace Marten.Linq.SqlGeneration
 
         async Task<T?> ISelector<T?>.ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(0, token))
+            if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
             {
                 return null;
             }
 
-            return await reader.GetFieldValueAsync<T>(0, token);
+            return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
         }
 
         T? ISelector<T?>.Resolve(DbDataReader reader)
@@ -118,12 +118,12 @@ namespace Marten.Linq.SqlGeneration
 
         public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(0, token))
+            if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
             {
                 return default;
             }
 
-            return await reader.GetFieldValueAsync<T>(0, token);
+            return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
         }
 
         public void ApplyOperator(string op)

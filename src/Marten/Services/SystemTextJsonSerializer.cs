@@ -80,13 +80,13 @@ namespace Marten.Services
 
         public async ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(cancellationToken), _optionsDeserialize, cancellationToken);
+            return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(cancellationToken).ConfigureAwait(false), _optionsDeserialize, cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
-            using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken);
-            return await FromJsonAsync<T>(stream, cancellationToken);
+            using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken).ConfigureAwait(false);
+            return await FromJsonAsync<T>(stream, cancellationToken).ConfigureAwait(false);
         }
 
         public object FromJson(Type type, Stream stream)
@@ -107,13 +107,13 @@ namespace Marten.Services
 
         public async ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(cancellationToken), type, _optionsDeserialize, cancellationToken);
+            return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(cancellationToken).ConfigureAwait(false), type, _optionsDeserialize, cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
         {
-            using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken);
-            return await FromJsonAsync(type, stream, cancellationToken);
+            using var stream = await reader.As<NpgsqlDataReader>().GetStreamAsync(index, cancellationToken).ConfigureAwait(false);
+            return await FromJsonAsync(type, stream, cancellationToken).ConfigureAwait(false);
         }
 
         public string ToCleanJson(object document)

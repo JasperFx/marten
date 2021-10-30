@@ -18,8 +18,8 @@ namespace Marten.Events.TestSupport
 
             if (scenario.NextStep is ScenarioAssertion)
             {
-                await scenario.Session.SaveChangesAsync();
-                await scenario.WaitForNonStaleData();
+                await scenario.Session.SaveChangesAsync().ConfigureAwait(false);
+                await scenario.WaitForNonStaleData().ConfigureAwait(false);
             }
         }
     }

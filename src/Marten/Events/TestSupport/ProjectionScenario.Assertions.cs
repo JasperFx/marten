@@ -26,7 +26,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document == null)
                 {
                     throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -46,7 +46,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document == null)
                 {
                     throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -66,7 +66,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document == null)
                 {
                     throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -86,7 +86,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document == null)
                 {
                     throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
@@ -105,7 +105,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document != null)
                 {
                     throw new Exception(
@@ -123,7 +123,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document != null)
                 {
                     throw new Exception(
@@ -141,7 +141,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document != null)
                 {
                     throw new Exception(
@@ -159,7 +159,7 @@ namespace Marten.Events.TestSupport
         {
             assertion(async session =>
             {
-                var document = await session.LoadAsync<T>(id);
+                var document = await session.LoadAsync<T>(id).ConfigureAwait(false);
                 if (document != null)
                 {
                     throw new Exception(

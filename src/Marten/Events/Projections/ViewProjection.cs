@@ -39,7 +39,7 @@ namespace Marten.Events.Projections
             var events = streams.SelectMany(x => x.Events).ToList();
 
 
-            var groups = await this.As<IEventSlicer<TDoc, TId>>().SliceAsyncEvents(querySession, events, tenancy);
+            var groups = await this.As<IEventSlicer<TDoc, TId>>().SliceAsyncEvents(querySession, events, tenancy).ConfigureAwait(false);
             return groups.SelectMany(x => x.Slices).ToList();
         }
 
@@ -54,7 +54,7 @@ namespace Marten.Events.Projections
 
             foreach (var lookupGrouper in _lookupGroupers)
             {
-                await lookupGrouper.Group(querySession, events, @group);
+                await lookupGrouper.Group(querySession, events, @group).ConfigureAwait(false);
             }
 
             group.ApplyFanOutRules(_afterGroupingFanoutRules);
@@ -83,13 +83,13 @@ namespace Marten.Events.Projections
                 var list = new List<TenantSliceGroup<TDoc, TId>>();
                 foreach (var groupTask in groupTasks)
                 {
-                    list.Add(await groupTask);
+                    list.Add(await groupTask.ConfigureAwait(false));
                 }
 
                 return list;
             }
 
-            var group = await groupSingleTenant(tenancy.Default, querySession, events);
+            var group = await groupSingleTenant(tenancy.Default, querySession, events).ConfigureAwait(false);
 
             return new List<TenantSliceGroup<TDoc, TId>> {group};
         }

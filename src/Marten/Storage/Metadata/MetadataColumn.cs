@@ -102,9 +102,9 @@ namespace Marten.Storage.Metadata
         internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(index, token)) return;
+            if (await reader.IsDBNullAsync(index, token).ConfigureAwait(false)) return;
 
-            var value = await reader.GetFieldValueAsync<T>(index, token);
+            var value = await reader.GetFieldValueAsync<T>(index, token).ConfigureAwait(false);
             _setter(metadata, value);
         }
 

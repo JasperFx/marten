@@ -116,7 +116,7 @@ namespace Marten.Pagination
         public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize)
         {
             var pagedList = new PagedList<T>();
-            await pagedList.InitAsync(queryable, pageNumber, pageSize);
+            await pagedList.InitAsync(queryable, pageNumber, pageSize).ConfigureAwait(false);
             return pagedList;
         }
 
@@ -147,12 +147,12 @@ namespace Marten.Pagination
 
             if (pageNumber == 1)
             {
-                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Take<T>(pageSize).ToListAsync<T>());
+                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
             }
             else
             {
                 var skipCount = (pageNumber - 1) * pageSize;
-                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Skip(skipCount).Take<T>(pageSize).ToListAsync<T>());
+                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Skip(skipCount).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
             }
 
             // fetch the total record count

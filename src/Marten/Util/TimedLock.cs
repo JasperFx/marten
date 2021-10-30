@@ -15,7 +15,7 @@ namespace Marten.Util
 
         public async Task<LockReleaser> Lock(TimeSpan timeout)
         {
-            if(await _toLock.WaitAsync(timeout))
+            if(await _toLock.WaitAsync(timeout).ConfigureAwait(false))
             {
                 return new LockReleaser(_toLock);
             }

@@ -224,7 +224,7 @@ namespace Marten.Internal.Storage
 
         public async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
         {
-            var doc = await _parent.LoadAsync(id, session, token);
+            var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);
 
             if (doc is T x) return x;
 
@@ -238,7 +238,7 @@ namespace Marten.Internal.Storage
 
         public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token)
         {
-            return (await _parent.LoadManyAsync(ids, session, token)).OfType<T>().ToList();
+            return (await _parent.LoadManyAsync(ids, session, token).ConfigureAwait(false)).OfType<T>().ToList();
         }
 
         public TId AssignIdentity(T document, ITenant tenant)

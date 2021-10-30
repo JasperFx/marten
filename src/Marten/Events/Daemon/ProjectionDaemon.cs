@@ -57,8 +57,8 @@ namespace Marten.Events.Daemon
 
         public async Task StartDaemon()
         {
-            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent));
-            await _highWater.Start();
+            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+            await _highWater.Start().ConfigureAwait(false);
         }
 
         public Task WaitForNonStaleData(TimeSpan timeout)
@@ -69,7 +69,7 @@ namespace Marten.Events.Daemon
 
             Task.Run(async () =>
             {
-                var statistics = await _store.Advanced.FetchEventStoreStatistics(timeoutCancellation.Token);
+                var statistics = await _store.Advanced.FetchEventStoreStatistics(timeoutCancellation.Token).ConfigureAwait(false);
                 timeoutCancellation.Token.Register(() =>
                 {
                     completion.TrySetException(new TimeoutException(
@@ -84,7 +84,7 @@ namespace Marten.Events.Daemon
 
                 while (!timeoutCancellation.IsCancellationRequested)
                 {
-                    await Task.Delay(100.Milliseconds(), timeoutCancellation.Token);
+                    await Task.Delay(100.Milliseconds(), timeoutCancellation.Token).ConfigureAwait(false);
 
                     if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
                     {
@@ -102,31 +102,31 @@ namespace Marten.Events.Daemon
         {
             if (!_highWater.IsRunning)
             {
-                await StartDaemon();
+                await StartDaemon().ConfigureAwait(false);
             }
 
             var shards = _store.Options.Projections.AllShards();
-            foreach (var shard in shards) await StartShard(shard, CancellationToken.None);
+            foreach (var shard in shards) await StartShard(shard, CancellationToken.None).ConfigureAwait(false);
         }
 
         public async Task StartShard(string shardName, CancellationToken token)
         {
             if (!_highWater.IsRunning)
             {
-                await StartDaemon();
+                await StartDaemon().ConfigureAwait(false);
             }
 
             // Latch it so it doesn't double start
             if (_agents.ContainsKey(shardName)) return;
 
-            if (_store.Options.Projections.TryFindAsyncShard(shardName, out var shard)) await StartShard(shard, token);
+            if (_store.Options.Projections.TryFindAsyncShard(shardName, out var shard)) await StartShard(shard, token).ConfigureAwait(false);
         }
 
         public async Task StartShard(AsyncProjectionShard shard, CancellationToken cancellationToken)
         {
             if (!_highWater.IsRunning)
             {
-                await StartDaemon();
+                await StartDaemon().ConfigureAwait(false);
             }
 
             // Don't duplicate the shard
@@ -137,7 +137,7 @@ namespace Marten.Events.Daemon
                 try
                 {
                     var agent = new ShardAgent(_store, shard, _logger, cancellationToken);
-                    var position = await agent.Start(this);
+                    var position = await agent.Start(this).ConfigureAwait(false);
 
                     Tracker.Publish(new ShardState(shard.Name, position) {Action = ShardAction.Started});
 
@@ -154,7 +154,7 @@ namespace Marten.Events.Daemon
                 logger.LogError(ex, "Error when trying to start projection shard '{ShardName}'", shard.Name.Identity);
             };
 
-            await TryAction(parameters);
+            await TryAction(parameters).ConfigureAwait(false);
         }
 
         public async Task StopShard(string shardName, Exception ex = null)
@@ -167,7 +167,7 @@ namespace Marten.Events.Daemon
                 {
                     try
                     {
-                        await agent.Stop(ex);
+                        await agent.Stop(ex).ConfigureAwait(false);
                         _agents.Remove(shardName);
                     }
                     catch (Exception e)
@@ -183,7 +183,7 @@ namespace Marten.Events.Daemon
                     }
                 };
 
-                await TryAction(parameters);
+                await TryAction(parameters).ConfigureAwait(false);
             }
         }
 
@@ -198,11 +198,11 @@ namespace Marten.Events.Daemon
 
             if (_coordinator != null)
             {
-                await _coordinator.Stop();
+                await _coordinator.Stop().ConfigureAwait(false);
             }
 
             _cancellation.Cancel();
-            await _highWater.Stop();
+            await _highWater.Stop().ConfigureAwait(false);
 
             foreach (var agent in _agents.Values)
             {
@@ -210,7 +210,7 @@ namespace Marten.Events.Daemon
                 {
                     if (agent.IsStopping()) continue;
 
-                    await agent.Stop();
+                    await agent.Stop().ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -261,27 +261,28 @@ namespace Marten.Events.Daemon
             var running = _agents.Values.Where(x => x.ShardName.ProjectionName == source.ProjectionName).ToArray();
             foreach (var agent in running)
             {
-                await agent.Stop();
+                await agent.Stop().ConfigureAwait(false);
                 _agents.Remove(agent.ShardName.Identity);
             }
 
             if (token.IsCancellationRequested) return;
 
-            if (Tracker.HighWaterMark == 0) await _highWater.CheckNow();
+            if (Tracker.HighWaterMark == 0) await _highWater.CheckNow().ConfigureAwait(false);
 
             if (token.IsCancellationRequested) return;
 
             var shards = source.AsyncProjectionShards(_store);
 
             // Teardown the current state
-            await using (var session = _store.LightweightSession())
+            var session = _store.LightweightSession();
+            await using (session.ConfigureAwait(false))
             {
                 source.Options.Teardown(session);
 
                 foreach (var shard in shards)
                     session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
 
-                await session.SaveChangesAsync(token);
+                await session.SaveChangesAsync(token).ConfigureAwait(false);
             }
 
             if (token.IsCancellationRequested) return;
@@ -289,13 +290,13 @@ namespace Marten.Events.Daemon
 
             var waiters = shards.Select(async x =>
             {
-                await StartShard(x, token);
+                await StartShard(x, token).ConfigureAwait(false);
                 return Tracker.WaitForShardState(x.Name, Tracker.HighWaterMark, 5.Minutes());
             }).Select(x => x.Unwrap()).ToArray();
 
-            await waitForAllShardsToComplete(token, waiters);
+            await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
 
-            foreach (var shard in shards) await StopShard(shard.Name.Identity);
+            foreach (var shard in shards) await StopShard(shard.Name.Identity).ConfigureAwait(false);
         }
 
         private static async Task waitForAllShardsToComplete(CancellationToken token, Task[] waiters)
@@ -305,19 +306,19 @@ namespace Marten.Events.Daemon
             // ReSharper disable once MethodSupportsCancellation
             token.Register(() => tcs.SetCanceled());
 
-            await Task.WhenAny(tcs.Task, completion);
+            await Task.WhenAny(tcs.Task, completion).ConfigureAwait(false);
         }
 
 
         internal async Task TryAction(ActionParameters parameters)
         {
-            if (parameters.Delay != default) await Task.Delay(parameters.Delay, parameters.Cancellation);
+            if (parameters.Delay != default) await Task.Delay(parameters.Delay, parameters.Cancellation).ConfigureAwait(false);
 
             if (parameters.Cancellation.IsCancellationRequested) return;
 
             try
             {
-                await parameters.Action();
+                await parameters.Action().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -353,21 +354,21 @@ namespace Marten.Events.Daemon
                         {
                             _logger.LogDebug("Retrying in {Milliseconds}", r.Delay.TotalMilliseconds);
                         }
-                        await TryAction(parameters);
+                        await TryAction(parameters).ConfigureAwait(false);
                         break;
                     case Resiliency.StopShard:
-                        if (parameters.Shard != null) await StopShard(parameters.Shard.ShardName.Identity, ex);
+                        if (parameters.Shard != null) await StopShard(parameters.Shard.ShardName.Identity, ex).ConfigureAwait(false);
                         break;
                     case StopAllShards:
                         var tasks = _agents.Keys.ToArray().Select(name =>
                         {
                             return Task.Run(async () =>
                             {
-                                await StopShard(name, ex);
+                                await StopShard(name, ex).ConfigureAwait(false);
                             }, _cancellation.Token);
                         });
 
-                        await Task.WhenAll(tasks);
+                        await Task.WhenAll(tasks).ConfigureAwait(false);
 
                         Tracker.Publish(
                             new ShardState(ShardName.All, Tracker.HighWaterMark)
@@ -376,18 +377,18 @@ namespace Marten.Events.Daemon
                             });
                         break;
                     case PauseShard pause:
-                        if (parameters.Shard != null) await parameters.Shard.Pause(pause.Delay);
+                        if (parameters.Shard != null) await parameters.Shard.Pause(pause.Delay).ConfigureAwait(false);
                         break;
                     case PauseAllShards pauseAll:
                         var tasks2 = _agents.Values.ToArray().Select(agent =>
                         {
                             return Task.Run(async () =>
                             {
-                                await agent.Pause(pauseAll.Delay);
+                                await agent.Pause(pauseAll.Delay).ConfigureAwait(false);
                             }, _cancellation.Token);
                         });
 
-                        await Task.WhenAll(tasks2);
+                        await Task.WhenAll(tasks2).ConfigureAwait(false);
                         break;
 
                     case SkipEvent skip:
@@ -402,9 +403,9 @@ namespace Marten.Events.Daemon
 
                         _logger.LogInformation("Skipping event #{Sequence} ({EventType}) in shard '{ShardName}'",
                             skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name);
-                        await WriteSkippedEvent(skip.Event, parameters.Shard.Name, ex as ApplyEventException);
+                        await WriteSkippedEvent(skip.Event, parameters.Shard.Name, ex as ApplyEventException).ConfigureAwait(false);
 
-                        await TryAction(parameters);
+                        await TryAction(parameters).ConfigureAwait(false);
                         break;
 
                     case DoNothing:
@@ -419,10 +420,11 @@ namespace Marten.Events.Daemon
             try
             {
                 var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
-                await using (var session = _store.LightweightSession())
+                var session = _store.LightweightSession();
+                await using (session.ConfigureAwait(false))
                 {
                     session.Store(deadLetterEvent);
-                    await session.SaveChangesAsync();
+                    await session.SaveChangesAsync().ConfigureAwait(false);
                 }
             }
             catch (Exception e)

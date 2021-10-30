@@ -68,10 +68,10 @@ namespace Marten.Linq.SqlGeneration
 
         public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var hasRow = await reader.ReadAsync(token);
+            var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
 
-            return hasRow && !await reader.IsDBNullAsync(0, token) &&
-                   await reader.GetFieldValueAsync<bool>(0, token);
+            return hasRow && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false) &&
+                   await reader.GetFieldValueAsync<bool>(0, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

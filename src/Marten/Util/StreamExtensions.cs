@@ -16,7 +16,7 @@ namespace Marten.Util
         {
             var output = new MemoryStream {Position = 0};
 
-            await stream.CopyStreamSkippingSOHAsync(output, token);
+            await stream.CopyStreamSkippingSOHAsync(output, token).ConfigureAwait(false);
             output.Position = 0;
 
             return output;
@@ -26,13 +26,13 @@ namespace Marten.Util
         {
             var buffer = new byte[1];
 
-            await input.ReadAsync(buffer, 0, 1, token);
+            await input.ReadAsync(buffer, 0, 1, token).ConfigureAwait(false);
             if (buffer[0] != 1)
             {
-                await output.WriteAsync(buffer, 0, buffer.Length, token);
+                await output.WriteAsync(buffer, 0, buffer.Length, token).ConfigureAwait(false);
             }
 
-            await input.CopyToAsync(output, 4096, token);
+            await input.CopyToAsync(output, 4096, token).ConfigureAwait(false);
         }
 
         public static StreamReader GetStreamReader(this Stream stream)

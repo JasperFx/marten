@@ -47,7 +47,7 @@ namespace Marten.Linq.QueryHandlers
 
         async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var list = await HandleAsync(reader, session, token);
+            var list = await HandleAsync(reader, session, token).ConfigureAwait(false);
             return list;
         }
 
@@ -65,9 +65,9 @@ namespace Marten.Linq.QueryHandlers
         {
             var list = new List<T>();
 
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var item = await Selector.ResolveAsync(reader, token);
+                var item = await Selector.ResolveAsync(reader, token).ConfigureAwait(false);
                 list.Add(item);
             }
 

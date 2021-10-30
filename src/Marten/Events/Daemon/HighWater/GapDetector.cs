@@ -47,18 +47,18 @@ select max(seq_id) from {graph.DatabaseSchemaName}.mt_events where seq_id > :sta
         public async Task<long?> HandleAsync(DbDataReader reader, CancellationToken token)
         {
             // If there is a row, this tells us the first sequence gap
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                return await reader.GetFieldValueAsync<long>(0, token);
+                return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
             // use the latest sequence in the event table
-            await reader.NextResultAsync(token);
-            if (!await reader.ReadAsync(token)) return null;
+            await reader.NextResultAsync(token).ConfigureAwait(false);
+            if (!await reader.ReadAsync(token).ConfigureAwait(false)) return null;
 
-            if (!(await reader.IsDBNullAsync(0, token)))
+            if (!(await reader.IsDBNullAsync(0, token).ConfigureAwait(false)))
             {
-                return await reader.GetFieldValueAsync<long>(0, token);
+                return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
             return null;
