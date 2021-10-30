@@ -29,12 +29,12 @@ namespace Marten.Storage.Metadata
         internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(index, token))
+            if (await reader.IsDBNullAsync(index, token).ConfigureAwait(false))
             {
                 return;
             }
 
-            metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(reader, index, token);
+            metadata.Headers = await martenSession.Serializer.FromJsonAsync<Dictionary<string, object>>(reader, index, token).ConfigureAwait(false);
         }
 
         internal override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,

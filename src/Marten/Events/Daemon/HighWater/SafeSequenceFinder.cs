@@ -34,14 +34,14 @@ namespace Marten.Events.Daemon.HighWater
 
         public async Task<long?> HandleAsync(DbDataReader reader, CancellationToken token)
         {
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                if (await reader.IsDBNullAsync(0, token))
+                if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
                 {
                     return null;
                 }
 
-                return await reader.GetFieldValueAsync<long>(0, token);
+                return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
             return null;

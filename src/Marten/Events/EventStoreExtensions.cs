@@ -42,7 +42,7 @@ namespace Marten.Events
         public static async Task<T> AggregateToAsync<T>(this IMartenQueryable<IEvent> queryable, T state = null,
                                                         CancellationToken token = new ()) where T : class
         {
-            var events = await queryable.ToListAsync(token);
+            var events = await queryable.ToListAsync(token).ConfigureAwait(false);
             if (!events.Any())
             {
                 return null;
@@ -51,7 +51,7 @@ namespace Marten.Events
             var session = queryable.As<MartenLinqQueryable<IEvent>>().Session;
             var aggregator = session.Options.Projections.AggregatorFor<T>();
 
-            var aggregate = await aggregator.BuildAsync(events, (IQuerySession)session, state, token);
+            var aggregate = await aggregator.BuildAsync(events, (IQuerySession)session, state, token).ConfigureAwait(false);
 
             return aggregate;
         }

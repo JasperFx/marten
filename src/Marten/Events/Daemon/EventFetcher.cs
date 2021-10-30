@@ -52,7 +52,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                range.Events = new List<IEvent>(await session.ExecuteHandlerAsync(_handler, token));
+                range.Events = new List<IEvent>(await session.ExecuteHandlerAsync(_handler, token).ConfigureAwait(false));
             }
             catch (Exception e)
             {

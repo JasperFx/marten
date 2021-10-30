@@ -45,10 +45,10 @@ namespace Marten.PLv8
         public static async Task TransformAsync(this IDocumentStore store, Action<IDocumentTransforms> apply, CancellationToken token = default)
         {
             var s = store.As<DocumentStore>();
-            await s.Tenancy.Default.EnsureStorageExistsAsync(typeof(TransformSchema), token);
+            await s.Tenancy.Default.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
             using var transforms = new DocumentTransforms(s, s.Tenancy.Default);
             apply(transforms);
-            await transforms.Session.SaveChangesAsync(token);
+            await transforms.Session.SaveChangesAsync(token).ConfigureAwait(false);
         }
     }
 }

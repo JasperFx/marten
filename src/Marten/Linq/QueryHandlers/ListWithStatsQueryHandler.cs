@@ -67,34 +67,34 @@ namespace Marten.Linq.QueryHandlers
             var count = 0;
             var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
-            await stream.WriteBytes(ManagedConnectionExtensions.LeftBracket, token);
+            await stream.WriteBytes(ManagedConnectionExtensions.LeftBracket, token).ConfigureAwait(false);
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 _statistics.TotalResults = reader.GetFieldValue<int>(_countIndex);
 
                 count++;
-                var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token);
-                await source.CopyStreamSkippingSOHAsync(stream, token);
+                var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token).ConfigureAwait(false);
+                await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
             }
 
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 count++;
-                await stream.WriteBytes(ManagedConnectionExtensions.Comma, token);
+                await stream.WriteBytes(ManagedConnectionExtensions.Comma, token).ConfigureAwait(false);
 
-                var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token);
-                await source.CopyStreamSkippingSOHAsync(stream, token);
+                var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token).ConfigureAwait(false);
+                await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
             }
 
-            await stream.WriteBytes(ManagedConnectionExtensions.RightBracket, token);
+            await stream.WriteBytes(ManagedConnectionExtensions.RightBracket, token).ConfigureAwait(false);
 
             return count;
         }
 
         async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
-            var list = await HandleAsync(reader, session, token);
+            var list = await HandleAsync(reader, session, token).ConfigureAwait(false);
             return list;
         }
 
@@ -107,10 +107,10 @@ namespace Marten.Linq.QueryHandlers
         {
             var list = new List<T>();
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                _statistics.TotalResults = await reader.GetFieldValueAsync<int>(_countIndex, token);
-                var item = await _selector.ResolveAsync(reader, token);
+                _statistics.TotalResults = await reader.GetFieldValueAsync<int>(_countIndex, token).ConfigureAwait(false);
+                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
                 list.Add(item);
             }
             else
@@ -121,9 +121,9 @@ namespace Marten.Linq.QueryHandlers
             }
 
             // Get the rest of the data
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var item = await _selector.ResolveAsync(reader, token);
+                var item = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
                 list.Add(item);
             }
 

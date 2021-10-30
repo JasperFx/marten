@@ -23,20 +23,20 @@ namespace Marten.Services
             var command = handler.BuildCommand();
             command.Connection = conn;
 
-            await conn.OpenAsync(cancellation);
-            using var reader = await command.ExecuteReaderAsync(cancellation);
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
+            using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
-            return await handler.HandleAsync(reader, cancellation);
+            return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
         }
 
         public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
         {
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync(cancellation);
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
             command.Connection = conn;
 
-            await command.ExecuteNonQueryAsync(cancellation);
+            await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
         }
     }
 }

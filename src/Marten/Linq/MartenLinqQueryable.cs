@@ -225,9 +225,9 @@ namespace Marten.Linq
         public async Task<string> ToJsonArray(CancellationToken token)
         {
             var stream = new MemoryStream();
-            await StreamJsonArray(stream, token);
+            await StreamJsonArray(stream, token).ConfigureAwait(false);
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         public Task StreamJsonFirst(Stream destination, CancellationToken token)
@@ -253,37 +253,37 @@ namespace Marten.Linq
         public async Task<string> ToJsonFirst(CancellationToken token)
         {
             var stream = new MemoryStream();
-            await StreamJsonFirst(stream, token);
+            await StreamJsonFirst(stream, token).ConfigureAwait(false);
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         public async Task<string?> ToJsonFirstOrDefault(CancellationToken token)
         {
             var stream = new MemoryStream();
-            var actual = await StreamJsonFirstOrDefault(stream, token);
+            var actual = await StreamJsonFirstOrDefault(stream, token).ConfigureAwait(false);
             if (actual == 0) return null;
 
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         public async Task<string> ToJsonSingle(CancellationToken token)
         {
             var stream = new MemoryStream();
-            await StreamJsonSingle(stream, token);
+            await StreamJsonSingle(stream, token).ConfigureAwait(false);
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         public async Task<string?> ToJsonSingleOrDefault(CancellationToken token)
         {
             var stream = new MemoryStream();
-            var count = await StreamJsonSingleOrDefault(stream, token);
+            var count = await StreamJsonSingleOrDefault(stream, token).ConfigureAwait(false);
             if (count == 0) return null;
 
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
     }
 }

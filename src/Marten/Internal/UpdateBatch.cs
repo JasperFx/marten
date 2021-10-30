@@ -65,8 +65,8 @@ namespace Marten.Internal
                 var command = session.BuildCommand(_operations);
                 try
                 {
-                    using var reader = await session.Database.ExecuteReaderAsync(command, token);
-                    await ApplyCallbacksAsync(_operations, reader, _exceptions, token);
+                    using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                    await ApplyCallbacksAsync(_operations, reader, _exceptions, token).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -88,8 +88,8 @@ namespace Marten.Internal
                     try
                     {
                         using var reader =
-                            await session.Database.ExecuteReaderAsync(command, token);
-                        await ApplyCallbacksAsync(operations, reader, _exceptions, token);
+                            await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                        await ApplyCallbacksAsync(operations, reader, _exceptions, token).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -161,10 +161,10 @@ namespace Marten.Internal
 
             if (!(first is NoDataReturnedCall))
             {
-                await first.PostprocessAsync(reader, exceptions, token);
+                await first.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
                 try
                 {
-                    await reader.NextResultAsync(token);
+                    await reader.NextResultAsync(token).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -176,10 +176,10 @@ namespace Marten.Internal
             {
                 if (operation is NoDataReturnedCall) continue;
 
-                await operation.PostprocessAsync(reader, exceptions, token);
+                await operation.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
                 try
                 {
-                    await reader.NextResultAsync(token);
+                    await reader.NextResultAsync(token).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {

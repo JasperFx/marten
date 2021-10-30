@@ -71,7 +71,7 @@ namespace Marten.Events
             }
 
             var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));
-            var sequences = await session.ExecuteHandlerAsync(fetcher, token);
+            var sequences = await session.ExecuteHandlerAsync(fetcher, token).ConfigureAwait(false);
 
 
             var storage = session.EventStorage();
@@ -88,7 +88,7 @@ namespace Marten.Events
                 else
                 {
                     var handler = storage.QueryForStream(stream);
-                    var state = await session.ExecuteHandlerAsync(handler, token);
+                    var state = await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
 
                     if (state == null)
                     {
@@ -110,7 +110,7 @@ namespace Marten.Events
 
             foreach (var projection in _inlineProjections.Value)
             {
-                await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token);
+                await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
             }
         }
 

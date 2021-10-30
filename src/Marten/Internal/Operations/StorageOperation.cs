@@ -118,12 +118,12 @@ namespace Marten.Internal.Operations
 
         protected async Task postprocessUpdateAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         {
-            if (!await reader.ReadAsync(token))
+            if (!await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 exceptions.Add(new NonExistentDocumentException(typeof(T), _id));
             };
 
-            var isNull = await reader.IsDBNullAsync(0, token);
+            var isNull = await reader.IsDBNullAsync(0, token).ConfigureAwait(false);
             if (isNull)
             {
                 exceptions.Add(new NonExistentDocumentException(typeof(T), _id));
@@ -133,9 +133,9 @@ namespace Marten.Internal.Operations
         protected async Task<bool> postprocessConcurrencyAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         {
             var success = false;
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var version = await reader.GetFieldValueAsync<Guid>(0, token);
+                var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
                 success = version == _version;
             };
 

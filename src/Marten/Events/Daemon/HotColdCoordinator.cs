@@ -59,15 +59,15 @@ namespace Marten.Events.Daemon
             try
             {
                 conn = _tenant.CreateConnection();
-                await conn.OpenAsync(_cancellation.Token);
+                await conn.OpenAsync(_cancellation.Token).ConfigureAwait(false);
 
                 gotLock = (bool) await conn.CreateCommand("SELECT pg_try_advisory_lock(:id);")
                     .With("id", _settings.DaemonLockId)
-                    .ExecuteScalarAsync(_cancellation.Token);
+                    .ExecuteScalarAsync(_cancellation.Token).ConfigureAwait(false);
 
                 if (!gotLock)
                 {
-                    await conn.CloseAsync();
+                    await conn.CloseAsync().ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -84,7 +84,7 @@ namespace Marten.Events.Daemon
 
                 try
                 {
-                    await startAllProjections(conn);
+                    await startAllProjections(conn).ConfigureAwait(false);
                     stopPollingForOwnership();
 
                     return true;
@@ -127,7 +127,7 @@ namespace Marten.Events.Daemon
         {
             _connection = conn;
 
-            await _daemon.StartAllShards();
+            await _daemon.StartAllShards().ConfigureAwait(false);
         }
 
         public Task Start(IProjectionDaemon daemon, CancellationToken token)
@@ -146,7 +146,7 @@ namespace Marten.Events.Daemon
                 _connection.SafeDispose();
                 if (_daemon != null)
                 {
-                    await _daemon.StopAll();
+                    await _daemon.StopAll().ConfigureAwait(false);
                 }
             }
         }
@@ -164,14 +164,14 @@ namespace Marten.Events.Daemon
                 var command = handler.BuildCommand();
                 command.Connection = _connection;
 
-                using var reader = await command.ExecuteReaderAsync(cancellation);
+                using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
-                return await handler.HandleAsync(reader, cancellation);
+                return await handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 // Let the caller deal with retries
-                await reopenConnectionIfNecessary(cancellation);
+                await reopenConnectionIfNecessary(cancellation).ConfigureAwait(false);
                 throw;
             }
         }
@@ -185,10 +185,10 @@ namespace Marten.Events.Daemon
 
             _connection?.SafeDispose();
 
-            var restarted = await tryToAttainLockAndStartShards();
+            var restarted = await tryToAttainLockAndStartShards().ConfigureAwait(false);
             if (!restarted)
             {
-                await _daemon.StopAll();
+                await _daemon.StopAll().ConfigureAwait(false);
                 startPollingForOwnership();
             }
         }
@@ -202,18 +202,18 @@ namespace Marten.Events.Daemon
                 tx = _connection.BeginTransaction();
                 command.Connection = _connection;
 
-                await command.ExecuteNonQueryAsync(cancellation);
-                await tx.CommitAsync(cancellation);
+                await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+                await tx.CommitAsync(cancellation).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 if (tx != null)
                 {
-                    await tx.RollbackAsync(cancellation);
+                    await tx.RollbackAsync(cancellation).ConfigureAwait(false);
                 }
 
                 // Let the caller deal with retries
-                await reopenConnectionIfNecessary(cancellation);
+                await reopenConnectionIfNecessary(cancellation).ConfigureAwait(false);
                 throw;
             }
             finally

@@ -57,9 +57,9 @@ namespace Marten.Linq.QueryHandlers
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
             var selector = (ISelector<T>)storage.BuildSelector(session);
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                return await selector.ResolveAsync(reader, token);
+                return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
             }
 
             return default;

@@ -236,11 +236,11 @@ namespace Marten.Events
 
         public async Task<IEvent> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            var eventTypeName = await reader.GetFieldValueAsync<string>(1, token);
+            var eventTypeName = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
             var mapping = Events.EventMappingFor(eventTypeName);
             if (mapping == null)
             {
-                var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token);
+                var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
                 if (dotnetTypeName.IsEmpty())
                 {
                     throw new UnknownEventTypeException(eventTypeName);
@@ -257,11 +257,11 @@ namespace Marten.Events
                 mapping = Events.EventMappingFor(type);
             }
 
-            var data = await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token);
+            var data = await _serializer.FromJsonAsync(mapping.DocumentType, reader, 0, token).ConfigureAwait(false);
 
             var @event = mapping.Wrap(data);
 
-            await ApplyReaderDataToEventAsync(reader, @event, token);
+            await ApplyReaderDataToEventAsync(reader, @event, token).ConfigureAwait(false);
 
             return @event;
         }

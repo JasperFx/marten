@@ -36,15 +36,15 @@ namespace Marten.Storage
         internal static async Task RunSqlAsync(this ITenant tenant, string sql)
         {
             using var conn = tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             try
             {
-                await conn.CreateCommand(sql).ExecuteNonQueryAsync();
+                await conn.CreateCommand(sql).ExecuteNonQueryAsync().ConfigureAwait(false);
             }
             finally
             {
-                await conn.CloseAsync();
+                await conn.CloseAsync().ConfigureAwait(false);
                 conn.Dispose();
             }
         }

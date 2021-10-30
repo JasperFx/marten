@@ -55,11 +55,11 @@ namespace Marten.Internal.CodeGeneration
             foreach (var document in documents)
             {
                 _storage.AssignIdentity(document, tenant);
-                await writer.StartRowAsync(cancellation);
-                await LoadRowAsync(writer, document, tenant, serializer, cancellation);
+                await writer.StartRowAsync(cancellation).ConfigureAwait(false);
+                await LoadRowAsync(writer, document, tenant, serializer, cancellation).ConfigureAwait(false);
             }
 
-            await writer.CompleteAsync(cancellation);
+            await writer.CompleteAsync(cancellation).ConfigureAwait(false);
         }
 
         public abstract void LoadRow(NpgsqlBinaryImporter writer, T document, ITenant tenant, ISerializer serializer);
@@ -92,11 +92,11 @@ namespace Marten.Internal.CodeGeneration
             using var writer = conn.BeginBinaryImport(TempLoaderSql());
             foreach (var document in documents)
             {
-                await writer.StartRowAsync(cancellation);
-                await LoadRowAsync(writer, document, tenant, serializer, cancellation);
+                await writer.StartRowAsync(cancellation).ConfigureAwait(false);
+                await LoadRowAsync(writer, document, tenant, serializer, cancellation).ConfigureAwait(false);
             }
 
-            await writer.CompleteAsync(cancellation);
+            await writer.CompleteAsync(cancellation).ConfigureAwait(false);
         }
 
         public abstract string CopyNewDocumentsFromTempTable();

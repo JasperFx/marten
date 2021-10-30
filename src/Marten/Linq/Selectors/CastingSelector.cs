@@ -20,7 +20,7 @@ namespace Marten.Linq.Selectors
 
         public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            return (T) (await _inner.ResolveAsync(reader, token));
+            return (T) (await _inner.ResolveAsync(reader, token).ConfigureAwait(false));
         }
     }
 }

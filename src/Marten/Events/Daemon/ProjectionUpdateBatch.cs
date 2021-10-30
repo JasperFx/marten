@@ -82,7 +82,7 @@ namespace Marten.Events.Daemon
             var exceptions = new List<Exception>();
             foreach (var page in _pages)
             {
-                await page.ApplyChangesAsync(exceptions, session, token);
+                await page.ApplyChangesAsync(exceptions, session, token).ConfigureAwait(false);
 
                 // Wanna fail fast here instead of trying the next batch
                 if (exceptions.Any())
@@ -128,8 +128,8 @@ namespace Marten.Events.Daemon
             {
                 _command.CommandText = _builder.ToString();
 
-                using var reader = await session.Database.ExecuteReaderAsync(_command, token);
-                await UpdateBatch.ApplyCallbacksAsync(_operations, reader, exceptions, token);
+                using var reader = await session.Database.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
+                await UpdateBatch.ApplyCallbacksAsync(_operations, reader, exceptions, token).ConfigureAwait(false);
             }
 
             public void ReleaseSession()
@@ -271,7 +271,7 @@ namespace Marten.Events.Daemon
             {
                 page.ReleaseSession();
             }
-            await _session.DisposeAsync();
+            await _session.DisposeAsync().ConfigureAwait(false);
             _session = null;
         }
     }

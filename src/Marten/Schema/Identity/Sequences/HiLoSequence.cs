@@ -48,18 +48,18 @@ namespace Marten.Schema.Identity.Sequences
                 $"update {_options.DatabaseSchemaName}.mt_hilo set hi_value = :floor where entity_name = :name";
 
             // This guarantees that the hilo row exists
-            await AdvanceToNextHi();
+            await AdvanceToNextHi().ConfigureAwait(false);
 
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             await conn.CreateCommand(updateSql)
                 .With("floor", numberOfPages)
                 .With("name", _entityName)
-                .ExecuteNonQueryAsync();
+                .ExecuteNonQueryAsync().ConfigureAwait(false);
 
             // And again to get it where we need it to be
-            await AdvanceToNextHi();
+            await AdvanceToNextHi().ConfigureAwait(false);
         }
 
         public int NextInt()
@@ -82,7 +82,7 @@ namespace Marten.Schema.Identity.Sequences
         public async Task AdvanceToNextHi()
         {
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             try
             {
@@ -95,7 +95,7 @@ namespace Marten.Schema.Identity.Sequences
                     // atomically secure the next hi
                     var raw = await conn.CreateCommand().CallsSproc(GetNextFunction)
                         .With("entity", _entityName)
-                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalarAsync();
+                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalarAsync().ConfigureAwait(false);
 
                     CurrentHi = Convert.ToInt64(raw);
 
@@ -109,7 +109,7 @@ namespace Marten.Schema.Identity.Sequences
             }
             finally
             {
-                await conn.CloseAsync();
+                await conn.CloseAsync().ConfigureAwait(false);
                 conn.Dispose();
             }
 

@@ -102,11 +102,11 @@ namespace Marten.Events
         public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null,
             T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
         {
-            var events = await FetchStreamAsync(streamId, version, timestamp, fromVersion, token);
+            var events = await FetchStreamAsync(streamId, version, timestamp, fromVersion, token).ConfigureAwait(false);
             if (!events.Any()) return null;
 
             var aggregator = _store.Options.Projections.AggregatorFor<T>();
-            var aggregate = await aggregator.BuildAsync(events, _session, state, token);
+            var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
             if (aggregate == null) return null;
 
@@ -136,7 +136,7 @@ namespace Marten.Events
         public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null,
             T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
         {
-            var events = await FetchStreamAsync(streamKey, version, timestamp, fromVersion, token);
+            var events = await FetchStreamAsync(streamKey, version, timestamp, fromVersion, token).ConfigureAwait(false);
             if (!events.Any())
             {
                 return null;
@@ -144,7 +144,7 @@ namespace Marten.Events
 
             var aggregator = _store.Options.Projections.AggregatorFor<T>();
 
-            var aggregate = await aggregator.BuildAsync(events, _session, state, token);
+            var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
             var storage = _session.StorageFor<T>();
             if (storage is IDocumentStorage<T, string> s) s.SetIdentity(aggregate, streamKey);
@@ -179,11 +179,11 @@ namespace Marten.Events
 
         public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class
         {
-            await _tenant.EnsureStorageExistsAsync(typeof(StreamAction), token);
+            await _tenant.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
 
             _store.Events.AddEventType(typeof(T));
 
-            return (await LoadAsync(id, token)).As<Event<T>>();
+            return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
         }
 
         public IEvent Load(Guid id)

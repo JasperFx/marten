@@ -56,11 +56,11 @@ namespace Marten.Linq.Includes
         {
             foreach (var includeReader in _readers)
             {
-                await includeReader.ReadAsync(reader, token);
-                await reader.NextResultAsync(token);
+                await includeReader.ReadAsync(reader, token).ConfigureAwait(false);
+                await reader.NextResultAsync(token).ConfigureAwait(false);
             }
 
-            return await Inner.HandleAsync(reader, session, token);
+            return await Inner.HandleAsync(reader, session, token).ConfigureAwait(false);
         }
     }
 }

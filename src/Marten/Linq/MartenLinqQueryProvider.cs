@@ -84,16 +84,16 @@ namespace Marten.Linq
 
             var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
-            return await handler.StreamJson(stream, reader, token);
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
         }
 
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
             var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
-            return await handler.HandleAsync(reader, _session, token);
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)
@@ -115,10 +115,10 @@ namespace Marten.Linq
 
             var cmd = _session.BuildCommand(statement);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
-            while (await reader.ReadAsync(token))
+            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                yield return await selector.ResolveAsync(reader, token);
+                yield return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
             }
         }
 

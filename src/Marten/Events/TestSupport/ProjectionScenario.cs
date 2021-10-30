@@ -64,16 +64,16 @@ namespace Marten.Events.TestSupport
         {
             if (!DoNotDeleteExistingData)
             {
-                await _store.Advanced.Clean.DeleteAllEventDataAsync();
+                await _store.Advanced.Clean.DeleteAllEventDataAsync().ConfigureAwait(false);
                 foreach (var storageType in
                     _store.Options.Projections.All.SelectMany(x => x.Options.StorageTypes))
-                    await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType);
+                    await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType).ConfigureAwait(false);
             }
 
             if (_store.Options.Projections.HasAnyAsyncProjections())
             {
                 Daemon = _store.BuildProjectionDaemon();
-                await Daemon.StartAllShards();
+                await Daemon.StartAllShards().ConfigureAwait(false);
             }
 
             Session = _store.LightweightSession();
@@ -91,7 +91,7 @@ namespace Marten.Events.TestSupport
 
                     try
                     {
-                        await step.Execute(this);
+                        await step.Execute(this).ConfigureAwait(false);
                         descriptions.Add($"{number.ToString().PadLeft(3)}. {step.Description}");
                     }
                     catch (Exception e)
@@ -111,7 +111,7 @@ namespace Marten.Events.TestSupport
             {
                 if (Daemon != null)
                 {
-                    await Daemon.StopAll();
+                    await Daemon.StopAll().ConfigureAwait(false);
                     Daemon.SafeDispose();
                 }
 

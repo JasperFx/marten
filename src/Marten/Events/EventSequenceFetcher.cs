@@ -44,9 +44,9 @@ namespace Marten.Events
         {
             var queue = new Queue<long>();
 
-            while (await reader.ReadAsync(token))
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                queue.Enqueue(await reader.GetFieldValueAsync<long>(0, token));
+                queue.Enqueue(await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false));
             }
 
             return queue;

@@ -214,7 +214,7 @@ namespace Marten.Internal.Sessions
             _disposed = true;
             if (Database != null)
             {
-                await Database.DisposeAsync();
+                await Database.DisposeAsync().ConfigureAwait(false);
             }
             GC.SuppressFinalize(this);
         }
@@ -236,7 +236,7 @@ namespace Marten.Internal.Sessions
         public async Task<T?> LoadAsync<T>(string id, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
-            var document = await StorageFor<T, string>().LoadAsync(id, this, token);
+            var document = await StorageFor<T, string>().LoadAsync(id, this, token).ConfigureAwait(false);
 
             return document;
         }
@@ -266,8 +266,8 @@ namespace Marten.Internal.Sessions
 
             var document = storage switch
             {
-                IDocumentStorage<T, int> i => await i.LoadAsync(id, this, token),
-                IDocumentStorage<T, long> l => await l.LoadAsync(id, this, token),
+                IDocumentStorage<T, int> i => await i.LoadAsync(id, this, token).ConfigureAwait(false),
+                IDocumentStorage<T, long> l => await l.LoadAsync(id, this, token).ConfigureAwait(false),
                 _ => throw new DocumentIdTypeMismatchException(
                     $"The identity type for document type {typeof(T).FullNameInCode()} is not numeric")
             };
@@ -286,7 +286,7 @@ namespace Marten.Internal.Sessions
         public async Task<T?> LoadAsync<T>(long id, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
-            var document = await StorageFor<T, long>().LoadAsync(id, this, token);
+            var document = await StorageFor<T, long>().LoadAsync(id, this, token).ConfigureAwait(false);
 
             return document;
         }
@@ -302,7 +302,7 @@ namespace Marten.Internal.Sessions
         public async Task<T?> LoadAsync<T>(Guid id, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
-            var document = await StorageFor<T, Guid>().LoadAsync(id, this, token);
+            var document = await StorageFor<T, Guid>().LoadAsync(id, this, token).ConfigureAwait(false);
 
             return document;
         }
@@ -390,7 +390,7 @@ namespace Marten.Internal.Sessions
         {
             var source = Options.GetCompiledQuerySourceFor(query, this);
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
-            return (await StreamJson(handler, destination, token) > 0);
+            return (await StreamJson(handler, destination, token).ConfigureAwait(false) > 0);
         }
 
         public Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
@@ -405,18 +405,18 @@ namespace Marten.Internal.Sessions
             CancellationToken token = default)
         {
             var stream = new MemoryStream();
-            var count = await StreamJsonOne(query, stream, token);
+            var count = await StreamJsonOne(query, stream, token).ConfigureAwait(false);
             if (!count) return null;
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         public async Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
         {
             var stream = new MemoryStream();
-            await StreamJsonOne(query, stream, token);
+            await StreamJsonOne(query, stream, token).ConfigureAwait(false);
             stream.Position = 0;
-            return await stream.ReadAllTextAsync();
+            return await stream.ReadAllTextAsync().ConfigureAwait(false);
         }
 
         public IReadOnlyList<T> LoadMany<T>(params string[] ids) where T : notnull
@@ -690,16 +690,16 @@ namespace Marten.Internal.Sessions
         {
             var cmd = this.BuildCommand(handler);
 
-            using var reader = await Database.ExecuteReaderAsync(cmd, token);
-            return await handler.StreamJson(destination, reader, token);
+            using var reader = await Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            return await handler.StreamJson(destination, reader, token).ConfigureAwait(false);
         }
 
         public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
         {
             var cmd = this.BuildCommand(handler);
 
-            using var reader = await Database.ExecuteReaderAsync(cmd, token);
-            return await handler.HandleAsync(reader, this, token);
+            using var reader = await Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
         }
 
         public T ExecuteHandler<T>(IQueryHandler<T> handler)

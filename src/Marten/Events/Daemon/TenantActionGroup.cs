@@ -23,9 +23,11 @@ namespace Marten.Events.Daemon
         {
             return Task.Run(async () =>
             {
-                await using var operations = new ProjectionDocumentSession(store, _tenant, batch);
-
-                await projection.ApplyAsync(operations, _actions, cancellationToken);
+                var operations = new ProjectionDocumentSession(store, _tenant, batch);
+                await using (operations.ConfigureAwait(false))
+                {
+                    await projection.ApplyAsync(operations, _actions, cancellationToken).ConfigureAwait(false);
+                }
             }, cancellationToken);
         }
     }

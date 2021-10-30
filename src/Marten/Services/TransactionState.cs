@@ -105,14 +105,14 @@ namespace Marten.Services
         {
             if (Transaction != null && _mode != CommandRunnerMode.External)
             {
-                await Transaction.CommitAsync(token);
-                await Transaction.DisposeAsync();
+                await Transaction.CommitAsync(token).ConfigureAwait(false);
+                await Transaction.DisposeAsync().ConfigureAwait(false);
                 Transaction = null;
             }
 
             if (_ownsConnection)
             {
-                await Connection.CloseAsync();
+                await Connection.CloseAsync().ConfigureAwait(false);
             }
         }
 
@@ -150,8 +150,8 @@ namespace Marten.Services
             {
                 try
                 {
-                    await Transaction.RollbackAsync(token);
-                    await Transaction.DisposeAsync();
+                    await Transaction.RollbackAsync(token).ConfigureAwait(false);
+                    await Transaction.DisposeAsync().ConfigureAwait(false);
                     Transaction = null;
                 }
                 catch (Exception e) when (e is ObjectDisposedException || e is InvalidOperationException)
@@ -166,7 +166,7 @@ namespace Marten.Services
                 {
                     if (_ownsConnection)
                     {
-                        await Connection.CloseAsync();
+                        await Connection.CloseAsync().ConfigureAwait(false);
                     }
                 }
             }
@@ -193,15 +193,15 @@ namespace Marten.Services
             {
                 if (Transaction != null)
                 {
-                    await Transaction.DisposeAsync();;
+                    await Transaction.DisposeAsync().ConfigureAwait(false);;
                     Transaction = null;
                 }
             }
 
             if (_ownsConnection)
             {
-                await Connection.CloseAsync();;
-                await Connection.DisposeAsync();;
+                await Connection.CloseAsync().ConfigureAwait(false);;
+                await Connection.DisposeAsync().ConfigureAwait(false);;
             }
         }
 

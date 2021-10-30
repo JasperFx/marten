@@ -97,12 +97,12 @@ namespace Marten
             {
                 try
                 {
-                    await operation();
+                    await operation().ConfigureAwait(false);
                     return;
                 }
                 catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
                 {
-                    await Task.Delay(_sleep(tries), token);
+                    await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
                 }
             }
         }
@@ -113,11 +113,11 @@ namespace Marten
             {
                 try
                 {
-                    return await operation();
+                    return await operation().ConfigureAwait(false);
                 }
                 catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
                 {
-                    await Task.Delay(_sleep(tries), token);
+                    await Task.Delay(_sleep(tries), token).ConfigureAwait(false);
                 }
             }
         }

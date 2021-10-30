@@ -58,10 +58,10 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         public async Task DeleteAllDocumentsAsync()
         {
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             var schemas = _options.Storage.AllSchemaNames();
-            var tables = await conn.ExistingTables("mt_%", schemas);
+            var tables = await conn.ExistingTables("mt_%", schemas).ConfigureAwait(false);
 
             if (!tables.Any()) return;
 
@@ -71,7 +71,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
                 builder.Append($"truncate {table} cascade;");
             }
 
-            await builder.ExecuteNonQueryAsync(conn);
+            await builder.ExecuteNonQueryAsync(conn).ConfigureAwait(false);
         }
 
         public void DeleteDocumentsByType(Type documentType)
@@ -102,7 +102,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
             foreach (var mapping in documentMappings)
             {
                 var storage = _options.Tenancy.Default.Providers.StorageFor(mapping.DocumentType);
-                await storage.TruncateDocumentStorageAsync(_tenant);
+                await storage.TruncateDocumentStorageAsync(_tenant).ConfigureAwait(false);
             }
         }
 
@@ -137,7 +137,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         {
             var mapping = _options.Storage.MappingFor(documentType);
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
             var writer = new StringWriter();
             foreach (var schemaObject in ((IFeatureSchema) mapping.Schema).Objects)
@@ -150,7 +150,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
             try
             {
-                await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -167,9 +167,9 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         public async Task CompletelyRemoveAllAsync()
         {
             using var conn = _tenant.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
             var schemas = _options.Storage.AllSchemaNames();
-            var tables = await conn.ExistingTables("mt_%", schemas);
+            var tables = await conn.ExistingTables("mt_%", schemas).ConfigureAwait(false);
 
             var builder = new CommandBuilder();
 
@@ -181,7 +181,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
             var functionDrops = await conn.CreateCommand(DropAllFunctionSql)
                 .With("schemas", schemas)
-                .FetchList<string>();
+                .FetchList<string>().ConfigureAwait(false);
             foreach (var functionDrop in functionDrops)
             {
                 builder.Append(functionDrop);
@@ -189,7 +189,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
             var sequenceDrops = await conn.CreateCommand(DropAllSequencesSql)
                 .With("schemas", schemas)
-                .FetchList<string>();
+                .FetchList<string>().ConfigureAwait(false);
             foreach (var sequenceDrop in sequenceDrops)
             {
                 builder.Append(sequenceDrop);
@@ -197,7 +197,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
             if (tables.Any() || functionDrops.Any() || sequenceDrops.Any())
             {
-                await builder.ExecuteNonQueryAsync(conn);
+                await builder.ExecuteNonQueryAsync(conn).ConfigureAwait(false);
             }
 
             _tenant.ResetSchemaExistenceChecks();
@@ -232,15 +232,15 @@ END; $$;
         public async Task DeleteAllEventDataAsync()
         {
             using var connection = _tenant.CreateConnection();
-            await connection.OpenAsync();
+            await connection.OpenAsync().ConfigureAwait(false);
 #if NET5_0
-            var tx = await connection.BeginTransactionAsync();
+            var tx = await connection.BeginTransactionAsync().ConfigureAwait(false);
             #else
             var tx = connection.BeginTransaction();
 #endif
             var deleteEventDataSql = toDeleteEventDataSql();
-            await connection.CreateCommand(deleteEventDataSql, tx).ExecuteNonQueryAsync();
-            await tx.CommitAsync();
+            await connection.CreateCommand(deleteEventDataSql, tx).ExecuteNonQueryAsync().ConfigureAwait(false);
+            await tx.CommitAsync().ConfigureAwait(false);
         }
 
         public void DeleteSingleEventStream(Guid streamId)
@@ -320,9 +320,9 @@ END; $$;
                 cmd.AddNamedParameter("tenantId", _tenant.TenantId);
             }
 
-            await conn.OpenAsync();
+            await conn.OpenAsync().ConfigureAwait(false);
 
-            await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
     }
 }

@@ -59,7 +59,7 @@ namespace Marten.Linq.QueryHandlers
         public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session,
             CancellationToken token)
         {
-            var hasResult = await reader.ReadAsync(token);
+            var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasResult)
             {
                 if (_canBeNull)
@@ -68,9 +68,9 @@ namespace Marten.Linq.QueryHandlers
                 throw new InvalidOperationException(NoElementsMessage);
             }
 
-            var result = await _selector.ResolveAsync(reader, token);
+            var result = await _selector.ResolveAsync(reader, token).ConfigureAwait(false);
 
-            if (!_canBeMultiples && await reader.ReadAsync(token))
+            if (!_canBeMultiples && await reader.ReadAsync(token).ConfigureAwait(false))
                 throw new InvalidOperationException(MoreThanOneElementMessage);
 
             return result;
@@ -80,7 +80,7 @@ namespace Marten.Linq.QueryHandlers
         {
             var npgsqlReader = reader.As<NpgsqlDataReader>();
 
-            var hasResult = await reader.ReadAsync(token);
+            var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasResult)
             {
                 if (_canBeNull)
@@ -95,12 +95,12 @@ namespace Marten.Linq.QueryHandlers
 
             var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
-            var source = await npgsqlReader.GetStreamAsync(ordinal, token);
-            await source.CopyStreamSkippingSOHAsync(stream, token);
+            var source = await npgsqlReader.GetStreamAsync(ordinal, token).ConfigureAwait(false);
+            await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
 
             if (_canBeMultiples) return 1;
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 throw new InvalidOperationException(MoreThanOneElementMessage);
             }

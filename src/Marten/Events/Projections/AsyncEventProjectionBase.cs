@@ -19,7 +19,7 @@ namespace Marten.Events.Projections
                 {
                     try
                     {
-                        await ApplyEvent(operations, stream, @event, cancellation);
+                        await ApplyEvent(operations, stream, @event, cancellation).ConfigureAwait(false);
                     }
                     catch (MartenCommandException)
                     {

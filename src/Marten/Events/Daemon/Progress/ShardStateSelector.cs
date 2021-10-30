@@ -16,8 +16,8 @@ namespace Marten.Events.Daemon.Progress
 
         public async Task<ShardState> ResolveAsync(DbDataReader reader, CancellationToken token)
         {
-            var name = await reader.GetFieldValueAsync<string>(0, token);
-            var sequence = await reader.GetFieldValueAsync<long>(1, token);
+            var name = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            var sequence = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
             return new ShardState(name, sequence);
         }
     }

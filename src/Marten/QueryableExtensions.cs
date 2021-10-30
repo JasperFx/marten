@@ -373,7 +373,7 @@ namespace Marten
 
         public static async Task<bool> StreamJsonFirstOrDefault<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)
         {
-            return (await queryable.As<MartenLinqQueryable<T>>().StreamJsonFirstOrDefault(destination, token)) > 0;
+            return (await queryable.As<MartenLinqQueryable<T>>().StreamJsonFirstOrDefault(destination, token).ConfigureAwait(false)) > 0;
         }
 
         public static Task StreamJsonSingle<T>(this IQueryable<T> queryable, Stream destination, CancellationToken token = default)

@@ -28,18 +28,18 @@ select last_seq_id, last_updated, transaction_timestamp() as timestamp from {gra
         {
             var statistics = new HighWaterStatistics();
 
-            if (await reader.ReadAsync(token))
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                statistics.HighestSequence = await reader.GetFieldValueAsync<long>(0, token);
+                statistics.HighestSequence = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             }
 
-            await reader.NextResultAsync(token);
+            await reader.NextResultAsync(token).ConfigureAwait(false);
 
-            if (!await reader.ReadAsync(token)) return statistics;
+            if (!await reader.ReadAsync(token).ConfigureAwait(false)) return statistics;
 
-            statistics.LastMark = statistics.SafeStartMark = await reader.GetFieldValueAsync<long>(0, token);
-            statistics.LastUpdated = await reader.GetFieldValueAsync<DateTimeOffset>(1, token);
-            statistics.Timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(2, token);
+            statistics.LastMark = statistics.SafeStartMark = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            statistics.LastUpdated = await reader.GetFieldValueAsync<DateTimeOffset>(1, token).ConfigureAwait(false);
+            statistics.Timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(2, token).ConfigureAwait(false);
 
             return statistics;
         }

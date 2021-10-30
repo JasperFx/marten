@@ -180,7 +180,7 @@ namespace Marten.Events
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
                 .With("id", streamKey);
 
-            var version = await readVersionFromExistingStream(streamKey, token, cmd);
+            var version = await readVersionFromExistingStream(streamKey, token, cmd).ConfigureAwait(false);
 
             var action = Append(streamKey, events);
             action.ExpectedVersionOnServer = version;
@@ -191,10 +191,10 @@ namespace Marten.Events
             long version = 0;
             try
             {
-                using var reader = await _session.Database.ExecuteReaderAsync(cmd, token);
-                if (await reader.ReadAsync(token))
+                using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                if (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
-                    version = await reader.GetFieldValueAsync<long>(0, token);
+                    version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
                 }
             }
             catch (Exception e)
@@ -227,7 +227,7 @@ namespace Marten.Events
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
                 .With("id", streamId);
 
-            var version = await readVersionFromExistingStream(streamId, token, cmd);
+            var version = await readVersionFromExistingStream(streamId, token, cmd).ConfigureAwait(false);
 
             var action = Append(streamId, events);
             action.ExpectedVersionOnServer = version;
@@ -245,9 +245,9 @@ namespace Marten.Events
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
                 .With("id", streamKey);
 
-            await _session.Database.BeginTransactionAsync(token);
+            await _session.Database.BeginTransactionAsync(token).ConfigureAwait(false);
 
-            var version = await readVersionFromExistingStream(streamKey, token, cmd);
+            var version = await readVersionFromExistingStream(streamKey, token, cmd).ConfigureAwait(false);
 
             var action = Append(streamKey, events);
             action.ExpectedVersionOnServer = version;
@@ -265,9 +265,9 @@ namespace Marten.Events
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
                 .With("id", streamId);
 
-            await _session.Database.BeginTransactionAsync(token);
+            await _session.Database.BeginTransactionAsync(token).ConfigureAwait(false);
 
-            var version = await readVersionFromExistingStream(streamId, token, cmd);
+            var version = await readVersionFromExistingStream(streamId, token, cmd).ConfigureAwait(false);
 
             var action = Append(streamId, events);
             action.ExpectedVersionOnServer = version;

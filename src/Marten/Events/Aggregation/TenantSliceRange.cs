@@ -46,7 +46,7 @@ namespace Marten.Events.Aggregation
                 @group.Start(shardAgent, batch.Queue, _runtime, _store, this);
             }
 
-            await Task.WhenAll(Groups.Select(x => x.Complete()).ToArray());
+            await Task.WhenAll(Groups.Select(x => x.Complete()).ToArray()).ConfigureAwait(false);
 
             if (Exception != null)
             {
@@ -59,8 +59,9 @@ namespace Marten.Events.Aggregation
             reset();
             Range.SkipEventSequence(eventSequence);
 
-            await using var session = _store.QuerySession();
-            Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events, _store.Tenancy);
+            var session = _store.QuerySession();
+            await using var _ = session.ConfigureAwait(false);
+            Groups = await _runtime.Slicer.SliceAsyncEvents(session, Range.Events, _store.Tenancy).ConfigureAwait(false);
         }
     }
 }
