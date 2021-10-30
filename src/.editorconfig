@@ -173,7 +173,7 @@ dotnet_diagnostic.VSTHRD103.severity = warning
 dotnet_diagnostic.VSTHRD110.severity = warning
 
 # VSTHRD111 Use .ConfigureAwait(bool)
-dotnet_diagnostic.VSTHRD111.severity = warning
+dotnet_diagnostic.VSTHRD111.severity = error
 
 # VSTHRD112 Implement System.IAsyncDisposable
 dotnet_diagnostic.VSTHRD112.severity = error
