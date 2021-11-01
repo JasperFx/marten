@@ -138,7 +138,7 @@ public class MembersEscaped
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/QuestTypes.cs#L12-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/QuestTypes.cs#L12-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In addition to generic `StartStream<T>`, `IEventStore` has a non-generic `StartStream` overload that let you pass explicit type.
