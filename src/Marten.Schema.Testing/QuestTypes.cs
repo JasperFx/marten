@@ -9,7 +9,7 @@ namespace Marten.Schema.Testing
         public Guid Id { get; set; }
     }
 
-    #region sample_sample-events
+    #region sample_sample-events_1
     public class ArrivedAtLocation
     {
         public int Day { get; set; }
