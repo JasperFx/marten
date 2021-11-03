@@ -90,7 +90,10 @@ namespace Marten.Linq.Parsing
                         CurrentStatement.WhereClauses.Add(@where);
                         break;
                     case OrderByClause orderBy:
-                        CurrentStatement.Orderings.AddRange(orderBy.Orderings);
+                        CurrentStatement.Orderings.AddRange(orderBy.Orderings.Select(x => (x, false)));
+                        break;
+                    case OrderByComparerClause orderBy:
+                        CurrentStatement.Orderings.AddRange(orderBy.Orderings.Select(x => (x, orderBy.CaseInsensitive)));
                         break;
                     case AdditionalFromClause additional:
                         var isComplex = queryModel.BodyClauses.Count > i + 1 || queryModel.ResultOperators.Any() || _provider.AllIncludes.Any();
