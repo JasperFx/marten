@@ -91,7 +91,14 @@ namespace Marten.Storage
             foreach (var pair in _builders.ToArray())
             {
                 // Just forcing them all to be built
-                var mapping = MappingFor(pair.Key);
+                FindMapping(pair.Key);
+            }
+
+            // This needs to be done second so that it can pick up any subclass
+            // relationships
+            foreach (var documentType in _options.Projections.AllPublishedTypes())
+            {
+                FindMapping(documentType);
             }
         }
 

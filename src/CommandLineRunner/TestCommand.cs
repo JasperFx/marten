@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Testing.Documents;
 using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
@@ -49,6 +50,11 @@ namespace CommandLineRunner
                 var target = Target.Random();
                 session2.Store(target);
                 session2.Store(user);
+
+                session2.Events.StartStream(Guid.NewGuid(), new TripStarted {Day = 5},
+                    Travel.Random(5), Travel.Random(6)
+                );
+
                 await session2.SaveChangesAsync();
 
 

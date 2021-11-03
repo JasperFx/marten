@@ -92,7 +92,8 @@ namespace Marten.Events.Projections
                 }
             }
 
-            public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType, DocumentMapping aggregateMapping,
+            public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
+                IDocumentMapping aggregateMapping,
                 MethodSlot slot)
             {
                 return new ProjectMethodCall(slot);
@@ -133,7 +134,8 @@ namespace Marten.Events.Projections
                 _validArgumentTypes.Add(typeof(IDocumentOperations));
             }
 
-            public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType, DocumentMapping aggregateMapping,
+            public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
+                IDocumentMapping aggregateMapping,
                 MethodSlot slot)
             {
                 return new CreateMethodFrame(slot);

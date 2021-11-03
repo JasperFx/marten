@@ -41,6 +41,8 @@ namespace CommandLineRunner
                         // *try* to use pre-generated code at runtime
                         opts.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly;
 
+                        opts.Schema.For<Activity>().AddSubClass<Trip>();
+
                         // You have to register all persisted document types ahead of time
                         // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
                         // just to let Marten know that document type exists
@@ -52,7 +54,7 @@ namespace CommandLineRunner
                         opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
                         // Register all event store projections ahead of time
-                        opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Async);
+                        opts.Projections.Add(new TripAggregationWithCustomName(), ProjectionLifecycle.Inline);
                         opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
                         opts.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async);
 
