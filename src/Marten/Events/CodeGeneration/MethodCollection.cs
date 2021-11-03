@@ -222,13 +222,13 @@ namespace Marten.Events.CodeGeneration
 
 
         public abstract IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            DocumentMapping aggregateMapping, MethodSlot slot);
+            IDocumentMapping aggregateMapping, MethodSlot slot);
 
         public List<MethodSlot> Methods { get; } = new List<MethodSlot>();
 
         public bool IsAsync { get; private set; }
 
-        public static EventTypePatternMatchFrame AddEventHandling(Type aggregateType, DocumentMapping mapping,
+        public static EventTypePatternMatchFrame AddEventHandling(Type aggregateType, IDocumentMapping mapping,
             params MethodCollection[] collections)
         {
             var byType = new Dictionary<Type, EventProcessingFrame>();

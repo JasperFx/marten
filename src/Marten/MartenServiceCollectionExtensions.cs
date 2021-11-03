@@ -79,7 +79,7 @@ namespace Marten
             services.AddSingleton<IGeneratesCode[]>(s =>
             {
                 var options = s.GetRequiredService<StoreOptions>();
-                return new IGeneratesCode[] {options.EventGraph, options};
+                return new IGeneratesCode[] {options, options.EventGraph};
             });
 
             return new MartenConfigurationExpression(services, null);

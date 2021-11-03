@@ -2,9 +2,14 @@ using System;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport
 {
-    public class Trip
+    public class Activity
     {
         public Guid Id { get; set; }
+    }
+
+    public class Trip : Activity
+    {
+
 
 
         public int EndedOn { get; set; }

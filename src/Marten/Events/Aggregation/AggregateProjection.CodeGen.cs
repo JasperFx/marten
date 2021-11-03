@@ -31,7 +31,7 @@ namespace Marten.Events.Aggregation
         private readonly string _inlineAggregationHandlerType;
         private readonly string _liveAggregationTypeName;
         private readonly ShouldDeleteMethodCollection _shouldDeleteMethods;
-        private DocumentMapping _aggregateMapping;
+        private IDocumentMapping _aggregateMapping;
         private GeneratedType _inlineGeneratedType;
         private bool _isAsync;
         private GeneratedType _liveGeneratedType;
@@ -91,7 +91,7 @@ namespace Marten.Events.Aggregation
 
             _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
 
-            _aggregateMapping = options.Storage.MappingFor(typeof(T));
+            _aggregateMapping = options.Storage.FindMapping(typeof(T));
 
 
             if (_aggregateMapping.IdMember == null)
@@ -358,7 +358,7 @@ namespace Marten.Events.Aggregation
 
         internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
         {
-            var mapping = options.Storage.MappingFor(typeof(T));
+            var mapping = options.Storage.FindMapping(typeof(T)).Root.As<DocumentMapping>();
             foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
 
             if (options.Events.TenancyStyle != mapping.TenancyStyle)

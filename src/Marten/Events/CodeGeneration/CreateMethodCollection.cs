@@ -42,7 +42,7 @@ namespace Marten.Events.CodeGeneration
             return BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic;
         }
 
-        public void BuildCreateMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)
+        public void BuildCreateMethod(GeneratedType generatedType, IDocumentMapping aggregateMapping)
         {
             var returnType = IsAsync
                 ? typeof(ValueTask<>).MakeGenericType(AggregateType)
@@ -68,7 +68,7 @@ namespace Marten.Events.CodeGeneration
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            DocumentMapping aggregateMapping, MethodSlot slot)
+            IDocumentMapping aggregateMapping, MethodSlot slot)
         {
             if (slot.Method is ConstructorInfo)
             {

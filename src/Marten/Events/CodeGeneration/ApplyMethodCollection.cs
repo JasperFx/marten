@@ -35,12 +35,12 @@ namespace Marten.Events.CodeGeneration
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            DocumentMapping aggregateMapping, MethodSlot slot)
+            IDocumentMapping aggregateMapping, MethodSlot slot)
         {
             return new ApplyMethodCall(slot);
         }
 
-        public void BuildApplyMethod(GeneratedType generatedType, DocumentMapping aggregateMapping)
+        public void BuildApplyMethod(GeneratedType generatedType, IDocumentMapping aggregateMapping)
         {
             var returnType = IsAsync
                 ? typeof(ValueTask<>).MakeGenericType(AggregateType)

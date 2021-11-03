@@ -110,11 +110,6 @@ namespace Marten.Events.Projections
                 projection.Lifecycle = lifecycle.Value;
             }
 
-            foreach (var publishedType in projection.As<IProjectionSource>().PublishedTypes())
-            {
-                _options.Storage.RegisterDocumentType(publishedType);
-            }
-
             projection.AssertValidity();
             All.Add(projection);
         }
@@ -152,11 +147,6 @@ namespace Marten.Events.Projections
         {
             var projection = new TProjection();
 
-            foreach (var publishedType in projection.As<IProjectionSource>().PublishedTypes())
-            {
-                _options.Storage.RegisterDocumentType(publishedType);
-            }
-
             if (lifecycle.HasValue)
             {
                 projection.Lifecycle = lifecycle.Value;
@@ -174,9 +164,8 @@ namespace Marten.Events.Projections
         /// <typeparam name="T"></typeparam>
         /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
         /// <returns>The extended storage configuration for document T</returns>
-        public MartenRegistry.DocumentMappingExpression<T> Add<T>(AggregateProjection<T> projection, ProjectionLifecycle? lifecycle = null)
+        public void Add<T>(AggregateProjection<T> projection, ProjectionLifecycle? lifecycle = null)
         {
-            var expression = _options.Schema.For<T>();
             if (lifecycle.HasValue)
             {
                 projection.Lifecycle = lifecycle.Value;
@@ -185,8 +174,6 @@ namespace Marten.Events.Projections
             projection.AssertValidity();
 
             All.Add(projection);
-
-            return expression;
         }
 
         internal bool Any()
@@ -281,6 +268,11 @@ namespace Marten.Events.Projections
         internal string[] AllProjectionNames()
         {
             return All.Select(x => $"'{x.ProjectionName}'").ToArray();
+        }
+
+        internal IEnumerable<Type> AllPublishedTypes()
+        {
+            return All.OfType<IProjectionSource>().SelectMany(x => x.PublishedTypes()).Distinct();
         }
     }
 }

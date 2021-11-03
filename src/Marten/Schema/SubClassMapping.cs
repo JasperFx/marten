@@ -43,6 +43,8 @@ namespace Marten.Schema
 
         public DocumentMapping Parent { get; }
 
+        public MemberInfo IdMember => Parent.IdMember;
+
         public string[] Aliases { get; }
         public string Alias { get; set; }
 

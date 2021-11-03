@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Weasel.Postgresql;
 using Marten.Schema.Identity;
 using Marten.Storage;
@@ -9,6 +10,8 @@ namespace Marten.Schema
     internal interface IDocumentMapping
     {
         IDocumentMapping Root { get; }
+
+        MemberInfo IdMember { get; }
 
         Type DocumentType { get; }
 
