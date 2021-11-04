@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,8 +18,7 @@ namespace Marten.Events.Aggregation
 
         public T Build(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot)
         {
-            return BuildAsync(events, session, snapshot, CancellationToken.None).GetAwaiter().GetResult();
+            throw new NotSupportedException();
         }
-
     }
 }
