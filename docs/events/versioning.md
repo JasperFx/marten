@@ -19,7 +19,7 @@ When it is not able to find event type with the same assembly, namespace and typ
 Such mapping needs to be defined manually:
 
 - either by registering events with store options `Events.AddEventTypes` method,
-- or by defining custom mapping with `Events.EventMappingFor` method.
+- or by defining custom mapping with `Events.MapEventType` method.
 
 For the case of namespace migration, it's enough to use `AddEventTypes` method as it's generating mapping based on the event type. As an example, change `OrderStatusChanged` event from:
 
@@ -87,14 +87,14 @@ After that Marten will automatically perform a matching based on the type name (
 
 When the event class type name has changed, Marten does not perform automatic mapping but allows to define a custom one.
 
-To do that you need to use `Events.EventMappingFor` method to define the type name for the new event.
+To do that you need to use `Events.MapEventType` method to define the type name for the new event.
 
 Eg. for migrating `OrderStatusChanged` event into `ConfirmedOrderStatusChanged`
 
 <!-- snippet: sample_new_event_type_name -->
 <a id='snippet-sample_new_event_type_name'></a>
 ```cs
-namespace OldEventNamespace
+namespace NewEventNamespace
 {
     public class ConfirmedOrderStatusChanged
     {
@@ -119,8 +119,8 @@ it's needed to register mapping using old event type name (`order_status_changed
 ```cs
 var options = new StoreOptions();
 
-var orderStatusChangedMapping = options.EventGraph.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
-orderStatusChangedMapping.EventTypeName = "order_status_changed";
+options.EventGraph
+    .MapEventType<NewEventNamespace.ConfirmedOrderStatusChanged>("order_status_changed");
 
 var store = new DocumentStore(options);
 ```

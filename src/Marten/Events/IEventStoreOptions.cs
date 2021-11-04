@@ -40,6 +40,22 @@ namespace Marten.Events
         /// <param name="types"></param>
         void AddEventTypes(IEnumerable<Type> types);
 
+        /// <summary>
+        /// Maps CLR event type as particular event type name. This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="eventTypeName">Event type name</param>
+        /// <typeparam name="TEvent">Mapped CLR event type</typeparam>
+        void MapEventType<TEvent>(string eventTypeName) where TEvent : class;
+
+        /// <summary>
+        /// Maps CLR event type as particular event type name. This is useful for event type migration.
+        /// See more in docs: https://martendb.io/events/versioning.html#event-type-name-migration
+        /// </summary>
+        /// <param name="eventType">Event type name</param>
+        /// <param name="eventTypeName">Mapped CLR event type</param>
+        void MapEventType(Type eventType, string eventTypeName);
+
         public MetadataConfig MetadataConfig { get; }
     }
 }

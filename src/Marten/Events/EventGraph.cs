@@ -124,6 +124,15 @@ namespace Marten.Events
             types.Each(AddEventType);
         }
 
+        public void MapEventType<TEvent>(string eventTypeName) where TEvent : class =>
+            MapEventType(typeof(TEvent), eventTypeName);
+
+        public void MapEventType(Type eventType, string eventTypeName)
+        {
+            var eventMapping = EventMappingFor(eventType);
+            eventMapping.EventTypeName = eventTypeName;
+        }
+
         /// <summary>
         ///     Override the database schema name for event related tables. By default this
         ///     is the same schema as the document storage
