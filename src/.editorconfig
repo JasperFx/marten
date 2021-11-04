@@ -149,7 +149,7 @@ csharp_preserve_single_line_blocks = true
 ###############################
 
 # CA2012: Use ValueTasks correctly
-dotnet_diagnostic.CA2012.severity = warning
+dotnet_diagnostic.CA2012.severity = error
 
 # VSTHRD002 Avoid problematic synchronous waits
 dotnet_diagnostic.VSTHRD002.severity = warning
