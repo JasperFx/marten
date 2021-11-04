@@ -47,7 +47,7 @@ namespace Marten.Testing.Events.SchemaChange
 
 
     #region sample_new_event_type_name
-    namespace OldEventNamespace
+    namespace NewEventNamespace
     {
         public class ConfirmedOrderStatusChanged
         {
@@ -81,8 +81,8 @@ namespace Marten.Testing.Events.SchemaChange
             #region sample_event_type_name_migration_options
             var options = new StoreOptions();
 
-            var orderStatusChangedMapping = options.EventGraph.EventMappingFor<OldEventNamespace.ConfirmedOrderStatusChanged>();
-            orderStatusChangedMapping.EventTypeName = "order_status_changed";
+            options.EventGraph
+                .MapEventType<NewEventNamespace.ConfirmedOrderStatusChanged>("order_status_changed");
 
             var store = new DocumentStore(options);
             #endregion
