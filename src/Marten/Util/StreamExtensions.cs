@@ -12,27 +12,15 @@ namespace Marten.Util
 
         static readonly Encoding UTF8NoBOM = new UTF8Encoding(false, true);
 
-        public static async Task<Stream> SkipSOHAsync(this Stream stream, CancellationToken token = default)
+        public static SOHSkippingStream ToSOHSkippingStream(this Stream stream)
         {
-            var output = new MemoryStream {Position = 0};
-
-            await stream.CopyStreamSkippingSOHAsync(output, token).ConfigureAwait(false);
-            output.Position = 0;
-
-            return output;
+            return  new SOHSkippingStream(stream);
         }
 
         public static async Task CopyStreamSkippingSOHAsync(this Stream input, Stream output, CancellationToken token = default)
         {
-            var buffer = new byte[1];
-
-            await input.ReadAsync(buffer, 0, 1, token).ConfigureAwait(false);
-            if (buffer[0] != 1)
-            {
-                await output.WriteAsync(buffer, 0, buffer.Length, token).ConfigureAwait(false);
-            }
-
-            await input.CopyToAsync(output, 4096, token).ConfigureAwait(false);
+            var sohSkippingStream = new SOHSkippingStream(input);
+            await sohSkippingStream.CopyToAsync(output, 4096, token).ConfigureAwait(false);
         }
 
         public static StreamReader GetStreamReader(this Stream stream)
