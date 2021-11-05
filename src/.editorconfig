@@ -158,7 +158,7 @@ dotnet_diagnostic.VSTHRD002.severity = warning
 dotnet_diagnostic.VSTHRD011.severity = warning
 
 # VSTHRD100 Avoid async void methods
-dotnet_diagnostic.VSTHRD100.severity = warning
+dotnet_diagnostic.VSTHRD100.severity = error
 
 # VSTHRD101 Avoid unsupported async delegates
 dotnet_diagnostic.VSTHRD101.severity = error
