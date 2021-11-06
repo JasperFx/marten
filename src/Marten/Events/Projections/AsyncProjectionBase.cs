@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace Marten.Events.Projections
     {
         public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
         {
-            ApplyAsync(operations, streams, CancellationToken.None).GetAwaiter().GetResult();
+            throw new NotSupportedException();
         }
 
         public abstract Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
