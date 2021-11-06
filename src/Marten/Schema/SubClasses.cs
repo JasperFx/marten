@@ -66,7 +66,7 @@ namespace Marten.Schema
 
             var assembly = baseType.GetTypeInfo().Assembly;
 
-            var types = TypeRepository.ForAssembly(assembly).GetAwaiter().GetResult();
+            var types = new AssemblyTypes(assembly);
             var allSubclassTypes = types.ClosedTypes.Concretes
                 .Where(x => x.CanBeCastTo(baseType));
 
