@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,41 +62,22 @@ namespace Marten.Events.Daemon
             await _highWater.Start().ConfigureAwait(false);
         }
 
-        public Task WaitForNonStaleData(TimeSpan timeout)
+        public async Task WaitForNonStaleData(TimeSpan timeout)
         {
-            var completion = new TaskCompletionSource<bool>();
-            var timeoutCancellation = new CancellationTokenSource(timeout);
+            var stopWatch = Stopwatch.StartNew();
+            var statistics = await _store.Advanced.FetchEventStoreStatistics().ConfigureAwait(false);
 
-
-            Task.Run(async () =>
+            while (stopWatch.Elapsed < timeout)
             {
-                var statistics = await _store.Advanced.FetchEventStoreStatistics(timeoutCancellation.Token).ConfigureAwait(false);
-                timeoutCancellation.Token.Register(() =>
+                if(CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
                 {
-                    completion.TrySetException(new TimeoutException(
-                        $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time"));
-                });
-
-                if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
-                {
-                    completion.SetResult(true);
                     return;
                 }
+                await Task.Delay(100.Milliseconds()).ConfigureAwait(false);
+            }
 
-                while (!timeoutCancellation.IsCancellationRequested)
-                {
-                    await Task.Delay(100.Milliseconds(), timeoutCancellation.Token).ConfigureAwait(false);
-
-                    if (CurrentShards().All(x => x.Position >= statistics.EventSequenceNumber))
-                    {
-                        completion.SetResult(true);
-                        return;
-                    }
-                }
-            }, timeoutCancellation.Token);
-
-            return completion.Task;
-
+            var message = $"The active projection shards did not reach sequence {statistics.EventSequenceNumber} in time";
+            throw new TimeoutException(message);
         }
 
         public async Task StartAllShards()
@@ -291,8 +273,8 @@ namespace Marten.Events.Daemon
             var waiters = shards.Select(async x =>
             {
                 await StartShard(x, token).ConfigureAwait(false);
-                return Tracker.WaitForShardState(x.Name, Tracker.HighWaterMark, 5.Minutes());
-            }).Select(x => x.Unwrap()).ToArray();
+                await Tracker.WaitForShardState(x.Name, Tracker.HighWaterMark, 5.Minutes()).ConfigureAwait(false);
+            }).ToArray();
 
             await waitForAllShardsToComplete(token, waiters).ConfigureAwait(false);
 
