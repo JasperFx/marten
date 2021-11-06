@@ -65,6 +65,18 @@ namespace Marten.Testing.Linq
         }
 
         [Fact]
+        public void single_hit_with_more_than_one_match_and_take_one_should_not_throw()
+        {
+            theSession.Store(new Target { Number = 1 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 2 });
+            theSession.Store(new Target { Number = 4 });
+            theSession.SaveChanges();
+
+            theSession.Query<Target>().Where(x => x.Number == 2).Take(1).Single().ShouldNotBeNull();
+        }
+
+        [Fact]
         public void single_or_default_hit_with_more_than_one_match()
         {
             theSession.Store(new Target { Number = 1 });
