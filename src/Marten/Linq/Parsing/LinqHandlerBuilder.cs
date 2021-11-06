@@ -165,7 +165,11 @@ namespace Marten.Linq.Parsing
                     break;
 
                 case SingleResultOperator single:
-                    CurrentStatement.Limit = 2;
+                    if (CurrentStatement.Limit == 0)
+                    {
+                        CurrentStatement.Limit = 2;
+                    }
+
                     CurrentStatement.SingleValue = true;
                     CurrentStatement.ReturnDefaultWhenEmpty = single.ReturnDefaultWhenEmpty;
                     CurrentStatement.CanBeMultiples = false;
