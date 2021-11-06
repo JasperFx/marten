@@ -64,7 +64,6 @@ namespace Marten.Events.Aggregation
         public ITenant Tenant { get; }
         public LightweightCache<TId, EventSlice<TDoc, TId>> Slices { get; }
         private TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
-        private Task<Task> _application;
 
         public TenantSliceGroup(ITenant tenant)
         {
@@ -112,7 +111,7 @@ namespace Marten.Events.Aggregation
             Slices[id].AddEvents(events);
         }
 
-        internal void Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,
+        internal async Task Start(IShardAgent shardAgent, ActionBlock<IStorageOperation> queue,
             AggregationRuntime<TDoc, TId> runtime,
             IDocumentStore store, EventRangeGroup parent)
         {
@@ -140,10 +139,15 @@ namespace Marten.Events.Aggregation
 
             _builder.LinkTo(queue, x => x != null);
 
-            _application = Task.Factory.StartNew(() =>
-                processEventSlices(shardAgent, runtime, store, parent.Cancellation)
-                , parent.Cancellation);
+            await processEventSlices(shardAgent, runtime, store, parent.Cancellation).ConfigureAwait(false);
 
+            var builder = Volatile.Read(ref _builder);
+
+            if (builder != null)
+            {
+                builder.Complete();
+                await builder.Completion.ConfigureAwait(false);
+            }
         }
 
         private async Task processEventSlices(IShardAgent shardAgent, AggregationRuntime<TDoc, TId> runtime,
@@ -195,21 +199,6 @@ namespace Marten.Events.Aggregation
                 }
 
                 _builder.Post(slice);
-            }
-        }
-
-        internal async Task Complete()
-        {
-            if (_application != null)
-            {
-                await (await _application.ConfigureAwait(false)).ConfigureAwait(false);
-            }
-
-            // This can happen if one group fails early
-            if (_builder != null)
-            {
-                _builder.Complete();
-                await _builder.Completion.ConfigureAwait(false);
             }
         }
 
