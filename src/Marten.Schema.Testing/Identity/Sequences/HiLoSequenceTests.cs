@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
@@ -14,6 +16,24 @@ namespace Marten.Schema.Testing.Identity.Sequences
         public int Id;
     }
 
+    public class AdvanceToNextHi : IEnumerable<object[]>
+    {
+        private static readonly Func<HiloSequence, Task> AsyncNext = sequence => sequence.AdvanceToNextHi();
+        private static readonly Func<HiloSequence, Task> SyncNext = sequence =>  {
+            sequence.AdvanceToNextHiSync();
+            return Task.CompletedTask;
+        };
+        public IEnumerator<object[]> GetEnumerator()
+        {
+            yield return new object []{ AsyncNext };
+            yield return new object[] { SyncNext };
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
 
     public class HiloSequenceTests : IntegrationContext
     {
@@ -43,35 +63,38 @@ namespace Marten.Schema.Testing.Identity.Sequences
             theSequence.ShouldAdvanceHi().ShouldBeTrue();
         }
 
-        [Fact]
-        public async Task advance_to_next_hi_from_initial_state()
+        [Theory]
+        [ClassData(typeof(AdvanceToNextHi))]
+        public async Task advance_to_next_hi_from_initial_state(Func<HiloSequence, Task> advanceToNextHi)
         {
-            await theSequence.AdvanceToNextHi();
+            await advanceToNextHi(theSequence);
 
             theSequence.CurrentLo.ShouldBe(1);
             theSequence.CurrentHi.ShouldBe(0);
         }
 
-        [Fact]
-        public async Task advance_to_next_hi_several_times()
+        [Theory]
+        [ClassData(typeof(AdvanceToNextHi))]
+        public async Task advance_to_next_hi_several_times(Func<HiloSequence, Task> advanceToNextHi)
         {
-            await theSequence.AdvanceToNextHi();
+            await advanceToNextHi(theSequence);
 
-            await theSequence.AdvanceToNextHi();
+            await advanceToNextHi(theSequence);
             theSequence.CurrentHi.ShouldBe(1);
 
-            await theSequence.AdvanceToNextHi();
+            await advanceToNextHi(theSequence);
             theSequence.CurrentHi.ShouldBe(2);
 
-            await theSequence.AdvanceToNextHi();
+            await advanceToNextHi(theSequence);
             theSequence.CurrentHi.ShouldBe(3);
         }
 
-        [Fact]
-        public async Task advance_value_from_initial_state()
+        [Theory]
+        [ClassData(typeof(AdvanceToNextHi))]
+        public async Task advance_value_from_initial_state(Func<HiloSequence, Task> advanceToNextHi)
         {
             // Gotta do this at least once
-            await theSequence.AdvanceToNextHi();
+            await advanceToNextHi(theSequence);
 
             theSequence.AdvanceValue().ShouldBe(1);
             theSequence.AdvanceValue().ShouldBe(2);
