@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Linq;
@@ -107,16 +108,29 @@ namespace Marten.Pagination
         public long LastItemOnPage { get; protected set; }
 
         /// <summary>
+        /// Static method to create a new instance of the <see cref="PagedList{T}
+        /// </summary>
+        /// <param name="queryable"></param>
+        /// <param name="pageNumber"></param>
+        /// <param name="pageSize"></param>
+
+        public static PagedList<T> Create(IQueryable<T> queryable, int pageNumber, int pageSize)
+        {
+            var pagedList = new PagedList<T>();
+            pagedList.Init(queryable, pageNumber, pageSize);
+            return pagedList;
+        }
+
+        /// <summary>
         /// Async static method to create a new instance of the <see cref="PagedList{T}
         /// </summary>
         /// <param name="queryable"></param>
         /// <param name="pageNumber"></param>
         /// <param name="pageSize"></param>
-        /// <returns></returns>
-        public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize)
+        public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize, CancellationToken token = default)
         {
             var pagedList = new PagedList<T>();
-            await pagedList.InitAsync(queryable, pageNumber, pageSize).ConfigureAwait(false);
+            await pagedList.InitAsync(queryable, pageNumber, pageSize, token).ConfigureAwait(false);
             return pagedList;
         }
 
@@ -126,7 +140,31 @@ namespace Marten.Pagination
         /// <param name="queryable">Query for which data has to be fetched</param>
         /// <param name="pageSize">Page size</param>
         /// <param name="totalItemCount">Total count of all records</param>
-        public async Task InitAsync(IQueryable<T> queryable, int pageNumber, int pageSize)
+        public void Init(IQueryable<T> queryable, int pageNumber, int pageSize)
+        {
+            var query = PrepareQuery(queryable, pageNumber, pageSize, out QueryStatistics statistics);
+
+            var items = query.ToList();
+
+            ProcessResults(pageSize, items, statistics);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PagedList{T}" /> class.
+        /// </summary>
+        /// <param name="queryable">Query for which data has to be fetched</param>
+        /// <param name="pageSize">Page size</param>
+        /// <param name="totalItemCount">Total count of all records</param>
+        public async Task InitAsync(IQueryable<T> queryable, int pageNumber, int pageSize, CancellationToken token = default)
+        {
+            var query = PrepareQuery(queryable, pageNumber, pageSize, out QueryStatistics statistics);
+
+            var items = await query.ToListAsync(token).ConfigureAwait(false);
+
+            ProcessResults(pageSize, items, statistics);
+        }
+
+        private IQueryable<T> PrepareQuery(IQueryable<T> queryable, int pageNumber, int pageSize, out QueryStatistics statistics)
         {
             // throw an argument exception if page number is less than one
             if (pageNumber < 1)
@@ -143,20 +181,17 @@ namespace Marten.Pagination
             PageNumber = pageNumber;
             PageSize = pageSize;
 
-            QueryStatistics? queryStats;
+            return pageNumber == 1
+                ? queryable.As<IMartenQueryable<T>>().Stats(out statistics).Take(pageSize)
+                : queryable.As<IMartenQueryable<T>>().Stats(out statistics).Skip((pageNumber - 1) * pageSize).Take(pageSize);
+        }
 
-            if (pageNumber == 1)
-            {
-                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
-            }
-            else
-            {
-                var skipCount = (pageNumber - 1) * pageSize;
-                _items.AddRange(await queryable.As<IMartenQueryable<T>>().Stats(out queryStats).Skip(skipCount).Take<T>(pageSize).ToListAsync<T>().ConfigureAwait(false));
-            }
+        private void ProcessResults(int pageSize, IReadOnlyList<T> items, QueryStatistics statistics)
+        {
+            _items.AddRange(items);
 
             // fetch the total record count
-            TotalItemCount = queryStats.TotalResults;
+            TotalItemCount = statistics.TotalResults;
 
             // compute the number of pages based on page size and total records
             PageCount = TotalItemCount > 0 ? (int)Math.Ceiling(TotalItemCount / (double)pageSize) : 0;

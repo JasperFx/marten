@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Xunit;
@@ -8,6 +10,7 @@ using Marten.Pagination;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Linq;
+using Marten.Schema.Identity.Sequences;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
@@ -16,6 +19,26 @@ namespace Marten.Testing.Pagination
     public class PaginationTestDocument
     {
         public string Id { get; set; }
+    }
+
+    public class ToPagedListData<T> : IEnumerable<object[]>
+    {
+        private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListAsync
+            = (query, pageNumber, pageSize) => query.ToPagedListAsync(pageNumber, pageSize);
+
+        private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListSync
+            = (query, pageNumber, pageSize) => Task.FromResult(query.ToPagedList(pageNumber, pageSize));
+
+        public IEnumerator<object[]> GetEnumerator()
+        {
+            yield return new object []{ ToPagedListAsync };
+            yield return new object[] { ToPagedListSync };
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 
     public class pagedlist_queryable_extension_Tests : IntegrationContext
@@ -81,9 +104,9 @@ namespace Marten.Testing.Pagination
 
             pagedList.Count.ShouldBe(pageSize);
         }
-
-        [Fact]
-        public void invalid_pagenumber_should_throw_exception()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task invalid_pagenumber_should_throw_exception(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             // invalid page number
             var pageNumber = 0;
@@ -91,13 +114,14 @@ namespace Marten.Testing.Pagination
             var pageSize = 10;
 
             var ex =
-                Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(
-                    () => theSession.Query<Target>().ToPagedList(pageNumber, pageSize));
+                await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
+                    async () => await toPagedList(_session.Query<Target>(), pageNumber, pageSize));
             SpecificationExtensions.ShouldContain(ex.Message, "pageNumber = 0. PageNumber cannot be below 1.");
         }
 
-        [Fact]
-        public void invalid_pagesize_should_throw_exception()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task invalid_pagesize_should_throw_exception(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 1;
 
@@ -105,13 +129,14 @@ namespace Marten.Testing.Pagination
             var pageSize = 0;
 
             var ex =
-                Exception<ArgumentOutOfRangeException>.ShouldBeThrownBy(
-                    () => theSession.Query<Target>().ToPagedList(pageNumber, pageSize));
+                await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
+                    async () =>  await toPagedList(_session.Query<Target>(), pageNumber, pageSize));
             SpecificationExtensions.ShouldContain(ex.Message, $"pageSize = 0. PageSize cannot be below 1.");
         }
 
-        [Fact]
-        public void check_computed_pagecount()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_computed_pagecount(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             // page number ouside the page range, page range is between 1 and 10 for the sample
             var pageNumber = 1;
@@ -120,12 +145,13 @@ namespace Marten.Testing.Pagination
 
             var expectedPageCount = theSession.Query<Target>().Count()/pageSize;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.PageCount.ShouldBe(expectedPageCount);
         }
 
-        [Fact]
-        public void check_total_items_count()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_total_items_count(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 1;
 
@@ -133,12 +159,13 @@ namespace Marten.Testing.Pagination
 
             var expectedTotalItemsCount = theSession.Query<Target>().Count();
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.TotalItemCount.ShouldBe(expectedTotalItemsCount);
         }
 
-        [Fact]
-        public void check_has_previous_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_has_previous_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 2;
 
@@ -146,12 +173,13 @@ namespace Marten.Testing.Pagination
 
             var expectedHasPreviousPage = true;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.HasPreviousPage.ShouldBe(expectedHasPreviousPage);
         }
 
-        [Fact]
-        public void check_has_no_previous_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_has_no_previous_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 1;
 
@@ -159,12 +187,13 @@ namespace Marten.Testing.Pagination
 
             var expectedHasPreviousPage = false;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.HasPreviousPage.ShouldBe(expectedHasPreviousPage);
         }
 
-        [Fact]
-        public void check_has_next_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_has_next_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 1;
 
@@ -172,12 +201,13 @@ namespace Marten.Testing.Pagination
 
             var expectedHasNextPage = true;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.HasNextPage.ShouldBe(expectedHasNextPage);
         }
 
-        [Fact]
-        public void check_has_no_next_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_has_no_next_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 10;
 
@@ -185,12 +215,13 @@ namespace Marten.Testing.Pagination
 
             var expectedHasNextPage = false;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.HasNextPage.ShouldBe(expectedHasNextPage);
         }
 
-        [Fact]
-        public void check_is_first_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_is_first_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 1;
 
@@ -198,12 +229,13 @@ namespace Marten.Testing.Pagination
 
             var expectedIsFirstPage = true;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.IsFirstPage.ShouldBe(expectedIsFirstPage);
         }
 
-        [Fact]
-        public void check_is_not_first_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_is_not_first_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 2;
 
@@ -211,12 +243,13 @@ namespace Marten.Testing.Pagination
 
             var expectedIsFirstPage = false;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.IsFirstPage.ShouldBe(expectedIsFirstPage);
         }
 
-        [Fact]
-        public void check_is_last_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_is_last_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 10;
 
@@ -224,12 +257,13 @@ namespace Marten.Testing.Pagination
 
             var expectedIsLastPage = true;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.IsLastPage.ShouldBe(expectedIsLastPage);
         }
 
-        [Fact]
-        public void check_is_not_last_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_is_not_last_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 1;
 
@@ -237,12 +271,13 @@ namespace Marten.Testing.Pagination
 
             var expectedIsLastPage = false;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.IsLastPage.ShouldBe(expectedIsLastPage);
         }
 
-        [Fact]
-        public void check_first_item_on_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_first_item_on_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 2;
 
@@ -250,12 +285,13 @@ namespace Marten.Testing.Pagination
 
             var expectedFirstItemOnPage = 11;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.FirstItemOnPage.ShouldBe(expectedFirstItemOnPage);
         }
 
-        [Fact]
-        public void check_last_item_on_page()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_last_item_on_page(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 2;
 
@@ -263,12 +299,13 @@ namespace Marten.Testing.Pagination
 
             var expectedLastItemOnPage = 20;
 
-            var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
             pagedList.LastItemOnPage.ShouldBe(expectedLastItemOnPage);
         }
 
-        [Fact]
-        public void zero_records_document_should_return_pagedlist_gracefully()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<PaginationTestDocument>))]
+        public async Task zero_records_document_should_return_pagedlist_gracefully(Func<IQueryable<PaginationTestDocument>, int, int, Task<IPagedList<PaginationTestDocument>>> toPagedList)
         {
             BuildUpDocumentWithZeroRecords();
 
@@ -276,7 +313,7 @@ namespace Marten.Testing.Pagination
 
             var pageSize = 10;
 
-            var pagedList = theSession.Query<PaginationTestDocument>().ToPagedList(pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<PaginationTestDocument>(), pageNumber, pageSize);
             pagedList.TotalItemCount.ShouldBe(0);
             pagedList.PageCount.ShouldBe(0);
             pagedList.IsFirstPage.ShouldBe(false);
@@ -289,8 +326,9 @@ namespace Marten.Testing.Pagination
             pagedList.PageSize.ShouldBe(pageSize);
         }
 
-        [Fact]
-        public void check_query_with_where_clause_followed_by_to_pagedlist()
+        [Theory]
+        [ClassData(typeof(ToPagedListData<Target>))]
+        public async Task check_query_with_where_clause_followed_by_to_pagedlist(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
         {
             var pageNumber = 2;
             var pageSize = 10;
