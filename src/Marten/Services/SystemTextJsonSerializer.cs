@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Data.Common;
 using System.IO;
 using System.Text.Json;
@@ -64,23 +65,18 @@ namespace Marten.Services
 
         public T FromJson<T>(Stream stream)
         {
-            using (NoSynchronizationContextScope.Enter())
-            {
-                return FromJsonAsync<T>(stream).GetAwaiter().GetResult();
-            }
+            using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
+            return JsonSerializer.Deserialize<T>(buffer, _optionsDeserialize);
         }
 
         public T FromJson<T>(DbDataReader reader, int index)
         {
-            using (NoSynchronizationContextScope.Enter())
-            {
-                return FromJsonAsync<T>(reader, index).GetAwaiter().GetResult();
-            }
+            return FromJson<T>(reader.GetStream(index));
         }
 
         public async ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync<T>(await stream.SkipSOHAsync(cancellationToken).ConfigureAwait(false), _optionsDeserialize, cancellationToken).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync<T>(stream.ToSOHSkippingStream(), _optionsDeserialize, cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
@@ -91,23 +87,18 @@ namespace Marten.Services
 
         public object FromJson(Type type, Stream stream)
         {
-            using (NoSynchronizationContextScope.Enter())
-            {
-                return FromJsonAsync(type, stream).GetAwaiter().GetResult();
-            }
+            using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
+            return JsonSerializer.Deserialize(buffer, type, _optionsDeserialize);
         }
 
         public object FromJson(Type type, DbDataReader reader, int index)
         {
-            using (NoSynchronizationContextScope.Enter())
-            {
-                return FromJsonAsync(type, reader, index).GetAwaiter().GetResult();
-            }
+            return FromJson(type, reader.As<NpgsqlDataReader>().GetStream(index));
         }
 
         public async ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
         {
-            return await JsonSerializer.DeserializeAsync(await stream.SkipSOHAsync(cancellationToken).ConfigureAwait(false), type, _optionsDeserialize, cancellationToken).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync(stream.ToSOHSkippingStream(), type, _optionsDeserialize, cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)

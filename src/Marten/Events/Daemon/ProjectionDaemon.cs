@@ -399,7 +399,7 @@ namespace Marten.Events.Daemon
                             return;
                         }
 
-                        parameters.ApplySkip(skip);
+                        await parameters.ApplySkipAsync(skip).ConfigureAwait(false);
 
                         _logger.LogInformation("Skipping event #{Sequence} ({EventType}) in shard '{ShardName}'",
                             skip.Event.Sequence, skip.Event.EventType.GetFullName(), parameters.Shard.Name);

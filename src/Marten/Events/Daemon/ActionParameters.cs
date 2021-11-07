@@ -54,15 +54,16 @@ namespace Marten.Events.Daemon
             Cancellation = Group.Cancellation;
         }
 
-        public void ApplySkip(SkipEvent skip)
+        public async Task ApplySkipAsync(SkipEvent skip)
         {
-            Group?.SkipEventSequence(skip.Event.Sequence);
+            if (Group != null)
+            {
+                await Group.SkipEventSequence(skip.Event.Sequence).ConfigureAwait(false);
 
-            // You have to reset the CancellationToken for the group
-            Group?.Reset();
-
-            Cancellation = Group?.Cancellation ?? Cancellation;
-
+                // You have to reset the CancellationToken for the group
+                Group.Reset();
+                Cancellation = Group.Cancellation;
+            }
 
             // Basically saying that the attempts start over when we skip
             Attempts = 0;
