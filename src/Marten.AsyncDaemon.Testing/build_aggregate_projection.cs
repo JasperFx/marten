@@ -1,8 +1,10 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -265,6 +267,100 @@ namespace Marten.AsyncDaemon.Testing
 
 
         }
+
+        [Fact]
+        public async Task rebuild_with_interface_creation()
+        {
+            StoreOptions(x =>
+            {
+                x.Events.TenancyStyle = TenancyStyle.Conjoined;
+                x.Policies.AllDocumentsAreMultiTenanted();
+                x.Projections.Add(new InterfaceCreationProjection());
+            }, true);
+
+            var id = Guid.NewGuid();
+            await using (var session = theStore.LightweightSession("a"))
+            {
+                session.Events.StartStream(id, new FooCreated(id, "Foo"));
+                session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
+
+                await session.SaveChangesAsync();
+
+                var foo = await session.LoadAsync<Foo>(id);
+                Assert.Equal("Foo", foo.Name);
+            }
+
+            var daemon = theStore.BuildProjectionDaemon();
+
+            await daemon.RebuildProjection("Foo", CancellationToken.None);
+
+            await using var session2 = theStore.LightweightSession("a");
+            var c = await session2.LoadAsync<Foo>(id);
+            Assert.Equal("Foo", c.Name);
+        }
+
+
+        public class InterfaceCreationProjection: AggregateProjection<Foo>
+        {
+            public InterfaceCreationProjection()
+            {
+                ProjectionName = nameof(Foo);
+                Lifecycle = ProjectionLifecycle.Inline;
+
+                CreateEvent<IFooCreated>(e => new(e.Id, "Foo"));
+            }
+        }
+
+        public interface IFooCreated { Guid Id { get; init; } }
+        public record BarCreated(Guid Id);
+        public record FooCreated(Guid Id, string Name): IFooCreated;
+        public record Foo(Guid Id, string Name);
+
+        [Fact]
+        public async Task rebuild_with_abstract_creation()
+        {
+            StoreOptions(x =>
+            {
+                x.Events.TenancyStyle = TenancyStyle.Conjoined;
+                x.Policies.AllDocumentsAreMultiTenanted();
+                x.Projections.Add(new AbstractCreationProjection());
+            }, true);
+
+            var id = Guid.NewGuid();
+            await using (var session = theStore.LightweightSession("a"))
+            {
+                session.Events.StartStream(id, new FooCreated2(id, "Foo"));
+                session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
+
+                await session.SaveChangesAsync();
+
+                var foo = await session.LoadAsync<Foo>(id);
+                Assert.Equal("Foo", foo.Name);
+            }
+
+            var daemon = theStore.BuildProjectionDaemon();
+
+            await daemon.RebuildProjection("Foo", CancellationToken.None);
+
+            await using var session2 = theStore.LightweightSession("a");
+            var c = await session2.LoadAsync<Foo>(id);
+            Assert.Equal("Foo", c.Name);
+        }
+
+
+        public class AbstractCreationProjection: AggregateProjection<Foo>
+        {
+            public AbstractCreationProjection()
+            {
+                ProjectionName = nameof(Foo);
+                Lifecycle = ProjectionLifecycle.Inline;
+
+                CreateEvent<AbstractFooCreated>(e => new(e.Id, "Foo"));
+            }
+        }
+
+        public abstract record AbstractFooCreated(Guid Id);
+        public record FooCreated2(Guid Id, string Name): AbstractFooCreated(Id);
 
     }
 }
