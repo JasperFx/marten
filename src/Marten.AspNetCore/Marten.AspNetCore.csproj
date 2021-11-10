@@ -24,4 +24,5 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
+    <Import Project="../../Analysis.Build.props" />
 </Project>

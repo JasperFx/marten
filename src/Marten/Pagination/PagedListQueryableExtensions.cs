@@ -24,7 +24,7 @@ namespace Marten.Pagination
             int pageSize)
         {
             // return paged list
-            return PagedList<T>.CreateAsync(queryable, pageNumber, pageSize).GetAwaiter().GetResult();
+            return PagedList<T>.Create(queryable, pageNumber, pageSize);
         }
 
         /// <summary>

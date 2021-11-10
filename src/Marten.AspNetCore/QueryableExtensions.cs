@@ -21,7 +21,7 @@ namespace Marten.AspNetCore
         public static async Task WriteSingle<T>(this IQueryable<T> queryable, HttpContext context, string contentType = "application/json", int onFoundStatus = 200)
         {
             var stream = new MemoryStream();
-            var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted);
+            var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted).ConfigureAwait(false);
 
             if (found)
             {
@@ -30,7 +30,7 @@ namespace Marten.AspNetCore
                 context.Response.ContentType = contentType;
 
                 stream.Position = 0;
-                await stream.CopyToAsync(context.Response.Body);
+                await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
             }
             else
             {
@@ -50,14 +50,14 @@ namespace Marten.AspNetCore
             string contentType = "application/json")
         {
             var stream = new MemoryStream();
-            await queryable.StreamJsonArray(stream, context.RequestAborted);
+            await queryable.StreamJsonArray(stream, context.RequestAborted).ConfigureAwait(false);
 
             context.Response.StatusCode = 200;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
             stream.Position = 0;
-            await stream.CopyToAsync(context.Response.Body);
+            await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Marten.AspNetCore
         public static async Task WriteById<T>(this IJsonLoader json, string id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
-            var found = await json.StreamById<T>(id, stream);
+            var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
             if (found)
             {
                 context.Response.StatusCode = 200;
@@ -79,7 +79,7 @@ namespace Marten.AspNetCore
                 context.Response.ContentType = contentType;
 
                 stream.Position = 0;
-                await stream.CopyToAsync(context.Response.Body);
+                await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
             }
             else
             {
@@ -99,7 +99,7 @@ namespace Marten.AspNetCore
         public static async Task WriteById<T>(this IJsonLoader json, Guid id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
-            var found = await json.StreamById<T>(id, stream);
+            var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
             if (found)
             {
                 context.Response.StatusCode = 200;
@@ -107,7 +107,7 @@ namespace Marten.AspNetCore
                 context.Response.ContentType = contentType;
 
                 stream.Position = 0;
-                await stream.CopyToAsync(context.Response.Body);
+                await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
             }
             else
             {
@@ -127,7 +127,7 @@ namespace Marten.AspNetCore
         public static async Task WriteById<T>(this IJsonLoader json, int id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
-            var found = await json.StreamById<T>(id, stream);
+            var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
             if (found)
             {
                 context.Response.StatusCode = 200;
@@ -135,7 +135,7 @@ namespace Marten.AspNetCore
                 context.Response.ContentType = contentType;
 
                 stream.Position = 0;
-                await stream.CopyToAsync(context.Response.Body);
+                await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
             }
             else
             {
@@ -155,7 +155,7 @@ namespace Marten.AspNetCore
         public static async Task WriteById<T>(this IJsonLoader json, long id, HttpContext context, string contentType = "application/json") where T : class
         {
             var stream = new MemoryStream();
-            var found = await json.StreamById<T>(id, stream);
+            var found = await json.StreamById<T>(id, stream).ConfigureAwait(false);
             if (found)
             {
                 context.Response.StatusCode = 200;
@@ -163,7 +163,7 @@ namespace Marten.AspNetCore
                 context.Response.ContentType = contentType;
 
                 stream.Position = 0;
-                await stream.CopyToAsync(context.Response.Body);
+                await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
             }
             else
             {
@@ -185,7 +185,7 @@ namespace Marten.AspNetCore
         public static async Task WriteOne<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context, string contentType = "application/json")
         {
             var stream = new MemoryStream();
-            var found = await session.StreamJsonOne(query, stream, context.RequestAborted);
+            var found = await session.StreamJsonOne(query, stream, context.RequestAborted).ConfigureAwait(false);
             if (found)
             {
                 context.Response.StatusCode = 200;
@@ -193,7 +193,7 @@ namespace Marten.AspNetCore
                 context.Response.ContentType = contentType;
 
                 stream.Position = 0;
-                await stream.CopyToAsync(context.Response.Body);
+                await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
             }
             else
             {
@@ -215,14 +215,14 @@ namespace Marten.AspNetCore
         public static async Task WriteArray<TDoc, TOut>(this IQuerySession session, ICompiledQuery<TDoc, TOut> query, HttpContext context, string contentType = "application/json")
         {
             var stream = new MemoryStream();
-            await session.StreamJsonMany(query, stream, context.RequestAborted);
+            await session.StreamJsonMany(query, stream, context.RequestAborted).ConfigureAwait(false);
 
             context.Response.StatusCode = 200;
             context.Response.ContentLength = stream.Length;
             context.Response.ContentType = contentType;
 
             stream.Position = 0;
-            await stream.CopyToAsync(context.Response.Body);
+            await stream.CopyToAsync(context.Response.Body).ConfigureAwait(false);
         }
     }
 }

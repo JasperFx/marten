@@ -71,7 +71,7 @@ namespace Marten.Linq.QueryHandlers
 
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                _statistics.TotalResults = reader.GetFieldValue<int>(_countIndex);
+                _statistics.TotalResults = await reader.GetFieldValueAsync<int>(_countIndex, token).ConfigureAwait(false);
 
                 count++;
                 var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token).ConfigureAwait(false);

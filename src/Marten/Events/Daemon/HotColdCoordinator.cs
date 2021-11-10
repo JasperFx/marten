@@ -123,11 +123,11 @@ namespace Marten.Events.Daemon
             _timer = null;
         }
 
-        private async Task startAllProjections(NpgsqlConnection conn)
+        private Task startAllProjections(NpgsqlConnection conn)
         {
             _connection = conn;
 
-            await _daemon.StartAllShards().ConfigureAwait(false);
+            return _daemon.StartAllShards();
         }
 
         public Task Start(IProjectionDaemon daemon, CancellationToken token)

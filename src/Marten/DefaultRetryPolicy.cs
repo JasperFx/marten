@@ -63,35 +63,44 @@ namespace Marten
 
         void IRetryPolicy.Execute(Action operation)
         {
-            using (Util.NoSynchronizationContextScope.Enter())
+            Try(() =>
             {
-                Try(() =>
-                {
-                    operation();
-                    return Task.CompletedTask;
-                }, CancellationToken.None).GetAwaiter().GetResult();
-            }
+                operation();
+                return 0;
+            });
         }
 
         TResult IRetryPolicy.Execute<TResult>(Func<TResult> operation)
         {
-            using (Util.NoSynchronizationContextScope.Enter())
-            {
-                return Try(() => Task.FromResult(operation()), CancellationToken.None).GetAwaiter().GetResult();
-            }
+            return Try(operation);
         }
 
         Task IRetryPolicy.ExecuteAsync(Func<Task> operation, CancellationToken cancellationToken)
         {
-            return Try(operation, cancellationToken);
+            return TryAsync(operation, cancellationToken);
         }
 
         Task<TResult> IRetryPolicy.ExecuteAsync<TResult>(Func<Task<TResult>> operation, CancellationToken cancellationToken)
         {
-            return Try(operation, cancellationToken);
+            return TryAsync(operation, cancellationToken);
         }
 
-        private async Task Try(Func<Task> operation, CancellationToken token)
+        private TResult Try<TResult>(Func<TResult> operation)
+        {
+            for (var tries = 0;;)
+            {
+                try
+                {
+                    return operation();
+                }
+                catch (Exception e) when (tries++ < _maxRetryCount && _filter(e))
+                {
+                    Thread.Sleep(_sleep(tries));
+                }
+            }
+        }
+
+        private async Task TryAsync(Func<Task> operation, CancellationToken token)
         {
             for (var tries = 0;; token.ThrowIfCancellationRequested())
             {
@@ -107,7 +116,7 @@ namespace Marten
             }
         }
 
-        private async Task<T> Try<T>(Func<Task<T>> operation, CancellationToken token)
+        private async Task<T> TryAsync<T>(Func<Task<T>> operation, CancellationToken token)
         {
             for (var tries = 0;; token.ThrowIfCancellationRequested())
             {

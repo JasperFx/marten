@@ -6,6 +6,7 @@ using Marten.Exceptions;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Marten.Util;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
 
@@ -73,7 +74,7 @@ namespace Marten.Schema.Identity.Sequences
             {
                 if(ShouldAdvanceHi())
                 {
-                    AdvanceToNextHi().GetAwaiter().GetResult();
+                    AdvanceToNextHiSync();
                 }
                 return AdvanceValue();
             }
@@ -84,37 +85,63 @@ namespace Marten.Schema.Identity.Sequences
             using var conn = _tenant.CreateConnection();
             await conn.OpenAsync().ConfigureAwait(false);
 
-            try
+            for (var attempts = 0; attempts < _settings.MaxAdvanceToNextHiAttempts; attempts++)
             {
-                var attempts = 0;
-                do
+
+                var command = GetNexFunctionCommand(conn);
+                var raw = await command.ExecuteScalarAsync().ConfigureAwait(false);
+
+                if (TrySetCurrentHi(raw))
                 {
-                    attempts++;
-
-                    // Sproc is expected to return -1 if it's unable to
-                    // atomically secure the next hi
-                    var raw = await conn.CreateCommand().CallsSproc(GetNextFunction)
-                        .With("entity", _entityName)
-                        .Returns("next", NpgsqlDbType.Bigint).ExecuteScalarAsync().ConfigureAwait(false);
-
-                    CurrentHi = Convert.ToInt64(raw);
-
-                } while (CurrentHi < 0 && attempts < _settings.MaxAdvanceToNextHiAttempts);
-
-                // if CurrentHi is still less than 0 at this point, then throw exception
-                if (CurrentHi < 0)
-                {
-                    throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
+                    return;
                 }
             }
-            finally
+
+            // CurrentHi is still less than 0 at this point, then throw exception
+            throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
+        }
+        public void AdvanceToNextHiSync()
+        {
+            using var conn = _tenant.CreateConnection();
+            conn.Open();
+
+            for (var attempts = 0; attempts <  _settings.MaxAdvanceToNextHiAttempts; attempts++)
             {
-                await conn.CloseAsync().ConfigureAwait(false);
-                conn.Dispose();
+                var command = GetNexFunctionCommand(conn);
+                var raw = command.ExecuteScalar();
+
+                if (TrySetCurrentHi(raw))
+                {
+                    return;
+                }
             }
 
-            CurrentLo = 1;
+            // CurrentHi is still less than 0 at this point, then throw exception
+            throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
         }
+
+        private bool TrySetCurrentHi(object? raw)
+        {
+            CurrentHi = Convert.ToInt64(raw);
+
+            if (0 <= CurrentHi)
+            {
+                CurrentLo = 1;
+                return true;
+            }
+
+            return false;
+        }
+
+        private NpgsqlCommand GetNexFunctionCommand(NpgsqlConnection conn)
+        {
+            // Sproc is expected to return -1 if it's unable to
+            // atomically secure the next hi
+            return conn.CreateCommand().CallsSproc(GetNextFunction)
+                .With("entity", _entityName)
+                .Returns("next", NpgsqlDbType.Bigint);
+        }
+
 
         public long AdvanceValue()
         {
