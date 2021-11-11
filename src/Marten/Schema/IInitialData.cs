@@ -13,6 +13,6 @@ namespace Marten.Schema
         /// Apply the data loading
         /// </summary>
         /// <param name="store"></param>
-        Task Populate(IDocumentStore store);
+        void Populate(IDocumentStore store);
     }
 }

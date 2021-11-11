@@ -45,13 +45,13 @@ namespace Marten.Testing.Bugs
             _initialData = initialData;
         }
 
-        public async Task Populate(IDocumentStore store)
+        public void Populate(IDocumentStore store)
         {
             using var session = store.OpenSession();
             if (!session.Query<Aggregate1495>().Any())
             {
                 session.Store(_initialData);
-                await session.SaveChangesAsync();
+                session.SaveChanges();
             }
         }
     }

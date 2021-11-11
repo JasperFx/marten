@@ -69,7 +69,7 @@ namespace Marten
                 Options.As<IGeneratesCode>().AttachPreBuiltTypes(rules, Assembly.GetEntryAssembly(), null);
             }
 
-            options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());
+            options.InitialData.Each(x => x.Populate(this));
 
         }
 

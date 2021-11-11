@@ -56,12 +56,12 @@ namespace Marten.Testing.Bugs
             _initialData = initialData;
         }
 
-        public async Task Populate(IDocumentStore store)
+        public void Populate(IDocumentStore store)
         {
             using var session = store.LightweightSession();
             // Marten UPSERT will cater for existing records
             session.Store(_initialData);
-            await session.SaveChangesAsync();
+            session.SaveChanges();
         }
     }
 
