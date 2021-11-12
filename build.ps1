@@ -7,9 +7,9 @@ elseif ($version.StartsWith("5.")) {
     $target_framework="net5.0"
 } 
 elseif ($version.StartsWith("6.")) {
-    $target_framework="net5.0"
+    $target_framework="net6.0"
 } else {
-    Write-Output "BUILD FAILURE: .NET Core 3.1 or .NET 5 SDK required to run build"
+    Write-Output "BUILD FAILURE: .NET Core 3.1, .NET 5, .NET 6 SDK required to run build"
     exit 1
 }
 
