@@ -33,13 +33,13 @@ variables:
   disable_test_parallelization: true
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  dotnet_core_version: 6.0.x
+  dotnet_version: 6.0.x
   node_version: 10.x
   pg_db: marten_testing
   marten_testing_database: "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;Password=Password12!"
 
 jobs:
-  - job: build_net5
+  - job: build_net6
     # timeoutInMinutes: 20
     pool:
       vmImage: 'ubuntu-latest'
@@ -66,7 +66,7 @@ jobs:
       - task: UseDotNet@2
         displayName: Install .Net Core 6.0.x
         inputs:
-          version: $(dotnet_core_version)
+          version: $(dotnet_version)
       - task: NodeTool@0
         displayName: Install Node.js
         inputs:
