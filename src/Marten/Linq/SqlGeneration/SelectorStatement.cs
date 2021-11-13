@@ -54,6 +54,7 @@ namespace Marten.Linq.SqlGeneration
         public void ToAny()
         {
             SelectClause = new AnySelectClause(SelectClause.FromObject);
+            Limit = 1;
         }
 
         public void ToCount<T>()

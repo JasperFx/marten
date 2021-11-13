@@ -25,7 +25,7 @@ namespace Marten.Linq.SqlGeneration
 
         public void WriteSelectClause(CommandBuilder sql)
         {
-            sql.Append("select (count(*) > 0) as result");
+            sql.Append("select TRUE as result");
             sql.Append(" from ");
             sql.Append(FromObject);
             sql.Append(" as d");
