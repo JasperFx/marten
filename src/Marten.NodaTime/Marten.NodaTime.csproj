@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>NodaTime extension for Marten</Description>
-        <VersionPrefix>4.0.4</VersionPrefix>
-        <TargetFrameworks>netstandard2.0;net5.0</TargetFrameworks>
+        <VersionPrefix>4.1.0</VersionPrefix>
+        <TargetFrameworks>netstandard2.0;net5.0;net6.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -29,8 +29,8 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
-        <PackageReference Include="Npgsql.NodaTime" Version="5.0.10" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+        <PackageReference Include="Npgsql.NodaTime" Version="[5.0.10,6.0)" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
