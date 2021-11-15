@@ -1,8 +1,10 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.AsyncDaemon.Testing.TestingSupport;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -264,6 +266,71 @@ namespace Marten.AsyncDaemon.Testing
             (await query.LoadAsync<Trip>(longTrip.StreamId)).ShouldBeNull();
 
 
+        }
+
+        [Fact]
+        public async Task rebuild_with_null_creation_return()
+        {
+            StoreOptions(x =>
+            {
+                x.Events.TenancyStyle = TenancyStyle.Conjoined;
+                x.Policies.AllDocumentsAreMultiTenanted();
+                x.Projections.Add(new ContactProjectionNullReturn());
+            }, true);
+
+            var id = Guid.NewGuid();
+            await using (var session = theStore.LightweightSession("a"))
+            {
+                session.Events.StartStream(id, new ContactCreated(id, "x"));
+                session.Events.Append(id, new ContactEdited(id, "x"));
+                session.Events.Append(Guid.NewGuid(), new RandomOtherEvent(Guid.NewGuid()));
+
+                await session.SaveChangesAsync();
+
+                var contact = await session.LoadAsync<Contact>(id);
+                Assert.Equal("x", contact.Name);
+            }
+
+            var daemon = theStore.BuildProjectionDaemon();
+
+            await daemon.RebuildProjection("Contact", CancellationToken.None);
+
+            await using var session2 = theStore.LightweightSession("a");
+            var c = await session2.LoadAsync<Contact>(id);
+            Assert.Equal("x", c.Name);
+        }
+
+
+        public class ContactProjectionNullReturn: AggregateProjection<Contact>
+        {
+            public ContactProjectionNullReturn()
+            {
+                ProjectionName = nameof(Contact);
+                Lifecycle = ProjectionLifecycle.Inline;
+
+                CreateEvent<ICreateEvent>(Contact.Create);
+                ProjectEvent<ContactEdited>(Contact.Apply);
+            }
+        }
+
+        public interface IEvent { Guid Id { get; init; } }
+        public interface ICreateEvent { Guid Id { get; init; } }
+        public record RandomOtherEvent(Guid Id): ICreateEvent;
+        public record ContactCreated(Guid Id, string Name): ICreateEvent;
+        public record ContactEdited(Guid Id, string Name): IEvent;
+        public record Contact(Guid Id, string Name)
+        {
+            public static Contact Create(ICreateEvent ev) => ev switch
+            {
+                ContactCreated e => new(e.Id, e.Name),
+                _ => null
+            };
+
+            public static Contact Apply(Contact state, IEvent ev) => ev switch
+            {
+                ContactEdited e => state with { Name = e.Name },
+                _ => state
+            };
         }
 
     }
