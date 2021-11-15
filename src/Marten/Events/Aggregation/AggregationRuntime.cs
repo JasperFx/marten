@@ -67,8 +67,6 @@ namespace Marten.Events.Aggregation
                 aggregate = await Storage.LoadAsync(slice.Id, session, cancellation).ConfigureAwait(false);
             }
 
-            var exists = aggregate != null;
-
             foreach (var @event in slice.Events())
             {
                 try
@@ -96,7 +94,7 @@ namespace Marten.Events.Aggregation
 
             if (aggregate == null)
             {
-                return exists ? Storage.DeleteForId(slice.Id, slice.Tenant) : null;
+                return Storage.DeleteForId(slice.Id, slice.Tenant);
             }
 
             return Storage.Upsert(aggregate, session, slice.Tenant);
