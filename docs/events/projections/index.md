@@ -202,8 +202,7 @@ At this point, you would be able to query against `QuestParty` as just another d
 
 Projections need to be rebuilt when the code that defines them changes in a way that requires events to be reapplied in order to maintain correct state. Using an `IDaemon` this is easy to execute on-demand:
 
-// TODO: fix this sample
-<[sample:rebuild-single-projection]>
+Refer to [Rebuilding Projections](/events/projections/rebuilding) for more details.
 
 ::: warning
 Marten by default while creating new object tries to use <b>default constructor</b>. Default constructor doesn't have to be public, might be also private or protected.
