@@ -41,11 +41,19 @@ namespace Marten.Events.Aggregation
         public override async Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
             EventRangeGroup eventRangeGroup)
         {
+#if NET6_0_OR_GREATER
+            await Parallel.ForEachAsync(Groups, CancellationToken.None,
+                    async (group, _) =>
+                        await group.Start(shardAgent, batch.Queue, _runtime, _store, this).ConfigureAwait(false))
+                .ConfigureAwait(false);
+#else
             var eventGroupTasks = Groups
-                .Select(x =>x.Start(shardAgent, batch.Queue, _runtime, _store, this))
+                .Select(x => x.Start(shardAgent, batch.Queue, _runtime, _store, this))
                 .ToArray();
 
             await Task.WhenAll(eventGroupTasks).ConfigureAwait(false);
+#endif
+
 
             if (Exception != null)
             {

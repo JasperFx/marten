@@ -15,7 +15,7 @@ namespace Marten.Services.BatchQuerying
         {
             _handler = handler;
 
-            Completion = new TaskCompletionSource<T>();
+            Completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
 

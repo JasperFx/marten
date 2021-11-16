@@ -129,7 +129,7 @@ namespace Marten.Storage
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
 #if NETSTANDARD2_0
             var tx = conn.BeginTransaction();
-            #else
+#else
             var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
 #endif
 

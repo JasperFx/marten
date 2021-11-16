@@ -22,7 +22,7 @@ namespace Marten.Events.Aggregation
         ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken);
     }
 
-    public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRuntime<TDoc, TId>
+    public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRuntime<TDoc, TId> where TDoc: notnull where TId: notnull
     {
         public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer, ITenancy tenancy, IDocumentStorage<TDoc, TId> storage) : base(store, projection, slicer, tenancy, storage)
         {
