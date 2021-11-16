@@ -81,17 +81,19 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task rebuild()
         {
-            StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
-
             NumberOfStreams = 10;
+
+            #region sample_rebuild-single-projection
+            StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
             var agent = await StartDaemon();
 
+            // setup test data
             await PublishSingleThreaded();
 
-
+            // rebuild projection `Distance`
             await agent.RebuildProjection("Distance", CancellationToken.None);
-
+            #endregion
 
         }
 
