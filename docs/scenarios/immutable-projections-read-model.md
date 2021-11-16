@@ -1,5 +1,9 @@
 # Immutable projections as read model
 
+::: warning TODO
+This whole page will need to be revisited due to the revamped event store/projections implementation in v4. Code samples are unavailable as well.
+:::
+
 This use case demonstrates how to create immutable projections from event streams.
 
 ## Scenario
