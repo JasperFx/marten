@@ -112,8 +112,17 @@ namespace Marten.Internal.CodeGeneration
             var bulkWriterType = new BulkLoaderBuilder(_mapping).BuildType(assembly);
 
             var compiler = new AssemblyGenerator();
-            compiler.ReferenceAssembly(typeof(IDocumentStorage<>).Assembly);
-            compiler.ReferenceAssembly(typeof(T).Assembly);
+
+            var types = new[]
+            {
+                typeof(IDocumentStorage<>),
+                typeof(T),
+            };
+
+            foreach (var referencedAssembly in WalkReferencedAssemblies.ForTypes(types))
+            {
+                compiler.ReferenceAssembly(referencedAssembly);
+            }
 
             try
             {
