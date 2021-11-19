@@ -373,7 +373,18 @@ namespace Marten.Schema.Testing.Storage
                 .ShouldHaveTheSameElementsAs(expected);
         }
 
+        [Fact]
+        public async Task can_migrate_long_pk_index_name_from_v3_to_v4()
+        {
+            // very long primary key index name longer than NAMEDATALEN limit
+            theTable.PrimaryKeyName = "pkey_lorem_ipsum_lorem_ipsum_lorem_ipsum_lorem_ipsum_lorem_ipsum_lorem_ipsum";
+            writeTable();
 
+            await writeAndApplyPatch(AutoCreate.CreateOrUpdate, theTable);
 
+            var delta = await theTable.FindDelta(_conn);
+            delta.Actual?.PrimaryKeyName.ShouldNotBe(delta.Expected?.PrimaryKeyName);
+            delta.HasChanges().ShouldBeFalse();
+        }
     }
 }
