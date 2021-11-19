@@ -229,90 +229,96 @@ namespace Marten.Testing.Bugs
         {
             using (var session = theStore.LightweightSession())
             {
-                var now = GenerateTestDateTime();
+                var now = GenerateTestDateTimeOffset();
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateOffsetClass
                 {
                     Id = Guid.NewGuid(),
-                    DateTimeField = now
+                    DateTimeOffsetField = now
                 };
 
                 session.Store(testClass);
 
                 session.Store(new DateOffsetClass
                 {
-                    DateTimeField = now.Add(5.Minutes())
+                    DateTimeOffsetField = now.Add(5.Minutes())
                 });
 
                 session.Store(new DateOffsetClass
                 {
-                    DateTimeField = now.Add(-5.Minutes())
+                    DateTimeOffsetField = now.Add(-5.Minutes())
                 });
 
                 session.SaveChanges();
 
-                var cmd = session.Query<DateOffsetClass>().Where(x => now >= x.DateTimeField)
+                var cmd = session.Query<DateOffsetClass>().Where(x => now >= x.DateTimeOffsetField)
                     .ToCommand();
 
                 _output.WriteLine(cmd.CommandText);
 
                 session.Query<DateOffsetClass>().ToList().Each(x =>
                 {
-                    _output.WriteLine(x.DateTimeField.ToString("o"));
+                    _output.WriteLine(x.DateTimeOffsetField.ToString("o"));
                 });
 
                 session.Query<DateOffsetClass>()
-                    .Count(x => now >= x.DateTimeField).ShouldBe(2);
+                    .Count(x => now >= x.DateTimeOffsetField).ShouldBe(2);
             }
         }
 
         [Fact]
         public void can_issue_queries_against_the_datetime_offset_as_duplicate_field()
         {
-            StoreOptions(_ => _.Schema.For<DateOffsetClass>().Duplicate(x => x.DateTimeField));
+            StoreOptions(_ => _.Schema.For<DateOffsetClass>().Duplicate(x => x.DateTimeOffsetField));
 
             using (var session = theStore.LightweightSession())
             {
-                var now = GenerateTestDateTime();
+                var now = GenerateTestDateTimeOffset();
                 _output.WriteLine("now: " + now.ToString("o"));
                 var testClass = new DateOffsetClass
                 {
                     Id = Guid.NewGuid(),
-                    DateTimeField = now
+                    DateTimeOffsetField = now
                 };
 
                 session.Store(testClass);
 
                 session.Store(new DateOffsetClass
                 {
-                    DateTimeField = now.Add(5.Minutes())
+                    DateTimeOffsetField = now.Add(5.Minutes())
                 });
 
                 session.Store(new DateOffsetClass
                 {
-                    DateTimeField = now.Add(-5.Minutes())
+                    DateTimeOffsetField = now.Add(-5.Minutes())
                 });
 
                 session.SaveChanges();
 
-                var cmd = session.Query<DateOffsetClass>().Where(x => now >= x.DateTimeField)
+                var cmd = session.Query<DateOffsetClass>().Where(x => now >= x.DateTimeOffsetField)
                     .ToCommand();
 
                 _output.WriteLine(cmd.CommandText);
 
                 session.Query<DateOffsetClass>().ToList().Each(x =>
                 {
-                    _output.WriteLine(x.DateTimeField.ToString("o"));
+                    _output.WriteLine(x.DateTimeOffsetField.ToString("o"));
                 });
 
                 session.Query<DateOffsetClass>()
-                    .Count(x => now >= x.DateTimeField).ShouldBe(2);
+                    .Count(x => now >= x.DateTimeOffsetField).ShouldBe(2);
             }
         }
 
         private static DateTime GenerateTestDateTime()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
+            return now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMillisecond));
+        }
+
+        private static DateTimeOffset GenerateTestDateTimeOffset()
+        {
+            var now = DateTimeOffset.UtcNow;
             return now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMillisecond));
         }
     }
@@ -326,6 +332,6 @@ namespace Marten.Testing.Bugs
     public class DateOffsetClass
     {
         public Guid Id { get; set; }
-        public DateTimeOffset DateTimeField { get; set; }
+        public DateTimeOffset DateTimeOffsetField { get; set; }
     }
 }

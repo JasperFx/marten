@@ -101,7 +101,7 @@ namespace Marten.Events
 
         public long Version { get; set; }
 
-        public DateTime? Timestamp { get; set; }
+        public DateTimeOffset? Timestamp { get; set; }
 
         public string TenantId { get; set; } = ALL_TENANTS;
 

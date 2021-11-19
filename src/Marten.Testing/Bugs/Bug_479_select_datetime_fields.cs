@@ -21,7 +21,7 @@ namespace Marten.Testing.Bugs
         {
             var doc = new DocWithDates
             {
-                DateTime = DateTime.Today.ToUniversalTime()
+                DateTime = DateTime.Today
             };
 
             using (var session = theStore.OpenSession())

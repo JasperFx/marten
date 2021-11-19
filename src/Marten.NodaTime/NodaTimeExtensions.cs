@@ -1,9 +1,12 @@
 using System;
+using System.Linq;
 using Marten.Services;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 using NodaTime.Serialization.SystemTextJson;
 using Npgsql;
+using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.NodaTime
 {
@@ -39,7 +42,7 @@ namespace Marten.NodaTime
                 }
                 else
                     throw new NotSupportedException("Current serializer cannot be automatically configured for Nodatime. Set shouldConfigureJsonSerializer to false if you're using your own serializer.");
-                
+
                 storeOptions.Serializer(serializer);
             }
         }
