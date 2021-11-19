@@ -17,7 +17,7 @@ namespace Marten.Events
         /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
         /// <param name="fromVersion">If set, queries for events on or from this version</param>
         /// <returns></returns>
-        IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null, long fromVersion = 0);
+        IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -28,7 +28,7 @@ namespace Marten.Events
         /// <param name="fromVersion">If set, queries for events on or from this version</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTime? timestamp = null, long fromVersion = 0, CancellationToken token = default);
+        Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -37,7 +37,7 @@ namespace Marten.Events
         /// <param name="version">If set, queries for events up to and including this version</param>
         /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
         /// <returns></returns>
-        IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0);
+        IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0);
 
         /// <summary>
         /// Synchronously fetches all of the events for the named stream
@@ -48,7 +48,7 @@ namespace Marten.Events
         /// <param name="fromVersion">If set, queries for events on or from this version</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0, CancellationToken token = default);
+        Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default);
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -60,7 +60,7 @@ namespace Marten.Events
         /// <param name="fromVersion">If set, queries for events on or from this version</param>
         /// <param name="state">Instance of T to apply events to</param>
         /// <returns></returns>
-        T? AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T? state = null, long fromVersion = 0) where T : class;
+        T? AggregateStream<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -73,7 +73,7 @@ namespace Marten.Events
         /// <param name="state">Instance of T to apply events to</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class;
+        Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -84,7 +84,7 @@ namespace Marten.Events
         /// <param name="timestamp"></param>
         /// <param name="state">Instance of T to apply events to</param>
         /// <returns></returns>
-        T? AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T? state = null, long fromVersion = 0) where T : class;
+        T? AggregateStream<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0) where T : class;
 
         /// <summary>
         /// Perform a live aggregation of the raw events in this stream to a T object
@@ -97,7 +97,7 @@ namespace Marten.Events
         /// <param name="state">Instance of T to apply events to</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null, T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class;
+        Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class;
 
         /// <summary>
         /// Query directly against ONLY the raw event data. Use IQuerySession.Query() for aggregated documents!

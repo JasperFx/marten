@@ -45,7 +45,7 @@ namespace Marten.Testing.Events.Examples
 
         public Task Handle(NewProjectCommand command)
         {
-            var timestamp = DateTimeOffset.Now;
+            var timestamp = DateTimeOffset.UtcNow;
             var started = new ProjectStarted {Name = command.Name, Timestamp = timestamp};
 
             var tasks = command.Tasks

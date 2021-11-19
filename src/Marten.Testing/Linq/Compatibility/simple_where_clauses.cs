@@ -86,7 +86,7 @@ namespace Marten.Testing.Linq.Compatibility
             @where(x => x.Decimal.Equals(10));
             @where(x => !x.Decimal.Equals(10));
 
-            var today = DateTime.Today.ToUniversalTime();
+            var today = DateTime.Today;
 
             @where(x => x.Date == today);
             @where(x => x.Date != today);

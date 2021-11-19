@@ -27,7 +27,7 @@ namespace Marten.Events
             _tenant = tenant;
         }
 
-        public IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null, long fromVersion = 0)
+        public IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0)
         {
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
@@ -41,7 +41,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTime? timestamp = null, long fromVersion = 0, CancellationToken token = default)
+        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
         {
             var selector = _store.Events.EnsureAsGuidStorage(_session);
 
@@ -55,7 +55,7 @@ namespace Marten.Events
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
-        public IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0)
+        public IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0)
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
@@ -69,7 +69,7 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0, CancellationToken token = default)
+        public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
         {
             var selector = _store.Events.EnsureAsStringStorage(_session);
 
@@ -83,7 +83,7 @@ namespace Marten.Events
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
-        public T? AggregateStream<T>(Guid streamId, long version = 0, DateTime? timestamp = null, T? state = null, long fromVersion = 0) where T : class
+        public T? AggregateStream<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0) where T : class
         {
             var events = FetchStream(streamId, version, timestamp, fromVersion);
 
@@ -99,7 +99,7 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTime? timestamp = null,
+        public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
             T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
         {
             var events = await FetchStreamAsync(streamId, version, timestamp, fromVersion, token).ConfigureAwait(false);
@@ -116,7 +116,7 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public T? AggregateStream<T>(string streamKey, long version = 0, DateTime? timestamp = null, T? state = null, long fromVersion = 0) where T : class
+        public T? AggregateStream<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null, T? state = null, long fromVersion = 0) where T : class
         {
             var events = FetchStream(streamKey, version, timestamp, fromVersion);
             if (!events.Any())
@@ -133,7 +133,7 @@ namespace Marten.Events
             return aggregate;
         }
 
-        public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTime? timestamp = null,
+        public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
             T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
         {
             var events = await FetchStreamAsync(streamKey, version, timestamp, fromVersion, token).ConfigureAwait(false);

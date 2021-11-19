@@ -24,7 +24,7 @@ namespace Marten.Testing.Bugs
         public void can_query_against_DateTimeOffset()
         {
             theSession.Query<Target>().SelectMany(x => x.Children)
-                .Where(x => x.DateOffset == DateTimeOffset.Now)
+                .Where(x => x.DateOffset == DateTimeOffset.UtcNow)
                 .ToList().ShouldNotBeNull();
         }
     }

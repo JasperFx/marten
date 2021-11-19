@@ -20,7 +20,7 @@ namespace Marten.Testing.Bugs
 
             using (var session = store.OpenSession())
             {
-                session.Query<Target>().FirstOrDefault(m => m.DateOffset > DateTimeOffset.Now)
+                session.Query<Target>().FirstOrDefault(m => m.DateOffset > DateTimeOffset.UtcNow)
                     .ShouldBeNull();
             }
         }

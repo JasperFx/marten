@@ -237,7 +237,7 @@ namespace Marten.Testing.Events
                     party_at_version_3.ShouldNotBeNull();
 
                     var party_yesterday = session.Events
-                        .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+                        .AggregateStream<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
                     party_yesterday.ShouldBeNull();
                 }
 
@@ -276,7 +276,7 @@ namespace Marten.Testing.Events
                     party_at_version_3.Id.ShouldBe(questId);
 
                     var party_yesterday = session.Events
-                        .AggregateStream<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+                        .AggregateStream<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
                     party_yesterday.ShouldBeNull();
                 }
             }).ShouldThrowIf(

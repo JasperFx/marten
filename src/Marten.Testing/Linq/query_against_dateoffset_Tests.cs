@@ -16,15 +16,15 @@ namespace Marten.Testing.Linq
         [Fact]
         public void query()
         {
-            theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.Now.AddMinutes(30)});
-            theSession.Store(new Target{Number = 2, DateOffset = DateTimeOffset.Now.AddDays(1)});
-            theSession.Store(new Target{Number = 3, DateOffset = DateTimeOffset.Now.AddHours(1)});
-            theSession.Store(new Target{Number = 4, DateOffset = DateTimeOffset.Now.AddHours(-2)});
-            theSession.Store(new Target{Number = 5, DateOffset = DateTimeOffset.Now.AddHours(-3)});
+            theSession.Store(new Target{Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30)});
+            theSession.Store(new Target{Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1)});
+            theSession.Store(new Target{Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1)});
+            theSession.Store(new Target{Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2)});
+            theSession.Store(new Target{Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3)});
 
             theSession.SaveChanges();
 
-            theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.Now).ToArray()
+            theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).ToArray()
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         }
@@ -37,16 +37,16 @@ namespace Marten.Testing.Linq
                 _.Schema.For<Target>().Index(x => x.DateOffset);
             });
 
-            theSession.Store(new Target { Number = 1, DateOffset = DateTimeOffset.Now.AddMinutes(30) });
-            theSession.Store(new Target { Number = 2, DateOffset = DateTimeOffset.Now.AddDays(1) });
-            theSession.Store(new Target { Number = 3, DateOffset = DateTimeOffset.Now.AddHours(1) });
-            theSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.Now.AddHours(-2) });
-            theSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.Now.AddHours(-3) });
+            theSession.Store(new Target { Number = 1, DateOffset = DateTimeOffset.UtcNow.AddMinutes(30) });
+            theSession.Store(new Target { Number = 2, DateOffset = DateTimeOffset.UtcNow.AddDays(1) });
+            theSession.Store(new Target { Number = 3, DateOffset = DateTimeOffset.UtcNow.AddHours(1) });
+            theSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2) });
+            theSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3) });
 
             theSession.SaveChanges();
 
 
-            theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.Now).OrderBy(x => x.DateOffset).ToArray()
+            theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).OrderBy(x => x.DateOffset).ToArray()
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1, 3, 2);
         }
