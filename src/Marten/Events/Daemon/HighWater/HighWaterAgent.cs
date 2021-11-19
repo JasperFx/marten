@@ -130,7 +130,7 @@ namespace Marten.Events.Daemon.HighWater
             await Task.Delay(delayTime, _token).ConfigureAwait(false);
         }
 
-        public void TimerOnElapsed(object sender, ElapsedEventArgs e)
+        private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
             _ = CheckState();
         }
