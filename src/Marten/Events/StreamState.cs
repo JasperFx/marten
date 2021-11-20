@@ -24,12 +24,12 @@ namespace Marten.Events
         /// <summary>
         /// The last time this stream was appended to
         /// </summary>
-        public DateTime LastTimestamp { get; set;}
+        public DateTimeOffset LastTimestamp { get; set;}
 
         /// <summary>
         /// The time at which this stream was created
         /// </summary>
-        public DateTime Created { get; set;}
+        public DateTimeOffset Created { get; set;}
 
         /// <summary>
         /// The identity of this stream if using strings as the stream
@@ -49,7 +49,7 @@ namespace Marten.Events
         }
 #nullable enable
 
-        public StreamState(Guid id, long version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        public StreamState(Guid id, long version, Type aggregateType, DateTimeOffset lastTimestamp, DateTimeOffset created)
         {
             Id = id;
             Version = version;
@@ -58,7 +58,7 @@ namespace Marten.Events
             Created = created;
         }
 
-        public StreamState(string key, long version, Type aggregateType, DateTime lastTimestamp, DateTime created)
+        public StreamState(string key, long version, Type aggregateType, DateTimeOffset lastTimestamp, DateTimeOffset created)
         {
             Key = key;
             Version = version;

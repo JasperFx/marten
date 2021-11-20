@@ -543,11 +543,6 @@ namespace Marten
         EnumStorage DuplicatedFieldEnumStorage { get; }
 
         /// <summary>
-        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
-        /// </summary>
-        bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; }
-
-        /// <summary>
         ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
         ///     type as well
         /// </summary>
