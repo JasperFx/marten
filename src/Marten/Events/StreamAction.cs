@@ -125,12 +125,12 @@ namespace Marten.Events
         /// <summary>
         /// The recorded timestamp for these events
         /// </summary>
-        public DateTime? Timestamp { get; internal set; }
+        public DateTimeOffset? Timestamp { get; internal set; }
 
         /// <summary>
         /// When was the stream created
         /// </summary>
-        public DateTime? Created { get; internal set; }
+        public DateTimeOffset? Created { get; internal set; }
 
 
         /// <summary>

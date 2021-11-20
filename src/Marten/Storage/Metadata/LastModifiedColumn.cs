@@ -18,7 +18,7 @@ namespace Marten.Storage.Metadata
             int index, DocumentMapping mapping)
         {
             var variableName = "lastModified";
-            var memberType = typeof(DateTime);
+            var memberType = typeof(DateTimeOffset);
 
             if (Member == null) return;
 
