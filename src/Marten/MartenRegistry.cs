@@ -348,6 +348,47 @@ namespace Marten
             }
 
             /// <summary>
+            /// Creates an n-gram index for the field which can be used for substring based matching, similar to the trigram extension but also generates uni-grams and bi-grams.
+            /// </summary>
+            /// <param name="configure">
+            /// </param>
+            /// <returns>
+            /// </returns>
+            public DocumentMappingExpression<T> NgramIndex(Action<NgramIndex> configure)
+            {
+                _builder.Alter = m => m.AddNgramIndex(configure);
+                return this;
+            }
+
+            /// <summary>
+            /// Creates an n-gram index for the field which can be used for substring based matching, similar to the trigram extension but also generates uni-grams and bi-grams.
+            /// </summary>
+            /// <param name="expression">
+            /// </param>
+            /// <returns>
+            /// </returns>
+            public DocumentMappingExpression<T> NgramIndex(Expression<Func<T, object>> expression)
+            {
+                _builder.Alter = m => m.NgramIndex(expression);
+                return this;
+            }
+
+            /// <summary>
+            /// Creates an n-gram index for the field which can be used for substring based matching, similar to the trigram extension but also generates uni-grams and bi-grams.
+            /// </summary>
+            /// <param name="configure">
+            /// </param>
+            /// <param name="expression">
+            /// </param>
+            /// <returns>
+            /// </returns>
+            public DocumentMappingExpression<T> NgramIndex(Action<NgramIndex> configure, Expression<Func<T, object>> expression)
+            {
+                _builder.Alter = m => m.NgramIndex(configure, expression);
+                return this;
+            }
+
+            /// <summary>
             ///     Add a foreign key reference to another document type
             /// </summary>
             /// <param name="expression"></param>

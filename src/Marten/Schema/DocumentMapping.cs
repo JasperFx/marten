@@ -396,6 +396,42 @@ namespace Marten.Schema
             return index;
         }
 
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
+        /// <param name="configure">Optional action to further configure the ngram index</param>
+        public NgramIndex AddNgramIndex(Action<NgramIndex> configure = null)
+        {
+            var index = new NgramIndex(this);
+            configure?.Invoke(index);
+
+            return AddNgramIndexIfDoesNotExist(index);
+        }
+
+        /// <summary>
+        /// Adds a full text index
+        /// </summary>
+        /// <param name="members">Document fields that should be use by ngram index</param>
+        public NgramIndex AddNgramIndex(MemberInfo[] members, string indexName = null)
+        {
+            var index = new NgramIndex(this, members) { Name = indexName };
+
+            return AddNgramIndexIfDoesNotExist(index);
+        }
+
+        private NgramIndex AddNgramIndexIfDoesNotExist(NgramIndex index)
+        {
+            var existing = Indexes.OfType<NgramIndex>().FirstOrDefault(x => x.Name == index.Name);
+            if (existing != null)
+            {
+                return existing;
+            }
+            Indexes.Add(index);
+
+            return index;
+        }
+
         public DocumentForeignKey AddForeignKey(string memberName, Type referenceType)
         {
             var field = FieldFor(memberName);
@@ -681,8 +717,27 @@ namespace Marten.Schema
                 regConfig);
         }
 
+        /// <summary>
+        /// Adds an ngram index.
+        /// </summary>
+        /// <param name="expression">Document field that should be use by ngram index</param>
+        public NgramIndex NgramIndex(Expression<Func<T, object>> expression)
+        {
+            var visitor = new FindMembers();
+            visitor.Visit(expression);
 
+            return AddNgramIndex(visitor.Members.ToArray());
+        }
 
-
+        /// <summary>
+        /// Adds a full text index with default region config set to 'english'
+        /// </summary>
+        /// <param name="expressions">Document fields that should be use by full text index</param>
+        public NgramIndex NgramIndex(Action<NgramIndex> configure, Expression<Func<T, object>> expression)
+        {
+            var index = NgramIndex(expression);
+            configure(index);
+            return index;
+        }
     }
 }

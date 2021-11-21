@@ -97,7 +97,8 @@ namespace Marten
             new Search(),
             new PhraseSearch(),
             new PlainTextSearch(),
-            new WebStyleSearch()
+            new WebStyleSearch(),
+            new NgramSearch(),
         };
 
 
