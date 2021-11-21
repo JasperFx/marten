@@ -7,7 +7,7 @@ using Marten.Schema;
 
 namespace Marten.Storage.Metadata
 {
-    internal class DotNetTypeColumn: MetadataColumn<string>, IEventTableColumn
+    public class DotNetTypeColumn: MetadataColumn<string>, IEventTableColumn
     {
         public DotNetTypeColumn(): base(SchemaConstants.DotNetTypeColumn, x => x.DotNetType)
         {

@@ -10,11 +10,10 @@ using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 using Marten.Schema;
-using Marten.Util;
 
 namespace Marten.Storage.Metadata
 {
-    internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
+    public class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
     {
         private readonly object _id;
         private readonly IDocumentStorage _storage;

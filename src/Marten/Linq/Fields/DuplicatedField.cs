@@ -19,7 +19,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Linq.Fields
 {
-    public class DuplicatedField: IField
+    public class DuplicatedField: IField, IFunctionArgumentProvider
     {
         private readonly Func<Expression, object> _parseObject = expression => expression.Value();
         private readonly bool useTimestampWithoutTimeZoneForDateTime;
@@ -89,8 +89,8 @@ namespace Marten.Linq.Fields
         /// </summary>
         public NpgsqlDbType DbType { get; set; }
 
-
-        internal UpsertArgument UpsertArgument => new UpsertArgument
+        /// <inheritdoc />
+        public UpsertArgument ToArgument() => new UpsertArgument
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),

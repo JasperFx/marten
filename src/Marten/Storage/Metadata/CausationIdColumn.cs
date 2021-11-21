@@ -1,5 +1,3 @@
-using System;
-using System.Linq.Expressions;
 using System.Threading;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -10,12 +8,11 @@ using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Npgsql;
 using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    internal class CausationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
+    public class CausationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
     {
         public static readonly string ColumnName = "causation_id";
 
@@ -35,7 +32,7 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.CausationId.EnabledWithMember();
         }
 
-        internal override UpsertArgument ToArgument()
+        public override UpsertArgument ToArgument()
         {
             return new CausationIdArgument();
         }
@@ -62,7 +59,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    internal class CausationIdArgument: UpsertArgument
+    public class CausationIdArgument: UpsertArgument
     {
         public CausationIdArgument()
         {

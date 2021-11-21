@@ -10,7 +10,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
-    internal class DocumentTable: Table
+    public class DocumentTable: Table
     {
         private readonly DocumentMapping _mapping;
 

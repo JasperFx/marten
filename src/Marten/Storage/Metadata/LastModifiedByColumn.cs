@@ -10,7 +10,7 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    internal class LastModifiedByColumn : MetadataColumn<string>, ISelectableColumn
+    public class LastModifiedByColumn : MetadataColumn<string>, ISelectableColumn
     {
         public static readonly string ColumnName = "last_modified_by";
 
@@ -30,13 +30,13 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.LastModifiedBy.EnabledWithMember();
         }
 
-        internal override UpsertArgument ToArgument()
+        public override UpsertArgument ToArgument()
         {
             return new LastModifiedByArgument();
         }
     }
 
-    internal class LastModifiedByArgument: UpsertArgument
+    public class LastModifiedByArgument: UpsertArgument
     {
         public LastModifiedByArgument()
         {

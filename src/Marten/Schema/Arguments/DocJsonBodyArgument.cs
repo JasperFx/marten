@@ -1,20 +1,17 @@
-using System;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
-using Baseline.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal;
-using Marten.Services;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    internal class DocJsonBodyArgument: UpsertArgument
+    /// <summary>
+    /// "doc" function argument for interaction with "data" column.
+    /// </summary>
+    public class DocJsonBodyArgument: UpsertArgument
     {
-
         public DocJsonBodyArgument()
         {
             Arg = "doc";
@@ -22,7 +19,6 @@ namespace Marten.Schema.Arguments
             DbType = NpgsqlDbType.Jsonb;
             Column = "data";
         }
-
 
         public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {
@@ -44,7 +40,5 @@ namespace Marten.Schema.Arguments
             method.Frames.Code($"{parameters.Usage}[{i}].NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
             method.Frames.Code($"{parameters.Usage}[{i}].Value = {{0}}.Serializer.ToJson(_document);", Use.Type<IMartenSession>());
         }
-
-
     }
 }

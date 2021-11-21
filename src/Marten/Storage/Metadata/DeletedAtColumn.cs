@@ -1,12 +1,11 @@
 using System;
-using System.Reflection;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 
 namespace Marten.Storage.Metadata
 {
-    internal class DeletedAtColumn: MetadataColumn<DateTimeOffset?> , ISelectableColumn
+    public class DeletedAtColumn: MetadataColumn<DateTimeOffset?> , ISelectableColumn
     {
         public DeletedAtColumn(): base(SchemaConstants.DeletedAtColumn, x => x.DeletedAt)
         {

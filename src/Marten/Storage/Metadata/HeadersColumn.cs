@@ -16,7 +16,7 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEventTableColumn
+    public class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEventTableColumn
     {
         public static readonly string ColumnName = "headers";
 
@@ -82,7 +82,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    internal class HeadersArgument: UpsertArgument
+    public class HeadersArgument: UpsertArgument
     {
         public HeadersArgument()
         {

@@ -1,8 +1,6 @@
 using System;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -12,7 +10,10 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    internal class VersionArgument: UpsertArgument
+    /// <summary>
+    /// "docVersion" function argument for interaction with "mt_version" column.
+    /// </summary>
+    public class VersionArgument: UpsertArgument
     {
         public const string ArgName = "docVersion";
 
@@ -38,7 +39,6 @@ namespace Marten.Schema.Arguments
             }
         }
 
-
         public override void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
@@ -60,8 +60,6 @@ writer.Write(version, {{0}});
 
                 load.Frames.SetMemberValue(mapping.Metadata.Version.Member, "version", mapping.DocumentType, type);
             }
-
-
         }
 
         public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
@@ -79,8 +77,6 @@ writer.Write(version, {{0}});
 
                 load.Frames.SetMemberValue(mapping.Metadata.Version.Member, "version", mapping.DocumentType, type);
             }
-
-
         }
     }
 }

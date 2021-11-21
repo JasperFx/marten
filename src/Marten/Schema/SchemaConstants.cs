@@ -1,6 +1,6 @@
 namespace Marten.Schema
 {
-    internal class SchemaConstants
+    public class SchemaConstants
     {
         public const string BaseAlias = "BASE";
         public const string TablePrefix = "mt_doc_";
