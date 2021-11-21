@@ -233,9 +233,9 @@ END; $$;
         {
             using var connection = _tenant.CreateConnection();
             await connection.OpenAsync().ConfigureAwait(false);
-#if NET5_0
+#if NET
             var tx = await connection.BeginTransactionAsync().ConfigureAwait(false);
-            #else
+#else
             var tx = connection.BeginTransaction();
 #endif
             var deleteEventDataSql = toDeleteEventDataSql();

@@ -16,7 +16,7 @@ namespace Marten.Events.Daemon
         public ShardStatusWatcher(ShardStateTracker tracker, ShardState expected, TimeSpan timeout)
         {
             _condition = x => x.Equals(expected);
-            _completion = new TaskCompletionSource<ShardState>();
+            _completion = new TaskCompletionSource<ShardState>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 
             var timeout1 = new CancellationTokenSource(timeout);
@@ -32,7 +32,7 @@ namespace Marten.Events.Daemon
         public ShardStatusWatcher(string description, Func<ShardState, bool> condition, ShardStateTracker tracker, TimeSpan timeout)
         {
             _condition = condition;
-            _completion = new TaskCompletionSource<ShardState>();
+            _completion = new TaskCompletionSource<ShardState>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 
             var timeout1 = new CancellationTokenSource(timeout);

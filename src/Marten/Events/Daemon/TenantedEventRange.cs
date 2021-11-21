@@ -71,10 +71,17 @@ namespace Marten.Events.Daemon
         public override Task ConfigureUpdateBatch(IShardAgent shardAgent, ProjectionUpdateBatch batch,
             EventRangeGroup eventRangeGroup)
         {
+#if NET6_0_OR_GREATER
+            return Parallel.ForEachAsync(Groups, Cancellation,
+                async (tenantGroup, token) =>
+                    await tenantGroup.ApplyEvents(batch, _projection, _store, token).ConfigureAwait(false));
+#else
+
             var tasks = Groups
                 .Select(tenantGroup => tenantGroup.ApplyEvents(batch, _projection, _store, Cancellation)).ToArray();
 
             return Task.WhenAll(tasks);
+#endif
         }
     }
 }

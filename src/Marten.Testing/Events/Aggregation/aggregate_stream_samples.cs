@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-#if NET5_0
+#if NET
 #nullable enable
 namespace Marten.Testing.Events.Aggregation
 {
