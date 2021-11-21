@@ -61,6 +61,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.AspNetCore.Testing",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IssueService", "IssueService\IssueService.csproj", "{B4F97F16-9FF3-4BC6-9B25-2FD2BD91F5E7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marten.Testing.ThirdAssembly", "Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj", "{5897FB86-03BD-42EE-8FD0-808FD56DB0CA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,6 +157,10 @@ Global
 		{B4F97F16-9FF3-4BC6-9B25-2FD2BD91F5E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4F97F16-9FF3-4BC6-9B25-2FD2BD91F5E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4F97F16-9FF3-4BC6-9B25-2FD2BD91F5E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5897FB86-03BD-42EE-8FD0-808FD56DB0CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5897FB86-03BD-42EE-8FD0-808FD56DB0CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5897FB86-03BD-42EE-8FD0-808FD56DB0CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5897FB86-03BD-42EE-8FD0-808FD56DB0CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
