@@ -252,5 +252,14 @@ namespace Marten
         {
             throw new NotSupportedException($"{nameof(WebStyleSearch)} extension method can only be used in Marten Linq queries.");
         }
+
+        /// <summary>
+        /// Performs a ngram search against <typeparamref name="T"/> using a custom ngram search function
+        /// </summary>
+        /// <param name="searchTerm">The text to search for.</param>
+        public static bool NgramSearch<T>(this T variable, string searchTerm)
+        {
+            throw new NotSupportedException($"{nameof(NgramSearch)} extension method can only be used in Marten Linq queries.");
+        }
     }
 }

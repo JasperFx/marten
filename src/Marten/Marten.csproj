@@ -12,6 +12,9 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <ItemGroup>
+        <None Remove="Schema\SQL\mt_grams_array.sql" />
+        <None Remove="Schema\SQL\mt_grams_query.sql" />
+        <None Remove="Schema\SQL\mt_grams_vector.sql" />
         <None Remove="Schema\SQL\mt_immutable_timestamptz.sql" />
     </ItemGroup>
     <ItemGroup>
