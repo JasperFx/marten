@@ -271,7 +271,7 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
         public class EventPublisher
         {
             private readonly DocumentStore _store;
-            private readonly TaskCompletionSource<bool> _completion = new TaskCompletionSource<bool>();
+            private readonly TaskCompletionSource<bool> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             public EventPublisher(DocumentStore store)
             {

@@ -52,7 +52,7 @@ namespace Marten.Testing.Acceptance
                 query.Query<User>().Count().ShouldBe(4);
             }
         }
-#if NET5_0
+#if NET
         [Fact]
         public void can_insert_records()
         {

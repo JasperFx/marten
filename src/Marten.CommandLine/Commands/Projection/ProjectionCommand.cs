@@ -18,8 +18,8 @@ namespace Marten.CommandLine.Commands.Projection
     [Description("Marten's asynchronous projection and projection rebuilds")]
     public class ProjectionsCommand: OaktonAsyncCommand<ProjectionInput>
     {
-        private TaskCompletionSource<bool> _completion = new TaskCompletionSource<bool>();
-        private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
+        private readonly TaskCompletionSource<bool> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly CancellationTokenSource _cancellation = new();
 
         public override async Task<bool> Execute(ProjectionInput input)
         {
@@ -75,12 +75,20 @@ namespace Marten.CommandLine.Commands.Projection
             var highWater = daemon.Tracker.HighWaterMark;
             var watcher = new RebuildWatcher(highWater, _completion.Task);
             using var unsubscribe = daemon.Tracker.Subscribe(watcher);
+#if NET6_0_OR_GREATER
+            await Parallel.ForEachAsync(projections, _cancellation.Token,
+                    async (projection, token) =>
+                        await daemon.RebuildProjection(projection.ProjectionName, token).ConfigureAwait(false))
+                .ConfigureAwait(false);
 
+#else
             var tasks = projections
                 .Select(x => Task.Run(async () => await daemon.RebuildProjection(x.ProjectionName, _cancellation.Token).ConfigureAwait(false)))
                 .ToArray();
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
+#endif
+
 
             _completion.SetResult(true);
 

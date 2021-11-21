@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
+#nullable enable
 namespace Marten.Events.Daemon
 {
     /// <summary>
@@ -48,7 +48,7 @@ namespace Marten.Events.Daemon
         /// <param name="shardName"></param>
         /// <param name="ex"></param>
         /// <returns></returns>
-        Task StopShard(string shardName, Exception ex = null);
+        Task StopShard(string shardName, Exception? ex = null);
 
         /// <summary>
         /// Starts all known projections shards

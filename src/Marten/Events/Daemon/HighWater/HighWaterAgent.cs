@@ -132,6 +132,11 @@ namespace Marten.Events.Daemon.HighWater
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
+            _ = CheckState();
+        }
+
+        private async Task CheckState()
+        {
             if (_loop.IsFaulted && !_token.IsCancellationRequested)
             {
                 _logger.LogError(_loop.Exception,"HighWaterAgent polling loop was faulted");
@@ -139,15 +144,13 @@ namespace Marten.Events.Daemon.HighWater
                 try
                 {
                     _loop.Dispose();
-                    Start().GetAwaiter().GetResult();
+                    await Start().ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error trying to restart the HighWaterAgent");
                 }
             }
-
-
         }
 
         public void Dispose()

@@ -395,7 +395,7 @@ namespace Marten.Events.Aggregation
 
             var eventTypes = determineEventTypes();
 
-            var baseFilters = new ISqlFragment[0];
+            var baseFilters = Array.Empty<ISqlFragment>();
             if (!eventTypes.Any(x => x.IsAbstract || x.IsInterface))
             {
                 baseFilters = new ISqlFragment[] {new EventTypeFilter(store.Events, eventTypes)};
