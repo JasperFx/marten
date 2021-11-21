@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Baseline;
 
 namespace Marten.Util
 {
-    internal static class ReflectionExtensions
+    public static class ReflectionExtensions
     {
         public static string ToTableAlias(this MemberInfo[] members)
         {
@@ -48,6 +45,5 @@ namespace Marten.Util
 
             return rawType;
         }
-
     }
 }

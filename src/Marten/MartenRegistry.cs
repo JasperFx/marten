@@ -18,7 +18,7 @@ using Weasel.Postgresql.Tables;
 #nullable enable
 namespace Marten
 {
-    internal interface IDocumentMappingBuilder
+    public interface IDocumentMappingBuilder
     {
         DocumentMapping Build(StoreOptions options);
         Type DocumentType { get; }
@@ -26,7 +26,7 @@ namespace Marten
         void Include(IDocumentMappingBuilder include);
     }
 
-    internal class DocumentMappingBuilder<T>: IDocumentMappingBuilder
+    public class DocumentMappingBuilder<T>: IDocumentMappingBuilder
     {
         private readonly IList<Action<DocumentMapping<T>>> _alterations
             = new List<Action<DocumentMapping<T>>>();

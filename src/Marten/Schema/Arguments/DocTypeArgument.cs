@@ -1,7 +1,4 @@
-using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Threading;
 using Baseline.Reflection;
 using LamarCodeGeneration;
@@ -13,7 +10,10 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    internal class DocTypeArgument: UpsertArgument
+    /// <summary>
+    /// "docType" function argument for interaction with "mt_doc_type" column.
+    /// </summary>
+    public class DocTypeArgument: UpsertArgument
     {
         private static readonly MethodInfo _getAlias = ReflectionHelper.GetMethod<DocumentMapping>(x => x.AliasFor(null));
         private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");

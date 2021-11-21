@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Marten.Linq.Fields;
+using Marten.Schema.Arguments;
 using Marten.Services;
 using Marten.Testing.Documents;
 using NpgsqlTypes;
@@ -36,9 +37,9 @@ namespace Marten.Testing.Linq.Fields
         [Fact]
         public void upsert_argument_defaults()
         {
-            theField.UpsertArgument.Arg.ShouldBe("arg_first_name");
-            theField.UpsertArgument.Column.ShouldBe("first_name");
-            theField.UpsertArgument.PostgresType.ShouldBe("varchar");
+            theField.ToArgument().Arg.ShouldBe("arg_first_name");
+            theField.ToArgument().Column.ShouldBe("first_name");
+            theField.ToArgument().PostgresType.ShouldBe("varchar");
         }
 
         [Fact]
@@ -64,8 +65,8 @@ namespace Marten.Testing.Linq.Fields
             });
 
             var field = DuplicatedField.For<Target>(options, x => x.Color);
-            field.UpsertArgument.DbType.ShouldBe(NpgsqlDbType.Varchar);
-            field.UpsertArgument.PostgresType.ShouldBe("varchar");
+            field.ToArgument().DbType.ShouldBe(NpgsqlDbType.Varchar);
+            field.ToArgument().PostgresType.ShouldBe("varchar");
 
             var constant = Expression.Constant((int)Colors.Blue);
 
@@ -83,8 +84,8 @@ namespace Marten.Testing.Linq.Fields
             });
 
             var field = DuplicatedField.For<Target>(options, x => x.Color);
-            field.UpsertArgument.DbType.ShouldBe(NpgsqlDbType.Varchar);
-            field.UpsertArgument.PostgresType.ShouldBe("varchar");
+            field.ToArgument().DbType.ShouldBe(NpgsqlDbType.Varchar);
+            field.ToArgument().PostgresType.ShouldBe("varchar");
 
             var constant = Expression.Constant(null);
 
@@ -115,7 +116,7 @@ namespace Marten.Testing.Linq.Fields
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
             var expectedPgType = pgType ?? "varchar";
             field.PgType.ShouldBe(expectedPgType);
-            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
+            field.ToArgument().PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Text);
         }
 
@@ -131,7 +132,7 @@ namespace Marten.Testing.Linq.Fields
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
             var expectedPgType = pgType ?? "uuid";
             field.PgType.ShouldBe(expectedPgType);
-            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
+            field.ToArgument().PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Uuid);
         }
 
@@ -147,7 +148,7 @@ namespace Marten.Testing.Linq.Fields
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
             var expectedPgType = pgType ?? "varchar[]";
             field.PgType.ShouldBe(expectedPgType);
-            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
+            field.ToArgument().PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
         }
 
@@ -163,7 +164,7 @@ namespace Marten.Testing.Linq.Fields
             field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
             var expectedPgType = pgType ?? "jsonb";
             field.PgType.ShouldBe(expectedPgType);
-            field.UpsertArgument.PostgresType.ShouldBe(expectedPgType);
+            field.ToArgument().PostgresType.ShouldBe(expectedPgType);
             field.DbType.ShouldBe(NpgsqlDbType.Array | NpgsqlDbType.Text);
         }
 

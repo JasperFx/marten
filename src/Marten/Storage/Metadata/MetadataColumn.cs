@@ -19,8 +19,7 @@ using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Storage.Metadata
 {
-
-    public abstract class MetadataColumn : TableColumn
+    public abstract class MetadataColumn : TableColumn, IFunctionArgumentProvider
     {
         public Type DotNetType { get; }
 
@@ -45,8 +44,6 @@ namespace Marten.Storage.Metadata
         {
             if (!Enabled || Member == null) return;
 
-
-
             mapping.DuplicateField(new MemberInfo[] {Member}, columnName: Name)
                 .OnlyForSearching = true;
         }
@@ -56,7 +53,7 @@ namespace Marten.Storage.Metadata
             return Enabled && Member != null;
         }
 
-        internal virtual UpsertArgument ToArgument()
+        public virtual UpsertArgument ToArgument()
         {
             return new UpsertArgument
             {
@@ -65,7 +62,6 @@ namespace Marten.Storage.Metadata
                 DbType = PostgresqlProvider.Instance.ToParameterType(DotNetType),
                 PostgresType = Type,
                 Members = new MemberInfo[]{Member}
-
             };
         }
 
@@ -86,7 +82,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    internal abstract class MetadataColumn<T> : MetadataColumn
+    public abstract class MetadataColumn<T> : MetadataColumn
     {
         private readonly Action<DocumentMetadata, T> _setter;
         private MemberInfo _member;

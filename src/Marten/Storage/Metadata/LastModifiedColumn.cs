@@ -2,11 +2,10 @@ using System;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
-    internal class LastModifiedColumn: MetadataColumn<DateTimeOffset>, ISelectableColumn
+    public class LastModifiedColumn: MetadataColumn<DateTimeOffset>, ISelectableColumn
     {
         public LastModifiedColumn() : base(SchemaConstants.LastModifiedColumn, x => x.LastModified)
         {

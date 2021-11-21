@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using Baseline;
@@ -8,7 +7,6 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using Marten.Internal.CodeGeneration;
-using Marten.Services;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -18,13 +16,14 @@ using Weasel.Postgresql;
 namespace Marten.Schema.Arguments
 {
     // Public for code generation, just let it go.
-    public class UpsertArgument
+    public class UpsertArgument : IFunctionArgument
     {
         protected static readonly MethodInfo writeMethod =
             typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.Name == "Write" && x.GetParameters().Length == 2 && x.GetParameters()[0].ParameterType.IsGenericParameter && x.GetParameters()[1].ParameterType == typeof(NpgsqlTypes.NpgsqlDbType));
 
         private MemberInfo[] _members;
         private string _postgresType;
+
         public string Arg { get; set; }
 
         public string PostgresType

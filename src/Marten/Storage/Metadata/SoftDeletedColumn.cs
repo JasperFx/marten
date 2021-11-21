@@ -1,11 +1,10 @@
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
-    internal class SoftDeletedColumn: MetadataColumn<bool>, ISelectableColumn
+    public class SoftDeletedColumn: MetadataColumn<bool>, ISelectableColumn
     {
         public SoftDeletedColumn() : base(SchemaConstants.DeletedColumn, x => x.Deleted)
         {

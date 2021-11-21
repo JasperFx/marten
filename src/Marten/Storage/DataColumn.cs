@@ -5,7 +5,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
-    internal class DataColumn: TableColumn, ISelectableColumn
+    public class DataColumn: TableColumn, ISelectableColumn
     {
         public DataColumn() : base("data", "JSONB")
         {

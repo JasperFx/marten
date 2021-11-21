@@ -1,5 +1,3 @@
-using System;
-using System.Linq.Expressions;
 using System.Threading;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -14,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    internal class CorrelationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
+    public class CorrelationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
     {
         public static readonly string ColumnName = "correlation_id";
 
@@ -61,7 +59,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    internal class CorrelationIdArgument: UpsertArgument
+    public class CorrelationIdArgument: UpsertArgument
     {
         public CorrelationIdArgument()
         {

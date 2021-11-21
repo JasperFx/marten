@@ -23,7 +23,13 @@ namespace Marten.Storage
         private readonly Ref<ImHashMap<Type, IDocumentMapping>> _mappings =
             Ref.Of(ImHashMap<Type, IDocumentMapping>.Empty);
 
-        private readonly Dictionary<Type, IFeatureSchema> _features = new Dictionary<Type, IFeatureSchema>();
+        private readonly Dictionary<Type, IFeatureSchema> _features =
+            new Dictionary<Type, IFeatureSchema>();
+
+        private readonly IDictionary<Type, IDocumentMappingBuilder> _builders =
+            new Dictionary<Type, IDocumentMappingBuilder>();
+
+        private readonly ThreadLocal<IList<Type>> _buildingList = new ThreadLocal<IList<Type>>();
 
         internal StorageFeatures(StoreOptions options)
         {
@@ -31,11 +37,6 @@ namespace Marten.Storage
 
             SystemFunctions = new SystemFunctions(options);
         }
-
-        private readonly IDictionary<Type, IDocumentMappingBuilder> _builders
-            = new Dictionary<Type, IDocumentMappingBuilder>();
-
-        private readonly ThreadLocal<IList<Type>> _buildingList = new ThreadLocal<IList<Type>>();
 
         internal DocumentMapping Build(Type type, StoreOptions options)
         {
@@ -73,7 +74,7 @@ namespace Marten.Storage
             }
         }
 
-        internal DocumentMappingBuilder<T> BuilderFor<T>()
+        public DocumentMappingBuilder<T> BuilderFor<T>()
         {
             if (_builders.TryGetValue(typeof(T), out var builder))
             {
@@ -137,11 +138,11 @@ namespace Marten.Storage
             Add(feature);
         }
 
-        internal SystemFunctions SystemFunctions { get; }
+        public SystemFunctions SystemFunctions { get; }
 
-        internal IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Value.Enumerate().Select(x => x.Value);
+        public IEnumerable<DocumentMapping> AllDocumentMappings => _documentMappings.Value.Enumerate().Select(x => x.Value);
 
-        internal DocumentMapping MappingFor(Type documentType)
+        public DocumentMapping MappingFor(Type documentType)
         {
             if (!_documentMappings.Value.TryFind(documentType, out var value))
             {
@@ -153,7 +154,7 @@ namespace Marten.Storage
             return value;
         }
 
-        internal IDocumentMapping FindMapping(Type documentType)
+        public IDocumentMapping FindMapping(Type documentType)
         {
             if (documentType == null) throw new ArgumentNullException(nameof(documentType));
 
@@ -171,11 +172,10 @@ namespace Marten.Storage
             return value;
         }
 
-        internal void AddMapping(IDocumentMapping mapping)
+        public void AddMapping(IDocumentMapping mapping)
         {
             _mappings.Swap(d => d.AddOrUpdate(mapping.DocumentType, mapping));
         }
-
 
         private void assertNoDuplicateDocumentAliases()
         {
@@ -258,7 +258,7 @@ namespace Marten.Storage
         }
 
 
-        internal IEnumerable<IFeatureSchema> AllActiveFeatures(ITenant tenant)
+        public IEnumerable<IFeatureSchema> AllActiveFeatures(ITenant tenant)
         {
             yield return SystemFunctions;
 

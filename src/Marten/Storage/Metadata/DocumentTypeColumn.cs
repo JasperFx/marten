@@ -1,11 +1,10 @@
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
-    internal class DocumentTypeColumn: MetadataColumn<string>, ISelectableColumn
+    public class DocumentTypeColumn: MetadataColumn<string>, ISelectableColumn
     {
         public DocumentTypeColumn(DocumentMapping mapping) : base(SchemaConstants.DocumentTypeColumn, x => x.DocumentType)
         {
@@ -32,6 +31,5 @@ namespace Marten.Storage.Metadata
         {
             return true;
         }
-
     }
 }

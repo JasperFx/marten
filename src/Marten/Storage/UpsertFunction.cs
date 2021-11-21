@@ -13,7 +13,7 @@ using Weasel.Postgresql.Functions;
 
 namespace Marten.Storage
 {
-    internal class UpsertFunction: Function
+    public class UpsertFunction: Function
     {
         protected readonly DocumentMapping _mapping;
         private readonly bool _disableConcurrency;
@@ -50,7 +50,7 @@ namespace Marten.Storage
 
             Arguments.Add(new DocJsonBodyArgument());
 
-            Arguments.AddRange(mapping.DuplicatedFields.Where(x => !x.OnlyForSearching).Select(x => x.UpsertArgument));
+            Arguments.AddRange(mapping.DuplicatedFields.Where(x => !x.OnlyForSearching).Select(x => x.ToArgument()));
 
             // These two arguments need to be added this way
             if (mapping.Metadata.Version.Enabled) Arguments.Add(new VersionArgument());
@@ -182,14 +182,11 @@ $function$;
 ");
             }
 
-
-
         }
 
         public UpsertArgument[] OrderedArguments()
         {
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }
-
     }
 }

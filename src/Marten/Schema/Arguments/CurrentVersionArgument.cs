@@ -1,12 +1,13 @@
-using System;
-using System.Linq.Expressions;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
-    internal class CurrentVersionArgument: UpsertArgument
+    /// <summary>
+    /// "current_version" function argument.
+    /// </summary>
+    public class CurrentVersionArgument: UpsertArgument
     {
         public CurrentVersionArgument()
         {

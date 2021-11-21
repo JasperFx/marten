@@ -9,6 +9,9 @@ using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments
 {
+    /// <summary>
+    /// "tenantid" function argument for interaction with <see cref="TenantIdColumn"/> column.
+    /// </summary>
     public class TenantIdArgument: UpsertArgument
     {
         public const string ArgName = "tenantid";
@@ -32,15 +35,11 @@ namespace Marten.Schema.Arguments
             }
         }
 
-
         public override void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
-
             method.Frames.Code($"{{0}}[{{1}}].Value = tenantId;", parameters, i);
             method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
-
-
         }
 
         public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

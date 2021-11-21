@@ -4,11 +4,10 @@ using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata
 {
-    internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn, IStreamTableColumn
+    public class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn, IStreamTableColumn
     {
         public static new readonly string Name = "tenant_id";
 
