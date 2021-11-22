@@ -18,9 +18,6 @@ namespace Marten.Schema.Arguments
     // Public for code generation, just let it go.
     public class UpsertArgument : IFunctionArgument
     {
-        protected static readonly MethodInfo writeMethod =
-            typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x => x.Name == "Write" && x.GetParameters().Length == 2 && x.GetParameters()[0].ParameterType.IsGenericParameter && x.GetParameters()[1].ParameterType == typeof(NpgsqlTypes.NpgsqlDbType));
-
         private MemberInfo[] _members;
         private string _postgresType;
 
@@ -54,7 +51,6 @@ namespace Marten.Schema.Arguments
                 {
                     DbType = PostgresqlProvider.Instance.ToParameterType(value.Last().GetMemberType());
 
-
                     if (_members.Length == 1)
                     {
                         DotNetType = _members.Last().GetRawMemberType();
@@ -72,19 +68,12 @@ namespace Marten.Schema.Arguments
                         }
                     }
                 }
-
-
             }
         }
 
         public Type DotNetType { get; private set; }
 
         public NpgsqlDbType DbType { get; set; }
-
-        public string ArgumentDeclaration()
-        {
-            return $"{Arg} {PostgresType}";
-        }
 
         public virtual void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i,
             Argument parameters,
@@ -105,7 +94,6 @@ namespace Marten.Schema.Arguments
             else
             {
                 var rawMemberType = _members.Last().GetRawMemberType();
-
 
                 var dbTypeString = rawMemberType.IsArray
                     ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
@@ -172,11 +160,9 @@ END
         {
             var rawMemberType = _members.Last().GetRawMemberType();
 
-
             var dbTypeString = rawMemberType.IsArray
                 ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
                 : Constant.ForEnum(DbType).Usage;
-
 
             var memberPath = _members.Select(x => x.Name).Join("?.");
             if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
@@ -216,7 +202,6 @@ END
             }
 
         }
-
 
         public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
         {

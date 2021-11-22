@@ -72,7 +72,7 @@ namespace Marten.Internal.CodeGeneration
             return type;
         }
 
-        private static List<UpsertArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
+        private static List<IFunctionArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
         {
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToList();
             // You need the document body to go last so that any metadata pushed into the document

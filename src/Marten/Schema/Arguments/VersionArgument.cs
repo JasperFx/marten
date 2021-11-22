@@ -1,5 +1,3 @@
-using System;
-using System.Reflection;
 using System.Threading;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
@@ -16,10 +14,6 @@ namespace Marten.Schema.Arguments
     public class VersionArgument: UpsertArgument
     {
         public const string ArgName = "docVersion";
-
-        private readonly static MethodInfo _newGuid =
-            typeof(Guid).GetMethod(nameof(Guid.NewGuid),
-                BindingFlags.Static | BindingFlags.Public);
 
         public VersionArgument()
         {

@@ -32,7 +32,7 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.CausationId.EnabledWithMember();
         }
 
-        public override UpsertArgument ToArgument()
+        public override IFunctionArgument ToArgument()
         {
             return new CausationIdArgument();
         }

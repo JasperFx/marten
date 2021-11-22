@@ -1,8 +1,4 @@
-using System;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
-using Baseline.Reflection;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
@@ -15,11 +11,6 @@ namespace Marten.Schema.Arguments
     /// </summary>
     public class DotNetTypeArgument: UpsertArgument
     {
-        private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");
-
-        private static readonly MethodInfo _fullName =
-            ReflectionHelper.GetProperty<Type>(x => x.FullName).GetMethod;
-
         public DotNetTypeArgument()
         {
             Arg = "docDotNetType";
@@ -27,7 +18,6 @@ namespace Marten.Schema.Arguments
             DbType = NpgsqlDbType.Varchar;
             PostgresType = "varchar";
         }
-
 
         public override void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)

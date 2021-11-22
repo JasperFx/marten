@@ -22,7 +22,7 @@ namespace Marten.Storage
         protected readonly string _tenantWhereClause;
         protected readonly string _andTenantWhereClause;
 
-        public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
+        public readonly IList<IFunctionArgument> Arguments = new List<IFunctionArgument>();
 
         public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false) : base(identifier ?? mapping.UpsertFunction)
         {
@@ -88,12 +88,14 @@ namespace Marten.Storage
             }
         }
 
+
         public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
         {
             var ordered = OrderedArguments();
 
-            var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
+            static string ArgumentDeclaration(IFunctionArgument functionArgument) => $"{functionArgument.Arg} {functionArgument.PostgresType}";
 
+            var argList = ordered.Select(ArgumentDeclaration).Join(", ");
 
             var systemUpdates = _mapping.Metadata.LastModified.Enabled ? new string[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" } : new string[0];
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
@@ -184,7 +186,7 @@ $function$;
 
         }
 
-        public UpsertArgument[] OrderedArguments()
+        public IFunctionArgument[] OrderedArguments()
         {
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }

@@ -6,11 +6,9 @@ using Baseline;
 using Marten.Exceptions;
 using Marten.Linq.Filters;
 using Marten.Linq.Parsing;
-using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
@@ -90,7 +88,7 @@ namespace Marten.Linq.Fields
         public NpgsqlDbType DbType { get; set; }
 
         /// <inheritdoc />
-        public UpsertArgument ToArgument() => new UpsertArgument
+        public IFunctionArgument ToArgument() => new UpsertArgument
         {
             Arg = "arg_" + ColumnName.ToLower(),
             Column = ColumnName.ToLower(),
@@ -112,7 +110,6 @@ namespace Marten.Linq.Fields
         internal IField InnerField { get; }
 
         public string RawLocator => TypedLocator;
-
 
         public object GetValueForCompiledQueryParameter(Expression valueExpression)
         {
@@ -145,6 +142,7 @@ namespace Marten.Linq.Fields
         }
 
         public string JSONBLocator { get; set; }
+
         public string LocatorForIncludedDocumentId => TypedLocator;
 
         public string LocatorFor(string rootTableAlias)
@@ -190,6 +188,7 @@ namespace Marten.Linq.Fields
         public Type FieldType => InnerField.FieldType;
 
         public MemberInfo[] Members => InnerField.Members;
+
         public string MemberName { get; }
 
         public string PgType { get; set; } // settable so it can be overidden by users

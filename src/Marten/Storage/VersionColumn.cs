@@ -1,16 +1,12 @@
 using System;
-using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage.Metadata;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage
 {
-    internal class VersionColumn: MetadataColumn<Guid>, ISelectableColumn
+    public class VersionColumn: MetadataColumn<Guid>, ISelectableColumn
     {
         public VersionColumn() : base(SchemaConstants.VersionColumn, x => x.CurrentVersion)
         {
@@ -22,9 +18,7 @@ namespace Marten.Storage
             GeneratedMethod sync, int index,
             DocumentMapping mapping)
         {
-
             var versionPosition = index;//mapping.IsHierarchy() ? 3 : 2;
-
 
             async.Frames.CodeAsync($"var version = await reader.GetFieldValueAsync<System.Guid>({versionPosition}, token);");
             sync.Frames.Code($"var version = reader.GetFieldValue<System.Guid>({versionPosition});");
