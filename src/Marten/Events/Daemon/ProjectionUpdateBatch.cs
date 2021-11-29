@@ -118,6 +118,11 @@ namespace Marten.Events.Daemon
 
             public void ApplyChanges(IList<Exception> exceptions, IMartenSession session)
             {
+                if (Count == 0)
+                {
+                    return;
+                }
+
                 _command.CommandText = _builder.ToString();
 
                 using var reader = session.Database.ExecuteReader(_command);
@@ -126,6 +131,11 @@ namespace Marten.Events.Daemon
 
             public async Task ApplyChangesAsync(IList<Exception> exceptions, IMartenSession session, CancellationToken token)
             {
+                if (Count == 0)
+                {
+                    return;
+                }
+
                 _command.CommandText = _builder.ToString();
 
                 using var reader = await session.Database.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
