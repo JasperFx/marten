@@ -135,8 +135,17 @@ namespace Marten.Internal.Operations
             var success = false;
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
-                success = version == _version;
+                try
+                {
+                    var version = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
+                    success = version == _version;
+                }
+                catch (InvalidCastException)
+                {
+                    // This is an edge case that only happens when someone calls Insert(), then Update() on the same
+                    // document in the same session
+                    success = false;
+                }
             };
 
             checkVersions(exceptions, success);
