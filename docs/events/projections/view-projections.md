@@ -246,6 +246,13 @@ public class UserGroupsAssignmentProjection: ViewProjection<UserGroupsAssignment
 
 ## View Projection with Custom Grouper
 
+::: warning
+If your grouping logic requires you to access the aggregate view itself, `ViewProjection` **will not function correctly**
+because of operation ordering (grouping happens in parallel to building projection views as a performance optimization). If
+your grouping logic does require loading the actual aggregate documents, you need to author a custom implementation of the raw
+`IProjection` interface.
+:::
+
 As simpler mechanism to group events to aggregate documents is to supply a custom `IAggregatorGrouper<TId>` as shown below:
 
 <!-- snippet: sample_view-projection-custom-grouper-with-querysession -->
