@@ -19,6 +19,11 @@ namespace Marten.Internal.CodeGeneration
             _storage = storage;
         }
 
+        public object GetNullableGuid(Guid? value)
+        {
+            return value.HasValue ? value.Value : DBNull.Value;
+        }
+
         public int GetEnumIntValue<TEnum>(TEnum? value) where TEnum : struct
         {
             if (value.HasValue) return value.Value.As<int>();

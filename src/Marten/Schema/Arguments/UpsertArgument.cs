@@ -180,7 +180,12 @@ END
 
 
             var memberPath = _members.Select(x => x.Name).Join("?.");
-            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+            if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0] == typeof(Guid))
+            {
+                var accessor = $"GetNullableGuid(document.{memberPath})";
+                load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Uuid);
+            }
+            else if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
             {
                 var isDeep = _members.Length > 0;
                 var memberType = _members.Last().GetMemberType();
@@ -230,7 +235,13 @@ END
 
 
             var memberPath = _members.Select(x => x.Name).Join("?.");
-            if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
+
+            if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0] == typeof(Guid))
+            {
+                var accessor = $"GetNullableGuid(document.{memberPath})";
+                load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {{0}}, {{1}});", NpgsqlDbType.Uuid, Use.Type<CancellationToken>());
+            }
+            else if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
             {
                 var isDeep = _members.Length > 0;
                 var memberType = _members.Last().GetMemberType();

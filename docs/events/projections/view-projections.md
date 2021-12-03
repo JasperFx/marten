@@ -263,7 +263,7 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
     {
         var licenceFeatureTogglesEvents = events
-            .OfType<Event<LicenseFeatureToggled>>()
+            .OfType<IEvent<LicenseFeatureToggled>>()
             .ToList();
 
         if (!licenceFeatureTogglesEvents.Any())
