@@ -21,7 +21,7 @@
     <PackageReference Include="Shouldly" Version="4.0.3" />
   </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="MarkdownSnippets.MsBuild" Version="24.2.0">
+      <PackageReference Include="MarkdownSnippets.MsBuild" Version="24.2.2">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       </PackageReference>
