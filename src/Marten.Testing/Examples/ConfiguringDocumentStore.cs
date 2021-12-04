@@ -172,9 +172,9 @@ namespace Marten.Testing.Examples
             #endregion
         }
 
-        public void customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters()
+        public void customize_json_net_nonpublicsetters()
         {
-            #region sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters
+            #region sample_customize_json_net_nonpublicsetters
 
             var store = DocumentStore.For(_ =>
             {

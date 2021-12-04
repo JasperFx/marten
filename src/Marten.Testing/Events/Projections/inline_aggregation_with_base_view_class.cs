@@ -51,6 +51,7 @@ namespace Marten.Testing.Events.Projections
         {
             var loadedView = theSession.Load<T>(streamId);
 
+            loadedView.ShouldNotBeNull();
             loadedView.Id.ShouldBe(streamId);
             loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 

@@ -13,9 +13,9 @@ namespace Marten.Services.Json
     /// </summary>
     public class JsonNetCollectionToArrayJsonConverter: JsonConverter
     {
-        public static JsonNetCollectionToArrayJsonConverter Instance = new JsonNetCollectionToArrayJsonConverter();
+        public static JsonNetCollectionToArrayJsonConverter Instance = new();
 
-        private readonly static List<Type> _types = new List<Type>
+        private static readonly List<Type> _types = new()
         {
             typeof(ICollection<>),
             typeof(IList<>),
