@@ -165,6 +165,8 @@ namespace Marten
     {
         Default = 0,
         NonPublicSetters = 1,
-        NonPublicDefaultConstructor = 2
+        NonPublicDefaultConstructor = 2,
+        NonPublicConstructor = 4,
+        All = Default | NonPublicSetters | NonPublicDefaultConstructor | NonPublicConstructor
     }
 }

@@ -152,7 +152,7 @@ private readonly JsonSerializer _serializer = new()
     ContractResolver = new JsonNetContractResolver()
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Services/JsonNetSerializer.cs#L40-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_newtonsoft-configuration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Services/JsonNetSerializer.cs#L39-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_newtonsoft-configuration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To customize the Newtonsoft.Json serialization, you need to explicitly supply an instance of Marten's `JsonNetSerializer` as shown below:
@@ -290,8 +290,8 @@ By default `Newtonsoft.Json` only deserializes properties with public setters.
 
 You can allow deserialization of properties with non-public setters by changing the serialization settings in the `DocumentStore` options.
 
-<!-- snippet: sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters -->
-<a id='snippet-sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters'></a>
+<!-- snippet: sample_customize_json_net_nonpublicsetters -->
+<a id='snippet-sample_customize_json_net_nonpublicsetters'></a>
 ```cs
 var store = DocumentStore.For(_ =>
 {
@@ -302,8 +302,18 @@ var store = DocumentStore.For(_ =>
     _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L177-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_nonpublicmembersstorage_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L177-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+You can also use other options of `NonPublicMembersStorage`:
+
+- `NonPublicDefaultConstructor` - allows deserialization using non-public default constructor,
+- `NonPublicConstructor` - allows deserialization using any constructor. Construction resolution uses the following precedence:
+  1. Constructor with `JsonConstructor` attribute.
+  2. Constructor with the biggest parameters' count.
+  3. If two constructors have the same parameters' count, use public or take the first one.
+  4. Use default constructor.
+- `All` - Use both properties with non-public setters and non-public constructors.
 
 ## Serialization with System.Text.Json
 

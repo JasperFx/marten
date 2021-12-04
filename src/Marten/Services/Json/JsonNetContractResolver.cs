@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -25,6 +26,20 @@ namespace Marten.Services.Json
             SetNamingStrategy(casing);
         }
 
+        protected override JsonObjectContract CreateObjectContract(Type objectType)
+        {
+            var contract = base.CreateObjectContract(objectType);
+
+            if (!NonPublicMembersStorage.HasFlag(NonPublicMembersStorage.NonPublicConstructor))
+                return contract;
+
+            return JsonNetObjectContractProvider.UsingNonDefaultConstructor(
+                contract,
+                objectType,
+                base.CreateConstructorParameters
+            );
+        }
+
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             var property = base.CreateProperty(member, memberSerialization);
@@ -34,24 +49,29 @@ namespace Marten.Services.Json
                 property.Converter = JsonNetCollectionToArrayJsonConverter.Instance;
             }
 
-            if (NonPublicMembersStorage.HasFlag(NonPublicMembersStorage.NonPublicSetters) && member is PropertyInfo pi)
-            {
-                property.Readable = pi.GetMethod != null;
-                property.Writable = pi.SetMethod != null;
-            }
+            if (!NonPublicMembersStorage.HasFlag(NonPublicMembersStorage.NonPublicSetters) ||
+                member is not PropertyInfo pi) return property;
+
+            property.Readable = pi.GetMethod != null;
+            property.Writable = pi.SetMethod != null;
             return property;
         }
 
         private void SetNamingStrategy(Casing casing)
         {
-            if (casing == Casing.CamelCase)
+            NamingStrategy = casing switch
             {
-                NamingStrategy = new CamelCaseNamingStrategy { ProcessDictionaryKeys = true, OverrideSpecifiedNames = true };
-            }
-            else if (casing == Casing.SnakeCase)
-            {
-                NamingStrategy = new SnakeCaseNamingStrategy { ProcessDictionaryKeys = true, OverrideSpecifiedNames = true };
+                Casing.CamelCase => new CamelCaseNamingStrategy
+                {
+                    ProcessDictionaryKeys = true, OverrideSpecifiedNames = true
+                },
+                Casing.SnakeCase => new SnakeCaseNamingStrategy
+                {
+                    ProcessDictionaryKeys = true, OverrideSpecifiedNames = true
+                },
+                _ => NamingStrategy
             };
+            ;
         }
     }
 }
