@@ -22,9 +22,11 @@
   <ItemGroup>
     <PackageReference Include="Jil" Version="3.0.0-alpha2" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="Lamar" Version="5.0.4" />
+    <PackageReference Include="Lamar" Version="7.0.0" Condition="'$(TargetFramework)' != 'netcoreapp3.1'" />
+    <PackageReference Include="Lamar" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -43,7 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MarkdownSnippets.MsBuild" Version="24.2.0">
+    <PackageReference Include="MarkdownSnippets.MsBuild" Version="24.2.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

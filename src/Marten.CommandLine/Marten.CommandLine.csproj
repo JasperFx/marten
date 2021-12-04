@@ -37,7 +37,8 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-        <PackageReference Include="Oakton" Version="3.2.2" />
+        <PackageReference Include="Oakton" Version="3.2.2" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
+        <PackageReference Include="Oakton" Version="4.1.0" Condition="'$(TargetFramework)' != 'netcoreapp3.1'" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>
