@@ -7,6 +7,7 @@ using Baseline.Dates;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace MemoryUsageChecker

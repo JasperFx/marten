@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -13,7 +14,7 @@ namespace Marten.Testing.Bugs
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.Advanced.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+                _.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
                 _.Schema.For<Bug_1002>();
             });
 
@@ -26,7 +27,7 @@ namespace Marten.Testing.Bugs
                     .Duplicate(x => x.Name); // add a new duplicate column
             });
 
-            (await store.Schema.CreateMigrationAsync()).UpdateSql.ShouldNotContain(";;");
+            (await store.Schema.CreateMigrationAsync()).UpdateSql().ShouldNotContain(";;");
         }
 
     }

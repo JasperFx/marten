@@ -28,7 +28,7 @@ namespace Marten.Internal
                 if (_operations.Count < session.Options.UpdateBatchSize)
                 {
                     var command = session.BuildCommand(_operations);
-                    using var reader = session.Database.ExecuteReader(command);
+                    using var reader = session.ExecuteReader(command);
                     ApplyCallbacks(_operations, reader, _exceptions);
                 }
                 else
@@ -43,7 +43,7 @@ namespace Marten.Internal
                             .ToArray();
 
                         var command = session.BuildCommand(operations);
-                        using var reader = session.Database.ExecuteReader(command);
+                        using var reader = session.ExecuteReader(command);
                         ApplyCallbacks(operations, reader, _exceptions);
 
                         count += session.Options.UpdateBatchSize;
@@ -65,7 +65,7 @@ namespace Marten.Internal
                 var command = session.BuildCommand(_operations);
                 try
                 {
-                    using var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                    using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
                     await ApplyCallbacksAsync(_operations, reader, _exceptions, token).ConfigureAwait(false);
                 }
                 catch (Exception e)
@@ -88,7 +88,7 @@ namespace Marten.Internal
                     try
                     {
                         using var reader =
-                            await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+                            await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
                         await ApplyCallbacksAsync(operations, reader, _exceptions, token).ConfigureAwait(false);
                     }
                     catch (Exception e)

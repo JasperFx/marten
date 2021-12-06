@@ -37,7 +37,7 @@ namespace Marten
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.Tenant);
 
-            return _session.Database.LoadOne(command, LinqConstants.StringValueSelector);
+            return _session.LoadOne(command, LinqConstants.StringValueSelector);
         }
 
         private Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token) where T : notnull where TId : notnull
@@ -45,7 +45,7 @@ namespace Marten
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.Tenant);
 
-            return _session.Database.LoadOneAsync(command, LinqConstants.StringValueSelector, token);
+            return _session.LoadOneAsync(command, LinqConstants.StringValueSelector, token);
         }
 
         public string? FindById<T>(int id) where T : class
@@ -88,7 +88,7 @@ namespace Marten
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.Tenant);
 
-            return _session.Database.StreamOne(command, destination, token);
+            return _session.StreamOne(command, destination, token);
         }
 
         public Task<bool> StreamById<T>(long id, Stream destination, CancellationToken token = default) where T : class

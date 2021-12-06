@@ -12,13 +12,13 @@ namespace Marten.Internal
         private ImHashMap<Type, object> _storage = ImHashMap<Type, object>.Empty;
         private readonly IProviderGraph _inner;
 
-        public StorageCheckingProviderGraph(ITenantStorage tenant, IProviderGraph inner)
+        public StorageCheckingProviderGraph(IMartenDatabase tenant, IProviderGraph inner)
         {
             Tenant = tenant;
             _inner = inner;
         }
 
-        public ITenantStorage Tenant { get; }
+        public IMartenDatabase Tenant { get; }
 
         public DocumentProvider<T> StorageFor<T>() where T : notnull
         {

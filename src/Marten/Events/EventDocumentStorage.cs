@@ -17,7 +17,6 @@ using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
-using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Remotion.Linq;
@@ -68,21 +67,21 @@ namespace Marten.Events
                 : IsNotArchivedFilter.Instance;
         }
 
-        public void TruncateDocumentStorage(ITenant tenant)
+        public void TruncateDocumentStorage(IMartenDatabase database)
         {
-            tenant.RunSql($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
+            database.RunSql($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
         }
 
-        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        public Task TruncateDocumentStorageAsync(IMartenDatabase database)
         {
-            return tenant.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
+            return database.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
         }
 
         public EventGraph Events { get; }
 
         public TenancyStyle TenancyStyle { get; }
 
-        public IDeletion DeleteForDocument(IEvent document, ITenant tenant)
+        public IDeletion DeleteForDocument(IEvent document, Tenant tenant)
         {
             throw new NotSupportedException();
         }
@@ -97,7 +96,7 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IDeletion HardDeleteForDocument(IEvent document, ITenant tenant)
+        public IDeletion HardDeleteForDocument(IEvent document, Tenant tenant)
         {
             throw new NotSupportedException();
         }
@@ -182,22 +181,22 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IStorageOperation Update(IEvent document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Update(IEvent document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation Insert(IEvent document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Insert(IEvent document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation Upsert(IEvent document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Upsert(IEvent document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation Overwrite(IEvent document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Overwrite(IEvent document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }

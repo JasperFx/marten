@@ -47,7 +47,7 @@ namespace Marten.Internal.CodeGeneration
 
             if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
-                type.AllInjectedFields.Add(new InjectedField(typeof(ITenant)));
+                type.AllInjectedFields.Add(new InjectedField(typeof(Tenant)));
             }
 
             type.MethodFor("Role").Frames.Return(Constant.ForEnum(_role));

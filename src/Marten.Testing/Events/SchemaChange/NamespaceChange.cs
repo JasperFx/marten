@@ -242,7 +242,7 @@ namespace Marten.Testing.Events.SchemaChange
             var task = new Old.Task(taskId, "Initial Description");
             task.UpdateDescription("updated description");
 
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
+            await theStore.EnsureStorageExistsAsync(typeof(StreamAction));
 
             using (var session = (DocumentSessionBase)theStore.OpenSession())
             {

@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Command line tooling for Marten</Description>
-        <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
         <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
         <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
         <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
@@ -19,6 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\weasel\src\Weasel.CommandLine\Weasel.CommandLine.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
@@ -37,8 +38,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-        <PackageReference Include="Oakton" Version="[3.2.2,4.0.0)" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
-        <PackageReference Include="Oakton" Version="4.1.0" Condition="'$(TargetFramework)' != 'netcoreapp3.1'" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Commands\Patch" />
     </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

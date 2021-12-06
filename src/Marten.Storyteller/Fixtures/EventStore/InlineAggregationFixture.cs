@@ -7,6 +7,7 @@ using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using StoryTeller;
 using StoryTeller.Grammars;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Storyteller.Fixtures.EventStore

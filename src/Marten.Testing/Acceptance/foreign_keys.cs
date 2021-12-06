@@ -217,7 +217,7 @@ namespace Marten.Testing.Acceptance
             {
                 options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = onDelete);
             });
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            theStore.EnsureStorageExists(typeof(User));
         }
 
         private void ShouldProperlySave(Issue issue)

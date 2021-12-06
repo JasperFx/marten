@@ -13,7 +13,7 @@ namespace Marten.Events.Aggregation
         {
             return new (streams.Select(s =>
             {
-                var tenant = tenancy[s.TenantId];
+                var tenant = tenancy.GetTenant(s.TenantId);
                 return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events);
             }).ToList());
         }
@@ -27,7 +27,7 @@ namespace Marten.Events.Aggregation
 
             foreach (var tenantGroup in byTenant)
             {
-                var tenant = tenancy[tenantGroup.Key];
+                var tenant = tenancy.GetTenant(tenantGroup.Key);
 
                 var slices = tenantGroup
                     .GroupBy(x => x.StreamId)

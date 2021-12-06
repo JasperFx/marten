@@ -152,7 +152,7 @@ namespace Marten.Events.Daemon
 
             foreach (var storageType in _source.Options.StorageTypes)
             {
-                await _store.Tenancy.Default.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
+                await _store.Tenancy.Default.Storage.EnsureStorageExistsAsync(storageType, _cancellation).ConfigureAwait(false);
             }
 
             _commandBlock.Post(Command.Started(_tracker.HighWaterMark, lastCommitted));

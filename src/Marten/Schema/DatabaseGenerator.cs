@@ -109,7 +109,7 @@ namespace Marten.Schema
 
             foreach (var tenantConfig in _configurationPerTenant)
             {
-                var tenant = tenancy[tenantConfig.Key];
+                var tenant = tenancy.GetTenant(tenantConfig.Key);
                 var config = tenantConfig.Value;
 
                 CreateDb(tenant, config);
@@ -121,12 +121,12 @@ namespace Marten.Schema
             }
         }
 
-        private void CreateDb(ITenant tenant, TenantDatabaseCreationExpressions config)
+        private void CreateDb(Tenant tenant, TenantDatabaseCreationExpressions config)
         {
             string catalog;
             var maintenanceDb = _maintenanceDbConnectionString;
 
-            using (var t = tenant.CreateConnection())
+            using (var t = tenant.Storage.CreateConnection())
             {
                 catalog = t.Database;
 
@@ -223,9 +223,10 @@ namespace Marten.Schema
             }
         }
 
-        private static void CreatePlv8Extension(ITenant tenant)
+        [Obsolete("Should be in Weasel now")]
+        private static void CreatePlv8Extension(Tenant tenant)
         {
-            using (var connection = tenant.CreateConnection())
+            using (var connection = tenant.Storage.CreateConnection())
             using (var cmd = connection.CreateCommand("CREATE EXTENSION IF NOT EXISTS plv8"))
             {
                 connection.Open();

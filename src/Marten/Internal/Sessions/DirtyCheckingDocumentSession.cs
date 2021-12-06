@@ -11,7 +11,8 @@ namespace Marten.Internal.Sessions
 {
     public class DirtyCheckingDocumentSession: DocumentSessionBase
     {
-        public DirtyCheckingDocumentSession(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database, ITenant tenant) : base(store, sessionOptions, database, tenant)
+        internal DirtyCheckingDocumentSession(DocumentStore store, SessionOptions sessionOptions,
+            IConnectionLifetime connection) : base(store, sessionOptions, connection)
         {
         }
 
@@ -59,14 +60,14 @@ namespace Marten.Internal.Sessions
 
         // NEED TO REMOVE TRACKER TOO!
 
-        protected internal override void ejectById<T>(long id) 
+        protected internal override void ejectById<T>(long id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);
             documentStorage.RemoveDirtyTracker(this, id);
         }
 
-        protected internal override void ejectById<T>(int id) 
+        protected internal override void ejectById<T>(int id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);
@@ -80,7 +81,7 @@ namespace Marten.Internal.Sessions
             documentStorage.RemoveDirtyTracker(this, id);
         }
 
-        protected internal override void ejectById<T>(string id) 
+        protected internal override void ejectById<T>(string id)
         {
             var documentStorage = StorageFor<T>();
             documentStorage.EjectById(this, id);

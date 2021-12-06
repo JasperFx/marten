@@ -43,7 +43,7 @@ var store = DocumentStore.For(_ =>
     _.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/auto_create_mode_Tests.cs#L15-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L38-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As long as you're using a permissive auto creation mode (i.e., not _None_), you should be able to code in your application model
@@ -64,7 +64,7 @@ In usage, you would need to tell Marten about every possible document type, any 
 <!-- snippet: sample_configure-document-types-upfront -->
 <a id='snippet-sample_configure-document-types-upfront'></a>
 ```cs
-var store = DocumentStore.For(_ =>
+using var store = DocumentStore.For(_ =>
 {
     // This is enough to tell Marten that the User
     // document is persisted and needs schema objects
@@ -74,7 +74,7 @@ var store = DocumentStore.For(_ =>
     _.Events.AddEventType(typeof(MembersJoined));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L16-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-document-types-upfront' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MigrationSamples.cs#L12-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-document-types-upfront' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then to write a patch DDL file, bootstrap your `IDocumentStore` pointing to the database connection you
@@ -83,9 +83,12 @@ want to update, and use:
 <!-- snippet: sample_WritePatch -->
 <a id='snippet-sample_writepatch'></a>
 ```cs
+var migration = await store.Schema.CreateMigrationAsync();
+// All migration code is async now!
+await store.Schema.Migrator.WriteMigrationFile("1.initial.sql", migration);
 await store.Schema.WriteMigrationFileAsync("1.initial.sql");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L28-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writepatch' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MigrationSamples.cs#L24-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writepatch' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The command above will generate a file called "1.initial.sql" to update the schema, and a second file called
@@ -108,7 +111,7 @@ bootstrapped, you can use this mechanism:
 ```cs
 await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L32-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applyallconfiguredchangestodatabase' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MigrationSamples.cs#L32-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applyallconfiguredchangestodatabase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Assert that a Schema Matches the Configuration
@@ -121,7 +124,7 @@ by throwing an exception:
 ```cs
 await store.Schema.AssertDatabaseMatchesConfigurationAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/WritePatch_smoke_tests.cs#L36-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_assertdatabasematchesconfiguration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MigrationSamples.cs#L36-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_assertdatabasematchesconfiguration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The exception will list out all the DDL changes that are missing.

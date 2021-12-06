@@ -14,8 +14,8 @@ namespace Marten.Testing.Events.Bugs
 
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            patch.UpdateSql.ShouldNotContain("mt_events");
-            patch.UpdateSql.ShouldNotContain("mt_streams");
+            patch.UpdateSql().ShouldNotContain("mt_events");
+            patch.UpdateSql().ShouldNotContain("mt_streams");
         }
 
     }

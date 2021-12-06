@@ -14,15 +14,14 @@ namespace Marten.Testing.Events
     public class StreamActionTester
     {
         private IMartenSession theSession;
-        private ITenant theTenant;
+        private Tenant theTenant;
         private EventGraph theEvents;
 
         public StreamActionTester()
         {
             theSession = Substitute.For<IMartenSession>();
-            theTenant = Substitute.For<ITenant>();
+            theTenant = new Tenant("TX", Substitute.For<IMartenDatabase>());
             theSession.Tenant.Returns(theTenant);
-            theTenant.TenantId.Returns("TX");
 
             theEvents = new EventGraph(new StoreOptions());
         }

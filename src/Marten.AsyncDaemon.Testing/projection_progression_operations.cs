@@ -4,6 +4,7 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Progress;
 using Marten.Exceptions;
+using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -16,7 +17,7 @@ namespace Marten.AsyncDaemon.Testing
         public projection_progression_operations() : base("progression")
         {
             theStore.Advanced.Clean.DeleteAllEventData();
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            theStore.EnsureStorageExists(typeof(IEvent));
         }
 
         [Fact]

@@ -35,7 +35,6 @@ namespace Marten.Testing.Acceptance
                 _.Schema.For<Issue>().UseOptimisticConcurrency(true);
             });
 
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(Issue));
         }
 
         [Fact]

@@ -2,6 +2,7 @@
 using System.Linq;
 using Marten.Storage;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -24,7 +25,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 
@@ -36,7 +37,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator
             {
                 UpsertRights = SecurityRights.Definer
             }, writer);
@@ -51,7 +52,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 
@@ -64,7 +65,7 @@ namespace Marten.Schema.Testing.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 
@@ -77,7 +78,7 @@ namespace Marten.Schema.Testing.Hierarchies
             var writer = new StringWriter();
 
             theHierarchy.UseOptimisticConcurrency = true;
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 
@@ -109,7 +110,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 
@@ -121,7 +122,7 @@ namespace Marten.Schema.Testing.Hierarchies
         {
             var writer = new StringWriter();
 
-            new UpsertFunction(theHierarchy).WriteCreateStatement(new DdlRules(), writer);
+            new UpsertFunction(theHierarchy).WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 

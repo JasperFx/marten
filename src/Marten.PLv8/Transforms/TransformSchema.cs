@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
-using Marten.Schema;
-using Marten.Storage;
+using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
 namespace Marten.PLv8.Transforms
@@ -13,27 +13,34 @@ namespace Marten.PLv8.Transforms
     {
         public const string PatchDoc = "patch_doc";
 
-        private readonly StoreOptions _options;
-
         private readonly IDictionary<string, TransformFunction> _functions
             = new Dictionary<string, TransformFunction>();
+
+        private readonly StoreOptions _options;
 
         public TransformSchema(StoreOptions options)
         {
             _options = options;
         }
 
-        private void AddFunction(TransformFunction function)
+        public IEnumerable<Type> DependentTypes()
         {
-            if (!_functions.ContainsKey(function.Name))
-            {
-                _functions.Add(function.Name, function);
-            }
+            yield break;
+        }
+
+        public ISchemaObject[] Objects => schemaObjects().ToArray();
+
+        public Type StorageType { get; } = typeof(TransformSchema);
+        public string Identifier { get; } = "transforms";
+        public Migrator Migrator => _options.Advanced.Migrator;
+
+        public void WritePermissions(Migrator rules, TextWriter writer)
+        {
+            // Nothing
         }
 
         public void LoadFile(string file, string name = null)
         {
-
             if (!Path.IsPathRooted(file))
             {
                 file = AppContext.BaseDirectory.AppendPath(file);
@@ -45,7 +52,6 @@ namespace Marten.PLv8.Transforms
 
         public void LoadDirectory(string directory)
         {
-
             if (!Path.IsPathRooted(directory))
             {
                 directory = AppContext.BaseDirectory.AppendPath(directory);
@@ -88,17 +94,18 @@ namespace Marten.PLv8.Transforms
             return _functions.Values;
         }
 
-        public IEnumerable<Type> DependentTypes()
+        private void AddFunction(TransformFunction function)
         {
-            yield break;
+            if (!_functions.ContainsKey(function.Name))
+            {
+                _functions.Add(function.Name, function);
+            }
         }
 
         public bool IsActive(StoreOptions options)
         {
             return true;
         }
-
-        public ISchemaObject[] Objects => schemaObjects().ToArray();
 
         private IEnumerable<ISchemaObject> schemaObjects()
         {
@@ -109,10 +116,7 @@ namespace Marten.PLv8.Transforms
 
             yield return new Extension("PLV8");
 
-            foreach (var function in _functions.Values)
-            {
-                yield return function;
-            }
+            foreach (var function in _functions.Values) yield return function;
         }
 
         private TransformFunction loadPatchDoc()
@@ -126,14 +130,6 @@ namespace Marten.PLv8.Transforms
             Load(patching);
 
             return patching;
-        }
-
-        public Type StorageType { get; } = typeof(TransformSchema);
-        public string Identifier { get; } = "transforms";
-
-        public void WritePermissions(DdlRules rules, TextWriter writer)
-        {
-            // Nothing
         }
     }
 }

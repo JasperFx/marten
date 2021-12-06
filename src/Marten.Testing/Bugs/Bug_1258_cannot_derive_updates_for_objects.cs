@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -12,7 +14,7 @@ namespace Marten.Testing.Bugs
     public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
     {
         [Fact]
-        public void can_properly_detect_changes_when_user_defined_type()
+        public async Task can_properly_detect_changes_when_user_defined_type()
         {
             theStore.Advanced.Clean.CompletelyRemoveAll();
             StoreOptions(_ =>
@@ -35,9 +37,10 @@ namespace Marten.Testing.Bugs
             var issue2 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #2" };
             var issue3 = new IssueForUserWithCustomType { UserId = guyWithCustomType2.Id, Title = "Issue #3" };
 
-            using (var session = theStore.OpenSession())
+            using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
             {
-                var cmd = new NpgsqlCommand(@"
+                await conn.OpenAsync();
+                var sql = @"
                     DROP CAST IF EXISTS (text AS cust_type);
                     DROP CAST IF EXISTS (cust_type AS text);
                     DROP OPERATOR CLASS IF EXISTS cust_type_ops USING btree;
@@ -153,15 +156,18 @@ namespace Marten.Testing.Bugs
                        FUNCTION 1 cust_type_compare(cust_type,cust_type);
 
                     CREATE CAST (text AS cust_type) WITH INOUT AS IMPLICIT;
-                    CREATE CAST (cust_type AS text) WITH INOUT AS IMPLICIT;", session.Connection);
-                cmd.ExecuteNonQuery();
+                    CREATE CAST (cust_type AS text) WITH INOUT AS IMPLICIT;";
+
+                await conn.CreateCommand(sql).ExecuteNonQueryAsync();
             }
+
+            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             using (var session = theStore.LightweightSession())
             {
                 session.Store(guyWithCustomType1, guyWithCustomType2);
                 session.Store(issue1, issue2, issue3);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.QuerySession())

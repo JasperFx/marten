@@ -26,15 +26,14 @@ namespace Marten.Internal.Sessions
         }
 #nullable enable
 
-        protected DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
-            ITenant tenant): base(store, sessionOptions, database, tenant)
+        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection): base(store, sessionOptions, connection)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
             _workTracker = new UnitOfWork(this);
         }
 
-        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database,
-            ITenant tenant, ISessionWorkTracker workTracker): base(store, sessionOptions, database, tenant)
+        internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection,
+            ISessionWorkTracker workTracker): base(store, sessionOptions, connection)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;
             _workTracker = workTracker;
@@ -181,7 +180,7 @@ namespace Marten.Internal.Sessions
 
         public new IEventStore Events => (IEventStore)base.Events;
 
-        protected override IQueryEventStore CreateEventStore(DocumentStore store, ITenant tenant)
+        protected override IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
             => new EventStore(this, store, tenant);
 
 
@@ -234,7 +233,7 @@ namespace Marten.Internal.Sessions
                 return tenantSession;
             }
 
-            var tenant = Options.Tenancy[tenantId];
+            var tenant = Options.Tenancy.GetTenant(tenantId);
             tenantSession = new NestedTenantSession(this, tenant);
             _byTenant[tenantId] = tenantSession;
 

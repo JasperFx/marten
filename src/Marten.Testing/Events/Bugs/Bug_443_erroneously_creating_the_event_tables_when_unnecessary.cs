@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Events.Bugs
@@ -14,11 +15,11 @@ namespace Marten.Testing.Events.Bugs
         [Fact]
         public async Task event_table_should_not_be_there_if_unused()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            await theStore.EnsureStorageExistsAsync(typeof(User));
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
-            var tables = await theStore.Tenancy.Default.SchemaTables();
+            var tables = await theStore.Tenancy.Default.Storage.SchemaTables();
 
             tables.Any(x => x.Name == "mt_events").ShouldBeFalse();
             tables.Any(x => x.Name == "mt_streams").ShouldBeFalse();
@@ -38,8 +39,8 @@ namespace Marten.Testing.Events.Bugs
         {
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            SpecificationExtensions.ShouldNotContain(patch.UpdateSql, "mt_events");
-            SpecificationExtensions.ShouldNotContain(patch.UpdateSql, "mt_streams");
+            SpecificationExtensions.ShouldNotContain(patch.UpdateSql(), "mt_events");
+            SpecificationExtensions.ShouldNotContain(patch.UpdateSql(), "mt_streams");
         }
 
         [Fact]

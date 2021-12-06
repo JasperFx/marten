@@ -29,7 +29,7 @@ namespace Marten.PLv8.Transforms
             return new[] { "doc" }.Concat(OtherArgs);
         }
 
-        public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
+        public override void WriteCreateStatement(Migrator rules, TextWriter writer)
         {
             writer.WriteLine(GenerateFunction());
             writer.WriteLine();

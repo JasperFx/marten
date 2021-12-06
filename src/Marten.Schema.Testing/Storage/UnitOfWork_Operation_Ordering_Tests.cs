@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing.Storage
 {
+    [Obsolete("Most of this could be eliminated in >= 4.0")]
     public class UnitOfWork_Operation_Ordering_Tests : IntegrationContext
     {
         private readonly Company _company;

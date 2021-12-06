@@ -11,11 +11,13 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
 {
+    [Obsolete("This could be thinned down quite a bit")]
     [Collection("testbed")]
     public class DocumentTableTester : IDisposable
     {
@@ -49,7 +51,7 @@ namespace Marten.Schema.Testing.Storage
             table = table ?? theTable;
 
             var writer = new StringWriter();
-            table.WriteCreateStatement(new DdlRules(), writer);
+            table.WriteCreateStatement(new PostgresqlMigrator(), writer);
 
             var sql = writer.ToString();
 
@@ -86,7 +88,7 @@ namespace Marten.Schema.Testing.Storage
 
             if (migration.Difference != SchemaPatchDifference.None)
             {
-                await migration.ApplyAll(_conn, new DdlRules(), autoCreate);
+                await new PostgresqlMigrator().ApplyAll(_conn, migration, autoCreate);
             }
 
         }
@@ -138,14 +140,14 @@ namespace Marten.Schema.Testing.Storage
             mapping.Duplicate(x => x.FirstName);
 
             var table = new DocumentTable(mapping);
-            table.BuildTemplate($"*{DdlRules.SCHEMA}*").ShouldBe($"*{table.Identifier.Schema}*");
-            table.BuildTemplate($"*{DdlRules.TABLENAME}*").ShouldBe($"*{table.Identifier.Name}*");
-            table.BuildTemplate($"*{DdlRules.COLUMNS}*")
+            table.BuildTemplate($"*{Migrator.SCHEMA}*").ShouldBe($"*{table.Identifier.Schema}*");
+            table.BuildTemplate($"*{Migrator.TABLENAME}*").ShouldBe($"*{table.Identifier.Name}*");
+            table.BuildTemplate($"*{Migrator.COLUMNS}*")
                 .ShouldBe($"*id, data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
-            table.BuildTemplate($"*{DdlRules.NON_ID_COLUMNS}*")
+            table.BuildTemplate($"*{Migrator.NON_ID_COLUMNS}*")
                 .ShouldBe($"*data, mt_last_modified, mt_version, mt_dotnet_type, first_name*");
 
-            table.BuildTemplate($"*{DdlRules.METADATA_COLUMNS}*")
+            table.BuildTemplate($"*{Migrator.METADATA_COLUMNS}*")
                 .ShouldBe("*mt_last_modified, mt_version, mt_dotnet_type*");
         }
 
@@ -279,7 +281,7 @@ namespace Marten.Schema.Testing.Storage
         {
             var users = DocumentMapping.For<User>();
             var table = new DocumentTable(users);
-            var rules = new DdlRules
+            var rules = new PostgresqlMigrator
             {
                 TableCreation = CreationStyle.CreateIfNotExists
             };
@@ -295,7 +297,7 @@ namespace Marten.Schema.Testing.Storage
         {
             var users = DocumentMapping.For<User>();
             var table = new DocumentTable(users);
-            var rules = new DdlRules
+            var rules = new PostgresqlMigrator
             {
                 TableCreation = CreationStyle.DropThenCreate
             };

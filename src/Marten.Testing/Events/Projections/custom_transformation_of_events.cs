@@ -5,6 +5,7 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 

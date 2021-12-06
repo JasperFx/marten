@@ -6,6 +6,7 @@ using Weasel.Postgresql;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
@@ -22,7 +23,7 @@ namespace Marten.Testing.CoreFunctionality
             });
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            (await theStore.Tenancy.Default.SchemaTables()).Any(x => x.Name == "mt_fake_table")
+            (await theStore.Tenancy.Default.Storage.SchemaTables()).Any(x => x.Name == "mt_fake_table")
                 .ShouldBeTrue();
         }
 
@@ -52,7 +53,7 @@ namespace Marten.Testing.CoreFunctionality
     {
         private readonly StoreOptions _options;
 
-        public FakeStorage(StoreOptions options) : base("fake")
+        public FakeStorage(StoreOptions options) : base("fake", options.Advanced.Migrator)
         {
             _options = options;
         }

@@ -21,8 +21,8 @@ namespace Marten.Internal.Storage
 {
     public interface IDocumentStorage : ISelectClause
     {
-        Task TruncateDocumentStorageAsync(ITenant tenant);
-        void TruncateDocumentStorage(ITenant tenant);
+        Task TruncateDocumentStorageAsync(IMartenDatabase database);
+        void TruncateDocumentStorage(IMartenDatabase database);
 
         Type SourceType { get; }
 
@@ -57,18 +57,18 @@ namespace Marten.Internal.Storage
 
         void Eject(IMartenSession session, T document);
 
-        IStorageOperation Update(T document, IMartenSession session, ITenant tenant);
-        IStorageOperation Insert(T document, IMartenSession session, ITenant tenant);
-        IStorageOperation Upsert(T document, IMartenSession session, ITenant tenant);
+        IStorageOperation Update(T document, IMartenSession session, Tenant tenant);
+        IStorageOperation Insert(T document, IMartenSession session, Tenant tenant);
+        IStorageOperation Upsert(T document, IMartenSession session, Tenant tenant);
 
-        IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant);
+        IStorageOperation Overwrite(T document, IMartenSession session, Tenant tenant);
 
-        IDeletion DeleteForDocument(T document, ITenant tenant);
+        IDeletion DeleteForDocument(T document, Tenant tenant);
 
 
         void EjectById(IMartenSession session, object id);
         void RemoveDirtyTracker(IMartenSession session, object id);
-        IDeletion HardDeleteForDocument(T document, ITenant tenant);
+        IDeletion HardDeleteForDocument(T document, Tenant tenant);
     }
 
     public interface IDocumentStorage<T, TId> : IDocumentStorage<T> where T : notnull where TId : notnull
@@ -80,7 +80,7 @@ namespace Marten.Internal.Storage
         /// <param name="identity"></param>
         void SetIdentity(T document, TId identity);
 
-        IDeletion DeleteForId(TId id, ITenant tenant);
+        IDeletion DeleteForId(TId id, Tenant tenant);
 
         T? Load(TId id, IMartenSession session);
         Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
@@ -89,12 +89,12 @@ namespace Marten.Internal.Storage
         Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
 
-        TId AssignIdentity(T document, ITenant tenant);
+        TId AssignIdentity(T document, Tenant tenant);
         TId Identity(T document);
         ISqlFragment ByIdFilter(TId id);
-        IDeletion HardDeleteForId(TId id, ITenant tenant);
-        NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant);
-        NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant);
+        IDeletion HardDeleteForId(TId id, Tenant tenant);
+        NpgsqlCommand BuildLoadCommand(TId id, Tenant tenant);
+        NpgsqlCommand BuildLoadManyCommand(TId[] ids, Tenant tenant);
     }
 
     internal static class DocumentStoreExtensions

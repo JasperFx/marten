@@ -48,7 +48,7 @@ public class MartenServices : ServiceRegistry
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/DevelopmentModeRegistry.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/DevelopmentModeRegistry.cs#L9-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 There are really only two key points here:

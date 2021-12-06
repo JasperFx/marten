@@ -110,16 +110,15 @@ namespace Marten.PLv8.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
-            using (var conn = theStore.Tenancy.Default.OpenConnection())
-            {
-                var cmd = new NpgsqlCommand(func.GenerateFunction());
-                conn.Execute(cmd);
+            using var conn = theStore.Tenancy.Default.Storage.CreateConnection();
+            conn.Open();
+            conn.CreateCommand(func.GenerateFunction()).ExecuteNonQuery();
 
-                var cmd2 = new NpgsqlCommand("select mt_transform_get_fullname(:json)").With("json", json, NpgsqlDbType.Jsonb);
-                var actual = conn.QueryScalar<string>(cmd2);
+            var actual = (string)conn.CreateCommand("select mt_transform_get_fullname(:json)")
+                .With("json", json, NpgsqlDbType.Jsonb)
+                .ExecuteScalar();
 
-                actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
-            }
+            actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
         }
 
 

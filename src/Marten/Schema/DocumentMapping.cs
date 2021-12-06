@@ -67,8 +67,6 @@ namespace Marten.Schema
     {
         private static readonly Regex _aliasSanitizer = new Regex("<|>", RegexOptions.Compiled);
 
-        private readonly StoreOptions _storeOptions;
-
 
         private string _alias;
         private string _databaseSchemaName;
@@ -80,7 +78,7 @@ namespace Marten.Schema
 
         public DocumentMapping(Type documentType, StoreOptions storeOptions): base("d.data", documentType, storeOptions)
         {
-            _storeOptions = storeOptions ?? throw new ArgumentNullException(nameof(storeOptions));
+            StoreOptions = storeOptions ?? throw new ArgumentNullException(nameof(storeOptions));
 
             DocumentType = documentType ?? throw new ArgumentNullException(nameof(documentType));
             Alias = defaultDocumentAliasName(documentType);
@@ -91,12 +89,14 @@ namespace Marten.Schema
 
             SubClasses = new SubClasses(this, storeOptions);
 
-            _storeOptions.applyPolicies(this);
+            StoreOptions.applyPolicies(this);
 
             applyAnyMartenAttributes(documentType);
 
             _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
         }
+
+        internal StoreOptions StoreOptions { get; }
 
         internal DocumentSchema Schema => _schema.Value;
 
@@ -150,18 +150,18 @@ namespace Marten.Schema
 
         public string DatabaseSchemaName
         {
-            get { return _databaseSchemaName ?? _storeOptions.DatabaseSchemaName; }
+            get { return _databaseSchemaName ?? StoreOptions.DatabaseSchemaName; }
             set { _databaseSchemaName = value; }
         }
 
         public EnumStorage EnumStorage
         {
-            get { return _storeOptions.EnumStorage; }
+            get { return StoreOptions.EnumStorage; }
         }
 
         public Casing Casing
         {
-            get { return _storeOptions.Serializer().Casing; }
+            get { return StoreOptions.Serializer().Casing; }
         }
 
         public string Alias
@@ -196,7 +196,7 @@ namespace Marten.Schema
 
                     var idField = new IdField(_idMember);
                     setField(_idMember.Name, idField);
-                    IdStrategy = defineIdStrategy(DocumentType, _storeOptions);
+                    IdStrategy = defineIdStrategy(DocumentType, StoreOptions);
                 }
             }
         }
@@ -405,7 +405,7 @@ namespace Marten.Schema
         public DocumentForeignKey AddForeignKey(MemberInfo[] members, Type referenceType)
         {
             var referenceMapping =
-                referenceType != DocumentType ? _storeOptions.Storage.MappingFor(referenceType) : this;
+                referenceType != DocumentType ? StoreOptions.Storage.MappingFor(referenceType) : this;
 
             var duplicateField = DuplicateField(members);
 
@@ -461,8 +461,8 @@ namespace Marten.Schema
         {
             var field = FieldFor(memberName);
 
-            var duplicate = new DuplicatedField(_storeOptions.Advanced.DuplicatedFieldEnumStorage, field,
-                _storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicate = new DuplicatedField(StoreOptions.Advanced.DuplicatedFieldEnumStorage, field,
+                StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
 
             if (pgType.IsNotEmpty()) duplicate.PgType = pgType;
 
@@ -477,8 +477,8 @@ namespace Marten.Schema
             var field = FieldFor(members);
             var memberName = members.Select(x => x.Name).Join("");
 
-            var duplicatedField = new DuplicatedField(_storeOptions.Advanced.DuplicatedFieldEnumStorage, field,
-                _storeOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
+            var duplicatedField = new DuplicatedField(StoreOptions.Advanced.DuplicatedFieldEnumStorage, field,
+                StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime, notNull);
 
             if (pgType.IsNotEmpty()) duplicatedField.PgType = pgType;
 

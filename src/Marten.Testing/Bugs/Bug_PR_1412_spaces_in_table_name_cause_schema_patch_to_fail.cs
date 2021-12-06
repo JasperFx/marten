@@ -8,6 +8,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
@@ -68,13 +69,14 @@ namespace Marten.Testing.Bugs
             public Type StorageType => GetType();
 
             public string Identifier { get; set; }
+            public Migrator Migrator { get; } = new PostgresqlMigrator();
 
             public IEnumerable<Type> DependentTypes()
             {
                 return new List<Type>();
             }
 
-            public void WritePermissions(DdlRules rules, TextWriter writer)
+            public void WritePermissions(Migrator rules, TextWriter writer)
             {
                 // No permissions!
             }

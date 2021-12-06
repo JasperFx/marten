@@ -191,7 +191,7 @@ var store = DocumentStore.For(opts =>
 
 // Resets the minimum Id number for the IntDoc document
 // type to 2500
-await store.Tenancy.Default.ResetHiloSequenceFloor<IntDoc>(2500);
+await store.Tenancy.Default.Storage.ResetHiloSequenceFloor<IntDoc>(2500);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/Identity/Sequences/hilo_configuration_overrides.cs#L18-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_resethilosequencefloor' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

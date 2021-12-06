@@ -9,12 +9,14 @@ namespace Marten.Internal.Sessions
     {
         private readonly QuerySession _parent;
 
-        internal NestedTenantQuerySession(QuerySession parent, ITenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions, parent.Database, tenant)
+        internal NestedTenantQuerySession(QuerySession parent, Tenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions, parent._connection)
         {
             Listeners.AddRange(parent.Listeners);
             _parent = parent;
             Versions = parent.Versions;
             ItemMap = parent.ItemMap;
+
+            // TODO -- express the TenantId here!!!
         }
 
         public IQuerySession Parent => _parent;

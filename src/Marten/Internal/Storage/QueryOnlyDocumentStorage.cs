@@ -34,7 +34,7 @@ namespace Marten.Internal.Storage
             var command = BuildLoadManyCommand(ids, session.Tenant);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            using (var reader = session.Database.ExecuteReader(command))
+            using (var reader = session.ExecuteReader(command))
             {
                 while (reader.Read())
                 {
@@ -54,7 +54,7 @@ namespace Marten.Internal.Storage
             var command = BuildLoadManyCommand(ids, session.Tenant);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            using (var reader = await session.Database.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+            using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
             {
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                 {

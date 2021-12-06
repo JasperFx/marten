@@ -23,14 +23,13 @@ namespace Marten.PLv8.Testing.Patching
     public class PatchExpressionTests : OneOffConfigurationsContext
     {
         private readonly PatchExpression<Target> _expression;
-        private readonly ITenant _schema = Substitute.For<ITenant>();
 
 
 
         public PatchExpressionTests() : base("patching")
         {
             StoreOptions(x => x.UseJavascriptTransformsAndPatching());
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(TransformSchema));
+            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(TransformSchema));
 
             var storage = Substitute.For<IDocumentStorage>();
             storage.DocumentType.Returns(typeof(Target));
@@ -45,9 +44,9 @@ namespace Marten.PLv8.Testing.Patching
         [Fact]
         public async Task does_not_blow_up()
         {
-            var transform = theStore.Tenancy.Default.TransformFor("patch_doc");
+            var transform = theStore.Options.TransformFor("patch_doc");
 
-            (await theStore.Tenancy.Default.Functions())
+            (await theStore.Tenancy.Default.Storage.Functions())
                 .ShouldContain(transform.Identifier);
         }
 

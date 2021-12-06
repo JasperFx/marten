@@ -7,6 +7,7 @@ using Npgsql;
 
 namespace Marten.Services
 {
+    [Obsolete("Being replaced by IConnectionLifetime")]
     internal class TransactionState: IDisposable, IAsyncDisposable
     {
         private readonly CommandRunnerMode _mode;

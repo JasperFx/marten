@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -16,7 +17,8 @@ namespace Marten.Testing.Bugs
             var store1 = theStore;
             await store1.BulkInsertAsync(Target.GenerateRandomData(5).ToArray());
             await store1.BulkInsertAsync(new[] { new User() });
-            (await store1.Tenancy.Default.DocumentTables()).Any().ShouldBeTrue();
+            var database1 = store1.Tenancy.Default.Storage;
+            (await database1.DocumentTables()).Any().ShouldBeTrue();
 
             var store2 = SeparateStore(_ =>
             {
@@ -26,11 +28,12 @@ namespace Marten.Testing.Bugs
 
             await store2.BulkInsertAsync(Target.GenerateRandomData(5).ToArray());
             await store2.BulkInsertAsync(new[] { new User() });
-            (await store2.Tenancy.Default.DocumentTables()).Any().ShouldBeTrue();
+            var database2 = store2.Tenancy.Default.Storage;
+            (await database2.DocumentTables()).Any().ShouldBeTrue();
 
-            store1.Advanced.Clean.CompletelyRemoveAll();
-            (await store1.Tenancy.Default.DocumentTables()).Any().ShouldBeFalse();
-            (await store2.Tenancy.Default.DocumentTables()).Any().ShouldBeTrue();
+            await store1.Advanced.Clean.CompletelyRemoveAllAsync();
+            (await database1.DocumentTables()).Any().ShouldBeFalse();
+            (await database2.DocumentTables()).Any().ShouldBeTrue();
         }
     }
 }

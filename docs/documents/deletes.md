@@ -85,7 +85,7 @@ public class SoftDeletedDoc
     public Guid Id;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L21-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L20-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface off of `StoreOptions`:
@@ -93,12 +93,12 @@ Or by using the fluent interface off of `StoreOptions`:
 <!-- snippet: sample_soft-delete-configuration-via-fi -->
 <a id='snippet-sample_soft-delete-configuration-via-fi'></a>
 ```cs
-DocumentStore.For(_ =>
+var store = DocumentStore.For(_ =>
 {
     _.Schema.For<User>().SoftDeleted();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L56-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft-delete-configuration-via-fi' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L55-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft-delete-configuration-via-fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With Marten v4.0, you can also opt into soft-deleted mechanics by having your document type implement the Marten `ISoftDeleted`

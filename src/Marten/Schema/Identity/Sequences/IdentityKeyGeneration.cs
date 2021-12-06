@@ -26,7 +26,7 @@ namespace Marten.Schema.Identity.Sequences
         {
             var document = new Use(mapping.DocumentType);
 
-            method.Frames.Code($"if (string.{nameof(string.IsNullOrEmpty)}({{0}}.{mapping.IdMember.Name})) _setter({{0}}, \"{_mapping.Alias}\" + \"/\" + {{1}}.Sequences.SequenceFor({{2}}).NextLong());", document, Use.Type<ITenant>(), mapping.DocumentType);
+            method.Frames.Code($"if (string.{nameof(string.IsNullOrEmpty)}({{0}}.{mapping.IdMember.Name})) _setter({{0}}, \"{_mapping.Alias}\" + \"/\" + {{1}}.Storage.Sequences.SequenceFor({{2}}).NextLong());", document, Use.Type<Tenant>(), mapping.DocumentType);
             method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);
         }
 

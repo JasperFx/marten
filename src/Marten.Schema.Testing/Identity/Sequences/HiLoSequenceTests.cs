@@ -39,7 +39,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
     {
 
         private readonly HiloSequence theSequence;
-        private ITenant theTenant;
+        private Tenant theTenant;
 
         public HiloSequenceTests()
         {
@@ -47,7 +47,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
             theTenant = theStore.Tenancy.Default;
 
-            theSequence = theTenant.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
+            theSequence = theTenant.Storage.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
         }
 
         [Fact]

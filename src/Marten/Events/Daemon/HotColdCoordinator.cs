@@ -25,7 +25,7 @@ namespace Marten.Events.Daemon
         private readonly ILogger _logger;
         private NpgsqlConnection _connection;
         private Timer _timer;
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private IProjectionDaemon _daemon;
 
@@ -58,7 +58,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                conn = _tenant.CreateConnection();
+                conn = _tenant.Storage.CreateConnection();
                 await conn.OpenAsync(_cancellation.Token).ConfigureAwait(false);
 
                 gotLock = (bool) await conn.CreateCommand("SELECT pg_try_advisory_lock(:id);")

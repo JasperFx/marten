@@ -68,12 +68,12 @@ namespace Marten.Testing.Acceptance
             theSession.Store(doc1, doc2, doc3, doc4, doc5);
             await theSession.SaveChangesAsync();
 
-            var session2 = theStore.LightweightSession();
+            using var session2 = theStore.LightweightSession();
             session2.Delete(doc1);
             session2.Delete(doc3);
             await session2.SaveChangesAsync();
 
-            var query = theStore.QuerySession();
+            using var query = theStore.QuerySession();
             query.Logger = new TestOutputMartenLogger(_output);
 
             var deleted = await query.Query<SoftDeletedDocument>().Where(x => x.Deleted)
@@ -549,9 +549,6 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public void soft_deleted_documents_work_with_linq_include()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(File));
-
             using var session = theStore.OpenSession();
 
             var user = new User();

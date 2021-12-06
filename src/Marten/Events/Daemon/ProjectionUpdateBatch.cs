@@ -125,7 +125,7 @@ namespace Marten.Events.Daemon
 
                 _command.CommandText = _builder.ToString();
 
-                using var reader = session.Database.ExecuteReader(_command);
+                using var reader = session.ExecuteReader(_command);
                 UpdateBatch.ApplyCallbacks(_operations, reader, exceptions);
             }
 
@@ -138,7 +138,7 @@ namespace Marten.Events.Daemon
 
                 _command.CommandText = _builder.ToString();
 
-                using var reader = await session.Database.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
+                using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
                 await UpdateBatch.ApplyCallbacksAsync(_operations, reader, exceptions, token).ConfigureAwait(false);
             }
 

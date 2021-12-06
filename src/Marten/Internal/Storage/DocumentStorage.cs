@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Operations;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
@@ -18,7 +19,6 @@ using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
-using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
@@ -84,16 +84,16 @@ namespace Marten.Internal.Storage
             DuplicatedFields = _mapping.DuplicatedFields;
         }
 
-        public void TruncateDocumentStorage(ITenant tenant)
+        public void TruncateDocumentStorage(IMartenDatabase database)
         {
             var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
-            tenant.RunSql(sql);
+            database.RunSql(sql);
         }
 
-        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        public Task TruncateDocumentStorageAsync(IMartenDatabase database)
         {
             var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
-            return tenant.RunSqlAsync(sql);
+            return database.RunSqlAsync(sql);
         }
 
         public void SetIdentity(T document, TId identity)
@@ -144,7 +144,7 @@ namespace Marten.Internal.Storage
             return new ByIdFilter<TId>(id, _idType);
         }
 
-        public IDeletion HardDeleteForId(TId id, ITenant tenant)
+        public IDeletion HardDeleteForId(TId id, Tenant tenant)
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
@@ -185,7 +185,7 @@ namespace Marten.Internal.Storage
             });
         }
 
-        public IDeletion HardDeleteForDocument(T document, ITenant tenant)
+        public IDeletion HardDeleteForDocument(T document, Tenant tenant)
         {
             var id = Identity(document);
 
@@ -207,7 +207,7 @@ namespace Marten.Internal.Storage
         public Type SourceType => typeof(T);
 
 
-        public abstract TId AssignIdentity(T document, ITenant tenant);
+        public abstract TId AssignIdentity(T document, Tenant tenant);
 
         public DbObjectName TableName { get; }
 
@@ -224,13 +224,13 @@ namespace Marten.Internal.Storage
         public abstract void Store(IMartenSession session, T document);
         public abstract void Store(IMartenSession session, T document, Guid? version);
         public abstract void Eject(IMartenSession session, T document);
-        public abstract IStorageOperation Update(T document, IMartenSession session, ITenant tenant);
-        public abstract IStorageOperation Insert(T document, IMartenSession session, ITenant tenant);
-        public abstract IStorageOperation Upsert(T document, IMartenSession session, ITenant tenant);
+        public abstract IStorageOperation Update(T document, IMartenSession session, Tenant tenant);
+        public abstract IStorageOperation Insert(T document, IMartenSession session, Tenant tenant);
+        public abstract IStorageOperation Upsert(T document, IMartenSession session, Tenant tenant);
 
-        public abstract IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant);
+        public abstract IStorageOperation Overwrite(T document, IMartenSession session, Tenant tenant);
 
-        public IDeletion DeleteForDocument(T document, ITenant tenant)
+        public IDeletion DeleteForDocument(T document, Tenant tenant)
         {
             var id = Identity(document);
 
@@ -240,7 +240,7 @@ namespace Marten.Internal.Storage
             return deletion;
         }
 
-        public IDeletion DeleteForId(TId id, ITenant tenant)
+        public IDeletion DeleteForId(TId id, Tenant tenant)
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
@@ -292,7 +292,8 @@ namespace Marten.Internal.Storage
             var command = BuildLoadCommand(id, session.Tenant);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            return session.Database.LoadOne(command, selector);
+            // TODO -- eliminate the downcast here!
+            return session.As<QuerySession>().LoadOne(command, selector);
         }
 
         protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)
@@ -300,7 +301,8 @@ namespace Marten.Internal.Storage
             var command = BuildLoadCommand(id, session.Tenant);
             var selector = (ISelector<T>)BuildSelector(session);
 
-            return session.Database.LoadOneAsync(command, selector, token);
+            // TODO -- eliminate the downcast here!
+            return session.As<QuerySession>().LoadOneAsync(command, selector, token);
         }
 
         public abstract IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
@@ -336,8 +338,8 @@ namespace Marten.Internal.Storage
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant);
+        public abstract NpgsqlCommand BuildLoadCommand(TId id, Tenant tenant);
 
-        public abstract NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant);
+        public abstract NpgsqlCommand BuildLoadManyCommand(TId[] ids, Tenant tenant);
     }
 }

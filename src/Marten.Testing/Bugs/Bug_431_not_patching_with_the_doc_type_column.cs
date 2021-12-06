@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -19,7 +20,7 @@ namespace Marten.Testing.Bugs
             });
 
 
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(User));
+            await theStore.EnsureStorageExistsAsync(typeof(User));
 
 
             var store2 = SeparateStore(_ =>

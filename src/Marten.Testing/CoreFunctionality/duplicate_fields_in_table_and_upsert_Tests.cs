@@ -4,6 +4,7 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
@@ -26,9 +27,11 @@ namespace Marten.Testing.CoreFunctionality
                 session.SaveChanges();
             }
 
-            var runner = theStore.Tenancy.Default.OpenConnection();
-            runner.QueryScalar<string>($"select first_name from duplicated.mt_doc_user where id = '{user1.Id}'")
-                  .ShouldBe("Byron");
+            using var conn = theStore.Tenancy.Default.Storage.CreateConnection();
+            conn.Open();
+            conn.CreateCommand($"select first_name from duplicated.mt_doc_user where id = '{user1.Id}'")
+                .ExecuteScalar().As<string>().ShouldBe("Byron");
+
         }
 
         public duplicate_fields_in_table_and_upsert_Tests() : base("duplicated")

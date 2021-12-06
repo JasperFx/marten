@@ -22,11 +22,9 @@ namespace Marten.Services.BatchQuerying
     {
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
         private readonly QuerySession _parent;
-        private readonly IManagedConnection _runner;
 
-        public BatchedQuery(IManagedConnection runner, QuerySession parent)
+        public BatchedQuery(QuerySession parent)
         {
-            _runner = runner;
             _parent = parent;
         }
 
@@ -76,23 +74,21 @@ namespace Marten.Services.BatchQuerying
 
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
-            using (var reader = await _runner.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+            using var reader = await _parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
+
+            var others = _items.Skip(1).ToArray();
+
+            foreach (var item in others)
             {
-                await _items[0].ReadAsync(reader, _parent, token).ConfigureAwait(false);
+                var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
 
-                var others = _items.Skip(1).ToArray();
-
-                foreach (var item in others)
+                if (!hasNext)
                 {
-                    var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
-
-                    if (!hasNext)
-                    {
-                        throw new InvalidOperationException("There is no next result to read over.");
-                    }
-
-                    await item.ReadAsync(reader, _parent, token).ConfigureAwait(false);
+                    throw new InvalidOperationException("There is no next result to read over.");
                 }
+
+                await item.ReadAsync(reader, _parent, token).ConfigureAwait(false);
             }
         }
 
@@ -106,7 +102,7 @@ namespace Marten.Services.BatchQuerying
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
 
-            using (var reader = _runner.ExecuteReader(command))
+            using (var reader = _parent.ExecuteReader(command))
             {
                 _items[0].Read(reader, _parent);
 
@@ -176,8 +172,6 @@ namespace Marten.Services.BatchQuerying
                 var handler = new LoadByIdHandler<T, TId>(s, id);
                 return AddItem(handler);
             }
-
-            var idType = storage.IdType;
 
             throw new DocumentIdTypeMismatchException(storage, typeof(TId));
         }

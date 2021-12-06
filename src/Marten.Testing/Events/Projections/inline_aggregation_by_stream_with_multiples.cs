@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 

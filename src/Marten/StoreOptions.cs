@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Metadata;
@@ -22,6 +24,7 @@ using Marten.Services.Json;
 using Marten.Storage;
 using Npgsql;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
 #nullable enable
@@ -32,7 +35,7 @@ namespace Marten
     ///     necessary to customize and bootstrap a working
     ///     DocumentStore
     /// </summary>
-    public partial class StoreOptions: IReadOnlyStoreOptions
+    public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     {
 
 
@@ -150,7 +153,17 @@ namespace Marten
         ///     https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html
         ///     for more information. This does NOT adjust NAMEDATALEN for you.
         /// </summary>
-        public int NameDataLength { get; set; } = 64;
+        public int NameDataLength
+        {
+            get
+            {
+                return Advanced.Migrator.NameDataLength;
+            }
+            set
+            {
+                Advanced.Migrator.NameDataLength = value;
+            }
+        }
 
         /// <summary>
         ///     Gets Enum values stored as either integers or strings. This is configured on your ISerializer
@@ -357,26 +370,6 @@ namespace Marten
             _compiledQueryTypes.Fill(queryType);
         }
 
-        internal void AssertValidIdentifier(string name)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new PostgresqlIdentifierInvalidException(name);
-            }
-
-            if (name.IndexOf(' ') >= 0)
-            {
-                throw new PostgresqlIdentifierInvalidException(name);
-            }
-
-            if (name.Length < NameDataLength)
-            {
-                return;
-            }
-
-            throw new PostgresqlIdentifierTooLongException(NameDataLength, name);
-        }
-
         internal void ApplyConfiguration()
         {
             Storage.BuildAllMappings();
@@ -423,7 +416,7 @@ namespace Marten
         }
 
         internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-            IMartenSession session)
+            QuerySession session)
         {
             if (_querySources.TryFind(query.GetType(), out var source))
             {
@@ -440,6 +433,16 @@ namespace Marten
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
             return source;
+        }
+
+        void IMigrationLogger.SchemaChange(string sql)
+        {
+            Logger().SchemaChange(sql);
+        }
+
+        void IMigrationLogger.OnFailure(DbCommand command, Exception ex)
+        {
+            throw new MartenSchemaException("All Configured Changes", command.CommandText, ex);
         }
 
         public class PoliciesExpression
@@ -565,7 +568,7 @@ namespace Marten
 
             // Making the DDL generation be transactional can cause runtime errors.
             // Make the user opt into this
-            DdlRules.IsTransactional = false;
+            Migrator.IsTransactional = false;
         }
 
 
@@ -580,7 +583,7 @@ namespace Marten
         ///     Allows you to modify how the DDL for document tables and upsert functions is
         ///     written
         /// </summary>
-        public DdlRules DdlRules { get; } = new();
+        public PostgresqlMigrator Migrator { get; } = new PostgresqlMigrator();
 
         /// <summary>
         ///     Sets Enum values stored as either integers or strings for DuplicatedField.
@@ -603,5 +606,8 @@ namespace Marten
         ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
         /// </summary>
         public bool DefaultTenantUsageEnabled { get; set; } = true;
+
+
+
     }
 }

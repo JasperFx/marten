@@ -7,6 +7,7 @@ using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
@@ -167,8 +168,8 @@ namespace Marten.Testing.Acceptance
         {
             var guid = Guid.NewGuid();
 
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(Target));
-            var existing = await theStore.Tenancy.Default.ExistingTableFor(typeof(Target));
+            await theStore.EnsureStorageExistsAsync(typeof(Target));
+            var existing = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(Target));
             var mapping = theStore.Options.Storage.MappingFor(typeof(Target));
             var expected = new DocumentTable(mapping);
 
@@ -360,17 +361,17 @@ namespace Marten.Testing.Acceptance
         }
 
         [Fact]
-        public void query_within_selected_tenants()
+        public async Task query_within_selected_tenants()
         {
-            theStore.Advanced.Clean.DeleteAllDocuments();
+            await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
             var reds = Target.GenerateRandomData(50).ToArray();
             var greens = Target.GenerateRandomData(75).ToArray();
             var blues = Target.GenerateRandomData(25).ToArray();
 
-            theStore.BulkInsert("Red", reds);
-            theStore.BulkInsert("Green", greens);
-            theStore.BulkInsert("Blue", blues);
+            await theStore.BulkInsertAsync("Red", reds);
+            await theStore.BulkInsertAsync("Green", greens);
+            await theStore.BulkInsertAsync("Blue", blues);
 
             var expected = reds.Concat(greens)
                 .Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToArray();
@@ -379,8 +380,8 @@ namespace Marten.Testing.Acceptance
             {
                 #region sample_tenant_is_one_of
                 // query data for a selected list of tenants
-                var actual = query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
-                    .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+                var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
+                    .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
                 #endregion
 
                 actual.ShouldHaveTheSameElementsAs(expected);
@@ -394,8 +395,8 @@ namespace Marten.Testing.Acceptance
             var user1 = new User();
             var user2 = new User();
 
-            theStore.BulkInsert("Green", new[] {user1});
-            theStore.BulkInsert("Purple", new[] {user2});
+            await theStore.BulkInsertAsync("Green", new[] {user1});
+            await theStore.BulkInsertAsync("Purple", new[] {user2});
 
 
             using var session = theStore.QuerySession();
@@ -484,13 +485,13 @@ namespace Marten.Testing.Acceptance
 
 
         [Fact]
-        public void write_to_tenant()
+        public async Task write_to_tenant()
         {
             var reds = Target.GenerateRandomData(50).ToArray();
             var greens = Target.GenerateRandomData(75).ToArray();
             var blues = Target.GenerateRandomData(25).ToArray();
 
-            theStore.Advanced.Clean.DeleteAllDocuments();
+            await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
             using (var session = theStore.OpenSession())
             {
@@ -498,7 +499,7 @@ namespace Marten.Testing.Acceptance
                 session.ForTenant("Green").Store(greens.AsEnumerable());
                 session.ForTenant("Blue").Store(blues.AsEnumerable());
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var red = theStore.QuerySession("Red"))
@@ -591,6 +592,8 @@ namespace Marten.Testing.Acceptance
         [Fact]
         public async Task can_delete_a_document_by_id_and_tenant_Guid()
         {
+            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+
             var target = new Target {Id = Guid.NewGuid()};
 
             using (var session = theStore.LightweightSession("Red"))
@@ -613,6 +616,8 @@ namespace Marten.Testing.Acceptance
             }
 
             var blue = theStore.QuerySession("Blue");
+            blue.Logger = new TestOutputMartenLogger(_output);
+
             (await blue.LoadAsync<Target>(target.Id)).ShouldBeNull();
 
             var red = theStore.QuerySession("Red");

@@ -16,7 +16,7 @@ namespace Marten.Events.Archiving
             _events = events;
         }
 
-        public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
+        public override void WriteCreateStatement(Migrator rules, TextWriter writer)
         {
             var argList = _events.StreamIdentity == StreamIdentity.AsGuid
                 ? "streamid uuid"

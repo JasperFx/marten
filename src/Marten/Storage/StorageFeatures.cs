@@ -9,6 +9,7 @@ using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Schema;
+using Weasel.Core.Migrations;
 
 #nullable enable
 namespace Marten.Storage
@@ -240,25 +241,7 @@ namespace Marten.Storage
             }
         }
 
-        /// <summary>
-        /// All referenced schema names by this DocumentStore
-        /// </summary>
-        /// <returns></returns>
-        public string[] AllSchemaNames()
-        {
-            var schemas = AllDocumentMappings
-                .Select(x => x.DatabaseSchemaName)
-                .Distinct()
-                .ToList();
-
-            schemas.Fill(_options.DatabaseSchemaName);
-            schemas.Fill(_options.Events.DatabaseSchemaName);
-
-            return schemas.Select(x => x.ToLowerInvariant()).ToArray();
-        }
-
-
-        internal IEnumerable<IFeatureSchema> AllActiveFeatures(ITenant tenant)
+        internal IEnumerable<IFeatureSchema> AllActiveFeatures(IMartenDatabase database)
         {
             yield return SystemFunctions;
 
@@ -275,7 +258,7 @@ namespace Marten.Storage
 
             if (SequenceIsRequired())
             {
-                yield return tenant.Sequences;
+                yield return database.Sequences;
             }
 
             if (_options.Events.As<EventGraph>().IsActive(_options))

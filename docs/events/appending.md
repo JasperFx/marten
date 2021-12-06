@@ -81,7 +81,7 @@ session.Events.Append(id, joined, departed);
 
 session.SaveChanges();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L567-L574' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L568-L575' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_append-events-1'></a>
 ```cs
 var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -91,7 +91,7 @@ session.Events.Append(id, joined, departed);
 
 session.SaveChanges();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L483-L490' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests.cs#L484-L491' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Optimistic Versioned Append

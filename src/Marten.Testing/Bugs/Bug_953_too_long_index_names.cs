@@ -1,6 +1,7 @@
 using System;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -25,7 +26,7 @@ namespace Marten.Testing.Bugs
 
             Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
             {
-                theStore.Tenancy.Default.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
+                theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
             });
         }
 

@@ -20,10 +20,10 @@ namespace Marten.Events
     internal class EventStore: QueryEventStore, IEventStore
     {
         private readonly DocumentSessionBase _session;
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
         private readonly DocumentStore _store;
 
-        public EventStore(DocumentSessionBase session, DocumentStore store, ITenant tenant) : base(session, store, tenant)
+        public EventStore(DocumentSessionBase session, DocumentStore store, Tenant tenant) : base(session, store, tenant)
         {
             _session = session;
             _store = store;
@@ -191,7 +191,7 @@ namespace Marten.Events
             long version = 0;
             try
             {
-                using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+                using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
                 if (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
                     version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
@@ -245,7 +245,7 @@ namespace Marten.Events
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
                 .With("id", streamKey);
 
-            await _session.Database.BeginTransactionAsync(token).ConfigureAwait(false);
+            await _session.BeginTransactionAsync(token).ConfigureAwait(false);
 
             var version = await readVersionFromExistingStream(streamKey, token, cmd).ConfigureAwait(false);
 
@@ -265,7 +265,7 @@ namespace Marten.Events
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
                 .With("id", streamId);
 
-            await _session.Database.BeginTransactionAsync(token).ConfigureAwait(false);
+            await _session.BeginTransactionAsync(token).ConfigureAwait(false);
 
             var version = await readVersionFromExistingStream(streamId, token, cmd).ConfigureAwait(false);
 

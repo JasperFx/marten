@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -540,5 +541,35 @@ namespace Marten
         /// <param name="tenantId"></param>
         /// <returns></returns>
         ITenantQueryOperations ForTenant(string tenantId);
+
+        /// <summary>
+        /// Execute a single command against the database with this session's connection
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <returns></returns>
+        int Execute(NpgsqlCommand cmd);
+
+        /// <summary>
+        /// Execute a single command against the database with this session's connection
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken());
+
+        /// <summary>
+        /// Execute a single command against the database with this session's connection and return the results
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        DbDataReader ExecuteReader(NpgsqlCommand command);
+
+        /// <summary>
+        /// Execute a single command against the database with this session's connection and return the results
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);
     }
 }

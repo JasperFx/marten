@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Schema.Testing.Documents;
+using Marten.Storage;
 using Shouldly;
+using Weasel.Core.Migrations;
 using Xunit;
 using Issue = Marten.Schema.Testing.Documents.Issue;
 
@@ -16,7 +18,7 @@ namespace Marten.Schema.Testing
 
 
         [Fact]
-        public void clean_table()
+        public async Task clean_table()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -25,19 +27,17 @@ namespace Marten.Schema.Testing
             theSession.Store(new Target { Number = 5 });
             theSession.Store(new Target { Number = 6 });
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
             theSession.Dispose();
 
-            theCleaner.DeleteDocumentsByType(typeof(Target));
+            await theCleaner.DeleteDocumentsByTypeAsync(typeof(Target));
 
-            using (var session = theStore.QuerySession())
-            {
-                session.Query<Target>().Count().ShouldBe(0);
-            }
+            using var session = theStore.QuerySession();
+            session.Query<Target>().Count().ShouldBe(0);
         }
 
         [Fact]
-        public void delete_all_documents()
+        public async Task delete_all_documents()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -45,18 +45,16 @@ namespace Marten.Schema.Testing
             theSession.Store(new Company());
             theSession.Store(new Issue());
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
             theSession.Dispose();
 
-            theCleaner.DeleteAllDocuments();
+            await theCleaner.DeleteAllDocumentsAsync();
 
-            using (var session = theStore.QuerySession())
-            {
-                session.Query<Target>().Count().ShouldBe(0);
-                session.Query<User>().Count().ShouldBe(0);
-                session.Query<Issue>().Count().ShouldBe(0);
-                session.Query<Company>().Count().ShouldBe(0);
-            }
+            using var session = theStore.QuerySession();
+            session.Query<Target>().Count().ShouldBe(0);
+            session.Query<User>().Count().ShouldBe(0);
+            session.Query<Issue>().Count().ShouldBe(0);
+            session.Query<Company>().Count().ShouldBe(0);
         }
 
         [Fact]
@@ -65,17 +63,17 @@ namespace Marten.Schema.Testing
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
             theSession.Dispose();
 
             var tableName = theStore.Storage.MappingFor(typeof(Target)).TableName;
 
-            (await theStore.Tenancy.Default.DocumentTables()).Contains(tableName)
+            (await theStore.Tenancy.Default.Storage.DocumentTables()).Contains(tableName)
                 .ShouldBeTrue();
 
-            theCleaner.CompletelyRemove(typeof(Target));
+            await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
-            (await theStore.Tenancy.Default.DocumentTables()).Contains(tableName)
+            (await theStore.Tenancy.Default.Storage.DocumentTables()).Contains(tableName)
                 .ShouldBeFalse();
         }
 
@@ -89,12 +87,13 @@ namespace Marten.Schema.Testing
 
             var upsertName = theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            (await theStore.Tenancy.Default.Functions()).ShouldContain(upsertName);
+            (await theStore.Tenancy.Default.Storage.Functions()).ShouldContain(upsertName);
 
             await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
-            (await theStore.Tenancy.Default.Functions()).ShouldNotContain(upsertName);
+            (await theStore.Tenancy.Default.Storage.Functions()).ShouldNotContain(upsertName);
 
+            Console.WriteLine("foo");
         }
 
         [Fact]
@@ -110,26 +109,26 @@ namespace Marten.Schema.Testing
             theSession.Dispose();
 
             await theCleaner.CompletelyRemoveAllAsync();
-            var tables = await theStore.Tenancy.Default.DocumentTables();
+            var tables = await theStore.Tenancy.Default.Storage.DocumentTables();
             tables.ShouldBeEmpty();
 
-            var functions = await theStore.Tenancy.Default.Functions();
+            var functions = await theStore.Tenancy.Default.Storage.Functions();
             functions.Where(x => x.Name != "mt_immutable_timestamp" || x.Name != "mt_immutable_timestamptz")
                 .ShouldBeEmpty();
         }
 
         [Fact]
-        public void delete_all_event_data()
+        public async Task delete_all_event_data()
         {
             var streamId = Guid.NewGuid();
             theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            theCleaner.DeleteAllEventData();
+            await theCleaner.DeleteAllEventDataAsync();
 
             theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
-            theSession.Events.FetchStream(streamId).ShouldBeEmpty();
+            (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
         }
 
 
@@ -154,7 +153,7 @@ namespace Marten.Schema.Testing
         }
 
         [Fact]
-        public void delete_except_types()
+        public async Task delete_except_types()
         {
             theSession.Store(new Target { Number = 1 });
             theSession.Store(new Target { Number = 2 });
@@ -162,21 +161,19 @@ namespace Marten.Schema.Testing
             theSession.Store(new Company());
             theSession.Store(new Issue());
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
             theSession.Dispose();
 
-            theCleaner.DeleteDocumentsExcept(typeof(Target), typeof(User));
+            await theCleaner.DeleteDocumentsExceptAsync(typeof(Target), typeof(User));
 
-            using (var session = theStore.OpenSession())
-            {
-                // Not cleaned off
-                session.Query<Target>().Count().ShouldBe(2);
-                session.Query<User>().Count().ShouldBe(1);
+            using var session = theStore.OpenSession();
+            // Not cleaned off
+            session.Query<Target>().Count().ShouldBe(2);
+            session.Query<User>().Count().ShouldBe(1);
 
-                // Should be cleaned off
-                session.Query<Issue>().Count().ShouldBe(0);
-                session.Query<Company>().Count().ShouldBe(0);
-            }
+            // Should be cleaned off
+            session.Query<Issue>().Count().ShouldBe(0);
+            session.Query<Company>().Count().ShouldBe(0);
         }
 
         [Fact]
@@ -213,7 +210,7 @@ namespace Marten.Schema.Testing
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
-            var allSchemas = theStore.Storage.AllSchemaNames();
+            var allSchemas = theStore.Tenancy.Default.Storage.AllSchemaNames();
 
             int GetSequenceCount(IDocumentStore store)
             {

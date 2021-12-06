@@ -20,7 +20,7 @@ namespace Marten.Testing.Events
         [Fact]
         public async Task fetch_sequence_numbers_async()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await theStore.EnsureStorageExistsAsync(typeof(IEvent));
 
             using var query = (QuerySession)theStore.QuerySession();
 
@@ -37,7 +37,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void fetch_sequence_numbers_sync()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(IEvent));
 
             using var query = (QuerySession)theStore.QuerySession();
 

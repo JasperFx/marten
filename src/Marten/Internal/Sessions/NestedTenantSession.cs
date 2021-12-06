@@ -10,12 +10,16 @@ namespace Marten.Internal.Sessions
     {
         private readonly DocumentSessionBase _parent;
 
-        internal NestedTenantSession(DocumentSessionBase parent, ITenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions!, parent.Database, tenant, parent._workTracker)
+        internal NestedTenantSession(DocumentSessionBase parent, Tenant tenant) : base((DocumentStore) parent.DocumentStore, parent.SessionOptions, parent._connection, parent._workTracker)
         {
             Listeners.AddRange(parent.Listeners);
             _parent = parent;
             Versions = parent.Versions;
             ItemMap = parent.ItemMap;
+
+            Tenant = tenant;
+
+            // TODO -- declare the TenantId here.
         }
 
         public IDocumentSession Parent => _parent;

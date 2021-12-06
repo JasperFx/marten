@@ -27,6 +27,7 @@ namespace Marten.Internal.DirtyTracking
 
             operation = session
                 .Tenant
+                .Storage
                 .Providers.StorageFor<T>()
                 .DirtyTracking
                 .Upsert(_document, session, session.Tenant);

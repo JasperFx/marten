@@ -1,5 +1,6 @@
 using System;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Xunit.Abstractions;
 using Weasel.Postgresql;
 
@@ -54,6 +55,10 @@ namespace Marten.Schema.Testing
         public virtual void Dispose()
         {
             _store?.Dispose();
+            if (_session != null)
+            {
+                _session.Dispose();
+            }
         }
 
         protected void UseDefaultSchema()

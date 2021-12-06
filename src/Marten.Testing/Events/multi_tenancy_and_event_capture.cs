@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -194,7 +196,11 @@ namespace Marten.Testing.Events
 
         private void InitStore(TenancyStyle tenancyStyle, StreamIdentity streamIdentity = StreamIdentity.AsGuid)
         {
-            var databaseSchema = $"{GetType().Name}_{tenancyStyle.ToString().ToLower()}";
+            var databaseSchema = $"{GetType().Name}_{tenancyStyle.ToString().ToLower()}_{streamIdentity}";
+
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            conn.Open();
+            conn.DropSchema(databaseSchema).GetAwaiter().GetResult();
 
             StoreOptions(_ =>
             {

@@ -32,7 +32,7 @@ public static bool IsBlue(this ColorTarget target)
     return target.Color == "Blue";
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#L75-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#L76-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, to plug in our new parser, we can add that to the `StoreOptions` object that we use to bootstrap a new `DocumentStore` as shown below:
@@ -79,5 +79,5 @@ public void query_with_custom_parser()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#L22-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#L23-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -1,5 +1,6 @@
 using System;
 using Marten.Storage;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
 #nullable enable

@@ -88,7 +88,7 @@ namespace Marten.Storage
             }
         }
 
-        public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
+        public override void WriteCreateStatement(Migrator rules, TextWriter writer)
         {
             var ordered = OrderedArguments();
 

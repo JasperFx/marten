@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
@@ -24,7 +25,7 @@ namespace Marten.Linq
     internal interface IMartenLinqQueryable
     {
         MartenLinqQueryProvider MartenProvider { get; }
-        IMartenSession Session { get; }
+        QuerySession Session { get; }
 
         Expression Expression { get; }
 
@@ -33,20 +34,20 @@ namespace Marten.Linq
 
     internal class MartenLinqQueryable<T>: QueryableBase<T>, IMartenQueryable<T>, IMartenLinqQueryable
     {
-        public MartenLinqQueryable(IMartenSession session, MartenLinqQueryProvider provider, Expression expression): base(provider,
+        public MartenLinqQueryable(QuerySession session, MartenLinqQueryProvider provider, Expression expression): base(provider,
             expression)
         {
             Session = session;
             MartenProvider = provider;
         }
 
-        public MartenLinqQueryable(IMartenSession session): base(new MartenLinqQueryProvider(session))
+        public MartenLinqQueryable(QuerySession session): base(new MartenLinqQueryProvider(session))
         {
             Session = session;
             MartenProvider = TypeExtensions.As<MartenLinqQueryProvider>(Provider);
         }
 
-        public MartenLinqQueryable(IMartenSession session, Expression expression): base(new MartenLinqQueryProvider(session),
+        public MartenLinqQueryable(QuerySession session, Expression expression): base(new MartenLinqQueryProvider(session),
             expression)
         {
             Session = session;
@@ -60,7 +61,7 @@ namespace Marten.Linq
 
         public MartenLinqQueryProvider MartenProvider { get; }
 
-        public IMartenSession Session { get; }
+        public QuerySession Session { get; }
 
         internal IQueryHandler<TResult> BuildHandler<TResult>(ResultOperatorBase? op = null)
         {
@@ -149,7 +150,10 @@ namespace Marten.Linq
         {
             var command = ToPreviewCommand(fetchType);
 
-            return Session.Database.ExplainQuery(Session.Serializer, command, configureExplain)!;
+            using var conn = Session.Tenant.Storage.CreateConnection();
+            conn.Open();
+            command.Connection = conn;
+            return conn.ExplainQuery(Session.Serializer, command, configureExplain)!;
         }
 
        public IMartenQueryable<T> Include<TInclude>(Expression<Func<T, object>> idSource, Action<TInclude> callback) where TInclude : notnull
@@ -216,9 +220,14 @@ namespace Marten.Linq
         {
             var builder = new LinqHandlerBuilder(MartenProvider, Session, Expression);
             var command = new NpgsqlCommand();
+
             var sql = new CommandBuilder(command);
+
             builder.BuildDiagnosticCommand(fetchType, sql);
             command.CommandText = sql.ToString();
+
+            Session._connection.Apply(command);
+
             return command;
         }
 

@@ -4,6 +4,7 @@ using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace EventSourceWorker

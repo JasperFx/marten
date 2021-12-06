@@ -2,8 +2,10 @@ namespace Marten.Services
 {
     public enum CommandRunnerMode
     {
+        /// <summary>
+        /// Marten controls the transactional boundary
+        /// </summary>
         Transactional,
-        AutoCommit,
         ReadOnly,
 
         /// <summary>
