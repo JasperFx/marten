@@ -5,6 +5,7 @@ using Baseline;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage.Metadata;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -74,15 +75,15 @@ namespace Marten.Storage
         public string BuildTemplate(string template)
         {
             return template
-                .Replace(DdlRules.SCHEMA, Identifier.Schema)
-                .Replace(DdlRules.TABLENAME, Identifier.Name)
-                .Replace(DdlRules.COLUMNS, Columns.Select(x => x.Name).Join(", "))
-                .Replace(DdlRules.NON_ID_COLUMNS,
+                .Replace(Migrator.SCHEMA, Identifier.Schema)
+                .Replace(Migrator.TABLENAME, Identifier.Name)
+                .Replace(Migrator.COLUMNS, Columns.Select(x => x.Name).Join(", "))
+                .Replace(Migrator.NON_ID_COLUMNS,
                     Columns.Where(x => !x.Name.EqualsIgnoreCase("id")).Select(x => x.Name).Join(", "))
-                .Replace(DdlRules.METADATA_COLUMNS, Columns.OfType<MetadataColumn>().Select(x => x.Name).Join(", "));
+                .Replace(Migrator.METADATA_COLUMNS, Columns.OfType<MetadataColumn>().Select(x => x.Name).Join(", "));
         }
 
-        public void WriteTemplate(DdlTemplate template, TextWriter writer)
+        public void WriteTemplate(SqlTemplate template, TextWriter writer)
         {
             var text = template?.TableCreation;
             if (text.IsNotEmpty())

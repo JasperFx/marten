@@ -6,6 +6,7 @@ using Marten.Events.Daemon;
 using Marten.Schema;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
+using Weasel.Core.Migrations;
 using IsolationLevel = System.Data.IsolationLevel;
 #nullable enable
 namespace Marten
@@ -24,7 +25,7 @@ namespace Marten
         /// <summary>
         ///     Information about the document and event storage
         /// </summary>
-        IDocumentSchema Schema { get; }
+        IDatabase Schema { get; }
 
         /// <summary>
         ///     Infrequently used operations like document cleaning and the initial store configuration

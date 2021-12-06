@@ -1,17 +1,19 @@
+using System;
 using System.Linq;
 using Baseline;
 using Marten.Internal.Storage;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
 using Shouldly;
+using Weasel.Core.Migrations;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
 {
-
+    [Obsolete("Combine this into DocumentTableTests")]
     public class when_deriving_the_table_definition_from_the_database_schema_Tests : IntegrationContext
     {
-        private readonly IDocumentSchema _schema;
+        private readonly IDatabase _schema;
         private DocumentMapping theMapping;
         private IDocumentStorage _storage;
         private DocumentTable theDerivedTable;
@@ -24,7 +26,7 @@ namespace Marten.Schema.Testing.Storage
             theMapping.DuplicateField("UserName");
 
 
-            _storage = theStore.Tenancy.Default.StorageFor<User>();
+            _storage = theStore.Tenancy.Default.Storage.StorageFor<User>();
 
             theDerivedTable = new DocumentTable(theMapping);
         }

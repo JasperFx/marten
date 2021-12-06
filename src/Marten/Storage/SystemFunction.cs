@@ -26,7 +26,7 @@ namespace Marten.Storage
 
         public string Name { get; }
 
-        public override void WriteCreateStatement(DdlRules rules, TextWriter writer)
+        public override void WriteCreateStatement(Migrator rules, TextWriter writer)
         {
             var body = SchemaBuilder.GetSqlScript(Identifier.Schema, Identifier.Name);
 

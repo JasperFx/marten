@@ -14,14 +14,6 @@ namespace Marten.Storage
 
         internal StoreOptions Options { get; }
 
-        protected void seedSchemas(ITenant tenant)
-        {
-            if (Options.AutoCreateSchemaObjects == AutoCreate.None)
-                return;
 
-            var allSchemaNames = Options.Storage.AllSchemaNames();
-            var generator = new DatabaseSchemaGenerator(tenant);
-            generator.Generate(Options, allSchemaNames);
-        }
     }
 }

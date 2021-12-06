@@ -19,7 +19,7 @@ namespace Marten.Events.Projections
     {
         private readonly List<IEvent> _events = new List<IEvent>();
 
-        public EventSlice(TId id, ITenant tenant, IEnumerable<IEvent>? events = null)
+        public EventSlice(TId id, Tenant tenant, IEnumerable<IEvent>? events = null)
         {
             Id = id;
             Tenant = tenant;
@@ -44,7 +44,7 @@ namespace Marten.Events.Projections
         /// <summary>
         /// The current tenant
         /// </summary>
-        public ITenant Tenant { get; }
+        public Tenant Tenant { get; }
 
         /// <summary>
         /// The related aggregate document

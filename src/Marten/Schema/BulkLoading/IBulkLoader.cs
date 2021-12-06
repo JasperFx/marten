@@ -12,13 +12,13 @@ namespace Marten.Schema.BulkLoading
     /// <typeparam name="T"></typeparam>
     public interface IBulkLoader<T>
     {
-        void Load(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents);
-        Task LoadAsync(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CancellationToken cancellation);
+        void Load(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents);
+        Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CancellationToken cancellation);
 
         string CreateTempTableForCopying();
 
-        void LoadIntoTempTable(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents);
-        Task LoadIntoTempTableAsync(ITenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CancellationToken cancellation);
+        void LoadIntoTempTable(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents);
+        Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents, CancellationToken cancellation);
 
         string CopyNewDocumentsFromTempTable();
 

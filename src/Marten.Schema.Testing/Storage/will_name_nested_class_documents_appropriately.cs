@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing.Storage
 {
+    [Obsolete("Combine into DocumentMapping/DocumentTable tests")]
     public class will_name_nested_class_documents_appropriately : IntegrationContext
     {
         [Fact]
@@ -16,10 +17,11 @@ namespace Marten.Schema.Testing.Storage
             DocumentTable table2;
 
 
-            theStore.Tenancy.Default.StorageFor<Foo.Document>();
-            theStore.Tenancy.Default.StorageFor<Bar.Document>();
+            var database = theStore.Tenancy.Default.Storage;
+            database.StorageFor<Foo.Document>();
+            database.StorageFor<Bar.Document>();
 
-            var documentTables = (await theStore.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ToArray();
+            var documentTables = (await database.DocumentTables()).Select(x => x.QualifiedName).ToArray();
             documentTables.ShouldContain("public.mt_doc_foo_document");
             documentTables.ShouldContain("public.mt_doc_bar_document");
 
@@ -42,10 +44,11 @@ namespace Marten.Schema.Testing.Storage
 
             StoreOptions(x => x.DatabaseSchemaName = "other");
 
-                theStore.Tenancy.Default.StorageFor<Foo.Document>();
-                theStore.Tenancy.Default.StorageFor<Bar.Document>();
+            var database = theStore.Tenancy.Default.Storage;
+            database.StorageFor<Foo.Document>();
+                database.StorageFor<Bar.Document>();
 
-                var documentTables = (await theStore.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ToArray();
+                var documentTables = (await database.DocumentTables()).Select(x => x.QualifiedName).ToArray();
                 documentTables.ShouldContain("other.mt_doc_foo_document");
                 documentTables.ShouldContain("other.mt_doc_bar_document");
 

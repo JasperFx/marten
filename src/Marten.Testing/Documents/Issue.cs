@@ -23,6 +23,7 @@ namespace Marten.Testing.Documents
         public Guid? ReporterId { get; set; }
 
         public Guid? BugId { get; set; }
+        public string Status { get; set; }
     }
 
     #endregion

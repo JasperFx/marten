@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 

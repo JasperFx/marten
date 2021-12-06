@@ -28,7 +28,7 @@ namespace Marten.Testing.Linq
             StoreOptions(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.Advanced.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+                _.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
 
                 _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
                 {

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema.Testing.Documents;
 using Marten.Storage;
@@ -10,6 +11,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing.Storage
 {
+    [Obsolete("Combine this into DocumentTableTests")]
     [Collection("soft_deletes")]
     public class when_generating_a_table_for_soft_deletes : IntegrationContext
     {
@@ -63,7 +65,7 @@ namespace Marten.Schema.Testing.Storage
                 }
 
 
-                var table = await store2.Tenancy.Default.ExistingTableFor(typeof(User));
+                var table = await store2.Tenancy.Default.Storage.ExistingTableFor(typeof(User));
 
                 table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();
@@ -95,7 +97,7 @@ namespace Marten.Schema.Testing.Storage
                 }
 
 
-                var table = await store2.Tenancy.Default.ExistingTableFor(typeof(User));
+                var table = await store2.Tenancy.Default.Storage.ExistingTableFor(typeof(User));
 
                 table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();

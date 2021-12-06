@@ -13,9 +13,9 @@ namespace Marten.Linq.Filters
     /// </summary>
     internal class SpecificTenantFilter: ISqlFragment
     {
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
 
-        public SpecificTenantFilter(ITenant tenant)
+        public SpecificTenantFilter(Tenant tenant)
         {
             _tenant = tenant;
         }

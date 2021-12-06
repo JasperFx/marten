@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten
-{    
+{
     public class Startup
     {
         public IConfiguration Configuration { get; }
@@ -43,7 +44,7 @@ namespace AspNetCoreWithMarten
 
         #endregion
 
-      
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())

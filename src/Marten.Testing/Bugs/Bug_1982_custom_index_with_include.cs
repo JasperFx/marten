@@ -4,6 +4,7 @@ using Marten.Schema;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Testing.Bugs

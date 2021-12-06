@@ -1,53 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Threading.Tasks;
-using Baseline;
 using Marten.Events;
-using Weasel.Postgresql;
-using Marten.Util;
-using Npgsql;
 
 namespace Marten.Storage
 {
-   internal static class TenantExtensions
+    internal static class TenantExtensions
     {
-        internal static IEventStorage EventStorage(this ITenant tenant)
+        internal static IEventStorage EventStorage(this Tenant tenant)
         {
-            return (IEventStorage) tenant.StorageFor<IEvent>();
+            return (IEventStorage)tenant.Storage.StorageFor<IEvent>();
         }
-
-        internal static void RunSql(this ITenant tenant, string sql)
-        {
-            using var conn = tenant.CreateConnection();
-            conn.Open();
-
-            try
-            {
-                conn.CreateCommand(sql).ExecuteNonQuery();
-            }
-            finally
-            {
-                conn.Close();
-                conn.Dispose();
-            }
-        }
-
-        internal static async Task RunSqlAsync(this ITenant tenant, string sql)
-        {
-            using var conn = tenant.CreateConnection();
-            await conn.OpenAsync().ConfigureAwait(false);
-
-            try
-            {
-                await conn.CreateCommand(sql).ExecuteNonQueryAsync().ConfigureAwait(false);
-            }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-                conn.Dispose();
-            }
-        }
-
     }
 }

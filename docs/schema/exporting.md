@@ -7,7 +7,7 @@ the SQL for creating these objects for *all the known document types* from `IDoc
 <!-- snippet: sample_export-ddl -->
 <a id='snippet-sample_export-ddl'></a>
 ```cs
-public void export_ddl()
+public async Task export_ddl()
 {
     var store = DocumentStore.For(_ =>
     {
@@ -22,7 +22,7 @@ public void export_ddl()
     });
 
     // Export the SQL to a file
-    store.Schema.WriteDatabaseCreationScriptFile("my_database.sql");
+    await store.Schema.WriteCreationScriptToFile("my_database.sql");
 
     // Or instead, write a separate sql script
     // to the named directory
@@ -34,7 +34,7 @@ public void export_ddl()
     Debug.WriteLine(sql);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExportingDDL.cs#L8-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export-ddl' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExportingDDL.cs#L9-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export-ddl' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of v0.8, this export will include the Hilo id generation table and all the objects necessary to use the event store functionality if that is enabled.

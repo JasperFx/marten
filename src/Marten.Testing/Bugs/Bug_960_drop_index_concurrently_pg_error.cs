@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -29,7 +30,7 @@ namespace Marten.Testing.Bugs
             });
 
             // cleanup prior to starting
-            store1.Advanced.Clean.CompletelyRemoveAll();
+            await store1.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store1.LightweightSession())
             {
@@ -38,7 +39,7 @@ namespace Marten.Testing.Bugs
                     Field1 = "field1-value",
                     Field2 = "field2.value"
                 });
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             // Add index on Field2 but exclude index on field 1.

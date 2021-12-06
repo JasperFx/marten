@@ -2,10 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Exceptions;
+using Marten.Testing;
 using Weasel.Postgresql;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
+using Weasel.Core.Migrations;
 using Xunit;
 
 namespace Marten.Schema.Testing
@@ -16,14 +19,14 @@ namespace Marten.Schema.Testing
         public async Task can_create_patch_for_event_store_schema_changes()
         {
             var store1 = Store(AutoCreate.All);
-            store1.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
+            await store1.EnsureStorageExistsAsync(typeof(StreamAction));
 
             SimulateEventStoreV3Schema();
 
             // create another store and check if the schema can be be auto updated
             using var store2 = Store(AutoCreate.CreateOrUpdate);
 
-            var sql = (await store2.Schema.CreateMigrationAsync()).UpdateSql;
+            var sql = (await store2.Schema.CreateMigrationAsync()).UpdateSql();
             sql.ShouldContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
             sql.ShouldContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
             sql.ShouldContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);
@@ -40,7 +43,7 @@ namespace Marten.Schema.Testing
             // create another store and check if the schema can be be auto updated
             using var store2 = Store(AutoCreate.CreateOrUpdate);
 
-            await Should.ThrowAsync<SchemaValidationException>(async () =>
+            await Should.ThrowAsync<DatabaseValidationException>(async () =>
             {
                 await store2.Schema.AssertDatabaseMatchesConfigurationAsync();
             });
@@ -56,12 +59,12 @@ namespace Marten.Schema.Testing
         public async Task should_not_have_v3_to_v4_patches_on_v4_schema()
         {
             using var store1 = Store(AutoCreate.All);
-            store1.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
+            await store1.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(StreamAction));
 
             // create another store and check if no v3 to v4 patches are generated
             using var store2 = Store(AutoCreate.CreateOrUpdate);
 
-            var sql = (await store2.Schema.CreateMigrationAsync()).UpdateSql;
+            var sql = (await store2.Schema.CreateMigrationAsync()).UpdateSql();
             sql.ShouldNotContain($"alter table {_schemaName}.mt_events alter column version type bigint", Case.Insensitive);
             sql.ShouldNotContain($"alter table {_schemaName}.mt_streams alter column version type bigint", Case.Insensitive);
             sql.ShouldNotContain($"drop function if exists {_schemaName}.mt_append_event", Case.Insensitive);

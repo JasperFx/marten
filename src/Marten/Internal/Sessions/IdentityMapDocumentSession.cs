@@ -2,13 +2,13 @@ using System;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Services;
-using Marten.Storage;
 #nullable enable
 namespace Marten.Internal.Sessions
 {
     public class IdentityMapDocumentSession: DocumentSessionBase
     {
-        public IdentityMapDocumentSession(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database, ITenant tenant) : base(store, sessionOptions, database, tenant)
+        internal IdentityMapDocumentSession(DocumentStore store, SessionOptions sessionOptions,
+            IConnectionLifetime connection) : base(store, sessionOptions, connection)
         {
         }
 

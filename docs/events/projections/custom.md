@@ -189,7 +189,7 @@ public class LapViewProjection: ViewProjection<Lap, Guid>
         view.End = eventData.Timestamp;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L88-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-from-class-with-eventdata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L89-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-from-class-with-eventdata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Injecting helpers classes
@@ -309,5 +309,5 @@ public class NewsletterSubscriptionProjection : ViewProjection<NewsletterSubscri
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L134-L215' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-with-update-only' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/custom_transformation_of_events.cs#L135-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_viewprojection-with-update-only' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

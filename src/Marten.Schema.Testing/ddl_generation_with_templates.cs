@@ -8,6 +8,7 @@ using Xunit;
 namespace Marten.Schema.Testing
 {
 
+    [Obsolete("Move this to Weasel")]
     [Collection("patching")]
     public class ddl_generation_with_templates : IntegrationContext
     {
@@ -21,7 +22,7 @@ namespace Marten.Schema.Testing
 
             StoreOptions(_ =>
             {
-                _.Advanced.DdlRules.ReadTemplates(directory);
+                _.Advanced.Migrator.ReadTemplates(directory);
 
                 _.Schema.For<User>();
                 _.Schema.For<BlueDoc>();

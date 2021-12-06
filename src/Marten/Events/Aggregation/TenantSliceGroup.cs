@@ -61,17 +61,17 @@ namespace Marten.Events.Aggregation
     /// <typeparam name="TId"></typeparam>
     public class TenantSliceGroup<TDoc, TId> : IDisposable, ITenantSliceGroup<TId>
     {
-        public ITenant Tenant { get; }
+        public Tenant Tenant { get; }
         public LightweightCache<TId, EventSlice<TDoc, TId>> Slices { get; }
         private TransformBlock<EventSlice<TDoc, TId>, IStorageOperation> _builder;
 
-        public TenantSliceGroup(ITenant tenant)
+        public TenantSliceGroup(Tenant tenant)
         {
             Tenant = tenant;
             Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant));
         }
 
-        public TenantSliceGroup(ITenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices) : this(tenant)
+        public TenantSliceGroup(Tenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices) : this(tenant)
         {
             foreach (var slice in slices)
             {

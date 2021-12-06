@@ -43,7 +43,7 @@ namespace Marten.Events.Projections
             return groups.SelectMany(x => x.Slices).ToList();
         }
 
-        private async Task<TenantSliceGroup<TDoc, TId>> groupSingleTenant(ITenant tenant, IQuerySession querySession, IList<IEvent> events)
+        private async Task<TenantSliceGroup<TDoc, TId>> groupSingleTenant(Tenant tenant, IQuerySession querySession, IList<IEvent> events)
         {
             var @group = new TenantSliceGroup<TDoc, TId>(tenant);
 
@@ -76,7 +76,7 @@ namespace Marten.Events.Projections
                 var byTenant = events.GroupBy(x => x.TenantId);
                 var groupTasks = byTenant.Select(tGroup =>
                 {
-                    var tenant = tenancy[tGroup.Key];
+                    var tenant = tenancy.GetTenant(tGroup.Key);
                     return groupSingleTenant(tenant, querySession.ForTenant(tGroup.Key), tGroup.ToList());
                 });
 

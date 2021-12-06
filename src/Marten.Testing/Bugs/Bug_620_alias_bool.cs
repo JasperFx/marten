@@ -14,7 +14,7 @@ namespace Marten.Testing.Bugs
         {
             using (var store1 = SeparateStore())
             {
-                store1.Tenancy.Default.EnsureStorageExists(typeof(DocWithBool));
+                await store1.EnsureStorageExistsAsync(typeof(DocWithBool));
 
                 await store1.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
             }

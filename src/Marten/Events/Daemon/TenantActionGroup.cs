@@ -9,9 +9,9 @@ namespace Marten.Events.Daemon
     internal class TenantActionGroup
     {
         private readonly List<StreamAction> _actions;
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
 
-        public TenantActionGroup(ITenant tenant, IEnumerable<StreamAction> actions)
+        public TenantActionGroup(Tenant tenant, IEnumerable<StreamAction> actions)
         {
             _tenant = tenant;
             _actions = new List<StreamAction>(actions);

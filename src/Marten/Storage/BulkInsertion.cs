@@ -13,9 +13,9 @@ namespace Marten.Storage
 {
     internal class BulkInsertion: IDisposable
     {
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
 
-        public BulkInsertion(ITenant tenant, StoreOptions options)
+        public BulkInsertion(Tenant tenant, StoreOptions options)
         {
             _tenant = tenant;
             Serializer = options.Serializer();
@@ -36,7 +36,7 @@ namespace Marten.Storage
             }
             else
             {
-                using var conn = _tenant.CreateConnection();
+                using var conn = _tenant.Storage.CreateConnection();
                 conn.Open();
                 var tx = conn.BeginTransaction();
 
@@ -62,7 +62,7 @@ namespace Marten.Storage
             }
             else
             {
-                using var conn = _tenant.CreateConnection();
+                using var conn = _tenant.Storage.CreateConnection();
                 await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
 #if NETSTANDARD2_0
@@ -98,7 +98,7 @@ namespace Marten.Storage
                     .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
                     .ToArray();
 
-            using var conn = _tenant.CreateConnection();
+            using var conn = _tenant.Storage.CreateConnection();
 
             conn.Open();
             var tx = conn.BeginTransaction();
@@ -124,7 +124,7 @@ namespace Marten.Storage
                     .Select(group => typeof(BulkInserter<>).CloseAndBuildAs<IBulkInserter>(group, group.Key))
                     .ToArray();
 
-            using var conn = _tenant.CreateConnection();
+            using var conn = _tenant.Storage.CreateConnection();
 
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
 #if NETSTANDARD2_0
@@ -152,7 +152,7 @@ namespace Marten.Storage
         private void bulkInsertDocuments<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn,
             BulkInsertMode mode)
         {
-            var provider = _tenant.Providers.StorageFor<T>();
+            var provider = _tenant.Storage.Providers.StorageFor<T>();
             var loader = provider.BulkLoader;
 
             if (mode != BulkInsertMode.InsertsOnly)
@@ -199,7 +199,7 @@ namespace Marten.Storage
 
         private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
         {
-            var provider = _tenant.Providers.StorageFor<T>();
+            var provider = _tenant.Storage.Providers.StorageFor<T>();
             var loader = provider.BulkLoader;
 
             if (mode != BulkInsertMode.InsertsOnly)

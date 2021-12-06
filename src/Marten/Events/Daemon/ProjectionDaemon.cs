@@ -58,7 +58,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartDaemon()
         {
-            await _store.Tenancy.Default.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+            await _store.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
             await _highWater.Start().ConfigureAwait(false);
         }
 
@@ -271,7 +271,7 @@ namespace Marten.Events.Daemon
 
 #if NET6_0_OR_GREATER
             // Is the shard count the optimal DoP here?
-            await Parallel.ForEachAsync(shards, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = shards.Count }, 
+            await Parallel.ForEachAsync(shards, new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = shards.Count },
                 async (shard, cancellationToken) =>
             {
                 await StartShard(shard, cancellationToken).ConfigureAwait(false);
@@ -310,7 +310,7 @@ namespace Marten.Events.Daemon
                 }
             }
 
-            
+
         }
 
 

@@ -1,19 +1,26 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Services
 {
     public class DefaultRetryPolicyTests
     {
+
+
         [Fact]
         public async Task transient_exception_is_retried()
         {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await conn.OpenAsync();
+
             var retryPolicy = DefaultRetryPolicy.Times(1, sleep: x => TimeSpan.FromMilliseconds(20));
             var retryPolicyDecorator = RetryPolicyDecorator.For(retryPolicy, runNumber =>
             {
@@ -22,51 +29,45 @@ namespace Marten.Testing.Services
                     throw createNpgsqlException(true);
                 }
             });
-            using var connection = new ManagedConnection(new ConnectionSource(), retryPolicyDecorator);
-            var cmd = new NpgsqlCommand("select 1");
 
-            await connection.ExecuteAsync(cmd);
+            await retryPolicyDecorator.ExecuteAsync(() => conn.CreateCommand("select 1").ExecuteNonQueryAsync(), default);
 
             retryPolicyDecorator.ExecutionCount.ShouldBe(2);
-            cmd.Dispose();
-            connection.Dispose();
         }
 
         [Fact]
         public void transient_exception_is_retried_but_throws_eventually()
         {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            conn.Open();
+
             var retryPolicy = DefaultRetryPolicy.Twice(sleep: x => TimeSpan.FromMilliseconds(20));
             var retryPolicyDecorator = RetryPolicyDecorator.For(retryPolicy, runNumber =>
                 throw createNpgsqlException(true));
 
-            using var connection = new ManagedConnection(new ConnectionSource(), retryPolicyDecorator);
-            var cmd = new NpgsqlCommand();
 
             Exception<NpgsqlException>
-                .ShouldBeThrownBy(() => connection.Execute(cmd));
+                .ShouldBeThrownBy(() => retryPolicyDecorator.Execute(() => conn.CreateCommand("").ExecuteNonQuery()));
 
             retryPolicyDecorator.ExecutionCount.ShouldBe(3);
-
-            cmd.Dispose();
-            connection.Dispose();
         }
 
         [Fact]
         public void non_transient_exception_is_not_retried()
         {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            conn.Open();
+
             var retryPolicy = DefaultRetryPolicy.Times(1, sleep: x => TimeSpan.FromMilliseconds(20));
             var retryPolicyDecorator = RetryPolicyDecorator.For(retryPolicy, runNumber =>
                 throw createNpgsqlException(false));
 
-            using var connection = new ManagedConnection(new ConnectionSource(), retryPolicyDecorator);
-            var cmd = new NpgsqlCommand();
 
             Exception<NpgsqlException>
-                .ShouldBeThrownBy(() => connection.Execute(cmd));
+                .ShouldBeThrownBy(() => retryPolicyDecorator.Execute(() => conn.CreateCommand().ExecuteNonQuery()));
 
             retryPolicyDecorator.ExecutionCount.ShouldBe(1);
-            cmd.Dispose();
-            connection.Dispose();
+
         }
 
         private static NpgsqlException createNpgsqlException(bool transient)

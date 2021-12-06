@@ -20,7 +20,7 @@ namespace Marten.Testing.CoreFunctionality
             await theSession.SaveChangesAsync();
 
             var json = await theSession.Json.FindByIdAsync<Issue>(issue.Id);
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"Status\": null, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
 
         #endregion

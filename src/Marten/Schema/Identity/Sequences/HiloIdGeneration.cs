@@ -30,11 +30,11 @@ namespace Marten.Schema.Identity.Sequences
 
             if (mapping.IdType == typeof(int))
             {
-                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Sequences.SequenceFor({{2}}).NextInt());", document, Use.Type<ITenant>(), mapping.DocumentType);
+                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Storage.Sequences.SequenceFor({{2}}).NextInt());", document, Use.Type<Tenant>(), mapping.DocumentType);
             }
             else
             {
-                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Sequences.SequenceFor({{2}}).NextLong());", document, Use.Type<ITenant>(), mapping.DocumentType);
+                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Storage.Sequences.SequenceFor({{2}}).NextLong());", document, Use.Type<Tenant>(), mapping.DocumentType);
             }
 
             method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);

@@ -8,9 +8,9 @@ namespace Marten.Services
 {
     internal class AutoOpenSingleQueryRunner : ISingleQueryRunner
     {
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
 
-        public AutoOpenSingleQueryRunner(ITenant tenant)
+        public AutoOpenSingleQueryRunner(Tenant tenant)
         {
             _tenant = tenant;
         }
@@ -18,7 +18,7 @@ namespace Marten.Services
 
         public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
         {
-            using var conn = _tenant.CreateConnection();
+            using var conn = _tenant.Storage.CreateConnection();
 
             var command = handler.BuildCommand();
             command.Connection = conn;
@@ -31,7 +31,7 @@ namespace Marten.Services
 
         public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
         {
-            using var conn = _tenant.CreateConnection();
+            using var conn = _tenant.Storage.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
             command.Connection = conn;

@@ -7,6 +7,7 @@ using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Weasel.Postgresql;
 using Marten.Services;
+using Marten.Testing;
 using NpgsqlTypes;
 using Shouldly;
 using Xunit;
@@ -21,7 +22,7 @@ namespace Marten.AsyncDaemon.Testing
 
         public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            theStore.EnsureStorageExists(typeof(IEvent));
             theDetector = new HighWaterDetector(new AutoOpenSingleQueryRunner(theStore.Tenancy.Default), theStore.Events);
         }
 
@@ -93,7 +94,7 @@ namespace Marten.AsyncDaemon.Testing
 
         protected async Task deleteEvents(params long[] ids)
         {
-            using var conn = theStore.Tenancy.Default.CreateConnection();
+            using var conn = theStore.CreateConnection();
             await conn.OpenAsync();
 
             await conn
@@ -106,7 +107,7 @@ namespace Marten.AsyncDaemon.Testing
 
         protected async Task makeOldWhereSequenceIsLessThanOrEqualTo(long seqId)
         {
-            using var conn = theStore.Tenancy.Default.CreateConnection();
+            using var conn = theStore.CreateConnection();
             await conn.OpenAsync();
 
             await conn
@@ -117,7 +118,7 @@ namespace Marten.AsyncDaemon.Testing
 
         protected async Task makeNewerWhereSequenceIsGreaterThan(long seqId)
         {
-            using var conn = theStore.Tenancy.Default.CreateConnection();
+            using var conn = theStore.CreateConnection();
             await conn.OpenAsync();
 
             await conn

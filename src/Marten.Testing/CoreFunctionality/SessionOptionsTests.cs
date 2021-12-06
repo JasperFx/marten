@@ -1,9 +1,12 @@
 using System;
+using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Npgsql;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -23,6 +26,79 @@ namespace Marten.Testing.CoreFunctionality
         }
         #endregion
 
+                [Fact]
+        public void for_connection_string()
+        {
+            var options = SessionOptions.ForConnectionString(ConnectionSource.ConnectionString);
+
+            options.Connection.ConnectionString.ShouldBe(ConnectionSource.ConnectionString);
+            options.Connection.State.ShouldBe(ConnectionState.Closed);
+
+            options.OwnsConnection.ShouldBeTrue();
+            options.OwnsTransactionLifecycle.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void with_tracking()
+        {
+            new SessionOptions().WithTracking(DocumentTracking.None)
+                .Tracking.ShouldBe(DocumentTracking.None);
+        }
+
+        [Fact]
+        public void add_a_listener()
+        {
+            var options = new SessionOptions();
+            var listener = Substitute.For<IDocumentSessionListener>();
+            options.ListenAt(listener)
+                .Listeners.Single().ShouldBe(listener);
+        }
+
+
+
+        [Fact]
+        public async System.Threading.Tasks.Task for_transaction()
+        {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await conn.OpenAsync().ConfigureAwait(false);
+            using var tx = await conn.BeginTransactionAsync();
+
+            var options = SessionOptions.ForTransaction(tx);
+            options.Transaction.ShouldBe(tx);
+            options.Connection.ShouldBe(conn);
+            options.OwnsConnection.ShouldBeFalse();
+            options.OwnsTransactionLifecycle.ShouldBeFalse();
+
+        }
+
+        [Fact]
+        public void build_from_connection()
+        {
+            var connection = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            var options = SessionOptions.ForConnection(connection);
+            options.Connection.ShouldBe(connection);
+            options.Timeout.Value.ShouldBe(connection.CommandTimeout);
+            options.OwnsConnection.ShouldBeFalse();
+            options.OwnsTransactionLifecycle.ShouldBeTrue();
+
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task for_transaction_with_ownership()
+        {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await conn.OpenAsync().ConfigureAwait(false);
+            using var tx = await conn.BeginTransactionAsync();
+
+            var options = SessionOptions.ForTransaction(tx, true);
+            options.Transaction.ShouldBe(tx);
+            options.Connection.ShouldBe(conn);
+            options.OwnsConnection.ShouldBeFalse();
+            options.OwnsTransactionLifecycle.ShouldBeTrue();
+            options.Timeout.ShouldBe(conn.CommandTimeout);
+        }
+
+
 
         [Fact]
         public void the_default_concurrency_checks_is_enabled()
@@ -31,7 +107,7 @@ namespace Marten.Testing.CoreFunctionality
                 .ShouldBe(ConcurrencyChecks.Enabled);
         }
 
-        //[Fact] doesn't play nicely on Travis
+        [Fact] //doesn't play nicely on Travis
         public void can_choke_on_custom_timeout()
         {
 
@@ -44,13 +120,14 @@ namespace Marten.Testing.CoreFunctionality
                     session.Query<FryGuy>("select pg_sleep(2)");
                 });
 
-                Assert.Contains("connected party did not properly respond after a period of time", e.InnerException.InnerException.Message);
+                Assert.Contains("Timeout during reading attempt", e.InnerException.InnerException.Message);
             }
         }
 
         [Fact]
         public void default_timeout_should_be_npgsql_default_ie_30()
         {
+            // TODO -- do this without the Preview command. Check against the session itself
             StoreOptions(opts =>
             {
                 var connectionString = ConnectionSource.ConnectionString.Replace(";Command Timeout=5", "");
@@ -67,10 +144,10 @@ namespace Marten.Testing.CoreFunctionality
         }
 
 
-        // Remarks: this test was basically asserting nothing related before.
         [Fact]
         public void can_define_custom_timeout()
         {
+            // TODO -- do this without the Preview command. Check against the session itself
             var options = new SessionOptions() { Timeout = 15 };
 
             using (var query = theStore.QuerySession(options))
@@ -83,6 +160,7 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void can_define_custom_timeout_via_pgcstring()
         {
+            // TODO -- do this without the Preview command. Check against the session itself
             var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
             connectionStringBuilder.CommandTimeout = 1;

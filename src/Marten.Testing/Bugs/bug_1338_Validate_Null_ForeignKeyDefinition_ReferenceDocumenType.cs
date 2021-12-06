@@ -5,6 +5,7 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
@@ -24,7 +25,7 @@ namespace Marten.Testing.Bugs
                     .ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
             });
 
-            theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default).All(x => x != null).ShouldBeTrue();
+            theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default.Storage).All(x => x != null).ShouldBeTrue();
         }
 
         [Fact]
@@ -90,7 +91,7 @@ namespace Marten.Testing.Bugs
 
     public class FakeExternalTable: FeatureSchemaBase
     {
-        public FakeExternalTable(StoreOptions options): base("fake_external_table")
+        public FakeExternalTable(StoreOptions options): base("fake_external_table", options.Advanced.Migrator)
         {
             Options = options;
         }

@@ -1,52 +1,9 @@
 # Schema Feature Extensions
 
 New in Marten 2.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's
-[schema management facilities)[/schema/migrations). The key abstraction is the `IFeatureSchema` interface shown below:
+[schema management facilities)[/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the Weasel.Core library.
 
-<!-- snippet: sample_IFeatureSchema -->
-<a id='snippet-sample_ifeatureschema'></a>
-```cs
-/// <summary>
-/// Defines the database objects for a named feature within your
-/// Marten application
-/// </summary>
-public interface IFeatureSchema
-{
-    /// <summary>
-    /// Any document or feature types that this feature depends on. Used
-    /// to intelligently order the creation and scripting of database
-    /// schema objects
-    /// </summary>
-    /// <returns></returns>
-    IEnumerable<Type> DependentTypes();
-
-    /// <summary>
-    /// All the schema objects in this feature
-    /// </summary>
-    ISchemaObject[] Objects { get; }
-
-    /// <summary>
-    /// Identifier by type for this feature. Used along with the DependentTypes()
-    /// collection to control the proper ordering of object creation or scripting
-    /// </summary>
-    Type StorageType { get; }
-
-    /// <summary>
-    /// Really just the filename when the SQL is exported
-    /// </summary>
-    string Identifier { get; }
-
-    /// <summary>
-    /// Write any permission SQL when this feature is exported to a SQL
-    /// file
-    /// </summary>
-    /// <param name="rules"></param>
-    /// <param name="writer"></param>
-    void WritePermissions(DdlRules rules, TextWriter writer);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/IFeatureSchema.cs#L11-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ifeatureschema' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+TODO -- should link to Weasel. And document Weasel I suppose. Ugh.
 
 Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple
 example that defines a custom table with one column:
@@ -58,7 +15,7 @@ public class FakeStorage : FeatureSchemaBase
 {
     private readonly StoreOptions _options;
 
-    public FakeStorage(StoreOptions options) : base("fake")
+    public FakeStorage(StoreOptions options) : base("fake", options.Advanced.Migrator)
     {
         _options = options;
     }
@@ -72,7 +29,7 @@ public class FakeStorage : FeatureSchemaBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L50-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L51-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, to actually apply this feature to your Marten applications, use this syntax:
@@ -91,7 +48,7 @@ var store = DocumentStore.For(_ =>
     _.Storage.Add(new FakeStorage(_));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L31-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L32-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that when you use the `Add<T>()` syntax, Marten will pass along the current `StoreOptions` to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.
@@ -222,5 +179,5 @@ var sequence = new Sequence(new DbObjectName(DatabaseSchemaName, "mt_events_sequ
     OwnerColumn = "seq_id"
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L32-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventGraph.FeatureSchema.cs#L33-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-sequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -5,6 +5,8 @@ using System.Linq;
 using Baseline;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
 namespace Marten.Schema
@@ -69,7 +71,9 @@ namespace Marten.Schema
         public ISchemaObject[] Objects => toSchemaObjects().ToArray();
         public Type StorageType => _mapping.DocumentType;
         public string Identifier => _mapping.Alias.ToLowerInvariant();
-        public void WritePermissions(DdlRules rules, TextWriter writer)
+        public Migrator Migrator => _mapping.StoreOptions.Advanced.Migrator;
+
+        public void WritePermissions(Migrator rules, TextWriter writer)
         {
             var template = _mapping.DdlTemplate.IsNotEmpty()
                 ? rules.Templates[_mapping.DdlTemplate.ToLower()]

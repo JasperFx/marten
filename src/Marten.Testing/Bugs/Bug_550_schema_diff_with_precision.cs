@@ -1,12 +1,15 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
+    [Obsolete("Move to Weasel")]
     public class Bug_550_schema_diff_with_precision: BugIntegrationContext
     {
 
@@ -27,7 +30,9 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<DocWithPrecision>().Duplicate(x => x.Name, "character varying (100)");
             });
 
-            var patch = await store.Schema.CreateMigrationAsync(typeof(DocWithPrecision));
+            var feature = store.Schema.BuildFeatureSchemas()
+                .FirstOrDefault(x => x.StorageType == typeof(DocWithPrecision));
+            var patch = await store.Schema.CreateMigrationAsync(feature);
             patch.Difference.ShouldBe(SchemaPatchDifference.None);
         }
 

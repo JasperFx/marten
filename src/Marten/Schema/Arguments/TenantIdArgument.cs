@@ -24,7 +24,7 @@ namespace Marten.Schema.Arguments
         public override void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
-            method.Frames.Code($"var tenantId = {{0}}.{nameof(ITenant.TenantId)};", Use.Type<ITenant>());
+            method.Frames.Code($"var tenantId = {{0}}.{nameof(Tenant.TenantId)};", Use.Type<Tenant>());
 
             if (mapping.Metadata.TenantId.Member != null)
             {

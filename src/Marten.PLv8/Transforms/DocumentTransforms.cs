@@ -11,9 +11,9 @@ namespace Marten.PLv8.Transforms
     internal class DocumentTransforms: IDocumentTransforms, IDisposable
     {
         private readonly DocumentStore _store;
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
 
-        public DocumentTransforms(DocumentStore store, ITenant tenant)
+        public DocumentTransforms(DocumentStore store, Tenant tenant)
         {
             _store = store;
             _tenant = tenant;
@@ -30,8 +30,8 @@ namespace Marten.PLv8.Transforms
 
         public void All<T>(string transformName)
         {
-            var transform = _tenant.TransformFor(transformName);
-            var storage = _tenant.StorageFor<T>();
+            var transform = Session.Options.TransformFor(transformName);
+            var storage = _tenant.Storage.StorageFor<T>();
 
             var operation = new DocumentTransformOperationFragment(storage, transform);
             var statement = new StatementOperation(storage, operation);
@@ -53,7 +53,7 @@ namespace Marten.PLv8.Transforms
 
         public void Where<T>(string transformName, Expression<Func<T, bool>> @where)
         {
-            var transform = _tenant.TransformFor(transformName);
+            var transform = Session.Options.TransformFor(transformName);
 
             var storage = Session.StorageFor<T>();
             var operation = new DocumentTransformOperationFragment(storage, transform);
@@ -71,7 +71,7 @@ namespace Marten.PLv8.Transforms
 
         private void transformOne<T>(string transformName, ISqlFragment filter)
         {
-            var transform = _tenant.TransformFor(transformName);
+            var transform = Session.Options.TransformFor(transformName);
 
             var storage = Session.StorageFor<T>();
             var operation = new DocumentTransformOperationFragment(storage, transform);

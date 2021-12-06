@@ -129,7 +129,7 @@ namespace Marten.Events.Aggregation
 
             // This will have to change when we introduce 1st class support for tenancy by
             // separate databases
-            store.Tenancy.Default.EnsureStorageExists(typeof(T));
+            store.Tenancy.Default.Storage.EnsureStorageExists(typeof(T));
             return BuildRuntime(store);
         }
 
@@ -255,8 +255,8 @@ namespace Marten.Events.Aggregation
 
             method.DerivedVariables.Add(new Variable(_aggregateMapping.IdType,
                 $"slice.{nameof(EventSlice<string, string>.Id)}"));
-            method.DerivedVariables.Add(Variable.For<ITenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
-            method.DerivedVariables.Add(Variable.For<ITenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
+            method.DerivedVariables.Add(Variable.For<Tenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
+            method.DerivedVariables.Add(Variable.For<Tenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
             method.DerivedVariables.Add(Variable.For<IEvent>("@event"));
             method.DerivedVariables.Add(
                 Variable.For<IMartenSession>($"({typeof(IMartenSession).FullNameInCode()})session"));

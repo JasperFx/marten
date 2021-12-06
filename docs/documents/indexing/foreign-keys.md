@@ -30,9 +30,10 @@ public class Issue
     public Guid? ReporterId { get; set; }
 
     public Guid? BugId { get; set; }
+    public string Status { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Documents/Issue.cs#L5-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Documents/Issue.cs#L5-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If I want to enforce referential integrity between the `Issue` document and the `User` documents,

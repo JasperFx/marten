@@ -85,7 +85,7 @@ using (var store = SeparateStore(_ =>
     _.Listeners.Add(stub2);
 }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/Using_Global_DocumentSessionListener_Tests.cs#L26-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/Using_Global_DocumentSessionListener_Tests.cs#L27-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_registering-a-document-session-listener-1'></a>
 ```cs
 var stub1 = new StubDocumentSessionListener();
@@ -97,7 +97,7 @@ using (var store = SeparateStore(_ =>
     _.AutoCreateSchemaObjects = AutoCreate.All;
 }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/Using_Local_DocumentSessionListener_Tests.cs#L23-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/Using_Local_DocumentSessionListener_Tests.cs#L24-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The listeners can be used to modify an `IDocumentSession` and its related unit of work just before persisting. Marten itself will be using this mechanism
@@ -229,7 +229,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L66-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L115-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -243,7 +243,7 @@ using (var session = store.OpenSession())
     session.Logger = new RecordingLogger();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L75-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L124-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.

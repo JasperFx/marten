@@ -290,7 +290,7 @@ namespace Marten.Events
             Version = Events.Last().Version;
         }
 
-        internal static StreamAction ForReference(Guid streamId, ITenant tenant)
+        internal static StreamAction ForReference(Guid streamId, Tenant tenant)
         {
             return new StreamAction(streamId, StreamActionType.Append)
             {
@@ -298,7 +298,7 @@ namespace Marten.Events
             };
         }
 
-        internal static StreamAction ForReference(string streamKey, ITenant tenant)
+        internal static StreamAction ForReference(string streamKey, Tenant tenant)
         {
             return new StreamAction(streamKey, StreamActionType.Append)
             {

@@ -14,9 +14,9 @@ namespace Marten.Testing.Bugs
         [Fact]
         public async Task should_create_an_index_for_the_fk()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(DocWithFK));
+            await theStore.EnsureStorageExistsAsync(typeof(DocWithFK));
 
-            var table = await theStore.Tenancy.Default.ExistingTableFor(typeof(DocWithFK));
+            var table = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(DocWithFK));
             table.Indexes.Any(x => x.Name == "mt_doc_docwithfk_idx_user_id").ShouldBeTrue();
         }
 

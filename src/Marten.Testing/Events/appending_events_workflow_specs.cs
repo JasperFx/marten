@@ -18,6 +18,7 @@ using Marten.Storage;
 using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -154,8 +155,8 @@ namespace Marten.Testing.Events
         [MemberData(nameof(Data))]
         public async Task can_establish_the_tombstone_stream_from_scratch(TestCase @case)
         {
-            @case.Store.Advanced.Clean.CompletelyRemoveAll();
-            @case.Store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
+            await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
             var operation = new EstablishTombstoneStream(@case.Store.Events);
             using var session = @case.Store.LightweightSession();
@@ -178,8 +179,8 @@ namespace Marten.Testing.Events
         [MemberData(nameof(Data))]
         public async Task can_re_run_the_tombstone_stream(TestCase @case)
         {
-            @case.Store.Advanced.Clean.CompletelyRemoveAll();
-            @case.Store.Tenancy.Default.EnsureStorageExists(typeof(IEvent));
+            await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
+            await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
             var operation = new EstablishTombstoneStream(@case.Store.Events);
             using var session = @case.Store.LightweightSession();
@@ -202,7 +203,7 @@ namespace Marten.Testing.Events
         [MemberData(nameof(Data))]
         public async Task exercise_tombstone_workflow_async(TestCase @case)
         {
-            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+            await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using var session = @case.Store.LightweightSession();
 

@@ -28,21 +28,12 @@ namespace Marten.Testing.CoreFunctionality
         public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
             // Use an existing connection, but Marten still controls the transaction lifecycle
-            var session1 = store.OpenSession(new SessionOptions
-            {
-                Connection = connection
-            });
+            var session1 = store.OpenSession(SessionOptions.ForConnection(connection));
+
 
             // Enlist in an existing Npgsql transaction, but
             // choose not to allow the session to own the transaction
             // boundaries
-            var session2 = store.OpenSession(new SessionOptions
-            {
-                Transaction = transaction,
-                OwnsTransactionLifecycle = false
-            });
-
-            // This is syntactical sugar for the sample above
             var session3 = store.OpenSession(SessionOptions.ForTransaction(transaction));
 
             // Enlist in the current, ambient transaction scope
@@ -51,15 +42,6 @@ namespace Marten.Testing.CoreFunctionality
                 var session4 = store.OpenSession(SessionOptions.ForCurrentTransaction());
             }
 
-            // or this is the long hand way of doing the options above
-            using (var scope = new TransactionScope())
-            {
-                var session5 = store.OpenSession(new SessionOptions
-                {
-                    EnlistInAmbientTransactionScope = true,
-                    OwnsTransactionLifecycle = false
-                });
-            }
         }
 
         #endregion
@@ -98,10 +80,16 @@ namespace Marten.Testing.CoreFunctionality
         {
             using (var scope = new TransactionScope())
             {
-                using (var session = theStore.OpenSession(new SessionOptions
-                {
-                    DotNetTransaction = Transaction.Current
-                }))
+
+
+
+
+
+
+
+
+
+                using (var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction()))
                 {
                     session.Store(Target.Random(), Target.Random());
                     session.SaveChanges();
@@ -144,10 +132,7 @@ namespace Marten.Testing.CoreFunctionality
                     query.Query<Target>().Count().ShouldBe(100);
                 }
 
-                using (var session = theStore.OpenSession(new SessionOptions
-                {
-                    Transaction = tx
-                }))
+                using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx, true)))
                 {
                     session.Store(newTargets);
                     session.SaveChanges();
@@ -181,10 +166,7 @@ namespace Marten.Testing.CoreFunctionality
                     (await query.Query<Target>().CountAsync()).ShouldBe(100);
                 }
 
-                using (var session = theStore.OpenSession(new SessionOptions
-                {
-                    Transaction = tx
-                }))
+                using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx, true)))
                 {
                     session.Store(newTargets);
                     await session.SaveChangesAsync();
@@ -212,11 +194,7 @@ namespace Marten.Testing.CoreFunctionality
                 cmd.Transaction = tx;
                 cmd.ExecuteNonQuery();
 
-                using (var session = theStore.OpenSession(new SessionOptions
-                {
-                    Transaction = tx,
-                    OwnsTransactionLifecycle = false
-                }))
+                using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx)))
                 {
                     session.Store(newTargets);
                     session.SaveChanges();
@@ -252,11 +230,7 @@ namespace Marten.Testing.CoreFunctionality
                 cmd.Transaction = tx;
                 await cmd.ExecuteNonQueryAsync();
 
-                using (var session = theStore.OpenSession(new SessionOptions
-                {
-                    Transaction = tx,
-                    OwnsTransactionLifecycle = false
-                }))
+                using (var session = theStore.OpenSession(SessionOptions.ForTransaction(tx)))
                 {
                     session.Store(newTargets);
                     await session.SaveChangesAsync();

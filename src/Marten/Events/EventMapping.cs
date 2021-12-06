@@ -21,11 +21,9 @@ using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Util;
-using Npgsql;
 using NpgsqlTypes;
 using Remotion.Linq;
 using Weasel.Core;
@@ -160,14 +158,14 @@ namespace Marten.Events
             _idType = parent.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }
 
-        public void TruncateDocumentStorage(ITenant tenant)
+        public void TruncateDocumentStorage(IMartenDatabase database)
         {
-            tenant.RunSql($"delete from table {_tableName} where type = '{Alias}'");
+            database.RunSql($"delete from table {_tableName} where type = '{Alias}'");
         }
 
-        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        public Task TruncateDocumentStorageAsync(IMartenDatabase database)
         {
-            return tenant.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'");
+            return database.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'");
         }
 
         public bool UseOptimisticConcurrency { get; } = false;
@@ -254,27 +252,27 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Update(T document, IMartenSession session, ITenant tenant)
+        IStorageOperation IDocumentStorage<T>.Update(T document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Insert(T document, IMartenSession session, ITenant tenant)
+        IStorageOperation IDocumentStorage<T>.Insert(T document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Upsert(T document, IMartenSession session, ITenant tenant)
+        IStorageOperation IDocumentStorage<T>.Upsert(T document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Overwrite(T document, IMartenSession session, ITenant tenant)
+        IStorageOperation IDocumentStorage<T>.Overwrite(T document, IMartenSession session, Tenant tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IDeletion DeleteForDocument(T document, ITenant tenant)
+        public IDeletion DeleteForDocument(T document, Tenant tenant)
         {
             throw new NotSupportedException();
         }
@@ -289,7 +287,7 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IDeletion HardDeleteForDocument(T document, ITenant tenant)
+        public IDeletion HardDeleteForDocument(T document, Tenant tenant)
         {
             throw new NotSupportedException();
         }

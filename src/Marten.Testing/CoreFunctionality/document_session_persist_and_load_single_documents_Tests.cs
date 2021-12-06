@@ -10,6 +10,7 @@ using Marten.Testing.Harness;
 using Marten.Testing.Services;
 using Marten.Util;
 using Newtonsoft.Json;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
@@ -35,11 +36,10 @@ namespace Marten.Testing.CoreFunctionality
 
             theSession.SaveChanges();
 
-            using var runner = theStore.Tenancy.Default.OpenConnection();
-            var command =
-                runner.Connection.CreateCommand("select data from mt_doc_user where id = '{0}'".ToFormat(user.Id));
+            using var conn = theStore.Tenancy.Default.Storage.CreateConnection();
+            conn.Open();
 
-            var reader = runner.ExecuteReader(command);
+            var reader = conn.CreateCommand($"select data from mt_doc_user where id = '{user.Id}'").ExecuteReader();
             reader.Read();
 
             var loadedUser = new JsonNetSerializer().FromJson<User>(reader, 0);

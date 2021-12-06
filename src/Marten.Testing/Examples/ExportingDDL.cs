@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples
@@ -6,7 +7,7 @@ namespace Marten.Testing.Examples
     public class ExportingDDL
     {
         #region sample_export-ddl
-        public void export_ddl()
+        public async Task export_ddl()
         {
             var store = DocumentStore.For(_ =>
             {
@@ -21,7 +22,7 @@ namespace Marten.Testing.Examples
             });
 
             // Export the SQL to a file
-            store.Schema.WriteDatabaseCreationScriptFile("my_database.sql");
+            await store.Schema.WriteCreationScriptToFile("my_database.sql");
 
             // Or instead, write a separate sql script
             // to the named directory

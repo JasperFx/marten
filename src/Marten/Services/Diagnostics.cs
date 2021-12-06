@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Weasel.Postgresql;
 using Marten.Util;
@@ -28,8 +29,8 @@ namespace Marten.Services
         /// <returns></returns>
         public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
         {
-            using var session = _store.LightweightSession();
-            var source = _store.Options.GetCompiledQuerySourceFor(query, (IMartenSession) session);
+            using var session = _store.QuerySession();
+            var source = _store.Options.GetCompiledQuerySourceFor(query, (QuerySession)session);
             var handler = source.Build(query, (IMartenSession) session);
 
             var command = new NpgsqlCommand();
@@ -52,7 +53,8 @@ namespace Marten.Services
         {
             var cmd = PreviewCommand(query);
 
-            using var conn = _store.Tenancy.Default.OpenConnection();
+            using var conn = _store.Tenancy.Default.Storage.CreateConnection();
+            conn.Open();
             return conn.ExplainQuery(_store.Serializer, cmd)!;
         }
 
@@ -65,9 +67,10 @@ namespace Marten.Services
             if (_postgreSqlVersion != null)
                 return _postgreSqlVersion;
 
-            using var conn = _store.Tenancy.Default.OpenConnection();
+            using var conn = _store.Tenancy.Default.Storage.CreateConnection();
+            conn.Open();
 
-            _postgreSqlVersion = conn.Connection.PostgreSqlVersion;
+            _postgreSqlVersion = conn.PostgreSqlVersion;
 
             return _postgreSqlVersion;
         }

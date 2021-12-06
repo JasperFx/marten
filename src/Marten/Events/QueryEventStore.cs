@@ -17,10 +17,10 @@ namespace Marten.Events
     internal class QueryEventStore: IQueryEventStore
     {
         private readonly QuerySession _session;
-        private readonly ITenant _tenant;
+        private readonly Tenant _tenant;
         private readonly DocumentStore _store;
 
-        public QueryEventStore(QuerySession session, DocumentStore store, ITenant tenant)
+        public QueryEventStore(QuerySession session, DocumentStore store, Tenant tenant)
         {
             _session = session;
             _store = store;
@@ -154,7 +154,7 @@ namespace Marten.Events
 
         public IMartenQueryable<T> QueryRawEventDataOnly<T>()
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
 
             _store.Events.AddEventType(typeof(T));
 
@@ -163,14 +163,14 @@ namespace Marten.Events
 
         public IMartenQueryable<IEvent> QueryAllRawEvents()
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
 
             return _session.Query<IEvent>();
         }
 
         public IEvent<T> Load<T>(Guid id) where T : class
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
 
             _store.Events.AddEventType(typeof(T));
 
@@ -179,7 +179,7 @@ namespace Marten.Events
 
         public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class
         {
-            await _tenant.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
+            await _tenant.Storage.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
 
             _store.Events.AddEventType(typeof(T));
 
@@ -194,7 +194,7 @@ namespace Marten.Events
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default)
         {
-            _tenant.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
 
             var handler = new SingleEventQueryHandler(id, _session.EventStorage());
             return _session.ExecuteHandlerAsync(handler, token);

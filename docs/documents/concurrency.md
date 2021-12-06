@@ -20,7 +20,7 @@ public class CoffeeShop: Shop
     public ICollection<Guid> Employees { get; set; } = new List<Guid>();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/optimistic_concurrency.cs#L641-L651' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/optimistic_concurrency.cs#L640-L650' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:
@@ -87,7 +87,7 @@ public void update_with_stale_version_standard()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/optimistic_concurrency.cs#L130-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/optimistic_concurrency.cs#L129-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten is throwing an AggregateException for the entire batch of chang

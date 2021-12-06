@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.CompiledQueries;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Internals.Compiled
 {
@@ -18,7 +22,7 @@ namespace Marten.Testing.Internals.Compiled
             using var store = DocumentStore.For(ConnectionSource.ConnectionString);
             using var session = store.QuerySession();
 
-            return QueryCompiler.BuildPlan((IMartenSession) session, query, new StoreOptions());
+            return QueryCompiler.BuildPlan((QuerySession)session, query, new StoreOptions());
         }
 
         protected ICompiledQuerySource buildQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
@@ -28,7 +32,7 @@ namespace Marten.Testing.Internals.Compiled
 
             using var session = store.QuerySession();
 
-            var plan = QueryCompiler.BuildPlan((IMartenSession) session, query, new StoreOptions());
+            var plan = QueryCompiler.BuildPlan((QuerySession) session, query, new StoreOptions());
 
             return new CompiledQuerySourceBuilder(plan, new StoreOptions()).Build();
         }
@@ -103,6 +107,56 @@ namespace Marten.Testing.Internals.Compiled
         public string StringValue { get; set; }
 
         public QueryStatistics Statistics { get; } = new QueryStatistics();
+    }
+
+    // ICompiledListQuery<T> is from Marten
+    public class OpenIssuesAssignedToUser: ICompiledListQuery<Issue>
+    {
+        public Expression<Func<IMartenQueryable<Issue>, IEnumerable<Issue>>> QueryIs()
+        {
+            return q => q
+                .Where(x => x.AssigneeId == UserId)
+                .Where(x => x.Status == "Open");
+        }
+
+        public Guid UserId { get; set; }
+    }
+
+    public class samples
+    {
+        private readonly ITestOutputHelper _output;
+
+        public static async Task using_it(Guid userId)
+        {
+    var store = DocumentStore.For(opts =>
+    {
+        opts.Connection("some connection string");
+    });
+
+    await using var session = store.QuerySession();
+
+    var issues = await session.Query<Issue>()
+        .Where(x => x.AssigneeId == userId)
+        .Where(x => x.Status == "Open")
+        .ToListAsync();
+
+    // do whatever with the issues
+        }
+
+        public samples(ITestOutputHelper output)
+        {
+            _output = output;
+
+        }
+
+        [Fact]
+        public void write_code()
+        {
+            var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            var code = store.Advanced
+                .SourceCodeForCompiledQuery(typeof(OpenIssuesAssignedToUser));
+            _output.WriteLine(code);
+        }
     }
 
     public class FindByName: ICompiledListQuery<User>

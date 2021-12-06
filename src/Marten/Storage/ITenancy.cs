@@ -1,16 +1,14 @@
-﻿using Marten.Schema;
+﻿using System;
+using Marten.Schema;
+using Weasel.Core.Migrations;
 
 namespace Marten.Storage
 {
-    public interface ITenancy
+    public interface ITenancy : IDatabaseSource
     {
-        ITenant this[string tenantId] { get; }
-        ITenant Default { get; }
-
-        void Initialize();
-
+        Tenant GetTenant(string tenantId);
+        Tenant Default { get; }
         IDocumentCleaner Cleaner { get; }
 
-        IDocumentSchema Schema { get; }
     }
 }

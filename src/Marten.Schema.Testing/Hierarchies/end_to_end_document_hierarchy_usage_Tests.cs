@@ -177,6 +177,7 @@ namespace Marten.Schema.Testing.Hierarchies
     {
         public query_through_mixed_population_Tests()
         {
+            EnableCommandLogging = true;
             DocumentTracking = DocumentTracking.IdentityOnly;
             loadData();
 

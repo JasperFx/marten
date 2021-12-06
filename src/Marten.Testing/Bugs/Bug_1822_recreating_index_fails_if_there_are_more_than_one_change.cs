@@ -5,7 +5,7 @@ using Bug1822;
 
 using Marten.Schema;
 using Marten.Testing.Harness;
-
+using Weasel.Core;
 using Weasel.Postgresql;
 
 using Xunit;

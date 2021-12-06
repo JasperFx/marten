@@ -8,13 +8,13 @@ Marten stores documents as JSON, and sometimes it might be valuable to access th
 [Fact]
 public void when_find_then_a_json_should_be_returned()
 {
-    var issue = new Issue { Title = "Issue 1" };
+    var issue = new Issue { Title = "Issue 2" };
 
     theSession.Store(issue);
     theSession.SaveChanges();
 
     var json = theSession.Json.FindById<Issue>(issue.Id);
-    json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+    json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"Status\": null, \"AssigneeId\": null, \"ReporterId\": null}}");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/document_session_find_json_Tests.cs#L12-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_find-json-by-id' title='Start of snippet'>anchor</a></sup>
@@ -34,7 +34,7 @@ public async Task when_find_then_a_json_should_be_returned()
     await theSession.SaveChangesAsync();
 
     var json = await theSession.Json.FindByIdAsync<Issue>(issue.Id);
-    json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+    json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"Status\": null, \"AssigneeId\": null, \"ReporterId\": null}}");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/document_session_find_json_async_Tests.cs#L13-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_find-json-by-id-async' title='Start of snippet'>anchor</a></sup>

@@ -6,6 +6,7 @@ using Baseline.Dates;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace EventPublisher

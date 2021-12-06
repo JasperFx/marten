@@ -7,6 +7,8 @@ using Marten.Exceptions;
 using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core.Migrations;
+using Weasel.Postgresql;
 using Xunit;
 using Issue = Marten.Schema.Testing.Documents.Issue;
 
@@ -17,30 +19,11 @@ namespace Marten.Schema.Testing
         private readonly string _binAllsql = AppContext.BaseDirectory.AppendPath("bin", "allsql");
         private readonly string _binAllsql2 = AppContext.BaseDirectory.AppendPath("bin", "allsql2");
 
-        private IDocumentSchema theSchema => theStore.Schema;
+        private IDatabase theSchema => theStore.Schema;
 
         public DocumentSchemaOnOtherSchemaTests()
         {
             StoreOptions(_ => _.DatabaseSchemaName = "other");
-        }
-
-        [Fact]
-        public void generate_ddl()
-        {
-            theStore.Tenancy.Default.StorageFor<User>();
-            theStore.Tenancy.Default.StorageFor<Issue>();
-            theStore.Tenancy.Default.StorageFor<Company>();
-
-
-
-            var sql = theSchema.ToDatabaseScript();
-
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_user");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_issue");
-            sql.ShouldContain("CREATE OR REPLACE FUNCTION other.mt_upsert_company");
-            sql.ShouldContain("CREATE TABLE other.mt_doc_user");
-            sql.ShouldContain("CREATE TABLE other.mt_doc_issue");
-            sql.ShouldContain("CREATE TABLE other.mt_doc_company");
         }
 
 
@@ -64,16 +47,16 @@ namespace Marten.Schema.Testing
         [Fact]
         public async Task builds_schema_objects_on_the_fly_as_needed()
         {
-            theStore.Tenancy.Default.StorageFor<User>().ShouldNotBeNull();
-            theStore.Tenancy.Default.StorageFor<Issue>().ShouldNotBeNull();
-            theStore.Tenancy.Default.StorageFor<Company>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Storage.StorageFor<User>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Storage.StorageFor<Issue>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Storage.StorageFor<Company>().ShouldNotBeNull();
 
-            var tables = (await theStore.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
+            var tables = (await theStore.Tenancy.Default.Storage.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             tables.ShouldContain("other.mt_doc_user");
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = (await theStore.Tenancy.Default.Functions()).Select(x => x.QualifiedName).ToArray();
+            var functions = (await theStore.Tenancy.Default.Storage.Functions()).Select(x => x.QualifiedName).ToArray();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");
@@ -111,142 +94,20 @@ namespace Marten.Schema.Testing
         [Fact]
         public void throw_ambigous_alias_exception_when_you_have_duplicate_document_aliases()
         {
-            using (var store = DocumentStore.For(ConnectionSource.ConnectionString))
+            using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+            store.Options.Providers.StorageFor<User>().ShouldNotBeNull();
+
+
+            Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
             {
-
-                store.Options.Providers.StorageFor<User>().ShouldNotBeNull();
-
-
-                Exception<AmbiguousDocumentTypeAliasesException>.ShouldBeThrownBy(() =>
-                {
-                    store.Options.Providers.StorageFor<User2>().ShouldNotBeNull();
-                });
-            }
+                store.Options.Providers.StorageFor<User2>().ShouldNotBeNull();
+            });
         }
 
         [DocumentAlias("user")]
         public class User2
         {
             public int Id { get; set; }
-        }
-
-
-        [Fact]
-        public void can_write_ddl_by_type_with_schema_creation()
-        {
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.DatabaseSchemaName = "yet_another";
-
-                _.RegisterDocumentType<Company>();
-                _.Schema.For<User>().DatabaseSchemaName("other");
-
-                _.Events.DatabaseSchemaName = "event_store";
-                _.EventGraph.EventMappingFor<MembersJoined>();
-
-                _.Connection(ConnectionSource.ConnectionString);
-            }))
-            {
-                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
-            }
-
-            string filename = _binAllsql.AppendPath("all.sql");
-
-            var fileSystem = new FileSystem();
-            fileSystem.FileExists(filename).ShouldBeTrue();
-
-            var contents = fileSystem.ReadStringFromFile(filename);
-
-            SpecificationExtensions.ShouldContain(contents, "CREATE SCHEMA event_store");
-            SpecificationExtensions.ShouldContain(contents, "CREATE SCHEMA other");
-            SpecificationExtensions.ShouldContain(contents, "CREATE SCHEMA yet_another");
-        }
-
-        [Fact]
-        public void write_ddl_by_type_generates_the_all_sql_script()
-        {
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.RegisterDocumentType<User>();
-                _.RegisterDocumentType<Company>();
-                _.RegisterDocumentType<Issue>();
-
-                _.DatabaseSchemaName = "yet_another";
-                _.Schema.For<User>().DatabaseSchemaName("other");
-
-                _.Events.AddEventType(typeof(MembersJoined));
-
-                _.Connection(ConnectionSource.ConnectionString);
-            }))
-            {
-                store.Options.Storage.MappingFor(typeof(User))
-                    .DatabaseSchemaName.ShouldBe("other");
-
-                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
-            }
-
-
-
-            var filename = _binAllsql.AppendPath("all.sql");
-
-            var lines = new FileSystem().ReadStringFromFile(filename).ReadLines().Select(x => x.Trim()).ToArray();
-
-            // should create the schemas too
-            lines.ShouldContain("EXECUTE 'CREATE SCHEMA yet_another';");
-            lines.ShouldContain("EXECUTE 'CREATE SCHEMA other';");
-
-            lines.ShouldContain("\\i user.sql");
-            lines.ShouldContain("\\i company.sql");
-            lines.ShouldContain("\\i issue.sql");
-            lines.ShouldContain("\\i eventstore.sql");
-        }
-
-
-        [Fact]
-        public void write_ddl_by_type_with_no_events()
-        {
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.RegisterDocumentType<User>();
-                _.RegisterDocumentType<Company>();
-                _.RegisterDocumentType<Issue>();
-
-                _.Connection(ConnectionSource.ConnectionString);
-            }))
-            {
-                store.Events.IsActive(null).ShouldBeFalse();
-                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
-            }
-
-            var fileSystem = new FileSystem();
-            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("*mt_streams.sql"))
-                .Any().ShouldBeFalse();
-        }
-
-        [Fact]
-        public void write_ddl_by_type_with_events()
-        {
-            using (var store = DocumentStore.For(_ =>
-            {
-                _.RegisterDocumentType<User>();
-                _.RegisterDocumentType<Company>();
-                _.RegisterDocumentType<Issue>();
-
-                _.Events.AddEventType(typeof(MembersJoined));
-
-                _.Connection(ConnectionSource.ConnectionString);
-            }))
-            {
-                store.Events.IsActive(null).ShouldBeTrue();
-                store.Schema.WriteDatabaseCreationScriptByType(_binAllsql);
-            }
-
-            var fileSystem = new FileSystem();
-            fileSystem.FindFiles(_binAllsql, FileSet.Shallow("eventstore.sql"))
-                .Any().ShouldBeTrue();
-
-            fileSystem.FindFiles(_binAllsql, FileSet.Shallow(".sql"))
-                .Any().ShouldBeFalse();
         }
 
         [Fact]
@@ -289,7 +150,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.Tenancy.Default.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.Storage.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

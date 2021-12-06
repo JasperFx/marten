@@ -5,6 +5,7 @@ using System.IO;
 using Weasel.Postgresql;
 using Marten.Storage;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql.Tables;
 
 #nullable enable
@@ -13,13 +14,13 @@ namespace Marten.Schema.Identity.Sequences
     public class SequenceFactory: ISequences
     {
         private readonly StoreOptions _options;
-        private readonly ITenant _tenant;
+        private readonly IMartenDatabase _database;
         private readonly ConcurrentDictionary<string, ISequence> _sequences = new ConcurrentDictionary<string, ISequence>();
 
-        public SequenceFactory(StoreOptions options, ITenant tenant)
+        public SequenceFactory(StoreOptions options, IMartenDatabase database)
         {
             _options = options;
-            _tenant = tenant;
+            _database = database;
         }
 
         public string Name { get; } = "mt_hilo";
@@ -52,7 +53,9 @@ namespace Marten.Schema.Identity.Sequences
         public Type StorageType { get; } = typeof(SequenceFactory);
         public string Identifier { get; } = "hilo";
 
-        public void WritePermissions(DdlRules rules, TextWriter writer)
+        Migrator IFeatureSchema.Migrator => _options.Advanced.Migrator;
+
+        public void WritePermissions(Migrator rules, TextWriter writer)
         {
             // Nothing
         }
@@ -65,7 +68,7 @@ namespace Marten.Schema.Identity.Sequences
         public ISequence Hilo(Type documentType, HiloSettings settings)
         {
             return _sequences.GetOrAdd(GetSequenceName(documentType, settings),
-                sequence => new HiloSequence(_tenant, _options, sequence, settings));
+                sequence => new HiloSequence(_database, _options, sequence, settings));
         }
 
         private string GetSequenceName(Type documentType, HiloSettings settings)

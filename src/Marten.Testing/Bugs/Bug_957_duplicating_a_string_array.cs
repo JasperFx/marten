@@ -1,5 +1,6 @@
 using System;
 using Marten.Testing.Harness;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -10,7 +11,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void works_just_fine_on_the_first_cut()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(HistoryDoc));
+            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(HistoryDoc));
 
             var store2 = SeparateStore(_ =>
             {
@@ -18,7 +19,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<HistoryDoc>().Duplicate(x => x.UrlHistory, pgType: "text[]");
             });
 
-            store2.Tenancy.Default.EnsureStorageExists(typeof(HistoryDoc));
+            store2.Tenancy.Default.Storage.EnsureStorageExists(typeof(HistoryDoc));
         }
 
     }

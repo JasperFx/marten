@@ -67,7 +67,7 @@ namespace Marten.Linq.QueryHandlers
             var count = 0;
             var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
-            await stream.WriteBytes(ManagedConnectionExtensions.LeftBracket, token).ConfigureAwait(false);
+            await stream.WriteBytes(JsonStreamingExtensions.LeftBracket, token).ConfigureAwait(false);
 
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
@@ -81,13 +81,13 @@ namespace Marten.Linq.QueryHandlers
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 count++;
-                await stream.WriteBytes(ManagedConnectionExtensions.Comma, token).ConfigureAwait(false);
+                await stream.WriteBytes(JsonStreamingExtensions.Comma, token).ConfigureAwait(false);
 
                 var source = await reader.As<NpgsqlDataReader>().GetStreamAsync(ordinal, token).ConfigureAwait(false);
                 await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
             }
 
-            await stream.WriteBytes(ManagedConnectionExtensions.RightBracket, token).ConfigureAwait(false);
+            await stream.WriteBytes(JsonStreamingExtensions.RightBracket, token).ConfigureAwait(false);
 
             return count;
         }

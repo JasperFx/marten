@@ -15,11 +15,11 @@ namespace Marten.PLv8.Transforms
 {
     public static class TransformExtensions
     {
-        internal static TransformFunction TransformFor(this ITenant tenant, string transformName)
+        internal static TransformFunction TransformFor(this StoreOptions options, string transformName)
         {
             try
             {
-                var schema = tenant.FindFeature(typeof(TransformSchema));
+                var schema = options.Storage.FindFeature(typeof(TransformSchema));
                 if (schema == null)
                 {
                     throw new InvalidOperationException(
@@ -39,7 +39,7 @@ namespace Marten.PLv8.Transforms
         {
             try
             {
-                operations.As<DocumentSessionBase>().Tenant.EnsureStorageExists(typeof(TransformSchema));
+                operations.As<DocumentSessionBase>().Tenant.Storage.EnsureStorageExists(typeof(TransformSchema));
             }
             catch (InvalidDocumentException)
             {
@@ -72,9 +72,9 @@ namespace Marten.PLv8.Transforms
             var session = martenQueryable.Session;
             var tenant = session.Tenant;
 
-            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
+            await tenant.Storage.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
-            var transform = tenant.TransformFor(transformName);
+            var transform = session.Options.TransformFor(transformName);
 
             builder.CurrentStatement.SelectClause =
                 new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
@@ -83,7 +83,7 @@ namespace Marten.PLv8.Transforms
             statement.Current().Limit = 1;
             var command = statement.BuildCommand();
 
-            await session.Database.StreamOne(command, destination, token).ConfigureAwait(false);
+            await session.StreamOne(command, destination, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -109,9 +109,9 @@ namespace Marten.PLv8.Transforms
             var session = martenQueryable.Session;
             var tenant = session.Tenant;
 
-            await tenant.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
+            await tenant.Storage.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
-            var transform = tenant.TransformFor(transformName);
+            var transform = session.Options.TransformFor(transformName);
 
             builder.CurrentStatement.SelectClause =
                 new TransformSelectClause<string>(transform, builder.CurrentStatement.SelectClause);
@@ -119,7 +119,7 @@ namespace Marten.PLv8.Transforms
             var statement = builder.TopStatement;
             var command = statement.BuildCommand();
 
-            await session.Database.StreamMany(command, destination, token).ConfigureAwait(false);
+            await session.StreamMany(command, destination, token).ConfigureAwait(false);
         }
 
         /// <summary>

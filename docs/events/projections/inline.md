@@ -24,7 +24,7 @@ public class MonsterDefeated
     public string Monster { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#L148-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monsterdefeatedtransform' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#L149-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monsterdefeatedtransform' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the inline projection is able to use the [event metadata](/events/metadata) at the time the inline projection is executed. That was previously a limitation of Marten that was fixed in Marten V4.
@@ -51,5 +51,5 @@ var streamId = session.Events
 // transaction
 await theSession.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#L26-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usage_of_inline_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_transformation_of_events.cs#L27-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usage_of_inline_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

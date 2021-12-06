@@ -26,7 +26,7 @@ namespace Marten.Events.Daemon
             var byTenant = Range.Events.GroupBy(x => x.TenantId);
             foreach (var group in byTenant)
             {
-                var tenant = _store.Tenancy[@group.Key];
+                var tenant = _store.Tenancy.GetTenant(@group.Key);
 
                 var actions = _store.Events.StreamIdentity switch
                 {

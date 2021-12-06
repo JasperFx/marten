@@ -4,6 +4,7 @@ using Marten.Schema.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 using Xunit.Sdk;
@@ -112,7 +113,7 @@ namespace Marten.Schema.Testing
 
             }))
             {
-                using (var connection = store.Tenancy.Default.CreateConnection())
+                using (var connection = store.Tenancy.Default.Storage.CreateConnection())
                 using (var command = connection.CreateCommand())
                 {
                     connection.Open();

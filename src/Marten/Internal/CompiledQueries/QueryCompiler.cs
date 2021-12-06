@@ -7,6 +7,7 @@ using Baseline;
 using Baseline.Dates;
 using LamarCodeGeneration;
 using Marten.Exceptions;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
@@ -122,7 +123,7 @@ namespace Marten.Internal.CompiledQueries
             });
         }
 
-        public static CompiledQueryPlan BuildPlan(IMartenSession session, Type queryType, StoreOptions storeOptions)
+        public static CompiledQueryPlan BuildPlan(QuerySession session, Type queryType, StoreOptions storeOptions)
         {
             var querySignature = queryType.FindInterfaceThatCloses(typeof(ICompiledQuery<,>));
             if (querySignature == null)
@@ -138,7 +139,7 @@ namespace Marten.Internal.CompiledQueries
 
         public class CompiledQueryPlanBuilder<TDoc, TOut>: ICompiledQueryPlanBuilder
         {
-            public CompiledQueryPlan BuildPlan(IMartenSession session, Type queryType, StoreOptions storeOptions)
+            public CompiledQueryPlan BuildPlan(QuerySession session, Type queryType, StoreOptions storeOptions)
             {
                 object query;
 
@@ -159,10 +160,10 @@ namespace Marten.Internal.CompiledQueries
 
         public interface ICompiledQueryPlanBuilder
         {
-            CompiledQueryPlan BuildPlan(IMartenSession session, Type queryType, StoreOptions storeOptions);
+            CompiledQueryPlan BuildPlan(QuerySession session, Type queryType, StoreOptions storeOptions);
         }
 
-        public static CompiledQueryPlan BuildPlan<TDoc, TOut>(IMartenSession session, ICompiledQuery<TDoc, TOut> query,
+        public static CompiledQueryPlan BuildPlan<TDoc, TOut>(QuerySession session, ICompiledQuery<TDoc, TOut> query,
             StoreOptions storeOptions)
         {
             eliminateStringNulls(query);
@@ -189,7 +190,7 @@ namespace Marten.Internal.CompiledQueries
             return plan;
         }
 
-        internal static LinqHandlerBuilder BuildDatabaseCommand<TDoc, TOut>(IMartenSession session,
+        internal static LinqHandlerBuilder BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
             ICompiledQuery<TDoc, TOut> queryTemplate,
             QueryStatistics statistics,
             out NpgsqlCommand command)

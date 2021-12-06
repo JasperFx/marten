@@ -12,6 +12,7 @@ using Marten.Schema.Testing.Documents;
 using Marten.Schema.Testing.Hierarchies;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Marten.Testing;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
 using Shouldly;
@@ -349,9 +350,9 @@ namespace Marten.Schema.Testing
             var mapping = store.Storage.MappingFor(typeof(User)).As<DocumentMapping>();
             mapping.DuplicateField(nameof(User.FirstName));
 
-            store.Tenancy.Default.EnsureStorageExists(typeof(User));
+            await store.EnsureStorageExistsAsync(typeof(User));
 
-            (await store.Tenancy.Default.DocumentTables()).Select(x => x.QualifiedName).ShouldContain(mapping.TableName.QualifiedName);
+            (await store.Tenancy.Default.Storage.DocumentTables()).Select(x => x.QualifiedName).ShouldContain(mapping.TableName.QualifiedName);
         }
 
         [Fact]

@@ -1,4 +1,5 @@
 using Marten.Testing.Documents;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Testing.Examples
@@ -10,11 +11,11 @@ namespace Marten.Testing.Examples
             #region sample_customizing_table_creation
             var store = DocumentStore.For(_ =>
             {
-                _.Advanced.DdlRules.TableCreation = CreationStyle.CreateIfNotExists;
+                _.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
 
                 // or the default
 
-                _.Advanced.DdlRules.TableCreation = CreationStyle.DropThenCreate;
+                _.Advanced.Migrator.TableCreation = CreationStyle.DropThenCreate;
             });
             #endregion
         }
@@ -25,10 +26,10 @@ namespace Marten.Testing.Examples
             var store = DocumentStore.For(_ =>
             {
                 // Opt into SECURITY DEFINER permissions
-                _.Advanced.DdlRules.UpsertRights = SecurityRights.Definer;
+                _.Advanced.Migrator.UpsertRights = SecurityRights.Definer;
 
                 // The default SECURITY INVOKER permissions
-                _.Advanced.DdlRules.UpsertRights = SecurityRights.Invoker;
+                _.Advanced.Migrator.UpsertRights = SecurityRights.Invoker;
             });
             #endregion
         }
@@ -38,7 +39,7 @@ namespace Marten.Testing.Examples
             #region sample_customizing_role
             var store = DocumentStore.For(_ =>
             {
-                _.Advanced.DdlRules.Role = "ROLE1";
+                _.Advanced.Migrator.Role = "ROLE1";
             });
 
             #endregion
@@ -52,10 +53,10 @@ namespace Marten.Testing.Examples
                 // let's say that you have template files in a
                 // "templates" directory under the root of your
                 // application
-                _.Advanced.DdlRules.ReadTemplates("templates");
+                _.Advanced.Migrator.ReadTemplates("templates");
 
                 // Or just sweep the base directory of your application
-                _.Advanced.DdlRules.ReadTemplates();
+                _.Advanced.Migrator.ReadTemplates();
             });
             #endregion
         }

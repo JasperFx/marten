@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
 namespace Marten.Storage
@@ -16,6 +18,8 @@ namespace Marten.Storage
         {
             _options = options;
         }
+
+        public Migrator Migrator => _options.Advanced.Migrator;
 
         public void AddSystemFunction(StoreOptions options, string name, string args)
         {
@@ -41,7 +45,7 @@ namespace Marten.Storage
         public Type StorageType { get; } = typeof(SystemFunctions);
         public string Identifier { get; } = "system_functions";
 
-        public void WritePermissions(DdlRules rules, TextWriter writer)
+        public void WritePermissions(Migrator rules, TextWriter writer)
         {
             // Nothing
         }

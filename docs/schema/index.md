@@ -32,7 +32,7 @@ var store = DocumentStore.For(_ =>
     _.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/auto_create_mode_Tests.cs#L15-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L38-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
@@ -59,7 +59,7 @@ By default marten will use the default `public` database scheme to create the do
 ```cs
 _.DatabaseSchemaName = "other";
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L496-L500' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L465-L469' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Hilo` sequence table is always created in this document store database schema.
@@ -80,7 +80,7 @@ StoreOptions(_ =>
     _.DatabaseSchemaName = SchemaConstants.DefaultSchema;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L335-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L310-L323' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
@@ -89,13 +89,9 @@ This will create the following tables in your database: `other.mt_doc_user`, `ov
 
 The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.
 
-<!-- snippet: sample_override_schema_name_event_store -->
-<a id='snippet-sample_override_schema_name_event_store'></a>
 ```cs
-_.Events.DatabaseSchemaName = "event_store";
+StoreOptions.Events.DatabaseSchemaName = "event_store";
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/using_the_schema_objects_Tests.cs#L60-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_name_event_store' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the `event_store` schema.
 
@@ -122,7 +118,7 @@ storeOptions.CreateDatabasesForTenants(c =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/create_database_Tests.cs#L38-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/create_database_Tests.cs#L39-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.

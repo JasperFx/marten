@@ -13,13 +13,13 @@ namespace Marten.Testing.CoreFunctionality
         [Fact]
         public void when_find_then_a_json_should_be_returned()
         {
-            var issue = new Issue { Title = "Issue 1" };
+            var issue = new Issue { Title = "Issue 2" };
 
             theSession.Store(issue);
             theSession.SaveChanges();
 
             var json = theSession.Json.FindById<Issue>(issue.Id);
-            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 1\", \"Number\": 0, \"AssigneeId\": null, \"ReporterId\": null}}");
+            json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"Status\": null, \"AssigneeId\": null, \"ReporterId\": null}}");
         }
 
         #endregion

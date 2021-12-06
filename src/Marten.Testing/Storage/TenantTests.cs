@@ -2,6 +2,7 @@ using Marten.Internal;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace Marten.Testing.Storage
                 AutoCreateSchemaObjects = AutoCreate.None
             };
 
-            var tenant = new Tenant(options.Storage, options, new ConnectionFactory(ConnectionSource.ConnectionString), "foo");
+            var tenant = new MartenDatabase(options, new ConnectionFactory(ConnectionSource.ConnectionString), "foo");
 
             tenant.Providers.ShouldBeSameAs(options.Providers);
         }
@@ -30,7 +31,7 @@ namespace Marten.Testing.Storage
                 AutoCreateSchemaObjects = AutoCreate.All
             };
 
-            var tenant = new Tenant(options.Storage, options, new ConnectionFactory(ConnectionSource.ConnectionString), "foo");
+            var tenant = new MartenDatabase(options, new ConnectionFactory(ConnectionSource.ConnectionString), "foo");
 
             tenant.Providers.ShouldBeOfType<StorageCheckingProviderGraph>()
                 .Tenant.ShouldBeSameAs(tenant);

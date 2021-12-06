@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +15,7 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
-using Weasel.Postgresql;
+using Weasel.Core.Migrations;
 
 #nullable enable
 namespace Marten
@@ -27,7 +26,6 @@ namespace Marten
     public class DocumentStore: IDocumentStore
     {
         private readonly IMartenLogger _logger;
-        private readonly IRetryPolicy _retryPolicy;
 
         /// <summary>
         ///     Creates a new DocumentStore with the supplied StoreOptions
@@ -41,7 +39,6 @@ namespace Marten
             Options = options;
             _logger = options.Logger();
             Serializer = options.Serializer();
-            _retryPolicy = options.RetryPolicy();
 
             if (options.CreateDatabases != null)
             {
@@ -49,9 +46,7 @@ namespace Marten
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
-            //Tenancy.Initialize();
-
-            Schema = Tenancy.Schema;
+            Schema = Tenancy.Default.Storage;
 
             Storage.PostProcessConfiguration();
             Events.AssertValidity(this);
@@ -89,7 +84,7 @@ namespace Marten
         {
         }
 
-        public IDocumentSchema Schema { get; }
+        public IDatabase Schema { get; }
         public AdvancedOperations Advanced { get; }
 
         public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
@@ -110,7 +105,7 @@ namespace Marten
             BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
+            var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
             bulkInsertion.BulkInsert(documents, mode, batchSize);
         }
 
@@ -118,7 +113,7 @@ namespace Marten
             BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
+            var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
             bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
         }
 
@@ -134,7 +129,7 @@ namespace Marten
             BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
             CancellationToken cancellation = default)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
+            var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
             return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
         }
 
@@ -150,7 +145,7 @@ namespace Marten
             BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000, CancellationToken cancellation = default)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy[tenantId], Options);
+            var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
             return bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation);
         }
 
@@ -200,18 +195,8 @@ namespace Marten
 
         public IQuerySession QuerySession(SessionOptions options)
         {
-            var tenant = Tenancy[options.TenantId];
-
-            if (!Options.Advanced.DefaultTenantUsageEnabled &&
-                tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
-            {
-                throw new DefaultTenantUsageDisabledException();
-            }
-
-            var connection = buildManagedConnection(options, tenant, CommandRunnerMode.ReadOnly, _retryPolicy);
-            var session = new QuerySession(this, options, connection, tenant);
-
-            connection.BeginSession();
+            var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
+            var session = new QuerySession(this, options, connection);
 
             session.Logger = _logger.StartSession(session);
 
@@ -225,20 +210,14 @@ namespace Marten
 
         public IQuerySession QuerySession(string tenantId)
         {
-            var tenant = Tenancy[tenantId];
-
-            if (!Options.Advanced.DefaultTenantUsageEnabled &&
-                tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            var options = new SessionOptions
             {
-                throw new DefaultTenantUsageDisabledException();
-            }
+                TenantId = tenantId
+            };
 
+            var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
 
-            var connection = tenant.OpenConnection(CommandRunnerMode.ReadOnly);
-
-            var session = new QuerySession(this, null, connection, tenant);
-
-            connection.BeginSession();
+            var session = new QuerySession(this, options, connection);
 
             session.Logger = _logger.StartSession(session);
 
@@ -299,97 +278,19 @@ namespace Marten
 
         private IDocumentSession openSession(SessionOptions options)
         {
-            var tenant = Tenancy[options.TenantId];
-
-            if (!Options.Advanced.DefaultTenantUsageEnabled &&
-                tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
-            {
-                throw new DefaultTenantUsageDisabledException();
-            }
-
-            var connection = buildManagedConnection(options, tenant, CommandRunnerMode.Transactional, _retryPolicy);
-            connection.BeginSession();
+            var connection = options.Initialize(this, CommandRunnerMode.Transactional);
 
             IDocumentSession session = options.Tracking switch
             {
-                DocumentTracking.None => new LightweightSession(this, options, connection, tenant),
-                DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection, tenant),
-                DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection, tenant),
+                DocumentTracking.None => new LightweightSession(this, options, connection),
+                DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection),
+                DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
                 _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
             };
 
             session.Logger = _logger.StartSession(session);
 
             return session;
-        }
-
-        private static IManagedConnection buildManagedConnection(SessionOptions options, ITenant tenant,
-            CommandRunnerMode commandRunnerMode, IRetryPolicy retryPolicy)
-        {
-            // Hate crap like this, but if we don't control the transation, use External to direct
-            // IManagedConnection not to call commit or rollback
-            if (!options.OwnsTransactionLifecycle && commandRunnerMode != CommandRunnerMode.ReadOnly)
-            {
-                commandRunnerMode = CommandRunnerMode.External;
-            }
-
-            if (options.Connection != null || options.Transaction != null)
-            {
-                options.OwnsConnection = false;
-            }
-
-            if (options.Transaction != null)
-            {
-                options.Connection = options.Transaction.Connection;
-            }
-
-            if (options.Connection == null && options.DotNetTransaction != null)
-            {
-                var connection = tenant.CreateConnection();
-                connection.Open();
-
-                options.OwnsConnection = true;
-                options.Connection = connection;
-            }
-
-            if (options.DotNetTransaction != null)
-            {
-                options.Connection!.EnlistTransaction(options.DotNetTransaction);
-                options.OwnsTransactionLifecycle = false;
-            }
-
-            if (options.Connection == null)
-            {
-                return tenant.OpenConnection(commandRunnerMode, options.IsolationLevel, options.Timeout);
-            }
-
-            return new ManagedConnection(options, commandRunnerMode, retryPolicy);
-        }
-    }
-
-
-    internal class NulloLogger: ILogger, IDisposable
-    {
-        public void Dispose()
-        {
-            // Nothing
-        }
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
-            Func<TState, Exception, string> formatter)
-        {
-            var message = $"{logLevel}: {formatter(state, exception)}";
-            Debug.WriteLine(message);
-        }
-
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return true;
-        }
-
-        public IDisposable BeginScope<TState>(TState state)
-        {
-            return this;
         }
     }
 }

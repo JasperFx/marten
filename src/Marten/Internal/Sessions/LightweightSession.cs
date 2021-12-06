@@ -10,10 +10,11 @@ namespace Marten.Internal.Sessions
     public class LightweightSession: DocumentSessionBase
     {
 
-        public LightweightSession(DocumentStore store, SessionOptions sessionOptions, IManagedConnection database, ITenant tenant) : base(store, sessionOptions, database, tenant)
+        internal LightweightSession(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection) : base(store, sessionOptions, connection)
         {
         }
 
+        [Obsolete("Get a lightweight IMartenSession and eliminate this.")]
         public LightweightSession(StoreOptions options): base(options)
         {
 

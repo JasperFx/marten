@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
@@ -19,9 +20,9 @@ namespace Marten.Linq
 {
     internal class MartenLinqQueryProvider: IQueryProvider
     {
-        private readonly IMartenSession _session;
+        private readonly QuerySession _session;
 
-        public MartenLinqQueryProvider(IMartenSession session)
+        public MartenLinqQueryProvider(QuerySession session)
         {
             _session = session;
         }
@@ -84,7 +85,7 @@ namespace Marten.Linq
 
             var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             return await handler.StreamJson(stream, reader, token).ConfigureAwait(false);
         }
 
@@ -92,7 +93,7 @@ namespace Marten.Linq
         {
             var cmd = _session.BuildCommand(handler);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             return await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
 
@@ -100,7 +101,7 @@ namespace Marten.Linq
         {
             var cmd = _session.BuildCommand(handler);
 
-            using var reader = _session.Database.ExecuteReader(cmd);
+            using var reader = _session.ExecuteReader(cmd);
             return handler.Handle(reader, _session);
         }
 
@@ -115,7 +116,7 @@ namespace Marten.Linq
 
             var cmd = _session.BuildCommand(statement);
 
-            using var reader = await _session.Database.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
+            using var reader = await _session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
@@ -128,7 +129,7 @@ namespace Marten.Linq
 
             var command = builder.TopStatement.BuildCommand();
 
-            return _session.Database.StreamMany(command, destination, token);
+            return _session.StreamMany(command, destination, token);
         }
 
         /// <summary>
@@ -152,7 +153,7 @@ namespace Marten.Linq
             statement.Current().Limit = 1;
             var command = statement.BuildCommand();
 
-            return _session.Database.StreamOne(command, destination, token);
+            return _session.StreamOne(command, destination, token);
         }
     }
 }

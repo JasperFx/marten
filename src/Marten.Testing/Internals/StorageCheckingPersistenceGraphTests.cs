@@ -14,7 +14,7 @@ namespace Marten.Testing.Internals
         {
             var options = new StoreOptions();
             var inner = new ProviderGraph(options);
-            var storage = Substitute.For<ITenantStorage>();
+            var storage = Substitute.For<IMartenDatabase>();
 
             var graph = new StorageCheckingProviderGraph(storage, inner);
 

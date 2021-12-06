@@ -14,7 +14,7 @@ namespace Marten.Testing.Events.Aggregation
 
     public class TestEventSlice: EventSlice<MyAggregate, Guid>
     {
-        public TestEventSlice(Guid id) : base(id, Substitute.For<ITenant>())
+        public TestEventSlice(Guid id) : base(id, new Tenant("SomeName", Substitute.For<IMartenDatabase>()))
         {
         }
 

@@ -7,8 +7,7 @@ using Xunit;
 
 namespace Marten.Schema.Testing
 {
-    [Collection("soft_deletes")]
-    public class configuring_mapping_deletion_style : IntegrationContext
+    public class configuring_mapping_deletion_style
     {
 
         [Fact]
@@ -54,7 +53,7 @@ namespace Marten.Schema.Testing
         public void example_of_using_fi_to_configure()
         {
             #region sample_soft-delete-configuration-via-fi
-            DocumentStore.For(_ =>
+            var store = DocumentStore.For(_ =>
             {
                 _.Schema.For<User>().SoftDeleted();
             });
@@ -68,17 +67,5 @@ namespace Marten.Schema.Testing
             #endregion
         }
 
-        [Fact]
-        public void can_configure_deletion_style_by_fluent_interface()
-        {
-            using (var store = StoreOptions(_ =>
-            {
-                _.Schema.For<User>().SoftDeleted();
-            }))
-            {
-                store.Storage.MappingFor(typeof(User)).As<DocumentMapping>()
-                    .DeleteStyle.ShouldBe(DeleteStyle.SoftDelete);
-            }
-        }
     }
 }

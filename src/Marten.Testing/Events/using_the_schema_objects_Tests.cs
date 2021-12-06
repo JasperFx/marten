@@ -5,6 +5,7 @@ using Marten.Events;
 using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -52,49 +53,7 @@ namespace Marten.Testing.Events
             store2.Dispose();
         }
 
-        [Fact]
-        public async Task can_build_the_event_schema_objects_in_a_different_schema()
-        {
-            var store = StoreOptions(_ =>
-            {
-                #region sample_override_schema_name_event_store
-                _.Events.DatabaseSchemaName = "event_store";
-                #endregion
-            });
 
-            store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
-
-            var schemaTableNames = (await store.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
-            schemaTableNames.ShouldContain("event_store.mt_streams");
-            schemaTableNames.ShouldContain("event_store.mt_events");
-        }
-
-        [Fact]
-        public async Task can_build_the_mt_stream_schema_objects()
-        {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
-
-            var schemaTableNames = (await theStore.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
-            schemaTableNames.ShouldContain($"{SchemaName}.mt_streams");
-            schemaTableNames.ShouldContain($"{SchemaName}.mt_events");
-            schemaTableNames.ShouldContain($"{SchemaName}.mt_event_progression");
-        }
-
-        [Fact]
-        public async Task can_build_the_mt_stream_schema_objects_in_different_database_schema()
-        {
-            var store = SeparateStore(_ =>
-            {
-                _.Events.DatabaseSchemaName = "other";
-            });
-
-            store.Tenancy.Default.EnsureStorageExists(typeof(StreamAction));
-
-            var schemaTableNames = (await store.Tenancy.Default.SchemaTables()).Select(x => x.QualifiedName).ToArray();
-            schemaTableNames.ShouldContain("other.mt_streams");
-            schemaTableNames.ShouldContain("other.mt_events");
-            schemaTableNames.ShouldContain("other.mt_event_progression");
-        }
 
         public using_the_schema_objects_Tests() : base("schema_objects")
         {

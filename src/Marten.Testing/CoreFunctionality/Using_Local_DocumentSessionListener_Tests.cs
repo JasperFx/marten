@@ -5,6 +5,7 @@ using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -55,26 +56,25 @@ namespace Marten.Testing.CoreFunctionality
             var stub1 = new StubDocumentSessionListener();
             var stub2 = new StubDocumentSessionListener();
 
-            using (var store = SeparateStore(_ =>
+            using var store = SeparateStore(_ =>
             {
                 _.Connection(ConnectionSource.ConnectionString);
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-            }))
+            });
+
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+            await using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
-                store.Advanced.Clean.CompletelyRemoveAll();
+                session.Store(new User(), new User());
 
-                using (var session = store.OpenSession(new SessionOptions { Listeners = { stub1, stub2 } }))
-                {
-                    session.Store(new User(), new User());
+                await session.SaveChangesAsync();
 
-                    await session.SaveChangesAsync();
+                stub1.SaveChangesSession.ShouldBeTheSameAs(session);
+                stub1.AfterCommitSession.ShouldBeTheSameAs(session);
 
-                    stub1.SaveChangesSession.ShouldBeTheSameAs(session);
-                    stub1.AfterCommitSession.ShouldBeTheSameAs(session);
-
-                    stub2.SaveChangesSession.ShouldBeTheSameAs(session);
-                    stub2.AfterCommitSession.ShouldBeTheSameAs(session);
-                }
+                stub2.SaveChangesSession.ShouldBeTheSameAs(session);
+                stub2.AfterCommitSession.ShouldBeTheSameAs(session);
             }
         }
 

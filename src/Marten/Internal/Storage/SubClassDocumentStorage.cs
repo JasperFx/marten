@@ -16,7 +16,6 @@ using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
-using Marten.Util;
 using Npgsql;
 using Remotion.Linq;
 using Weasel.Core;
@@ -43,15 +42,15 @@ namespace Marten.Internal.Storage
             _fields = _parent.SelectFields();
         }
 
-        public void TruncateDocumentStorage(ITenant tenant)
+        public void TruncateDocumentStorage(IMartenDatabase database)
         {
-            tenant.RunSql(
+            database.RunSql(
                 $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
         }
 
-        public Task TruncateDocumentStorageAsync(ITenant tenant)
+        public Task TruncateDocumentStorageAsync(IMartenDatabase database)
         {
-            return tenant.RunSqlAsync(
+            return database.RunSqlAsync(
                 $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
         }
 
@@ -178,27 +177,27 @@ namespace Marten.Internal.Storage
             _parent.Eject(session, document);
         }
 
-        public IStorageOperation Update(T document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Update(T document, IMartenSession session, Tenant tenant)
         {
             return _parent.Update(document, session, tenant);
         }
 
-        public IStorageOperation Insert(T document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Insert(T document, IMartenSession session, Tenant tenant)
         {
             return _parent.Insert(document, session, tenant);
         }
 
-        public IStorageOperation Upsert(T document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Upsert(T document, IMartenSession session, Tenant tenant)
         {
             return _parent.Upsert(document, session, tenant);
         }
 
-        public IStorageOperation Overwrite(T document, IMartenSession session, ITenant tenant)
+        public IStorageOperation Overwrite(T document, IMartenSession session, Tenant tenant)
         {
             return _parent.Overwrite(document, session, tenant);
         }
 
-        public IDeletion DeleteForDocument(T document, ITenant tenant)
+        public IDeletion DeleteForDocument(T document, Tenant tenant)
         {
             return _parent.DeleteForDocument(document, tenant);
         }
@@ -208,7 +207,7 @@ namespace Marten.Internal.Storage
             _parent.SetIdentity(document, identity);
         }
 
-        public IDeletion DeleteForId(TId id, ITenant tenant)
+        public IDeletion DeleteForId(TId id, Tenant tenant)
         {
             return _parent.DeleteForId(id, tenant);
         }
@@ -241,7 +240,7 @@ namespace Marten.Internal.Storage
             return (await _parent.LoadManyAsync(ids, session, token).ConfigureAwait(false)).OfType<T>().ToList();
         }
 
-        public TId AssignIdentity(T document, ITenant tenant)
+        public TId AssignIdentity(T document, Tenant tenant)
         {
             return _parent.AssignIdentity(document, tenant);
         }
@@ -256,17 +255,17 @@ namespace Marten.Internal.Storage
             return _parent.ByIdFilter(id);
         }
 
-        public IDeletion HardDeleteForId(TId id, ITenant tenant)
+        public IDeletion HardDeleteForId(TId id, Tenant tenant)
         {
             return _parent.HardDeleteForId(id, tenant);
         }
 
-        public NpgsqlCommand BuildLoadCommand(TId id, ITenant tenant)
+        public NpgsqlCommand BuildLoadCommand(TId id, Tenant tenant)
         {
             return _parent.BuildLoadCommand(id, tenant);
         }
 
-        public NpgsqlCommand BuildLoadManyCommand(TId[] ids, ITenant tenant)
+        public NpgsqlCommand BuildLoadManyCommand(TId[] ids, Tenant tenant)
         {
             return _parent.BuildLoadManyCommand(ids, tenant);
         }
@@ -281,7 +280,7 @@ namespace Marten.Internal.Storage
             _parent.RemoveDirtyTracker(session, id);
         }
 
-        public IDeletion HardDeleteForDocument(T document, ITenant tenant)
+        public IDeletion HardDeleteForDocument(T document, Tenant tenant)
         {
             return _parent.HardDeleteForDocument(document, tenant);
         }

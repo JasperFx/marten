@@ -40,7 +40,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void smoke_test_being_able_to_create_database_objects()
         {
-            theStore.Tenancy.Default.EnsureStorageExists(typeof(EventGraph));
+            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(EventGraph));
         }
 
         [Fact]

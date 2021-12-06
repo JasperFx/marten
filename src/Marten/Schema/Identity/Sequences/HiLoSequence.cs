@@ -1,11 +1,8 @@
 using System;
-using System.Data;
-using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Weasel.Postgresql;
 using Marten.Storage;
-using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
@@ -15,7 +12,7 @@ namespace Marten.Schema.Identity.Sequences
 {
     public class HiloSequence: ISequence
     {
-        private readonly ITenant _tenant;
+        private readonly IMartenDatabase _database;
         private readonly StoreOptions _options;
         private readonly string _entityName;
         private readonly object _lock = new object();
@@ -23,9 +20,9 @@ namespace Marten.Schema.Identity.Sequences
 
         private DbObjectName GetNextFunction => new DbObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
-        public HiloSequence(ITenant tenant, StoreOptions options, string entityName, HiloSettings settings)
+        public HiloSequence(IMartenDatabase database, StoreOptions options, string entityName, HiloSettings settings)
         {
-            _tenant = tenant;
+            _database = database;
             _options = options;
             _entityName = entityName;
             CurrentHi = -1;
@@ -51,7 +48,7 @@ namespace Marten.Schema.Identity.Sequences
             // This guarantees that the hilo row exists
             await AdvanceToNextHi().ConfigureAwait(false);
 
-            using var conn = _tenant.CreateConnection();
+            using var conn = _database.CreateConnection();
             await conn.OpenAsync().ConfigureAwait(false);
 
             await conn.CreateCommand(updateSql)
@@ -82,7 +79,7 @@ namespace Marten.Schema.Identity.Sequences
 
         public async Task AdvanceToNextHi()
         {
-            using var conn = _tenant.CreateConnection();
+            using var conn = (NpgsqlConnection)_database.CreateConnection();
             await conn.OpenAsync().ConfigureAwait(false);
 
             for (var attempts = 0; attempts < _settings.MaxAdvanceToNextHiAttempts; attempts++)
@@ -102,7 +99,7 @@ namespace Marten.Schema.Identity.Sequences
         }
         public void AdvanceToNextHiSync()
         {
-            using var conn = _tenant.CreateConnection();
+            using var conn = _database.CreateConnection();
             conn.Open();
 
             for (var attempts = 0; attempts <  _settings.MaxAdvanceToNextHiAttempts; attempts++)

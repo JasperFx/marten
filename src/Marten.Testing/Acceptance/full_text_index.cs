@@ -8,6 +8,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -506,7 +507,7 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             await theStore.BulkInsertAsync(data);
 
-            var table = await theStore.Tenancy.Default.ExistingTableFor(typeof(Target));
+            var table = await theStore.ExistingTableFor(typeof(Target));
             var index = table.IndexFor("mt_doc_target_idx_fts");
             index.ShouldNotBeNull();
 
@@ -781,7 +782,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -799,7 +800,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateSql);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -817,7 +818,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
+            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -845,7 +846,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await store.Schema.CreateMigrationAsync();
 
-            Assert.Contains("drop index if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql);
+            Assert.Contains("drop index if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]

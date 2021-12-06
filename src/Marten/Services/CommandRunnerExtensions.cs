@@ -12,20 +12,15 @@ namespace Marten.Services
 {
     public static class CommandRunnerExtensions
     {
-        public static int Execute(this IManagedConnection runner, string sql)
-        {
-            var cmd = new NpgsqlCommand(sql);
-            return runner.Execute(cmd);
-        }
-
-        public static QueryPlan? ExplainQuery(this IManagedConnection runner, ISerializer serializer, NpgsqlCommand cmd, Action<IConfigureExplainExpressions>? configureExplain = null)
+        public static QueryPlan? ExplainQuery(this NpgsqlConnection conn, ISerializer serializer, NpgsqlCommand cmd, Action<IConfigureExplainExpressions>? configureExplain = null)
         {
             var config = new ConfigureExplainExpressions();
             configureExplain?.Invoke(config);
 
             cmd.CommandText = string.Concat($"explain ({config} format json) ", cmd.CommandText);
+            cmd.Connection = conn;
 
-            using var reader = runner.ExecuteReader(cmd);
+            using var reader = cmd.ExecuteReader();
 
             var queryPlans = reader.Read() ? serializer.FromJson<QueryPlanContainer[]>(reader, 0) : null;
             var planToReturn = queryPlans?[0].Plan;
@@ -42,13 +37,13 @@ namespace Marten.Services
 
 
 
-        public static T? QueryScalar<T>(this IManagedConnection runner, string sql)
+        public static T? QueryScalar<T>(this IQuerySession runner, string sql)
         {
             var cmd = new NpgsqlCommand(sql);
             return runner.QueryScalar<T>(cmd);
         }
 
-        public static T? QueryScalar<T>(this IManagedConnection runner, NpgsqlCommand cmd)
+        public static T? QueryScalar<T>(this IQuerySession runner, NpgsqlCommand cmd)
         {
             using var reader = runner.ExecuteReader(cmd);
 

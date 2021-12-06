@@ -216,7 +216,7 @@ namespace Marten.PLv8.Patching
 
         private void apply()
         {
-            var transform = _session.Tenant.TransformFor(TransformSchema.PatchDoc);
+            var transform = _session.Options.TransformFor(TransformSchema.PatchDoc);
             var storage = _session.StorageFor(typeof(T));
 
             ISqlFragment where;

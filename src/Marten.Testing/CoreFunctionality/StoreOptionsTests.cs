@@ -14,6 +14,55 @@ namespace Marten.Testing.CoreFunctionality
 {
     public class StoreOptionsTests
     {
+
+        [Fact]
+        public void DefaultAutoCreateShouldBeCreateOrUpdate()
+        {
+            var settings = new StoreOptions();
+
+            Assert.Equal(AutoCreate.CreateOrUpdate, settings.AutoCreateSchemaObjects);
+        }
+
+        [Fact]
+        public void DefaultAutoCreateShouldBeCreateOrUpdateWhenProvidingNoConfig()
+        {
+            var store = DocumentStore.For("");
+
+            Assert.Equal(AutoCreate.CreateOrUpdate, store.Options.AutoCreateSchemaObjects);
+        }
+
+
+        [Fact(Skip = "sample usage code")]
+        public void using_auto_create_field()
+        {
+            #region sample_AutoCreateSchemaObjects
+            var store = DocumentStore.For(_ =>
+            {
+                // Marten will create any new objects that are missing,
+                // attempt to update tables if it can, but drop and replace
+                // tables that it cannot patch.
+                _.AutoCreateSchemaObjects = AutoCreate.All;
+
+
+                // Marten will create any new objects that are missing or
+                // attempt to update tables if it can. Will *never* drop
+                // any existing objects, so no data loss
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+
+
+                // Marten will create missing objects on demand, but
+                // will not change any existing schema objects
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
+
+                // Marten will not create or update any schema objects
+                // and throws an exception in the case of a schema object
+                // not reflecting the Marten configuration
+                _.AutoCreateSchemaObjects = AutoCreate.None;
+            });
+            #endregion
+        }
+
+
         [Fact]
         public void CannotBuildStoreWithoutConnection()
         {
@@ -99,8 +148,8 @@ namespace Marten.Testing.CoreFunctionality
         {
             var options = new StoreOptions();
 
-            options.Advanced.DdlRules.TableCreation.ShouldBe(CreationStyle.DropThenCreate);
-            options.Advanced.DdlRules.UpsertRights.ShouldBe(SecurityRights.Invoker);
+            options.Advanced.Migrator.TableCreation.ShouldBe(CreationStyle.DropThenCreate);
+            options.Advanced.Migrator.UpsertRights.ShouldBe(SecurityRights.Invoker);
         }
 
         [Fact]
@@ -118,77 +167,6 @@ namespace Marten.Testing.CoreFunctionality
             });
         }
 
-
-        [Fact]
-        public void default_name_data_length_is_64()
-        {
-            new StoreOptions().NameDataLength.ShouldBe(64);
-        }
-
-        [Fact]
-        public void assert_identifier_length_happy_path()
-        {
-            var options = new StoreOptions();
-
-            for (var i = 1; i < options.NameDataLength; i++)
-            {
-                var text = new string('a', i);
-
-                options.AssertValidIdentifier(text);
-            }
-        }
-
-        [Fact]
-        public void assert_identifier_must_not_contain_space()
-        {
-            var random = new Random();
-            var options = new StoreOptions();
-
-            for (var i = 1; i < options.NameDataLength; i++)
-            {
-                var text = new string('a', i);
-                var position = random.Next(0, i);
-
-                Exception<PostgresqlIdentifierInvalidException>.ShouldBeThrownBy(() =>
-                {
-                    options.AssertValidIdentifier(text.Remove(position).Insert(position, " "));
-                });
-            }
-        }
-
-        [Fact]
-        public void assert_identifier_null_or_whitespace()
-        {
-            var options = new StoreOptions();
-
-            Exception<PostgresqlIdentifierInvalidException>.ShouldBeThrownBy(() =>
-            {
-                options.AssertValidIdentifier(null);
-            });
-
-            for (var i = 0; i < options.NameDataLength; i++)
-            {
-                var text = new string(' ', i);
-
-                Exception<PostgresqlIdentifierInvalidException>.ShouldBeThrownBy(() =>
-                {
-                    options.AssertValidIdentifier(text);
-                });
-            }
-        }
-
-        [Fact]
-        public void assert_identifier_length_exceeding_maximum()
-        {
-            var options = new StoreOptions();
-
-            var text = new string('a', options.NameDataLength);
-
-            Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
-            {
-                options.AssertValidIdentifier(text);
-            });
-        }
 
         [Fact]
         public void default_enum_storage_should_be_integer()

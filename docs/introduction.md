@@ -58,7 +58,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 // and other methods we don't care about right now...
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L23-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Startup.cs#L24-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.

@@ -5,6 +5,7 @@ using Bug1779;
 using Marten.Testing.Harness;
 
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
@@ -57,7 +58,7 @@ namespace Marten.Testing.Linq
                     .ForeignKey<HierarchyEntity>(m => m.ParentId);
             });
 
-            documentStore.Advanced.Clean.DeleteAllDocuments();
+            await documentStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
             var parentId = Guid.NewGuid();
 

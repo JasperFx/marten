@@ -4,11 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Storage;
 using Weasel.Core;
+using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Schema.Testing.Storage
 {
+    [Obsolete("move to examples in testing library")]
     public class ScenarioUsingSequenceForUniqueId : IntegrationContext
     {
         #region sample_scenario-usingsequenceforuniqueid-setup
@@ -18,7 +20,7 @@ namespace Marten.Schema.Testing.Storage
             private readonly int _startFrom;
             private readonly string _schema;
 
-            public MatterId(StoreOptions options, int startFrom) : base(nameof(MatterId))
+            public MatterId(StoreOptions options, int startFrom) : base(nameof(MatterId), options.Advanced.Migrator)
             {
                 _startFrom = startFrom;
                 _schema = options.DatabaseSchemaName;
@@ -49,28 +51,27 @@ namespace Marten.Schema.Testing.Storage
             #region sample_scenario-usingsequenceforuniqueid-querymatter
             var matter = theStore.Storage.FindFeature(typeof(MatterId)).Objects.OfType<Sequence>().Single();
 
-            using (var session = theStore.OpenSession())
+            using var session = theStore.OpenSession();
+            // Generate a new, unique identifier
+            var nextMatter = session.NextInSequence(matter);
+
+            var contract = new Contract
             {
-                // Generate a new, unique identifier
-                var nextMatter = session.NextInSequence(matter);
+                Id = Guid.NewGuid(),
+                Matter = nextMatter
+            };
 
-                var contract = new Contract
-                {
-                    Id = Guid.NewGuid(),
-                    Matter = nextMatter
-                };
+            var inquiry = new Inquiry
+            {
+                Id = Guid.NewGuid(),
+                Matter = nextMatter
+            };
 
-                var inquiry = new Inquiry
-                {
-                    Id = Guid.NewGuid(),
-                    Matter = nextMatter
-                };
+            session.Store(contract);
+            session.Store(inquiry);
 
-                session.Store(contract);
-                session.Store(inquiry);
+            await session.SaveChangesAsync();
 
-                session.SaveChanges();
-            }
             #endregion
         }
 
