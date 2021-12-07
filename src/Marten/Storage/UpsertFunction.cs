@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Baseline;
-using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using Weasel.Core;
+using Weasel.Postgresql;
 using Weasel.Postgresql.Functions;
 
 namespace Marten.Storage
@@ -22,7 +22,7 @@ namespace Marten.Storage
         protected readonly string _tenantWhereClause;
         protected readonly string _andTenantWhereClause;
 
-        public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
+        public readonly IList<IFunctionArgument> Arguments = new List<IFunctionArgument>();
 
         public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false) : base(identifier ?? mapping.UpsertFunction)
         {
@@ -53,8 +53,10 @@ namespace Marten.Storage
             Arguments.AddRange(mapping.DuplicatedFields.Where(x => !x.OnlyForSearching).Select(x => x.ToArgument()));
 
             // These two arguments need to be added this way
-            if (mapping.Metadata.Version.Enabled) Arguments.Add(new VersionArgument());
-            if (mapping.Metadata.DotNetType.Enabled) Arguments.Add(new DotNetTypeArgument());
+            if (mapping.Metadata.Version.Enabled)
+                Arguments.Add(new VersionArgument());
+            if (mapping.Metadata.DotNetType.Enabled)
+                Arguments.Add(new DotNetTypeArgument());
 
             AddIfActive(mapping.Metadata.CorrelationId);
             AddIfActive(mapping.Metadata.CausationId);
@@ -92,8 +94,9 @@ namespace Marten.Storage
         {
             var ordered = OrderedArguments();
 
-            var argList = ordered.Select(x => x.ArgumentDeclaration()).Join(", ");
+            static string ArgumentDeclaration(IFunctionArgument functionArgument) => $"{functionArgument.Arg} {functionArgument.PostgresType}";
 
+            var argList = ordered.Select(ArgumentDeclaration).Join(", ");
 
             var systemUpdates = _mapping.Metadata.LastModified.Enabled ? new string[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" } : new string[0];
             var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
@@ -103,7 +106,7 @@ namespace Marten.Storage
 
             if (_mapping.Metadata.LastModified.Enabled)
             {
-                insertColumns.Add(SchemaConstants.LastModifiedColumn );
+                insertColumns.Add(SchemaConstants.LastModifiedColumn);
             }
 
             var inserts = insertColumns.Join(", ");
@@ -184,7 +187,7 @@ $function$;
 
         }
 
-        public UpsertArgument[] OrderedArguments()
+        public IFunctionArgument[] OrderedArguments()
         {
             return Arguments.OrderBy(x => x.Arg).ToArray();
         }

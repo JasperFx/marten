@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    public class CausationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
+    public class CausationIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn
     {
         public static readonly string ColumnName = "causation_id";
 
@@ -32,7 +32,7 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.CausationId.EnabledWithMember();
         }
 
-        public override UpsertArgument ToArgument()
+        public override IFunctionArgument ToArgument()
         {
             return new CausationIdArgument();
         }

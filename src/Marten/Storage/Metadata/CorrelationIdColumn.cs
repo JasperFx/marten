@@ -12,7 +12,7 @@ using NpgsqlTypes;
 
 namespace Marten.Storage.Metadata
 {
-    public class CorrelationIdColumn : MetadataColumn<string>, ISelectableColumn, IEventTableColumn
+    public class CorrelationIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn
     {
         public static readonly string ColumnName = "correlation_id";
 
@@ -32,7 +32,7 @@ namespace Marten.Storage.Metadata
             return mapping.Metadata.CorrelationId.EnabledWithMember();
         }
 
-        public override UpsertArgument ToArgument()
+        public override IFunctionArgument ToArgument()
         {
             return new CorrelationIdArgument();
         }

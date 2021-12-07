@@ -54,7 +54,7 @@ namespace Marten.Storage.Metadata
             // Nothing
         }
 
-        public override UpsertArgument ToArgument()
+        public override IFunctionArgument ToArgument()
         {
             return new HeadersArgument();
         }

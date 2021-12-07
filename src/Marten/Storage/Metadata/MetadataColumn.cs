@@ -19,7 +19,7 @@ using FindMembers = Marten.Linq.Parsing.FindMembers;
 
 namespace Marten.Storage.Metadata
 {
-    public abstract class MetadataColumn : TableColumn, IFunctionArgumentProvider
+    public abstract class MetadataColumn: TableColumn, IFunctionArgumentProvider
     {
         public Type DotNetType { get; }
 
@@ -42,9 +42,10 @@ namespace Marten.Storage.Metadata
 
         internal virtual void RegisterForLinqSearching(DocumentMapping mapping)
         {
-            if (!Enabled || Member == null) return;
+            if (!Enabled || Member == null)
+                return;
 
-            mapping.DuplicateField(new MemberInfo[] {Member}, columnName: Name)
+            mapping.DuplicateField(new MemberInfo[] { Member }, columnName: Name)
                 .OnlyForSearching = true;
         }
 
@@ -53,7 +54,7 @@ namespace Marten.Storage.Metadata
             return Enabled && Member != null;
         }
 
-        public virtual UpsertArgument ToArgument()
+        public virtual IFunctionArgument ToArgument()
         {
             return new UpsertArgument
             {
@@ -61,14 +62,15 @@ namespace Marten.Storage.Metadata
                 Column = Name,
                 DbType = PostgresqlProvider.Instance.ToParameterType(DotNetType),
                 PostgresType = Type,
-                Members = new MemberInfo[]{Member}
+                Members = new MemberInfo[] { Member }
             };
         }
 
         protected void setMemberFromReader(GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync, int index,
             DocumentMapping mapping)
         {
-            if (Member == null) return;
+            if (Member == null)
+                return;
 
             sync.IfDbReaderValueIsNotNull(index, () =>
             {
@@ -82,7 +84,7 @@ namespace Marten.Storage.Metadata
         }
     }
 
-    public abstract class MetadataColumn<T> : MetadataColumn
+    public abstract class MetadataColumn<T>: MetadataColumn
     {
         private readonly Action<DocumentMetadata, T> _setter;
         private MemberInfo _member;
@@ -98,7 +100,8 @@ namespace Marten.Storage.Metadata
         internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader, CancellationToken token)
         {
-            if (await reader.IsDBNullAsync(index, token).ConfigureAwait(false)) return;
+            if (await reader.IsDBNullAsync(index, token).ConfigureAwait(false))
+                return;
 
             var value = await reader.GetFieldValueAsync<T>(index, token).ConfigureAwait(false);
             _setter(metadata, value);
@@ -107,7 +110,8 @@ namespace Marten.Storage.Metadata
         internal override void Apply(IMartenSession martenSession, DocumentMetadata metadata, int index,
             DbDataReader reader)
         {
-            if (reader.IsDBNull(index)) return;
+            if (reader.IsDBNull(index))
+                return;
 
             var value = reader.GetFieldValue<T>(index);
             _setter(metadata, value);

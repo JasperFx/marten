@@ -17,7 +17,7 @@ namespace Marten.Internal.CodeGeneration
         public BulkLoaderBuilder(DocumentMapping mapping)
         {
             _mapping = mapping;
-            _tempTable = _mapping.TableName.Name + "_temp" ;
+            _tempTable = _mapping.TableName.Name + "_temp";
             TypeName = $"{_mapping.DocumentType.Name.Sanitize()}BulkLoader";
         }
 
@@ -72,7 +72,7 @@ namespace Marten.Internal.CodeGeneration
             return type;
         }
 
-        private static List<UpsertArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
+        private static List<IFunctionArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
         {
             var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToList();
             // You need the document body to go last so that any metadata pushed into the document
