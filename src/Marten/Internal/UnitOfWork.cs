@@ -219,6 +219,17 @@ namespace Marten.Internal
             }
         }
 
+        public void EjectAllOfType(Type type)
+        {
+            var operations = operationsFor(type);
+            var matching = operations.OfType<IDocumentStorageOperation>().ToArray();
+
+            foreach (var operation in matching)
+            {
+                _operations.Remove(operation);
+            }
+        }
+
         private class StorageOperationWithDeletionsComparer: IComparer<IStorageOperation>
         {
             private readonly Type[] _topologicallyOrderedTypes;

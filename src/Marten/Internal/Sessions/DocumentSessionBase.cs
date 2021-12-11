@@ -201,6 +201,9 @@ namespace Marten.Internal.Sessions
         public virtual void EjectAllOfType(Type type)
         {
             ItemMap.Remove(type);
+
+            _workTracker.EjectAllOfType(type);
+
             ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
         }
 
