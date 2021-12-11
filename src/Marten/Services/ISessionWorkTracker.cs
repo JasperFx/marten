@@ -13,6 +13,7 @@ namespace Marten.Services
         new List<StreamAction> Streams { get; }
         IReadOnlyList<IStorageOperation> AllOperations { get; }
         void Eject<T>(T document);
+        void EjectAllOfType(Type type);
         bool TryFindStream(string streamKey, out StreamAction stream);
         bool TryFindStream(Guid streamId, out StreamAction stream);
         bool HasOutstandingWork();

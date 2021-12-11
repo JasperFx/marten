@@ -260,6 +260,11 @@ namespace Marten.Events.Daemon
             throw new NotSupportedException();
         }
 
+        void ISessionWorkTracker.EjectAllOfType(Type type)
+        {
+            throw new NotSupportedException();
+        }
+
         bool ISessionWorkTracker.TryFindStream(string streamKey, out StreamAction stream)
         {
             throw new NotSupportedException();

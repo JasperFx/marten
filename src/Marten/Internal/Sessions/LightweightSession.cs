@@ -31,7 +31,7 @@ namespace Marten.Internal.Sessions
 
         public override void EjectAllOfType(Type type)
         {
-            // Nothing
+            _workTracker.EjectAllOfType(type);
         }
 
         protected internal override void ejectById<T>(long id)
