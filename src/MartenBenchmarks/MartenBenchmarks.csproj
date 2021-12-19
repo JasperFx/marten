@@ -1,20 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
-    <OutputType>Exe</OutputType>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+        <OutputType>Exe</OutputType>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
-    <ProjectReference Include="..\Marten\Marten.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Benchmarks" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.1"/>
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Benchmarks"/>
+    </ItemGroup>
 </Project>
