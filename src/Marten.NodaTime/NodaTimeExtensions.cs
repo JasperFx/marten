@@ -21,7 +21,7 @@ namespace Marten.NodaTime
         /// <exception cref="NotSupportedException">Thrown if the current serializer is not supported for automatic configuration.</exception>
         public static void UseNodaTime(this StoreOptions storeOptions, bool shouldConfigureJsonSerializer = true)
         {
-            SetNodaTimeMappings();
+            SetNodaTimeTypeMappings();
             NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
 
             if (!shouldConfigureJsonSerializer) return;
@@ -49,7 +49,7 @@ namespace Marten.NodaTime
             storeOptions.Serializer(serializer);
         }
 
-        public static void SetNodaTimeMappings()
+        public static void SetNodaTimeTypeMappings()
         {
             NpgsqlTypeMapper.Mappings.AddRange(
                 new NpgsqlTypeMapping[] {
