@@ -72,7 +72,7 @@ namespace Marten.Linq.Parsing
 
             if (_supportContainment && ((mapping.PropertySearching == PropertySearching.ContainmentOperator ||
                                          field.ShouldUseContainmentOperator()) &&
-                                        !(field is DuplicatedField)))
+                                        !(field is DuplicatedField || field is IdField)))
             {
                 var dict = new Dictionary<string, object>();
                 ContainmentWhereFragment.CreateDictionaryForSearch(dict, expression, valueToQuery, serializer);
