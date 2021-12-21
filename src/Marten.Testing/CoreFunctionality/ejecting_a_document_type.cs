@@ -1,3 +1,4 @@
+using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -15,23 +16,26 @@ namespace Marten.Testing.CoreFunctionality
             var user1 = new User();
             var user2 = new User();
 
-            using (var session = theStore.OpenSession())
-            {
-                session.Store(target1, target2);
-                session.Store(user1, user2);
+            using var session = theStore.OpenSession();
+            session.Store(target1, target2);
+            session.Store(user1, user2);
 
-                session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-                session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
-                session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-                session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
+            session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
+            session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+            session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
+            session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
 
-                session.EjectAllOfType(typeof(Target));
+            session.EjectAllOfType(typeof(Target));
 
-                SpecificationExtensions.ShouldBeNull(session.Load<Target>(target1.Id));
-                SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
-                session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-                session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
-            }
+            session.PendingChanges.OperationsFor<User>().Any().ShouldBeTrue();
+            session.PendingChanges.OperationsFor<Target>().Any().ShouldBeFalse();
+
+            session.SaveChanges();
+
+            session.Load<Target>(target1.Id).ShouldBeNull();
+            session.Load<Target>(target2.Id).ShouldBeNull();
+            session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
+            session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
         }
 
         [Fact]
@@ -42,23 +46,24 @@ namespace Marten.Testing.CoreFunctionality
             var user1 = new User();
             var user2 = new User();
 
-            using (var session = theStore.DirtyTrackedSession())
-            {
-                session.Store(target1, target2);
-                session.Store(user1, user2);
+            using var session = theStore.DirtyTrackedSession();
+            session.Store(target1, target2);
+            session.Store(user1, user2);
 
-                session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-                session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
-                session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-                session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
+            session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
+            session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+            session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
+            session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
 
-                session.EjectAllOfType(typeof(Target));
+            session.EjectAllOfType(typeof(Target));
 
-                SpecificationExtensions.ShouldBeNull(session.Load<Target>(target1.Id));
-                SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
-                session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
-                session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
-            }
+            session.PendingChanges.OperationsFor<User>().Any().ShouldBeTrue();
+            session.PendingChanges.OperationsFor<Target>().Any().ShouldBeFalse();
+
+            session.Load<Target>(target1.Id).ShouldBeNull();
+            session.Load<Target>(target2.Id).ShouldBeNull();
+            session.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
+            session.Load<User>(user2.Id).ShouldBeTheSameAs(user2);
         }
 
         [Fact]
