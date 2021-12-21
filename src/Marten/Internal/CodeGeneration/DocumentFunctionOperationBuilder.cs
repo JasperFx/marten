@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Baseline;
 using LamarCodeGeneration;
@@ -16,15 +15,6 @@ using Weasel.Postgresql;
 
 namespace Marten.Internal.CodeGeneration
 {
-
-    public static class StringExtensions
-    {
-        public static string Sanitize(this string value)
-        {
-            return Regex.Replace(value, @"[\#\<\>\,\.\]\[\`\+\-]", "_").Replace(" ", "");
-        }
-    }
-
     internal class DocumentFunctionOperationBuilder
     {
         private readonly UpsertFunction _function;

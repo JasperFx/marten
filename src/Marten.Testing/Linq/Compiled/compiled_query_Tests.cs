@@ -344,6 +344,40 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
+    [Collection("compiled")]
+    public class when_using_open_generic_compiled_query: OneOffConfigurationsContext
+    {
+        public when_using_open_generic_compiled_query() : base("compiled")
+        {
+        }
+
+        [Fact]
+        public async Task can_use_a_generic_compiled_query()
+        {
+            StoreOptions(opts =>
+            {
+                opts.Schema.For<User>().AddSubClass<AdminUser>();
+            });
+
+            theSession.Store(new AdminUser{UserName = "Harry"}, new User{UserName = "Harry"}, new AdminUser{UserName = "Sue"});
+            await theSession.SaveChangesAsync();
+
+            var user = await theSession.QueryAsync(new FindUserByUserName<AdminUser> { UserName = "Harry" });
+            user.ShouldNotBeNull();
+
+        }
+    }
+
+    public class FindUserByUserName<TUser>: ICompiledQuery<TUser, TUser> where TUser : User
+    {
+        public Expression<Func<IMartenQueryable<TUser>, TUser>> QueryIs()
+        {
+            return q => q.FirstOrDefault(x => x.UserName == UserName);
+        }
+
+        public string UserName { get; set; }
+    }
+
     [Collection("multi_tenancy")]
     public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfigurationsContext
     {

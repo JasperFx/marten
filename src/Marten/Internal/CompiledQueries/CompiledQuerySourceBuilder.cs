@@ -7,6 +7,7 @@ using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
 using LamarCompiler;
+using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
@@ -27,7 +28,7 @@ namespace Marten.Internal.CompiledQueries
         {
             _plan = plan;
             _storeOptions = storeOptions;
-            _typeName = _plan.QueryType.Name + "CompiledQuerySource";
+            _typeName = _plan.QueryType.ToTypeNamePart() + "CompiledQuerySource";
         }
 
         public (GeneratedType, GeneratedType) AssemblyType(GeneratedAssembly assembly)
@@ -141,7 +142,7 @@ namespace Marten.Internal.CompiledQueries
         private GeneratedType buildHandlerType(GeneratedAssembly assembly,
             CompiledSourceType handlerType, HardCodedParameters hardcoded)
         {
-            var queryTypeName = _plan.QueryType.Name + "CompiledQuery";
+            var queryTypeName = _plan.QueryType.ToTypeNamePart() + "CompiledQuery";
             var baseType = determineBaseType(handlerType);
             var type = assembly.AddType(queryTypeName, baseType);
 
