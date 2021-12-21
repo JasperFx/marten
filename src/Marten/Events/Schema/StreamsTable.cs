@@ -51,9 +51,11 @@ namespace Marten.Events.Schema
 
             AddColumn(new StreamTableColumn("created", x => x.Created)
             {
-                Writes = false, Type = "timestamptz"
-            }).NotNull().DefaultValueByString("(now())");
-
+                Type = "timestamptz",
+                Writes = false,
+                AllowNulls = false,
+                DefaultExpression = "(now())"
+            });
 
             if (events.TenancyStyle != TenancyStyle.Conjoined)
             {
