@@ -29,7 +29,6 @@ var millers = session
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L20-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_and_parameters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-
 And finally asynchronously:
 
 <!-- snippet: sample_query_with_sql_async -->
