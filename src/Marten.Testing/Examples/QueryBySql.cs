@@ -17,7 +17,7 @@ namespace Marten.Testing.Examples
 
         public void QueryWithParameters(IQuerySession session)
         {
-            #region sample_query_with_sql_async
+            #region sample_query_with_sql_and_parameters
 
             var millers = session
                 .Query<User>("where data ->> 'LastName' = ?", "Miller");
@@ -27,7 +27,7 @@ namespace Marten.Testing.Examples
 
         public async Task QueryAsynchronously(IQuerySession session)
         {
-            #region sample_query_with_sql_and_parameters
+            #region sample_query_with_sql_async
 
             var millers = await session
                 .QueryAsync<User>("where data ->> 'LastName' = ?", "Miller");
