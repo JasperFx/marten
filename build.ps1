@@ -13,4 +13,4 @@ elseif ($version.StartsWith("6.")) {
     exit 1
 }
 
-dotnet run -p build/build.csproj -f $target_framework -c Release -- $args
+dotnet run --project build/build.csproj -f $target_framework -c Release -- $args

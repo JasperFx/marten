@@ -13,4 +13,4 @@ else
   exit 1
 fi
 
-dotnet run -p build/build.csproj -f $target_framework -c Release -- "$@"
+dotnet run --project build/build.csproj -f $target_framework -c Release -- "$@"
