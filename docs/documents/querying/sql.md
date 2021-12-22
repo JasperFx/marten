@@ -18,7 +18,7 @@ var millers = session
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L10-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_whole_document_by_where_clause' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Or asynchronously:
+Or with parameterized SQL:
 
 <!-- snippet: sample_query_with_sql_async -->
 <a id='snippet-sample_query_with_sql_async'></a>
@@ -29,7 +29,7 @@ var millers = session
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L20-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And finally with parameterized SQL:
+And finally asynchronously:
 
 <!-- snippet: sample_query_with_sql_and_parameters -->
 <a id='snippet-sample_query_with_sql_and_parameters'></a>
