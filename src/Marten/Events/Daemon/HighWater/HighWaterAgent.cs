@@ -170,8 +170,8 @@ namespace Marten.Events.Daemon.HighWater
         {
             try
             {
-                _timer.Stop();
-                _loop.Dispose();
+                _timer?.Stop();
+                _loop?.Dispose();
 
                 IsRunning = false;
             }
