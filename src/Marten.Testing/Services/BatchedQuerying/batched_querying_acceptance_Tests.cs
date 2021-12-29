@@ -45,6 +45,80 @@ namespace Marten.Testing.Services.BatchedQuerying
         }
     }
 
+    public class batched_querying_with_order_functions: IntegrationContext
+    {
+        [Fact]
+        public async Task orderby_thenby()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+
+            await batch.Execute();
+
+            var names = await toList;
+            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
+            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Smith", "Somerset", "Houston", "White", "Bean", "Brown");
+        }
+
+        [Fact]
+        public async Task orderbydescending_thenby()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenBy(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+
+            await batch.Execute();
+
+            var names = await toList;
+            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
+            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Bean", "Brown", "Houston", "White", "Smith", "Somerset");
+        }
+
+        [Fact]
+        public async Task orderby_thenbydescending()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenByDescending(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+
+            await batch.Execute();
+
+            var names = await toList;
+            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
+            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Somerset", "Smith", "White", "Houston", "Brown", "Bean");
+        }
+
+        [Fact]
+        public async Task orderbydescending_thenbydescending()
+        {
+            var batch = theSession.CreateBatchQuery();
+
+            var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenByDescending(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+
+            await batch.Execute();
+
+            var names = await toList;
+            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
+            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Brown", "Bean", "White", "Houston", "Somerset", "Smith");
+        }
+
+        public batched_querying_with_order_functions(DefaultStoreFixture fixture) : base(fixture)
+        {
+            DocumentTracking = DocumentTracking.IdentityOnly;
+
+            theSession.Store(
+                new User { FirstName = "Justin", LastName = "Houston" },
+                new User { FirstName = "Justin", LastName = "White" },
+                new User { FirstName = "Michael", LastName = "Bean" },
+                new User { FirstName = "Michael", LastName = "Brown" },
+                new User { FirstName = "Harry", LastName = "Smith" },
+                new User { FirstName = "Harry", LastName = "Somerset" }
+            );
+
+            theSession.SaveChanges();
+        }
+    }
 
     // TODO -- I vote to move this to ST specs for perf reasons
     public class batched_querying_acceptance_Tests : IntegrationContext
