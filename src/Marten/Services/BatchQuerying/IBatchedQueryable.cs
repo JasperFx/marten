@@ -22,9 +22,9 @@ namespace Marten.Services.BatchQuerying
 
         IBatchedQueryable<T> Take(int count);
 
-        IBatchedQueryable<T> OrderBy<TKey>(Expression<Func<T, TKey>> expression);
+        IBatchedOrderedQueryable<T> OrderBy<TKey>(Expression<Func<T, TKey>> expression);
 
-        IBatchedQueryable<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> expression);
+        IBatchedOrderedQueryable<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> expression);
 
         ITransformedBatchQueryable<TValue> Select<TValue>(Expression<Func<T, TValue>> selection);
 

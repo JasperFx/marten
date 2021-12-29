@@ -19,6 +19,12 @@ namespace Marten.Services.BatchQuerying
             _inner = inner;
         }
 
+        protected IMartenQueryable<T> Inner
+        {
+            get => _inner;
+            set { _inner = value; }
+        }
+
         public IBatchedQueryable<T> Stats(out QueryStatistics stats)
         {
             _inner = _inner.Stats(out stats);
@@ -43,16 +49,14 @@ namespace Marten.Services.BatchQuerying
             return this;
         }
 
-        public IBatchedQueryable<T> OrderBy<TKey>(Expression<Func<T, TKey>> expression)
+        public IBatchedOrderedQueryable<T> OrderBy<TKey>(Expression<Func<T, TKey>> expression)
         {
-            _inner = _inner.OrderBy(expression).As<IMartenQueryable<T>>();
-            return this;
+            return new BatchedOrderedQueryable<T>(_parent, _inner.OrderBy(expression).As<IMartenQueryable<T>>());
         }
 
-        public IBatchedQueryable<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> expression)
+        public IBatchedOrderedQueryable<T> OrderByDescending<TKey>(Expression<Func<T, TKey>> expression)
         {
-            _inner = _inner.OrderByDescending(expression).As<IMartenQueryable<T>>();
-            return this;
+            return new BatchedOrderedQueryable<T>(_parent, _inner.OrderByDescending(expression).As<IMartenQueryable<T>>());
         }
 
         public ITransformedBatchQueryable<TValue> Select<TValue>(Expression<Func<T, TValue>> selection)
