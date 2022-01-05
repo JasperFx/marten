@@ -764,7 +764,7 @@ The `Program Files` and `9.5` folders should correspond to the bit and version o
 
 The zip contains the folders for all the supported versions and the install_plv8.bat file.
 
-Run the batch file from a command window running in administrative mode and provide the path for your Postgres installation. 
+Run the batch file from a command window running in administrative mode and provide the path for your Postgres installation.
 
 [Documentation on installing plv8 from xTuple](https://www.xtuple.com/en/knowledge/installing-plv8)
 
