@@ -730,7 +730,7 @@ You can download the appropriate binaries for PostgreSQL 9.5/PostgreSQL 9.6 from
 
 [PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit](http://www.postgresonline.com/journal/archives/379-PLV8-binaries-for-PostgreSQL-10-windows-both-32-bit-and-64-bit.htmll)
 
-[xTuple-PLV8-binaries-for-PostgreSQL-9.4-to-12-windows-64-bit](http://updates.xtuple.com/updates/plv8/win/xtuple_plv8.zip)
+[xTuple-PLV8-binaries-for-PostgreSQL-9.4-to-12-windows-64-bit](http://xtuple-plv8.s3.amazonaws.com/win/xtuple_plv8.zip)
 
 Download the version that corresponds to the version of PostgreSQL you installed (32 or 64 bit)
 
@@ -764,7 +764,9 @@ The `Program Files` and `9.5` folders should correspond to the bit and version o
 
 The zip contains the folders for all the supported versions and the install_plv8.bat file.
 
-Run the batch file from a command window running in administrative mode and provide the path for your Postgres installation.
+Run the batch file from a command window running in administrative mode and provide the path for your Postgres installation. 
+
+[Documentation on installing plv8 from xTuple](https://www.xtuple.com/en/knowledge/installing-plv8)
 
 ## Create Extension
 
