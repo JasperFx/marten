@@ -57,19 +57,23 @@ namespace Marten.AsyncDaemon.Testing
                 await session.SaveChangesAsync();
             }
 
+            // We need to ensure that the events are not processed in a single slice to hit the IsNew issue on multiple
+            // slices which is what causes the loss of information in the projection.
+            await daemon.Tracker.WaitForShardState("UserIssue:All", 4, 15.Seconds());
+
             using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(issue2, new IssueCreated {UserId = user1, IssueId = issue2});
                 await session.SaveChangesAsync();
             }
 
+            await daemon.Tracker.WaitForShardState("UserIssue:All", 5, 15.Seconds());
+
             using (var session = theStore.LightweightSession())
             {
                 session.Events.Append(issue3, new IssueCreated {UserId = user1, IssueId = issue3});
                 await session.SaveChangesAsync();
             }
-
-
 
             await daemon.Tracker.WaitForShardState("UserIssue:All", 6, 15.Seconds());
 
