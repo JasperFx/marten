@@ -231,8 +231,7 @@ namespace Marten.Events.Aggregation
 
         private void buildInlineAggregationType(GeneratedAssembly assembly)
         {
-            var inlineBaseType =
-                typeof(AggregationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
+            var inlineBaseType = baseTypeForAggregationRuntime();
 
             _inlineGeneratedType = assembly.AddType(_inlineAggregationHandlerType, inlineBaseType);
 
