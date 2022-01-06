@@ -63,7 +63,7 @@ namespace Marten.Linq.Parsing
 
             var useContainment = mapping.PropertySearching == PropertySearching.ContainmentOperator || field.ShouldUseContainmentOperator();
 
-            var isDuplicated = (mapping.FieldFor(members) is DuplicatedField);
+            var isDuplicated = field is DuplicatedField || field is IdField;
             var isEnumString = field.MemberType.GetTypeInfo().IsEnum && serializer.EnumStorage == EnumStorage.AsString;
 
             if (useContainment &&
