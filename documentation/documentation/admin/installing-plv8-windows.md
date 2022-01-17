@@ -89,7 +89,7 @@ To test out the extension you can create a super basic function which manipulate
 ```sql
 create or replace function test_js_func(value text) returns text as $$
 
-    var thing = 'I\' a JavaScript string';
+    var thing = 'I\'m a JavaScript string';
 
     var result = thing.replace(/JavaScript/g, value);
 
@@ -106,4 +106,4 @@ select test_js_func('Manipulated');
 
 And we should get a result that reads:
 
-> I' a Manipulated string
+> I'm a Manipulated string
