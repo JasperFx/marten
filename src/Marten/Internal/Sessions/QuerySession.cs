@@ -15,7 +15,6 @@ namespace Marten.Internal.Sessions
 
         public ISerializer Serializer { get; }
 
-        public Tenant Tenant { get; protected set; }
         public StoreOptions Options { get; }
         public IQueryEventStore Events { get; }
 
@@ -37,11 +36,17 @@ namespace Marten.Internal.Sessions
         protected QuerySession(StoreOptions options)
         {
             Serializer = options.Serializer();
-            Tenant = options.Tenancy.Default;
+            TenantId = options.Tenancy.Default.TenantId;
+
+            Database = options.Tenancy.Default.Database;
             Options = options;
             _providers = options.Providers;
             _retryPolicy = options.RetryPolicy();
         }
+
+        public IMartenDatabase Database { get; protected set; }
+
+        public string TenantId { get; protected set; }
 #nullable enable
 
         internal QuerySession(DocumentStore store,
@@ -49,6 +54,8 @@ namespace Marten.Internal.Sessions
             IConnectionLifetime connection)
         {
             DocumentStore = store;
+            TenantId = sessionOptions.TenantId;
+            Database = sessionOptions.Tenant.Database;
 
             SessionOptions = sessionOptions;
 
@@ -61,17 +68,16 @@ namespace Marten.Internal.Sessions
             }
 
             Listeners.AddRange(sessionOptions.Listeners);
-            _providers = sessionOptions.Tenant.Storage.Providers ??
+            _providers = sessionOptions.Tenant.Database.Providers ??
                          throw new ArgumentNullException(nameof(IMartenDatabase.Providers));
 
             _connection = connection;
             Serializer = store.Serializer;
-            Tenant = sessionOptions.Tenant;
             Options = store.Options;
 
             _retryPolicy = Options.RetryPolicy();
 
-            Events = CreateEventStore(store, Tenant);
+            Events = CreateEventStore(store, sessionOptions.Tenant);
         }
 
         public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;

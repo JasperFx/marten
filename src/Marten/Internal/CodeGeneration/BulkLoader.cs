@@ -44,7 +44,7 @@ namespace Marten.Internal.CodeGeneration
 
             foreach (var document in documents)
             {
-                _storage.AssignIdentity(document, tenant);
+                _storage.AssignIdentity(document, tenant.TenantId, tenant.Database);
                 writer.StartRow();
                 LoadRow(writer, document, tenant, serializer);
             }
@@ -55,11 +55,11 @@ namespace Marten.Internal.CodeGeneration
         public async Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
             CancellationToken cancellation)
         {
-            using var writer = conn.BeginBinaryImport(MainLoaderSql());
+            using var writer = await conn.BeginBinaryImportAsync(MainLoaderSql(), cancellation).ConfigureAwait(false);
 
             foreach (var document in documents)
             {
-                _storage.AssignIdentity(document, tenant);
+                _storage.AssignIdentity(document, tenant.TenantId, tenant.Database);
                 await writer.StartRowAsync(cancellation).ConfigureAwait(false);
                 await LoadRowAsync(writer, document, tenant, serializer, cancellation).ConfigureAwait(false);
             }

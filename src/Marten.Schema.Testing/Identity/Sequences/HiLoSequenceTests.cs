@@ -47,7 +47,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
             theTenant = theStore.Tenancy.Default;
 
-            theSequence = theTenant.Storage.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
+            theSequence = theTenant.Database.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
         }
 
         [Fact]

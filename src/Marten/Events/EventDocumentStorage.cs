@@ -81,7 +81,7 @@ namespace Marten.Events
 
         public TenancyStyle TenancyStyle { get; }
 
-        public IDeletion DeleteForDocument(IEvent document, Tenant tenant)
+        public IDeletion DeleteForDocument(IEvent document, string tenant)
         {
             throw new NotSupportedException();
         }
@@ -96,7 +96,7 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IDeletion HardDeleteForDocument(IEvent document, Tenant tenant)
+        public IDeletion HardDeleteForDocument(IEvent document, string tenantId)
         {
             throw new NotSupportedException();
         }
@@ -181,22 +181,22 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IStorageOperation Update(IEvent document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Update(IEvent document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation Insert(IEvent document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Insert(IEvent document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation Upsert(IEvent document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Upsert(IEvent document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IStorageOperation Overwrite(IEvent document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Overwrite(IEvent document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }

@@ -46,7 +46,7 @@ namespace Marten
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
-            Schema = Tenancy.Default.Storage;
+            Schema = Tenancy.Default.Database;
 
             Storage.PostProcessConfiguration();
             Events.AssertValidity(this);

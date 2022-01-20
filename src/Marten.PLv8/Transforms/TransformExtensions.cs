@@ -39,7 +39,7 @@ namespace Marten.PLv8.Transforms
         {
             try
             {
-                operations.As<DocumentSessionBase>().Tenant.Storage.EnsureStorageExists(typeof(TransformSchema));
+                operations.As<DocumentSessionBase>().Database.EnsureStorageExists(typeof(TransformSchema));
             }
             catch (InvalidDocumentException)
             {
@@ -70,9 +70,8 @@ namespace Marten.PLv8.Transforms
             var builder = martenQueryable.BuildLinqHandler();
 
             var session = martenQueryable.Session;
-            var tenant = session.Tenant;
 
-            await tenant.Storage.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
+            await session.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
             var transform = session.Options.TransformFor(transformName);
 
@@ -107,9 +106,8 @@ namespace Marten.PLv8.Transforms
             var builder = martenQueryable.BuildLinqHandler();
 
             var session = martenQueryable.Session;
-            var tenant = session.Tenant;
 
-            await tenant.Storage.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
+            await session.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
 
             var transform = session.Options.TransformFor(transformName);
 

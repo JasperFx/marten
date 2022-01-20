@@ -19,7 +19,7 @@ namespace Marten.Testing.Events.Bugs
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
-            var tables = await theStore.Tenancy.Default.Storage.SchemaTables();
+            var tables = await theStore.Tenancy.Default.Database.SchemaTables();
 
             tables.Any(x => x.Name == "mt_events").ShouldBeFalse();
             tables.Any(x => x.Name == "mt_streams").ShouldBeFalse();

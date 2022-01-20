@@ -13,7 +13,7 @@ namespace Marten.Testing.Events
     {
         public EventProgressWriteTests(DefaultStoreFixture fixture) : base(fixture)
         {
-            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(StreamAction));
+            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(StreamAction));
         }
 
         [Fact]

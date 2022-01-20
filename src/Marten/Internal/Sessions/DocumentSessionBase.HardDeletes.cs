@@ -18,7 +18,7 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
             var documentStorage = StorageFor<T>();
 
-            var deletion = documentStorage.HardDeleteForDocument(entity, Tenant);
+            var deletion = documentStorage.HardDeleteForDocument(entity, TenantId);
             _workTracker.Add(deletion);
 
             documentStorage.Eject(this, entity);
@@ -32,13 +32,13 @@ namespace Marten.Internal.Sessions
 
             if (storage is IDocumentStorage<T, int> i)
             {
-                _workTracker.Add(i.HardDeleteForId(id, Tenant));
+                _workTracker.Add(i.HardDeleteForId(id, TenantId));
 
                 ejectById<T>(id);
             }
             else if (storage is IDocumentStorage<T, long> l)
             {
-                _workTracker.Add(l.HardDeleteForId(id, Tenant));
+                _workTracker.Add(l.HardDeleteForId(id, TenantId));
 
                 ejectById<T>((long)id);
             }
@@ -51,7 +51,7 @@ namespace Marten.Internal.Sessions
         public void HardDelete<T>(long id) where T : notnull
         {
             assertNotDisposed();
-            var deletion = StorageFor<T, long>().HardDeleteForId(id, Tenant);
+            var deletion = StorageFor<T, long>().HardDeleteForId(id, TenantId);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -60,7 +60,7 @@ namespace Marten.Internal.Sessions
         public void HardDelete<T>(Guid id) where T : notnull
         {
             assertNotDisposed();
-            var deletion = StorageFor<T, Guid>().HardDeleteForId(id, Tenant);
+            var deletion = StorageFor<T, Guid>().HardDeleteForId(id, TenantId);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -70,7 +70,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var deletion = StorageFor<T, string>().HardDeleteForId(id, Tenant);
+            var deletion = StorageFor<T, string>().HardDeleteForId(id, TenantId);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);

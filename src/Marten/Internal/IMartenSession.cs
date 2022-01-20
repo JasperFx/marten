@@ -17,7 +17,8 @@ namespace Marten.Internal
     {
         ISerializer Serializer { get; }
         Dictionary<Type, object> ItemMap { get; }
-        Tenant Tenant { get; }
+        string TenantId { get; }
+        IMartenDatabase Database {get;}
 
         VersionTracker Versions { get; }
 

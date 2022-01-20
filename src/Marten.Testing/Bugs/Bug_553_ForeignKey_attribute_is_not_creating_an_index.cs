@@ -16,7 +16,7 @@ namespace Marten.Testing.Bugs
         {
             await theStore.EnsureStorageExistsAsync(typeof(DocWithFK));
 
-            var table = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(DocWithFK));
+            var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(DocWithFK));
             table.Indexes.Any(x => x.Name == "mt_doc_docwithfk_idx_user_id").ShouldBeTrue();
         }
 

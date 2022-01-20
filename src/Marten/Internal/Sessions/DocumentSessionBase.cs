@@ -71,7 +71,7 @@ namespace Marten.Internal.Sessions
 
             var storage = StorageFor<T>();
             storage.Store(this, entity, version);
-            var op = storage.Upsert(entity, this, Tenant);
+            var op = storage.Upsert(entity, this, TenantId);
             _workTracker.Add(op);
         }
 
@@ -106,7 +106,7 @@ namespace Marten.Internal.Sessions
                 foreach (var entity in entities)
                 {
                     storage.Store(this, entity);
-                    var op = storage.Insert(entity, this, Tenant);
+                    var op = storage.Insert(entity, this, TenantId);
                     _workTracker.Add(op);
                 }
             }
@@ -143,7 +143,7 @@ namespace Marten.Internal.Sessions
                 foreach (var entity in entities)
                 {
                     storage.Store(this, entity);
-                    var op = storage.Update(entity, this, Tenant);
+                    var op = storage.Update(entity, this, TenantId);
                     _workTracker.Add(op);
                 }
             }
@@ -275,7 +275,7 @@ namespace Marten.Internal.Sessions
                         // Put it in the identity map -- if necessary
                         storage.Store(this, entity);
 
-                        var overwrite = storage.Overwrite(entity, this, Tenant);
+                        var overwrite = storage.Overwrite(entity, this, TenantId);
 
                         _workTracker.Add(overwrite);
                     }
@@ -287,7 +287,7 @@ namespace Marten.Internal.Sessions
                         // Put it in the identity map -- if necessary
                         storage.Store(this, entity);
 
-                        var upsert = storage.Upsert(entity, this, Tenant);
+                        var upsert = storage.Upsert(entity, this, TenantId);
 
                         _workTracker.Add(upsert);
                     }

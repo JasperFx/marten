@@ -144,7 +144,7 @@ namespace Marten.Internal.Storage
             return new ByIdFilter<TId>(id, _idType);
         }
 
-        public IDeletion HardDeleteForId(TId id, Tenant tenant)
+        public IDeletion HardDeleteForId(TId id, string tenant)
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
@@ -185,11 +185,11 @@ namespace Marten.Internal.Storage
             });
         }
 
-        public IDeletion HardDeleteForDocument(T document, Tenant tenant)
+        public IDeletion HardDeleteForDocument(T document, string tenantId)
         {
             var id = Identity(document);
 
-            var deletion = HardDeleteForId(id, tenant);
+            var deletion = HardDeleteForId(id, tenantId);
             deletion.Document = document;
 
             return deletion;
@@ -207,7 +207,7 @@ namespace Marten.Internal.Storage
         public Type SourceType => typeof(T);
 
 
-        public abstract TId AssignIdentity(T document, Tenant tenant);
+        public abstract TId AssignIdentity(T document, string tenantId, IMartenDatabase database);
 
         public DbObjectName TableName { get; }
 
@@ -224,13 +224,13 @@ namespace Marten.Internal.Storage
         public abstract void Store(IMartenSession session, T document);
         public abstract void Store(IMartenSession session, T document, Guid? version);
         public abstract void Eject(IMartenSession session, T document);
-        public abstract IStorageOperation Update(T document, IMartenSession session, Tenant tenant);
-        public abstract IStorageOperation Insert(T document, IMartenSession session, Tenant tenant);
-        public abstract IStorageOperation Upsert(T document, IMartenSession session, Tenant tenant);
+        public abstract IStorageOperation Update(T document, IMartenSession session, string tenant);
+        public abstract IStorageOperation Insert(T document, IMartenSession session, string tenant);
+        public abstract IStorageOperation Upsert(T document, IMartenSession session, string tenant);
 
-        public abstract IStorageOperation Overwrite(T document, IMartenSession session, Tenant tenant);
+        public abstract IStorageOperation Overwrite(T document, IMartenSession session, string tenant);
 
-        public IDeletion DeleteForDocument(T document, Tenant tenant)
+        public IDeletion DeleteForDocument(T document, string tenant)
         {
             var id = Identity(document);
 
@@ -240,7 +240,7 @@ namespace Marten.Internal.Storage
             return deletion;
         }
 
-        public IDeletion DeleteForId(TId id, Tenant tenant)
+        public IDeletion DeleteForId(TId id, string tenant)
         {
             if (TenancyStyle == TenancyStyle.Conjoined)
             {
@@ -289,7 +289,7 @@ namespace Marten.Internal.Storage
 
         protected T? load(TId id, IMartenSession session)
         {
-            var command = BuildLoadCommand(id, session.Tenant);
+            var command = BuildLoadCommand(id, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             // TODO -- eliminate the downcast here!
@@ -298,7 +298,7 @@ namespace Marten.Internal.Storage
 
         protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)
         {
-            var command = BuildLoadCommand(id, session.Tenant);
+            var command = BuildLoadCommand(id, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             // TODO -- eliminate the downcast here!
@@ -338,8 +338,8 @@ namespace Marten.Internal.Storage
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public abstract NpgsqlCommand BuildLoadCommand(TId id, Tenant tenant);
+        public abstract NpgsqlCommand BuildLoadCommand(TId id, string tenant);
 
-        public abstract NpgsqlCommand BuildLoadManyCommand(TId[] ids, Tenant tenant);
+        public abstract NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant);
     }
 }

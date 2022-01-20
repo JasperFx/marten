@@ -113,7 +113,7 @@ namespace Marten.Schema.Testing
 
             }))
             {
-                using (var connection = store.Tenancy.Default.Storage.CreateConnection())
+                using (var connection = store.Tenancy.Default.Database.CreateConnection())
                 using (var command = connection.CreateCommand())
                 {
                     connection.Open();

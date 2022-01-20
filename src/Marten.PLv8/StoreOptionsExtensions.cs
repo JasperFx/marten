@@ -28,7 +28,7 @@ namespace Marten.PLv8
         public static void Transform(this IDocumentStore store, Action<IDocumentTransforms> apply)
         {
             var s = store.As<DocumentStore>();
-            s.Tenancy.Default.Storage.EnsureStorageExists(typeof(TransformSchema));
+            s.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));
 
             using var transforms = new DocumentTransforms(s, s.Tenancy.Default);
             apply(transforms);
@@ -45,7 +45,7 @@ namespace Marten.PLv8
         public static async Task TransformAsync(this IDocumentStore store, Action<IDocumentTransforms> apply, CancellationToken token = default)
         {
             var s = store.As<DocumentStore>();
-            await s.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
+            await s.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(TransformSchema), token).ConfigureAwait(false);
             using var transforms = new DocumentTransforms(s, s.Tenancy.Default);
             apply(transforms);
             await transforms.Session.SaveChangesAsync(token).ConfigureAwait(false);

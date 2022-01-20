@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
         {
             StoreOptions(_ => _.Schema.For<Target>().Index(x => x.Date));
 
-            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(Target));
+            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(Target));
         }
 
     }

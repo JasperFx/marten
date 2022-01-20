@@ -41,7 +41,7 @@ namespace Marten
         public Task ResetHiloSequenceFloor<T>(long floor)
         {
             // TODO -- this is mildly awful, and won't work with multiple databases!
-            return _store.Tenancy.Default.Storage.ResetHiloSequenceFloor<T>(floor);
+            return _store.Tenancy.Default.Database.ResetHiloSequenceFloor<T>(floor);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Marten
         /// <param name="floor"></param>
         public Task ResetHiloSequenceFloor<T>(string tenantId, long floor)
         {
-            return _store.Tenancy.GetTenant(tenantId).Storage.ResetHiloSequenceFloor<T>(floor);
+            return _store.Tenancy.GetTenant(tenantId).Database.ResetHiloSequenceFloor<T>(floor);
         }
 
         /// <summary>
@@ -76,11 +76,11 @@ select count(*) from {_store.Events.DatabaseSchemaName}.mt_streams;
 select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
 ";
 
-            await _store.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+            await _store.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var statistics = new EventStoreStatistics();
 
-            using var conn = _store.Tenancy.Default.Storage.CreateConnection();
+            using var conn = _store.Tenancy.Default.Database.CreateConnection();
 
             await conn.OpenAsync(token).ConfigureAwait(false);
 
@@ -115,7 +115,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// <returns></returns>
         public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(CancellationToken token = default)
         {
-            await _store.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+            await _store.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(new ProjectionProgressStatement(_store.Events),
                 new ShardStateSelector());
@@ -132,7 +132,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// <returns></returns>
         public async Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default)
         {
-            await _store.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+            await _store.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var statement = new ProjectionProgressStatement(_store.Events)
             {

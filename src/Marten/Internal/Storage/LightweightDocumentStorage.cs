@@ -16,13 +16,13 @@ namespace Marten.Internal.Storage
 
         public sealed override void Store(IMartenSession session, T document)
         {
-            var id = AssignIdentity(document, session.Tenant);
+            var id = AssignIdentity(document, session.TenantId, session.Database);
             session.MarkAsAddedForStorage(id, document);
         }
 
         public sealed override void Store(IMartenSession session, T document, Guid? version)
         {
-            var id = AssignIdentity(document, session.Tenant);
+            var id = AssignIdentity(document, session.TenantId, session.Database);
             session.MarkAsAddedForStorage(id, document);
 
             if (version.HasValue)
@@ -46,7 +46,7 @@ namespace Marten.Internal.Storage
         {
             var list = new List<T>();
 
-            var command = BuildLoadManyCommand(ids, session.Tenant);
+            var command = BuildLoadManyCommand(ids, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             using (var reader = session.ExecuteReader(command))
@@ -66,7 +66,7 @@ namespace Marten.Internal.Storage
         {
             var list = new List<T>();
 
-            var command = BuildLoadManyCommand(ids, session.Tenant);
+            var command = BuildLoadManyCommand(ids, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))

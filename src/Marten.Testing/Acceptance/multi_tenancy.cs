@@ -169,7 +169,7 @@ namespace Marten.Testing.Acceptance
             var guid = Guid.NewGuid();
 
             await theStore.EnsureStorageExistsAsync(typeof(Target));
-            var existing = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(Target));
+            var existing = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
             var mapping = theStore.Options.Storage.MappingFor(typeof(Target));
             var expected = new DocumentTable(mapping);
 
@@ -492,6 +492,8 @@ namespace Marten.Testing.Acceptance
             var blues = Target.GenerateRandomData(25).ToArray();
 
             await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+
+            _output.WriteLine(theStore.Advanced.SourceCodeForDocumentType(typeof(Target)).AllSourceCode());
 
             using (var session = theStore.OpenSession())
             {

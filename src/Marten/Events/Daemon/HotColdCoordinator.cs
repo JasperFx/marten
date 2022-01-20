@@ -58,7 +58,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                conn = _tenant.Storage.CreateConnection();
+                conn = _tenant.Database.CreateConnection();
                 await conn.OpenAsync(_cancellation.Token).ConfigureAwait(false);
 
                 gotLock = (bool) await conn.CreateCommand("SELECT pg_try_advisory_lock(:id);")

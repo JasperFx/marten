@@ -14,16 +14,16 @@ namespace Marten.Storage
 
         public Tenant GetTenant(string tenantId)
         {
-            return new Tenant(tenantId, Default.Storage);
+            return new Tenant(tenantId, Default.Database);
         }
 
         public Tenant Default { get; }
 
-        public IDocumentCleaner Cleaner => Default.Storage;
+        public IDocumentCleaner Cleaner => Default.Database;
 
         public IReadOnlyList<IDatabase> BuildDatabases()
         {
-            return new IDatabase[] { Default.Storage };
+            return new IDatabase[] { Default.Database };
         }
     }
 }

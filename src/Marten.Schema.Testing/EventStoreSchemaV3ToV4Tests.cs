@@ -59,7 +59,7 @@ namespace Marten.Schema.Testing
         public async Task should_not_have_v3_to_v4_patches_on_v4_schema()
         {
             using var store1 = Store(AutoCreate.All);
-            await store1.Tenancy.Default.Storage.EnsureStorageExistsAsync(typeof(StreamAction));
+            await store1.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(StreamAction));
 
             // create another store and check if no v3 to v4 patches are generated
             using var store2 = Store(AutoCreate.CreateOrUpdate);

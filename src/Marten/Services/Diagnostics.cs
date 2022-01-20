@@ -53,7 +53,7 @@ namespace Marten.Services
         {
             var cmd = PreviewCommand(query);
 
-            using var conn = _store.Tenancy.Default.Storage.CreateConnection();
+            using var conn = _store.Tenancy.Default.Database.CreateConnection();
             conn.Open();
             return conn.ExplainQuery(_store.Serializer, cmd)!;
         }
@@ -67,7 +67,7 @@ namespace Marten.Services
             if (_postgreSqlVersion != null)
                 return _postgreSqlVersion;
 
-            using var conn = _store.Tenancy.Default.Storage.CreateConnection();
+            using var conn = _store.Tenancy.Default.Database.CreateConnection();
             conn.Open();
 
             _postgreSqlVersion = conn.PostgreSqlVersion;

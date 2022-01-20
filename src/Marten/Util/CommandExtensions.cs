@@ -30,7 +30,7 @@ namespace Marten.Util
 
             if (tenantParameter != null)
             {
-                tenantParameter.Value = session.Tenant.TenantId;
+                tenantParameter.Value = session.TenantId;
             }
 
             return command;
@@ -49,7 +49,7 @@ namespace Marten.Util
 
             if (tenantParameter != null)
             {
-                tenantParameter.Value = session.Tenant.TenantId;
+                tenantParameter.Value = session.TenantId;
             }
 
             return command;
@@ -72,7 +72,7 @@ namespace Marten.Util
 
             if (tenantParameter != null)
             {
-                tenantParameter.Value = session.Tenant.TenantId;
+                tenantParameter.Value = session.TenantId;
             }
 
             return command;

@@ -110,7 +110,7 @@ namespace Marten.PLv8.Testing.Transforms
 
             var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 
-            using var conn = theStore.Tenancy.Default.Storage.CreateConnection();
+            using var conn = theStore.Tenancy.Default.Database.CreateConnection();
             conn.Open();
             conn.CreateCommand(func.GenerateFunction()).ExecuteNonQuery();
 

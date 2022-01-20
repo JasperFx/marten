@@ -5,12 +5,12 @@ namespace Marten.Storage
     {
         public Tenant(string tenantId, IMartenDatabase inner)
         {
-            Storage = inner;
+            Database = inner;
             TenantId = tenantId;
         }
 
         public string TenantId { get; }
 
-        public IMartenDatabase Storage { get; }
+        public IMartenDatabase Database { get; }
     }
 }

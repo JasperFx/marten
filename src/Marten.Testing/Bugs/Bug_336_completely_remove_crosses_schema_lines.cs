@@ -17,7 +17,7 @@ namespace Marten.Testing.Bugs
             var store1 = theStore;
             await store1.BulkInsertAsync(Target.GenerateRandomData(5).ToArray());
             await store1.BulkInsertAsync(new[] { new User() });
-            var database1 = store1.Tenancy.Default.Storage;
+            var database1 = store1.Tenancy.Default.Database;
             (await database1.DocumentTables()).Any().ShouldBeTrue();
 
             var store2 = SeparateStore(_ =>
@@ -28,7 +28,7 @@ namespace Marten.Testing.Bugs
 
             await store2.BulkInsertAsync(Target.GenerateRandomData(5).ToArray());
             await store2.BulkInsertAsync(new[] { new User() });
-            var database2 = store2.Tenancy.Default.Storage;
+            var database2 = store2.Tenancy.Default.Database;
             (await database2.DocumentTables()).Any().ShouldBeTrue();
 
             await store1.Advanced.Clean.CompletelyRemoveAllAsync();

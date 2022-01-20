@@ -2,6 +2,7 @@ using System.Threading;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
+using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -12,6 +13,7 @@ namespace Marten.Schema.Arguments
     public class TenantIdArgument: UpsertArgument
     {
         public const string ArgName = "tenantid";
+        private const string TenantIdFieldName = "_tenantId";
 
         public TenantIdArgument()
         {
@@ -24,11 +26,9 @@ namespace Marten.Schema.Arguments
         public override void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i, Argument parameters,
             DocumentMapping mapping, StoreOptions options)
         {
-            method.Frames.Code($"var tenantId = {{0}}.{nameof(Tenant.TenantId)};", Use.Type<Tenant>());
-
             if (mapping.Metadata.TenantId.Member != null)
             {
-                method.Frames.SetMemberValue(mapping.Metadata.TenantId.Member, "tenantId", mapping.DocumentType, type);
+                method.Frames.SetMemberValue(mapping.Metadata.TenantId.Member, TenantIdFieldName, mapping.DocumentType, type);
             }
         }
 
@@ -37,7 +37,7 @@ namespace Marten.Schema.Arguments
             DocumentMapping mapping, StoreOptions options)
         {
 
-            method.Frames.Code($"{{0}}[{{1}}].Value = tenantId;", parameters, i);
+            method.Frames.Code($"{{0}}[{{1}}].Value = _tenantId;", parameters, i);
             method.Frames.Code("{0}[{1}].NpgsqlDbType = {2};", parameters, i, DbType);
 
 

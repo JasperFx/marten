@@ -27,7 +27,7 @@ namespace Marten.Events
 
             foreach (var stream in session.WorkTracker.Streams)
             {
-                stream.TenantId ??= session.Tenant.TenantId;
+                stream.TenantId ??= session.TenantId;
 
                 if (stream.ActionType == StreamActionType.Start)
                 {
@@ -78,7 +78,7 @@ namespace Marten.Events
 
             foreach (var stream in session.WorkTracker.Streams)
             {
-                stream.TenantId ??= session.Tenant.TenantId;
+                stream.TenantId ??= session.TenantId;
 
                 if (stream.ActionType == StreamActionType.Start)
                 {

@@ -252,27 +252,27 @@ namespace Marten.Events
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Update(T document, IMartenSession session, Tenant tenant)
+        IStorageOperation IDocumentStorage<T>.Update(T document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Insert(T document, IMartenSession session, Tenant tenant)
+        IStorageOperation IDocumentStorage<T>.Insert(T document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Upsert(T document, IMartenSession session, Tenant tenant)
+        IStorageOperation IDocumentStorage<T>.Upsert(T document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        IStorageOperation IDocumentStorage<T>.Overwrite(T document, IMartenSession session, Tenant tenant)
+        IStorageOperation IDocumentStorage<T>.Overwrite(T document, IMartenSession session, string tenant)
         {
             throw new NotSupportedException();
         }
 
-        public IDeletion DeleteForDocument(T document, Tenant tenant)
+        public IDeletion DeleteForDocument(T document, string tenant)
         {
             throw new NotSupportedException();
         }
@@ -287,7 +287,7 @@ namespace Marten.Events
             // Nothing
         }
 
-        public IDeletion HardDeleteForDocument(T document, Tenant tenant)
+        public IDeletion HardDeleteForDocument(T document, string tenantId)
         {
             throw new NotSupportedException();
         }

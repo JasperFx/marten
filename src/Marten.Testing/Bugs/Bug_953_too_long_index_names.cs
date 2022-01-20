@@ -26,7 +26,7 @@ namespace Marten.Testing.Bugs
 
             Exception<PostgresqlIdentifierTooLongException>.ShouldBeThrownBy(() =>
             {
-                theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
+                theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(LongEnoughNameToCauseIdTruncation));
             });
         }
 

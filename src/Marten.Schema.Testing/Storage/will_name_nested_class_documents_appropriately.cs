@@ -17,7 +17,7 @@ namespace Marten.Schema.Testing.Storage
             DocumentTable table2;
 
 
-            var database = theStore.Tenancy.Default.Storage;
+            var database = theStore.Tenancy.Default.Database;
             database.StorageFor<Foo.Document>();
             database.StorageFor<Bar.Document>();
 
@@ -44,7 +44,7 @@ namespace Marten.Schema.Testing.Storage
 
             StoreOptions(x => x.DatabaseSchemaName = "other");
 
-            var database = theStore.Tenancy.Default.Storage;
+            var database = theStore.Tenancy.Default.Database;
             database.StorageFor<Foo.Document>();
                 database.StorageFor<Bar.Document>();
 

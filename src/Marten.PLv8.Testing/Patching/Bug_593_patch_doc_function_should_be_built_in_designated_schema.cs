@@ -23,7 +23,7 @@ namespace Marten.PLv8.Testing.Patching
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             var expected = new DbObjectName("other", "mt_transform_patch_doc");
-            (await theStore.Tenancy.Default.Storage.Functions()).Contains(expected).ShouldBeTrue();
+            (await theStore.Tenancy.Default.Database.Functions()).Contains(expected).ShouldBeTrue();
         }
 
     }

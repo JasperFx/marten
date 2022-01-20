@@ -20,8 +20,8 @@ namespace Marten.Testing.Events
         public StreamActionTester()
         {
             theSession = Substitute.For<IMartenSession>();
-            theTenant = new Tenant("TX", Substitute.For<IMartenDatabase>());
-            theSession.Tenant.Returns(theTenant);
+            theSession.TenantId.Returns("TX");
+            theSession.Database.Returns(Substitute.For<IMartenDatabase>());
 
             theEvents = new EventGraph(new StoreOptions());
         }

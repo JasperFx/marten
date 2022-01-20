@@ -24,7 +24,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
 
             // Resets the minimum Id number for the IntDoc document
             // type to 2500
-            await store.Tenancy.Default.Storage.ResetHiloSequenceFloor<IntDoc>(2500);
+            await store.Tenancy.Default.Database.ResetHiloSequenceFloor<IntDoc>(2500);
             #endregion
 
             using (var session = store.OpenSession())
@@ -53,7 +53,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
                 opts.DatabaseSchemaName = "sequences";
             });
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(defaults.MaxLo);
         }
 
@@ -69,7 +69,7 @@ namespace Marten.Schema.Testing.Identity.Sequences
             });
             #endregion
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(55);
         }
 
@@ -89,9 +89,9 @@ namespace Marten.Schema.Testing.Identity.Sequences
             });
             #endregion
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(66);
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("IntDoc");
         }
 
@@ -107,14 +107,14 @@ namespace Marten.Schema.Testing.Identity.Sequences
             });
 
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(33);
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("IntDoc");
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(66);
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).As<HiloSequence>().EntityName.ShouldBe("Entity");
         }
 
@@ -131,15 +131,15 @@ namespace Marten.Schema.Testing.Identity.Sequences
             });
 
             var mapping = store.Storage.MappingFor(typeof(IntDoc));
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).MaxLo.ShouldBe(33);
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(IntDoc)).As<HiloSequence>().EntityName.ShouldBe("ID");
 
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).MaxLo.ShouldBe(66);
-            store.Tenancy.Default.Storage.Sequences
+            store.Tenancy.Default.Database.Sequences
                 .SequenceFor(typeof(OverriddenHiloDoc)).As<HiloSequence>().EntityName.ShouldBe("Entity");
         }
 

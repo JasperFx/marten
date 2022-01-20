@@ -13,17 +13,17 @@ namespace Marten.Linq.Filters
     /// </summary>
     internal class SpecificTenantFilter: ISqlFragment
     {
-        private readonly Tenant _tenant;
+        private readonly string _tenantId;
 
-        public SpecificTenantFilter(Tenant tenant)
+        public SpecificTenantFilter(string tenantId)
         {
-            _tenant = tenant;
+            _tenantId = tenantId;
         }
 
         public void Apply(CommandBuilder builder)
         {
             builder.Append($"d.{TenantIdColumn.Name} = ");
-            builder.AppendParameter(_tenant.TenantId);
+            builder.AppendParameter(_tenantId);
         }
 
         public bool Contains(string sqlText)
