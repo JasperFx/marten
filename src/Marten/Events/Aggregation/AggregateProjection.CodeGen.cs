@@ -129,7 +129,7 @@ namespace Marten.Events.Aggregation
 
             // This will have to change when we introduce 1st class support for tenancy by
             // separate databases
-            store.Tenancy.Default.Storage.EnsureStorageExists(typeof(T));
+            store.Tenancy.Default.Database.EnsureStorageExists(typeof(T));
             return BuildRuntime(store);
         }
 

@@ -36,7 +36,7 @@ namespace Marten.Testing.CoreFunctionality
 
             theSession.SaveChanges();
 
-            using var conn = theStore.Tenancy.Default.Storage.CreateConnection();
+            using var conn = theStore.Tenancy.Default.Database.CreateConnection();
             conn.Open();
 
             var reader = conn.CreateCommand($"select data from mt_doc_user where id = '{user.Id}'").ExecuteReader();

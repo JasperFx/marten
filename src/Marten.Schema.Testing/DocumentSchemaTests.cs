@@ -25,7 +25,7 @@ namespace Marten.Schema.Testing
         [Fact]
         public void can_create_a_new_storage_for_a_document_type_without_subclasses()
         {
-            var storage = theStore.Tenancy.Default.Storage.StorageFor<User>();
+            var storage = theStore.Tenancy.Default.Database.StorageFor<User>();
             storage.ShouldNotBeNull();
         }
 
@@ -37,7 +37,7 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            theStore.Tenancy.Default.Storage.StorageFor<Squad>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<Squad>().ShouldNotBeNull();
         }
 
         [Fact]
@@ -63,21 +63,21 @@ namespace Marten.Schema.Testing
                 _.Schema.For<Squad>().AddSubClass<FootballTeam>().AddSubClass<BaseballTeam>();
             });
 
-            theStore.Tenancy.Default.Storage.StorageFor<BaseballTeam>()
+            theStore.Tenancy.Default.Database.StorageFor<BaseballTeam>()
                 .ShouldBeOfType<SubClassDocumentStorage<BaseballTeam, Squad, string>>();
         }
 
         [Fact]
         public void caches_storage_for_a_document_type()
         {
-            theStore.Tenancy.Default.Storage.StorageFor<User>()
-                .ShouldBeSameAs(theStore.Tenancy.Default.Storage.StorageFor<User>());
+            theStore.Tenancy.Default.Database.StorageFor<User>()
+                .ShouldBeSameAs(theStore.Tenancy.Default.Database.StorageFor<User>());
 
-            theStore.Tenancy.Default.Storage.StorageFor<Issue>()
-                .ShouldBeSameAs(theStore.Tenancy.Default.Storage.StorageFor<Issue>());
+            theStore.Tenancy.Default.Database.StorageFor<Issue>()
+                .ShouldBeSameAs(theStore.Tenancy.Default.Database.StorageFor<Issue>());
 
-            theStore.Tenancy.Default.Storage.StorageFor<Company>()
-                .ShouldBeSameAs(theStore.Tenancy.Default.Storage.StorageFor<Company>());
+            theStore.Tenancy.Default.Database.StorageFor<Company>()
+                .ShouldBeSameAs(theStore.Tenancy.Default.Database.StorageFor<Company>());
         }
 
         [Fact]
@@ -103,16 +103,16 @@ namespace Marten.Schema.Testing
         [Fact]
         public async Task builds_schema_objects_on_the_fly_as_needed()
         {
-            theStore.Tenancy.Default.Storage.StorageFor<User>().ShouldNotBeNull();
-            theStore.Tenancy.Default.Storage.StorageFor<Issue>().ShouldNotBeNull();
-            theStore.Tenancy.Default.Storage.StorageFor<Company>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<User>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<Issue>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<Company>().ShouldNotBeNull();
 
-            var tables = (await theStore.Tenancy.Default.Storage.SchemaTables()).Select(x => x.QualifiedName).ToArray();
+            var tables = (await theStore.Tenancy.Default.Database.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             tables.ShouldContain("public.mt_doc_user");
             tables.ShouldContain("public.mt_doc_issue");
             tables.ShouldContain("public.mt_doc_company");
 
-            var functions = (await theStore.Tenancy.Default.Storage.Functions()).Select(x => x.QualifiedName).ToArray();
+            var functions = (await theStore.Tenancy.Default.Database.Functions()).Select(x => x.QualifiedName).ToArray();
             functions.ShouldContain("public.mt_upsert_user");
             functions.ShouldContain("public.mt_upsert_issue");
             functions.ShouldContain("public.mt_upsert_company");
@@ -134,7 +134,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.Tenancy.Default.Storage.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.Database.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
     }
@@ -176,8 +176,8 @@ namespace Marten.Schema.Testing
                 session.SaveChanges();
             }
 
-            _tables = theStore.Tenancy.Default.Storage.SchemaTables().GetAwaiter().GetResult().ToArray();
-            _functions = theStore.Tenancy.Default.Storage.Functions().GetAwaiter().GetResult().ToArray();
+            _tables = theStore.Tenancy.Default.Database.SchemaTables().GetAwaiter().GetResult().ToArray();
+            _functions = theStore.Tenancy.Default.Database.Functions().GetAwaiter().GetResult().ToArray();
         }
 
 
@@ -329,8 +329,8 @@ namespace Marten.Schema.Testing
                 session.SaveChanges();
             }
 
-            _tables = theStore.Tenancy.Default.Storage.SchemaTables().GetAwaiter().GetResult().ToArray();
-            _functions = theStore.Tenancy.Default.Storage.Functions().GetAwaiter().GetResult().ToArray();
+            _tables = theStore.Tenancy.Default.Database.SchemaTables().GetAwaiter().GetResult().ToArray();
+            _functions = theStore.Tenancy.Default.Database.Functions().GetAwaiter().GetResult().ToArray();
         }
 
 

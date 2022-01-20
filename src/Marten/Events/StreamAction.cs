@@ -281,7 +281,7 @@ namespace Marten.Events
                     @event.Id = CombGuidIdGeneration.NewGuid();
                 }
                 @event.Sequence = sequences.Dequeue();
-                @event.TenantId = session.Tenant.TenantId;
+                @event.TenantId = session.TenantId;
                 @event.Timestamp = timestamp;
 
                 ProcessMetadata(@event, graph, session);
@@ -290,19 +290,19 @@ namespace Marten.Events
             Version = Events.Last().Version;
         }
 
-        internal static StreamAction ForReference(Guid streamId, Tenant tenant)
+        internal static StreamAction ForReference(Guid streamId, string tenantId)
         {
             return new StreamAction(streamId, StreamActionType.Append)
             {
-                TenantId = tenant?.TenantId
+                TenantId = tenantId
             };
         }
 
-        internal static StreamAction ForReference(string streamKey, Tenant tenant)
+        internal static StreamAction ForReference(string streamKey, string tenantId)
         {
             return new StreamAction(streamKey, StreamActionType.Append)
             {
-                TenantId = tenant?.TenantId
+                TenantId = tenantId
             };
         }
 

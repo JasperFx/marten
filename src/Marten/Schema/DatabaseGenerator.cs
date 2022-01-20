@@ -126,7 +126,7 @@ namespace Marten.Schema
             string catalog;
             var maintenanceDb = _maintenanceDbConnectionString;
 
-            using (var t = tenant.Storage.CreateConnection())
+            using (var t = tenant.Database.CreateConnection())
             {
                 catalog = t.Database;
 
@@ -226,7 +226,7 @@ namespace Marten.Schema
         [Obsolete("Should be in Weasel now")]
         private static void CreatePlv8Extension(Tenant tenant)
         {
-            using (var connection = tenant.Storage.CreateConnection())
+            using (var connection = tenant.Database.CreateConnection())
             using (var cmd = connection.CreateCommand("CREATE EXTENSION IF NOT EXISTS plv8"))
             {
                 connection.Open();

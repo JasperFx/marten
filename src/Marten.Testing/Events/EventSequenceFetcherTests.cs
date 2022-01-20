@@ -37,7 +37,7 @@ namespace Marten.Testing.Events
         [Fact]
         public void fetch_sequence_numbers_sync()
         {
-            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(IEvent));
+            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(IEvent));
 
             using var query = (QuerySession)theStore.QuerySession();
 

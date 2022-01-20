@@ -50,7 +50,7 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             await theStore.BulkInsertAsync(data.ToArray());
 
-            var table = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(Target));
+            var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
             table.HasIndex("mt_doc_target_idx_number").ShouldBeTrue();
 
             using var session = theStore.QuerySession();
@@ -141,7 +141,7 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             await theStore.BulkInsertAsync(data.ToArray());
 
-            var table = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(Target));
+            var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
             var index = table.IndexFor("mt_doc_target_idx_user_idflag");
 
             index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON acceptance.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
@@ -166,7 +166,7 @@ namespace Marten.Testing.Acceptance
             var data = Target.GenerateRandomData(100).ToArray();
             await theStore.BulkInsertAsync(data.ToArray());
 
-            var table = await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(Target));
+            var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
             var index = table.IndexFor("mt_doc_target_idx_stringstring_field");
 
             index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON acceptance.mt_doc_target USING btree (upper((data ->> 'String'), upper((data ->> 'StringField'))));");
@@ -206,7 +206,7 @@ namespace Marten.Testing.Acceptance
                 await session.SaveChangesAsync();
             }
 
-            (await theStore.Tenancy.Default.Storage.ExistingTableFor(typeof(Target)))
+            (await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target)))
                 .HasIndex("mt_banana_index_created_by_nigel");
 
         }

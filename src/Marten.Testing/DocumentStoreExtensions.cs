@@ -18,7 +18,7 @@ namespace Marten.Testing
         /// <param name="store"></param>
         /// <param name="storageType"></param>
         /// <returns></returns>
-        public static Task EnsureStorageExistsAsync(this DocumentStore store, Type storageType, CancellationToken token = default) => store.Tenancy.Default.Storage.EnsureStorageExistsAsync(storageType, token);
+        public static Task EnsureStorageExistsAsync(this DocumentStore store, Type storageType, CancellationToken token = default) => store.Tenancy.Default.Database.EnsureStorageExistsAsync(storageType, token);
 
         /// <summary>
         /// Strictly a testing helper to guarantee that the database storage for
@@ -28,7 +28,7 @@ namespace Marten.Testing
         /// <param name="store"></param>
         /// <param name="storageType"></param>
         /// <returns></returns>
-        public static void EnsureStorageExists(this DocumentStore store, Type storageType) => store.Tenancy.Default.Storage.EnsureStorageExists(storageType);
+        public static void EnsureStorageExists(this DocumentStore store, Type storageType) => store.Tenancy.Default.Database.EnsureStorageExists(storageType);
 
         /// <summary>
         /// Extension method for testing to examine the existing table in the default tenant database
@@ -39,7 +39,7 @@ namespace Marten.Testing
         /// <returns></returns>
         public static Task<Table> ExistingTableFor(this DocumentStore store, Type storageType)
         {
-            return store.Tenancy.Default.Storage.ExistingTableFor(storageType);
+            return store.Tenancy.Default.Database.ExistingTableFor(storageType);
         }
 
         /// <summary>
@@ -49,12 +49,12 @@ namespace Marten.Testing
         /// <returns></returns>
         public static Task<IReadOnlyList<DbObjectName>> SchemaTables(this DocumentStore store)
         {
-            return store.Tenancy.Default.Storage.SchemaTables();
+            return store.Tenancy.Default.Database.SchemaTables();
         }
 
         public static NpgsqlConnection CreateConnection(this DocumentStore store)
         {
-            return store.Tenancy.Default.Storage.CreateConnection();
+            return store.Tenancy.Default.Database.CreateConnection();
         }
 
     }

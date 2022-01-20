@@ -352,7 +352,7 @@ namespace Marten.Schema.Testing
 
             await store.EnsureStorageExistsAsync(typeof(User));
 
-            (await store.Tenancy.Default.Storage.DocumentTables()).Select(x => x.QualifiedName).ShouldContain(mapping.TableName.QualifiedName);
+            (await store.Tenancy.Default.Database.DocumentTables()).Select(x => x.QualifiedName).ShouldContain(mapping.TableName.QualifiedName);
         }
 
         [Fact]

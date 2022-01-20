@@ -29,7 +29,7 @@ namespace Marten.PLv8.Testing.Patching
         public PatchExpressionTests() : base("patching")
         {
             StoreOptions(x => x.UseJavascriptTransformsAndPatching());
-            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(TransformSchema));
+            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));
 
             var storage = Substitute.For<IDocumentStorage>();
             storage.DocumentType.Returns(typeof(Target));
@@ -46,7 +46,7 @@ namespace Marten.PLv8.Testing.Patching
         {
             var transform = theStore.Options.TransformFor("patch_doc");
 
-            (await theStore.Tenancy.Default.Storage.Functions())
+            (await theStore.Tenancy.Default.Database.Functions())
                 .ShouldContain(transform.Identifier);
         }
 

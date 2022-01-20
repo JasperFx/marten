@@ -154,7 +154,7 @@ namespace Marten.Events
 
         public IMartenQueryable<T> QueryRawEventDataOnly<T>()
         {
-            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
 
             _store.Events.AddEventType(typeof(T));
 
@@ -163,14 +163,14 @@ namespace Marten.Events
 
         public IMartenQueryable<IEvent> QueryAllRawEvents()
         {
-            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
 
             return _session.Query<IEvent>();
         }
 
         public IEvent<T> Load<T>(Guid id) where T : class
         {
-            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
 
             _store.Events.AddEventType(typeof(T));
 
@@ -179,7 +179,7 @@ namespace Marten.Events
 
         public async Task<IEvent<T>> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class
         {
-            await _tenant.Storage.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
+            await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
 
             _store.Events.AddEventType(typeof(T));
 
@@ -194,7 +194,7 @@ namespace Marten.Events
 
         public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default)
         {
-            _tenant.Storage.EnsureStorageExists(typeof(StreamAction));
+            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
 
             var handler = new SingleEventQueryHandler(id, _session.EventStorage());
             return _session.ExecuteHandlerAsync(handler, token);
@@ -202,25 +202,25 @@ namespace Marten.Events
 
         public StreamState FetchStreamState(Guid streamId)
         {
-            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant));
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant.TenantId));
             return _session.ExecuteHandler(handler);
         }
 
         public Task<StreamState> FetchStreamStateAsync(Guid streamId, CancellationToken token = default)
         {
-            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant));
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant.TenantId));
             return _session.ExecuteHandlerAsync(handler, token);
         }
 
         public StreamState FetchStreamState(string streamKey)
         {
-            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant));
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant.TenantId));
             return _session.ExecuteHandler(handler);
         }
 
         public Task<StreamState> FetchStreamStateAsync(string streamKey, CancellationToken token = default)
         {
-            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant));
+            var handler = _tenant.EventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant.TenantId));
             return _session.ExecuteHandlerAsync(handler, token);
         }
     }

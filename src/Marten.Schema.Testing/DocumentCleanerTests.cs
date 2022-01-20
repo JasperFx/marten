@@ -68,12 +68,12 @@ namespace Marten.Schema.Testing
 
             var tableName = theStore.Storage.MappingFor(typeof(Target)).TableName;
 
-            (await theStore.Tenancy.Default.Storage.DocumentTables()).Contains(tableName)
+            (await theStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
                 .ShouldBeTrue();
 
             await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
-            (await theStore.Tenancy.Default.Storage.DocumentTables()).Contains(tableName)
+            (await theStore.Tenancy.Default.Database.DocumentTables()).Contains(tableName)
                 .ShouldBeFalse();
         }
 
@@ -87,11 +87,11 @@ namespace Marten.Schema.Testing
 
             var upsertName = theStore.Storage.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
 
-            (await theStore.Tenancy.Default.Storage.Functions()).ShouldContain(upsertName);
+            (await theStore.Tenancy.Default.Database.Functions()).ShouldContain(upsertName);
 
             await theCleaner.CompletelyRemoveAsync(typeof(Target));
 
-            (await theStore.Tenancy.Default.Storage.Functions()).ShouldNotContain(upsertName);
+            (await theStore.Tenancy.Default.Database.Functions()).ShouldNotContain(upsertName);
 
             Console.WriteLine("foo");
         }
@@ -109,10 +109,10 @@ namespace Marten.Schema.Testing
             theSession.Dispose();
 
             await theCleaner.CompletelyRemoveAllAsync();
-            var tables = await theStore.Tenancy.Default.Storage.DocumentTables();
+            var tables = await theStore.Tenancy.Default.Database.DocumentTables();
             tables.ShouldBeEmpty();
 
-            var functions = await theStore.Tenancy.Default.Storage.Functions();
+            var functions = await theStore.Tenancy.Default.Database.Functions();
             functions.Where(x => x.Name != "mt_immutable_timestamp" || x.Name != "mt_immutable_timestamptz")
                 .ShouldBeEmpty();
         }
@@ -210,7 +210,7 @@ namespace Marten.Schema.Testing
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
-            var allSchemas = theStore.Tenancy.Default.Storage.AllSchemaNames();
+            var allSchemas = theStore.Tenancy.Default.Database.AllSchemaNames();
 
             int GetSequenceCount(IDocumentStore store)
             {

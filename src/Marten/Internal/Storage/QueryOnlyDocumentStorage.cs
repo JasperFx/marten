@@ -31,7 +31,7 @@ namespace Marten.Internal.Storage
         {
             var list = new List<T>();
 
-            var command = BuildLoadManyCommand(ids, session.Tenant);
+            var command = BuildLoadManyCommand(ids, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             using (var reader = session.ExecuteReader(command))
@@ -51,7 +51,7 @@ namespace Marten.Internal.Storage
         {
             var list = new List<T>();
 
-            var command = BuildLoadManyCommand(ids, session.Tenant);
+            var command = BuildLoadManyCommand(ids, session.TenantId);
             var selector = (ISelector<T>)BuildSelector(session);
 
             using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))

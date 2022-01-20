@@ -40,7 +40,7 @@ namespace Marten.Internal.Storage
 
         private void store(IMartenSession session, T document, out TId id)
         {
-            id = AssignIdentity(document, session.Tenant);
+            id = AssignIdentity(document, session.TenantId, session.Database);
             session.MarkAsAddedForStorage(id, document);
 
             if (session.ItemMap.TryGetValue(typeof(T), out var items))
@@ -138,7 +138,7 @@ namespace Marten.Internal.Storage
                 }
             }
 
-            command = BuildLoadManyCommand(idList.ToArray(), session.Tenant);
+            command = BuildLoadManyCommand(idList.ToArray(), session.TenantId);
             return list;
         }
 

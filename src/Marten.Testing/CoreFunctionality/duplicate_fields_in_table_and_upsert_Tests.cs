@@ -27,7 +27,7 @@ namespace Marten.Testing.CoreFunctionality
                 session.SaveChanges();
             }
 
-            using var conn = theStore.Tenancy.Default.Storage.CreateConnection();
+            using var conn = theStore.Tenancy.Default.Database.CreateConnection();
             conn.Open();
             conn.CreateCommand($"select first_name from duplicated.mt_doc_user where id = '{user1.Id}'")
                 .ExecuteScalar().As<string>().ShouldBe("Byron");

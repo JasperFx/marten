@@ -17,9 +17,9 @@ namespace Marten.Internal.Sessions
             Versions = parent.Versions;
             ItemMap = parent.ItemMap;
 
-            Tenant = tenant;
+            TenantId = tenant.TenantId;
+            Database = tenant.Database;
 
-            // TODO -- declare the TenantId here.
         }
 
         public IDocumentSession Parent => _parent;
@@ -59,6 +59,5 @@ namespace Marten.Internal.Sessions
             return _parent.selectStorage(provider);
         }
 
-        public string TenantId => Tenant.TenantId;
     }
 }

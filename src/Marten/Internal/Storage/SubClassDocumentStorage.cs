@@ -177,27 +177,27 @@ namespace Marten.Internal.Storage
             _parent.Eject(session, document);
         }
 
-        public IStorageOperation Update(T document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Update(T document, IMartenSession session, string tenant)
         {
             return _parent.Update(document, session, tenant);
         }
 
-        public IStorageOperation Insert(T document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Insert(T document, IMartenSession session, string tenant)
         {
             return _parent.Insert(document, session, tenant);
         }
 
-        public IStorageOperation Upsert(T document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Upsert(T document, IMartenSession session, string tenant)
         {
             return _parent.Upsert(document, session, tenant);
         }
 
-        public IStorageOperation Overwrite(T document, IMartenSession session, Tenant tenant)
+        public IStorageOperation Overwrite(T document, IMartenSession session, string tenant)
         {
             return _parent.Overwrite(document, session, tenant);
         }
 
-        public IDeletion DeleteForDocument(T document, Tenant tenant)
+        public IDeletion DeleteForDocument(T document, string tenant)
         {
             return _parent.DeleteForDocument(document, tenant);
         }
@@ -207,7 +207,7 @@ namespace Marten.Internal.Storage
             _parent.SetIdentity(document, identity);
         }
 
-        public IDeletion DeleteForId(TId id, Tenant tenant)
+        public IDeletion DeleteForId(TId id, string tenant)
         {
             return _parent.DeleteForId(id, tenant);
         }
@@ -240,9 +240,9 @@ namespace Marten.Internal.Storage
             return (await _parent.LoadManyAsync(ids, session, token).ConfigureAwait(false)).OfType<T>().ToList();
         }
 
-        public TId AssignIdentity(T document, Tenant tenant)
+        public TId AssignIdentity(T document, string tenantId, IMartenDatabase database)
         {
-            return _parent.AssignIdentity(document, tenant);
+            return _parent.AssignIdentity(document, tenantId, database);
         }
 
         public TId Identity(T document)
@@ -255,17 +255,17 @@ namespace Marten.Internal.Storage
             return _parent.ByIdFilter(id);
         }
 
-        public IDeletion HardDeleteForId(TId id, Tenant tenant)
+        public IDeletion HardDeleteForId(TId id, string tenant)
         {
             return _parent.HardDeleteForId(id, tenant);
         }
 
-        public NpgsqlCommand BuildLoadCommand(TId id, Tenant tenant)
+        public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
         {
             return _parent.BuildLoadCommand(id, tenant);
         }
 
-        public NpgsqlCommand BuildLoadManyCommand(TId[] ids, Tenant tenant)
+        public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
         {
             return _parent.BuildLoadManyCommand(ids, tenant);
         }
@@ -280,9 +280,9 @@ namespace Marten.Internal.Storage
             _parent.RemoveDirtyTracker(session, id);
         }
 
-        public IDeletion HardDeleteForDocument(T document, Tenant tenant)
+        public IDeletion HardDeleteForDocument(T document, string tenantId)
         {
-            return _parent.HardDeleteForDocument(document, tenant);
+            return _parent.HardDeleteForDocument(document, tenantId);
         }
     }
 }

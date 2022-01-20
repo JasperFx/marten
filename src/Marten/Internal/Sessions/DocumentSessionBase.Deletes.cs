@@ -14,7 +14,7 @@ namespace Marten.Internal.Sessions
             assertNotDisposed();
             var documentStorage = StorageFor<T>();
 
-            var deletion = documentStorage.DeleteForDocument(entity, Tenant);
+            var deletion = documentStorage.DeleteForDocument(entity, TenantId);
             _workTracker.Add(deletion);
 
             documentStorage.Eject(this, entity);
@@ -28,13 +28,13 @@ namespace Marten.Internal.Sessions
 
             if (storage is IDocumentStorage<T, int> i)
             {
-                _workTracker.Add(i.DeleteForId(id, Tenant));
+                _workTracker.Add(i.DeleteForId(id, TenantId));
 
                 ejectById<T>(id);
             }
             else if (storage is IDocumentStorage<T, long> l)
             {
-                _workTracker.Add(l.DeleteForId(id, Tenant));
+                _workTracker.Add(l.DeleteForId(id, TenantId));
 
                 ejectById<T>((long)id);
             }
@@ -47,7 +47,7 @@ namespace Marten.Internal.Sessions
         public void Delete<T>(long id) where T : notnull
         {
             assertNotDisposed();
-            var deletion = StorageFor<T, long>().DeleteForId(id, Tenant);
+            var deletion = StorageFor<T, long>().DeleteForId(id, TenantId);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -56,7 +56,7 @@ namespace Marten.Internal.Sessions
         public void Delete<T>(Guid id) where T : notnull
         {
             assertNotDisposed();
-            var deletion = StorageFor<T, Guid>().DeleteForId(id, Tenant);
+            var deletion = StorageFor<T, Guid>().DeleteForId(id, TenantId);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);
@@ -66,7 +66,7 @@ namespace Marten.Internal.Sessions
         {
             assertNotDisposed();
 
-            var deletion = StorageFor<T, string>().DeleteForId(id, Tenant);
+            var deletion = StorageFor<T, string>().DeleteForId(id, TenantId);
             _workTracker.Add(deletion);
 
             ejectById<T>(id);

@@ -118,9 +118,9 @@ namespace Marten.Internal.CodeGeneration
             if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
             {
                 load.Frames.Code(
-                    "return new NpgsqlCommand(_loaderSql).With(\"id\", id).With(TenantIdArgument.ArgName, tenant.TenantId);");
+                    "return new NpgsqlCommand(_loaderSql).With(\"id\", id).With(TenantIdArgument.ArgName, tenant);");
                 loadByArray.Frames.Code(
-                    "return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids).With(TenantIdArgument.ArgName, tenant.TenantId);");
+                    "return new NpgsqlCommand(_loadArraySql).With(\"ids\", ids).With(TenantIdArgument.ArgName, tenant);");
             }
             else
             {
@@ -191,6 +191,7 @@ namespace Marten.Internal.CodeGeneration
             {
                 tenantDeclaration = ", tenant";
             }
+
 
             if (_mapping.IsHierarchy())
             {

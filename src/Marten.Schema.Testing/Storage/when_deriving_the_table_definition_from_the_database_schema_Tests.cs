@@ -26,7 +26,7 @@ namespace Marten.Schema.Testing.Storage
             theMapping.DuplicateField("UserName");
 
 
-            _storage = theStore.Tenancy.Default.Storage.StorageFor<User>();
+            _storage = theStore.Tenancy.Default.Database.StorageFor<User>();
 
             theDerivedTable = new DocumentTable(theMapping);
         }

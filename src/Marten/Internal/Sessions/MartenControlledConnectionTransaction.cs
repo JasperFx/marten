@@ -52,7 +52,7 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
-                Connection = _options.Tenant.Storage.CreateConnection();
+                Connection = _options.Tenant.Database.CreateConnection();
                 Connection.Open();
 
             }
@@ -77,7 +77,7 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
-                Connection = _options.Tenant.Storage.CreateConnection();
+                Connection = _options.Tenant.Database.CreateConnection();
                 await Connection.OpenAsync(token).ConfigureAwait(false);
 
             }

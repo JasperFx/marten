@@ -25,7 +25,7 @@ namespace Marten.Testing.Bugs
                     .ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
             });
 
-            theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default.Storage).All(x => x != null).ShouldBeTrue();
+            theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null).ShouldBeTrue();
         }
 
         [Fact]

@@ -18,7 +18,7 @@ namespace Marten.Services
 
         public async Task<T> Query<T>(ISingleQueryHandler<T> handler, CancellationToken cancellation)
         {
-            using var conn = _tenant.Storage.CreateConnection();
+            using var conn = _tenant.Database.CreateConnection();
 
             var command = handler.BuildCommand();
             command.Connection = conn;
@@ -31,7 +31,7 @@ namespace Marten.Services
 
         public async Task SingleCommit(DbCommand command, CancellationToken cancellation)
         {
-            using var conn = _tenant.Storage.CreateConnection();
+            using var conn = _tenant.Database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
             command.Connection = conn;

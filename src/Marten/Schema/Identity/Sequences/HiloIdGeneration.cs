@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
+using Marten.Internal;
 using Marten.Storage;
 #nullable enable
 namespace Marten.Schema.Identity.Sequences
@@ -30,11 +31,11 @@ namespace Marten.Schema.Identity.Sequences
 
             if (mapping.IdType == typeof(int))
             {
-                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Storage.Sequences.SequenceFor({{2}}).NextInt());", document, Use.Type<Tenant>(), mapping.DocumentType);
+                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Sequences.SequenceFor({{2}}).NextInt());", document, Use.Type<IMartenDatabase>(), mapping.DocumentType);
             }
             else
             {
-                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Storage.Sequences.SequenceFor({{2}}).NextLong());", document, Use.Type<Tenant>(), mapping.DocumentType);
+                method.Frames.Code($"if ({{0}}.{mapping.IdMember.Name} <= 0) _setter({{0}}, {{1}}.Sequences.SequenceFor({{2}}).NextLong());", document, Use.Type<IMartenDatabase>(), mapping.DocumentType);
             }
 
             method.Frames.Code($"return {{0}}.{mapping.IdMember.Name};", document);

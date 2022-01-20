@@ -26,11 +26,10 @@ namespace Marten.Internal.DirtyTracking
             }
 
             operation = session
-                .Tenant
-                .Storage
+                .Database
                 .Providers.StorageFor<T>()
                 .DirtyTracking
-                .Upsert(_document, session, session.Tenant);
+                .Upsert(_document, session, session.TenantId);
 
             return true;
         }

@@ -11,7 +11,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void works_just_fine_on_the_first_cut()
         {
-            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(HistoryDoc));
+            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(HistoryDoc));
 
             var store2 = SeparateStore(_ =>
             {
@@ -19,7 +19,7 @@ namespace Marten.Testing.Bugs
                 _.Schema.For<HistoryDoc>().Duplicate(x => x.UrlHistory, pgType: "text[]");
             });
 
-            store2.Tenancy.Default.Storage.EnsureStorageExists(typeof(HistoryDoc));
+            store2.Tenancy.Default.Database.EnsureStorageExists(typeof(HistoryDoc));
         }
 
     }

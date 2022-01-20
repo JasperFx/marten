@@ -6,7 +6,7 @@ namespace Marten.Storage
     {
         internal static IEventStorage EventStorage(this Tenant tenant)
         {
-            return (IEventStorage)tenant.Storage.StorageFor<IEvent>();
+            return (IEventStorage)tenant.Database.StorageFor<IEvent>();
         }
     }
 }

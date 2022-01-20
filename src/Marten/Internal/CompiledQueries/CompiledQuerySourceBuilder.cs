@@ -231,7 +231,7 @@ namespace Marten.Internal.CompiledQueries
 
             if (hardcoded.HasTenantId)
             {
-                method.Frames.Code($"{{0}}.{nameof(CommandBuilder.AddNamedParameter)}({{1}}, session.Tenant.TenantId);",
+                method.Frames.Code($"{{0}}.{nameof(CommandBuilder.AddNamedParameter)}({{1}}, session.TenantId);",
                     Use.Type<CommandBuilder>(), TenantIdArgument.ArgName);
             }
 

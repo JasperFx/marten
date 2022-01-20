@@ -85,7 +85,7 @@ namespace Marten.PLv8.Testing.Transforms
         [Fact] //-- Unreliable on CI
         public async Task use_transform_in_production_mode()
         {
-            theStore.Tenancy.Default.Storage.EnsureStorageExists(typeof(User));
+            theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(User));
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
             await theStore.TransformAsync(x => x.All<User>("default_username"));

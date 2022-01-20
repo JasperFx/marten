@@ -65,7 +65,7 @@ namespace Marten.Schema.Testing.Storage
                 }
 
 
-                var table = await store2.Tenancy.Default.Storage.ExistingTableFor(typeof(User));
+                var table = await store2.Tenancy.Default.Database.ExistingTableFor(typeof(User));
 
                 table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();
@@ -97,7 +97,7 @@ namespace Marten.Schema.Testing.Storage
                 }
 
 
-                var table = await store2.Tenancy.Default.Storage.ExistingTableFor(typeof(User));
+                var table = await store2.Tenancy.Default.Database.ExistingTableFor(typeof(User));
 
                 table.HasColumn(SchemaConstants.DeletedColumn).ShouldBeTrue();
                 table.HasColumn(SchemaConstants.DeletedAtColumn).ShouldBeTrue();

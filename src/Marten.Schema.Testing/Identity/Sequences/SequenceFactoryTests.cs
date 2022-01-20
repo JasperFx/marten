@@ -13,20 +13,20 @@ namespace Marten.Schema.Testing.Identity.Sequences
     {
         public SequenceFactoryTests()
         {
-            theStore.Tenancy.Default.Storage.Sequences.Hilo(typeof(Target), new HiloSettings())
+            theStore.Tenancy.Default.Database.Sequences.Hilo(typeof(Target), new HiloSettings())
                 .ShouldBeOfType<HiloSequence>();
         }
 
         [Fact]
         public async Task can_create_table_on_fly_if_necessary()
         {
-            (await theStore.Tenancy.Default.Storage.Functions()).Select(x => x.QualifiedName).ShouldContain("public.mt_get_next_hi");
+            (await theStore.Tenancy.Default.Database.Functions()).Select(x => x.QualifiedName).ShouldContain("public.mt_get_next_hi");
         }
 
         [Fact]
         public async Task can_create_function_on_fly_if_necessary()
         {
-            (await theStore.Tenancy.Default.Storage.Functions()).Select(x => x.QualifiedName).ShouldContain("public.mt_get_next_hi");
+            (await theStore.Tenancy.Default.Database.Functions()).Select(x => x.QualifiedName).ShouldContain("public.mt_get_next_hi");
         }
 
 
@@ -39,20 +39,20 @@ namespace Marten.Schema.Testing.Identity.Sequences
         {
             StoreOptions(x => x.DatabaseSchemaName = "seq_other");
 
-            theStore.Tenancy.Default.Storage.Sequences.Hilo(typeof(Target), new HiloSettings())
+            theStore.Tenancy.Default.Database.Sequences.Hilo(typeof(Target), new HiloSettings())
                 .ShouldBeOfType<HiloSequence>();
         }
 
         [Fact]
         public async Task can_create_table_on_fly_if_necessary()
         {
-            (await theStore.Tenancy.Default.Storage.SchemaTables()).Select(x => x.QualifiedName).ShouldContain("seq_other.mt_hilo");
+            (await theStore.Tenancy.Default.Database.SchemaTables()).Select(x => x.QualifiedName).ShouldContain("seq_other.mt_hilo");
         }
 
         [Fact]
         public async Task can_create_function_on_fly_if_necessary()
         {
-            (await theStore.Tenancy.Default.Storage.Functions()).Select(x => x.QualifiedName).ShouldContain("seq_other.mt_get_next_hi");
+            (await theStore.Tenancy.Default.Database.Functions()).Select(x => x.QualifiedName).ShouldContain("seq_other.mt_get_next_hi");
         }
     }
 }

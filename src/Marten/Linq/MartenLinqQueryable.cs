@@ -150,7 +150,7 @@ namespace Marten.Linq
         {
             var command = ToPreviewCommand(fetchType);
 
-            using var conn = Session.Tenant.Storage.CreateConnection();
+            using var conn = Session.Database.CreateConnection();
             conn.Open();
             command.Connection = conn;
             return conn.ExplainQuery(Session.Serializer, command, configureExplain)!;

@@ -23,7 +23,7 @@ namespace Marten.Testing.CoreFunctionality
             });
 
             await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
-            (await theStore.Tenancy.Default.Storage.SchemaTables()).Any(x => x.Name == "mt_fake_table")
+            (await theStore.Tenancy.Default.Database.SchemaTables()).Any(x => x.Name == "mt_fake_table")
                 .ShouldBeTrue();
         }
 

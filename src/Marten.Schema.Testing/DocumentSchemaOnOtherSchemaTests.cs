@@ -47,16 +47,16 @@ namespace Marten.Schema.Testing
         [Fact]
         public async Task builds_schema_objects_on_the_fly_as_needed()
         {
-            theStore.Tenancy.Default.Storage.StorageFor<User>().ShouldNotBeNull();
-            theStore.Tenancy.Default.Storage.StorageFor<Issue>().ShouldNotBeNull();
-            theStore.Tenancy.Default.Storage.StorageFor<Company>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<User>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<Issue>().ShouldNotBeNull();
+            theStore.Tenancy.Default.Database.StorageFor<Company>().ShouldNotBeNull();
 
-            var tables = (await theStore.Tenancy.Default.Storage.SchemaTables()).Select(x => x.QualifiedName).ToArray();
+            var tables = (await theStore.Tenancy.Default.Database.SchemaTables()).Select(x => x.QualifiedName).ToArray();
             tables.ShouldContain("other.mt_doc_user");
             tables.ShouldContain("other.mt_doc_issue");
             tables.ShouldContain("other.mt_doc_company");
 
-            var functions = (await theStore.Tenancy.Default.Storage.Functions()).Select(x => x.QualifiedName).ToArray();
+            var functions = (await theStore.Tenancy.Default.Database.Functions()).Select(x => x.QualifiedName).ToArray();
             functions.ShouldContain("other.mt_upsert_user");
             functions.ShouldContain("other.mt_upsert_issue");
             functions.ShouldContain("other.mt_upsert_company");
@@ -150,7 +150,7 @@ namespace Marten.Schema.Testing
         {
             theStore.Events.AddEventType(typeof(RaceStarted));
 
-            theStore.Tenancy.Default.Storage.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
+            theStore.Tenancy.Default.Database.StorageFor<RaceStarted>().ShouldBeOfType<EventMapping<RaceStarted>>()
                 .DocumentType.ShouldBe(typeof(RaceStarted));
         }
 

@@ -94,10 +94,10 @@ namespace Marten.Events.Aggregation
 
             if (aggregate == null)
             {
-                return Storage.DeleteForId(slice.Id, slice.Tenant);
+                return Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
             }
 
-            return Storage.Upsert(aggregate, session, slice.Tenant);
+            return Storage.Upsert(aggregate, session, slice.Tenant.TenantId);
         }
 
         public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
@@ -133,7 +133,7 @@ namespace Marten.Events.Aggregation
 
                 if (Projection.MatchesAnyDeleteType(slice))
                 {
-                    operation = Storage.DeleteForId(slice.Id, slice.Tenant);
+                    operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
                 }
                 else
                 {
