@@ -73,7 +73,7 @@ namespace Marten.Internal
                 case EventMapping em:
                 {
                     var storage = (IDocumentStorage<T>) em;
-                    var slot = new DocumentProvider<T> {Lightweight = storage, IdentityMap = storage, DirtyTracking = storage, QueryOnly = storage};
+                    var slot = new DocumentProvider<T>(null, storage, storage, storage, storage);
                     _storage = _storage.AddOrUpdate(documentType, slot);
 
                     return slot;
@@ -94,14 +94,13 @@ namespace Marten.Internal
             {
                 var inner = graph.StorageFor<TRoot>();
 
-                return new DocumentProvider<T>()
-                {
-                    QueryOnly = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.QueryOnly, mapping),
-                    Lightweight = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.Lightweight, mapping),
-                    IdentityMap = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.IdentityMap, mapping),
-                    DirtyTracking = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.DirtyTracking, mapping),
-                    BulkLoader = new SubClassBulkLoader<T, TRoot>(inner.BulkLoader)
-                };
+                var queryOnly = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.QueryOnly, mapping);
+                var lightweight = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.Lightweight, mapping);
+                var identityMap = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.IdentityMap, mapping);
+                var dirtyTracking = new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>) inner.DirtyTracking, mapping);
+
+                var bulkLoader = new SubClassBulkLoader<T, TRoot>(inner.BulkLoader);
+                return new DocumentProvider<T>(bulkLoader, queryOnly, lightweight, identityMap, dirtyTracking);
             }
         }
     }

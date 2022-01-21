@@ -493,8 +493,6 @@ namespace Marten.Testing.Acceptance
 
             await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
-            _output.WriteLine(theStore.Advanced.SourceCodeForDocumentType(typeof(Target)).AllSourceCode());
-
             using (var session = theStore.OpenSession())
             {
                 session.ForTenant("Red").Store(reds.AsEnumerable());

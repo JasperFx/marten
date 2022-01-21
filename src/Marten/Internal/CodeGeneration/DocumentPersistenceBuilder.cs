@@ -3,13 +3,12 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Model;
 using LamarCompiler;
 using Marten.Internal.Storage;
-using Weasel.Postgresql;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
-using Marten.Util;
 using Npgsql;
 using CommandExtensions = Weasel.Postgresql.CommandExtensions;
 
@@ -24,7 +23,11 @@ namespace Marten.Internal.CodeGeneration
         {
             _mapping = mapping;
             _options = options;
+
+            ProviderName = $"{mapping.DocumentType.Name.Sanitize()}Provider";
         }
+
+        public string ProviderName { get; }
 
         public void AssemblyTypes(GeneratedAssembly assembly)
         {
@@ -53,36 +56,10 @@ namespace Marten.Internal.CodeGeneration
 
         public static DocumentProvider<T> FromPreBuiltTypes<T>(Assembly assembly, DocumentMapping mapping)
         {
-            var queryOnly = assembly.ExportedTypes.FirstOrDefault(x =>
-                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.QueryOnly));
+            var providerType = assembly.ExportedTypes.FirstOrDefault(x =>
+                x.Name == new DocumentPersistenceBuilder(mapping, mapping.StoreOptions).ProviderName);
 
-            var lightweight = assembly.ExportedTypes.FirstOrDefault(x =>
-                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.Lightweight));
-
-            var identityMap = assembly.ExportedTypes.FirstOrDefault(x =>
-                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.IdentityMap));
-
-            var dirtyTracking = assembly.ExportedTypes.FirstOrDefault(x =>
-                x.Name == DocumentStorageBuilder.DeriveTypeName(mapping, StorageStyle.DirtyTracking));
-
-            var bulkWriterType =
-                assembly.ExportedTypes.FirstOrDefault(x => x.Name == new BulkLoaderBuilder(mapping).TypeName);
-
-            var slot = new DocumentProvider<T>
-            {
-                QueryOnly = (IDocumentStorage<T>)Activator.CreateInstance(queryOnly, mapping),
-                Lightweight = (IDocumentStorage<T>)Activator.CreateInstance(lightweight, mapping),
-                IdentityMap = (IDocumentStorage<T>)Activator.CreateInstance(identityMap, mapping),
-                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking, mapping),
-
-            };
-
-            slot.BulkLoader = mapping.IsHierarchy()
-                ? (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType, slot.QueryOnly, mapping)
-                : (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType, slot.QueryOnly);
-
-
-            return slot;
+            return Activator.CreateInstance(providerType, mapping) as DocumentProvider<T>;
         }
 
         public DocumentProvider<T> Generate<T>()
@@ -124,6 +101,29 @@ namespace Marten.Internal.CodeGeneration
                 compiler.ReferenceAssembly(referencedAssembly);
             }
 
+            var providerType = assembly.AddType(ProviderName,
+                typeof(DocumentProvider<>).MakeGenericType(_mapping.DocumentType));
+            providerType.AllInjectedFields.Clear();
+
+            providerType.AllInjectedFields.Add(new InjectedField(typeof(DocumentMapping), "mapping"));
+
+            var bulkWriterArgType = typeof(IBulkLoader<>).MakeGenericType(_mapping.DocumentType);
+            var bulkWriterArgs = $"new {queryOnly.TypeName}(mapping)";
+            if (bulkWriterType.AllInjectedFields.Count == 2)
+            {
+                bulkWriterArgs += ", mapping";
+            }
+
+            var bulkWriterCode = $"new {bulkWriterType.TypeName}({bulkWriterArgs})";
+            providerType.BaseConstructorArguments[0] = new Variable(bulkWriterArgType, bulkWriterCode);
+
+
+            providerType.BaseConstructorArguments[1] = new CreateFromDocumentMapping(_mapping, typeof(IDocumentStorage<>), queryOnly);
+            providerType.BaseConstructorArguments[2] = new CreateFromDocumentMapping(_mapping, typeof(IDocumentStorage<>), lightweight);
+            providerType.BaseConstructorArguments[3] = new CreateFromDocumentMapping(_mapping, typeof(IDocumentStorage<>), identityMap);
+            providerType.BaseConstructorArguments[4] = new CreateFromDocumentMapping(_mapping, typeof(IDocumentStorage<>), dirtyTracking);
+
+
             try
             {
                 compiler.Compile(assembly);
@@ -138,27 +138,7 @@ namespace Marten.Internal.CodeGeneration
                 throw;
             }
 
-            var slot = new DocumentProvider<T>
-            {
-                QueryOnly = (IDocumentStorage<T>)Activator.CreateInstance(queryOnly.CompiledType, _mapping),
-                Lightweight = (IDocumentStorage<T>)Activator.CreateInstance(lightweight.CompiledType, _mapping),
-                IdentityMap = (IDocumentStorage<T>)Activator.CreateInstance(identityMap.CompiledType, _mapping),
-                DirtyTracking = (IDocumentStorage<T>)Activator.CreateInstance(dirtyTracking.CompiledType, _mapping),
-
-                Operations = operations,
-                QueryOnlyType = queryOnly,
-                LightweightType = lightweight,
-                IdentityMapType = identityMap,
-                DirtyTrackingType = dirtyTracking
-            };
-
-            slot.BulkLoader = _mapping.IsHierarchy()
-                ? (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType.CompiledType, slot.QueryOnly, _mapping)
-                : (IBulkLoader<T>)Activator.CreateInstance(bulkWriterType.CompiledType, slot.QueryOnly);
-
-            slot.BulkLoaderType = bulkWriterType;
-
-            return slot;
+            return (DocumentProvider<T>)Activator.CreateInstance(providerType.CompiledType, _mapping);
         }
     }
 }

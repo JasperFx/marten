@@ -16,6 +16,7 @@ using Marten.Events.Querying;
 using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
+using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -63,14 +64,7 @@ namespace Marten.Events.CodeGeneration
         {
             var (storage, code) = GenerateStorage(options);
 
-            return new DocumentProvider<IEvent>
-            {
-                DirtyTracking = storage,
-                Lightweight = storage,
-                IdentityMap = storage,
-                QueryOnly = storage,
-                SourceCode = code
-            };
+            return new DocumentProvider<IEvent>(null, storage, storage, storage, storage);
         }
 
         public static DocumentProvider<IEvent> BuildProviderFromAssembly(Assembly assembly, StoreOptions options)
@@ -83,14 +77,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             var storage = (EventDocumentStorage)Activator.CreateInstance(storageType, options);
-            return new DocumentProvider<IEvent>
-            {
-                DirtyTracking = storage,
-                Lightweight = storage,
-                IdentityMap = storage,
-                QueryOnly = storage,
-                SourceCode = storageType.FullNameInCode()
-            };
+            return new DocumentProvider<IEvent>(null, storage, storage, storage, storage);
         }
 
         public static GeneratedType AssembleTypes(StoreOptions options, GeneratedAssembly assembly)

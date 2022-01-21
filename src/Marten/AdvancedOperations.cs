@@ -180,12 +180,9 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public IDocumentSourceCode SourceCodeForDocumentType(Type type)
+        public string SourceCodeForDocumentType(Type type)
         {
-            var loader = typeof(DocumentSourceCodeLoader<>)
-                .CloseAndBuildAs<IDocumentSourceCodeLoader>(type);
-
-            return loader.Load(_store.Options.Providers);
+            throw new NotImplementedException("Broken, redo");
         }
 
         /// <summary>
@@ -195,20 +192,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         /// <returns></returns>
         public string SourceCodeForEventStore()
         {
-            return _store.Options.Providers.StorageFor<IEvent>().SourceCode;
-        }
-
-        internal interface IDocumentSourceCodeLoader
-        {
-            IDocumentSourceCode Load(IProviderGraph providers);
-        }
-
-        internal class DocumentSourceCodeLoader<T>: IDocumentSourceCodeLoader where T : notnull
-        {
-            public IDocumentSourceCode Load(IProviderGraph providers)
-            {
-                return providers.StorageFor<T>();
-            }
+            throw new NotImplementedException("Broken, redo");
         }
 
 

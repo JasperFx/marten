@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using LamarCodeGeneration;
+using LamarCodeGeneration.Frames;
+using LamarCodeGeneration.Model;
 using Marten.Internal.Operations;
 using Marten.Linq.Fields;
 using Marten.Linq.Filters;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
+using Marten.Schema.BulkLoading;
 using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Storage;
@@ -43,6 +47,31 @@ namespace Marten.Internal.Storage
 
         TenancyStyle TenancyStyle { get; }
 
+    }
+
+    internal class CreateFromDocumentMapping: Variable
+    {
+        public CreateFromDocumentMapping(DocumentMapping mapping, Type openType, GeneratedType type) : base(openType.MakeGenericType(mapping.DocumentType), $"new {type.TypeName}(mapping)")
+        {
+        }
+    }
+
+    public class DocumentProvider<T> where T : notnull
+    {
+        public DocumentProvider(IBulkLoader<T> bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight, IDocumentStorage<T> identityMap, IDocumentStorage<T> dirtyTracking)
+        {
+            BulkLoader = bulkLoader;
+            QueryOnly = queryOnly;
+            Lightweight = lightweight;
+            IdentityMap = identityMap;
+            DirtyTracking = dirtyTracking;
+        }
+
+        public IBulkLoader<T> BulkLoader { get; }
+        public IDocumentStorage<T> QueryOnly { get; }
+        public IDocumentStorage<T> Lightweight { get; }
+        public IDocumentStorage<T> IdentityMap { get; }
+        public IDocumentStorage<T> DirtyTracking { get; }
     }
 
     public interface IDocumentStorage<T> : IDocumentStorage where T : notnull

@@ -4,7 +4,6 @@ using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using Marten.Internal.Storage;
-using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
 using Marten.Services;

@@ -24,8 +24,6 @@ namespace Marten.Testing.Bugs
                 options.Schema.For<ParentDoc>().Duplicate(x => x.Child.Id);
             });
 
-            _output.WriteLine(theStore.Advanced.SourceCodeForDocumentType(typeof(ParentDoc)).BulkLoaderCode);
-
             await theStore.BulkInsertDocumentsAsync(new List<ParentDoc>
             {
                 new ParentDoc
@@ -44,8 +42,6 @@ namespace Marten.Testing.Bugs
             {
                 options.Schema.For<ParentDoc>().Duplicate(x => x.Child.Id);
             });
-
-            _output.WriteLine(theStore.Advanced.SourceCodeForDocumentType(typeof(ParentDoc)).BulkLoaderCode);
 
             theStore.BulkInsertDocuments(new List<ParentDoc>
             {
