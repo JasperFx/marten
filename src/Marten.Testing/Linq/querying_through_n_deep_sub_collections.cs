@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Pagination;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
-using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -81,10 +80,11 @@ namespace Marten.Testing.Linq
         public querying_through_n_deep_sub_collections(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;
+        }
 
-            theStore.BulkInsert(new Top[]{blueBill, top2, top3, greenBill, top5, top6, topNoBottoms});
-
-            theSession.Logger = new TestOutputMartenLogger(_output);
+        protected override Task fixtureSetup()
+        {
+            return theStore.BulkInsertAsync(new Top[]{blueBill, top2, top3, greenBill, top5, top6, topNoBottoms});
         }
 
         [Fact]

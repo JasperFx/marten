@@ -233,7 +233,7 @@ public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTra
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_use_an_existing_connection_and_transaction.cs#L27-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_use_an_existing_connection_and_transaction.cs#L31-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Transaction Isolation Level

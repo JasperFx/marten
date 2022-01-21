@@ -88,11 +88,16 @@ namespace Marten.Testing.Events
 
         public fetching_stream_state(DefaultStoreFixture fixture) : base(fixture)
         {
+
+        }
+
+        protected override Task fixtureSetup()
+        {
             var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             theStreamId = theSession.Events.StartStream<Quest>(joined, departed).Id;
-            theSession.SaveChanges();
+            return theSession.SaveChangesAsync();
         }
 
         [Fact]

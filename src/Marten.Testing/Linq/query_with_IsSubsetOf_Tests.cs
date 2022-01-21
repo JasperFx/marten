@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -13,6 +14,11 @@ namespace Marten.Testing.Linq
     {
         public query_with_IsSubsetOf_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+
+        }
+
+        protected override Task fixtureSetup()
+        {
             _allTargets = new[]
             {
                 CreateTarget("c#"),
@@ -23,7 +29,7 @@ namespace Marten.Testing.Linq
                 CreateTarget("sql", "mssql"),
                 CreateTarget(".net", "json", "mssql", "c#")
             };
-            theStore.BulkInsert(_allTargets);
+            return theStore.BulkInsertAsync(_allTargets);
         }
 
         public void is_subset_of_example()
@@ -37,7 +43,9 @@ namespace Marten.Testing.Linq
             #endregion
         }
 
-        private readonly Target[] _allTargets;
+
+
+        private Target[] _allTargets;
 
         private static Target CreateTarget(params string[] tags)
         {

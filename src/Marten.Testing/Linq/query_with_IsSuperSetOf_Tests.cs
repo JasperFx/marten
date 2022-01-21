@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -22,9 +23,14 @@ namespace Marten.Testing.Linq
             #endregion
         }
 
-        private readonly Target[] _allTargets;
+        private Target[] _allTargets;
 
         public query_with_IsSupersetOf_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+
+        }
+
+        protected override Task fixtureSetup()
         {
             _allTargets = new[]
             {
@@ -36,7 +42,7 @@ namespace Marten.Testing.Linq
                 CreateTarget("sql", "mssql"),
                 CreateTarget(".net", "json", "mssql", "c#")
             };
-            theStore.BulkInsert(_allTargets);
+            return theStore.BulkInsertAsync(_allTargets);
         }
 
         [Fact]

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Xunit;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Linq;
 using Marten.Util;
@@ -21,15 +22,20 @@ namespace Marten.Testing.Linq
         public StringNotVisitorTests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
 		{
             _output = output;
-            var entry = new User() { FirstName = "Beeblebrox" };
-			var entry2 = new User() { FirstName = "Bee" };
-			var entry3 = new User() { FirstName = "Zaphod" };
-			var entry4 = new User() { FirstName = "Zap" };
 
-			theStore.BulkInsert(new[] { entry, entry2, entry3, entry4 });
 		}
 
-		[Theory]
+        protected override Task fixtureSetup()
+        {
+            var entry = new User() { FirstName = "Beeblebrox" };
+            var entry2 = new User() { FirstName = "Bee" };
+            var entry3 = new User() { FirstName = "Zaphod" };
+            var entry4 = new User() { FirstName = "Zap" };
+
+            return theStore.BulkInsertAsync(new[] { entry, entry2, entry3, entry4 });
+        }
+
+        [Theory]
 		[InlineData("zap", StringComparison.OrdinalIgnoreCase, 3)]
 		[InlineData("Zap", StringComparison.CurrentCulture, 3)]
 		[InlineData("zap", StringComparison.CurrentCulture, 4)]

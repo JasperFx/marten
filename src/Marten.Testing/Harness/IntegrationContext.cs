@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Marten.Internal.CodeGeneration;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -39,13 +41,17 @@ namespace Marten.Testing.Harness
     }
 
     [Collection("integration")]
-    public class IntegrationContext : StoreContext<DefaultStoreFixture>
+    public class IntegrationContext : IDisposable, IAsyncLifetime
     {
+        private readonly DefaultStoreFixture _fixture;
         private DocumentStore _store;
+        private IDocumentSession _session;
+        protected readonly IList<IDisposable> Disposables = new List<IDisposable>();
 
-        public IntegrationContext(DefaultStoreFixture fixture) : base(fixture)
+
+        public IntegrationContext(DefaultStoreFixture fixture)
         {
-
+            _fixture = fixture;
         }
 
 
@@ -57,8 +63,6 @@ namespace Marten.Testing.Harness
         /// <returns></returns>
         protected string StoreOptions(Action<StoreOptions> configure)
         {
-            _overrodeStore = true;
-
             if (_session != null)
             {
                 _session.Dispose();
@@ -73,7 +77,7 @@ namespace Marten.Testing.Harness
             // Can be overridden
             options.AutoCreateSchemaObjects = AutoCreate.All;
             options.NameDataLength = 100;
-            options.DatabaseSchemaName = "special";
+            options.DatabaseSchemaName = GetType().Name.Sanitize();
 
             configure(options);
 
@@ -83,38 +87,70 @@ namespace Marten.Testing.Harness
             _store.Advanced.Clean.CompletelyRemoveAll();
 
             return options.DatabaseSchemaName;
-
-
         }
 
-        private bool _hasBuiltStore = false;
-        private bool _overrodeStore;
-
-        protected override DocumentStore theStore
+        protected DocumentStore theStore
         {
             get
             {
                 if (_store != null) return _store;
 
-                if (!_hasBuiltStore)
-                {
-                    base.theStore.Advanced.Clean.DeleteAllDocuments();
-                    base.theStore.Advanced.Clean.DeleteAllEventData();
-                    _hasBuiltStore = true;
-                }
-
-                return base.theStore;
+                return _fixture.Store;
             }
         }
 
-        public override void Dispose()
-        {
-            if (_overrodeStore)
-            {
-                Fixture.Store.Advanced.Clean.CompletelyRemoveAll();
-            }
 
-            base.Dispose();
+        /// <summary>
+        /// Sets the default DocumentTracking for this context. Default is "None"
+        /// </summary>
+        protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
+
+
+        protected IDocumentSession theSession
+        {
+            get
+            {
+                if (_session == null)
+                {
+                    _session = theStore.OpenSession(DocumentTracking);
+                    Disposables.Add(_session);
+                }
+
+                return _session;
+            }
+        }
+
+        protected async Task AppendEvent(Guid streamId, params object[] events)
+        {
+            theSession.Events.Append(streamId, events);
+            await theSession.SaveChangesAsync();
+        }
+
+        public virtual void Dispose()
+        {
+            foreach (var disposable in Disposables)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        public async Task InitializeAsync()
+        {
+            await _fixture.Store.Advanced.Clean.DeleteAllDocumentsAsync();
+            await _fixture.Store.Advanced.Clean.DeleteAllEventDataAsync();
+
+            await fixtureSetup();
+        }
+
+        protected virtual Task fixtureSetup()
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task DisposeAsync()
+        {
+            Dispose();
+            return Task.CompletedTask;
         }
     }
 }

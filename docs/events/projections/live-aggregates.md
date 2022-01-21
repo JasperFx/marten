@@ -386,7 +386,7 @@ var closedCashierShift =
 var (openedCashierShift, cashierShiftOpened) =
     OpenAccountingMonth(closedCashierShift!);
 
-var repository = new CashRegisterRepository(_session);
+var repository = new CashRegisterRepository(theSession);
 
 await repository.Store(openedCashierShift, cashierShiftOpened);
 ```

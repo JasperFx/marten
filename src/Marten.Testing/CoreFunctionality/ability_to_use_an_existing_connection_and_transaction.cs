@@ -19,9 +19,13 @@ namespace Marten.Testing.CoreFunctionality
 
         public ability_to_use_an_existing_connection_and_transaction(DefaultStoreFixture fixture,ITestOutputHelper output = null) : base(fixture)
         {
-            theStore.BulkInsertDocuments(targets);
+
         }
 
+        protected override Task fixtureSetup()
+        {
+            return theStore.BulkInsertDocumentsAsync(targets);
+        }
 
 
         #region sample_passing-in-existing-connections-and-transactions

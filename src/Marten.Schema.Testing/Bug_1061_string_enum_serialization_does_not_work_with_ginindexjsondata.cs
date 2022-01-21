@@ -3,10 +3,9 @@ using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Linq
+namespace Marten.Schema.Testing
 {
     public class Bug_1061_Class
     {
@@ -19,7 +18,7 @@ namespace Marten.Testing.Linq
         One
     }
 
-    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: IntegrationContext
+    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: Marten.Testing.Harness.IntegrationContext
     {
         [Fact]
         public async Task string_enum_serialization_does_not_work_with_ginindexjsondata()
