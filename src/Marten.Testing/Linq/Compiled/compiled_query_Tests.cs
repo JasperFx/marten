@@ -17,10 +17,15 @@ namespace Marten.Testing.Linq.Compiled
 {
     public class compiled_query_Tests: IntegrationContext
     {
-        private readonly User _user1;
-        private readonly User _user5;
+        private User _user1;
+        private User _user5;
 
         public compiled_query_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        {
+
+        }
+
+        protected override Task fixtureSetup()
         {
             _user1 = new User { FirstName = "Jeremy", UserName = "jdm", LastName = "Miller" };
             var user2 = new User { FirstName = "Jens" };
@@ -29,7 +34,7 @@ namespace Marten.Testing.Linq.Compiled
             _user5 = new User { FirstName = "Jeremy", UserName = "shadetreedev", LastName = "Miller" };
 
             theSession.Store(_user1, user2, user3, user4, _user5);
-            theSession.SaveChanges();
+            return theSession.SaveChangesAsync();
         }
 
         [Fact]

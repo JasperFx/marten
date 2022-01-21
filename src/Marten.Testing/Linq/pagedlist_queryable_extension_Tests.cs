@@ -3,18 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Xunit;
-using Shouldly;
-using Marten.Services;
-using Marten.Pagination;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Linq;
-using Marten.Schema.Identity.Sequences;
+using Marten.Pagination;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
+using Xunit;
 
-namespace Marten.Testing.Pagination
+namespace Marten.Testing.Linq
 {
     public class PaginationTestDocument
     {
@@ -43,12 +41,15 @@ namespace Marten.Testing.Pagination
 
     public class pagedlist_queryable_extension_Tests : IntegrationContext
     {
-        private void BuildUpTargetData()
+        public pagedlist_queryable_extension_Tests(DefaultStoreFixture fixture) : base(fixture)
+        {
+        }
+
+        protected override async Task fixtureSetup()
         {
             var targets = Target.GenerateRandomData(100).ToArray();
 
-            theSession.Store(targets);
-            theSession.SaveChanges();
+            await theStore.BulkInsertDocumentsAsync(targets);
         }
 
         private void BuildUpDocumentWithZeroRecords()
@@ -61,11 +62,6 @@ namespace Marten.Testing.Pagination
 
             theSession.Delete<PaginationTestDocument>(doc);
             theSession.SaveChanges();
-        }
-
-        public pagedlist_queryable_extension_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-            BuildUpTargetData();
         }
 
         [Fact]
@@ -115,7 +111,7 @@ namespace Marten.Testing.Pagination
 
             var ex =
                 await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
-                    async () => await toPagedList(_session.Query<Target>(), pageNumber, pageSize));
+                    async () => await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
             SpecificationExtensions.ShouldContain(ex.Message, "pageNumber = 0. PageNumber cannot be below 1.");
         }
 
@@ -130,7 +126,7 @@ namespace Marten.Testing.Pagination
 
             var ex =
                 await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
-                    async () =>  await toPagedList(_session.Query<Target>(), pageNumber, pageSize));
+                    async () =>  await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
             SpecificationExtensions.ShouldContain(ex.Message, $"pageSize = 0. PageSize cannot be below 1.");
         }
 
@@ -145,7 +141,7 @@ namespace Marten.Testing.Pagination
 
             var expectedPageCount = theSession.Query<Target>().Count()/pageSize;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.PageCount.ShouldBe(expectedPageCount);
         }
 
@@ -159,7 +155,7 @@ namespace Marten.Testing.Pagination
 
             var expectedTotalItemsCount = theSession.Query<Target>().Count();
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.TotalItemCount.ShouldBe(expectedTotalItemsCount);
         }
 
@@ -173,7 +169,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasPreviousPage = true;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.HasPreviousPage.ShouldBe(expectedHasPreviousPage);
         }
 
@@ -187,7 +183,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasPreviousPage = false;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.HasPreviousPage.ShouldBe(expectedHasPreviousPage);
         }
 
@@ -201,7 +197,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasNextPage = true;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.HasNextPage.ShouldBe(expectedHasNextPage);
         }
 
@@ -215,7 +211,7 @@ namespace Marten.Testing.Pagination
 
             var expectedHasNextPage = false;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.HasNextPage.ShouldBe(expectedHasNextPage);
         }
 
@@ -229,7 +225,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsFirstPage = true;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.IsFirstPage.ShouldBe(expectedIsFirstPage);
         }
 
@@ -243,7 +239,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsFirstPage = false;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.IsFirstPage.ShouldBe(expectedIsFirstPage);
         }
 
@@ -257,7 +253,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsLastPage = true;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.IsLastPage.ShouldBe(expectedIsLastPage);
         }
 
@@ -271,7 +267,7 @@ namespace Marten.Testing.Pagination
 
             var expectedIsLastPage = false;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.IsLastPage.ShouldBe(expectedIsLastPage);
         }
 
@@ -285,7 +281,7 @@ namespace Marten.Testing.Pagination
 
             var expectedFirstItemOnPage = 11;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.FirstItemOnPage.ShouldBe(expectedFirstItemOnPage);
         }
 
@@ -299,7 +295,7 @@ namespace Marten.Testing.Pagination
 
             var expectedLastItemOnPage = 20;
 
-            var pagedList = await toPagedList(_session.Query<Target>(), pageNumber, pageSize);
+            var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
             pagedList.LastItemOnPage.ShouldBe(expectedLastItemOnPage);
         }
 

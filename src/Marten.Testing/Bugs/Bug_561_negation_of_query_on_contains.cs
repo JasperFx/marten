@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -11,6 +12,11 @@ namespace Marten.Testing.Bugs
     {
         public Bug_561_negation_of_query_on_contains(DefaultStoreFixture fixture) : base(fixture)
         {
+
+        }
+
+        protected override Task fixtureSetup()
+        {
             var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
             var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
             var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
@@ -18,7 +24,7 @@ namespace Marten.Testing.Bugs
 
             theSession.Store(doc1, doc2, doc3, doc4);
 
-            theSession.SaveChanges();
+            return theSession.SaveChangesAsync();
         }
 
         [Fact]

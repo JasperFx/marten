@@ -17,7 +17,12 @@ namespace Marten.Testing.Linq
     {
         public invoking_query_with_statistics(DefaultStoreFixture fixture) : base(fixture)
         {
-            theStore.BulkInsert(Target.GenerateRandomData(100).ToArray());
+
+        }
+
+        protected override Task fixtureSetup()
+        {
+            return theStore.BulkInsertAsync(Target.GenerateRandomData(100).ToArray());
         }
 
         #region sample_compiled-query-statistics

@@ -80,13 +80,13 @@ Finally, you can query for child collections that do **not** contain a value:
 theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
     .ShouldBe(2);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_561_negation_of_query_on_contains.cs#L27-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_561_negation_of_query_on_contains.cs#L33-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_negated-contains-1'></a>
 ```cs
 theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
     .ShouldBe(2);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_561_negation_of_query_on_contains.cs#L67-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Bugs/Bug_561_negation_of_query_on_contains.cs#L73-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying within Value IEnumerables
@@ -270,7 +270,7 @@ var users = session.Query<SuperUser>()
 var posts = theSession.Query<Post>()
     .Where(x => x.Tags.IsSupersetOf("c#", "json", "postgres"));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_IsSuperSetOf_Tests.cs#L16-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_superset_of' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_IsSuperSetOf_Tests.cs#L17-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_superset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## IsSubsetOf
@@ -283,5 +283,5 @@ var posts = theSession.Query<Post>()
 var posts = theSession.Query<Post>()
     .Where(x => x.Tags.IsSubsetOf("c#", "json", "postgres"));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_IsSubsetOf_Tests.cs#L31-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_subset_of' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_IsSubsetOf_Tests.cs#L37-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_subset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -19,6 +19,11 @@ namespace Marten.Testing.Linq
 
         public query_running_through_the_IdentityMap_Tests(DefaultStoreFixture fixture) : base(fixture)
         {
+
+        }
+
+        protected override async Task fixtureSetup()
+        {
             DocumentTracking = DocumentTracking.IdentityOnly;
 
             #region sample_using-store-with-multiple-docs
@@ -30,9 +35,9 @@ namespace Marten.Testing.Linq
             theSession.Store(user1, user2, user3, user4);
             #endregion
 
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            theSession.Load<User>(user1.Id).ShouldBeTheSameAs(user1);
+            (await theSession.LoadAsync<User>(user1.Id)).ShouldBeTheSameAs(user1);
         }
 
         [Fact]

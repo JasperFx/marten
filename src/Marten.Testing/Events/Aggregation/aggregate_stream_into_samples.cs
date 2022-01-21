@@ -181,7 +181,7 @@ namespace Marten.Testing.Events.Aggregation
             var (openedCashierShift, cashierShiftOpened) =
                 OpenAccountingMonth(closedCashierShift!);
 
-            var repository = new CashRegisterRepository(_session);
+            var repository = new CashRegisterRepository(theSession);
 
             await repository.Store(openedCashierShift, cashierShiftOpened);
 

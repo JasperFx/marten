@@ -11,6 +11,7 @@ using Marten.Testing.Harness;
 using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Marten.Testing.Services.BatchedQuerying
 {
@@ -123,6 +124,7 @@ namespace Marten.Testing.Services.BatchedQuerying
     // TODO -- I vote to move this to ST specs for perf reasons
     public class batched_querying_acceptance_Tests : IntegrationContext
     {
+        private readonly ITestOutputHelper _output;
         private readonly Target target1 = Target.Random();
         private readonly Target target2 = Target.Random();
         private readonly Target target3 = Target.Random();
@@ -161,8 +163,9 @@ namespace Marten.Testing.Services.BatchedQuerying
             Role = "Master"
         };
 
-        public batched_querying_acceptance_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public batched_querying_acceptance_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
+            _output = output;
             DocumentTracking = DocumentTracking.IdentityOnly;
             StoreOptions(_ =>
             {
@@ -170,7 +173,7 @@ namespace Marten.Testing.Services.BatchedQuerying
                     .Duplicate(x => x.FirstName).Duplicate(x => x.LastName);
             });
 
-
+            theSession.Logger = new TestOutputMartenLogger(_output);
             theSession.Store(target1, target2, target3);
             theSession.Store(user1, user2, admin1, admin2, super1, super2);
 
@@ -453,6 +456,7 @@ namespace Marten.Testing.Services.BatchedQuerying
         [Fact]
         public async Task can_find_multiple_docs_by_id()
         {
+            theSession.Logger = new TestOutputMartenLogger(_output);
             var batch1 = theSession.CreateBatchQuery();
             var task = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
 
