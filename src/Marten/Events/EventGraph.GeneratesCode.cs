@@ -1,53 +1,83 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Model;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
-using Marten.Schema;
+using Marten.Internal.CodeGeneration;
+using Marten.Internal.Storage;
 
 namespace Marten.Events
 {
-    public partial class EventGraph : IGeneratesCode
+    internal class ProjectionCodeFile: ICodeFile
     {
-        IServiceVariableSource IGeneratesCode.AssemblyTypes(GenerationRules rules, GeneratedAssembly assembly)
+        private readonly IGeneratedProjection _projection;
+        private readonly StoreOptions _options;
+
+        public ProjectionCodeFile(IGeneratedProjection projection, StoreOptions options)
         {
-            rules.ApplicationNamespace = SchemaConstants.MartenGeneratedNamespace;
+            _projection = projection;
+            _options = options;
+        }
+
+        public void AssembleTypes(GeneratedAssembly assembly)
+        {
+            _projection.AssembleTypes(assembly, _options);
+        }
+
+        public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services, string containingNamespace)
+        {
+            var attached = _projection.TryAttachTypes(assembly, _options);
+            return Task.FromResult(attached);
+        }
+
+        public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+            string containingNamespace)
+        {
+            return _projection.TryAttachTypes(assembly, _options);
+        }
+
+        public string FileName => _projection.GetType().FullName.Sanitize();
+    }
+
+    public partial class EventGraph : IGeneratesCode, ICodeFile
+    {
+        IReadOnlyList<ICodeFile> IGeneratesCode.BuildFiles()
+        {
+            var list = new List<ICodeFile> { this };
+
+            var projections = Options.Projections.All.OfType<IGeneratedProjection>()
+                .Select(x => new ProjectionCodeFile(x, Options));
+            list.AddRange(projections);
+
+            return list;
+        }
+
+        internal DocumentProvider<IEvent> Provider { get; private set; }
+
+        string IGeneratesCode.ChildNamespace { get; } = "EventStore";
+
+        void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
+        {
             EventDocumentStorageGenerator.AssembleTypes(Options, assembly);
-
-            var projections = Options.Projections.All.OfType<IGeneratedProjection>();
-            foreach (var projection in projections)
-            {
-                projection.AssembleTypes(assembly, Options);
-            }
-
-            return null;
         }
 
-        Task IGeneratesCode.AttachPreBuiltTypes(GenerationRules rules, Assembly assembly, IServiceProvider services)
+        public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+            string containingNamespace)
         {
-            var provider = EventDocumentStorageGenerator.BuildProviderFromAssembly(assembly, Options);
-            if (provider != null)
-            {
-                Options.Providers.Append(provider);
-            }
-
-            var projections = Options.Projections.All.OfType<IGeneratedProjection>();
-            foreach (var projection in projections)
-            {
-                projection.AttachTypes(assembly, Options);
-            }
-
-            return Task.CompletedTask;
+            Provider = EventDocumentStorageGenerator.BuildProviderFromAssembly(assembly, Options);
+            return Provider != null;
         }
 
-        Task IGeneratesCode.AttachGeneratedTypes(GenerationRules rules, IServiceProvider services)
+        Task<bool> ICodeFile.AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services, string containingNamespace)
         {
-            throw new NotSupportedException();
+            var found = AttachTypesSynchronously(rules, assembly, services, containingNamespace);
+            return Task.FromResult(found);
         }
 
-        string IGeneratesCode.CodeType => "Events";
+        string ICodeFile.FileName => "EventStorage";
+
     }
 }

@@ -69,7 +69,7 @@ namespace Marten.Internal.CodeGeneration
             buildStorageOperationMethods(operations, type);
 
             type.MethodFor(nameof(ISelectClause.BuildSelector))
-                .Frames.Code($"return new Marten.Generated.{selectorType.TypeName}({{0}}, {{1}});",
+                .Frames.Code($"return new Marten.Generated.DocumentStorage.{selectorType.TypeName}({{0}}, {{1}});",
                     Use.Type<IMartenSession>(), Use.Type<DocumentMapping>());
 
             buildLoaderCommands(type);
@@ -196,7 +196,7 @@ namespace Marten.Internal.CodeGeneration
             {
                 method.Frames
                     .Code($@"
-return new Marten.Generated.{operationType.TypeName}
+return new Marten.Generated.DocumentStorage.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
     {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),
@@ -209,7 +209,7 @@ return new Marten.Generated.{operationType.TypeName}
             {
                 method.Frames
                     .Code($@"
-return new Marten.Generated.{operationType.TypeName}
+return new Marten.Generated.DocumentStorage.{operationType.TypeName}
 (
     {{0}}, Identity({{0}}),
     {{1}}.Versions.ForType<{_mapping.DocumentType.FullNameInCode()}, {_mapping.IdType.FullNameInCode()}>(),

@@ -224,11 +224,11 @@ namespace Marten.Events.Projections
         {
             _assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
 
-            _assembly.Generation.Assemblies.Add(GetType().Assembly);
-            _assembly.Generation.Assemblies.AddRange(_projectMethods.ReferencedAssemblies());
-            _assembly.Generation.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
+            _assembly.Rules.Assemblies.Add(GetType().Assembly);
+            _assembly.Rules.Assemblies.AddRange(_projectMethods.ReferencedAssemblies());
+            _assembly.Rules.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
 
-            _assembly.Namespaces.Add("System.Linq");
+            _assembly.UsingNamespaces.Add("System.Linq");
 
             _isAsync = _createMethods.IsAsync || _projectMethods.IsAsync;
 

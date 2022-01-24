@@ -72,22 +72,24 @@ namespace Marten.Events.Aggregation
 
         Type IAggregateProjection.AggregateType => typeof(T);
 
-        public void AttachTypes(Assembly assembly, StoreOptions options)
+        public bool TryAttachTypes(Assembly assembly, StoreOptions options)
         {
             _inlineType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _inlineAggregationHandlerType);
             _liveType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _liveAggregationTypeName);
+
+            return _inlineType != null && _liveType != null;
         }
 
         public void AssembleTypes(GeneratedAssembly assembly, StoreOptions options)
         {
-            assembly.Generation.Assemblies.Add(GetType().Assembly);
-            assembly.Generation.Assemblies.Add(typeof(T).Assembly);
-            assembly.Generation.Assemblies.AddRange(_applyMethods.ReferencedAssemblies());
-            assembly.Generation.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
-            assembly.Generation.Assemblies.AddRange(_shouldDeleteMethods.ReferencedAssemblies());
+            assembly.ReferenceAssembly(GetType().Assembly);
+            assembly.ReferenceAssembly(typeof(T).Assembly);
+            assembly.Rules.Assemblies.AddRange(_applyMethods.ReferencedAssemblies());
+            assembly.Rules.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
+            assembly.Rules.Assemblies.AddRange(_shouldDeleteMethods.ReferencedAssemblies());
 
-            assembly.Namespaces.Add("System");
-            assembly.Namespaces.Add("System.Linq");
+            assembly.UsingNamespaces.Add("System");
+            assembly.UsingNamespaces.Add("System.Linq");
 
             _isAsync = _createMethods.IsAsync || _applyMethods.IsAsync;
 
@@ -111,10 +113,6 @@ namespace Marten.Events.Aggregation
             if (_liveType == null)
             {
                 Compile(options);
-            }
-            else if (_liveGeneratedType == null)
-            {
-                AssembleTypes(new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace)), options);
             }
 
             return BuildLiveAggregator();
@@ -207,21 +205,25 @@ namespace Marten.Events.Aggregation
             return writer.ToString();
         }
 
-        internal GeneratedAssembly Compile(StoreOptions options)
+        internal void Compile(StoreOptions options)
         {
-            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
+            // TODO -- this needs to be built from StoreOptions to prevent
+            // duplication
+            var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
+            {
+                TypeLoadMode = options.GeneratedCodeMode
+            };
 
-            AssembleTypes(assembly, options);
+            rules.Assemblies.Fill(typeof(IMartenSession).Assembly);
 
-            var assemblyGenerator = new AssemblyGenerator();
+            new ProjectionCodeFile(this, options)
+                .InitializeSynchronously(rules, options.EventGraph, null);
 
-            assemblyGenerator.ReferenceAssembly(typeof(IMartenSession).Assembly);
-            assemblyGenerator.Compile(assembly);
-
-            _liveType = _liveGeneratedType.CompiledType;
-            _inlineType = _inlineGeneratedType.CompiledType;
-
-            return assembly;
+            // You have to do this for the sake of the Setters
+            if (_liveGeneratedType == null)
+            {
+                AssembleTypes(new GeneratedAssembly(rules), options);
+            }
         }
 
         protected virtual Type baseTypeForAggregationRuntime()

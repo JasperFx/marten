@@ -31,9 +31,17 @@ namespace Marten.Internal.CompiledQueries
             _typeName = _plan.QueryType.ToTypeNamePart() + "CompiledQuerySource";
         }
 
-        public (GeneratedType, GeneratedType) AssemblyType(GeneratedAssembly assembly)
+        public (GeneratedType, GeneratedType) AssembleTypes(GeneratedAssembly assembly)
         {
-            assembly.Namespaces.Fill("System");
+            assembly.UsingNamespaces.Fill("System");
+
+            foreach (var referencedAssembly in WalkReferencedAssemblies.ForTypes(
+                         typeof(IDocumentStorage<>),
+                         _plan.QueryType,
+                         _plan.OutputType))
+            {
+                assembly.Rules.Assemblies.Fill(referencedAssembly);
+            }
 
             var handlerType = determineHandlerType();
 
@@ -45,42 +53,11 @@ namespace Marten.Internal.CompiledQueries
             return (sourceType, compiledHandlerType);
         }
 
-        public ICompiledQuerySource CreateFromPreBuiltType(Assembly assembly)
+        public ICompiledQuerySource Build(Type sourceType)
         {
             var hardcoded = new HardCodedParameters(_plan);
-
-            var sourceType = assembly.GetExportedTypes().FirstOrDefault(x => x.Name == _typeName);
-            if (sourceType == null)
-            {
-                Console.WriteLine("Unable to find a pre-built type for compiled query with name " + _typeName);
-                return null;
-            }
 
             return (ICompiledQuerySource)Activator.CreateInstance(sourceType, new object[] {hardcoded, _plan.HandlerPrototype});
-        }
-
-        public ICompiledQuerySource Build()
-        {
-            if (_storeOptions.GeneratedCodeMode == TypeLoadMode.LoadFromPreBuiltAssembly)
-            {
-                var source = CreateFromPreBuiltType(Assembly.GetEntryAssembly());
-                if (source != null) return source;
-            }
-
-            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
-
-
-            var handlerType = determineHandlerType();
-
-            var hardcoded = new HardCodedParameters(_plan);
-            var compiledHandlerType = buildHandlerType(assembly, handlerType, hardcoded);
-
-            var sourceType = buildSourceType(assembly, handlerType, compiledHandlerType);
-
-            assembly.Namespaces.Add("System");
-            compileAssembly(assembly);
-
-            return (ICompiledQuerySource)Activator.CreateInstance(sourceType.CompiledType, new object[] {hardcoded, _plan.HandlerPrototype});
         }
 
         private GeneratedType buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
@@ -101,7 +78,7 @@ namespace Marten.Internal.CompiledQueries
 
                     var statistics = _plan.StatisticsMember == null ? "null" : $"query.{_plan.StatisticsMember.Name}";
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
+                        $"return new Marten.Generated.DocumentStorage.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
                     break;
 
                 case CompiledSourceType.Stateless:
@@ -109,7 +86,7 @@ namespace Marten.Internal.CompiledQueries
                     sourceType.AllInjectedFields.Add(inner);
 
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
+                        $"return new Marten.Generated.DocumentStorage.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
                     break;
 
                 case CompiledSourceType.Complex:
@@ -117,26 +94,11 @@ namespace Marten.Internal.CompiledQueries
                     sourceType.AllInjectedFields.Add(innerField2);
 
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
+                        $"return new Marten.Generated.DocumentStorage.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
                     break;
             }
 
             return sourceType;
-        }
-
-        private void compileAssembly(GeneratedAssembly assembly)
-        {
-            var compiler = new AssemblyGenerator();
-
-            foreach (var referencedAssembly in WalkReferencedAssemblies.ForTypes(
-                typeof(IDocumentStorage<>),
-                _plan.QueryType,
-                _plan.OutputType))
-            {
-                compiler.ReferenceAssembly(referencedAssembly);
-            }
-
-            compiler.Compile(assembly);
         }
 
         private GeneratedType buildHandlerType(GeneratedAssembly assembly,

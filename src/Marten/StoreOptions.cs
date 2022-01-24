@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
 using LamarCodeGeneration;
+using LamarCompiler;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -428,8 +429,16 @@ namespace Marten
                 throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
             }
 
-            var plan = QueryCompiler.BuildPlan(session, query, this);
-            source = new CompiledQuerySourceBuilder(plan, this).Build();
+            var file = new CompiledQueryCodeFile(query.GetType(), this);
+            // TODO -- centralize this logic!
+            var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
+            {
+                TypeLoadMode = GeneratedCodeMode
+            };
+
+            file.InitializeSynchronously(rules, this, null);
+
+            source = file.Build();
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
             return source;

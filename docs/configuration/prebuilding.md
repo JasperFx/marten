@@ -47,7 +47,7 @@ public class Program
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.LoadFromPreBuiltAssembly;
+                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
                     opts.Schema.For<Activity>().AddSubClass<Trip>();
 
