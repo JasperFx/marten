@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -14,20 +15,17 @@ namespace Marten.Testing.CoreFunctionality
     public class persist_and_load_documents_with_long_ids_Tests : IntegrationContext
     {
         [Fact]
-        public void persist_and_load()
+        public async Task persist_and_load()
         {
             var LongDoc = new LongDoc { Id = 456 };
 
             theSession.Store(LongDoc);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            using (var session = theStore.OpenSession())
-            {
-                SpecificationExtensions.ShouldNotBeNull(session.Load<LongDoc>(456));
+            using var session = theStore.OpenSession();
+            session.Load<LongDoc>(456).ShouldNotBeNull();
 
-                SpecificationExtensions.ShouldBeNull(session.Load<LongDoc>(222));
-            }
-
+            session.Load<LongDoc>(222).ShouldBeNull();
         }
 
         [Fact]

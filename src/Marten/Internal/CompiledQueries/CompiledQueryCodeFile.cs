@@ -1,0 +1,63 @@
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using LamarCodeGeneration;
+using Marten.Internal.CodeGeneration;
+using Marten.Internal.Sessions;
+
+namespace Marten.Internal.CompiledQueries
+{
+    internal class CompiledQueryCodeFile: ICodeFile
+    {
+        private readonly Type _compiledQueryType;
+        private readonly StoreOptions _options;
+        private readonly string _typeName;
+        private Type _sourceType;
+        private CompiledQueryPlan _plan;
+        private CompiledQuerySourceBuilder _builder;
+
+        public CompiledQueryCodeFile(Type compiledQueryType, StoreOptions options)
+        {
+            _compiledQueryType = compiledQueryType;
+            _options = options;
+
+            _typeName = compiledQueryType.ToTypeNamePart() + "CompiledQuerySource";
+
+
+        }
+
+        public void AssembleTypes(GeneratedAssembly assembly)
+        {
+            // TODO -- we need a lightweight marten session just for codegen here
+            using var session = new LightweightSession(_options);
+            _plan = QueryCompiler.BuildPlan(session, _compiledQueryType, _options);
+            _builder = new CompiledQuerySourceBuilder(_plan, _options);
+            _builder.AssembleTypes(assembly);
+        }
+
+        public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services, string containingNamespace)
+        {
+            _sourceType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == _typeName);
+            return Task.FromResult(_sourceType != null);
+        }
+
+        public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+            string containingNamespace)
+        {
+            _sourceType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == _typeName);
+            return _sourceType != null;
+        }
+
+        public ICompiledQuerySource Build()
+        {
+            if (_builder == null)
+                throw new InvalidOperationException($"{nameof(AttachTypesSynchronously)}() must be called first");
+            return _builder.Build(_sourceType);
+        }
+
+        public string FileName => _typeName;
+
+
+    }
+}

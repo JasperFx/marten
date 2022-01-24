@@ -1,5 +1,6 @@
 using Marten.Testing.Harness;
 using System;
+using LamarCodeGeneration;
 using Xunit;
 
 namespace Marten.Testing.Bugs
@@ -15,7 +16,7 @@ namespace Marten.Testing.Bugs
         {
             var store = StoreOptions(_ =>
             {
-                _.GeneratedCodeMode = LamarCodeGeneration.TypeLoadMode.LoadFromPreBuiltAssembly;
+                _.GeneratedCodeMode = TypeLoadMode.Static;
                 _.Events.AddEventType(typeof(RandomEvent1));
             });
 

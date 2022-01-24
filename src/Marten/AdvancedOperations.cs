@@ -168,7 +168,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             using var session = _store.QuerySession();
             var plan = QueryCompiler.BuildPlan((QuerySession)session, type, _store.Options);
             var builder = new CompiledQuerySourceBuilder(plan, _store.Options);
-            var (sourceType, handlerType) = builder.AssemblyType(assembly);
+            var (sourceType, handlerType) = builder.AssembleTypes(assembly);
 
             return assembly.GenerateCode();
 

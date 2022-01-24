@@ -249,7 +249,7 @@ namespace Marten.Testing.Linq.Compiled
         {
             // Really just a smoke test now
 
-            (await theSession.QueryAsync(new CompiledQuery1())).ShouldNotBeNull();
+            (await theSession.QueryAsync(new CompiledQuery1{StringValue = "foo"})).ShouldNotBeNull();
             (await theSession.QueryAsync(new CompiledQuery2())).ShouldNotBeNull();
         }
 
@@ -594,7 +594,7 @@ namespace Marten.Testing.Linq.Compiled
 
     public class CompiledQuery2 : ICompiledQuery<Target, bool>
     {
-        public Guid IdValue { get; set; }
+        public Guid IdValue { get; set; } = Guid.NewGuid();
 
         public Expression<Func<IMartenQueryable<Target>, bool>> QueryIs()
         {

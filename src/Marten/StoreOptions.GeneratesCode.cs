@@ -1,105 +1,25 @@
-using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using Baseline;
-using Baseline.ImTools;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Model;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.CompiledQueries;
-using Marten.Internal.Sessions;
-using Marten.Schema;
-using Marten.Services;
-using Marten.Storage;
 
 namespace Marten
 {
-    public partial class StoreOptions : IGeneratesCode
+    public partial class StoreOptions: IGeneratesCode
     {
-
-        public IServiceVariableSource AssemblyTypes(GenerationRules rules, GeneratedAssembly assembly)
+        public IReadOnlyList<ICodeFile> BuildFiles()
         {
-            // This is important to ensure that all the possible DocumentMappings exist
-            // first
             Storage.BuildAllMappings();
-            foreach (var mapping in Storage.AllDocumentMappings)
-            {
-                var builder = new DocumentPersistenceBuilder(mapping, this);
-                builder.AssemblyTypes(assembly);
-            }
+            var list = new List<ICodeFile>(
+                Storage.AllDocumentMappings.Select(x => new DocumentPersistenceBuilder(x, this)));
 
-            if (_compiledQueryTypes.Any())
-            {
-                using var session = new LightweightSession(this);
-                foreach (var compiledQueryType in _compiledQueryTypes)
-                {
-                    var plan = QueryCompiler.BuildPlan(session, compiledQueryType, this);
-                    var builder = new CompiledQuerySourceBuilder(plan, this);
-                    builder.AssemblyType(assembly);
-                }
-            }
 
-            return null;
+            list.AddRange(_compiledQueryTypes.Select(x => new CompiledQueryCodeFile(x, this)));
+
+            return list;
         }
 
-        public Task AttachPreBuiltTypes(GenerationRules rules, Assembly assembly, IServiceProvider services)
-        {
-            foreach (var mapping in Storage.AllDocumentMappings)
-            {
-                var builder = typeof(ProviderBuilder<>).CloseAndBuildAs<IProviderBuilder>(mapping.DocumentType);
-                builder.BuildAndStore(assembly, mapping, this);
-            }
-
-            if (_compiledQueryTypes.Any())
-            {
-                using var session = new LightweightSession(this);
-                foreach (var compiledQueryType in _compiledQueryTypes)
-                {
-                    var plan = QueryCompiler.BuildPlan(session, compiledQueryType, this);
-                    var builder = new CompiledQuerySourceBuilder(plan, this);
-                    var source = builder.CreateFromPreBuiltType(assembly);
-
-                    if (source == null)
-                    {
-                        Console.WriteLine("Could not find a pre-built compiled query source type for compiled query type " + compiledQueryType.FullNameInCode());
-                    }
-                    else
-                    {
-                        _querySources = _querySources.AddOrUpdate(compiledQueryType, source);
-                    }
-                }
-            }
-
-            return Task.CompletedTask;
-        }
-
-        private interface IProviderBuilder
-        {
-            void BuildAndStore(Assembly assembly, DocumentMapping mapping, StoreOptions options);
-        }
-
-        private class ProviderBuilder<T> : IProviderBuilder
-        {
-            public void BuildAndStore(Assembly assembly, DocumentMapping mapping, StoreOptions options)
-            {
-                try
-                {
-                    var provider = DocumentPersistenceBuilder.FromPreBuiltTypes<T>(assembly, mapping);
-                    options.Providers.Append(provider);
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Unable to use pre-built type for " + typeof(T).FullNameInCode());
-                }
-            }
-        }
-
-        public Task AttachGeneratedTypes(GenerationRules rules, IServiceProvider services)
-        {
-            return Task.CompletedTask;
-        }
-
-        public string CodeType => "DocumentStorage";
+        public string ChildNamespace { get; } = "DocumentStorage";
     }
 }

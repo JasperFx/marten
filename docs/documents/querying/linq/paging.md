@@ -20,7 +20,7 @@ var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
 var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
 var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Pagination/pagedlist_queryable_extension_Tests.cs#L72-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/pagedlist_queryable_extension_Tests.cs#L70-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_to_paged_list_async -->
@@ -31,7 +31,7 @@ var pageSize = 10;
 
 var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Pagination/pagedlist_queryable_extension_Tests.cs#L96-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/pagedlist_queryable_extension_Tests.cs#L94-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you want to create you own paged queries, just use the `Take()` and `Skip()` Linq operators in combination with `Stats()`

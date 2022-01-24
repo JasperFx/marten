@@ -32,9 +32,14 @@ namespace Marten.Events.CodeGeneration
         private const string UpdateStreamVersionOperationName = "GeneratedStreamVersionOperation";
         private const string EventDocumentStorageTypeName = "GeneratedEventDocumentStorage";
 
+        /// <summary>
+        /// Only for testing support
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
         public static (EventDocumentStorage, string) GenerateStorage(StoreOptions options)
         {
-            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
+            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace  + ".EventStore"));
             var builderType = AssembleTypes(options, assembly);
 
 
@@ -72,7 +77,6 @@ namespace Marten.Events.CodeGeneration
             var storageType = assembly.GetExportedTypes().FirstOrDefault(x => x.CanBeCastTo<IEventStorage>());
             if (storageType == null)
             {
-                Console.WriteLine($"Unable to find a pre-built storage type for {nameof(IEventStorage)}");
                 return null;
             }
 
@@ -91,7 +95,7 @@ namespace Marten.Events.CodeGeneration
             buildAppendEventOperation(options.EventGraph, assembly);
 
             builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
-                .Frames.Code($"return new Marten.Generated.AppendEventOperation(stream, e);");
+                .Frames.Code($"return new Marten.Generated.EventStore.AppendEventOperation(stream, e);");
 
             buildInsertStream(builderType, assembly, options.EventGraph);
 
@@ -154,7 +158,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             builderType.MethodFor(nameof(EventDocumentStorage.UpdateStreamVersion))
-                .Frames.Code($"return new Marten.Generated.{UpdateStreamVersionOperationName}({{0}});",
+                .Frames.Code($"return new Marten.Generated.EventStore.{UpdateStreamVersionOperationName}({{0}});",
                     Use.Type<StreamAction>());
 
             return operationType;
@@ -175,7 +179,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             builderType.MethodFor(nameof(EventDocumentStorage.QueryForStream))
-                .Frames.Code($"return new Marten.Generated.{StreamStateSelectorTypeName}({arguments.Join(", ")});");
+                .Frames.Code($"return new Marten.Generated.EventStore.{StreamStateSelectorTypeName}({arguments.Join(", ")});");
 
         }
 
@@ -317,7 +321,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             builderType.MethodFor(nameof(EventDocumentStorage.InsertStream))
-                .Frames.Code($"return new Marten.Generated.{InsertStreamOperationName}(stream);");
+                .Frames.Code($"return new Marten.Generated.EventStore.{InsertStreamOperationName}(stream);");
 
             return operationType;
         }

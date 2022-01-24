@@ -53,14 +53,6 @@ namespace Marten.Testing.Events
 
         [Theory]
         [MemberData(nameof(Data))]
-        public void generate_operation_builder(TestCase @case)
-        {
-            EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options)
-                .ShouldNotBeNull();
-        }
-
-        [Theory]
-        [MemberData(nameof(Data))]
         public async Task can_fetch_stream_async(TestCase @case)
         {
             await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();

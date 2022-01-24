@@ -51,17 +51,19 @@ namespace Marten.Internal.Sessions
         public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
         {
             var source = Options.GetCompiledQuerySourceFor(query, this);
+            Database.EnsureStorageExists(typeof(TDoc));
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
 
             return ExecuteHandler(handler);
         }
 
-        public Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
+        public async Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
         {
             var source = Options.GetCompiledQuerySourceFor(query, this);
+            await Database.EnsureStorageExistsAsync(typeof(TDoc), token).ConfigureAwait(false);
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
 
-            return ExecuteHandlerAsync(handler, token);
+            return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
     }
 }

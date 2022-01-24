@@ -2,6 +2,7 @@ using System;
 using Baseline;
 using Baseline.ImTools;
 using LamarCodeGeneration;
+using LamarCompiler;
 using Marten.Events;
 using Marten.Events.CodeGeneration;
 using Marten.Internal.CodeGeneration;
@@ -39,11 +40,14 @@ namespace Marten.Internal
 
             if (documentType == typeof(IEvent))
             {
-                var slot = EventDocumentStorageGenerator.BuildProvider(_options);
+                _options.EventGraph.InitializeSynchronously(new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
+                {
+                    TypeLoadMode = _options.GeneratedCodeMode
+                }, _options.EventGraph, null);
 
-                _storage = _storage.AddOrUpdate(documentType, slot);
+                _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
 
-                return slot.As<DocumentProvider<T>>();
+                return _options.EventGraph.Provider.As<DocumentProvider<T>>();
             }
 
             var mapping = _options.Storage.FindMapping(documentType);
@@ -53,7 +57,9 @@ namespace Marten.Internal
                 case DocumentMapping m:
                 {
                     var builder = new DocumentPersistenceBuilder(m, _options);
-                    var slot = builder.Generate<T>();
+
+                    builder.InitializeSynchronously(new GenerationRules(SchemaConstants.MartenGeneratedNamespace), _options, null);
+                    var slot = builder.BuildProvider<T>();
 
                     _storage = _storage.AddOrUpdate(documentType, slot);
 

@@ -59,7 +59,7 @@ namespace Marten.Events.Projections
     internal interface IGeneratedProjection
     {
         void AssembleTypes(GeneratedAssembly assembly, StoreOptions options);
-        void AttachTypes(Assembly assembly, StoreOptions options);
+        bool TryAttachTypes(Assembly assembly, StoreOptions options);
 
 
     }
