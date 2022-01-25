@@ -429,12 +429,12 @@ namespace Marten
                 throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
             }
 
-            var file = new CompiledQueryCodeFile(query.GetType(), this);
-            // TODO -- centralize this logic!
-            var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
-            {
-                TypeLoadMode = GeneratedCodeMode
-            };
+
+            var plan = QueryCompiler.BuildPlan(session, query, this);
+            var file = new CompiledQueryCodeFile(query.GetType(), this, plan);
+
+            var rules = CreateGenerationRules();
+            rules.ReferenceTypes(typeof(TDoc), typeof(TOut), query.GetType());
 
             file.InitializeSynchronously(rules, this, null);
 

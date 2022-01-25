@@ -17,21 +17,28 @@ namespace Marten.Internal.CompiledQueries
         private CompiledQueryPlan _plan;
         private CompiledQuerySourceBuilder _builder;
 
+        public CompiledQueryCodeFile(Type compiledQueryType, StoreOptions options, CompiledQueryPlan plan) : this(compiledQueryType, options)
+        {
+            _plan = plan;
+        }
+
         public CompiledQueryCodeFile(Type compiledQueryType, StoreOptions options)
         {
             _compiledQueryType = compiledQueryType;
             _options = options;
 
             _typeName = compiledQueryType.ToTypeNamePart() + "CompiledQuerySource";
-
-
         }
 
         public void AssembleTypes(GeneratedAssembly assembly)
         {
             // TODO -- we need a lightweight marten session just for codegen here
-            using var session = new LightweightSession(_options);
-            _plan = QueryCompiler.BuildPlan(session, _compiledQueryType, _options);
+            if (_plan == null)
+            {
+                using var session = new LightweightSession(_options);
+                _plan = QueryCompiler.BuildPlan(session, _compiledQueryType, _options);
+            }
+
             _builder = new CompiledQuerySourceBuilder(_plan, _options);
             _builder.AssembleTypes(assembly);
         }

@@ -17,7 +17,7 @@ namespace Marten.Testing.Bugs
         [Fact]
         public void good_error_on_non_public_type()
         {
-            var expectedMessage = "Requested document type 'Marten.Testing.Bugs.Bug_1563_user_friendly_warning_about_public_type.InternalDoc' must be either scoped as 'public' or the assembly holding it must use the InternalsVisibleToAttribute pointing to 'Marten.Generated'";
+            var expectedMessage = "Requested document type 'Marten.Testing.Bugs.Bug_1563_user_friendly_warning_about_public_type.InternalDoc' must be scoped as 'public'";
 
             var ex = Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
             {

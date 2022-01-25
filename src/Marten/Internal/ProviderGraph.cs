@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Baseline;
 using Baseline.ImTools;
 using LamarCodeGeneration;
@@ -40,10 +41,8 @@ namespace Marten.Internal
 
             if (documentType == typeof(IEvent))
             {
-                _options.EventGraph.InitializeSynchronously(new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
-                {
-                    TypeLoadMode = _options.GeneratedCodeMode
-                }, _options.EventGraph, null);
+                var rules = _options.CreateGenerationRules();
+                _options.EventGraph.InitializeSynchronously(rules, _options.EventGraph, null);
 
                 _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
 
@@ -56,14 +55,29 @@ namespace Marten.Internal
             {
                 case DocumentMapping m:
                 {
-                    var builder = new DocumentPersistenceBuilder(m, _options);
+                    try
+                    {
+                        var builder = new DocumentPersistenceBuilder(m, _options);
 
-                    builder.InitializeSynchronously(new GenerationRules(SchemaConstants.MartenGeneratedNamespace), _options, null);
-                    var slot = builder.BuildProvider<T>();
+                        var rules = _options.CreateGenerationRules();
+                        rules.ReferenceTypes(m.DocumentType);
+                        builder.InitializeSynchronously(rules, _options, null);
+                        var slot = builder.BuildProvider<T>();
 
-                    _storage = _storage.AddOrUpdate(documentType, slot);
+                        _storage = _storage.AddOrUpdate(documentType, slot);
 
-                    return slot;
+                        return slot;
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.Message.Contains("is inaccessible due to its protection level"))
+                        {
+                            throw new InvalidOperationException($"Requested document type '{mapping.DocumentType.FullNameInCode()}' must be scoped as 'public' in order to be used as a document type inside of Marten", e);
+                        }
+
+                        throw;
+
+                    }
                 }
                 case SubClassMapping s:
                 {
