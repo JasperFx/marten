@@ -207,14 +207,8 @@ namespace Marten.Events.Aggregation
 
         internal void Compile(StoreOptions options)
         {
-            // TODO -- this needs to be built from StoreOptions to prevent
-            // duplication
-            var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
-            {
-                TypeLoadMode = options.GeneratedCodeMode
-            };
-
-            rules.Assemblies.Fill(typeof(IMartenSession).Assembly);
+            var rules = options.CreateGenerationRules();
+            rules.ReferenceTypes(GetType());
 
             new ProjectionCodeFile(this, options)
                 .InitializeSynchronously(rules, options.EventGraph, null);

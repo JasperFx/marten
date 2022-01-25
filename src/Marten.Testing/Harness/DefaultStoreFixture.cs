@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using LamarCodeGeneration;
 using Weasel.Core;
 using Xunit;
 
@@ -13,7 +14,7 @@ namespace Marten.Testing.Harness
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-                // TODO -- opt into auto code generation later.
+                opts.GeneratedCodeMode = TypeLoadMode.Auto;
             });
 
             // Do this exactly once and no more.
