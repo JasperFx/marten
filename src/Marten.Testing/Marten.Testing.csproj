@@ -58,10 +58,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Internals\SqlGeneration" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="MarkdownSnippets.MsBuild" Version="24.2.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

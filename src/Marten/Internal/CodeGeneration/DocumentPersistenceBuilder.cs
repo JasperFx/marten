@@ -1,12 +1,10 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Model;
-using LamarCompiler;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Arguments;
@@ -27,7 +25,7 @@ namespace Marten.Internal.CodeGeneration
             _mapping = mapping;
             _options = options;
 
-            ProviderName = $"{mapping.DocumentType.Name.Sanitize()}Provider";
+            ProviderName = mapping.DocumentType.ToSuffixedTypeName("Provider");
         }
 
         public string ProviderName { get; }
@@ -79,10 +77,7 @@ namespace Marten.Internal.CodeGeneration
                 _mapping.DocumentType,
             };
 
-            foreach (var referencedAssembly in WalkReferencedAssemblies.ForTypes(types))
-            {
-                assembly.Rules.Assemblies.Fill(referencedAssembly);
-            }
+            assembly.Rules.ReferenceTypes(types);
         }
 
         public DocumentProvider<T> BuildProvider<T>()

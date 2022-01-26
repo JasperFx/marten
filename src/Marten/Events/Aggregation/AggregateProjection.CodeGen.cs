@@ -56,8 +56,8 @@ namespace Marten.Events.Aggregation
             });
 
 
-            _inlineAggregationHandlerType = GetType().NameInCode().Sanitize() + "InlineHandler";
-            _liveAggregationTypeName = GetType().NameInCode().Sanitize() + "LiveAggregation";
+            _inlineAggregationHandlerType = GetType().ToSuffixedTypeName("InlineHandler");
+            _liveAggregationTypeName = GetType().ToSuffixedTypeName("LiveAggregation");
         }
 
         public override Type ProjectionType => GetType();

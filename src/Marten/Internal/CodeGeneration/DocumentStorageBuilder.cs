@@ -20,7 +20,7 @@ namespace Marten.Internal.CodeGeneration
 
         public static string DeriveTypeName(DocumentMapping mapping, StorageStyle style)
         {
-            return $"{style}{mapping.DocumentType.Name.Sanitize()}DocumentStorage";
+            return $"{style}{mapping.DocumentType.ToSuffixedTypeName("DocumentStorage")}";
         }
 
         public DocumentStorageBuilder(DocumentMapping mapping, StorageStyle style, Func<DocumentOperations, GeneratedType> selectorTypeSource)

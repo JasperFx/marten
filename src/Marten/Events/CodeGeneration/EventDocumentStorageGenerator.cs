@@ -74,7 +74,7 @@ namespace Marten.Events.CodeGeneration
 
         public static DocumentProvider<IEvent> BuildProviderFromAssembly(Assembly assembly, StoreOptions options)
         {
-            var storageType = assembly.GetExportedTypes().FirstOrDefault(x => x.CanBeCastTo<IEventStorage>());
+            var storageType = assembly.ExportedTypes.FirstOrDefault(x => x.CanBeCastTo<EventDocumentStorage>());
             if (storageType == null)
             {
                 return null;

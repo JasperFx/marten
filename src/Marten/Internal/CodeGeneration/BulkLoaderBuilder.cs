@@ -18,7 +18,7 @@ namespace Marten.Internal.CodeGeneration
         {
             _mapping = mapping;
             _tempTable = _mapping.TableName.Name + "_temp" ;
-            TypeName = $"{_mapping.DocumentType.Name.Sanitize()}BulkLoader";
+            TypeName = _mapping.DocumentType.ToSuffixedTypeName("BulkLoader");
         }
 
         public string TypeName { get; }
