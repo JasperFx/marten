@@ -21,8 +21,7 @@ namespace Marten.Internal.CodeGeneration
 
         public GeneratedType BuildType(GeneratedAssembly assembly)
         {
-            var typeName = $"{_style}{_mapping.DocumentType.Name.Sanitize()}Selector";
-
+            var typeName = _style.ToString() + _mapping.DocumentType.ToSuffixedTypeName("Selector");
 
             var baseType = determineBaseType();
 

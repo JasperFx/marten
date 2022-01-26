@@ -32,7 +32,7 @@ namespace Marten.Internal.CodeGeneration
             CommandText = $"select {_function.Identifier}({_function.OrderedArguments().Select(x => "?").Join(", ")})";
 
             ClassName =
-                $"{function.GetType().Name.Replace("Function", "")}{mapping.DocumentType.Name.Sanitize()}Operation";
+                $"{function.GetType().Name.Replace("Function", "")}{mapping.DocumentType.ToSuffixedTypeName("Operation")}";
 
             _mapping = mapping;
         }

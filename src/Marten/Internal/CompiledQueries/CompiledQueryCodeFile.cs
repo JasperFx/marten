@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Baseline;
 using LamarCodeGeneration;
-using Marten.Internal.CodeGeneration;
 using Marten.Internal.Sessions;
 
 namespace Marten.Internal.CompiledQueries
@@ -27,12 +27,11 @@ namespace Marten.Internal.CompiledQueries
             _compiledQueryType = compiledQueryType;
             _options = options;
 
-            _typeName = compiledQueryType.ToTypeNamePart() + "CompiledQuerySource";
+            _typeName = compiledQueryType.ToSuffixedTypeName("CompiledQuerySource");
         }
 
         public void AssembleTypes(GeneratedAssembly assembly)
         {
-            // TODO -- we need a lightweight marten session just for codegen here
             if (_plan == null)
             {
                 using var session = new LightweightSession(_options);
@@ -56,10 +55,13 @@ namespace Marten.Internal.CompiledQueries
             return _sourceType != null;
         }
 
-        public ICompiledQuerySource Build()
+        public ICompiledQuerySource Build(GenerationRules generationRules)
         {
             if (_builder == null)
-                throw new InvalidOperationException($"{nameof(AttachTypesSynchronously)}() must be called first");
+            {
+                AssembleTypes(new GeneratedAssembly(generationRules));
+            }
+
             return _builder.Build(_sourceType);
         }
 

@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Util;
 using Weasel.Core;
 using Xunit;
 
@@ -15,6 +16,7 @@ namespace Marten.Testing.Harness
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
 
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                opts.ApplicationAssembly = GetType().Assembly;
             });
 
             // Do this exactly once and no more.

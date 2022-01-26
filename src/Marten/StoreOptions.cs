@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
+using Baseline.Reflection;
 using LamarCodeGeneration;
 using LamarCompiler;
 using Marten.Events;
@@ -368,6 +369,12 @@ namespace Marten
                 throw new ArgumentOutOfRangeException(nameof(queryType), $"{queryType.FullNameInCode()} is not a valid Marten compiled query type");
             }
 
+            if (!queryType.HasDefaultConstructor())
+            {
+                throw new ArgumentOutOfRangeException(nameof(queryType),
+                    "Sorry, but Marten requires a no-arg constructor on compiled query types in order to opt into the 'code ahead' generation model.");
+            }
+
             _compiledQueryTypes.Fill(queryType);
         }
 
@@ -438,7 +445,7 @@ namespace Marten
 
             file.InitializeSynchronously(rules, this, null);
 
-            source = file.Build();
+            source = file.Build(rules);
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
             return source;

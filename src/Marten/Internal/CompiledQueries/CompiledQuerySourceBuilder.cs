@@ -28,7 +28,7 @@ namespace Marten.Internal.CompiledQueries
         {
             _plan = plan;
             _storeOptions = storeOptions;
-            _typeName = _plan.QueryType.ToTypeNamePart() + "CompiledQuerySource";
+            _typeName = plan.QueryType.ToSuffixedTypeName("CompiledQuerySource");
         }
 
         public (GeneratedType, GeneratedType) AssembleTypes(GeneratedAssembly assembly)
@@ -104,7 +104,7 @@ namespace Marten.Internal.CompiledQueries
         private GeneratedType buildHandlerType(GeneratedAssembly assembly,
             CompiledSourceType handlerType, HardCodedParameters hardcoded)
         {
-            var queryTypeName = _plan.QueryType.ToTypeNamePart() + "CompiledQuery";
+            var queryTypeName = _plan.QueryType.ToSuffixedTypeName("CompiledQuery");
             var baseType = determineBaseType(handlerType);
             var type = assembly.AddType(queryTypeName, baseType);
 

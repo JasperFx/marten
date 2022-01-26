@@ -14,7 +14,7 @@ namespace Marten.Internal.Sessions
         {
         }
 
-        [Obsolete("Get a lightweight IMartenSession and eliminate this.")]
+        // Wanted to delete this, but we need it for code generation
         public LightweightSession(StoreOptions options): base(options)
         {
 
