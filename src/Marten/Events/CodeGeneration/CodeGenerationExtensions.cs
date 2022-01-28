@@ -38,7 +38,6 @@ namespace Marten.Events.CodeGeneration
                 return parameterInfo.ParameterType.GetGenericArguments()[0];
 
 
-
             return parameterInfo.ParameterType;
         }
     }

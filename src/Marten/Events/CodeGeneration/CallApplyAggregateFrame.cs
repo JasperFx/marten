@@ -13,7 +13,7 @@ namespace Marten.Events.CodeGeneration
         private Variable _session;
         private Variable _cancellation;
 
-        public CallApplyAggregateFrame(ApplyMethodCollection methods) : base(methods.IsAsync)
+        public CallApplyAggregateFrame(ApplyMethodCollection methods): base(methods.IsAsync)
         {
             AggregateType = methods.AggregateType;
         }
@@ -25,7 +25,8 @@ namespace Marten.Events.CodeGeneration
         {
             _aggregate = chain.FindVariable(AggregateType);
 
-            _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ?? chain.FindVariable(typeof(IDocumentSession));
+            _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ??
+                       chain.FindVariable(typeof(IDocumentSession));
             yield return _session;
 
             if (IsAsync)
@@ -47,11 +48,13 @@ namespace Marten.Events.CodeGeneration
 
             if (IsAsync)
             {
-                writer.WriteLine($"{_aggregate.Usage} = await {ApplyMethodCollection.MethodName}(@event, {_aggregate.Usage}, {_session.Usage}, {_cancellation.Usage});");
+                writer.WriteLine(
+                    $"{_aggregate.Usage} = await {ApplyMethodCollection.MethodName}(@event, {_aggregate.Usage}, {_session.Usage}, {_cancellation.Usage});");
             }
             else
             {
-                writer.WriteLine($"{_aggregate.Usage} = {ApplyMethodCollection.MethodName}(@event, {_aggregate.Usage}, {_session.Usage});");
+                writer.WriteLine(
+                    $"{_aggregate.Usage} = {ApplyMethodCollection.MethodName}(@event, {_aggregate.Usage}, {_session.Usage});");
             }
 
             if (InsideForEach)

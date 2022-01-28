@@ -23,7 +23,8 @@ namespace Marten.Internal.CodeGeneration
             return $"{style}{mapping.DocumentType.ToSuffixedTypeName("DocumentStorage")}";
         }
 
-        public DocumentStorageBuilder(DocumentMapping mapping, StorageStyle style, Func<DocumentOperations, GeneratedType> selectorTypeSource)
+        public DocumentStorageBuilder(DocumentMapping mapping, StorageStyle style,
+            Func<DocumentOperations, GeneratedType> selectorTypeSource)
         {
             _mapping = mapping;
             _selectorTypeSource = selectorTypeSource;
@@ -60,7 +61,8 @@ namespace Marten.Internal.CodeGeneration
             return buildDocumentStorageType(assembly, operations, _typeName, _baseType, selectorType);
         }
 
-        private GeneratedType buildDocumentStorageType(GeneratedAssembly assembly, DocumentOperations operations, string typeName,
+        private GeneratedType buildDocumentStorageType(GeneratedAssembly assembly, DocumentOperations operations,
+            string typeName,
             Type baseType, GeneratedType selectorType)
         {
             var type = assembly.AddType(typeName, baseType);
@@ -88,7 +90,6 @@ namespace Marten.Internal.CodeGeneration
 
             _mapping.IdStrategy.GenerateCode(assign, _mapping);
         }
-
 
 
         private static void writeNotImplementedStubs(GeneratedType type)
@@ -145,7 +146,6 @@ namespace Marten.Internal.CodeGeneration
             }
 
 
-
             if (_mapping.UseOptimisticConcurrency)
             {
                 buildOperationMethod(type, operations, "Overwrite");
@@ -154,8 +154,6 @@ namespace Marten.Internal.CodeGeneration
             {
                 type.MethodFor("Overwrite").Frames.ThrowNotSupportedException();
             }
-
-
         }
 
         private void buildConditionalOperationBasedOnConcurrencyChecks(GeneratedType type,

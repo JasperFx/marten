@@ -16,7 +16,7 @@ namespace Marten
         {
             Storage.BuildAllMappings();
             var list = new List<ICodeFile>(
-                Storage.AllDocumentMappings.Select(x => new DocumentPersistenceBuilder(x, this)));
+                Storage.AllDocumentMappings.Select(x => new DocumentProviderBuilder(x, this)));
 
 
             list.AddRange(_compiledQueryTypes.Select(x => new CompiledQueryCodeFile(x, this)));

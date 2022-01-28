@@ -39,7 +39,8 @@ namespace Marten.Internal.CodeGeneration
             _inner.LoadIntoTempTable(tenant, serializer, conn, documents.OfType<TRoot>());
         }
 
-        public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+        public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+            IEnumerable<T> documents,
             CancellationToken cancellation)
         {
             return _inner.LoadIntoTempTableAsync(tenant, serializer, conn, documents.OfType<TRoot>(), cancellation);

@@ -6,6 +6,5 @@ namespace Marten.Internal.CodeGeneration
     /// </summary>
     internal interface IDocumentSelector
     {
-
     }
 }

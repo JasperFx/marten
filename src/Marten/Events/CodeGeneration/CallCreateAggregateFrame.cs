@@ -12,12 +12,12 @@ namespace Marten.Events.CodeGeneration
         private Variable _session;
         private Variable _cancellation;
 
-        public CallCreateAggregateFrame(CreateMethodCollection methods) : base(methods.IsAsync)
+        public CallCreateAggregateFrame(CreateMethodCollection methods): base(methods.IsAsync)
         {
             Aggregate = new Variable(methods.AggregateType, this);
         }
 
-        public CallCreateAggregateFrame(CreateMethodCollection methods, Variable aggregate) : base(methods.IsAsync)
+        public CallCreateAggregateFrame(CreateMethodCollection methods, Variable aggregate): base(methods.IsAsync)
         {
             Aggregate = aggregate;
         }
@@ -34,7 +34,8 @@ namespace Marten.Events.CodeGeneration
 
         public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
         {
-            _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ?? chain.FindVariable(typeof(IDocumentSession));
+            _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ??
+                       chain.FindVariable(typeof(IDocumentSession));
             yield return _session;
 
             if (IsAsync)
@@ -70,11 +71,13 @@ namespace Marten.Events.CodeGeneration
 
             if (IsAsync)
             {
-                writer.WriteLine($"{declaration} await {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage}, {_cancellation.Usage});");
+                writer.WriteLine(
+                    $"{declaration} await {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage}, {_cancellation.Usage});");
             }
             else
             {
-                writer.WriteLine($"{declaration} {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage});");
+                writer.WriteLine(
+                    $"{declaration} {CreateMethodCollection.MethodName}({FirstEventExpression}, {_session.Usage});");
             }
 
             Next?.GenerateCode(method, writer);

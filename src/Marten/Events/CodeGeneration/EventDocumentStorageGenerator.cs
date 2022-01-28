@@ -39,7 +39,8 @@ namespace Marten.Events.CodeGeneration
         /// <returns></returns>
         public static (EventDocumentStorage, string) GenerateStorage(StoreOptions options)
         {
-            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace  + ".EventStore"));
+            var assembly =
+                new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace + ".EventStore"));
             var builderType = AssembleTypes(options, assembly);
 
 
@@ -57,10 +58,9 @@ namespace Marten.Events.CodeGeneration
             }
 
 
-
             var code = writer.ToString();
 
-            var storage = (EventDocumentStorage) Activator.CreateInstance(builderType.CompiledType, options);
+            var storage = (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
 
             return (storage, code);
         }
@@ -123,7 +123,8 @@ namespace Marten.Events.CodeGeneration
             }
         }
 
-        private static GeneratedType buildUpdateStreamVersion(GeneratedType builderType, GeneratedAssembly assembly, EventGraph graph)
+        private static GeneratedType buildUpdateStreamVersion(GeneratedType builderType, GeneratedAssembly assembly,
+            EventGraph graph)
         {
             var operationType = assembly.AddType(UpdateStreamVersionOperationName, typeof(UpdateStreamVersion));
 
@@ -133,10 +134,13 @@ namespace Marten.Events.CodeGeneration
                 sql += $" and {TenantIdColumn.Name} = ?";
             }
 
-            var configureCommand = operationType.MethodFor("ConfigureCommand");
-            configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(UpdateStreamVersion.Stream)));
+            var setter = operationType.AddStringConstant("SQL", sql);
 
-            configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(\"{sql}\");",
+            var configureCommand = operationType.MethodFor("ConfigureCommand");
+            configureCommand.DerivedVariables.Add(
+                new Variable(typeof(StreamAction), nameof(UpdateStreamVersion.Stream)));
+
+            configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
                 Use.Type<CommandBuilder>());
 
             configureCommand.SetParameterFromMember<StreamAction>(0, x => x.Version);
@@ -179,8 +183,8 @@ namespace Marten.Events.CodeGeneration
             }
 
             builderType.MethodFor(nameof(EventDocumentStorage.QueryForStream))
-                .Frames.Code($"return new Marten.Generated.EventStore.{StreamStateSelectorTypeName}({arguments.Join(", ")});");
-
+                .Frames.Code(
+                    $"return new Marten.Generated.EventStore.{StreamStateSelectorTypeName}({arguments.Join(", ")});");
         }
 
         private static GeneratedType buildStreamQueryHandlerType(EventGraph graph, GeneratedAssembly assembly)
@@ -221,11 +225,12 @@ namespace Marten.Events.CodeGeneration
             });
 
 #pragma warning disable 4014
-            async.Frames.Call<StreamStateQueryHandler>(x => x.SetAggregateTypeAsync(null, null, null, CancellationToken.None), @call =>
+            async.Frames.Call<StreamStateQueryHandler>(
+                x => x.SetAggregateTypeAsync(null, null, null, CancellationToken.None), @call =>
 #pragma warning restore 4014
-            {
-                @call.IsLocal = true;
-            });
+                {
+                    @call.IsLocal = true;
+                });
 
             sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 3, x => x.LastTimestamp);
             async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 3, x => x.LastTimestamp);
@@ -242,7 +247,8 @@ namespace Marten.Events.CodeGeneration
             return streamQueryHandlerType;
         }
 
-        private static void buildConfigureCommandMethodForStreamState(EventGraph graph, GeneratedType streamQueryHandlerType)
+        private static void buildConfigureCommandMethodForStreamState(EventGraph graph,
+            GeneratedType streamQueryHandlerType)
         {
             var sql =
                 $"select id, version, type, timestamp, created as timestamp, is_archived from {graph.DatabaseSchemaName}.mt_streams where id = ?";
@@ -252,10 +258,12 @@ namespace Marten.Events.CodeGeneration
                 sql += $" and {TenantIdColumn.Name} = ?";
             }
 
+            var setter = streamQueryHandlerType.AddStringConstant("SQL", sql);
+
             var configureCommand = streamQueryHandlerType.MethodFor("ConfigureCommand");
             configureCommand.Frames.Call<CommandBuilder>(x => x.AppendWithParameters(""), @call =>
             {
-                @call.Arguments[0] = Constant.ForString(sql);
+                @call.Arguments[0] = setter;
                 @call.ReturnAction = ReturnAction.Initialize;
             });
 
@@ -286,7 +294,9 @@ namespace Marten.Events.CodeGeneration
             var sql =
                 $"insert into {graph.DatabaseSchemaName}.mt_events ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
 
-            configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(\"{sql}\");",
+            operationType.AddStringConstant("SQL", sql);
+
+            configure.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
                 Use.Type<CommandBuilder>());
 
             for (var i = 0; i < columns.Count; i++)
@@ -308,11 +318,14 @@ namespace Marten.Events.CodeGeneration
                 .Where(x => x.Writes)
                 .ToArray();
 
-            var sql = $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
+            var sql =
+                $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values ({columns.Select(_ => "?").Join(", ")})";
+            operationType.AddStringConstant("SQL", sql);
+
             var configureCommand = operationType.MethodFor("ConfigureCommand");
             configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(InsertStreamBase.Stream)));
 
-            configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(\"{sql}\");",
+            configureCommand.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(SQL);",
                 Use.Type<CommandBuilder>());
 
             for (var i = 0; i < columns.Length; i++)
@@ -325,9 +338,5 @@ namespace Marten.Events.CodeGeneration
 
             return operationType;
         }
-
-
     }
-
-
 }

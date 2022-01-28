@@ -7,7 +7,6 @@ namespace Marten.Events.CodeGeneration
 {
     internal class DeclareAggregateFrame: SyncFrame
     {
-
         public DeclareAggregateFrame(Type aggregateType)
         {
             Variable = new Variable(aggregateType, this);

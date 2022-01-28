@@ -52,7 +52,8 @@ namespace Marten.Internal.CodeGeneration
             writer.Complete();
         }
 
-        public async Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+        public async Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+            IEnumerable<T> documents,
             CancellationToken cancellation)
         {
             using var writer = await conn.BeginBinaryImportAsync(MainLoaderSql(), cancellation).ConfigureAwait(false);
@@ -68,12 +69,13 @@ namespace Marten.Internal.CodeGeneration
         }
 
         public abstract void LoadRow(NpgsqlBinaryImporter writer, T document, Tenant tenant, ISerializer serializer);
-        public abstract Task LoadRowAsync(NpgsqlBinaryImporter writer, T document, Tenant tenant, ISerializer serializer, CancellationToken cancellation);
+
+        public abstract Task LoadRowAsync(NpgsqlBinaryImporter writer, T document, Tenant tenant,
+            ISerializer serializer, CancellationToken cancellation);
 
 
         public abstract string MainLoaderSql();
         public abstract string TempLoaderSql();
-
 
 
         public abstract string CreateTempTableForCopying();
@@ -91,7 +93,8 @@ namespace Marten.Internal.CodeGeneration
             writer.Complete();
         }
 
-        public async Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+        public async Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+            IEnumerable<T> documents,
             CancellationToken cancellation)
         {
             using var writer = conn.BeginBinaryImport(TempLoaderSql());

@@ -10,7 +10,7 @@ using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration
 {
-    internal class CreateMethodCollection : MethodCollection
+    internal class CreateMethodCollection: MethodCollection
     {
         internal override void validateMethod(MethodSlot method)
         {
@@ -19,7 +19,8 @@ namespace Marten.Events.CodeGeneration
 
         public static readonly string MethodName = "Create";
 
-        public CreateMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
+        public CreateMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
+            aggregateType)
         {
             _validArgumentTypes.Add(typeof(IQuerySession));
 
@@ -48,10 +49,10 @@ namespace Marten.Events.CodeGeneration
                 ? typeof(ValueTask<>).MakeGenericType(AggregateType)
                 : AggregateType;
 
-            var args = new[] {new Argument(typeof(IEvent), "@event"), new Argument(typeof(IQuerySession), "session")};
+            var args = new[] { new Argument(typeof(IEvent), "@event"), new Argument(typeof(IQuerySession), "session") };
             if (IsAsync)
             {
-                args = args.Concat(new[] {new Argument(typeof(CancellationToken), "cancellation")}).ToArray();
+                args = args.Concat(new[] { new Argument(typeof(CancellationToken), "cancellation") }).ToArray();
             }
 
             var method = new GeneratedMethod(MethodName, returnType, args);
@@ -63,8 +64,9 @@ namespace Marten.Events.CodeGeneration
 
 
             method.Frames.Add(new DefaultAggregateConstruction(AggregateType, generatedType)
-                {IfStyle = IfStyle.None});
-
+            {
+                IfStyle = IfStyle.None
+            });
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,

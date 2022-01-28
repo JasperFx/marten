@@ -4,11 +4,12 @@ using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration
 {
-    internal class ShouldDeleteMethodCollection : MethodCollection
+    internal class ShouldDeleteMethodCollection: MethodCollection
     {
         public static readonly string MethodName = "ShouldDelete";
 
-        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
+        public ShouldDeleteMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
+            aggregateType)
         {
             _validArgumentTypes.Add(typeof(IQuerySession));
             _validArgumentTypes.Add(aggregateType);
@@ -26,7 +27,8 @@ namespace Marten.Events.CodeGeneration
         {
             if (!method.Method.GetParameters().Any())
             {
-                method.AddError($"ShouldDelete() requires at least one argument (the event type, the aggregate type, or IQuerySession)");
+                method.AddError(
+                    $"ShouldDelete() requires at least one argument (the event type, the aggregate type, or IQuerySession)");
             }
         }
     }

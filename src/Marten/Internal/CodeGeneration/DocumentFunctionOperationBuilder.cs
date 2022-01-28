@@ -51,8 +51,9 @@ namespace Marten.Internal.CodeGeneration
             }
 
             type.MethodFor("Role").Frames.Return(Constant.ForEnum(_role));
-            type.MethodFor("DbType").Frames.Return(Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(_mapping.IdType)));
-            type.MethodFor("CommandText").Frames.Return(Constant.ForString(CommandText));
+            type.MethodFor("DbType").Frames
+                .Return(Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(_mapping.IdType)));
+            type.MethodFor("CommandText").Frames.ReturnNewStringConstant("COMMAND_TEXT", CommandText);
 
             buildConfigureMethod(type);
 
@@ -70,8 +71,10 @@ namespace Marten.Internal.CodeGeneration
             {
                 if (_mapping.Metadata.Version.Member != null)
                 {
-                    sync.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType, type);
-                    async.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType, type);
+                    sync.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType,
+                        type);
+                    async.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType,
+                        type);
                 }
             }
 
@@ -134,5 +137,4 @@ namespace Marten.Internal.CodeGeneration
             }
         }
     }
-
 }

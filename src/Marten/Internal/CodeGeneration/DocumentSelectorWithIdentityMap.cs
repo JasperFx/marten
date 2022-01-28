@@ -4,7 +4,7 @@ using Marten.Schema;
 
 namespace Marten.Internal.CodeGeneration
 {
-    public abstract class DocumentSelectorWithIdentityMap<T, TId> : IDocumentSelector
+    public abstract class DocumentSelectorWithIdentityMap<T, TId>: IDocumentSelector
     {
         protected readonly DocumentMapping _mapping;
         protected readonly ISerializer _serializer;
@@ -26,6 +26,5 @@ namespace Marten.Internal.CodeGeneration
                 session.ItemMap[typeof(T)] = _identityMap;
             }
         }
-
     }
 }

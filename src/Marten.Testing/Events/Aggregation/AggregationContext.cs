@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
@@ -22,7 +23,9 @@ namespace Marten.Testing.Events.Aggregation
         {
             _projection = new T();
 
-            _projection.Compile(theStore.Options);
+            var rules = theStore.Options.CreateGenerationRules();
+            rules.TypeLoadMode = TypeLoadMode.Dynamic;
+            _projection.Compile(theStore.Options, rules);
         }
 
         public void UsingDefinition(Action<AggregateProjection<MyAggregate>> configure)
@@ -30,7 +33,10 @@ namespace Marten.Testing.Events.Aggregation
             _projection = new AggregateProjection<MyAggregate>();
             configure(_projection);
 
-            _projection.Compile(theStore.Options);
+
+            var rules = theStore.Options.CreateGenerationRules();
+            rules.TypeLoadMode = TypeLoadMode.Dynamic;
+            _projection.Compile(theStore.Options, rules);
         }
 
 

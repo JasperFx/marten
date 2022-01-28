@@ -14,13 +14,13 @@ using CommandExtensions = Weasel.Postgresql.CommandExtensions;
 
 namespace Marten.Internal.CodeGeneration
 {
-    public class DocumentPersistenceBuilder : ICodeFile
+    public class DocumentProviderBuilder: ICodeFile
     {
         private readonly DocumentMapping _mapping;
         private readonly StoreOptions _options;
         private Type _providerType;
 
-        public DocumentPersistenceBuilder(DocumentMapping mapping, StoreOptions options)
+        public DocumentProviderBuilder(DocumentMapping mapping, StoreOptions options)
         {
             _mapping = mapping;
             _options = options;
@@ -30,7 +30,8 @@ namespace Marten.Internal.CodeGeneration
 
         public string ProviderName { get; }
 
-        public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services, string containingNamespace)
+        public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+            string containingNamespace)
         {
             _providerType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == ProviderName);
             return Task.FromResult(_providerType != null);
@@ -64,18 +65,15 @@ namespace Marten.Internal.CodeGeneration
             var identityMap = new DocumentStorageBuilder(_mapping, StorageStyle.IdentityMap, x => x.IdentityMapSelector)
                 .Build(assembly, operations);
 
-            var dirtyTracking = new DocumentStorageBuilder(_mapping, StorageStyle.DirtyTracking, x => x.DirtyCheckingSelector)
-                .Build(assembly, operations);
+            var dirtyTracking =
+                new DocumentStorageBuilder(_mapping, StorageStyle.DirtyTracking, x => x.DirtyCheckingSelector)
+                    .Build(assembly, operations);
 
             var bulkWriterType = new BulkLoaderBuilder(_mapping).BuildType(assembly);
 
             buildProviderType(assembly, queryOnly, bulkWriterType, lightweight, identityMap, dirtyTracking);
 
-            var types = new[]
-            {
-                typeof(IDocumentStorage<>),
-                _mapping.DocumentType,
-            };
+            var types = new[] { typeof(IDocumentStorage<>), _mapping.DocumentType, };
 
             assembly.Rules.ReferenceTypes(types);
         }
@@ -86,7 +84,8 @@ namespace Marten.Internal.CodeGeneration
         }
 
         private GeneratedType buildProviderType(GeneratedAssembly assembly, GeneratedType queryOnly,
-            GeneratedType bulkWriterType, GeneratedType lightweight, GeneratedType identityMap, GeneratedType dirtyTracking)
+            GeneratedType bulkWriterType, GeneratedType lightweight, GeneratedType identityMap,
+            GeneratedType dirtyTracking)
         {
             var providerType = assembly.AddType(ProviderName,
                 typeof(DocumentProvider<>).MakeGenericType(_mapping.DocumentType));
