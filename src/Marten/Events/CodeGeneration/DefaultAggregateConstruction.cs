@@ -27,13 +27,9 @@ namespace Marten.Events.CodeGeneration
                 var ctor = Expression.New(_constructor);
                 var lambda = Expression.Lambda(ctor);
                 var func = lambda.Compile();
-                _setter = new Setter(func.GetType(), "AggregateBuilder")
-                {
-                    InitialValue = func
-                };
+                _setter = new Setter(func.GetType(), "AggregateBuilder") { InitialValue = func };
                 generatedType.Setters.Add(_setter);
             }
-
         }
 
         public IfStyle IfStyle { get; set; } = IfStyle.Else;
@@ -50,7 +46,8 @@ namespace Marten.Events.CodeGeneration
 
             if (_constructor == null)
             {
-                writer.WriteLine($"throw new {typeof(InvalidOperationException).FullNameInCode()}(\"There is no default constructor for {_returnType.FullNameInCode()}\");");
+                writer.WriteLine(
+                    $"throw new {typeof(InvalidOperationException).FullNameInCode()}(\"There is no default constructor for {_returnType.FullNameInCode()}\");");
             }
             else if (_setter != null)
             {

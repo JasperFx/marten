@@ -56,7 +56,8 @@ document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeF
 
         public static void MarkAsLoaded(this FramesCollection frames)
         {
-            frames.Code($"{{0}}.{nameof(IMartenSession.MarkAsDocumentLoaded)}(id, document);", Use.Type<IMartenSession>());
+            frames.Code($"{{0}}.{nameof(IMartenSession.MarkAsDocumentLoaded)}(id, document);",
+                Use.Type<IMartenSession>());
         }
 
         public static void DeserializeDocumentAsync(this FramesCollection frames, DocumentMapping mapping, int index)
@@ -66,22 +67,19 @@ document = ({documentType.FullNameInCode()}) _serializer.FromJson(_mapping.TypeF
 
             if (!mapping.IsHierarchy())
             {
-                frames.Code($@"
+                frames.CodeAsync($@"
 {documentType.FullNameInCode()} document;
-document = _serializer.FromJson<{documentType.FullNameInCode()}>(reader, {index});
-").Creates(document);
+document = await _serializer.FromJsonAsync<{documentType.FullNameInCode()}>(reader, {index}, {{0}}).ConfigureAwait(false);
+", Use.Type<CancellationToken>()).Creates(document);
             }
             else
             {
                 frames.CodeAsync($@"
 {documentType.FullNameInCode()} document;
-var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}});
-document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_mapping.TypeFor(typeAlias), reader, {index}, {{0}}));
+var typeAlias = await reader.GetFieldValueAsync<string>({index + 1}, {{0}}).ConfigureAwait(false);
+document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_mapping.TypeFor(typeAlias), reader, {index}, {{0}}).ConfigureAwait(false));
 ", Use.Type<CancellationToken>()).Creates(document);
             }
-
-
-
         }
 
         /// <summary>
@@ -93,7 +91,8 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         /// <param name="variableName"></param>
         /// <param name="documentType"></param>
         /// <param name="generatedType"></param>
-        public static void SetMemberValue(this FramesCollection frames, MemberInfo member, string variableName, Type documentType, GeneratedType generatedType)
+        public static void SetMemberValue(this FramesCollection frames, MemberInfo member, string variableName,
+            Type documentType, GeneratedType generatedType)
         {
             if (member is PropertyInfo property)
             {
@@ -130,7 +129,8 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
             throw new ArgumentOutOfRangeException(nameof(member), $"MemberInfo {member} is not valid in this usage. ");
         }
 
-        public static string InitializeLambdaSetterProperty(this GeneratedType generatedType, MemberInfo member, Type documentType)
+        public static string InitializeLambdaSetterProperty(this GeneratedType generatedType, MemberInfo member,
+            Type documentType)
         {
             var setterFieldName = $"{member.Name}Writer";
 
@@ -138,14 +138,14 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
             {
                 var memberType = member.GetRawMemberType();
                 var actionType = typeof(Action<,>).MakeGenericType(documentType, memberType);
-                var expression = $"{typeof(LambdaBuilder).GetFullName()}.{nameof(LambdaBuilder.Setter)}<{documentType.FullNameInCode()},{memberType.FullNameInCode()}>(typeof({documentType.FullNameInCode()}).GetProperty(\"{member.Name}\"))";
+                var expression =
+                    $"{typeof(LambdaBuilder).GetFullName()}.{nameof(LambdaBuilder.Setter)}<{documentType.FullNameInCode()},{memberType.FullNameInCode()}>(typeof({documentType.FullNameInCode()}).GetProperty(\"{member.Name}\"))";
 
                 var constant = new Variable(actionType, expression);
 
                 var setter = Setter.StaticReadOnly(setterFieldName, constant);
 
                 generatedType.Setters.Add(setter);
-
             }
 
             return setterFieldName;
@@ -174,16 +174,17 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
                     };
 
                 generatedType.Setters.Add(setter);
-
             }
         }
 
-        public static void AssignMemberFromReader<T>(this GeneratedMethod method, GeneratedType generatedType, int index,
+        public static void AssignMemberFromReader<T>(this GeneratedMethod method, GeneratedType generatedType,
+            int index,
             Expression<Func<T, object>> memberExpression)
         {
             var member = FindMembers.Determine(memberExpression).Single();
             var variableName = member.Name.ToCamelCase();
-            method.Frames.Code($"var {variableName} = reader.GetFieldValue<{member.GetMemberType().FullNameInCode()}>({index});");
+            method.Frames.Code(
+                $"var {variableName} = reader.GetFieldValue<{member.GetMemberType().FullNameInCode()}>({index});");
 
             method.Frames.SetMemberValue(member, variableName, typeof(T), generatedType);
         }
@@ -193,27 +194,34 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
         {
             var member = documentType.GetMember(memberName).Single();
             var variableName = member.Name.ToCamelCase();
-            method.Frames.Code($"var {variableName} = reader.GetFieldValue<{member.GetMemberType().FullNameInCode()}>({index});");
+            method.Frames.Code(
+                $"var {variableName} = reader.GetFieldValue<{member.GetMemberType().FullNameInCode()}>({index});");
 
             method.Frames.SetMemberValue(member, variableName, documentType, generatedType);
         }
 
-        public static void AssignMemberFromReaderAsync<T>(this GeneratedMethod method, GeneratedType generatedType, int index,
+        public static void AssignMemberFromReaderAsync<T>(this GeneratedMethod method, GeneratedType generatedType,
+            int index,
             Expression<Func<T, object>> memberExpression)
         {
             var member = FindMembers.Determine(memberExpression).Single();
             var variableName = member.Name.ToCamelCase();
-            method.Frames.Code($"var {variableName} = await reader.GetFieldValueAsync<{member.GetMemberType().FullNameInCode()}>({index}, {{0}});", Use.Type<CancellationToken>());
+            method.Frames.Code(
+                $"var {variableName} = await reader.GetFieldValueAsync<{member.GetMemberType().FullNameInCode()}>({index}, {{0}}).ConfigureAwait(false);",
+                Use.Type<CancellationToken>());
 
             method.Frames.SetMemberValue(member, variableName, typeof(T), generatedType);
         }
 
-        public static void AssignMemberFromReaderAsync(this GeneratedMethod method, GeneratedType generatedType, int index,
+        public static void AssignMemberFromReaderAsync(this GeneratedMethod method, GeneratedType generatedType,
+            int index,
             Type documentType, string memberName)
         {
             var member = documentType.GetMember(memberName).Single();
             var variableName = member.Name.ToCamelCase();
-            method.Frames.Code($"var {variableName} = await reader.GetFieldValueAsync<{member.GetMemberType().FullNameInCode()}>({index}, {{0}});", Use.Type<CancellationToken>());
+            method.Frames.Code(
+                $"var {variableName} = await reader.GetFieldValueAsync<{member.GetMemberType().FullNameInCode()}>({index}, {{0}}).ConfigureAwait(false);",
+                Use.Type<CancellationToken>());
 
             method.Frames.SetMemberValue(member, variableName, documentType, generatedType);
         }
@@ -230,12 +238,21 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
 
         public static void IfDbReaderValueIsNotNullAsync(this GeneratedMethod method, int index, Action action)
         {
-            method.Frames.CodeAsync($"if (!(await reader.IsDBNullAsync({index}, token)))");
+            method.Frames.CodeAsync($"if (!(await reader.IsDBNullAsync({index}, token).ConfigureAwait(false)))");
             method.Frames.Code("{{");
 
             action();
 
             method.Frames.Code("}}");
+        }
+
+        public static void SetParameterFromMemberNonNullableString<T>(this GeneratedMethod method, int index,
+            Expression<Func<T, string>> memberExpression)
+        {
+            var member = FindMembers.Determine(memberExpression).Single();
+
+            method.Frames.Code($"parameters[{index}].Value = {{0}}.{member.Name};", Use.Type<T>());
+            method.Frames.Code($"parameters[{index}].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;");
         }
 
         public static void SetParameterFromMember<T>(this GeneratedMethod method, int index,
@@ -247,7 +264,9 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
 
             if (memberType == typeof(string))
             {
-                method.Frames.Code($"parameters[{index}].Value = {{0}}.{member.Name} != null ? (object){{0}}.{member.Name} : {typeof(DBNull).FullNameInCode()}.Value;", Use.Type<T>());
+                method.Frames.Code(
+                    $"parameters[{index}].Value = {{0}}.{member.Name} != null ? (object){{0}}.{member.Name} : {typeof(DBNull).FullNameInCode()}.Value;",
+                    Use.Type<T>());
                 method.Frames.Code($"parameters[{index}].NpgsqlDbType = {{0}};", pgType);
             }
             else

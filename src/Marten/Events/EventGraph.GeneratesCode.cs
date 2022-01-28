@@ -39,7 +39,7 @@ namespace Marten.Events
             return _projection.TryAttachTypes(assembly, _options);
         }
 
-        public string FileName => _projection.GetType().FullName.Sanitize();
+        public string FileName => _projection.GetType().ToSuffixedTypeName("RuntimeSupport");
     }
 
     public partial class EventGraph : IGeneratesCode, ICodeFile

@@ -57,7 +57,7 @@ namespace Marten.Internal
                 {
                     try
                     {
-                        var builder = new DocumentPersistenceBuilder(m, _options);
+                        var builder = new DocumentProviderBuilder(m, _options);
 
                         var rules = _options.CreateGenerationRules();
                         rules.ReferenceTypes(m.DocumentType);

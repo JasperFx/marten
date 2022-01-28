@@ -42,9 +42,9 @@ namespace Marten.Events.Schema
 
         public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
         {
-            method.IfDbReaderValueIsNotNull(index, () =>
+            method.IfDbReaderValueIsNotNullAsync(index, () =>
             {
-                method.AssignMemberFromReader(null, index, _eventMemberExpression);
+                method.AssignMemberFromReaderAsync(null, index, _eventMemberExpression);
             });
         }
 

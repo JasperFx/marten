@@ -208,6 +208,11 @@ namespace Marten.Events.Aggregation
         internal void Compile(StoreOptions options)
         {
             var rules = options.CreateGenerationRules();
+            Compile(options, rules);
+        }
+
+        internal void Compile(StoreOptions options, GenerationRules rules)
+        {
             rules.ReferenceTypes(GetType());
 
             new ProjectionCodeFile(this, options)

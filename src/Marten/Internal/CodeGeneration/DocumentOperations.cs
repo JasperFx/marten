@@ -10,14 +10,11 @@ namespace Marten.Internal.CodeGeneration
         public DocumentOperations(GeneratedAssembly assembly, DocumentMapping mapping, StoreOptions options)
         {
             Upsert = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Upsert, OperationRole.Upsert, options)
-                    .BuildType(assembly);
+                .BuildType(assembly);
             Insert = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Insert, OperationRole.Insert, options)
-                    .BuildType(assembly);
+                .BuildType(assembly);
             Update = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Update, OperationRole.Update, options)
-                    .BuildType(assembly);
-
-
-
+                .BuildType(assembly);
 
 
             QueryOnlySelector = new SelectorBuilder(mapping, StorageStyle.QueryOnly).BuildType(assembly);
@@ -27,11 +24,11 @@ namespace Marten.Internal.CodeGeneration
 
             if (mapping.UseOptimisticConcurrency)
             {
-                Overwrite = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Overwrite, OperationRole.Update, options)
-                        .BuildType(assembly);
+                Overwrite = new DocumentFunctionOperationBuilder(mapping, mapping.Schema.Overwrite,
+                        OperationRole.Update, options)
+                    .BuildType(assembly);
             }
         }
-
 
 
         public GeneratedType Upsert { get; set; }
@@ -44,6 +41,5 @@ namespace Marten.Internal.CodeGeneration
         public GeneratedType IdentityMapSelector { get; set; }
 
         public GeneratedType DirtyCheckingSelector { get; set; }
-
     }
 }

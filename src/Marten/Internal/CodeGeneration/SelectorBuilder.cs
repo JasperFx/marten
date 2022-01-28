@@ -55,7 +55,8 @@ namespace Marten.Internal.CodeGeneration
             return type;
         }
 
-        private void generateIdentityMapAndTrackingCode(GeneratedMethod sync, GeneratedMethod @async, StorageStyle storageStyle)
+        private void generateIdentityMapAndTrackingCode(GeneratedMethod sync, GeneratedMethod @async,
+            StorageStyle storageStyle)
         {
             if (storageStyle == StorageStyle.QueryOnly) return;
 

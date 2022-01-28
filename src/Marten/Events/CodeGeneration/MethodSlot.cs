@@ -10,7 +10,8 @@ namespace Marten.Events.CodeGeneration
 {
     public class MethodSlot
     {
-        public static readonly string NoEventType = "No event type can be determined. The argument for the event should be named '@event'";
+        public static readonly string NoEventType =
+            "No event type can be determined. The argument for the event should be named '@event'";
 
         private readonly List<string> _errors = new List<string>();
 
@@ -69,7 +70,8 @@ namespace Marten.Events.CodeGeneration
 
         public string Signature()
         {
-            var description = $"{Method.Name}({Method.GetParameters().Select(x => x.ParameterType.NameInCode()).Join(", ")})";
+            var description =
+                $"{Method.Name}({Method.GetParameters().Select(x => x.ParameterType.NameInCode()).Join(", ")})";
             if (ReturnType != typeof(void))
             {
                 description += $" : {ReturnType.NameInCode()}";
@@ -94,7 +96,8 @@ namespace Marten.Events.CodeGeneration
 
             if (collection.ValidReturnTypes.Any() && !collection.ValidReturnTypes.Contains(ReturnType))
             {
-                var message = $"Return type '{ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
+                var message =
+                    $"Return type '{ReturnType.FullNameInCode()}' is invalid. The valid options are {collection.ValidArgumentTypes.Select(x => x.FullNameInCode()).Join(", ")}";
                 AddError(message);
             }
         }
@@ -106,12 +109,13 @@ namespace Marten.Events.CodeGeneration
 
         private void validateArguments(MethodCollection collection)
         {
-            var possibleTypes = new List<Type>(collection.ValidArgumentTypes) {EventType, typeof(IEvent)};
+            var possibleTypes = new List<Type>(collection.ValidArgumentTypes) { EventType, typeof(IEvent) };
 
             if (EventType != null)
             {
                 possibleTypes.Add(typeof(IEvent<>).MakeGenericType(EventType));
             }
+
             if (collection.AggregateType != null)
             {
                 possibleTypes.Fill(collection.AggregateType);
@@ -131,7 +135,8 @@ namespace Marten.Events.CodeGeneration
         public static MethodSlot InvalidMethodName(MethodInfo methodInfo, string[] methodNames)
         {
             var slot = new MethodSlot(methodInfo, null);
-            slot._errors.Add($"Unrecognized method name '{methodInfo.Name}'. Either mark with [MartenIgnore] or use one of {methodNames.Select(x => $"'{x}'").Join(", ")}");
+            slot._errors.Add(
+                $"Unrecognized method name '{methodInfo.Name}'. Either mark with [MartenIgnore] or use one of {methodNames.Select(x => $"'{x}'").Join(", ")}");
 
             return slot;
         }

@@ -7,12 +7,12 @@ using LamarCodeGeneration.Model;
 
 namespace Marten.Events.CodeGeneration
 {
-    internal class EventTypePatternMatchFrame : Frame
+    internal class EventTypePatternMatchFrame: Frame
     {
         private readonly List<EventProcessingFrame> _inner;
         private Variable _event;
 
-        public EventTypePatternMatchFrame(List<EventProcessingFrame> frames) : base(frames.Any(x => x.IsAsync))
+        public EventTypePatternMatchFrame(List<EventProcessingFrame> frames): base(frames.Any(x => x.IsAsync))
         {
             _inner = frames;
         }
@@ -26,6 +26,7 @@ namespace Marten.Events.CodeGeneration
                 {
                     frame.GenerateCode(method, writer);
                 }
+
                 writer.FinishBlock();
             }
 

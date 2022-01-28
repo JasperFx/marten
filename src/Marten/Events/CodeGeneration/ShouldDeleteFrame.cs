@@ -17,10 +17,10 @@ namespace Marten.Events.CodeGeneration
 
         private Variable _aggregate;
 
-        public ShouldDeleteFrame(MethodSlot slot) : base(slot.Method.As<MethodInfo>().IsAsync())
+        public ShouldDeleteFrame(MethodSlot slot): base(slot.Method.As<MethodInfo>().IsAsync())
         {
             EventType = slot.EventType;
-            Maybe = new MethodCall(slot.HandlerType, (MethodInfo) slot.Method) {Target = slot.Setter};
+            Maybe = new MethodCall(slot.HandlerType, (MethodInfo)slot.Method) { Target = slot.Setter };
             Maybe.ReturnVariable.OverrideName(Maybe.ReturnVariable.Usage + ++_number);
         }
 

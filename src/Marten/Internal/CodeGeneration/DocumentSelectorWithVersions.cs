@@ -4,7 +4,7 @@ using Marten.Schema;
 
 namespace Marten.Internal.CodeGeneration
 {
-    public abstract class DocumentSelectorWithVersions<T, TId> : IDocumentSelector
+    public abstract class DocumentSelectorWithVersions<T, TId>: IDocumentSelector
     {
         protected readonly DocumentMapping _mapping;
         protected readonly ISerializer _serializer;

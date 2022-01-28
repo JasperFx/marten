@@ -10,7 +10,7 @@ using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration
 {
-    internal class ApplyMethodCollection : MethodCollection
+    internal class ApplyMethodCollection: MethodCollection
     {
         internal override void validateMethod(MethodSlot method)
         {
@@ -22,7 +22,8 @@ namespace Marten.Events.CodeGeneration
 
         public static readonly string MethodName = "Apply";
 
-        public ApplyMethodCollection(Type projectionType, Type aggregateType) : base(MethodName, projectionType, aggregateType)
+        public ApplyMethodCollection(Type projectionType, Type aggregateType): base(MethodName, projectionType,
+            aggregateType)
         {
             LambdaName = nameof(AggregateProjection<string>.ProjectEvent);
             _validArgumentTypes.Add(typeof(IQuerySession));
@@ -48,14 +49,13 @@ namespace Marten.Events.CodeGeneration
 
             var args = new[]
             {
-                new Argument(typeof(IEvent), "@event"),
-                new Argument(AggregateType, "aggregate"),
+                new Argument(typeof(IEvent), "@event"), new Argument(AggregateType, "aggregate"),
                 new Argument(typeof(IQuerySession), "session")
             };
 
             if (IsAsync)
             {
-                args = args.Concat(new[] {new Argument(typeof(CancellationToken), "cancellation")}).ToArray();
+                args = args.Concat(new[] { new Argument(typeof(CancellationToken), "cancellation") }).ToArray();
             }
 
             var method = new GeneratedMethod(MethodName, returnType, args);

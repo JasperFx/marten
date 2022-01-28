@@ -17,7 +17,7 @@ namespace Marten.Internal.CodeGeneration
         public BulkLoaderBuilder(DocumentMapping mapping)
         {
             _mapping = mapping;
-            _tempTable = _mapping.TableName.Name + "_temp" ;
+            _tempTable = _mapping.TableName.Name + "_temp";
             TypeName = _mapping.DocumentType.ToSuffixedTypeName("BulkLoader");
         }
 
@@ -40,20 +40,23 @@ namespace Marten.Internal.CodeGeneration
                 type.AllInjectedFields.Add(new InjectedField(typeof(DocumentMapping), "mapping"));
             }
 
-            type.MethodFor("MainLoaderSql").Frames
-                .Return($"COPY {_mapping.TableName.QualifiedName}({columns}) FROM STDIN BINARY");
+            type.MethodFor("MainLoaderSql")
+                .Frames
+                .ReturnNewStringConstant("MAIN_LOADER_SQL",
+                    $"COPY {_mapping.TableName.QualifiedName}({columns}) FROM STDIN BINARY");
 
             type.MethodFor("TempLoaderSql").Frames
-                .Return($"COPY {_tempTable}({columns}) FROM STDIN BINARY");
+                .ReturnNewStringConstant("TEMP_LOADER_SQL", $"COPY {_tempTable}({columns}) FROM STDIN BINARY");
 
             type.MethodFor(nameof(CopyNewDocumentsFromTempTable))
-                .Frames.Return(CopyNewDocumentsFromTempTable());
+                .Frames.ReturnNewStringConstant("COPY_NEW_DOCUMENTS_SQL", CopyNewDocumentsFromTempTable());
 
             type.MethodFor(nameof(OverwriteDuplicatesFromTempTable))
-                .Frames.Return(OverwriteDuplicatesFromTempTable());
+                .Frames.ReturnNewStringConstant("OVERWRITE_SQL", OverwriteDuplicatesFromTempTable());
 
             type.MethodFor(nameof(CreateTempTableForCopying))
-                .Frames.Return(CreateTempTableForCopying().Replace("\"", "\\\""));
+                .Frames.ReturnNewStringConstant("CREATE_TEMP_TABLE_FOR_COPYING_SQL",
+                    CreateTempTableForCopying().Replace("\"", "\\\""));
 
             var load = type.MethodFor("LoadRow");
 
@@ -88,10 +91,13 @@ namespace Marten.Internal.CodeGeneration
             var table = _mapping.Schema.Table;
 
             var storageTable = table.Identifier.QualifiedName;
-            var columns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"\\\"{x.Name}\\\"").Join(", ");
-            var selectColumns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn).Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
+            var columns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
+                .Select(x => $"\\\"{x.Name}\\\"").Join(", ");
+            var selectColumns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
+                .Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
-            return $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
+            return
+                $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) (select {selectColumns}, transaction_timestamp() from {_tempTable} left join {storageTable} on {_tempTable}.id = {storageTable}.id where {storageTable}.id is null)";
         }
 
         public string OverwriteDuplicatesFromTempTable()
@@ -102,14 +108,13 @@ namespace Marten.Internal.CodeGeneration
             var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
                 .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-            return $@"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE source.id = target.id";
+            return
+                $@"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE source.id = target.id";
         }
 
         public string CreateTempTableForCopying()
         {
             return $"create temporary table {_tempTable} as select * from {_mapping.TableName.QualifiedName} limit 0";
         }
-
-
     }
 }

@@ -5,7 +5,7 @@ using Marten.Schema;
 
 namespace Marten.Internal.CodeGeneration
 {
-    public abstract class DocumentSelectorWithDirtyChecking<T, TId> : IDocumentSelector
+    public abstract class DocumentSelectorWithDirtyChecking<T, TId>: IDocumentSelector
     {
         protected readonly DocumentMapping _mapping;
         protected readonly ISerializer _serializer;
@@ -36,6 +36,5 @@ namespace Marten.Internal.CodeGeneration
             var tracker = new ChangeTracker<T>(session, document);
             session.ChangeTrackers.Add(tracker);
         }
-
     }
 }

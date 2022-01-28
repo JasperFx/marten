@@ -9,7 +9,7 @@ namespace Marten.Events.CodeGeneration
 {
     internal class AggregateEventProcessingFrame: EventProcessingFrame
     {
-        public AggregateEventProcessingFrame(Type aggregateType, Type eventType) : base(true, aggregateType, eventType)
+        public AggregateEventProcessingFrame(Type aggregateType, Type eventType): base(true, aggregateType, eventType)
         {
         }
 
@@ -32,6 +32,7 @@ namespace Marten.Events.CodeGeneration
                     throw new ArgumentOutOfRangeException(
                         $"The CreationFrame must implement {nameof(IEventHandlingFrame)}");
                 }
+
                 _inner.Add(value);
                 _creation = value;
             }
@@ -95,9 +96,11 @@ namespace Marten.Events.CodeGeneration
                     }
                     else
                     {
-                        var errorMessage = $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
+                        var errorMessage =
+                            $"Projection for {AggregateType.FullName} should either have the Create Method or Constructor for event of type {SpecificEvent.VariableType.FullNameInCode()}, or {AggregateType.FullName} should have a Default Constructor.";
 
-                        writer.Write($"if({Aggregate.Usage} == default) throw new ArgumentException(\"{errorMessage}\");");
+                        writer.Write(
+                            $"if({Aggregate.Usage} == default) throw new ArgumentException(\"{errorMessage}\");");
                     }
                 }
 

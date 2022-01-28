@@ -20,7 +20,7 @@ namespace Marten.Events.CodeGeneration
     /// Organizes a single Event type within a pattern
     /// matching switch statement
     /// </summary>
-    internal class EventProcessingFrame : Frame
+    internal class EventProcessingFrame: Frame
     {
         private static int _counter;
         private Variable _event;
@@ -30,12 +30,13 @@ namespace Marten.Events.CodeGeneration
 
         public Type EventType { get; }
 
-        public EventProcessingFrame(bool isAsync, Type aggregateType, Type eventType) : base(isAsync)
+        public EventProcessingFrame(bool isAsync, Type aggregateType, Type eventType): base(isAsync)
         {
             EventType = eventType;
             AggregateType = aggregateType;
 
-            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType), "event_" + eventType.Name.Sanitize() + ++_counter);
+            SpecificEvent = new Variable(typeof(IEvent<>).MakeGenericType(eventType),
+                "event_" + eventType.Name.Sanitize() + ++_counter);
             DataOnly = new Variable(EventType, $"{SpecificEvent.Usage}.{nameof(IEvent<string>.Data)}");
         }
 

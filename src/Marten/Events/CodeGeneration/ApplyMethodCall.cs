@@ -7,12 +7,12 @@ namespace Marten.Events.CodeGeneration
 {
     internal class ApplyMethodCall: MethodCall, IEventHandlingFrame
     {
-        public ApplyMethodCall(Type handlerType, string methodName, Type aggregateType) : base(handlerType, methodName)
+        public ApplyMethodCall(Type handlerType, string methodName, Type aggregateType): base(handlerType, methodName)
         {
             EventType = Method.GetEventType(aggregateType);
         }
 
-        public ApplyMethodCall(MethodSlot slot) : base(slot.HandlerType, (MethodInfo) slot.Method)
+        public ApplyMethodCall(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
         {
             EventType = slot.EventType;
             if (slot.Setter != null)

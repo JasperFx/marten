@@ -18,26 +18,26 @@ namespace Marten.Events.CodeGeneration
     {
         private static readonly Dictionary<int, Type> _funcBaseTypes = new Dictionary<int, Type>
         {
-            {1, typeof(Func<>)},
-            {2, typeof(Func<,>)},
-            {3, typeof(Func<,,>)},
-            {4, typeof(Func<,,,>)},
-            {5, typeof(Func<,,,,>)},
-            {6, typeof(Func<,,,,,>)},
-            {7, typeof(Func<,,,,,,>)},
-            {8, typeof(Func<,,,,,,,>)},
+            { 1, typeof(Func<>) },
+            { 2, typeof(Func<,>) },
+            { 3, typeof(Func<,,>) },
+            { 4, typeof(Func<,,,>) },
+            { 5, typeof(Func<,,,,>) },
+            { 6, typeof(Func<,,,,,>) },
+            { 7, typeof(Func<,,,,,,>) },
+            { 8, typeof(Func<,,,,,,,>) },
         };
 
         private static readonly Dictionary<int, Type> _actionBaseTypes = new Dictionary<int, Type>
         {
-            {1, typeof(Action<>)},
-            {2, typeof(Action<,>)},
-            {3, typeof(Action<,,>)},
-            {4, typeof(Action<,,,>)},
-            {5, typeof(Action<,,,,>)},
-            {6, typeof(Action<,,,,,>)},
-            {7, typeof(Action<,,,,,,>)},
-            {8, typeof(Action<,,,,,,,>)},
+            { 1, typeof(Action<>) },
+            { 2, typeof(Action<,>) },
+            { 3, typeof(Action<,,>) },
+            { 4, typeof(Action<,,,>) },
+            { 5, typeof(Action<,,,,>) },
+            { 6, typeof(Action<,,,,,>) },
+            { 7, typeof(Action<,,,,,,>) },
+            { 8, typeof(Action<,,,,,,,>) },
         };
 
         private int _lambdaNumber = 0;
@@ -61,9 +61,8 @@ namespace Marten.Events.CodeGeneration
         public IReadOnlyList<Type> ValidReturnTypes => _validReturnTypes;
 
         protected MethodCollection(string methodName, Type projectionType, Type aggregateType)
-        : this(new string[]{methodName}, projectionType, aggregateType)
+            : this(new string[] { methodName }, projectionType, aggregateType)
         {
-
         }
 
         protected MethodCollection(string[] methodNames, Type projectionType, Type aggregateType)
@@ -80,7 +79,6 @@ namespace Marten.Events.CodeGeneration
                 .Where(x => MethodNames.Contains(x.Name))
                 .Where(x => !x.HasAttribute<MartenIgnoreAttribute>())
                 .Each(method => addMethodSlot(method, false));
-
 
 
             if (aggregateType != null)
@@ -133,7 +131,7 @@ namespace Marten.Events.CodeGeneration
 
             var name = LambdaName + (++_lambdaNumber).ToString();
             var method = lambda.GetType().GetMethod("Invoke");
-            var setter = new Setter(typeof(T), name){InitialValue = lambda};
+            var setter = new Setter(typeof(T), name) { InitialValue = lambda };
             var slot = new MethodSlot(setter, method, eventType);
 
             Methods.Add(slot);
@@ -176,7 +174,6 @@ namespace Marten.Events.CodeGeneration
                 if (method.ReturnType == typeof(void))
                 {
                     baseType = _actionBaseTypes[parameterTypes.Count];
-
                 }
                 else
                 {
@@ -190,10 +187,6 @@ namespace Marten.Events.CodeGeneration
                 var loader = (ILambdaLoader)Activator.CreateInstance(loaderType);
                 loader.Add(this, method, AggregateType, parameters);
             }
-
-
-
-
         }
 
         private interface ILambdaLoader
@@ -202,11 +195,13 @@ namespace Marten.Events.CodeGeneration
                 IList<ParameterExpression> parameters);
         }
 
-        private class LambdaLoader<T> : ILambdaLoader where T : class
+        private class LambdaLoader<T>: ILambdaLoader where T : class
         {
-            public void Add(MethodCollection methods, MethodInfo method, Type aggregateType, IList<ParameterExpression> parameters)
+            public void Add(MethodCollection methods, MethodInfo method, Type aggregateType,
+                IList<ParameterExpression> parameters)
             {
-                Expression body = Expression.Call(parameters[0], method, parameters.OfType<Expression>().Skip(1).ToArray());
+                Expression body = Expression.Call(parameters[0], method,
+                    parameters.OfType<Expression>().Skip(1).ToArray());
                 var expression = Expression.Lambda<T>(body, parameters);
 
 
@@ -217,8 +212,6 @@ namespace Marten.Events.CodeGeneration
                 methods.AddLambda(lambda, eventType);
             }
         }
-
-
 
 
         public abstract IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
@@ -242,7 +235,7 @@ namespace Marten.Events.CodeGeneration
                     var frame = collection.CreateEventTypeHandler(aggregateType, mapping, slot);
                     if (byType.TryGetValue(frame.EventType, out var container))
                     {
-                        container.Add((Frame) frame);
+                        container.Add((Frame)frame);
                     }
                     else
                     {
@@ -252,7 +245,6 @@ namespace Marten.Events.CodeGeneration
 
                         frames.Add(container);
                     }
-
                 }
             }
 

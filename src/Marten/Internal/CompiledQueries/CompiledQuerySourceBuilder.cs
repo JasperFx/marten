@@ -183,8 +183,10 @@ namespace Marten.Internal.CompiledQueries
         private void configureCommandMethod(GeneratedType compiledType, HardCodedParameters hardcoded)
         {
             var method = compiledType.MethodFor(nameof(IQueryHandler.ConfigureCommand));
+            var correctedCommandText = _plan.CorrectedCommandText();
+
             method.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}});",
-                Use.Type<CommandBuilder>(), _plan.CorrectedCommandText());
+                Use.Type<CommandBuilder>(), correctedCommandText);
 
             foreach (var parameter in _plan.Parameters)
             {

@@ -10,13 +10,14 @@ namespace Marten.Events.CodeGeneration
     /// </summary>
     internal class CreateAggregateFrame: MethodCall, IEventHandlingFrame
     {
-        public CreateAggregateFrame(Type handlerType, string methodName, Type aggregateType): base(handlerType, methodName)
+        public CreateAggregateFrame(Type handlerType, string methodName, Type aggregateType): base(handlerType,
+            methodName)
         {
             ReturnAction = ReturnAction.Return;
             EventType = Method.GetEventType(aggregateType);
         }
 
-        public CreateAggregateFrame(MethodSlot slot): base(slot.HandlerType, (MethodInfo) slot.Method)
+        public CreateAggregateFrame(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
         {
             ReturnAction = ReturnAction.Return;
             EventType = slot.EventType;
@@ -26,7 +27,7 @@ namespace Marten.Events.CodeGeneration
             }
         }
 
-        public Type EventType { get;}
+        public Type EventType { get; }
 
         public void Configure(EventProcessingFrame parent)
         {
@@ -44,8 +45,6 @@ namespace Marten.Events.CodeGeneration
             {
                 ReturnAction = ReturnAction.Return;
             }
-
-
         }
     }
 }
