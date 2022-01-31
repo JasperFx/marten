@@ -54,7 +54,7 @@ namespace Marten.Services
             throw new NotSupportedException("Invalid combination of SessionOptions");
         }
 
-        internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store)
+        internal Task<IConnectionLifetime> InitializeAsync(DocumentStore store)
         {
             // LATER with GH-2048
 
@@ -66,7 +66,7 @@ namespace Marten.Services
         }
 
         internal CommandRunnerMode Mode { get; private set; }
-        internal Tenant Tenant { get; set; }
+        internal Tenant? Tenant { get; set; }
 
 
         /// <summary>
@@ -168,7 +168,7 @@ namespace Marten.Services
                 Connection = transaction.Connection,
                 OwnsConnection = false,
                 OwnsTransactionLifecycle = shouldAutoCommit,
-                Timeout = transaction.Connection.CommandTimeout
+                Timeout = transaction.Connection?.CommandTimeout
             };
         }
 

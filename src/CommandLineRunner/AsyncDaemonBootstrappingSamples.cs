@@ -26,13 +26,11 @@ namespace CommandLineRunner
                     {
                         opts.Connection("some connection string");
 
-
-                        // Turn on the async daemon in "Solo" mode
-                        opts.Projections.AsyncMode = DaemonMode.Solo;
-
                         // Register any projections you need to run asynchronously
                         opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
-                    });
+                    })
+                        // Turn on the async daemon in "Solo" mode
+                        .AddAsyncDaemon(DaemonMode.Solo);
                 })
                 .StartAsync();
 
@@ -48,10 +46,6 @@ namespace CommandLineRunner
                     services.AddMarten(opts =>
                     {
                         opts.Connection("some connection string");
-
-
-                        // Turn on the async daemon in "Solo" mode
-                        opts.Projections.AsyncMode = DaemonMode.Solo;
 
                         // Register any projections you need to run asynchronously
                         opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
@@ -86,7 +80,9 @@ namespace CommandLineRunner
                             .Pause(1.Minutes());
 
                         #endregion
-                    });
+                    })
+                        // Turn on the async daemon in "Solo" mode
+                        .AddAsyncDaemon(DaemonMode.Solo);
                 })
                 .StartAsync();
 
@@ -105,14 +101,12 @@ namespace CommandLineRunner
                     {
                         opts.Connection("some connection string");
 
-
-                        // Turn on the async daemon in "HotCold" mode
-                        // with built in leader election
-                        opts.Projections.AsyncMode = DaemonMode.HotCold;
-
                         // Register any projections you need to run asynchronously
                         opts.Projections.Add<TripAggregationWithCustomName>(ProjectionLifecycle.Async);
-                    });
+                    })
+                        // Turn on the async daemon in "HotCold" mode
+                        // with built in leader election
+                        .AddAsyncDaemon(DaemonMode.HotCold);
                 })
                 .StartAsync();
 

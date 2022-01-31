@@ -186,7 +186,7 @@ namespace Marten.Internal.Sessions
         void Rollback();
         Task RollbackAsync(CancellationToken token);
 
-        NpgsqlConnection Connection { get; }
+        NpgsqlConnection? Connection { get; }
         void BeginTransaction();
         ValueTask BeginTransactionAsync(CancellationToken token);
 

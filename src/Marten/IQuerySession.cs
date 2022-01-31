@@ -155,7 +155,7 @@ namespace Marten
         /// <summary>
         /// The currently open Npgsql connection for this session. Use with caution.
         /// </summary>
-        NpgsqlConnection Connection { get; }
+        NpgsqlConnection? Connection { get; }
 
         /// <summary>
         /// The session specific logger for this session. Can be set for better integration

@@ -188,11 +188,8 @@ namespace Marten
         public IQuerySession QuerySession(SessionOptions options)
         {
             var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
-            var session = new QuerySession(this, options, connection);
 
-            session.Logger = _logger.StartSession(session);
-
-            return session;
+            return new QuerySession(this, options, connection);
         }
 
         public IQuerySession QuerySession()
@@ -210,8 +207,6 @@ namespace Marten
             var connection = options.Initialize(this, CommandRunnerMode.ReadOnly);
 
             var session = new QuerySession(this, options, connection);
-
-            session.Logger = _logger.StartSession(session);
 
             return session;
         }
@@ -279,8 +274,6 @@ namespace Marten
                 DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
                 _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
             };
-
-            session.Logger = _logger.StartSession(session);
 
             return session;
         }

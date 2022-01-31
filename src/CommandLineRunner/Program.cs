@@ -63,9 +63,7 @@ namespace CommandLineRunner
 
                         // This is actually important to register "live" aggregations too for the code generation
                         opts.Projections.SelfAggregate<SelfAggregatingTrip>(ProjectionLifecycle.Live);
-
-                        opts.Projections.AsyncMode = DaemonMode.Solo;
-                    });
+                    }).AddAsyncDaemon(DaemonMode.Solo);
                 });
         }
     }

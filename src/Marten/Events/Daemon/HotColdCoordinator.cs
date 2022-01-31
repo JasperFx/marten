@@ -113,7 +113,7 @@ namespace Marten.Events.Daemon
 
         private void TimerOnElapsed(object sender, ElapsedEventArgs e)
         {
-            Task.Run(tryToAttainLockAndStartShards, _cancellation.Token);
+            tryToAttainLockAndStartShards().GetAwaiter().GetResult();
         }
 
         private void stopPollingForOwnership()

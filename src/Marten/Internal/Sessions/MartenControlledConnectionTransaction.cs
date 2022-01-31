@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,7 +53,9 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
+#pragma warning disable CS8602
                 Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
                 Connection.Open();
 
             }
@@ -64,7 +67,7 @@ namespace Marten.Internal.Sessions
         }
 
         // TODO -- this should be ValueTask
-        public async virtual Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
+        public virtual async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
         {
             await BeginTransactionAsync(token).ConfigureAwait(false);
 
@@ -77,7 +80,9 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
+#pragma warning disable CS8602
                 Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
                 await Connection.OpenAsync(token).ConfigureAwait(false);
 
             }
@@ -98,7 +103,7 @@ namespace Marten.Internal.Sessions
             Transaction.Dispose();
             Transaction = null;
 
-            Connection.Close();
+            Connection?.Close();
             Connection = null;
         }
 
@@ -111,8 +116,12 @@ namespace Marten.Internal.Sessions
             await Transaction.DisposeAsync().ConfigureAwait(false);
             Transaction = null;
 
-            await Connection.CloseAsync().ConfigureAwait(false);
-            await Connection.DisposeAsync().ConfigureAwait(false);
+            if (Connection != null)
+            {
+                await Connection.CloseAsync().ConfigureAwait(false);
+                await Connection.DisposeAsync().ConfigureAwait(false);
+            }
+
             Connection = null;
         }
 
@@ -124,8 +133,8 @@ namespace Marten.Internal.Sessions
                 Transaction.Dispose();
                 Transaction = null;
 
-                Connection.Close();
-                Connection.Dispose();
+                Connection?.Close();
+                Connection?.Dispose();
                 Connection = null;
             }
         }
@@ -138,8 +147,12 @@ namespace Marten.Internal.Sessions
                 await Transaction.DisposeAsync().ConfigureAwait(false);
                 Transaction = null;
 
-                await Connection.CloseAsync().ConfigureAwait(false);
-                await Connection.DisposeAsync().ConfigureAwait(false);
+                if (Connection != null)
+                {
+                    await Connection.CloseAsync().ConfigureAwait(false);
+                    await Connection.DisposeAsync().ConfigureAwait(false);
+                }
+
                 Connection = null;
             }
         }

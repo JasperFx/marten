@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Marten.Services;
 using Npgsql;
 
+#nullable enable
+
 namespace Marten.Internal.Sessions
 {
     internal class AmbientTransactionLifetime: IConnectionLifetime
@@ -72,7 +74,9 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
+#pragma warning disable CS8602
                 Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
                 Connection.Open();
                 Connection.EnlistTransaction(_options.DotNetTransaction);
             }
@@ -82,7 +86,9 @@ namespace Marten.Internal.Sessions
         {
             if (Connection == null)
             {
+#pragma warning disable CS8602
                 Connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
                 await Connection.OpenAsync(token).ConfigureAwait(false);
                 Connection.EnlistTransaction(_options.DotNetTransaction);
             }

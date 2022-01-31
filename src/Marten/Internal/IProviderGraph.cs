@@ -9,7 +9,7 @@ namespace Marten.Internal
     {
         DocumentProvider<T> StorageFor<T>() where T : notnull;
 
-        void Append<T>(DocumentProvider<T> provider);
+        void Append<T>(DocumentProvider<T> provider) where T : notnull;
     }
 
     internal static class ProviderGraphExtensions

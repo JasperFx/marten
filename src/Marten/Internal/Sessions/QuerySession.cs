@@ -25,14 +25,13 @@ namespace Marten.Internal.Sessions
 
         public IList<IDocumentSessionListener> Listeners { get; } = new List<IDocumentSessionListener>();
 
-        internal SessionOptions? SessionOptions { get; }
+        internal SessionOptions SessionOptions { get; }
 
         /// <summary>
         ///     Used for code generation
         /// </summary>
 #nullable disable
 
-        // TODO -- this can be eliminated with some sort of LightweightMartenSession. Only used in code generation.
         protected QuerySession(StoreOptions options)
         {
             Serializer = options.Serializer();
@@ -42,6 +41,10 @@ namespace Marten.Internal.Sessions
             Options = options;
             _providers = options.Providers;
             _retryPolicy = options.RetryPolicy();
+
+            Logger = options.Logger().StartSession(this);
+
+            SessionOptions = new SessionOptions { Tenant = options.Tenancy.Default };
         }
 
         public IMartenDatabase Database { get; protected set; }
@@ -53,9 +56,11 @@ namespace Marten.Internal.Sessions
             SessionOptions sessionOptions,
             IConnectionLifetime connection)
         {
+
+
             DocumentStore = store;
             TenantId = sessionOptions.TenantId;
-            Database = sessionOptions.Tenant.Database;
+            Database = sessionOptions.Tenant?.Database ?? throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
             SessionOptions = sessionOptions;
 
@@ -78,11 +83,13 @@ namespace Marten.Internal.Sessions
             _retryPolicy = Options.RetryPolicy();
 
             Events = CreateEventStore(store, sessionOptions.Tenant);
+
+            Logger = store.Options.Logger().StartSession(this);
         }
 
         public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
 
-        public NpgsqlConnection Connection
+        public NpgsqlConnection? Connection
         {
             get
             {

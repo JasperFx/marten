@@ -58,7 +58,7 @@ namespace Marten.Internal.Storage
 
     public class DocumentProvider<T> where T : notnull
     {
-        public DocumentProvider(IBulkLoader<T> bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight, IDocumentStorage<T> identityMap, IDocumentStorage<T> dirtyTracking)
+        public DocumentProvider(IBulkLoader<T>? bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight, IDocumentStorage<T> identityMap, IDocumentStorage<T> dirtyTracking)
         {
             BulkLoader = bulkLoader;
             QueryOnly = queryOnly;
@@ -67,7 +67,7 @@ namespace Marten.Internal.Storage
             DirtyTracking = dirtyTracking;
         }
 
-        public IBulkLoader<T> BulkLoader { get; }
+        public IBulkLoader<T>? BulkLoader { get; }
         public IDocumentStorage<T> QueryOnly { get; }
         public IDocumentStorage<T> Lightweight { get; }
         public IDocumentStorage<T> IdentityMap { get; }

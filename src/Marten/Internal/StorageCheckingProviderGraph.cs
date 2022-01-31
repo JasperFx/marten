@@ -36,7 +36,7 @@ namespace Marten.Internal
             return persistence;
         }
 
-        public void Append<T>(DocumentProvider<T> provider)
+        public void Append<T>(DocumentProvider<T> provider) where T : notnull
         {
             // This might cause Marten to re-check the database storage, but double dipping
             // seems smarter than trying to be too clever and miss doing the check

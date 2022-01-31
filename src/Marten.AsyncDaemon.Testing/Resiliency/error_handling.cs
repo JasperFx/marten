@@ -33,6 +33,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
                 opts.Projections.Add(projection1, ProjectionLifecycle.Async);
                 opts.Projections.OnException<ArithmeticException>()
                     .RetryLater(50.Milliseconds(), 50.Milliseconds());
+
             });
 
             using var node = await StartDaemon();
@@ -41,6 +42,13 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
             await PublishSingleThreaded();
             await node.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
+            var i = 0;
+            while (i < 10)
+            {
+                if (node.StatusFor("one:All") == AgentStatus.Running) break;
+                await Task.Delay(1.Seconds());
+                i++;
+            }
             node.StatusFor("one:All").ShouldBe(AgentStatus.Running);
         }
 

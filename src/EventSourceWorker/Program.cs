@@ -40,11 +40,10 @@ namespace EventSourceWorker
                             options.AutoCreateSchemaObjects = AutoCreate.All;
                         }
 
-                        // Run the asynchronous projections in this node
-                        options.Projections.AsyncMode = DaemonMode.Solo;
-
                         options.Projections.Add(new TripAggregationWithCustomName());
-                    });
+                    })
+                        // Run the asynchronous projections in this node
+                        .AddAsyncDaemon(DaemonMode.Solo);
                 });
         }
     }

@@ -25,7 +25,7 @@ namespace Marten.Internal
             _options = options;
         }
 
-        public void Append<T>(DocumentProvider<T> provider)
+        public void Append<T>(DocumentProvider<T> provider) where T : notnull
         {
             _storage = _storage.AddOrUpdate(typeof(T), provider);
         }
@@ -103,7 +103,7 @@ namespace Marten.Internal
             }
         }
 
-        private interface ISubClassLoader<T>
+        private interface ISubClassLoader<T> where T : notnull
         {
             DocumentProvider<T> BuildPersistence(IProviderGraph graph, SubClassMapping mapping);
         }

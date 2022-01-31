@@ -41,7 +41,7 @@ namespace Marten.Events.Daemon.HighWater
 
             _tracker.Publish(new ShardState(ShardState.HighWaterMark, _current.CurrentMark){Action = ShardAction.Started});
 
-            _loop = Task.Factory.StartNew(DetectChanges, TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent);
+            _loop = Task.Factory.StartNew(DetectChanges, _token, TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent, TaskScheduler.Default);
 
             _timer.Start();
 
