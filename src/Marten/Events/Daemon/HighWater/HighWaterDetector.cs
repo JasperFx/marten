@@ -34,6 +34,7 @@ namespace Marten.Events.Daemon.HighWater
             var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
 
             _safeSequenceFinder.SafeTimestamp = safeTimestamp;
+            _safeSequenceFinder.SafeSequenceId = statistics.SafeStartMark;
             var safeSequence = await _runner.Query(_safeSequenceFinder, token).ConfigureAwait(false);
             if (safeSequence.HasValue)
             {
