@@ -84,9 +84,15 @@ namespace Marten.Events.Aggregation
         {
             assembly.ReferenceAssembly(GetType().Assembly);
             assembly.ReferenceAssembly(typeof(T).Assembly);
-            assembly.Rules.Assemblies.AddRange(_applyMethods.ReferencedAssemblies());
-            assembly.Rules.Assemblies.AddRange(_createMethods.ReferencedAssemblies());
-            assembly.Rules.Assemblies.AddRange(_shouldDeleteMethods.ReferencedAssemblies());
+
+
+            assembly.Rules.ReferenceTypes(_applyMethods.ReferencedTypes().ToArray());
+            assembly.Rules.ReferenceTypes(_createMethods.ReferencedTypes().ToArray());
+            assembly.Rules.ReferenceTypes(_shouldDeleteMethods.ReferencedTypes().ToArray());
+
+            // Walk the assembly dependencies for the projection and aggregate types,
+            // and this will catch generic type argument dependencies as well. For GH-2061
+            assembly.Rules.ReferenceTypes(GetType(), typeof(T));
 
             assembly.UsingNamespaces.Add("System");
             assembly.UsingNamespaces.Add("System.Linq");

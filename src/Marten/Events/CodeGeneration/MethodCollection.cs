@@ -44,9 +44,14 @@ namespace Marten.Events.CodeGeneration
 
         internal IEnumerable<Assembly> ReferencedAssemblies()
         {
-            return Methods.SelectMany(x => x.ReferencedTypes())
+            return ReferencedTypes()
                 .Select(x => x.Assembly)
                 .Distinct();
+        }
+
+        internal IEnumerable<Type> ReferencedTypes()
+        {
+            return Methods.SelectMany(x => x.ReferencedTypes());
         }
 
         protected virtual BindingFlags flags() => BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
