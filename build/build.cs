@@ -14,15 +14,20 @@ namespace martenbuild
 {
     internal class MartenBuild
     {
+        private static string _framework;
+        private static string _configuration;
+
         private const string DockerConnectionString =
             "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
 
         private static void Main(string[] args)
         {
-            var framework = GetFramework();
+            _framework = GetFramework();
 
             var configuration = GetEnvironmentVariable("config");
             configuration = string.IsNullOrEmpty(configuration) ? "debug" : configuration;
+
+            _configuration = configuration;
 
             var disableTestParallelization = GetEnvironmentVariable("disable_test_parallelization");
 
@@ -45,28 +50,28 @@ namespace martenbuild
             Target("compile", DependsOn("clean"), () =>
             {
                 Run("dotnet",
-                    $"build src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration}");
+                    $"build src/Marten.Testing/Marten.Testing.csproj --framework {_framework} --configuration {configuration}");
 
                 Run("dotnet",
-                    $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {framework} --configuration {configuration}");
+                    $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {_framework} --configuration {configuration}");
             });
 
             Target("compile-noda-time", DependsOn("clean"), () =>
-                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration}"));
+                Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {_framework} --configuration {configuration}"));
 
             Target("test-noda-time", DependsOn("compile-noda-time"), () =>
-                Run("dotnet", $"test src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+                RunTests("Marten.NodaTime.Testing"));
 
             Target("compile-aspnetcore", DependsOn("clean"), () =>
-                Run("dotnet", $"build src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --configuration {configuration}"));
+                RunTests("Marten.AspNetCore.Testing"));
 
 
             Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
-                Run("dotnet", $"test src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --configuration {configuration} --no-build"));
+                RunTests("Marten.AspNetCore.Testing"));
 
 
             Target("test-schema", () =>
-                Run("dotnet", $"test src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+                RunTests("Marten.Schema.Testing"));
 
             Target("test-codegen", () =>
             {
@@ -77,20 +82,23 @@ namespace martenbuild
             });
 
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
-                Run("dotnet", $"test src/Marten.Testing/Marten.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+            {
+                RunTests("Marten.Testing");
+                RunTests("ConfigurationTests");
+            });
 
             Target("test-plv8", DependsOn("compile"), () =>
-                Run("dotnet", $"test src/Marten.PLv8.Testing/Marten.PLv8.Testing.csproj --framework {framework} --configuration {configuration} --no-build"));
+                RunTests("Marten.PLv8.Testing"));
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
             Target("test", DependsOn("test-marten", "test-noda-time", "test-schema", "test-plv8", "test-aspnetcore"));
 
             Target("storyteller", DependsOn("compile"), () =>
-                Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
+                Run("dotnet", $"run --framework {_framework} --culture en-US", "src/Marten.Storyteller"));
 
             Target("open_st", DependsOn("compile"), () =>
-                Run("dotnet", $"storyteller open --framework {framework} --culture en-US", "src/Marten.Storyteller"));
+                Run("dotnet", $"storyteller open --framework {_framework} --culture en-US", "src/Marten.Storyteller"));
 
             Target("install-mdsnippets", IgnoreIfFailed(() =>
                 Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
@@ -183,6 +191,11 @@ namespace martenbuild
             });
 
             RunTargetsAndExit(args);
+        }
+
+        private static void RunTests(string projectName, string directoryName = "src")
+        {
+            Run("dotnet", $"test --no-build --no-restore --configuration {_configuration} --framework {_framework} {directoryName}/{projectName}/{projectName}.csproj");
         }
 
         private static void WaitForDatabaseToBeReady()
