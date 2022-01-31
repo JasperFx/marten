@@ -107,9 +107,10 @@ namespace Marten.Events.Daemon
         public int DaemonLockId { get; set; } = 4444;
 
         /// <summary>
-        /// Projection Daemon mode. The default is Disabled
+        /// Projection Daemon mode. The default is Disabled. As of V5, the async daemon needs to be
+        /// explicitly added to the system with AddMarten().AddAsyncDaemon();
         /// </summary>
-        public DaemonMode AsyncMode { get; set; } = DaemonMode.Disabled;
+        public DaemonMode AsyncMode { get; internal set; } = DaemonMode.Disabled;
 
         internal IList<IExceptionPolicy> Policies { get; } = new List<IExceptionPolicy>();
 

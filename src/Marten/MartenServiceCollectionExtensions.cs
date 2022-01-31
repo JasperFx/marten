@@ -1,8 +1,11 @@
 using System;
 using LamarCodeGeneration;
+using LamarCodeGeneration.Model;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Schema;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 #nullable enable
@@ -102,8 +105,6 @@ namespace Marten
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
 
-            services.AddHostedService<AsyncProjectionHostedService>();
-
             services.AddSingleton<IGeneratesCode>(s => s.GetRequiredService<StoreOptions>());
             services.AddSingleton<IGeneratesCode>(s => s.GetRequiredService<StoreOptions>().EventGraph);
 
@@ -145,6 +146,20 @@ namespace Marten
             public MartenConfigurationExpression BuildSessionsWith<T>(ServiceLifetime lifetime = ServiceLifetime.Singleton ) where T : class, ISessionFactory
             {
                 Services.Add(new ServiceDescriptor(typeof(ISessionFactory), typeof(T), lifetime));
+                return this;
+            }
+
+
+            /// <summary>
+            /// Register the Async Daemon hosted service to continuously attempt to update asynchronous event projections
+            /// </summary>
+            /// <param name="mode"></param>
+            /// <returns></returns>
+            public MartenConfigurationExpression AddAsyncDaemon(DaemonMode mode)
+            {
+                Services.ConfigureMarten(opts => opts.Projections.AsyncMode = mode);
+                Services.AddSingleton<IHostedService, AsyncProjectionHostedService>();
+
                 return this;
             }
 
