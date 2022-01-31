@@ -1,11 +1,6 @@
 using System;
-using System.Composition.Hosting.Core;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.HighWater;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
-using Marten.Linq.QueryHandlers;
 using Marten.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +10,34 @@ namespace Marten
 {
     public static class MartenServiceCollectionExtensions
     {
+        /// <summary>
+        /// Apply additional configuration to a Marten DocumentStore. This is applied *after*
+        /// AddMarten(), but before the DocumentStore is initialized
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public static IServiceCollection ConfigureMarten(this IServiceCollection services,
+            Action<StoreOptions> configure)
+        {
+            return services.ConfigureMarten((s, opts) => configure(opts));
+        }
+
+        /// <summary>
+        /// Apply additional configuration to a Marten DocumentStore. This is applied *after*
+        /// AddMarten(), but before the DocumentStore is initialized
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public static IServiceCollection ConfigureMarten(this IServiceCollection services,
+            Action<IServiceProvider, StoreOptions> configure)
+        {
+            var configureMarten = new LambdaConfigureMarten(configure);
+            services.AddSingleton<IConfigureMarten>(configureMarten);
+            return services;
+        }
+
         /// <summary>
         /// Add Marten IDocumentStore, IDocumentSession, and IQuerySession service registrations
         /// to your application with the given Postgresql connection string and Marten
@@ -51,7 +74,17 @@ namespace Marten
         /// <returns></returns>
         public static MartenConfigurationExpression AddMarten(this IServiceCollection services, Func<IServiceProvider, StoreOptions> optionSource)
         {
-            services.AddSingleton<StoreOptions>(optionSource);
+            services.AddSingleton(s =>
+            {
+                var options = optionSource(s);
+                var configures = s.GetServices<IConfigureMarten>();
+                foreach (var configure in configures)
+                {
+                    configure.Configure(s, options);
+                }
+
+                return options;
+            });
 
             services.AddSingleton<IDocumentStore>(s =>
             {
@@ -65,22 +98,14 @@ namespace Marten
 
             // This can be overridden by the expression following
             services.AddSingleton<ISessionFactory, DefaultSessionFactory>();
-            services.AddSingleton<GenerationRules>(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
-
-            // To support LamarCodeGeneration.Commands
-            services.AddSingleton<DynamicCodeBuilder>();
-
 
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
 
             services.AddHostedService<AsyncProjectionHostedService>();
 
-            services.AddSingleton<IGeneratesCode[]>(s =>
-            {
-                var options = s.GetRequiredService<StoreOptions>();
-                return new IGeneratesCode[] {options, options.EventGraph};
-            });
+            services.AddSingleton<IGeneratesCode>(s => s.GetRequiredService<StoreOptions>());
+            services.AddSingleton<IGeneratesCode>(s => s.GetRequiredService<StoreOptions>().EventGraph);
 
             return new MartenConfigurationExpression(services, null);
         }
@@ -156,6 +181,8 @@ namespace Marten
                 return store;
             }
 
+
+
         }
     }
 
@@ -215,6 +242,30 @@ namespace Marten
         public IDocumentSession OpenSession()
         {
             return _store.LightweightSession();
+        }
+    }
+
+    /// <summary>
+    /// Mechanism to register additional Marten configuration that is applied after AddMarten()
+    /// configuration, but before DocumentStore is initialized
+    /// </summary>
+    public interface IConfigureMarten
+    {
+        void Configure(IServiceProvider services, StoreOptions options);
+    }
+
+    internal class LambdaConfigureMarten: IConfigureMarten
+    {
+        private readonly Action<IServiceProvider, StoreOptions> _configure;
+
+        public LambdaConfigureMarten(Action<IServiceProvider, StoreOptions> configure)
+        {
+            _configure = configure;
+        }
+
+        public void Configure(IServiceProvider services, StoreOptions options)
+        {
+            _configure(services, options);
         }
     }
 }

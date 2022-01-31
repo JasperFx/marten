@@ -1,3 +1,4 @@
+using System;
 using Lamar;
 using Marten;
 using Marten.Internal.Sessions;
@@ -130,6 +131,37 @@ namespace ConfigurationTests
 
             using var session = container.GetInstance<IDocumentSession>();
             session.ShouldBeOfType<LightweightSession>();
+        }
+
+        [Fact]
+        public void apply_configure_marten_options()
+        {
+            IServiceProvider? provider = null;
+
+            using var container = Container.For(x =>
+            {
+                x.AddMarten(ConnectionSource.ConnectionString)
+                    .UseLightweightSessions();
+
+                x.ConfigureMarten(opts => opts.Advanced.HiloSequenceDefaults.MaxLo = 111);
+
+                x.ConfigureMarten((services, opts) =>
+                {
+                    opts.Events.DatabaseSchemaName = "random";
+                    provider = services;
+                });
+            });
+
+            var store = container.GetInstance<IDocumentStore>();
+
+            store.Options.Advanced.HiloSequenceDefaults.MaxLo.ShouldBe(111);
+            provider.ShouldNotBeNull();
+            provider.ShouldBeSameAs(container);
+
+            store.Options.Events.DatabaseSchemaName.ShouldBe("random");
+
+
+
         }
 
         public class SpecialBuilder: ISessionFactory
