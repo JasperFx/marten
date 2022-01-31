@@ -18,54 +18,50 @@ namespace Marten.Schema.Testing
         One
     }
 
-    public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata: Marten.Testing.Harness.IntegrationContext
+    public class
+        Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata
     {
         [Fact]
         public async Task string_enum_serialization_does_not_work_with_ginindexjsondata()
         {
-
-            StoreOptions(_ =>
+            using var store = DocumentStore.For(opts =>
             {
-                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-                _.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
+                opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+                opts.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
+                opts.Connection(ConnectionSource.ConnectionString);
 
-                _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
+                opts.DatabaseSchemaName = "Bug1061";
+
+                opts.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
                 {
-                    _.Columns = new []{"to_tsvector('english', data::TEXT)"};
+                    _.Columns = new[] { "to_tsvector('english', data::TEXT)" };
                 });
             });
 
-            await theStore.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
+            await store.Schema.ApplyAllConfiguredChangesToDatabaseAsync();
 
-            using var store = DocumentStore.For(_ =>
+            using var store2 = DocumentStore.For(_ =>
             {
-                _.Serializer(new JsonNetSerializer
-                {
-                    EnumStorage = EnumStorage.AsString,
-                    Casing = Casing.Default
-                });
+                _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString, Casing = Casing.Default });
                 _.Connection(ConnectionSource.ConnectionString);
                 _.Schema.For<Bug_1061_Class>().GinIndexJsonData(_ =>
                 {
-                    _.Columns = new []{"to_tsvector('english', data::TEXT)"};
+                    _.Columns = new[] { "to_tsvector('english', data::TEXT)" };
                 });
             });
 
-            using (var session = store.OpenSession())
+            using (var session = store2.OpenSession())
             {
                 session.Store(new Bug_1061_Class { Id = "one", Enum = Bug_1061_Enum.One });
                 await session.SaveChangesAsync();
             }
 
-            using (var session = store.OpenSession())
+            using (var session = store2.OpenSession())
             {
                 var items = session.Query<Bug_1061_Class>().Where(x => x.Enum == Bug_1061_Enum.One).ToList();
                 Assert.Single(items);
             }
         }
 
-        public Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsondata(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }
