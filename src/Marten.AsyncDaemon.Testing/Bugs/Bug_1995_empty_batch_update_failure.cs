@@ -3,16 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Bug1995;
-using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
-
 using Xunit;
 
-namespace Marten.Testing.Events.Bugs
+namespace Marten.AsyncDaemon.Testing.Bugs
 {
     public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
     {
@@ -37,20 +33,17 @@ namespace Marten.Testing.Events.Bugs
                 for (var i = 0; i < 499; i++)
                 {
                     var id = Guid.NewGuid();
-                    session.Events.StartStream(id, new Bug1995.IssueCreated { Id = id });
+                    session.Events.StartStream(id, new IssueCreated { Id = id });
                 }
 
                 await session.SaveChangesAsync();
             }
 
             using var daemon = documentStore.BuildProjectionDaemon();
-            await daemon.RebuildProjection<Bug1995.IssueAggregate>(default);
+            await daemon.RebuildProjection<IssueAggregate>(default);
         }
     }
-}
 
-namespace Bug1995
-{
     public class IssueCreated
     {
         public Guid Id { get; set; }

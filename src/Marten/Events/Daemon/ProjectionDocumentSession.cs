@@ -15,7 +15,7 @@ namespace Marten.Events.Daemon
     {
         // TODO -- this has to have a ManagedConnection
         public ProjectionDocumentSession(DocumentStore store, Tenant tenant, ISessionWorkTracker workTracker): base(
-            store, new SessionOptions {Tracking = DocumentTracking.None}, null, workTracker)
+            store, new SessionOptions {Tracking = DocumentTracking.None, Tenant = tenant}, null, workTracker)
         {
         }
 

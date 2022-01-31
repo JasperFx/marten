@@ -25,7 +25,11 @@ namespace Marten.Internal.Sessions
                 return;
 
             _disposed = true;
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
+
             GC.SuppressFinalize(this);
         }
 

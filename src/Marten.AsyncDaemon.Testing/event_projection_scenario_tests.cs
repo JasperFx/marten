@@ -114,17 +114,15 @@ namespace Marten.AsyncDaemon.Testing
         }
 
 
-
-
-
-
         [Fact]
         public async Task happy_path_test_with_inline_projection_async()
         {
             StoreOptions(opts =>
             {
-                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Async);
+                opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
             });
+
+            await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
             await theStore.Advanced.EventProjectionScenario(scenario =>
             {

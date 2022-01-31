@@ -104,7 +104,7 @@ namespace Marten.Events.Daemon
 
             public Page(IMartenSession session)
             {
-                _session = session;
+                _session = session ?? throw new ArgumentNullException(nameof(session));
                 _builder = new CommandBuilder(_command);
             }
 

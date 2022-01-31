@@ -13,7 +13,7 @@ namespace Marten.Services
         internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode)
         {
             Mode = mode;
-            Tenant = TenantId != null ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
+            Tenant ??= TenantId != null ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
 
             if (!store.Options.Advanced.DefaultTenantUsageEnabled &&
                 Tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
@@ -66,7 +66,7 @@ namespace Marten.Services
         }
 
         internal CommandRunnerMode Mode { get; private set; }
-        internal Tenant Tenant { get; private set; }
+        internal Tenant Tenant { get; set; }
 
 
         /// <summary>
