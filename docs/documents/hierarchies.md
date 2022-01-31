@@ -33,7 +33,7 @@ using (var session = store.QuerySession())
     session.Query<SuperUser>().ToList();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L187-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-hierarchy-of-types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L189-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-hierarchy-of-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the configuration above, you can now query by `User` and get `AdminUser` and `SuperUser` documents as part of the results,

@@ -104,10 +104,8 @@ namespace Marten.Testing.Services.BatchedQuerying
             names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Brown", "Bean", "White", "Houston", "Somerset", "Smith");
         }
 
-        public batched_querying_with_order_functions(DefaultStoreFixture fixture) : base(fixture)
+        protected override Task fixtureSetup()
         {
-            DocumentTracking = DocumentTracking.IdentityOnly;
-
             theSession.Store(
                 new User { FirstName = "Justin", LastName = "Houston" },
                 new User { FirstName = "Justin", LastName = "White" },
@@ -117,7 +115,11 @@ namespace Marten.Testing.Services.BatchedQuerying
                 new User { FirstName = "Harry", LastName = "Somerset" }
             );
 
-            theSession.SaveChanges();
+            return theSession.SaveChangesAsync();
+        }
+
+        public batched_querying_with_order_functions(DefaultStoreFixture fixture) : base(fixture)
+        {
         }
     }
 
