@@ -84,7 +84,7 @@ namespace martenbuild
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
-            Target("test", DependsOn("setup-test-parallelization", "test-marten", "test-noda-time", "test-schema", "test-plv8", "test-aspnetcore"));
+            Target("test", DependsOn("test-marten", "test-noda-time", "test-schema", "test-plv8", "test-aspnetcore"));
 
             Target("storyteller", DependsOn("compile"), () =>
                 Run("dotnet", $"run --framework {framework} --culture en-US", "src/Marten.Storyteller"));
