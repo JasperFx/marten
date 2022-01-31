@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Lamar;
@@ -5,6 +6,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -22,21 +24,45 @@ namespace Marten.AsyncDaemon.Testing
         }
 
         [Fact]
-        public async Task when_registering_as_disabled()
+        public async Task hosted_service_is_not_automatically_registered()
         {
             var logger = Substitute.For<ILogger<AsyncProjectionHostedService>>();
-            using var container = new Container(x =>
+            await using var container = new Container(x =>
             {
                 x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
                 x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
                 x.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.Projections.AsyncMode = DaemonMode.Disabled;
                 });
+
+                //.AddAsyncDaemon(DaemonMode.Disabled);
             });
 
-            var service = container.GetInstance<AsyncProjectionHostedService>();
+            container.Model.For<IHostedService>().Instances.Any().ShouldBeFalse();
+
+
+        }
+
+        [Fact]
+        public async Task when_registering_as_disabled()
+        {
+            var logger = Substitute.For<ILogger<AsyncProjectionHostedService>>();
+            await using var container = new Container(x =>
+            {
+                x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
+                x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
+                x.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                }).AddAsyncDaemon(DaemonMode.Disabled);
+            });
+
+            var service = container
+                .GetAllInstances<IHostedService>()
+                .OfType<AsyncProjectionHostedService>()
+                .Single();
+
             await service.StartAsync(CancellationToken.None);
 
             service.Agent.ShouldBeNull();
@@ -56,12 +82,15 @@ namespace Marten.AsyncDaemon.Testing
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.Projections.AsyncMode = DaemonMode.Solo;
-                });
+                }).AddAsyncDaemon(DaemonMode.Solo);
                 x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
                 x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
             });
 
-            var service = container.GetInstance<AsyncProjectionHostedService>();
+            var service = container
+                .GetAllInstances<IHostedService>()
+                .OfType<AsyncProjectionHostedService>()
+                .Single();
             await service.StartAsync(CancellationToken.None);
 
             service.Agent.ShouldNotBeNull();
@@ -82,12 +111,15 @@ namespace Marten.AsyncDaemon.Testing
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.Projections.AsyncMode = DaemonMode.HotCold;
-                });
+                }).AddAsyncDaemon(DaemonMode.HotCold);
                 x.For(typeof(ILogger<>)).Use(typeof(NullLogger<>));
                 x.AddSingleton(typeof(ILogger<AsyncProjectionHostedService>), logger);
             });
 
-            var service = container.GetInstance<AsyncProjectionHostedService>();
+            var service = container
+                .GetAllInstances<IHostedService>()
+                .OfType<AsyncProjectionHostedService>()
+                .Single();
             await service.StartAsync(CancellationToken.None);
 
             service.Agent.ShouldNotBeNull();
