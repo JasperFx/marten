@@ -12,11 +12,18 @@ namespace Marten.Events.Daemon.HighWater
     {
         private readonly NpgsqlCommand _findSafeSequence;
         private readonly NpgsqlParameter _safeTimestamp;
+        private readonly NpgsqlParameter _safeSequenceId;
 
         public SafeSequenceFinder(EventGraph graph)
         {
-            _findSafeSequence = new NpgsqlCommand($@"select min(seq_id) from {graph.DatabaseSchemaName}.mt_events where mt_events.timestamp >= :timestamp");
+            _findSafeSequence = new NpgsqlCommand($@"select min(seq_id) from {graph.DatabaseSchemaName}.mt_events where mt_events.seq_id > :sequence_id and mt_events.timestamp >= :timestamp");
             _safeTimestamp = _findSafeSequence.AddNamedParameter("timestamp", DateTimeOffset.MinValue);
+            _safeSequenceId = _findSafeSequence.AddNamedParameter("sequence_id", 0);
+        }
+
+        public long SafeSequenceId
+        {
+            set => _safeSequenceId.Value = value;
         }
 
         public DateTimeOffset SafeTimestamp
