@@ -19,7 +19,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\weasel\src\Weasel.CommandLine\Weasel.CommandLine.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
@@ -38,6 +37,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+        <PackageReference Include="Weasel.CommandLine" Version="3.0.0" />
     </ItemGroup>
     <ItemGroup>
       <Folder Include="Commands\Patch" />

@@ -41,7 +41,7 @@ namespace Marten.Testing.Bugs
             var s3 = await theSession.Events.FetchStreamStateAsync(stream3);
             var s4 = await theSession.Events.FetchStreamStateAsync(stream4);
 
-            var dates = new DateTime[] { s1.Created, s2.Created, s3.Created, s4.Created };
+            var dates = new DateTimeOffset[] { s1.Created, s2.Created, s3.Created, s4.Created };
             dates.Distinct().Count().ShouldBe(4);
         }
 
