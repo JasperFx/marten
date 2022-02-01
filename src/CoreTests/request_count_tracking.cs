@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Exceptions;
 using Marten.Services;
 using Marten.Testing.Harness;
@@ -7,15 +8,30 @@ using Npgsql;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Services
+namespace CoreTests
 {
-    public class ManagedConnectionTests: IntegrationContext
+    public class request_count_tracking : IDisposable
     {
         private readonly RecordingLogger logger = new();
+        private readonly DocumentStore _store;
+        private readonly IDocumentSession theSession;
 
-        public ManagedConnectionTests(DefaultStoreFixture fixture) : base(fixture)
+        public request_count_tracking()
         {
+            _store = DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = "request_counts";
+            });
+
+            theSession = _store.LightweightSession();
             theSession.Logger = logger;
+        }
+
+        public void Dispose()
+        {
+            _store?.Dispose();
+            theSession?.Dispose();
         }
 
         [Fact]
@@ -42,7 +58,7 @@ namespace Marten.Testing.Services
         [Fact]
         public async Task log_execute_failure_1_async()
         {
-            var ex = await Exception<MartenCommandException>.ShouldBeThrownByAsync(async () =>
+            var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
             {
                 await theSession.ExecuteAsync(new NpgsqlCommand("select foo from nonexistent"));
             });
@@ -60,7 +76,7 @@ namespace Marten.Testing.Services
 
             var cmd = new NpgsqlCommand("select foo from nonexistent");
 
-            var ex = Exception<MartenCommandException>.ShouldBeThrownBy(() =>
+            var ex = Should.Throw<MartenCommandException>(() =>
                 theSession.Execute(cmd));
 
             logger.LastCommand.ShouldBe(cmd);

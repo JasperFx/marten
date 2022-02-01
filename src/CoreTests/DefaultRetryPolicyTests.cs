@@ -1,15 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Exceptions;
-using Marten.Services;
+using Marten;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Services
+namespace CoreTests
 {
     public class DefaultRetryPolicyTests
     {
@@ -45,9 +44,7 @@ namespace Marten.Testing.Services
             var retryPolicyDecorator = RetryPolicyDecorator.For(retryPolicy, runNumber =>
                 throw createNpgsqlException(true));
 
-
-            Exception<NpgsqlException>
-                .ShouldBeThrownBy(() => retryPolicyDecorator.Execute(() => conn.CreateCommand("").ExecuteNonQuery()));
+            Should.Throw<NpgsqlException>(() => retryPolicyDecorator.Execute(() => conn.CreateCommand("").ExecuteNonQuery()));
 
             retryPolicyDecorator.ExecutionCount.ShouldBe(3);
         }
@@ -62,9 +59,7 @@ namespace Marten.Testing.Services
             var retryPolicyDecorator = RetryPolicyDecorator.For(retryPolicy, runNumber =>
                 throw createNpgsqlException(false));
 
-
-            Exception<NpgsqlException>
-                .ShouldBeThrownBy(() => retryPolicyDecorator.Execute(() => conn.CreateCommand().ExecuteNonQuery()));
+            Should.Throw<NpgsqlException>(() => retryPolicyDecorator.Execute(() => conn.CreateCommand().ExecuteNonQuery()));
 
             retryPolicyDecorator.ExecutionCount.ShouldBe(1);
 

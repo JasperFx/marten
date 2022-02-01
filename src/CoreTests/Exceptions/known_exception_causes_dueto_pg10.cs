@@ -1,11 +1,12 @@
 using System.Linq;
+using CoreTests.Documents;
+using CoreTests.Harness;
+using Marten;
 using Marten.Exceptions;
-using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Exceptions
+namespace CoreTests.Exceptions
 {
     public class known_exception_causes_dueto_pg10: IntegrationContext
     {

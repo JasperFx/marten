@@ -5,3 +5,4 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.Schema.Testing")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Marten.AsyncDaemon.Testing")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("ConfigurationTests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("CoreTests")]

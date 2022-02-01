@@ -93,8 +93,6 @@ namespace Marten.Internal.Sessions
         {
             get
             {
-                // TODO -- I don't like this. Potentially mixes
-                // sync and async code.
                 _connection.BeginTransaction();
                 return _connection.Connection;
             }

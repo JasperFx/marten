@@ -1,17 +1,20 @@
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
-using Weasel.Postgresql;
+using CoreTests.Documents;
+using CoreTests.Harness;
+using Marten;
 using Marten.Services;
-using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Util;
 using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
+using IsolationLevel = System.Data.IsolationLevel;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public class ability_to_use_an_existing_connection_and_transaction : IntegrationContext
     {
@@ -50,6 +53,13 @@ namespace Marten.Testing.CoreFunctionality
 
         #endregion
 
+        [Fact]
+        public void can_open_serializable_sync()
+        {
+            using var session = theStore.LightweightSession(IsolationLevel.Serializable);
+            session.Connection.State.ShouldBe(ConnectionState.Open);
+        }
+
 
         [Fact]
         public void enlist_in_transaction_scope()
@@ -79,20 +89,13 @@ namespace Marten.Testing.CoreFunctionality
             }
         }
 
+
+
         [Fact]
         public void enlist_in_transaction_scope_by_transaction()
         {
             using (var scope = new TransactionScope())
             {
-
-
-
-
-
-
-
-
-
                 using (var session = theStore.OpenSession(SessionOptions.ForCurrentTransaction()))
                 {
                     session.Store(Target.Random(), Target.Random());
@@ -149,6 +152,7 @@ namespace Marten.Testing.CoreFunctionality
                 query.Query<Target>().Count().ShouldBe(5);
             }
         }
+
 
         [Fact]
         public async Task pass_in_current_connection_and_transaction_async()
@@ -219,6 +223,7 @@ namespace Marten.Testing.CoreFunctionality
                 query.Query<Target>().Count().ShouldBe(5);
             }
         }
+
 
         [Fact]
         public async Task pass_in_current_connection_and_transaction_with_externally_controlled_tx_boundaries_async()

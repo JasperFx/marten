@@ -101,12 +101,22 @@ namespace Marten
             IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
         /// <summary>
-        ///     Open a new IDocumentSession with the supplied DocumentTracking.
-        ///     "IdentityOnly" is the default.
+        ///  Open a new IDocumentSession with the supplied options
         /// </summary>
         /// <param name="options">Additional options for session</param>
         /// <returns></returns>
         IDocumentSession OpenSession(SessionOptions options);
+
+
+        /// <summary>
+        /// Open a new IDocumentSession with the supplied options and immediately open
+        /// the database connection and start the transaction for the session. This is approapriate
+        /// for Serializable transaction sessions
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<IDocumentSession> OpenSessionAsync(SessionOptions options, CancellationToken token = default);
 
         /// <summary>
         ///     Convenience method to create a new "lightweight" IDocumentSession with no IdentityMap

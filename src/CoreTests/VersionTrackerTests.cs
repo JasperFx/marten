@@ -1,11 +1,10 @@
 ﻿using System;
+using CoreTests.Documents;
 using Marten.Services;
-using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Services
+namespace CoreTests
 {
     public class VersionTrackerTests
     {
@@ -13,7 +12,7 @@ namespace Marten.Testing.Services
         public void null_when_it_does_not_have_it()
         {
             var tracker = new VersionTracker();
-            SpecificationExtensions.ShouldBeNull(tracker.Version<User>(Guid.NewGuid()));
+            tracker.Version<User>(Guid.NewGuid()).ShouldBeNull();
         }
 
         [Fact]

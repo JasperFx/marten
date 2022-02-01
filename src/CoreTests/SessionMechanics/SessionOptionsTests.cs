@@ -2,7 +2,8 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
+using CoreTests.Harness;
+using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -10,7 +11,7 @@ using NSubstitute;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public class SessionOptionsTests : IntegrationContext
     {

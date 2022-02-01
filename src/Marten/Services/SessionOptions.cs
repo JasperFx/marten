@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -26,13 +28,18 @@ namespace Marten.Services
                 Mode = CommandRunnerMode.External;
             }
 
-            // TODO -- blow up if it's serializable???
-
             if (OwnsConnection && OwnsTransactionLifecycle)
             {
-                return mode == CommandRunnerMode.ReadOnly
+                var transaction = mode == CommandRunnerMode.ReadOnly
                     ? new ReadOnlyMartenControlledConnectionTransaction(this)
                     : new MartenControlledConnectionTransaction(this);
+
+                if (IsolationLevel == IsolationLevel.Serializable)
+                {
+                    transaction.BeginTransaction();
+                }
+
+                return transaction;
             }
 
             if (Transaction != null)
@@ -45,24 +52,47 @@ namespace Marten.Services
                 return new AmbientTransactionLifetime(this);
             }
 
-            // var connection = new ManagedConnection(this, store.Options.RetryPolicy());
-            // connection.BeginSession(); // See if this can be eliminated
-            //
-            // //_retryPolicy = store.Options.RetryPolicy();
-            // // TODO -- blow up if isolation level is serializable
-
             throw new NotSupportedException("Invalid combination of SessionOptions");
         }
 
-        internal Task<IConnectionLifetime> InitializeAsync(DocumentStore store)
+        internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store, CommandRunnerMode mode, CancellationToken token)
         {
-            // LATER with GH-2048
+            Mode = mode;
+            Tenant ??= TenantId != null ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
 
-            // See QuerySession ctor logic as well
-            // take over DocumentStore.buildManagedConnection logic here
-            // find the tenant
-            // throw if tenant is required
-            throw new NotImplementedException();
+            if (!store.Options.Advanced.DefaultTenantUsageEnabled &&
+                Tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
+            {
+                throw new DefaultTenantUsageDisabledException();
+            }
+
+            if (!OwnsTransactionLifecycle && mode != CommandRunnerMode.ReadOnly)
+            {
+                Mode = CommandRunnerMode.External;
+            }
+
+            if (OwnsConnection && OwnsTransactionLifecycle)
+            {
+                var transaction = mode == CommandRunnerMode.ReadOnly
+                    ? new ReadOnlyMartenControlledConnectionTransaction(this)
+                    : new MartenControlledConnectionTransaction(this);
+
+                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+
+                return transaction;
+            }
+
+            if (Transaction != null)
+            {
+                return new ExternalTransaction(this);
+            }
+
+            if (DotNetTransaction != null)
+            {
+                return new AmbientTransactionLifetime(this);
+            }
+
+            throw new NotSupportedException("Invalid combination of SessionOptions");
         }
 
         internal CommandRunnerMode Mode { get; private set; }

@@ -277,5 +277,20 @@ namespace Marten
 
             return session;
         }
+
+        public async Task<IDocumentSession> OpenSessionAsync(SessionOptions options, CancellationToken token = default)
+        {
+            var connection = await options.InitializeAsync(this, CommandRunnerMode.Transactional, token).ConfigureAwait(false);
+
+            IDocumentSession session = options.Tracking switch
+            {
+                DocumentTracking.None => new LightweightSession(this, options, connection),
+                DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection),
+                DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
+                _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
+            };
+
+            return session;
+        }
     }
 }

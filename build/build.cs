@@ -85,6 +85,13 @@ namespace martenbuild
             {
                 RunTests("Marten.Testing");
                 RunTests("ConfigurationTests");
+                RunTests("CoreTests");
+            });
+
+            Target("rebuild-database", () =>
+            {
+                Run("docker", "compose down");
+                Run("docker", "compose up -d");
             });
 
             Target("test-plv8", DependsOn("compile"), () =>
