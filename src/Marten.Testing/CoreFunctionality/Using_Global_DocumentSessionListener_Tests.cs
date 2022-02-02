@@ -14,10 +14,9 @@ using Xunit;
 namespace Marten.Testing.CoreFunctionality
 {
 
-    [Collection("listeners")]
     public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsContext
     {
-        public Using_Global_DocumentSessionListener_Tests() : base("listeners")
+        public Using_Global_DocumentSessionListener_Tests()
         {
         }
 

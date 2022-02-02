@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class query_with_dates_Tests: IntegrationContext
     {
         [Fact]

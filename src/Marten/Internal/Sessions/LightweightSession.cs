@@ -14,12 +14,6 @@ namespace Marten.Internal.Sessions
         {
         }
 
-        // Wanted to delete this, but we need it for code generation
-        public LightweightSession(StoreOptions options): base(options)
-        {
-
-        }
-
         protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
         {
             return provider.Lightweight;

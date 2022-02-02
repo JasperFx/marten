@@ -18,10 +18,9 @@ using Xunit;
 
 namespace Marten.PLv8.Testing.Patching
 {
-    [Collection("patching_api")]
     public class patching_api: OneOffConfigurationsContext
     {
-        public patching_api() : base("patching_api")
+        public patching_api()
         {
             StoreOptions(_ =>
             {

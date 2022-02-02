@@ -10,14 +10,8 @@ using Xunit.Sdk;
 
 namespace Marten.Testing.Events.Projections
 {
-    [Collection("self_aggregates")]
     public class self_aggregates : OneOffConfigurationsContext
     {
-        public self_aggregates() : base("self_aggregates")
-        {
-
-        }
-
         [Fact]
         public async Task create_with_static_create_method()
         {

@@ -1,8 +1,8 @@
 using System.Linq;
-using CoreTests.Documents;
 using CoreTests.Harness;
 using Marten;
 using Marten.Exceptions;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 

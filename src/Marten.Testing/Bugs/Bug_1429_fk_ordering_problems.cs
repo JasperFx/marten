@@ -8,12 +8,11 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Bugs
 {
-    [Collection("bug1429")]
     public class Bug_1429_fk_ordering_problems : OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
 
-        public Bug_1429_fk_ordering_problems(ITestOutputHelper output) : base("bug1429")
+        public Bug_1429_fk_ordering_problems(ITestOutputHelper output)
         {
             _output = output;
         }

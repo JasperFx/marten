@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [SingleStoryteller]
+
     public class invoking_queryable_through_single_Tests : IntegrationContext
     {
         #region sample_single_and_single_or_default

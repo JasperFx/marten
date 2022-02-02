@@ -94,7 +94,7 @@ namespace Marten.Testing.Linq
         }
     }
 
-    [ControlledQueryStoryteller]
+
     public class query_with_inner_query_with_global_CollectionStorage_WithArray: IntegrationContext
     {
         private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]

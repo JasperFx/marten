@@ -1,6 +1,6 @@
 ﻿using System;
-using CoreTests.Documents;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Shouldly;
 using Xunit;
 

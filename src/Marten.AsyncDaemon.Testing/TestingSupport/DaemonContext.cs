@@ -18,11 +18,11 @@ using Xunit.Abstractions;
 
 namespace Marten.AsyncDaemon.Testing.TestingSupport
 {
-    [Collection("daemon")]
     public abstract class DaemonContext : OneOffConfigurationsContext, IDisposable
     {
-        protected DaemonContext(ITestOutputHelper output) : base("daemon")
+        protected DaemonContext(ITestOutputHelper output)
         {
+            _schemaName = "daemon";
             theStore.Advanced.Clean.DeleteAllEventData();
             Logger = new TestLogger<IProjection>(output);
 

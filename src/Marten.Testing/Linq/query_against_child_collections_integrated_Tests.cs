@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class query_against_child_collections_integrated_Tests : IntegrationContext
     {
         private readonly ITestOutputHelper _output;

@@ -9,12 +9,8 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    [Collection("metadata")]
     public class document_metadata_specs : OneOffConfigurationsContext
     {
-        public document_metadata_specs() : base("metadata")
-        {
-        }
 
         [Fact]
         public void set_the_metadata_projections_through_the_fluent_interface()

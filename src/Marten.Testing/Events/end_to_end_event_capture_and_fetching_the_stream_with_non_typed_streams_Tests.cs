@@ -12,7 +12,6 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("projections")]
     public class end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests : OneOffConfigurationsContext
     {
         public static TheoryData<DocumentTracking> SessionTypes = new TheoryData<DocumentTracking>
@@ -20,10 +19,6 @@ namespace Marten.Testing.Events
             DocumentTracking.IdentityOnly,
             DocumentTracking.DirtyTracking
         };
-
-        public end_to_end_event_capture_and_fetching_the_stream_with_non_typed_streams_Tests() : base("projections")
-        {
-        }
 
         [Theory]
         [MemberData(nameof(SessionTypes))]

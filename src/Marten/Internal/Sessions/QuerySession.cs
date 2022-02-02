@@ -12,6 +12,7 @@ namespace Marten.Internal.Sessions
     public partial class QuerySession: IMartenSession, IQuerySession
     {
         protected readonly IRetryPolicy _retryPolicy;
+        private readonly DocumentStore _store;
 
         public ISerializer Serializer { get; }
 
@@ -32,21 +33,6 @@ namespace Marten.Internal.Sessions
         /// </summary>
 #nullable disable
 
-        protected QuerySession(StoreOptions options)
-        {
-            Serializer = options.Serializer();
-            TenantId = options.Tenancy.Default.TenantId;
-
-            Database = options.Tenancy.Default.Database;
-            Options = options;
-            _providers = options.Providers;
-            _retryPolicy = options.RetryPolicy();
-
-            Logger = options.Logger().StartSession(this);
-
-            SessionOptions = new SessionOptions { Tenant = options.Tenancy.Default };
-        }
-
         public IMartenDatabase Database { get; protected set; }
 
         public string TenantId { get; protected set; }
@@ -56,9 +42,7 @@ namespace Marten.Internal.Sessions
             SessionOptions sessionOptions,
             IConnectionLifetime connection)
         {
-
-
-            DocumentStore = store;
+            _store = store;
             TenantId = sessionOptions.TenantId;
             Database = sessionOptions.Tenant?.Database ?? throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
@@ -105,6 +89,6 @@ namespace Marten.Internal.Sessions
         }
 
         public int RequestCount { get; set; }
-        public IDocumentStore DocumentStore { get; }
+        public IDocumentStore DocumentStore => _store;
     }
 }

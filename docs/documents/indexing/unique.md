@@ -225,7 +225,7 @@ var store = DocumentStore.For(_ =>
             });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/computed_indexes.cs#L80-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/computed_indexes.cs#L79-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Same can be configured for Duplicated Field:

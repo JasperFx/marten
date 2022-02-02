@@ -171,5 +171,7 @@ namespace Marten.Testing.Documents
         public string PostalCode { get; set; }
 
         public bool Primary { get; set; }
+        public string Street { get; set; }
+        public string HouseNumber { get; set; }
     }
 }

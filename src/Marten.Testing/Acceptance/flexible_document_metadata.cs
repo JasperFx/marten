@@ -25,10 +25,10 @@ namespace Marten.Testing.Acceptance
         public DateTimeOffset LastModified { get; set; }
     }
 
-    [Collection("metadata")]
+
     public class when_using_the_user_defined_header_metadata: FlexibleDocumentMetadataContext
     {
-        public when_using_the_user_defined_header_metadata() : base("metadata")
+        public when_using_the_user_defined_header_metadata()
         {
         }
 
@@ -57,13 +57,8 @@ namespace Marten.Testing.Acceptance
         }
     }
 
-    [Collection("metadata")]
     public class when_mapping_to_the_version_and_others: FlexibleDocumentMetadataContext
     {
-        public when_mapping_to_the_version_and_others() : base("metadata")
-        {
-
-        }
 
         protected override void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata)
         {
@@ -105,13 +100,8 @@ namespace Marten.Testing.Acceptance
         }
     }
 
-    [Collection("metadata")]
     public class when_mapping_to_the_correlation_tracking : FlexibleDocumentMetadataContext
     {
-        public when_mapping_to_the_correlation_tracking() : base("metadata")
-        {
-        }
-
         protected override void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata)
         {
             metadata.CorrelationId.MapTo(x => x.CorrelationId);
@@ -184,23 +174,20 @@ namespace Marten.Testing.Acceptance
         }
     }
 
-    [Collection("metadata")]
     public class when_turning_off_all_optional_metadata: FlexibleDocumentMetadataContext
     {
-        public when_turning_off_all_optional_metadata() : base("metadata")
-        {
-        }
-
         protected override void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata)
         {
             metadata.DisableInformationalFields();
         }
     }
 
+    [Collection("metadata")]
     public abstract class FlexibleDocumentMetadataContext : OneOffConfigurationsContext
     {
-        protected FlexibleDocumentMetadataContext(string schemaName) : base(schemaName)
+        protected FlexibleDocumentMetadataContext()
         {
+            _schemaName = "metadata";
             StoreOptions(opts =>
             {
                 opts.Schema.For<MetadataTarget>()
@@ -338,10 +325,9 @@ namespace Marten.Testing.Acceptance
         }
     }
 
-    [Collection("metadata")]
     public class when_disabling_informational_schema_everywhere: OneOffConfigurationsContext
     {
-        public when_disabling_informational_schema_everywhere() : base("metadata")
+        public when_disabling_informational_schema_everywhere()
         {
             StoreOptions(opts =>
             {

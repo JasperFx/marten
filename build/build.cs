@@ -86,6 +86,7 @@ namespace martenbuild
                 RunTests("Marten.Testing");
                 RunTests("ConfigurationTests");
                 RunTests("CoreTests");
+                RunTests("DocumentDbTests");
             });
 
             Target("rebuild-database", () =>

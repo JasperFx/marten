@@ -11,10 +11,9 @@ namespace Marten.Testing.Events
 {
     public class append_events_with_optimistic_or_exclusive_locks
     {
-        [Collection("event_locking")]
         public class append_events_optimistic_or_exclusive_with_guid_identity: OneOffConfigurationsContext
         {
-            public append_events_optimistic_or_exclusive_with_guid_identity(): base("event_locking")
+            public append_events_optimistic_or_exclusive_with_guid_identity()
             {
                 theStore.Advanced.Clean.DeleteAllEventData();
             }
@@ -138,10 +137,9 @@ namespace Marten.Testing.Events
         }
 
 
-        [Collection("event_locking")]
         public class append_events_optimistic_or_exclusive_with_string_identity: OneOffConfigurationsContext
         {
-            public append_events_optimistic_or_exclusive_with_string_identity(): base("event_locking")
+            public append_events_optimistic_or_exclusive_with_string_identity()
             {
                 StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
                 theStore.Advanced.Clean.DeleteAllEventData();

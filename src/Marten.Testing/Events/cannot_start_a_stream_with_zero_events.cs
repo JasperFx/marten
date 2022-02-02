@@ -8,12 +8,8 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("events")]
     public class cannot_start_a_stream_with_zero_events : OneOffConfigurationsContext
     {
-        public cannot_start_a_stream_with_zero_events() : base("events")
-        {
-        }
 
         public class IssueCreated
         {

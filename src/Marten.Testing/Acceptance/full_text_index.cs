@@ -86,12 +86,8 @@ namespace Marten.Testing.Acceptance
 
     #endregion
 
-    [Collection("fulltext")]
     public class full_text_index: OneOffConfigurationsContext
     {
-        public full_text_index() : base("fulltext")
-        {
-        }
 
         public void using_whole_document_full_text_index_through_store_options_with_default()
         {

@@ -16,7 +16,6 @@ using Xunit;
 
 namespace Marten.NodaTime.Testing.Acceptance
 {
-    [Collection("noda_time_integration")]
     public class noda_time_acceptance: OneOffConfigurationsContext
     {
         public void noda_time_default_setup()
@@ -304,8 +303,5 @@ namespace Marten.NodaTime.Testing.Acceptance
             toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
         }
 
-        public noda_time_acceptance() : base("noda_time_integration")
-        {
-        }
     }
 }

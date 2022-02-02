@@ -16,16 +16,6 @@ namespace Marten.Internal.Sessions
 
         private Dictionary<string, NestedTenantSession>? _byTenant;
 
-        /// <summary>
-        /// Used for code generation
-        /// </summary>
-#nullable disable
-        protected DocumentSessionBase(StoreOptions options): base(options)
-        {
-
-        }
-#nullable enable
-
         internal DocumentSessionBase(DocumentStore store, SessionOptions sessionOptions, IConnectionLifetime connection): base(store, sessionOptions, connection)
         {
             Concurrency = sessionOptions.ConcurrencyChecks;

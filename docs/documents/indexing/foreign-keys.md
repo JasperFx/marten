@@ -33,33 +33,7 @@ public class Issue
     public string Status { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Documents/Issue.cs#L5-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_issue-1'></a>
-```cs
-public class Issue
-{
-    public Issue()
-    {
-        Id = Guid.NewGuid();
-    }
-
-    public string[] Tags { get; set; }
-
-    public Guid Id { get; set; }
-
-    public string Title { get; set; }
-
-    public int Number { get; set; }
-
-    public Guid? AssigneeId { get; set; }
-
-    public Guid? ReporterId { get; set; }
-
-    public Guid? BugId { get; set; }
-    public string Status { get; set; }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Documents/Issue.cs#L5-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Documents/Issue.cs#L5-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If I want to enforce referential integrity between the `Issue` document and the `User` documents,

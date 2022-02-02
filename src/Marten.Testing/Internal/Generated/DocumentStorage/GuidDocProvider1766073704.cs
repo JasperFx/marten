@@ -8,20 +8,21 @@ using Marten.Testing.Internals;
 using Npgsql;
 using System;
 using System.Collections.Generic;
+using Marten.Testing.Documents;
 using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Generated.DocumentStorage
 {
     // START: UpsertGuidDocOperation1766073704
-    public class UpsertGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class UpsertGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<GuidDoc, System.Guid>
     {
-        private readonly Marten.Testing.Internals.GuidDoc _document;
+        private readonly GuidDoc _document;
         private readonly System.Guid _id;
         private readonly System.Collections.Generic.Dictionary<System.Guid, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpsertGuidDocOperation1766073704(Marten.Testing.Internals.GuidDoc document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpsertGuidDocOperation1766073704(GuidDoc document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -45,7 +46,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, GuidDoc document, Marten.Internal.IMartenSession session)
         {
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
             parameters[0].Value = session.Serializer.ToJson(_document);
@@ -83,14 +84,14 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: InsertGuidDocOperation1766073704
-    public class InsertGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class InsertGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<GuidDoc, System.Guid>
     {
-        private readonly Marten.Testing.Internals.GuidDoc _document;
+        private readonly GuidDoc _document;
         private readonly System.Guid _id;
         private readonly System.Collections.Generic.Dictionary<System.Guid, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public InsertGuidDocOperation1766073704(Marten.Testing.Internals.GuidDoc document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public InsertGuidDocOperation1766073704(GuidDoc document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -114,7 +115,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, GuidDoc document, Marten.Internal.IMartenSession session)
         {
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
             parameters[0].Value = session.Serializer.ToJson(_document);
@@ -152,14 +153,14 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: UpdateGuidDocOperation1766073704
-    public class UpdateGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class UpdateGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<GuidDoc, System.Guid>
     {
-        private readonly Marten.Testing.Internals.GuidDoc _document;
+        private readonly GuidDoc _document;
         private readonly System.Guid _id;
         private readonly System.Collections.Generic.Dictionary<System.Guid, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpdateGuidDocOperation1766073704(Marten.Testing.Internals.GuidDoc document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpdateGuidDocOperation1766073704(GuidDoc document, System.Guid id, System.Collections.Generic.Dictionary<System.Guid, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -183,7 +184,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Npgsql.NpgsqlParameter[] parameters, GuidDoc document, Marten.Internal.IMartenSession session)
         {
             parameters[0].NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
             parameters[0].Value = session.Serializer.ToJson(_document);
@@ -221,7 +222,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: QueryOnlyGuidDocSelector1766073704
-    public class QueryOnlyGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<Marten.Testing.Internals.GuidDoc>
+    public class QueryOnlyGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -234,20 +235,20 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public Marten.Testing.Internals.GuidDoc Resolve(System.Data.Common.DbDataReader reader)
+        public GuidDoc Resolve(System.Data.Common.DbDataReader reader)
         {
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = _serializer.FromJson<Marten.Testing.Internals.GuidDoc>(reader, 0);
+            GuidDoc document;
+            document = _serializer.FromJson<GuidDoc>(reader, 0);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<Marten.Testing.Internals.GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = await _serializer.FromJsonAsync<Marten.Testing.Internals.GuidDoc>(reader, 0, token).ConfigureAwait(false);
+            GuidDoc document;
+            document = await _serializer.FromJsonAsync<GuidDoc>(reader, 0, token).ConfigureAwait(false);
             return document;
         }
 
@@ -257,7 +258,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: LightweightGuidDocSelector1766073704
-    public class LightweightGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<Marten.Testing.Internals.GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<Marten.Testing.Internals.GuidDoc>
+    public class LightweightGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -270,23 +271,23 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public Marten.Testing.Internals.GuidDoc Resolve(System.Data.Common.DbDataReader reader)
+        public GuidDoc Resolve(System.Data.Common.DbDataReader reader)
         {
             var id = reader.GetFieldValue<System.Guid>(0);
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = _serializer.FromJson<Marten.Testing.Internals.GuidDoc>(reader, 1);
+            GuidDoc document;
+            document = _serializer.FromJson<GuidDoc>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<Marten.Testing.Internals.GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<System.Guid>(0, token);
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = await _serializer.FromJsonAsync<Marten.Testing.Internals.GuidDoc>(reader, 1, token).ConfigureAwait(false);
+            GuidDoc document;
+            document = await _serializer.FromJsonAsync<GuidDoc>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
@@ -297,7 +298,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: IdentityMapGuidDocSelector1766073704
-    public class IdentityMapGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<Marten.Testing.Internals.GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<Marten.Testing.Internals.GuidDoc>
+    public class IdentityMapGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -310,26 +311,26 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public Marten.Testing.Internals.GuidDoc Resolve(System.Data.Common.DbDataReader reader)
+        public GuidDoc Resolve(System.Data.Common.DbDataReader reader)
         {
             var id = reader.GetFieldValue<System.Guid>(0);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = _serializer.FromJson<Marten.Testing.Internals.GuidDoc>(reader, 1);
+            GuidDoc document;
+            document = _serializer.FromJson<GuidDoc>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<Marten.Testing.Internals.GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<System.Guid>(0, token);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = await _serializer.FromJsonAsync<Marten.Testing.Internals.GuidDoc>(reader, 1, token).ConfigureAwait(false);
+            GuidDoc document;
+            document = await _serializer.FromJsonAsync<GuidDoc>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
@@ -341,7 +342,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: DirtyTrackingGuidDocSelector1766073704
-    public class DirtyTrackingGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<Marten.Testing.Internals.GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<Marten.Testing.Internals.GuidDoc>
+    public class DirtyTrackingGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -354,13 +355,13 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public Marten.Testing.Internals.GuidDoc Resolve(System.Data.Common.DbDataReader reader)
+        public GuidDoc Resolve(System.Data.Common.DbDataReader reader)
         {
             var id = reader.GetFieldValue<System.Guid>(0);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = _serializer.FromJson<Marten.Testing.Internals.GuidDoc>(reader, 1);
+            GuidDoc document;
+            document = _serializer.FromJson<GuidDoc>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -368,13 +369,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public async System.Threading.Tasks.Task<Marten.Testing.Internals.GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<GuidDoc> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
             var id = await reader.GetFieldValueAsync<System.Guid>(0, token);
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            Marten.Testing.Internals.GuidDoc document;
-            document = await _serializer.FromJsonAsync<Marten.Testing.Internals.GuidDoc>(reader, 1, token).ConfigureAwait(false);
+            GuidDoc document;
+            document = await _serializer.FromJsonAsync<GuidDoc>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -387,7 +388,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: QueryOnlyGuidDocDocumentStorage1766073704
-    public class QueryOnlyGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.QueryOnlyDocumentStorage<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class QueryOnlyGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.QueryOnlyDocumentStorage<GuidDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -398,59 +399,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(Marten.Testing.Internals.GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(Marten.Testing.Internals.GuidDoc document)
+        public override System.Guid Identity(GuidDoc document)
         {
             return document.Id;
         }
@@ -479,7 +480,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: LightweightGuidDocDocumentStorage1766073704
-    public class LightweightGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.LightweightDocumentStorage<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class LightweightGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.LightweightDocumentStorage<GuidDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -490,59 +491,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(Marten.Testing.Internals.GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(Marten.Testing.Internals.GuidDoc document)
+        public override System.Guid Identity(GuidDoc document)
         {
             return document.Id;
         }
@@ -571,7 +572,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: IdentityMapGuidDocDocumentStorage1766073704
-    public class IdentityMapGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.IdentityMapDocumentStorage<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class IdentityMapGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.IdentityMapDocumentStorage<GuidDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -582,59 +583,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(Marten.Testing.Internals.GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(Marten.Testing.Internals.GuidDoc document)
+        public override System.Guid Identity(GuidDoc document)
         {
             return document.Id;
         }
@@ -663,7 +664,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: DirtyTrackingGuidDocDocumentStorage1766073704
-    public class DirtyTrackingGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class DirtyTrackingGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<GuidDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -674,59 +675,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override System.Guid AssignIdentity(Marten.Testing.Internals.GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override System.Guid AssignIdentity(GuidDoc document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             if (document.Id == Guid.Empty) _setter(document, Marten.Schema.Identity.CombGuidIdGeneration.NewGuid());
             return document.Id;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertGuidDocOperation1766073704
             (
                 document, Identity(document),
-                session.Versions.ForType<Marten.Testing.Internals.GuidDoc, System.Guid>(),
+                session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
                 
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(Marten.Testing.Internals.GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(GuidDoc document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override System.Guid Identity(Marten.Testing.Internals.GuidDoc document)
+        public override System.Guid Identity(GuidDoc document)
         {
             return document.Id;
         }
@@ -755,11 +756,11 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: GuidDocBulkLoader1766073704
-    public class GuidDocBulkLoader1766073704 : Marten.Internal.CodeGeneration.BulkLoader<Marten.Testing.Internals.GuidDoc, System.Guid>
+    public class GuidDocBulkLoader1766073704 : Marten.Internal.CodeGeneration.BulkLoader<GuidDoc, System.Guid>
     {
-        private readonly Marten.Internal.Storage.IDocumentStorage<Marten.Testing.Internals.GuidDoc, System.Guid> _storage;
+        private readonly Marten.Internal.Storage.IDocumentStorage<GuidDoc, System.Guid> _storage;
 
-        public GuidDocBulkLoader1766073704(Marten.Internal.Storage.IDocumentStorage<Marten.Testing.Internals.GuidDoc, System.Guid> storage) : base(storage)
+        public GuidDocBulkLoader1766073704(Marten.Internal.Storage.IDocumentStorage<GuidDoc, System.Guid> storage) : base(storage)
         {
             _storage = storage;
         }
@@ -776,7 +777,7 @@ namespace Marten.Generated.DocumentStorage
         public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_guiddoc_temp as select * from public.mt_doc_guiddoc limit 0";
 
 
-        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, Marten.Testing.Internals.GuidDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
+        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, GuidDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
         {
             writer.Write(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar);
             writer.Write(document.Id, NpgsqlTypes.NpgsqlDbType.Uuid);
@@ -785,7 +786,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, Marten.Testing.Internals.GuidDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
+        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, GuidDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(document.Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
@@ -829,7 +830,7 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: GuidDocProvider1766073704
-    public class GuidDocProvider1766073704 : Marten.Internal.Storage.DocumentProvider<Marten.Testing.Internals.GuidDoc>
+    public class GuidDocProvider1766073704 : Marten.Internal.Storage.DocumentProvider<GuidDoc>
     {
         private readonly Marten.Schema.DocumentMapping _mapping;
 

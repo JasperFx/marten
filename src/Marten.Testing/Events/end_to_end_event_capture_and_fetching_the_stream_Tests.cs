@@ -14,7 +14,6 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Events
 {
-    [Collection("projections")]
     public class end_to_end_event_capture_and_fetching_the_stream_Tests : OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
@@ -22,7 +21,7 @@ namespace Marten.Testing.Events
         private static readonly string[] DiffetentTenants = { "tenant", "differentTenant" };
         private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
 
-        public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output) : base("projections")
+        public end_to_end_event_capture_and_fetching_the_stream_Tests(ITestOutputHelper output)
         {
             _output = output;
         }

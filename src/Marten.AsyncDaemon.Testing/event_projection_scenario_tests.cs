@@ -9,13 +9,8 @@ using Xunit;
 
 namespace Marten.AsyncDaemon.Testing
 {
-    [Collection("projection_scenario")]
     public class event_projection_scenario_tests : OneOffConfigurationsContext
     {
-        public event_projection_scenario_tests() : base("projection_scenario")
-        {
-        }
-
         [Fact]
         public async Task happy_path_test_with_inline_projection()
         {

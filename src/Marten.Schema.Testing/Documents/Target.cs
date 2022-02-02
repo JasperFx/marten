@@ -171,5 +171,8 @@ namespace Marten.Schema.Testing.Documents
         public string PostalCode { get; set; }
 
         public bool Primary { get; set; }
+
+        public string HouseNumber { get; set; }
+        public string Street { get; set; }
     }
 }

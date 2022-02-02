@@ -5,7 +5,6 @@ using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
-using Marten.Internal.CompiledQueries;
 using Marten.Schema;
 
 namespace Marten
@@ -15,13 +14,10 @@ namespace Marten
         public IReadOnlyList<ICodeFile> BuildFiles()
         {
             Storage.BuildAllMappings();
-            var list = new List<ICodeFile>(
-                Storage.AllDocumentMappings.Select(x => new DocumentProviderBuilder(x, this)));
-
-
-            list.AddRange(_compiledQueryTypes.Select(x => new CompiledQueryCodeFile(x, this)));
-
-            return list;
+            return Storage
+                .AllDocumentMappings
+                .Select(x => new DocumentProviderBuilder(x, this))
+                .ToList();
         }
 
         string IGeneratesCode.ChildNamespace { get; } = "DocumentStorage";
@@ -38,6 +34,8 @@ namespace Marten
             var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
             {
                 TypeLoadMode = GeneratedCodeMode,
+
+                // TODO -- WATCH THIS! ONLY VALID FOR MULTI-TARGETED PROJECTS
                 GeneratedCodeOutputPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
                     .AppendPath("Internal", "Generated"),
                 ApplicationAssembly = ApplicationAssembly

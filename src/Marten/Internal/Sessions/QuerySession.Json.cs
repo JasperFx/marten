@@ -17,7 +17,7 @@ namespace Marten.Internal.Sessions
 
         public async Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination, CancellationToken token = default)
         {
-            var source = Options.GetCompiledQuerySourceFor(query, this);
+            var source = _store.GetCompiledQuerySourceFor(query, this);
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
             return (await StreamJson(handler, destination, token).ConfigureAwait(false) > 0);
         }
@@ -25,7 +25,7 @@ namespace Marten.Internal.Sessions
         public Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
             CancellationToken token = default)
         {
-            var source = Options.GetCompiledQuerySourceFor(query, this);
+            var source = _store.GetCompiledQuerySourceFor(query, this);
             var handler = (IQueryHandler<TOut>)source.Build(query, this);
             return StreamJson(handler, destination, token);
         }

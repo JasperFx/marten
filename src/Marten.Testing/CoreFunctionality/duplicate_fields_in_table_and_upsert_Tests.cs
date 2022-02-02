@@ -9,7 +9,6 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    [Collection("duplicated")]
     public class duplicate_fields_in_table_and_upsert_Tests : OneOffConfigurationsContext
     {
         [Fact]
@@ -34,8 +33,5 @@ namespace Marten.Testing.CoreFunctionality
 
         }
 
-        public duplicate_fields_in_table_and_upsert_Tests() : base("duplicated")
-        {
-        }
     }
 }

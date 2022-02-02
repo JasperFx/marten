@@ -11,10 +11,9 @@ using Xunit;
 
 namespace Marten.Testing.Events.Projections
 {
-    [Collection("event_projections")]
     public class EventProjectionTests : OneOffConfigurationsContext
     {
-        public EventProjectionTests() : base("event_projections")
+        public EventProjectionTests()
         {
             theStore.Advanced.Clean.DeleteDocumentsByType(typeof(User));
         }

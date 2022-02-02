@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class using_multiple_where_clauses_Tests : IntegrationContext
     {
         [Fact]

@@ -60,9 +60,6 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        public assigning_versions_to_documents() : base("acceptance")
-        {
-        }
     }
 
     public class end_to_end_versioned_docs: IntegrationContext

@@ -105,7 +105,7 @@ var json = await theSession
 
     json.ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/streaming_json_results.cs#L975-L985' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/streaming_json_results.cs#L973-L983' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And another example, but this time transforming to an anonymous type:
@@ -124,5 +124,5 @@ And another example, but this time transforming to an anonymous type:
     .ToJsonFirstOrDefault())
      .ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/streaming_json_results.cs#L948-L960' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/streaming_json_results.cs#L946-L958' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

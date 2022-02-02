@@ -19,14 +19,13 @@ using Xunit;
 
 namespace Marten.PLv8.Testing.Patching
 {
-    [Collection("patching")]
     public class PatchExpressionTests : OneOffConfigurationsContext
     {
         private readonly PatchExpression<Target> _expression;
 
 
 
-        public PatchExpressionTests() : base("patching")
+        public PatchExpressionTests()
         {
             StoreOptions(x => x.UseJavascriptTransformsAndPatching());
             theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));

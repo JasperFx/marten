@@ -13,21 +13,16 @@ namespace Marten.Testing.Harness
     /// </summary>
     public abstract class OneOffConfigurationsContext : IDisposable
     {
-        private readonly string _schemaName;
+        protected string _schemaName;
         private DocumentStore _store;
         private IDocumentSession _session;
         protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
 
         public string SchemaName => _schemaName;
 
-        protected OneOffConfigurationsContext(string schemaName)
+        protected OneOffConfigurationsContext()
         {
-            if (!GetType().HasAttribute<CollectionAttribute>())
-            {
-                throw new InvalidOperationException("You must decorate this class with a [Collection(\"schemaname\"] attribute. Preferably w/ the schema name");
-            }
-
-            _schemaName = schemaName;
+            _schemaName = GetType().Name;
         }
 
         public IList<IDisposable> Disposables => _disposables;

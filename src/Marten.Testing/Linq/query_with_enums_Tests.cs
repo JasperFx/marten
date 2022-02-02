@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class query_with_enums_Tests : IntegrationContext
     {
         [Fact]

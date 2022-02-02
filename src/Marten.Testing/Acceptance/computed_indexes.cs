@@ -12,7 +12,6 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    [Collection("acceptance")]
     public class computed_indexes: OneOffConfigurationsContext
     {
         [Fact]
@@ -234,8 +233,5 @@ namespace Marten.Testing.Acceptance
             }
         }
 
-        public computed_indexes() : base("acceptance")
-        {
-        }
     }
 }

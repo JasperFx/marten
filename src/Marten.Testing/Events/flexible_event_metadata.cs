@@ -7,7 +7,6 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("flexible_metadata")]
     public class flexible_event_metadata : OneOffConfigurationsContext
     {
         private QuestStarted started = new QuestStarted { Name = "Find the Orb" };
@@ -195,8 +194,5 @@ namespace Marten.Testing.Events
             }
         }
 
-        public flexible_event_metadata() : base("event_flex_meta")
-        {
-        }
     }
 }

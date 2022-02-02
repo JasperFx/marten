@@ -11,12 +11,8 @@ using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-    [Collection("listeners")]
     public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsContext
     {
-        public Using_Local_DocumentSessionListener_Tests() : base("listeners")
-        {
-        }
 
         [Fact]
         public void call_listener_events_on_synchronous_session_saves()

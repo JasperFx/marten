@@ -122,7 +122,8 @@ namespace Marten.Services.BatchQuerying
 
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
         {
-            var source = _parent.Options.GetCompiledQuerySourceFor(query, _parent);
+            // Smelly downcast, but we'll allow it
+            var source = _parent.DocumentStore.As<DocumentStore>().GetCompiledQuerySourceFor(query, _parent);
             var handler = (IQueryHandler<TResult>)source.Build(query, _parent);
 
             return AddItem(handler);

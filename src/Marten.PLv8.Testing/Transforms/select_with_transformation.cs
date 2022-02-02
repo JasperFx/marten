@@ -12,10 +12,9 @@ using Xunit;
 
 namespace Marten.PLv8.Testing.Transforms
 {
-    [Collection("transforms")]
     public class select_with_transformation: OneOffConfigurationsContext
     {
-        public select_with_transformation() : base("transforms")
+        public select_with_transformation()
         {
             StoreOptions(_ =>
             {

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class using_const_boolean_in_where_clause_Tests : IntegrationContext
     {
         [Fact]

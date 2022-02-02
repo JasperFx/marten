@@ -101,7 +101,7 @@ theStore.BulkInsert(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_Tests.cs#L95-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L90-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
@@ -126,7 +126,7 @@ await theStore.BulkInsertAsync(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L248-L258' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
@@ -151,7 +151,7 @@ await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
 // being loaded
 await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L146-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L300-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert feature can also be used with multi-tenanted documents, but in that
@@ -173,5 +173,5 @@ using var store = DocumentStore.For(opts =>
 // If multi-tenanted
 await store.BulkInsertDocumentsAsync("a tenant id", data);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/bulk_loading_async_Tests.cs#L170-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L324-L338' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

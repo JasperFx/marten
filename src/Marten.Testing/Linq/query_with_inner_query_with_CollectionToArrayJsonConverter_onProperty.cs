@@ -72,7 +72,7 @@ namespace Marten.Testing.Linq
         }
     };
 
-    [ControlledQueryStoryteller]
+
     public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty : IntegrationContext
     {
         private readonly ITestOutputHelper _output;

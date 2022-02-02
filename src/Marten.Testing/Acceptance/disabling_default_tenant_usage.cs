@@ -7,7 +7,6 @@ using Xunit;
 
 namespace Marten.Testing.Acceptance
 {
-    [Collection("multitenancy")]
     public class disabling_default_tenant_usage : OneOffConfigurationsContext
     {
         [Fact]
@@ -96,8 +95,5 @@ namespace Marten.Testing.Acceptance
             });
         }
 
-        public disabling_default_tenant_usage() : base("multitenancy")
-        {
-        }
     }
 }

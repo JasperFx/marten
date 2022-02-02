@@ -56,7 +56,7 @@ theSession.DeleteWhere<Target>(x => x.Double == 578);
 
 theSession.SaveChanges();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/delete_many_documents_by_query_Tests.cs#L28-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletewhere' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/delete_many_documents_by_query.cs#L27-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletewhere' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A couple things to note:
@@ -159,26 +159,24 @@ public void query_soft_deleted_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using (var session = theStore.OpenSession())
-    {
-        session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+    using var session = theStore.OpenSession();
+    session.Store(user1, user2, user3, user4);
+    session.SaveChanges();
 
-        // Deleting 'bar' and 'baz'
-        session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+    // Deleting 'bar' and 'baz'
+    session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+    session.SaveChanges();
 
-        // no where clause, deleted docs should be filtered out
-        session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+    // no where clause, deleted docs should be filtered out
+    session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
 
-        // with a where clause
-        session.Query<User>().Where(x => x.UserName != "jack")
+    // with a where clause
+    session.Query<User>().Where(x => x.UserName != "jack")
         .ToList().Single().UserName.ShouldBe("foo");
-    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L285-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L275-L301' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The SQL generated for the first call to `Query<User>()` above would be:
@@ -203,28 +201,26 @@ public void query_maybe_soft_deleted_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using (var session = theStore.OpenSession())
-    {
-        session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+    using var session = theStore.OpenSession();
+    session.Store(user1, user2, user3, user4);
+    session.SaveChanges();
 
-        session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+    session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+    session.SaveChanges();
 
-        // no where clause, all documents are returned
-        session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+    // no where clause, all documents are returned
+    session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
-        // with a where clause, all documents are returned
-        session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
-            .OrderBy(x => x.UserName)
-            .ToList()
-            .Select(x => x.UserName)
-            .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
-    }
+    // with a where clause, all documents are returned
+    session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+        .OrderBy(x => x.UserName)
+        .ToList()
+        .Select(x => x.UserName)
+        .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L315-L345' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L303-L331' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Only Deleted Documents
@@ -243,28 +239,26 @@ public void query_is_soft_deleted_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using (var session = theStore.OpenSession())
-    {
-        session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+    using var session = theStore.OpenSession();
+    session.Store(user1, user2, user3, user4);
+    session.SaveChanges();
 
-        session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-        session.SaveChanges();
+    session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
+    session.SaveChanges();
 
-        // no where clause
-        session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+    // no where clause
+    session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
 
-        // with a where clause
-        session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
-            .OrderBy(x => x.UserName)
-            .ToList()
-            .Select(x => x.UserName)
-            .Single().ShouldBe("bar");
-    }
+    // with a where clause
+    session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+        .OrderBy(x => x.UserName)
+        .ToList()
+        .Select(x => x.UserName)
+        .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L347-L377' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L333-L361' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Documents Deleted Before or After a Specific Time
@@ -283,24 +277,22 @@ public void query_is_soft_deleted_since_docs()
     var user3 = new User { UserName = "baz" };
     var user4 = new User { UserName = "jack" };
 
-    using (var session = theStore.OpenSession())
-    {
-        session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+    using var session = theStore.OpenSession();
+    session.Store(user1, user2, user3, user4);
+    session.SaveChanges();
 
-        session.Delete(user3);
-        session.SaveChanges();
+    session.Delete(user3);
+    session.SaveChanges();
 
-        var epoch = session.MetadataFor(user3).DeletedAt;
-        session.Delete(user4);
-        session.SaveChanges();
+    var epoch = session.MetadataFor(user3).DeletedAt;
+    session.Delete(user4);
+    session.SaveChanges();
 
-        session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("jack");
-    }
+    session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
+        .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/soft_deletes.cs#L379-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L363-L387' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 _Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:

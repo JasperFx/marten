@@ -11,7 +11,6 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("schema_objects")]
     public class using_the_schema_objects_Tests : OneOffConfigurationsContext
     {
         [Fact]
@@ -53,10 +52,5 @@ namespace Marten.Testing.Events
             store2.Dispose();
         }
 
-
-
-        public using_the_schema_objects_Tests() : base("schema_objects")
-        {
-        }
     }
 }

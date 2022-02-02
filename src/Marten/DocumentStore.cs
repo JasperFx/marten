@@ -10,6 +10,7 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Exceptions;
+using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
@@ -23,7 +24,7 @@ namespace Marten
     /// <summary>
     ///     The main entry way to using Marten
     /// </summary>
-    public class DocumentStore: IDocumentStore
+    public partial class DocumentStore: IDocumentStore
     {
         private readonly IMartenLogger _logger;
 
@@ -57,7 +58,6 @@ namespace Marten
             Diagnostics = new Diagnostics(this);
 
             options.InitialData.Each(x => x.Populate(this).GetAwaiter().GetResult());
-
         }
 
         public ITenancy Tenancy => Options.Tenancy;

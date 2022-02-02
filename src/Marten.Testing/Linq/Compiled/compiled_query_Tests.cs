@@ -349,13 +349,8 @@ namespace Marten.Testing.Linq.Compiled
         }
     }
 
-    [Collection("compiled")]
     public class when_using_open_generic_compiled_query: OneOffConfigurationsContext
     {
-        public when_using_open_generic_compiled_query() : base("compiled")
-        {
-        }
-
         [Fact]
         public async Task can_use_a_generic_compiled_query()
         {
@@ -383,12 +378,11 @@ namespace Marten.Testing.Linq.Compiled
         public string UserName { get; set; }
     }
 
-    [Collection("multi_tenancy")]
     public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
 
-        public when_compiled_queries_are_used_in_multi_tenancy(ITestOutputHelper output) : base("multi_tenancy")
+        public when_compiled_queries_are_used_in_multi_tenancy(ITestOutputHelper output)
         {
             _output = output;
         }

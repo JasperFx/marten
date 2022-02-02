@@ -7,12 +7,11 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("event_listener")]
     public class get_committed_events_from_listener_Tests : OneOffConfigurationsContext
     {
         public readonly StubDocumentSessionListener listener = new StubDocumentSessionListener();
 
-        public get_committed_events_from_listener_Tests() : base("event_listener")
+        public get_committed_events_from_listener_Tests()
         {
             StoreOptions(_ =>
             {

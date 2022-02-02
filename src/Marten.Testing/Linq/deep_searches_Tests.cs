@@ -8,7 +8,6 @@ using Xunit;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
     public class deep_searches_Tests: IntegrationContext
     {
         [Fact]

@@ -29,7 +29,7 @@ public class FakeStorage : FeatureSchemaBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L51-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/ability_to_add_custom_storage_features.cs#L45-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_creating-a-fake-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, to actually apply this feature to your Marten applications, use this syntax:
@@ -48,7 +48,7 @@ var store = DocumentStore.For(_ =>
     _.Storage.Add(new FakeStorage(_));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ability_to_add_custom_storage_features.cs#L32-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/ability_to_add_custom_storage_features.cs#L30-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-schema-feature' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that when you use the `Add<T>()` syntax, Marten will pass along the current `StoreOptions` to the constructor function if there is a constructor with that signature. Otherwise, it uses the no-arg constructor.

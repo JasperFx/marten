@@ -230,7 +230,6 @@ namespace Marten.Testing.Events.SchemaChange
         }
     }
 
-    [Collection("events_namespace_migration")]
     public class EventsNamespaceChange: OneOffConfigurationsContext
     {
         [Fact]
@@ -271,8 +270,5 @@ namespace Marten.Testing.Events.SchemaChange
             }
         }
 
-        public EventsNamespaceChange() : base("events_namespace_migration")
-        {
-        }
     }
 }

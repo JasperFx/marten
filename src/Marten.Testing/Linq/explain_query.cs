@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -17,14 +18,14 @@ namespace Marten.Testing.Linq
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 6,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();
@@ -44,14 +45,14 @@ namespace Marten.Testing.Linq
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 6,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();
@@ -71,14 +72,14 @@ namespace Marten.Testing.Linq
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 6,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             theSession.SaveChanges();

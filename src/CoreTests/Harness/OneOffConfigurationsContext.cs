@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Baseline;
 using Marten;
 using Marten.Testing.Harness;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Weasel.Core;
 using Xunit;
 
@@ -21,14 +22,9 @@ namespace CoreTests.Harness
 
         public string SchemaName => _schemaName;
 
-        protected OneOffConfigurationsContext(string schemaName)
+        protected OneOffConfigurationsContext()
         {
-            if (!GetType().HasAttribute<CollectionAttribute>())
-            {
-                throw new InvalidOperationException("You must decorate this class with a [Collection(\"schemaname\"] attribute. Preferably w/ the schema name");
-            }
-
-            _schemaName = schemaName;
+            _schemaName = GetType().Name;
         }
 
         public IList<IDisposable> Disposables => _disposables;

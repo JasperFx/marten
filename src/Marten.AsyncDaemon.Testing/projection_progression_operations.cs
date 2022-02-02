@@ -11,10 +11,9 @@ using Xunit;
 
 namespace Marten.AsyncDaemon.Testing
 {
-    [Collection("progression")]
     public class projection_progression_operations : OneOffConfigurationsContext
     {
-        public projection_progression_operations() : base("progression")
+        public projection_progression_operations()
         {
             theStore.Advanced.Clean.DeleteAllEventData();
             theStore.EnsureStorageExists(typeof(IEvent));

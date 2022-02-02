@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class query_with_nullable_types_Tests : IntegrationContext
     {
         private readonly ITestOutputHelper _output;

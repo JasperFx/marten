@@ -16,7 +16,6 @@ using Issue = Marten.Testing.Documents.Issue;
 
 namespace Marten.PLv8.Testing.Transforms
 {
-    [Collection("transforms")]
     public class TransformFunctionTests : OneOffConfigurationsContext
     {
         private readonly string _getFullnameJs = AppContext.BaseDirectory.AppendPath("get_fullname.js");
@@ -121,10 +120,6 @@ namespace Marten.PLv8.Testing.Transforms
             actual.ShouldBe("{\"fullname\": \"Jeremy Miller\"}");
         }
 
-
-        public TransformFunctionTests() : base("transforms")
-        {
-        }
     }
 
 

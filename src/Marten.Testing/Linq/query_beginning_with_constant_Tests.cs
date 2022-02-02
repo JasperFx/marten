@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace Marten.Testing.Linq
 {
-    [ControlledQueryStoryteller]
+
     public class query_beginning_with_equal_to_value_Tests : IntegrationContext
     {
         private readonly ITestOutputHelper _output;

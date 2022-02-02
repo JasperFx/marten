@@ -10,13 +10,8 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("streams")]
     public class EventSequenceFetcherTests : OneOffConfigurationsContext
     {
-        public EventSequenceFetcherTests() : base("streams")
-        {
-        }
-
         [Fact]
         public async Task fetch_sequence_numbers_async()
         {

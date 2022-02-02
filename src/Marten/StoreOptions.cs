@@ -3,20 +3,15 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using Baseline;
 using Baseline.ImTools;
 using Baseline.Reflection;
 using LamarCodeGeneration;
-using LamarCompiler;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
-using Marten.Internal.CompiledQueries;
-using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Fields;
 using Marten.Metadata;
@@ -39,10 +34,10 @@ namespace Marten
     /// </summary>
     public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger
     {
-
-
         private readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, ChildDocument>> _childDocs
             = new();
+
+        internal IList<Type> CompiledQueryTypes { get; } = new List<Type>();
 
         private readonly IList<IDocumentPolicy> _policies = new List<IDocumentPolicy>
         {
@@ -50,8 +45,8 @@ namespace Marten
         };
 
         /// <summary>
-        /// Register "initial data loads" that will be applied to the DocumentStore when it is
-        /// bootstrapped
+        ///     Register "initial data loads" that will be applied to the DocumentStore when it is
+        ///     bootstrapped
         /// </summary>
         public readonly IList<IInitialData> InitialData = new List<IInitialData>();
 
@@ -72,9 +67,6 @@ namespace Marten
 
         private IMartenLogger _logger = new NulloMartenLogger();
 
-        private ImHashMap<Type, ICompiledQuerySource> _querySources = ImHashMap<Type, ICompiledQuerySource>.Empty;
-
-
         private IRetryPolicy _retryPolicy = new NulloRetryPolicy();
         private ISerializer? _serializer;
 
@@ -94,21 +86,20 @@ namespace Marten
             Advanced = new AdvancedOptions(this);
 
             Projections = new ProjectionOptions(this);
-
         }
 
         /// <summary>
-        /// Configuration for all event store projections
+        ///     Configuration for all event store projections
         /// </summary>
-        public ProjectionOptions Projections { get;}
+        public ProjectionOptions Projections { get; }
 
         /// <summary>
-        /// Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
+        ///     Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
         /// </summary>
         public TypeLoadMode GeneratedCodeMode { get; set; } = TypeLoadMode.Dynamic;
 
         /// <summary>
-        /// Access to adding custom schema features to this Marten-enabled Postgresql database
+        ///     Access to adding custom schema features to this Marten-enabled Postgresql database
         /// </summary>
         public StorageFeatures Storage { get; }
 
@@ -117,7 +108,7 @@ namespace Marten
         internal IProviderGraph Providers { get; }
 
         /// <summary>
-        /// Advanced configuration options for this DocumentStore
+        ///     Advanced configuration options for this DocumentStore
         /// </summary>
         public AdvancedOptions Advanced { get; }
 
@@ -138,6 +129,17 @@ namespace Marten
         /// </summary>
         public PoliciesExpression Policies => new(this);
 
+
+        void IMigrationLogger.SchemaChange(string sql)
+        {
+            Logger().SchemaChange(sql);
+        }
+
+        void IMigrationLogger.OnFailure(DbCommand command, Exception ex)
+        {
+            throw new MartenSchemaException("All Configured Changes", command.CommandText, ex);
+        }
+
         IReadOnlyAdvancedOptions IReadOnlyStoreOptions.Advanced => Advanced;
 
         /// <summary>
@@ -157,14 +159,8 @@ namespace Marten
         /// </summary>
         public int NameDataLength
         {
-            get
-            {
-                return Advanced.Migrator.NameDataLength;
-            }
-            set
-            {
-                Advanced.Migrator.NameDataLength = value;
-            }
+            get => Advanced.Migrator.NameDataLength;
+            set => Advanced.Migrator.NameDataLength = value;
         }
 
         /// <summary>
@@ -180,7 +176,7 @@ namespace Marten
         public int UpdateBatchSize { get; set; } = 500;
 
         /// <summary>
-        /// Retrieve the currently configured serializer
+        ///     Retrieve the currently configured serializer
         /// </summary>
         /// <returns></returns>
         public ISerializer Serializer()
@@ -189,7 +185,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Retrieve the currently configured logger for this DocumentStore
+        ///     Retrieve the currently configured logger for this DocumentStore
         /// </summary>
         /// <returns></returns>
         public IMartenLogger Logger()
@@ -198,7 +194,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Retrieve the current retry policy for this DocumentStore
+        ///     Retrieve the current retry policy for this DocumentStore
         /// </summary>
         /// <returns></returns>
         public IRetryPolicy RetryPolicy()
@@ -218,7 +214,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Get or set the tenancy model for this DocumentStore
+        ///     Get or set the tenancy model for this DocumentStore
         /// </summary>
         public ITenancy Tenancy { get; set; } = null!;
 
@@ -311,7 +307,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Replace the Marten logging strategy
+        ///     Replace the Marten logging strategy
         /// </summary>
         /// <param name="logger"></param>
         public void Logger(IMartenLogger logger)
@@ -320,7 +316,7 @@ namespace Marten
         }
 
         /// <summary>
-        /// Replace the Marten retry policy
+        ///     Replace the Marten retry policy
         /// </summary>
         /// <param name="retryPolicy"></param>
         public void RetryPolicy(IRetryPolicy retryPolicy)
@@ -355,10 +351,8 @@ namespace Marten
             documentTypes.Each(RegisterDocumentType);
         }
 
-        private readonly IList<Type> _compiledQueryTypes = new List<Type>();
-
         /// <summary>
-        /// Register a compiled query type for the "generate ahead" code generation strategy
+        ///     Register a compiled query type for the "generate ahead" code generation strategy
         /// </summary>
         /// <param name="queryType"></param>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
@@ -366,7 +360,8 @@ namespace Marten
         {
             if (!queryType.Closes(typeof(ICompiledQuery<,>)))
             {
-                throw new ArgumentOutOfRangeException(nameof(queryType), $"{queryType.FullNameInCode()} is not a valid Marten compiled query type");
+                throw new ArgumentOutOfRangeException(nameof(queryType),
+                    $"{queryType.FullNameInCode()} is not a valid Marten compiled query type");
             }
 
             if (!queryType.HasDefaultConstructor())
@@ -375,7 +370,7 @@ namespace Marten
                     "Sorry, but Marten requires a no-arg constructor on compiled query types in order to opt into the 'code ahead' generation model.");
             }
 
-            _compiledQueryTypes.Fill(queryType);
+            CompiledQueryTypes.Fill(queryType);
         }
 
         internal void ApplyConfiguration()
@@ -421,44 +416,6 @@ namespace Marten
             _childFieldMappings = _childFieldMappings.AddOrUpdate(type, mapping);
 
             return mapping;
-        }
-
-        internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-            QuerySession session)
-        {
-            if (_querySources.TryFind(query.GetType(), out var source))
-            {
-                return source;
-            }
-
-            if (typeof(TOut).CanBeCastTo<Task>())
-            {
-                throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
-            }
-
-
-            var plan = QueryCompiler.BuildPlan(session, query, this);
-            var file = new CompiledQueryCodeFile(query.GetType(), this, plan);
-
-            var rules = CreateGenerationRules();
-            rules.ReferenceTypes(typeof(TDoc), typeof(TOut), query.GetType());
-
-            file.InitializeSynchronously(rules, this, null);
-
-            source = file.Build(rules);
-            _querySources = _querySources.AddOrUpdate(query.GetType(), source);
-
-            return source;
-        }
-
-        void IMigrationLogger.SchemaChange(string sql)
-        {
-            Logger().SchemaChange(sql);
-        }
-
-        void IMigrationLogger.OnFailure(DbCommand command, Exception ex)
-        {
-            throw new MartenSchemaException("All Configured Changes", command.CommandText, ex);
         }
 
         public class PoliciesExpression
@@ -513,8 +470,8 @@ namespace Marten
             }
 
             /// <summary>
-            /// Unless explicitly marked otherwise, all documents should
-            /// be soft-deleted
+            ///     Unless explicitly marked otherwise, all documents should
+            ///     be soft-deleted
             /// </summary>
             /// <returns></returns>
             public PoliciesExpression AllDocumentsSoftDeleted()
@@ -599,7 +556,12 @@ namespace Marten
         ///     Allows you to modify how the DDL for document tables and upsert functions is
         ///     written
         /// </summary>
-        public PostgresqlMigrator Migrator { get; } = new PostgresqlMigrator();
+        public PostgresqlMigrator Migrator { get; } = new();
+
+        /// <summary>
+        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
+        /// </summary>
+        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
 
         /// <summary>
         ///     Sets Enum values stored as either integers or strings for DuplicatedField.
@@ -610,11 +572,6 @@ namespace Marten
             set => _duplicatedFieldEnumStorage = value;
         }
 
-        /// <summary>
-        ///     Decides if `timestamp without time zone` database type should be used for `DateTime` DuplicatedField.
-        /// </summary>
-        public bool DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime { get; set; } = true;
-
         IReadOnlyHiloSettings IReadOnlyAdvancedOptions.HiloSequenceDefaults => HiloSequenceDefaults;
 
 
@@ -622,8 +579,5 @@ namespace Marten
         ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
         /// </summary>
         public bool DefaultTenantUsageEnabled { get; set; } = true;
-
-
-
     }
 }

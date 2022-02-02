@@ -1,4 +1,5 @@
 using System;
+using Marten.Testing.Documents;
 
 namespace Marten.Testing.Linq
 {
@@ -13,7 +14,7 @@ namespace Marten.Testing.Linq
         public string UserName { get; set; }
         public DateTime Birthdate { get; set; }
         public int Number { get; set; }
-        public Address Address { get; set; }
+        public SimpleAddress Address { get; set; }
 
         public string ToJson()
         {
@@ -27,5 +28,11 @@ namespace Marten.Testing.Linq
 ""Birthdate"": ""{Birthdate.ToString("s")}""
 }}".Replace("\r\n", "").Replace("\n", "");
         }
+    }
+
+    public class SimpleAddress
+    {
+        public string Street { get; set; }
+        public string HouseNumber { get; set; }
     }
 }

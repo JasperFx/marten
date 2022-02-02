@@ -32,7 +32,7 @@ var store = DocumentStore.For(_ =>
     _.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/StoreOptionsTests.cs#L38-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/StoreOptionsTests.cs#L39-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:

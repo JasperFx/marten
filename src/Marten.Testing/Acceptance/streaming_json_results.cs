@@ -9,11 +9,9 @@ using Marten.Linq;
 using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Internals;
 using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
-using Address = Marten.Testing.Linq.Address;
 
 namespace Marten.Testing.Acceptance
 {
@@ -174,21 +172,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 6,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -206,21 +204,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 6,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -236,21 +234,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -267,21 +265,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -297,14 +295,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user1,user2);
             await theSession.SaveChangesAsync();
@@ -320,21 +318,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -350,21 +348,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -381,14 +379,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user1,user2);
             await theSession.SaveChangesAsync();
@@ -405,21 +403,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -435,21 +433,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -465,21 +463,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -495,21 +493,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "0", Street = "rue de l'invisible"}
+                Address = new SimpleAddress {HouseNumber = "0", Street = "rue de l'invisible"}
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user0,user1,user2);
             await theSession.SaveChangesAsync();
@@ -525,14 +523,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user1,user2);
             await theSession.SaveChangesAsync();
@@ -548,14 +546,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address {HouseNumber = "12bis", Street = "rue de la martre"}
+                Address = new SimpleAddress {HouseNumber = "12bis", Street = "rue de la martre"}
             };
             theSession.Store(user1,user2);
             await theSession.SaveChangesAsync();
@@ -615,14 +613,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "0", Street = "rue de l'invisible" }
+                Address = new SimpleAddress { HouseNumber = "0", Street = "rue de l'invisible" }
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user0, user1);
             await theSession.SaveChangesAsync();
@@ -638,7 +636,7 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1);
             await theSession.SaveChangesAsync();
@@ -654,14 +652,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();
@@ -677,14 +675,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();
@@ -700,14 +698,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "0", Street = "rue de l'invisible" }
+                Address = new SimpleAddress { HouseNumber = "0", Street = "rue de l'invisible" }
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user0, user1);
             await theSession.SaveChangesAsync();
@@ -723,7 +721,7 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
 
             theSession.Store(user1);
@@ -740,14 +738,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();
@@ -764,14 +762,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();
@@ -788,14 +786,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "0", Street = "rue de l'invisible" }
+                Address = new SimpleAddress { HouseNumber = "0", Street = "rue de l'invisible" }
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user0, user1);
             await theSession.SaveChangesAsync();
@@ -811,7 +809,7 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1);
             await theSession.SaveChangesAsync();
@@ -827,21 +825,21 @@ namespace Marten.Testing.Acceptance
                 UserName = "Invisible man",
                 Number = 4,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "0", Street = "rue de l'invisible" }
+                Address = new SimpleAddress { HouseNumber = "0", Street = "rue de l'invisible" }
             };
             var user1 = new SimpleUser
             {
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 6,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user0, user1, user2);
             await theSession.SaveChangesAsync();
@@ -857,7 +855,7 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1);
             await theSession.SaveChangesAsync();
@@ -873,14 +871,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();
@@ -896,14 +894,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();
@@ -919,14 +917,14 @@ namespace Marten.Testing.Acceptance
                 UserName = "Mr Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1986, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             var user2 = new SimpleUser
             {
                 UserName = "Mrs Fouine",
                 Number = 5,
                 Birthdate = new DateTime(1987, 10, 4),
-                Address = new Address { HouseNumber = "12bis", Street = "rue de la martre" }
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
             };
             theSession.Store(user1, user2);
             await theSession.SaveChangesAsync();

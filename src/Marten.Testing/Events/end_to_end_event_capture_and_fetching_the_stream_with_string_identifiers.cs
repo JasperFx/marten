@@ -12,13 +12,8 @@ using Xunit;
 
 namespace Marten.Testing.Events
 {
-    [Collection("projections")]
     public class end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers : OneOffConfigurationsContext
     {
-        public end_to_end_event_capture_and_fetching_the_stream_with_string_identifiers() : base("projections")
-        {
-        }
-
         [Fact]
         public void capture_events_to_a_new_stream_and_fetch_the_events_back()
         {

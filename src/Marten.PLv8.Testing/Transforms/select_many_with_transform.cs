@@ -10,13 +10,8 @@ using Xunit;
 
 namespace Marten.PLv8.Testing.Transforms
 {
-    [Collection("transforms")]
     public class select_many_with_transform : OneOffConfigurationsContext
     {
-        public select_many_with_transform() : base("transforms")
-        {
-        }
-
 
         [Fact]
         public async Task project_select_many_with_javascript()

@@ -11,21 +11,21 @@ namespace Marten.Internal.CompiledQueries
     internal class CompiledQueryCodeFile: ICodeFile
     {
         private readonly Type _compiledQueryType;
-        private readonly StoreOptions _options;
+        private readonly DocumentStore _store;
         private readonly string _typeName;
         private Type _sourceType;
         private CompiledQueryPlan _plan;
         private CompiledQuerySourceBuilder _builder;
 
-        public CompiledQueryCodeFile(Type compiledQueryType, StoreOptions options, CompiledQueryPlan plan) : this(compiledQueryType, options)
+        public CompiledQueryCodeFile(Type compiledQueryType, DocumentStore store, CompiledQueryPlan plan) : this(compiledQueryType, store)
         {
             _plan = plan;
         }
 
-        public CompiledQueryCodeFile(Type compiledQueryType, StoreOptions options)
+        public CompiledQueryCodeFile(Type compiledQueryType, DocumentStore store)
         {
             _compiledQueryType = compiledQueryType;
-            _options = options;
+            _store = store;
 
             _typeName = compiledQueryType.ToSuffixedTypeName("CompiledQuerySource");
         }
@@ -34,11 +34,12 @@ namespace Marten.Internal.CompiledQueries
         {
             if (_plan == null)
             {
-                using var session = new LightweightSession(_options);
-                _plan = QueryCompiler.BuildPlan(session, _compiledQueryType, _options);
+                // TODO -- this needs to change next
+                using var session = (QuerySession)_store.LightweightSession();
+                _plan = QueryCompiler.BuildPlan(session, _compiledQueryType, _store.Options);
             }
 
-            _builder = new CompiledQuerySourceBuilder(_plan, _options);
+            _builder = new CompiledQuerySourceBuilder(_plan, _store.Options);
             _builder.AssembleTypes(assembly);
         }
 
