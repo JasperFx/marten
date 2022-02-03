@@ -198,7 +198,7 @@ public void get_distinct_string()
     queryable.ToList().Count.ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_distinct_Tests.cs#L53-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_strings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_distinct_Tests.cs#L52-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_strings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that the `Distinct()` keyword can be used with `Select()` transforms as well:
@@ -227,7 +227,7 @@ public void get_distinct_numbers()
     queryable.ToList().Count.ShouldBe(4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_distinct_Tests.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_distinct_Tests.cs#L29-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Modulo Queries
@@ -254,5 +254,5 @@ public void use_modulo()
         .ShouldHaveTheSameElementsAs(2, 4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_modulo_Tests.cs#L12-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_modulo_Tests.cs#L11-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

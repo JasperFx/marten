@@ -21,7 +21,7 @@ public void use_select_in_query_for_one_field()
         .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#L16-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_one_field_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_select_Tests.cs#L16-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_one_field_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When you wish to retrieve certain properties and transform them into another type:
@@ -50,7 +50,7 @@ public void use_select_with_multiple_fields_to_other_type()
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#L190-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_other_type_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_select_Tests.cs#L190-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_other_type_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When you wish to retrieve certain properties and transform them into an anonymous type:
@@ -74,7 +74,7 @@ public void use_select_to_transform_to_an_anonymous_type()
         .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#L150-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_anonymous_type_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_select_Tests.cs#L150-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_anonymous_type_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also allows you to run projection queries on deep (nested) properties:
@@ -96,7 +96,7 @@ public void transform_with_deep_properties()
     actual.ShouldHaveTheSameElementsAs(expected);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#L302-L317' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_properties_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_select_Tests.cs#L302-L317' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_properties_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Chaining other Linq Methods
@@ -121,7 +121,7 @@ public void use_select_to_another_type_with_first()
         ?.Name.ShouldBe("Bill");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_select_Tests.cs#L78-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_first_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_select_Tests.cs#L78-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_first_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## SelectMany()
@@ -162,7 +162,7 @@ public void can_do_simple_select_many_against_simple_array()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_select_many.cs#L20-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_can_do_simple_select_many_against_simple_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_select_many.cs#L21-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_can_do_simple_select_many_against_simple_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or against collections of child documents:
@@ -178,7 +178,7 @@ var results = query.Query<Target>()
     .Take(15)
     .ToList();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/query_with_select_many.cs#L394-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/query_with_select_many.cs#L395-L403' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A few notes on the `SelectMany()` usage and limitations:
