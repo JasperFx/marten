@@ -5,8 +5,6 @@ using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Testing.Documents;
 using Marten.Testing.Events.Aggregation;
-using Marten.Testing.Harness;
-using Marten.Testing.Linq.Compiled;
 using Microsoft.Extensions.DependencyInjection;
 using Oakton;
 using Shouldly;

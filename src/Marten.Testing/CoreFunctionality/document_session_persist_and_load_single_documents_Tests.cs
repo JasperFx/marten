@@ -1,25 +1,18 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Baseline;
-using Weasel.Postgresql;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Services;
-using Marten.Util;
-using Newtonsoft.Json;
-using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.CoreFunctionality
 {
-
-    public class document_session_persist_and_load_single_documents_Tests : IntegrationContext
+    public class document_session_persist_and_load_single_documents_Tests: IntegrationContext
     {
-        public document_session_persist_and_load_single_documents_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public document_session_persist_and_load_single_documents_Tests(DefaultStoreFixture fixture): base(fixture)
         {
         }
 
@@ -29,7 +22,7 @@ namespace Marten.Testing.CoreFunctionality
         {
             DocumentTracking = tracking;
 
-            var user = new User {FirstName = "Magic", LastName = "Johnson"};
+            var user = new User { FirstName = "Magic", LastName = "Johnson" };
 
 
             theSession.Store(user);
@@ -138,6 +131,7 @@ namespace Marten.Testing.CoreFunctionality
             DocumentTracking = tracking;
 
             #region sample_saving-changes-async
+
             var user1 = new User { FirstName = "Magic", LastName = "Johnson" };
             var user2 = new User { FirstName = "James", LastName = "Worthy" };
             var user3 = new User { FirstName = "Michael", LastName = "Cooper" };
@@ -151,16 +145,19 @@ namespace Marten.Testing.CoreFunctionality
             theSession.Store(user5);
 
             await theSession.SaveChangesAsync();
+
             #endregion
 
             var store = theStore;
 
             #region sample_load_by_id_array_async
+
             using (var session = store.OpenSession())
             {
                 var users = await session.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
                 users.Count().ShouldBe(3);
             }
+
             #endregion
         }
     }

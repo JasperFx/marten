@@ -10,6 +10,12 @@ using Xunit;
 
 namespace Marten.PLv8.Testing.Transforms
 {
+    public class TargetNumbers
+    {
+        public double one { get; set; }
+        public long two { get; set; }
+    }
+
     public class select_many_with_transform : OneOffConfigurationsContext
     {
 

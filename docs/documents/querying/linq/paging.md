@@ -20,7 +20,7 @@ var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
 var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
 var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/pagedlist_queryable_extension_Tests.cs#L70-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/pagedlist_queryable_extension_Tests.cs#L70-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_to_paged_list_async -->
@@ -31,7 +31,7 @@ var pageSize = 10;
 
 var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/pagedlist_queryable_extension_Tests.cs#L94-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/pagedlist_queryable_extension_Tests.cs#L94-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you want to create you own paged queries, just use the `Take()` and `Skip()` Linq operators in combination with `Stats()`
@@ -64,7 +64,7 @@ public void can_get_the_total_in_results()
     stats.TotalResults.ShouldBe(count);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/invoking_query_with_statistics.cs#L170-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-query-statistics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Linq/invoking_query_with_statistics.cs#L169-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-query-statistics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For the sake of completeness, the SQL generated in the operation above by Marten would be:

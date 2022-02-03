@@ -10,11 +10,9 @@ using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
-using Marten.Testing.Linq.Compiled;
 using Microsoft.Extensions.Hosting;
 using Oakton;
 using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace CommandLineRunner
 {

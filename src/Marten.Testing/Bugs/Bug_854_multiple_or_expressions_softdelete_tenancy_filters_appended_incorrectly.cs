@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -6,6 +7,13 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
+    public class SoftDeletedItem
+    {
+        public Guid Id { get; set; }
+        public int Number { get; set; }
+        public string Name { get; set; }
+    }
+
     public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: BugIntegrationContext
     {
         [Fact]
