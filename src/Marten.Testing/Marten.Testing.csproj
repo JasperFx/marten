@@ -62,6 +62,10 @@
         </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Services" />
+    </ItemGroup>
+
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

@@ -43,7 +43,7 @@ public class FindByFirstName : ICompiledQuery<User, User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L213-L223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L103-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -64,7 +64,7 @@ var justin = theSession.Query(new FindByFirstName {FirstName = "Justin"});
 
 var tamba = await theSession.QueryAsync(new FindByFirstName {FirstName = "Tamba"});
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L260-L264' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-compiled-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L150-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-compiled-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or to use it as part of a batched query, this syntax:
@@ -82,7 +82,7 @@ await batch.Execute();
 (await justin).Id.ShouldBe(user1.Id);
 (await tamba).Id.ShouldBe(user2.Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/BatchedQuerying/batched_querying_acceptance_Tests.cs#L228-L238' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L118-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## How Does It Work?
@@ -266,7 +266,7 @@ public class IssueByTitleWithAssignee : ICompiledQuery<Issue>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#L24-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L20-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this example, the query has an `Included` property which will receive the included Assignee / `User`. The 'resulting' included property can only be
@@ -325,7 +325,7 @@ public void compiled_include_to_list()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#L61-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_list' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L57-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that you could either have the list instantiated or at least make sure the property has a setter as well as a getter (we've got your back).
@@ -375,7 +375,7 @@ public void compiled_include_to_dictionary()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Services/Includes/end_to_end_query_with_compiled_include_Tests.cs#L103-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_dictionary' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Includes/end_to_end_query_with_compiled_include.cs#L99-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include_dictionary' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Paginated Results

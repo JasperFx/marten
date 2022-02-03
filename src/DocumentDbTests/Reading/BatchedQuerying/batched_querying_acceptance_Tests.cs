@@ -4,126 +4,16 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Linq;
-using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.Testing.Services.BatchedQuerying
+namespace DocumentDbTests.Reading.BatchedQuerying
 {
-
-
-    public class batched_querying_with_aggregate_functions : IntegrationContext
-    {
-        [Fact]
-        public async Task can_run_aggregate_functions()
-        {
-            theSession.Store(new IntDoc(1), new IntDoc(3), new IntDoc(5), new IntDoc(6));
-            await theSession.SaveChangesAsync();
-
-            var batch = theSession.CreateBatchQuery();
-
-            var min = batch.Query<IntDoc>().Min(x => x.Id);
-            var max = batch.Query<IntDoc>().Max(x => x.Id);
-            var sum = batch.Query<IntDoc>().Sum(x => x.Id);
-            var average = batch.Query<IntDoc>().Average(x => x.Id);
-
-            await batch.Execute();
-
-            (await min).ShouldBe(1);
-            (await max).ShouldBe(6);
-            (await sum).ShouldBe(1 + 3 + 5 + 6);
-            (await average).ShouldBe(3.75);
-        }
-
-        public batched_querying_with_aggregate_functions(DefaultStoreFixture fixture) : base(fixture)
-        {
-            DocumentTracking = DocumentTracking.IdentityOnly;
-        }
-    }
-
-    public class batched_querying_with_order_functions: IntegrationContext
-    {
-        [Fact]
-        public async Task orderby_thenby()
-        {
-            var batch = theSession.CreateBatchQuery();
-
-            var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
-
-            await batch.Execute();
-
-            var names = await toList;
-            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
-            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Smith", "Somerset", "Houston", "White", "Bean", "Brown");
-        }
-
-        [Fact]
-        public async Task orderbydescending_thenby()
-        {
-            var batch = theSession.CreateBatchQuery();
-
-            var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenBy(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
-
-            await batch.Execute();
-
-            var names = await toList;
-            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
-            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Bean", "Brown", "Houston", "White", "Smith", "Somerset");
-        }
-
-        [Fact]
-        public async Task orderby_thenbydescending()
-        {
-            var batch = theSession.CreateBatchQuery();
-
-            var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenByDescending(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
-
-            await batch.Execute();
-
-            var names = await toList;
-            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
-            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Somerset", "Smith", "White", "Houston", "Brown", "Bean");
-        }
-
-        [Fact]
-        public async Task orderbydescending_thenbydescending()
-        {
-            var batch = theSession.CreateBatchQuery();
-
-            var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenByDescending(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
-
-            await batch.Execute();
-
-            var names = await toList;
-            names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
-            names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Brown", "Bean", "White", "Houston", "Somerset", "Smith");
-        }
-
-        protected override Task fixtureSetup()
-        {
-            theSession.Store(
-                new User { FirstName = "Justin", LastName = "Houston" },
-                new User { FirstName = "Justin", LastName = "White" },
-                new User { FirstName = "Michael", LastName = "Bean" },
-                new User { FirstName = "Michael", LastName = "Brown" },
-                new User { FirstName = "Harry", LastName = "Smith" },
-                new User { FirstName = "Harry", LastName = "Somerset" }
-            );
-
-            return theSession.SaveChangesAsync();
-        }
-
-        public batched_querying_with_order_functions(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
-    }
-
-    // TODO -- I vote to move this to ST specs for perf reasons
     public class batched_querying_acceptance_Tests : IntegrationContext
     {
         private readonly ITestOutputHelper _output;

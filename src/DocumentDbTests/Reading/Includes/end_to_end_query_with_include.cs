@@ -1,27 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Baseline;
-using Marten.Linq;
-using Marten.Services;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Linq;
-using Marten.Util;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;
 
-namespace Marten.Testing.Services.Includes
+namespace DocumentDbTests.Reading.Includes
 {
-    public class end_to_end_query_with_include_Tests : IntegrationContext
+    public class end_to_end_query_with_include : IntegrationContext
     {
         private readonly ITestOutputHelper _output;
 
@@ -922,7 +915,7 @@ namespace Marten.Testing.Services.Includes
             }
         }
 
-        public end_to_end_query_with_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        public end_to_end_query_with_include(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
         {
             _output = output;
 
