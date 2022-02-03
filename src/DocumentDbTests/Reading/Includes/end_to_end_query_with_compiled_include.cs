@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
-using Baseline;
+using Marten;
 using Marten.Linq;
-using Marten.Services;
 using Marten.Testing.Harness;
-using Marten.Util;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;
 
-namespace Marten.Testing.Services.Includes
+namespace DocumentDbTests.Reading.Includes
 {
     public class end_to_end_query_with_compiled_include_Tests : IntegrationContext
     {
