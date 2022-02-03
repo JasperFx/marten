@@ -143,7 +143,7 @@ namespace Marten.Testing.Acceptance
             var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
             var index = table.IndexFor("mt_doc_target_idx_user_idflag");
 
-            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON acceptance.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
+            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_user_idflag ON computed_indexes.mt_doc_target USING btree (CAST(data ->> 'UserId' as uuid), CAST(data ->> 'Flag' as boolean));");
 
 
 
@@ -168,7 +168,7 @@ namespace Marten.Testing.Acceptance
             var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
             var index = table.IndexFor("mt_doc_target_idx_stringstring_field");
 
-            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON acceptance.mt_doc_target USING btree (upper((data ->> 'String'), upper((data ->> 'StringField'))));");
+            index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON computed_indexes.mt_doc_target USING btree (upper((data ->> 'String'), upper((data ->> 'StringField'))));");
 
 
         }

@@ -13,19 +13,17 @@ using Marten.Linq;
 
 namespace Marten
 {
-    public partial class DocumentStore : IGeneratesCode
+    internal class CompiledQueryCollection
     {
-        // TODO -- will become more later
         private ImHashMap<Type, ICompiledQuerySource> _querySources = ImHashMap<Type, ICompiledQuerySource>.Empty;
+        private readonly DocumentTracking _tracking;
+        private readonly DocumentStore _store;
 
-        IReadOnlyList<ICodeFile> IGeneratesCode.BuildFiles()
+        public CompiledQueryCollection(DocumentTracking tracking, DocumentStore store)
         {
-            // TODO -- will be more later
-
-            return Options.CompiledQueryTypes.Select(x => new CompiledQueryCodeFile(x, this)).ToList();
+            _tracking = tracking;
+            _store = store;
         }
-
-        string IGeneratesCode.ChildNamespace { get; } = "CompiledQueries";
 
         internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
             QuerySession session)
@@ -40,19 +38,59 @@ namespace Marten
                 throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
             }
 
+            var plan = QueryCompiler.BuildPlan(session, query, _store.Options);
+            var file = new CompiledQueryCodeFile(query.GetType(), _store, plan, _tracking);
 
-            var plan = QueryCompiler.BuildPlan(session, query, Options);
-            var file = new CompiledQueryCodeFile(query.GetType(), this, plan);
-
-            var rules = Options.CreateGenerationRules();
+            var rules = _store.Options.CreateGenerationRules();
             rules.ReferenceTypes(typeof(TDoc), typeof(TOut), query.GetType());
 
-            file.InitializeSynchronously(rules, this, null);
+            file.InitializeSynchronously(rules, _store, null);
 
             source = file.Build(rules);
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
             return source;
+        }
+    }
+
+    public partial class DocumentStore : IGeneratesCode
+    {
+        private readonly CompiledQueryCollection _lightweightCompiledQueries;
+        private readonly CompiledQueryCollection _identityMapCompiledQueries;
+        private readonly CompiledQueryCollection _dirtyTrackedCompiledQueries;
+        private readonly CompiledQueryCollection _queryOnlyCompiledQueries;
+
+        IReadOnlyList<ICodeFile> IGeneratesCode.BuildFiles()
+        {
+            using var lightweight = (QuerySession)LightweightSession();
+            using var identityMap = (QuerySession)OpenSession();
+            using var dirty = (QuerySession)DirtyTrackedSession();
+            using var readOnly = (QuerySession)QuerySession();
+
+            return Options.CompiledQueryTypes.SelectMany(x => new ICodeFile[]
+            {
+                new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(lightweight, x, Options), DocumentTracking.None),
+                new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(identityMap, x, Options),DocumentTracking.IdentityOnly),
+                new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(dirty, x, Options),DocumentTracking.DirtyTracking),
+                new CompiledQueryCodeFile(x, this, QueryCompiler.BuildPlan(readOnly, x, Options),DocumentTracking.QueryOnly)
+            }).ToList();
+        }
+
+        string IGeneratesCode.ChildNamespace { get; } = "CompiledQueries";
+
+        internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
+            QuerySession session)
+        {
+            return session.TrackingMode switch
+            {
+                DocumentTracking.None => _lightweightCompiledQueries.GetCompiledQuerySourceFor(query, session),
+                DocumentTracking.IdentityOnly => _identityMapCompiledQueries.GetCompiledQuerySourceFor(query, session),
+                DocumentTracking.DirtyTracking =>
+                    _dirtyTrackedCompiledQueries.GetCompiledQuerySourceFor(query, session),
+                DocumentTracking.QueryOnly => _queryOnlyCompiledQueries.GetCompiledQuerySourceFor(query, session),
+                _ => throw new ArgumentOutOfRangeException(nameof(session),
+                    "Unknown document tracking type " + session.TrackingMode)
+            };
         }
     }
 }

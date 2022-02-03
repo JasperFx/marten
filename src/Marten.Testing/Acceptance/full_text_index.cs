@@ -674,7 +674,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Book>(
-                    tableName: "fulltext.mt_doc_book",
+                    tableName: "full_text_index.mt_doc_book",
                     indexName: $"mt_doc_book_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"data"
@@ -690,7 +690,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<UserProfile>(
-                    tableName: "fulltext.mt_doc_userprofile",
+                    tableName: "full_text_index.mt_doc_userprofile",
                     indexName: $"mt_doc_userprofile_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(UserProfile.Information)}'))"
@@ -706,7 +706,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<UserDetails>(
-                    tableName: "fulltext.mt_doc_userdetails",
+                    tableName: "full_text_index.mt_doc_userdetails",
                     indexName: "mt_custom_user_details_fts_idx",
                     regConfig: "italian",
                     dataConfig: $"((data ->> '{nameof(UserDetails.Details)}'))"
@@ -722,7 +722,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<Article>(
-                    tableName: "fulltext.mt_doc_article",
+                    tableName: "full_text_index.mt_doc_article",
                     indexName: $"mt_doc_article_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(Article.Heading)}') || ' ' || (data ->> '{nameof(Article.Text)}'))"
@@ -741,7 +741,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
-                    tableName: "fulltext.mt_doc_blogpost",
+                    tableName: "full_text_index.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_idx_fts",
                     regConfig: FullTextIndex.DefaultRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.EnglishText)}'))"
@@ -749,7 +749,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
-                    tableName: "fulltext.mt_doc_blogpost",
+                    tableName: "full_text_index.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_{frenchRegConfig}_idx_fts",
                     regConfig: frenchRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.FrenchText)}'))"
@@ -757,7 +757,7 @@ namespace Marten.Testing.Acceptance
 
             theStore.Storage
                 .ShouldContainIndexDefinitionFor<BlogPost>(
-                    tableName: "fulltext.mt_doc_blogpost",
+                    tableName: "full_text_index.mt_doc_blogpost",
                     indexName: $"mt_doc_blogpost_{italianRegConfig}_idx_fts",
                     regConfig: italianRegConfig,
                     dataConfig: $"((data ->> '{nameof(BlogPost.ItalianText)}'))"
@@ -778,7 +778,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql());
+            Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -796,7 +796,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_company_idx_fts", patch.UpdateSql());
+            Assert.DoesNotContain("drop index full_text_index.mt_doc_company_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -814,7 +814,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await theStore.Schema.CreateMigrationAsync();
 
-            Assert.DoesNotContain("drop index fulltext.mt_doc_user_idx_fts", patch.UpdateSql());
+            Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -842,7 +842,7 @@ namespace Marten.Testing.Acceptance
             // Look at updates after that
             var patch = await store.Schema.CreateMigrationAsync();
 
-            Assert.Contains("drop index if exists fulltext.mt_doc_user_idx_fts", patch.UpdateSql());
+            Assert.Contains("drop index if exists full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
         }
 
         [PgVersionTargetedFact(MinimumVersion = "10.0")]
@@ -860,9 +860,9 @@ namespace Marten.Testing.Acceptance
             await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
             {
                 await conn.OpenAsync();
-                await conn.CreateCommand("DROP INDEX if exists fulltext.mt_doc_user_idx_fts")
+                await conn.CreateCommand("DROP INDEX if exists full_text_index.mt_doc_user_idx_fts")
                     .ExecuteNonQueryAsync();
-                await conn.CreateCommand("CREATE INDEX mt_doc_user_idx_fts ON fulltext.mt_doc_user USING gin (( to_tsvector('english', data) ))")
+                await conn.CreateCommand("CREATE INDEX mt_doc_user_idx_fts ON full_text_index.mt_doc_user USING gin (( to_tsvector('english', data) ))")
                     .ExecuteNonQueryAsync();
             }
 
@@ -883,7 +883,7 @@ namespace Marten.Testing.Acceptance
     {
         public static void ShouldContainIndexDefinitionFor<TDocument>(
             this StorageFeatures storage,
-            string tableName = "fulltext.mt_doc_target",
+            string tableName = "full_text_index.mt_doc_target",
             string indexName = "mt_doc_target_idx_fts",
             string regConfig = "english",
             string dataConfig = null)

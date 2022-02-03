@@ -22,13 +22,16 @@ namespace Marten.Internal.CompiledQueries
     {
         private readonly CompiledQueryPlan _plan;
         private readonly StoreOptions _storeOptions;
+        private readonly DocumentTracking _documentTracking;
         private readonly string _typeName;
 
-        public CompiledQuerySourceBuilder(CompiledQueryPlan plan, StoreOptions storeOptions)
+        public CompiledQuerySourceBuilder(CompiledQueryPlan plan, StoreOptions storeOptions,
+            DocumentTracking documentTracking)
         {
             _plan = plan;
             _storeOptions = storeOptions;
-            _typeName = plan.QueryType.ToSuffixedTypeName("CompiledQuerySource");
+            _documentTracking = documentTracking;
+            _typeName = documentTracking + plan.QueryType.ToSuffixedTypeName("CompiledQuerySource");
         }
 
         public (GeneratedType, GeneratedType) AssembleTypes(GeneratedAssembly assembly)
@@ -78,7 +81,7 @@ namespace Marten.Internal.CompiledQueries
 
                     var statistics = _plan.StatisticsMember == null ? "null" : $"query.{_plan.StatisticsMember.Name}";
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.DocumentStorage.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
+                        $"return new Marten.Generated.CompiledQueries.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
                     break;
 
                 case CompiledSourceType.Stateless:
@@ -86,7 +89,7 @@ namespace Marten.Internal.CompiledQueries
                     sourceType.AllInjectedFields.Add(inner);
 
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.DocumentStorage.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
+                        $"return new Marten.Generated.CompiledQueries.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
                     break;
 
                 case CompiledSourceType.Complex:
@@ -94,7 +97,7 @@ namespace Marten.Internal.CompiledQueries
                     sourceType.AllInjectedFields.Add(innerField2);
 
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.DocumentStorage.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
+                        $"return new Marten.Generated.CompiledQueries.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
                     break;
             }
 
@@ -104,7 +107,7 @@ namespace Marten.Internal.CompiledQueries
         private GeneratedType buildHandlerType(GeneratedAssembly assembly,
             CompiledSourceType handlerType, HardCodedParameters hardcoded)
         {
-            var queryTypeName = _plan.QueryType.ToSuffixedTypeName("CompiledQuery");
+            var queryTypeName =  _documentTracking + _plan.QueryType.ToSuffixedTypeName("CompiledQuery");
             var baseType = determineBaseType(handlerType);
             var type = assembly.AddType(queryTypeName, baseType);
 

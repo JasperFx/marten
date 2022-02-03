@@ -53,14 +53,6 @@ namespace Marten.Testing.Examples
 
         }
 
-        [Fact]
-        public void write_code()
-        {
-            var store = DocumentStore.For(ConnectionSource.ConnectionString);
-            var code = store.Advanced
-                .SourceCodeForCompiledQuery(typeof(OpenIssuesAssignedToUser));
-            _output.WriteLine(code);
-        }
     }
 
     public class FindByName: ICompiledListQuery<User>

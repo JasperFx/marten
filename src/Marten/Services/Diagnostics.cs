@@ -27,9 +27,9 @@ namespace Marten.Services
         /// <typeparam name="TReturn"></typeparam>
         /// <param name="query"></param>
         /// <returns></returns>
-        public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
+        public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, DocumentTracking trackingMode = DocumentTracking.QueryOnly)
         {
-            using var session = _store.QuerySession();
+            using var session = OpenQuerySession(trackingMode);
             var source = _store.GetCompiledQuerySourceFor(query, (QuerySession)session);
             var handler = source.Build(query, (IMartenSession) session);
 
@@ -40,6 +40,23 @@ namespace Marten.Services
             command.CommandText = builder.ToString();
 
             return command;
+        }
+
+        private QuerySession OpenQuerySession(DocumentTracking tracking)
+        {
+            switch (tracking)
+            {
+                case DocumentTracking.None:
+                    return (QuerySession)_store.LightweightSession();
+                case DocumentTracking.QueryOnly:
+                    return (QuerySession)_store.QuerySession();
+                case DocumentTracking.IdentityOnly:
+                    return (QuerySession)_store.OpenSession();
+                case DocumentTracking.DirtyTracking:
+                    return (QuerySession)_store.DirtyTrackedSession();
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(tracking));
         }
 
         /// <summary>

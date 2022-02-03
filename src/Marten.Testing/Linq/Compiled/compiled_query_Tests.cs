@@ -33,16 +33,25 @@ namespace Marten.Testing.Linq.Compiled
             var user4 = new User { FirstName = "Corey", UserName = "myusername", LastName = "Kaylor" };
             _user5 = new User { FirstName = "Jeremy", UserName = "shadetreedev", LastName = "Miller" };
 
-            theSession.Store(_user1, user2, user3, user4, _user5);
-            return theSession.SaveChangesAsync();
+            return theStore.BulkInsertDocumentsAsync(new[] { _user1, user2, user3, user4, _user5 });
         }
 
         [Fact]
         public void can_preview_command_for_a_compiled_query()
         {
-            var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" });
+            var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" }, DocumentTracking.IdentityOnly);
 
             cmd.CommandText.ShouldBe("select d.id, d.data from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
+
+            cmd.Parameters.First().Value.ShouldBe("hank");
+        }
+
+        [Fact]
+        public void can_preview_command_for_a_compiled_query_2()
+        {
+            var cmd = theStore.Diagnostics.PreviewCommand(new UserByUsername { UserName = "hank" }, DocumentTracking.QueryOnly);
+
+            cmd.CommandText.ShouldBe("select d.data from public.mt_doc_user as d where d.data ->> 'UserName' = :p0 LIMIT :p1");
 
             cmd.Parameters.First().Value.ShouldBe("hank");
         }
@@ -57,9 +66,12 @@ namespace Marten.Testing.Linq.Compiled
             SpecificationExtensions.ShouldNotBeNull(plan);
         }
 
-        [Fact]
-        public void a_single_item_compiled_query()
+        [Theory]
+        [SessionTypes]
+        public void a_single_item_compiled_query(DocumentTracking tracking)
         {
+            DocumentTracking = tracking;
+
             var user = theSession.Query(new UserByUsername { UserName = "myusername" });
             user.ShouldNotBeNull();
             var differentUser = theSession.Query(new UserByUsername { UserName = "jdm" });
@@ -172,7 +184,20 @@ namespace Marten.Testing.Linq.Compiled
         }
 
         [Fact]
-        public void a_list_query_with_fields_compiled()
+        public void a_list_query_with_fields_compiled_from_QuerySession()
+        {
+            using var query = theStore.QuerySession();
+
+            var users = query.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
+            users.Count.ShouldBe(2);
+            users.ElementAt(0).UserName.ShouldBe("jdm");
+            users.ElementAt(1).UserName.ShouldBe("shadetreedev");
+            var differentUsers = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" });
+            differentUsers.Count().ShouldBe(2);
+        }
+
+        [Fact]
+        public void a_list_query_with_fields_compiled_2()
         {
 
             var users = theSession.Query(new UsersByFirstNameWithFields { FirstName = "Jeremy" }).ToList();
@@ -446,15 +471,6 @@ namespace Marten.Testing.Linq.Compiled
 
         #endregion
 
-        [Fact]
-        public void can_preview_generated_source_code()
-        {
-            var sourceCode = theStore.Advanced
-                .SourceCodeForCompiledQuery(typeof(FindJsonUserByUsername));
-
-            // xunit output helper
-            _output.WriteLine(sourceCode);
-        }
     }
 
     public class UserProjectionToLoginPayload: ICompiledQuery<User, LoginPayload>

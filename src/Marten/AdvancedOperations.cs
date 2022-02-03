@@ -150,52 +150,6 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             return progress?.Sequence ?? 0;
         }
 
-
-        /// <summary>
-        /// Calculate the source code that would be generated to handle
-        /// a compiled query class
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public string SourceCodeForCompiledQuery(Type type)
-        {
-            if (!type.Closes(typeof(ICompiledQuery<,>)))
-            {
-                throw new ArgumentOutOfRangeException(nameof(type), "Not a compiled query type");
-            }
-
-            var assembly = new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace));
-            using var session = _store.QuerySession();
-            var plan = QueryCompiler.BuildPlan((QuerySession)session, type, _store.Options);
-            var builder = new CompiledQuerySourceBuilder(plan, _store.Options);
-            var (sourceType, handlerType) = builder.AssembleTypes(assembly);
-
-            return assembly.GenerateCode();
-
-        }
-
-        /// <summary>
-        /// Access the generated source code Marten is using for a given
-        /// document type
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public string SourceCodeForDocumentType(Type type)
-        {
-            throw new NotImplementedException("Broken, redo");
-        }
-
-        /// <summary>
-        /// See the code that Marten generates for the current configuration of the
-        /// Event Store
-        /// </summary>
-        /// <returns></returns>
-        public string SourceCodeForEventStore()
-        {
-            throw new NotImplementedException("Broken, redo");
-        }
-
-
         /// <summary>
         /// Marten's built in test support for event projections. Only use this in testing as
         /// it will delete existing event and projected aggregate data

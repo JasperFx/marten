@@ -12,6 +12,8 @@ namespace Marten.Internal.Sessions
         {
         }
 
+        internal override DocumentTracking TrackingMode => DocumentTracking.IdentityOnly;
+
         protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
         {
             return provider.IdentityMap;

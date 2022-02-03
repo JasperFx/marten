@@ -16,30 +16,21 @@ namespace Marten.Internal.CompiledQueries
         private Type _sourceType;
         private CompiledQueryPlan _plan;
         private CompiledQuerySourceBuilder _builder;
+        private readonly DocumentTracking _documentTracking;
 
-        public CompiledQueryCodeFile(Type compiledQueryType, DocumentStore store, CompiledQueryPlan plan) : this(compiledQueryType, store)
+        public CompiledQueryCodeFile(Type compiledQueryType, DocumentStore store, CompiledQueryPlan plan, DocumentTracking documentTracking)
         {
-            _plan = plan;
-        }
-
-        public CompiledQueryCodeFile(Type compiledQueryType, DocumentStore store)
-        {
+            _plan = plan ?? throw new ArgumentNullException(nameof(plan));
             _compiledQueryType = compiledQueryType;
             _store = store;
 
-            _typeName = compiledQueryType.ToSuffixedTypeName("CompiledQuerySource");
+            _typeName = documentTracking + compiledQueryType.ToSuffixedTypeName("CompiledQuerySource");
+            _documentTracking = documentTracking;
         }
 
         public void AssembleTypes(GeneratedAssembly assembly)
         {
-            if (_plan == null)
-            {
-                // TODO -- this needs to change next
-                using var session = (QuerySession)_store.LightweightSession();
-                _plan = QueryCompiler.BuildPlan(session, _compiledQueryType, _store.Options);
-            }
-
-            _builder = new CompiledQuerySourceBuilder(_plan, _store.Options);
+            _builder = new CompiledQuerySourceBuilder(_plan, _store.Options, _documentTracking);
             _builder.AssembleTypes(assembly);
         }
 

@@ -17,7 +17,7 @@ namespace Marten
         /// <typeparam name="TReturn"></typeparam>
         /// <param name="query"></param>
         /// <returns></returns>
-        NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query);
+        NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, DocumentTracking trackingMode = DocumentTracking.QueryOnly);
 
         /// <summary>
         /// Find the Postgresql EXPLAIN PLAN for this compiled query

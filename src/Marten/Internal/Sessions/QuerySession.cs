@@ -14,6 +14,8 @@ namespace Marten.Internal.Sessions
         protected readonly IRetryPolicy _retryPolicy;
         private readonly DocumentStore _store;
 
+        internal virtual DocumentTracking TrackingMode => DocumentTracking.QueryOnly;
+
         public ISerializer Serializer { get; }
 
         public StoreOptions Options { get; }
