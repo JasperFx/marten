@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Storage;
@@ -7,7 +8,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Metadata
 {
     public class metadata_marker_interfaces : IntegrationContext
     {

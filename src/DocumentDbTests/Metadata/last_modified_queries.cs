@@ -1,13 +1,14 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Linq.LastModified;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Metadata
 {
     public class last_modified_queries: IntegrationContext
     {

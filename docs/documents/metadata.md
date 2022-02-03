@@ -149,7 +149,7 @@ public class MyTrackedDoc: ITracked
     public string LastModifiedBy { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L162-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mytrackeddoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L163-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mytrackeddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If your document type implements this interface, Marten will automatically enable the correlation and causation tracking, and set values for correlation, causation, and the last modified data on documents anytime they are loaded or persisted by Marten.
@@ -166,7 +166,7 @@ public class MyVersionedDoc: IVersioned
     public Guid Version { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/metadata_marker_interfaces.cs#L120-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myversioneddoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L121-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myversioneddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Implementing `IVersioned` will automatically opt your document type into optimistic concurrency
@@ -215,7 +215,7 @@ public async Task sample_usage(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/last_modified_queries.cs#L15-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_last_modified_queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_last_modified_queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Indexing

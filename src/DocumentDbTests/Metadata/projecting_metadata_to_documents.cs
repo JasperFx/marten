@@ -1,13 +1,13 @@
-using Marten.Schema;
-using Marten.Linq.SoftDeletes;
-using Shouldly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
+using Marten.Schema;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Metadata
 {
     public class document_metadata_specs : OneOffConfigurationsContext
     {
@@ -18,12 +18,12 @@ namespace Marten.Testing.Acceptance
             StoreOptions(_ =>
             {
                 _.Schema.For<DocWithMeta>().Metadata(m =>
-                {
-                    m.Version.MapTo(x => x.Version);
-                    m.LastModified.MapTo(x => x.LastModified);
-                    m.IsSoftDeleted.MapTo(x => x.Deleted);
-                    m.SoftDeletedAt.MapTo(x => x.DeletedAt);
-                })
+                    {
+                        m.Version.MapTo(x => x.Version);
+                        m.LastModified.MapTo(x => x.LastModified);
+                        m.IsSoftDeleted.MapTo(x => x.Deleted);
+                        m.SoftDeletedAt.MapTo(x => x.DeletedAt);
+                    })
                     .SoftDeleted();
             });
 
@@ -73,7 +73,7 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 var loaded = session.Load<DocWithMeta>(doc.Id);
-                loaded.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
+                ShouldBeTestExtensions.ShouldNotBe(loaded.LastModified, DateTimeOffset.MinValue);
             }
         }
 
@@ -159,7 +159,7 @@ namespace Marten.Testing.Acceptance
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
                 userQuery.Description = "updated via a user SQL query";
-                userQuery.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
+                ShouldBeTestExtensions.ShouldNotBe(userQuery.LastModified, DateTimeOffset.MinValue);
                 lastMod = userQuery.LastModified;
                 session.Store(userQuery);
                 session.SaveChanges();
@@ -168,7 +168,7 @@ namespace Marten.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
-                userQuery.LastModified.ShouldBeGreaterThanOrEqualTo(lastMod);
+                ShouldBeTestExtensions.ShouldBeGreaterThanOrEqualTo(userQuery.LastModified, lastMod);
             }
         }
 
@@ -178,12 +178,12 @@ namespace Marten.Testing.Acceptance
             StoreOptions(c =>
             {
                 c.Schema.For<DocWithMeta>()
-                .MultiTenanted()
-                .Metadata(m =>
-                {
-                    m.TenantId.MapTo(x => x.TenantId);
-                    m.LastModified.MapTo(x => x.LastModified);
-                });
+                    .MultiTenanted()
+                    .Metadata(m =>
+                    {
+                        m.TenantId.MapTo(x => x.TenantId);
+                        m.LastModified.MapTo(x => x.LastModified);
+                    });
             });
 
             var doc = new DocWithMeta();
@@ -202,8 +202,8 @@ namespace Marten.Testing.Acceptance
                 session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
                 var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
-                loaded.TenantId.ShouldBe(tenant);
-                loaded.LastModified.ShouldNotBe(DateTimeOffset.MinValue); // it's pretty well impossible to compare timestamps
+                ShouldBeStringTestExtensions.ShouldBe(loaded.TenantId, tenant);
+                ShouldBeTestExtensions.ShouldNotBe(loaded.LastModified, DateTimeOffset.MinValue); // it's pretty well impossible to compare timestamps
             }
         }
 
@@ -230,8 +230,8 @@ namespace Marten.Testing.Acceptance
             session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
             var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
-            loaded.TenantId.ShouldBe(tenant);
-            (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
+            ShouldBeStringTestExtensions.ShouldBe(loaded.TenantId, tenant);
+            (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan<TimeSpan>(TimeSpan.FromMinutes(1));
         }
 
 
@@ -275,7 +275,7 @@ namespace Marten.Testing.Acceptance
 
                 var redDocs = session.Query<RedDocWithMeta>().ToList();
                 redDocs.Count.ShouldBe(1);
-                redDocs.First().DocType.ShouldBe("red_doc_with_meta");
+                ShouldBeStringTestExtensions.ShouldBe(redDocs.First().DocType, "red_doc_with_meta");
                 session.Delete(redDocs.First());
 
                 session.SaveChanges();
@@ -385,9 +385,11 @@ namespace Marten.Testing.Acceptance
         public DateTimeOffset LastModified { get; set; }
 
     }
+
+
 }
 
-namespace Marten.Testing.Acceptance.StructuralTypes
+namespace other
 {
     [StructuralTyped]
     public class DocWithMeta
@@ -397,3 +399,4 @@ namespace Marten.Testing.Acceptance.StructuralTypes
         public string DocType { get; private set; }
     }
 }
+
