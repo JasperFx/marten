@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Metadata
 {
 
     public class MetadataTarget
