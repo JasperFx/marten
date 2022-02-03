@@ -1,6 +1,4 @@
 using System.Linq;
-using Marten.Linq;
-using Marten.Linq.Filters;
 using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -8,7 +6,7 @@ using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Reading.Linq
 {
     public class matches_sql_queries: IntegrationContext
     {

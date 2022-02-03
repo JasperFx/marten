@@ -1,14 +1,11 @@
-using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Baseline;
 using Marten.Exceptions;
-using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Concurrency
 {
     public class optimistic_concurrency_with_subclass_hierarchies: IntegrationContext
     {
