@@ -1,15 +1,11 @@
-﻿using System;
-using System.Linq;
-using Baseline;
-using Marten.Internal.Operations;
+﻿using System.Linq;
+using CoreTests.Harness;
 using Marten.Linq.SqlGeneration;
-using Marten.Services;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public class UnitOfWork_PendingChanges_Functionality_Tests : IntegrationContext
     {
