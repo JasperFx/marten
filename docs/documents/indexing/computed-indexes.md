@@ -34,7 +34,7 @@ using (var session = store.QuerySession())
         .FirstOrDefault(x => x.UserName == "somebody");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/computed_indexes.cs#L20-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration shown above, Marten generates a database index in Postgresql:
@@ -55,7 +55,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Target>().Index(x => x.Inner.Color);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/computed_indexes.cs#L66-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L67-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The configuration above creates an index like this:
@@ -124,7 +124,7 @@ var store = DocumentStore.For(_ =>
                 // Toggle whether index value will be constrained unique in scope of whole document table (Global)
                 // or in a scope of a single tenant (PerTenant)
                 // Default is Global
-                x.TenancyScope = Schema.Indexing.Unique.TenancyScope.PerTenant;
+                x.TenancyScope = Marten.Schema.Indexing.Unique.TenancyScope.PerTenant;
 
                 // Partial index by supplying a condition
                 x.Predicate = "(data ->> 'Number')::int > 10";
@@ -139,5 +139,5 @@ var store = DocumentStore.For(_ =>
             });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/computed_indexes.cs#L79-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L80-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

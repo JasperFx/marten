@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1325_Any_with_contains_on_IList_of_string: IntegrationContext
+    public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContext
     {
         [Fact]
         public void can_do_any_with_contains_against_IList()
@@ -63,9 +63,6 @@ namespace Marten.Testing.Bugs
             }
         }
 
-        public Bug_1325_Any_with_contains_on_IList_of_string(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
     public class DocWithLists

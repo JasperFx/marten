@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Loading
 {
-    public class document_session_load_document: IntegrationContext
+    public class document_session_load_document: OneOffConfigurationsContext
     {
 
 
@@ -40,7 +40,7 @@ namespace DocumentDbTests.Reading.Loading
             userFromDb.Collection.ShouldHaveTheSameElementsAs(user.Collection);
         }
 
-        public document_session_load_document(DefaultStoreFixture fixture) : base(fixture)
+        public document_session_load_document()
         {
         }
     }

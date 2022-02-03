@@ -7,7 +7,7 @@ using Xunit;
 
 namespace DocumentDbTests.Metadata
 {
-    public class fetching_entity_metadata: IntegrationContext
+    public class fetching_entity_metadata: OneOffConfigurationsContext
     {
         [Fact]
         public void total_miss_returns_null()
@@ -78,10 +78,6 @@ namespace DocumentDbTests.Metadata
             metadata.DocumentType.ShouldBe("coffee_shop");
             metadata.Deleted.ShouldBeTrue();
             metadata.DeletedAt.ShouldNotBeNull();
-        }
-
-        public fetching_entity_metadata(DefaultStoreFixture fixture) : base(fixture)
-        {
         }
     }
 }

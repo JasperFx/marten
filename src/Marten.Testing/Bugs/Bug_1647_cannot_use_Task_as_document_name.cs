@@ -1,5 +1,3 @@
-using System;
-using Marten.Testing.Examples;
 using Marten.Testing.Harness;
 using Marten.Testing.Weird;
 using Xunit;

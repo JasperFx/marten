@@ -1,10 +1,10 @@
 using System;
 using Baseline.Dates;
+using EventSourcingTests.Aggregation;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Exceptions;
-using Marten.Testing.Events.Aggregation;
 using Npgsql;
 using Shouldly;
 using Xunit;

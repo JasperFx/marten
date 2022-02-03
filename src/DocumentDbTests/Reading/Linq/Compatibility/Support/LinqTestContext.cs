@@ -11,19 +11,25 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq.Compatibility.Support
 {
-        [Collection("linq")]
-    public abstract class LinqTestContext<TFixture, TSelf>: IClassFixture<TFixture> where TFixture : TargetSchemaFixture
+    [CollectionDefinition("linq")]
+    public class LinqCollection: ICollectionFixture<DefaultQueryFixture>
+    {
+
+    }
+
+    [Collection("linq")]
+    public abstract class LinqTestContext<TSelf>
     {
         protected static IList<LinqTestCase> testCases = new List<LinqTestCase>();
 
-        public TFixture Fixture { get; }
+        public DefaultQueryFixture Fixture { get; }
 
         static LinqTestContext()
         {
             _descriptions = readDescriptions();
         }
 
-        protected LinqTestContext(TFixture fixture)
+        protected LinqTestContext(DefaultQueryFixture fixture)
         {
             Fixture = fixture;
         }

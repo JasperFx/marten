@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq
 {
-    public class query_by_different_id_member : IntegrationContext
+    public class query_by_different_id_member : OneOffConfigurationsContext
     {
         private static readonly string[] listIds = {"qwe", "zxc"};
         private static readonly string[] listSystemIds = {"123", "456"};
@@ -54,9 +54,6 @@ namespace DocumentDbTests.Reading.Linq
             }
         }
 
-        public query_by_different_id_member(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
 

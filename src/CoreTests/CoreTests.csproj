@@ -82,8 +82,50 @@
         <Compile Include="..\Marten.Testing\Documents\UserWithInheritedId.cs">
           <Link>Documents\UserWithInheritedId.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\BugIntegrationContext.cs">
+          <Link>Harness\BugIntegrationContext.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
             <Link>ConnectionSource.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\DefaultStoreFixture.cs">
+          <Link>Harness\DefaultStoreFixture.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\DestructiveIntegrationContext.cs">
+          <Link>Harness\DestructiveIntegrationContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\IntegrationContext.cs">
+          <Link>Harness\IntegrationContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\OneOffConfigurationsContext.cs">
+          <Link>Harness\OneOffConfigurationsContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\PgVersionTargetedFact.cs">
+          <Link>PgVersionTargetedFact.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\SerializerTypeTargetedFact.cs">
+          <Link>SerializerTypeTargetedFact.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\SerializerTypeTargetedTheory.cs">
+          <Link>SerializerTypeTargetedTheory.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\SpecificationExtensions.cs">
+          <Link>SpecificationExtensions.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\StoreContext.cs">
+          <Link>Harness\StoreContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\StoreFixture.cs">
+          <Link>Harness\StoreFixture.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\TestOutputMartenLogger.cs">
+          <Link>Harness\TestOutputMartenLogger.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
+          <Link>Harness\TestsSettings.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
+          <Link>SchemaMigrationExtensions.cs</Link>
         </Compile>
     </ItemGroup>
 

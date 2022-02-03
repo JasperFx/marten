@@ -41,9 +41,9 @@ namespace DocumentDbTests.Reading.Linq
 
     #endregion
 
-    public class query_with_inheritance_and_aliases: IntegrationContext
+    public class query_with_inheritance_and_aliases: OneOffConfigurationsContext
     {
-        public query_with_inheritance_and_aliases(DefaultStoreFixture fixture): base(fixture)
+        public query_with_inheritance_and_aliases()
         {
             StoreOptions(_ =>
             {
@@ -81,11 +81,11 @@ namespace DocumentDbTests.Reading.Linq
         }
     }
 
-    public class query_with_inheritance: IntegrationContext
+    public class query_with_inheritance: OneOffConfigurationsContext
     {
         #region sample_add-subclass-hierarchy
 
-        public query_with_inheritance(DefaultStoreFixture fixture): base(fixture)
+        public query_with_inheritance()
         {
             StoreOptions(_ =>
             {

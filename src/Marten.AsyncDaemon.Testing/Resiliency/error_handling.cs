@@ -9,7 +9,6 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
-using Marten.Testing.Events.Projections;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;

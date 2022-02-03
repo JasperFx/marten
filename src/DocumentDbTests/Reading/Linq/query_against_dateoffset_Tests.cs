@@ -7,7 +7,7 @@ using Xunit;
 namespace DocumentDbTests.Reading.Linq
 {
 
-    public class query_against_dateoffset_Tests : IntegrationContext
+    public class query_against_dateoffset_Tests : OneOffConfigurationsContext
     {
         [Fact]
         public void query()
@@ -47,9 +47,6 @@ namespace DocumentDbTests.Reading.Linq
                 .ShouldHaveTheSameElementsAs(1, 3, 2);
         }
 
-        public query_against_dateoffset_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
 

@@ -56,7 +56,7 @@ public class Customer
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_schema_name_Tests.cs#L14-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L811-L820' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Type Aliases
@@ -73,7 +73,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().DocumentAlias("folks");
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_the_document_type_alias_Tests.cs#L23-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten-registry-to-override-document-alias' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/configuring_the_document_type_alias.cs#L25-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten-registry-to-override-document-alias' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 or by decorating the actual document class with an attribute:
@@ -87,5 +87,5 @@ public class Tractor
     public string id;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_the_document_type_alias_Tests.cs#L35-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-document-alias-attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/configuring_the_document_type_alias.cs#L37-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-document-alias-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

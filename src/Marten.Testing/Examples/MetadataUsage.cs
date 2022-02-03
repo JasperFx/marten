@@ -1,5 +1,4 @@
 using System;
-using Marten.Testing.Acceptance;
 using Marten.Testing.Documents;
 
 namespace Marten.Testing.Examples

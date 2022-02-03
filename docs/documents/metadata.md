@@ -52,7 +52,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L27-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_causation_fields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L26-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_causation_fields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, you relay the actual values for these fields at the document session level as shown below:
@@ -68,7 +68,7 @@ public void SettingMetadata(IDocumentSession session, string correlationId, stri
     session.CausationId = causationId;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L56-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_metadata_on_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L55-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_metadata_on_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Headers are a little bit different, with the ability to set individual header key/value pairs
@@ -82,7 +82,7 @@ public void SetHeader(IDocumentSession session, string sagaId)
     session.SetHeader("saga-id", sagaId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L68-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_header' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L67-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_header' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Tracking Metadata on Documents
@@ -106,7 +106,7 @@ public class DocWithMetadata
     public bool IsDeleted { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L77-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docwithmetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L76-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docwithmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To enable the Marten mapping to metadata values, use this syntax:
@@ -128,7 +128,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L94-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicitly_map_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L93-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicitly_map_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -188,7 +188,7 @@ var store = DocumentStore.For(opts =>
     opts.Policies.DisableInformationalFields();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L11-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disableallinformationalfields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disableallinformationalfields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying by Last Modified
@@ -215,7 +215,7 @@ public async Task sample_usage(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_last_modified_queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L34-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_last_modified_queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Indexing

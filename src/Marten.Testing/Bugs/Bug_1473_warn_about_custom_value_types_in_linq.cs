@@ -17,7 +17,10 @@ namespace Marten.Testing.Bugs
         {
             var ex = Should.Throw<BadLinqExpressionException>(() =>
             {
-                theSession.Query<MyClass>().Where(x => x.CustomObject == new CustomObject()).ToList();
+                theSession
+                    .Query<MyClass>()
+                    .Where(x => x.CustomObject == new CustomObject())
+                    .ToList();
             });
 
             ex.Message.ShouldBe("Marten cannot support custom value types in Linq expression. Please query on either simple properties of the value type, or register a custom IFieldSource for this value type.");

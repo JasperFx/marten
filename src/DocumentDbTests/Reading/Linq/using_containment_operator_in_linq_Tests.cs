@@ -8,9 +8,9 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq
 {
-    public class using_containment_operator_in_linq_Tests : IntegrationContext
+    public class using_containment_operator_in_linq_Tests : OneOffConfigurationsContext
     {
-        public using_containment_operator_in_linq_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public using_containment_operator_in_linq_Tests()
         {
             DocumentTracking = DocumentTracking.IdentityOnly;
             StoreOptions(_ => { _.Schema.For<Target>().GinIndexJsonData(); });
@@ -64,9 +64,9 @@ namespace DocumentDbTests.Reading.Linq
         }
     }
 
-    public class using_containment_operator_in_linq_with_camel_casing_Tests : IntegrationContext
+    public class using_containment_operator_in_linq_with_camel_casing_Tests : OneOffConfigurationsContext
     {
-        public using_containment_operator_in_linq_with_camel_casing_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public using_containment_operator_in_linq_with_camel_casing_Tests()
         {
             StoreOptions(_ =>
             {

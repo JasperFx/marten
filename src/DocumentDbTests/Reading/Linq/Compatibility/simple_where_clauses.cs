@@ -5,7 +5,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq.Compatibility
 {
-    public class simple_where_clauses: LinqTestContext<DefaultQueryFixture, simple_where_clauses>
+    public class simple_where_clauses: LinqTestContext<simple_where_clauses>
     {
         public simple_where_clauses(DefaultQueryFixture fixture) : base(fixture)
         {

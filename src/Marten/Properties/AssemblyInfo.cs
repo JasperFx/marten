@@ -7,3 +7,5 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("ConfigurationTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("CoreTests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DocumentDbTests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("EventSourcingTests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Examples")]

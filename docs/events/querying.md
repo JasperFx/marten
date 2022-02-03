@@ -33,7 +33,7 @@ public async Task load_event_stream_async(IDocumentSession session, Guid streamI
                 .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L103-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L103-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-fetch-stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The data returned is a list of `IEvent` objects, where each is a strongly-typed `Event<T>` object shown below:
@@ -221,7 +221,7 @@ public class fetching_stream_state: IntegrationContext
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/fetching_stream_state.cs#L84-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L84-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Furthermore, `StreamState` contains metadata for when the stream was created, `StreamState.Created`, and when the stream was last updated, `StreamState.LastTimestamp`.
@@ -251,7 +251,7 @@ public async Task load_a_single_event_asynchronously(IDocumentSession session, G
     var event2 = await session.Events.LoadAsync(eventId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L132-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_load-a-single-event' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L132-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_load-a-single-event' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying Directly Against Event Data
@@ -278,7 +278,7 @@ public void can_query_against_event_type()
         .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/query_against_event_documents_Tests.cs#L24-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/query_against_event_documents_Tests.cs#L22-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.
@@ -296,7 +296,7 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
         .ToList();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/query_against_event_documents_Tests.cs#L175-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/query_against_event_documents_Tests.cs#L148-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This mechanism will allow you to query by any property of the `IEvent` interface shown above.

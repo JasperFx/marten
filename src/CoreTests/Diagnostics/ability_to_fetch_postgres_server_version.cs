@@ -1,4 +1,4 @@
-using CoreTests.Harness;
+using Marten.Testing.Harness;
 using Xunit;
 
 namespace CoreTests.Diagnostics

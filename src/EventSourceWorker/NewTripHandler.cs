@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
-using Marten.Events;
-using Marten.Testing.Linq;
 
 namespace EventSourceWorker
 {

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using LamarCodeGeneration;
 using Marten;
 using Marten.AsyncDaemon.Testing;
@@ -8,7 +9,6 @@ using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Documents;
-using Marten.Testing.Events.Aggregation;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Oakton;

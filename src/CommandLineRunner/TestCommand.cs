@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.AsyncDaemon.Testing.TestingSupport;
 using Marten.Testing.Documents;
-using Marten.Testing.Events.Aggregation;
 using Microsoft.Extensions.DependencyInjection;
 using Oakton;
 using Shouldly;

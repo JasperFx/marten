@@ -3,15 +3,33 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Linq.LastModified;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace DocumentDbTests.Metadata
 {
     public class last_modified_queries: IntegrationContext
     {
+        [Fact]
+        public void creates_btree_index_for_mt_last_modified()
+        {
+            var mapping = DocumentMapping.For<Customer>();
+            var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == SchemaConstants.LastModifiedColumn);
+
+            indexDefinition.Method.ShouldBe(IndexMethod.btree);
+        }
+
+        #region sample_index-last-modified-via-attribute
+        [IndexedLastModified]
+        public class Customer
+        {
+        }
+        #endregion
+
 
         #region sample_last_modified_queries
 

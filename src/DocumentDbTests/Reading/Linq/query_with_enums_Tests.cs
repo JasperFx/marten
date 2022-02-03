@@ -8,7 +8,7 @@ using Xunit;
 namespace DocumentDbTests.Reading.Linq
 {
 
-    public class query_with_enums_Tests : IntegrationContext
+    public class query_with_enums_Tests : OneOffConfigurationsContext
     {
         [Fact]
         public void use_enum_values_with_jil_that_are_not_duplicated()
@@ -196,9 +196,5 @@ namespace DocumentDbTests.Reading.Linq
                 .ShouldHaveTheSameElementsAs(1, 4, 7);
         }
 
-
-        public query_with_enums_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

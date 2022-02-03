@@ -15,11 +15,11 @@ using Xunit.Abstractions;
 namespace DocumentDbTests.Reading.Linq
 {
 
-    public class query_against_child_collections_integrated_Tests : IntegrationContext
+    public class query_against_child_collections_integrated_Tests : OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
 
-        public query_against_child_collections_integrated_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        public query_against_child_collections_integrated_Tests(ITestOutputHelper output)
         {
             _output = output;
             StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
@@ -122,7 +122,7 @@ namespace DocumentDbTests.Reading.Linq
             buildUpTargetData();
 
             theSession.Query<Target>()
-                .Count(x => Enumerable.Any<Target>(x.Children, _ => _.Color == Colors.Green))
+                .Count(x => x.Children.Any<Target>(_ => _.Color == Colors.Green))
                 .ShouldBeGreaterThanOrEqualTo(1);
         }
 
