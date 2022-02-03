@@ -36,6 +36,30 @@ namespace Marten.Testing.Linq.Compiled
             return theStore.BulkInsertDocumentsAsync(new[] { _user1, user2, user3, user4, _user5 });
         }
 
+        #region sample_using_QueryStatistics_with_compiled_query
+
+        [Fact]
+        public async Task use_compiled_query_with_statistics()
+        {
+            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+            var targets = Target.GenerateRandomData(100).ToArray();
+            await theStore.BulkInsertAsync(targets);
+
+            var query = new TargetsInOrder
+            {
+                PageSize = 10,
+                Start = 20
+            };
+
+            var results = await theSession.QueryAsync(query);
+
+            // Verifying that the total record count in the database matching
+            // the query is determined when this is executed
+            query.Statistics.TotalResults.ShouldBe(100);
+        }
+
+        #endregion
+
         [Fact]
         public void can_preview_command_for_a_compiled_query()
         {
@@ -447,29 +471,7 @@ namespace Marten.Testing.Linq.Compiled
 
 
 
-        #region sample_using_QueryStatistics_with_compiled_query
 
-        [Fact]
-        public async Task use_compiled_query_with_statistics()
-        {
-            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
-            var targets = Target.GenerateRandomData(100).ToArray();
-            await theStore.BulkInsertAsync(targets);
-
-            var query = new TargetsInOrder
-            {
-                PageSize = 10,
-                Start = 20
-            };
-
-            var results = await theSession.QueryAsync(query);
-
-            // Verifying that the total record count in the database matching
-            // the query is determined when this is executed
-            query.Statistics.TotalResults.ShouldBe(100);
-        }
-
-        #endregion
 
     }
 
