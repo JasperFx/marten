@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CoreTests.Harness;
+using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public class Using_Local_DocumentSessionListener_Tests : OneOffConfigurationsContext
     {

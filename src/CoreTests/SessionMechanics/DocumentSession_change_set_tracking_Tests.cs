@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Linq;
-using Marten.Internal.Operations;
+using CoreTests.Harness;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public class DocumentSession_change_set_tracking_Tests : IntegrationContext
     {
@@ -42,7 +41,7 @@ namespace Marten.Testing.CoreFunctionality
             theSession.ShouldHaveDeleteFor(new Target{Id = id2});
 
 
-            SpecificationExtensions.ShouldBeNull(logger.LastCommit);
+            logger.LastCommit.ShouldBeNull();
             theSession.SaveChanges();
 
             // Everything should be cleared out

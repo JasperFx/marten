@@ -1,9 +1,11 @@
 ﻿using System;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public class DocumentSession_disposal_locking
     {
@@ -15,7 +17,7 @@ namespace Marten.Testing.CoreFunctionality
             var session = store.OpenSession();
             session.Dispose();
 
-            Exception<ObjectDisposedException>.ShouldBeThrownBy(() =>
+            Should.Throw<ObjectDisposedException>(() =>
             {
                 session.Load<User>(Guid.NewGuid());
             });

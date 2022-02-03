@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Exceptions;
@@ -128,11 +129,19 @@ namespace CoreTests
     {
         public NpgsqlCommand LastCommand;
         public Exception LastException;
+        public readonly IList<IChangeSet> Commits = new List<IChangeSet>();
+        public IChangeSet LastCommit { get; set; }
+
+        public IDocumentSession LastSession { get; set; }
 
         public int OnBeforeExecuted { get; set; }
 
         public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
         {
+            LastSession = session;
+            LastCommit = commit.Clone();
+
+            Commits.Add(commit);
         }
 
         public void OnBeforeExecute(NpgsqlCommand command)

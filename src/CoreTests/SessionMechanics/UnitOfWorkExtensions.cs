@@ -1,12 +1,11 @@
-using System;
 using System.Linq;
+using Marten;
 using Marten.Internal.Operations;
 using Marten.Linq.SqlGeneration;
-using Marten.Services;
 using Marten.Testing.Documents;
 using Shouldly;
 
-namespace Marten.Testing.CoreFunctionality
+namespace CoreTests.SessionMechanics
 {
     public static class UnitOfWorkExtensions
     {
