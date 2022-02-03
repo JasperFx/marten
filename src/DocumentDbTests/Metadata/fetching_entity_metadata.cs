@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using DocumentDbTests.Concurrency;
 using Marten.Testing.Harness;
-using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Metadata
 {
     public class fetching_entity_metadata: IntegrationContext
     {

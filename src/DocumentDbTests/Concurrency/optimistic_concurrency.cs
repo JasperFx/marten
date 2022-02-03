@@ -2,17 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
-using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace Marten.Testing.Acceptance
+namespace DocumentDbTests.Concurrency
 {
     public class optimistic_concurrency: IntegrationContext
     {
