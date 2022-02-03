@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading.BatchedQuerying
 {
-    public class batched_querying_acceptance_Tests : IntegrationContext
+    public class batched_querying_acceptance_Tests : OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
         private readonly Target target1 = Target.Random();
@@ -55,7 +55,7 @@ namespace DocumentDbTests.Reading.BatchedQuerying
             Role = "Master"
         };
 
-        public batched_querying_acceptance_Tests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        public batched_querying_acceptance_Tests(ITestOutputHelper output)
         {
             _output = output;
             DocumentTracking = DocumentTracking.IdentityOnly;

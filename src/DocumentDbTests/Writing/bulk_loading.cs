@@ -9,7 +9,7 @@ using Xunit;
 
 namespace DocumentDbTests.Writing
 {
-    public class bulk_loading_Tests : IntegrationContext
+    public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         [Fact]
         public void load_with_ignore_duplicates()
@@ -352,7 +352,7 @@ namespace DocumentDbTests.Writing
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
 
             var count = theSession.Connection.CreateCommand()
-                .Sql("select count(*) from mt_doc_target where mt_last_modified is null")
+                .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
                 .ExecuteScalar();
 
             count.ShouldBe(0);
@@ -372,8 +372,103 @@ namespace DocumentDbTests.Writing
             theSession.Load<Target>(data[0].Id).ShouldNotBeNull();
         }
 
-        public bulk_loading_Tests(DefaultStoreFixture fixture) : base(fixture)
+                [Fact]
+        public void store_multiple_types_of_documents_at_one_time()
         {
+            var user1 = new User();
+            var user2 = new User();
+            var issue1 = new Issue();
+            var issue2 = new Issue();
+            var company1 = new Company();
+            var company2 = new Company();
+
+            theSession.Store<object>(user1, user2, issue1, issue2, company1, company2);
+            theSession.SaveChanges();
+
+            using (var querying = theStore.QuerySession())
+            {
+                querying.Query<User>().Count().ShouldBe(2);
+                querying.Query<Issue>().Count().ShouldBe(2);
+                querying.Query<Company>().Count().ShouldBe(2);
+            }
+        }
+
+        [Fact]
+        public void store_multiple_types_of_documents_at_one_time_by_StoreObjects()
+        {
+            var user1 = new User();
+            var user2 = new User();
+            var issue1 = new Issue();
+            var issue2 = new Issue();
+            var company1 = new Company();
+            var company2 = new Company();
+
+            var documents = new object[] { user1, user2, issue1, issue2, company1, company2};
+            theSession.StoreObjects(documents);
+            theSession.SaveChanges();
+
+            using (var querying = theStore.QuerySession())
+            {
+                querying.Query<User>().Count().ShouldBe(2);
+                querying.Query<Issue>().Count().ShouldBe(2);
+                querying.Query<Company>().Count().ShouldBe(2);
+            }
+        }
+
+        [Fact]
+        public void can_bulk_insert_mixed_list_of_objects()
+        {
+            var user1 = new User();
+            var user2 = new User();
+            var issue1 = new Issue();
+            var issue2 = new Issue();
+            var company1 = new Company();
+            var company2 = new Company();
+
+            var documents = new object[] { user1, user2, issue1, issue2, company1, company2 };
+
+            theStore.BulkInsert(documents);
+
+            using (var querying = theStore.QuerySession())
+            {
+                querying.Query<User>().Count().ShouldBe(2);
+                querying.Query<Issue>().Count().ShouldBe(2);
+                querying.Query<Company>().Count().ShouldBe(2);
+            }
+        }
+
+        [Fact]
+        public void can_bulk_insert_mixed_list_of_objects_by_objects()
+        {
+            var user1 = new User();
+            var user2 = new User();
+            var issue1 = new Issue();
+            var issue2 = new Issue();
+            var company1 = new Company();
+            var company2 = new Company();
+
+            var documents = new object[] { user1, user2, issue1, issue2, company1, company2 };
+
+            theStore.BulkInsertDocuments(documents);
+
+            using (var querying = theStore.QuerySession())
+            {
+                querying.Query<User>().Count().ShouldBe(2);
+                querying.Query<Issue>().Count().ShouldBe(2);
+                querying.Query<Company>().Count().ShouldBe(2);
+            }
+        }
+
+
+        public Task InitializeAsync()
+        {
+            return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        }
+
+        public Task DisposeAsync()
+        {
+            Dispose();
+            return Task.CompletedTask;
         }
     }
 }

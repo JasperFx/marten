@@ -81,7 +81,7 @@ using (var session = theStore.OpenSession())
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Acceptance/document_inserts.cs#L81-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L80-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Bulk Loading

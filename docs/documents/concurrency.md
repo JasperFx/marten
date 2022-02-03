@@ -20,7 +20,7 @@ public class CoffeeShop: Shop
     public ICollection<Guid> Employees { get; set; } = new List<Guid>();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L640-L650' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L796-L806' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:
@@ -34,7 +34,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Issue>().UseOptimisticConcurrency(true);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L21-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-optimistic-concurrency' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L35-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-optimistic-concurrency' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Once optimistic concurrency is turned on for the CoffeeShop document type, a session will now only be able to update a document if the document has been unchanged in the database since it was initially loaded.
@@ -73,7 +73,7 @@ public void update_with_stale_version_standard()
             session1.SaveChanges();
         });
 
-        ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
+        ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
     }
     finally
     {
@@ -87,7 +87,7 @@ public void update_with_stale_version_standard()
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L129-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L127-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten is throwing an AggregateException for the entire batch of chang

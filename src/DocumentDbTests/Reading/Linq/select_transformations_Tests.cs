@@ -25,7 +25,7 @@ namespace DocumentDbTests.Reading.Linq
         }
     }
 
-    public class select_transformations_with_database_schema_Tests : IntegrationContext
+    public class select_transformations_with_database_schema_Tests : OneOffConfigurationsContext
     {
 
         [Fact]
@@ -40,8 +40,6 @@ namespace DocumentDbTests.Reading.Linq
             cmd.CommandText.ShouldBe("select d.data ->> 'UserName' from other_select.mt_doc_user as d");
         }
 
-        public select_transformations_with_database_schema_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+
     }
 }

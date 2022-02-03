@@ -7,7 +7,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq.Compatibility
 {
-    public class select_transforms: LinqTestContext<DefaultQueryFixture, select_transforms>
+    public class select_transforms: LinqTestContext<select_transforms>
     {
         public select_transforms(DefaultQueryFixture fixture) : base(fixture)
         {

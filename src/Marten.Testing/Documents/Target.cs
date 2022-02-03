@@ -174,4 +174,15 @@ namespace Marten.Testing.Documents
         public string Street { get; set; }
         public string HouseNumber { get; set; }
     }
+
+    public class Squad
+    {
+        public string Id { get; set; }
+    }
+
+    public class BasketballTeam : Squad { }
+
+    public class FootballTeam : Squad { }
+
+    public class BaseballTeam : Squad { }
 }

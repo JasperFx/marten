@@ -3,7 +3,7 @@ using DocumentDbTests.Reading.Linq.Compatibility.Support;
 
 namespace DocumentDbTests.Reading.Linq.Compatibility
 {
-    public class simple_order_by_clauses: LinqTestContext<DefaultQueryFixture, simple_order_by_clauses>
+    public class simple_order_by_clauses: LinqTestContext<simple_order_by_clauses>
     {
         public simple_order_by_clauses(DefaultQueryFixture fixture) : base(fixture)
         {

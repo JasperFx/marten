@@ -33,7 +33,7 @@ namespace martenbuild
 
             Target("ci", DependsOn("connection", "default"));
 
-            Target("default", DependsOn("mocha", "test", "storyteller"));
+            Target("default", DependsOn("mocha", "test"));
 
             Target("clean", () =>
                 EnsureDirectoriesDeleted("results", "artifacts"));
@@ -51,9 +51,6 @@ namespace martenbuild
             {
                 Run("dotnet",
                     $"build src/Marten.Testing/Marten.Testing.csproj --framework {_framework} --configuration {configuration}");
-
-                Run("dotnet",
-                    $"build src/Marten.Schema.Testing/Marten.Schema.Testing.csproj --framework {_framework} --configuration {configuration}");
             });
 
             Target("compile-noda-time", DependsOn("clean"), () =>
@@ -69,10 +66,6 @@ namespace martenbuild
             Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
                 RunTests("Marten.AspNetCore.Testing"));
 
-
-            Target("test-schema", () =>
-                RunTests("Marten.Schema.Testing"));
-
             Target("test-codegen", () =>
             {
                 var projectPath = "src/CommandLineRunner";
@@ -84,9 +77,9 @@ namespace martenbuild
             Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
             {
                 RunTests("Marten.Testing");
-                RunTests("ConfigurationTests");
                 RunTests("CoreTests");
                 RunTests("DocumentDbTests");
+                RunTests("EventSourcingTests");
             });
 
             Target("rebuild-database", () =>
@@ -100,13 +93,8 @@ namespace martenbuild
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
-            Target("test", DependsOn("test-marten", "test-noda-time", "test-schema", "test-plv8", "test-aspnetcore"));
+            Target("test", DependsOn("test-marten", "test-noda-time", "test-plv8", "test-aspnetcore"));
 
-            Target("storyteller", DependsOn("compile"), () =>
-                Run("dotnet", $"run --framework {_framework} --culture en-US", "src/Marten.Storyteller"));
-
-            Target("open_st", DependsOn("compile"), () =>
-                Run("dotnet", $"storyteller open --framework {_framework} --culture en-US", "src/Marten.Storyteller"));
 
             Target("install-mdsnippets", IgnoreIfFailed(() =>
                 Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
@@ -187,8 +175,9 @@ namespace martenbuild
 
                 var test_projects = new string[] {
                   "src/Marten.Testing",
-                  "src/Marten.Schema.Testing",
-                  "src/Marten.NodaTime.Testing"
+                  "src/Marten.NodaTime.Testing",
+                  "src/EventSourcingTests",
+                  "src/DocumentDbTests"
                 };
 
                 foreach (var item in test_projects)

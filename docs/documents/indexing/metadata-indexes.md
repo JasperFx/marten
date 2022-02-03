@@ -16,7 +16,7 @@ public class Customer
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_last_modified_index_Tests.cs#L19-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-last-modified-via-attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L26-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-last-modified-via-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface:
@@ -46,7 +46,7 @@ public class IndexedSoftDeletedDoc
     public Guid Id;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L44-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedwithindexattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedwithindexattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface:
@@ -59,7 +59,7 @@ DocumentStore.For(_ =>
     _.Schema.For<User>().SoftDeletedWithIndex();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/configuring_mapping_deletion_style.cs#L62-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft-delete-with-index-configuration-via-fi' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L63-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft-delete-with-index-configuration-via-fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This will help Postgres answer queries using `IsDeleted()`, `DeletedSince(DateTimeOffset)` and `DeletedBefore(DateTimeOffset)`

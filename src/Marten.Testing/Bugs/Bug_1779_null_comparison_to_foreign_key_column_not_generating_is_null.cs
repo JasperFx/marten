@@ -10,7 +10,7 @@ using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.Testing.Linq
+namespace Marten.Testing.Bugs
 {
     public class Bug_1779_null_comparison_to_foreign_key_column_not_generating_is_null : BugIntegrationContext
     {

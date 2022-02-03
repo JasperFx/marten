@@ -5,7 +5,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq.Compatibility
 {
-    public class take_and_skip: LinqTestContext<DefaultQueryFixture, take_and_skip>
+    public class take_and_skip: LinqTestContext<take_and_skip>
     {
         public take_and_skip(DefaultQueryFixture fixture) : base(fixture)
         {

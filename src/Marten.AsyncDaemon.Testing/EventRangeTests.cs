@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using EventSourcingTests.Aggregation;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Testing.Events.Aggregation;
 using Shouldly;
 using Xunit;
 

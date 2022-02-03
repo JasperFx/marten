@@ -2,12 +2,9 @@
 using System.Linq;
 using Baseline;
 using Marten.PLv8.Transforms;
-using Marten.Services;
 using Marten.Testing;
 using Marten.Testing.Documents;
-using Marten.Testing.Events;
 using Marten.Testing.Harness;
-using Npgsql;
 using NpgsqlTypes;
 using Shouldly;
 using Weasel.Postgresql;
@@ -121,6 +118,53 @@ namespace Marten.PLv8.Testing.Transforms
         }
 
     }
+
+
+    public class MembersJoined
+    {
+        public MembersJoined()
+        {
+        }
+
+        public MembersJoined(int day, string location, params string[] members)
+        {
+            Day = day;
+            Location = location;
+            Members = members;
+        }
+
+        public Guid QuestId { get; set; }
+
+        public int Day { get; set; }
+
+        public string Location { get; set; }
+
+        public string[] Members { get; set; }
+
+        public override string ToString()
+        {
+            return $"Members {Members.Join(", ")} joined at {Location} on Day {Day}";
+        }
+
+        protected bool Equals(MembersJoined other)
+        {
+            return QuestId.Equals(other.QuestId) && Day == other.Day && Location == other.Location && Members.SequenceEqual(other.Members);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((MembersJoined) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(QuestId, Day, Location, Members);
+        }
+    }
+
 
 
 }

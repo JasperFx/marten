@@ -7,7 +7,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq
 {
-    public class query_with_multiple_where_clauses_and_soft_deletes_configured : IntegrationContext
+    public class query_with_multiple_where_clauses_and_soft_deletes_configured : OneOffConfigurationsContext
     {
         [Fact]
         public async Task TestMultipleWhereClausesWithSoftDeleteConfigured()
@@ -61,9 +61,6 @@ namespace DocumentDbTests.Reading.Linq
             }
         }
 
-        public query_with_multiple_where_clauses_and_soft_deletes_configured(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 
     public class SoftDeletedItem

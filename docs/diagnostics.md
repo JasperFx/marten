@@ -85,7 +85,7 @@ using (var store = SeparateStore(_ =>
     _.Listeners.Add(stub2);
 }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionMechanics/Using_Global_DocumentSessionListener_Tests.cs#L23-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Global_DocumentSessionListener_Tests.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_registering-a-document-session-listener-1'></a>
 ```cs
 var stub1 = new StubDocumentSessionListener();
@@ -97,7 +97,7 @@ using (var store = SeparateStore(_ =>
     _.AutoCreateSchemaObjects = AutoCreate.All;
 }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionMechanics/Using_Local_DocumentSessionListener_Tests.cs#L21-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Local_DocumentSessionListener_Tests.cs#L20-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The listeners can be used to modify an `IDocumentSession` and its related unit of work just before persisting. Marten itself will be using this mechanism
@@ -229,7 +229,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/StoreOptionsTests.cs#L144-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L144-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -241,7 +241,7 @@ using var session = store.OpenSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/StoreOptionsTests.cs#L153-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L153-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -359,7 +359,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/archiving_events.cs#L230-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L226-L232' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan

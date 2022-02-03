@@ -96,7 +96,7 @@ namespace DocumentDbTests.Reading.Linq
     }
 
 
-    public class query_with_inner_query_with_global_CollectionStorage_WithArray: IntegrationContext
+    public class query_with_inner_query_with_global_CollectionStorage_WithArray: OneOffConfigurationsContext
     {
         private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]
         {
@@ -162,7 +162,7 @@ namespace DocumentDbTests.Reading.Linq
             }
         }
 
-        public query_with_inner_query_with_global_CollectionStorage_WithArray(DefaultStoreFixture fixture) : base(fixture)
+        public query_with_inner_query_with_global_CollectionStorage_WithArray()
         {
             var jsonNetSerializer = new JsonNetSerializer();
             jsonNetSerializer.CollectionStorage = CollectionStorage.AsArray;

@@ -40,9 +40,6 @@ namespace Marten.AsyncDaemon.Testing
             await daemon2.Tracker.WaitForHighWaterMark(NumberOfEvents);
 
             await daemon2.StartAllShards();
-
-
-
         }
 
         [Fact]

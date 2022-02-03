@@ -32,7 +32,7 @@ var store = DocumentStore.For(_ =>
     _.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/StoreOptionsTests.cs#L39-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L39-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
@@ -54,33 +54,19 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
 
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
 
-<!-- snippet: sample_override_schema_name -->
-<a id='snippet-sample_override_schema_name'></a>
+
 ```cs
-_.DatabaseSchemaName = "other";
+StoreOptions.DatabaseSchemaName = "other";
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L308-L312' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_name' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 The `Hilo` sequence table is always created in this document store database schema.
 
 If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:
 
-<!-- snippet: sample_override_schema_per_table -->
-<a id='snippet-sample_override_schema_per_table'></a>
 ```cs
-StoreOptions(_ =>
-{
-    _.Storage.MappingFor(typeof(User)).DatabaseSchemaName = "other";
-    _.Storage.MappingFor(typeof(Issue)).DatabaseSchemaName = "overriden";
-    _.Storage.MappingFor(typeof(Company));
-    _.Storage.MappingFor(typeof(IntDoc));
-
-    // this will tell marten to use the default 'public' schema name.
-    _.DatabaseSchemaName = SchemaConstants.DefaultSchema;
-});
+StoreOptions.Schema.For<User>().DatabaseSchemaName("other");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L153-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L154-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
@@ -118,7 +104,7 @@ storeOptions.CreateDatabasesForTenants(c =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/create_database_Tests.cs#L39-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/create_database_Tests.cs#L39-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.

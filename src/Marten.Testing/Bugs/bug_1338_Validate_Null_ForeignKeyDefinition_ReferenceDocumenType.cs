@@ -1,44 +1,57 @@
 using System.Collections.Generic;
 using System.Linq;
-using Marten.Storage;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Npgsql;
+using NSubstitute.ClearExtensions;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: BugIntegrationContext
+    public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: BugIntegrationContext, IAsyncLifetime
     {
         [Fact]
         public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
         {
-            CreateExternalTableForTesting();
-
-            StoreOptions(_ =>
-            {
-                _.Schema.For<ClassWithExternalForeignKey>()
-                    .ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
-            });
-
             theStore.Storage.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null).ShouldBeTrue();
         }
 
-        [Fact]
-        public void UnitOfWork_GetTypeDependencies_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
+        public async Task InitializeAsync()
         {
-            CreateExternalTableForTesting();
+            var table = new Table(new DbObjectName(SchemaName, "external_table"));
+            table.AddColumn("id", "integer").AsPrimaryKey();
+
+            using var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await dbConn.OpenAsync();
+            await table.Create(dbConn);
+
+            await dbConn.CreateCommand("insert into bugs.external_table (id) values (1)").ExecuteNonQueryAsync();
+
+            await dbConn.CloseAsync();
 
             StoreOptions(_ =>
             {
                 _.Schema.For<ClassWithExternalForeignKey>()
                     .ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
-            });
+            }, false);
 
+            await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ClassWithExternalForeignKey));
+
+        }
+
+        public Task DisposeAsync()
+        {
+            Dispose();
+            return Task.CompletedTask;
+        }
+
+        [Fact]
+        public async Task UnitOfWork_GetTypeDependencies_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
+        {
             // Inserting a new document will force a call to:
             //  UnitOfWork.ApplyChanges()
             //  UnitOfWork.buildChangeSet()
@@ -46,65 +59,11 @@ namespace Marten.Testing.Bugs
             //  UnitOfWork.shouldSort()
             //  and finally, the function that we want to regression test"
             //  UnitOfWork.GetTypeDependencies(ClassWithExternalForeignKey)
-            using (var session = theStore.LightweightSession())
-            {
-                session.Insert(new ClassWithExternalForeignKey {Id = 1, ForeignId = 1});
-                session.SaveChanges();
-            }
+            await using var session = theStore.LightweightSession();
+            session.Insert(new ClassWithExternalForeignKey {Id = 1, ForeignId = 1});
+            await session.SaveChangesAsync();
         }
 
-        private void CreateExternalTableForTesting()
-        {
-            var createSchema = $"create schema if not exists {SchemaName}";
-            var dropSql = $"DROP TABLE IF EXISTS {SchemaName}.external_table CASCADE;";
-            var createSql =
-                $@"CREATE TABLE {SchemaName}.external_table (
-    id integer,
-    CONSTRAINT ""external_table_pkey"" PRIMARY KEY (id)
-);";
-            var insertSql = $"INSERT INTO {SchemaName}.external_table VALUES (1);";
-
-            using (var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-            {
-                dbConn.Open();
-
-                dbConn.CreateCommand(createSchema).ExecuteNonQuery();
-
-                NpgsqlCommand cmd;
-                using (cmd = new NpgsqlCommand(dropSql, dbConn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                using (cmd = new NpgsqlCommand(createSql, dbConn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-
-                using (cmd = new NpgsqlCommand(insertSql, dbConn))
-                {
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
-    }
-
-    public class FakeExternalTable: FeatureSchemaBase
-    {
-        public FakeExternalTable(StoreOptions options): base("fake_external_table", options.Advanced.Migrator)
-        {
-            Options = options;
-        }
-
-        public StoreOptions Options { get; }
-
-        protected override IEnumerable<ISchemaObject> schemaObjects()
-        {
-            var table = new Table(new DbObjectName(Options.DatabaseSchemaName, "external_table"));
-            table.AddColumn("id", "integer");
-
-            yield return table;
-        }
     }
 
     public class ClassWithExternalForeignKey

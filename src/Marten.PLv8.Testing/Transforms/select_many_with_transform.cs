@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Marten.PLv8.Transforms;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Linq;
 using Shouldly;
 using Xunit;
 

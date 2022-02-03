@@ -130,7 +130,7 @@ public void demonstrate_eject()
         session.Eject(target2);
 
         // Now that 2nd document is no longer in the identity map
-        SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
+        session.Load<Target>(target2.Id).ShouldBeNull();
 
         session.SaveChanges();
     }
@@ -139,11 +139,11 @@ public void demonstrate_eject()
     {
         // The 2nd document was ejected before the session
         // was saved, so it was never persisted
-        SpecificationExtensions.ShouldBeNull(session.Load<Target>(target2.Id));
+        session.Load<Target>(target2.Id).ShouldBeNull();
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/ejecting_a_document.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L11-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Connection Handling
@@ -176,7 +176,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionMechanics/SessionOptionsTests.cs#L18-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/SessionOptionsTests.cs#L18-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics
@@ -233,7 +233,7 @@ public void samples(IDocumentStore store, NpgsqlConnection connection, NpgsqlTra
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionMechanics/ability_to_use_an_existing_connection_and_transaction.cs#L34-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ability_to_use_an_existing_connection_and_transaction.cs#L33-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_passing-in-existing-connections-and-transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Transaction Isolation Level

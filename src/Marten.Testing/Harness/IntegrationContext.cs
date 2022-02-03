@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -52,6 +53,26 @@ namespace Marten.Testing.Harness
         public IntegrationContext(DefaultStoreFixture fixture)
         {
             _fixture = fixture;
+        }
+
+        /// <summary>
+        /// Switch the DocumentStore between stream identity styles, but reuse
+        /// the underlying document store
+        /// </summary>
+        /// <param name="identity"></param>
+        internal void UseStreamIdentity(StreamIdentity identity)
+        {
+            _session = null;
+
+            if (identity == StreamIdentity.AsGuid)
+            {
+                _store = _fixture.Store;
+            }
+            else
+            {
+                _store = _fixture.StringStreamIdentifiers.Value;
+                _store.Advanced.Clean.DeleteAllEventData();
+            }
         }
 
 

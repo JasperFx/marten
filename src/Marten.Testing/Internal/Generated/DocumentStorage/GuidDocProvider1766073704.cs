@@ -4,7 +4,6 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Marten.Testing.Internals;
 using Npgsql;
 using System;
 using System.Collections.Generic;
@@ -81,8 +80,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpsertGuidDocOperation1766073704
-    
-    
+
+
     // START: InsertGuidDocOperation1766073704
     public class InsertGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<GuidDoc, System.Guid>
     {
@@ -150,8 +149,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InsertGuidDocOperation1766073704
-    
-    
+
+
     // START: UpdateGuidDocOperation1766073704
     public class UpdateGuidDocOperation1766073704 : Marten.Internal.Operations.StorageOperation<GuidDoc, System.Guid>
     {
@@ -219,8 +218,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpdateGuidDocOperation1766073704
-    
-    
+
+
     // START: QueryOnlyGuidDocSelector1766073704
     public class QueryOnlyGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
@@ -255,8 +254,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyGuidDocSelector1766073704
-    
-    
+
+
     // START: LightweightGuidDocSelector1766073704
     public class LightweightGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
@@ -295,8 +294,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightGuidDocSelector1766073704
-    
-    
+
+
     // START: IdentityMapGuidDocSelector1766073704
     public class IdentityMapGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
@@ -339,8 +338,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapGuidDocSelector1766073704
-    
-    
+
+
     // START: DirtyTrackingGuidDocSelector1766073704
     public class DirtyTrackingGuidDocSelector1766073704 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<GuidDoc, System.Guid>, Marten.Linq.Selectors.ISelector<GuidDoc>
     {
@@ -385,8 +384,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingGuidDocSelector1766073704
-    
-    
+
+
     // START: QueryOnlyGuidDocDocumentStorage1766073704
     public class QueryOnlyGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.QueryOnlyDocumentStorage<GuidDoc, System.Guid>
     {
@@ -414,7 +413,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -427,7 +426,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -440,7 +439,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -477,8 +476,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyGuidDocDocumentStorage1766073704
-    
-    
+
+
     // START: LightweightGuidDocDocumentStorage1766073704
     public class LightweightGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.LightweightDocumentStorage<GuidDoc, System.Guid>
     {
@@ -506,7 +505,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -519,7 +518,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -532,7 +531,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -569,8 +568,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightGuidDocDocumentStorage1766073704
-    
-    
+
+
     // START: IdentityMapGuidDocDocumentStorage1766073704
     public class IdentityMapGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.IdentityMapDocumentStorage<GuidDoc, System.Guid>
     {
@@ -598,7 +597,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -611,7 +610,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -624,7 +623,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -661,8 +660,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapGuidDocDocumentStorage1766073704
-    
-    
+
+
     // START: DirtyTrackingGuidDocDocumentStorage1766073704
     public class DirtyTrackingGuidDocDocumentStorage1766073704 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<GuidDoc, System.Guid>
     {
@@ -690,7 +689,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -703,7 +702,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -716,7 +715,7 @@ namespace Marten.Generated.DocumentStorage
                 document, Identity(document),
                 session.Versions.ForType<GuidDoc, System.Guid>(),
                 _document
-                
+
             );
         }
 
@@ -753,8 +752,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingGuidDocDocumentStorage1766073704
-    
-    
+
+
     // START: GuidDocBulkLoader1766073704
     public class GuidDocBulkLoader1766073704 : Marten.Internal.CodeGeneration.BulkLoader<GuidDoc, System.Guid>
     {
@@ -827,8 +826,8 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: GuidDocBulkLoader1766073704
-    
-    
+
+
     // START: GuidDocProvider1766073704
     public class GuidDocProvider1766073704 : Marten.Internal.Storage.DocumentProvider<GuidDoc>
     {
@@ -843,7 +842,7 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: GuidDocProvider1766073704
-    
-    
+
+
 }
 

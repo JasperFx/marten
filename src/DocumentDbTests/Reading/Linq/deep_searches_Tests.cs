@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq
 {
-    public class deep_searches_Tests: IntegrationContext
+    public class deep_searches_Tests: OneOffConfigurationsContext
     {
         [Fact]
         public void query_two_deep()
@@ -116,8 +116,5 @@ namespace DocumentDbTests.Reading.Linq
                 .ShouldHaveTheSameElementsAs("Lindsey", "Max");
         }
 
-        public deep_searches_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

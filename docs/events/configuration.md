@@ -15,7 +15,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.DatabaseSchemaName = "events";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StartStreamSamples.cs#L12-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_event_store_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L12-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_event_store_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Stream Identity
@@ -40,7 +40,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.StreamIdentity = StreamIdentity.AsString;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StartStreamSamples.cs#L26-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_stream_identity' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L26-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_stream_identity' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Stream identity effects the underlying database schema of the Event Store related tables. Namely, using string identities configures `stream_id` in the `mt_events` table to be `varchar`, whereas `uuid` would be used for GUIDs. The same applies to the `id` column in `mt_streams` table.

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Baseline;
+using System.Threading.Tasks;
+using Marten.Internal.CodeGeneration;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -11,6 +13,7 @@ namespace Marten.Testing.Harness
     /// Use this if the tests in a fixture are going to use
     /// all custom StoreOptions configuration
     /// </summary>
+    [Collection("OneOffs")]
     public abstract class OneOffConfigurationsContext : IDisposable
     {
         protected string _schemaName;
@@ -22,7 +25,7 @@ namespace Marten.Testing.Harness
 
         protected OneOffConfigurationsContext()
         {
-            _schemaName = GetType().Name;
+            _schemaName = GetType().Name.ToLower().Sanitize();
         }
 
         public IList<IDisposable> Disposables => _disposables;
@@ -70,7 +73,13 @@ namespace Marten.Testing.Harness
 
             if (cleanAll)
             {
-                _store.Advanced.Clean.CompletelyRemoveAll();
+                using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+                {
+                    conn.Open();
+                    conn.CreateCommand($"drop schema if exists {_schemaName} cascade")
+                        .ExecuteNonQuery();
+                }
+
             }
 
             _disposables.Add(_store);
@@ -97,13 +106,20 @@ namespace Marten.Testing.Harness
             {
                 if (_session == null)
                 {
-                    _session = theStore.LightweightSession();
+                    _session = theStore.OpenSession(DocumentTracking);
                     _disposables.Add(_session);
                 }
 
                 return _session;
             }
         }
+
+        /// <summary>
+        /// Sets the default DocumentTracking for this context. Default is "None"
+        /// </summary>
+        protected DocumentTracking DocumentTracking { get; set; } = DocumentTracking.None;
+
+
 
         public void Dispose()
         {
@@ -113,6 +129,10 @@ namespace Marten.Testing.Harness
             }
         }
 
-
+        protected async Task AppendEvent(Guid streamId, params object[] events)
+        {
+            theSession.Events.Append(streamId, events);
+            await theSession.SaveChangesAsync();
+        }
     }
 }

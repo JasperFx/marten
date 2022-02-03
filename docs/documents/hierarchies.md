@@ -98,7 +98,7 @@ first you will need to map the hierarchy like so:
 <!-- snippet: sample_add-subclass-hierarchy -->
 <a id='snippet-sample_add-subclass-hierarchy'></a>
 ```cs
-public query_with_inheritance(DefaultStoreFixture fixture): base(fixture)
+public query_with_inheritance()
 {
     StoreOptions(_ =>
     {

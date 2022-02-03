@@ -493,6 +493,18 @@ namespace Marten
                     x.Metadata.Version.Enabled = false;
                 });
             }
+
+            /// <summary>
+            /// All document types will have optimistic concurrency checks
+            /// </summary>
+            /// <returns></returns>
+            public PoliciesExpression AllDocumentsEnforceOptimisticConcurrency()
+            {
+                return ForAllDocuments(x =>
+                {
+                    x.UseOptimisticConcurrency = true;
+                });
+            }
         }
     }
 

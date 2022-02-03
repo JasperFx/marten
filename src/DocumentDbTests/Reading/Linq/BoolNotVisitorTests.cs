@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading.Linq
 {
-    public class BoolNotVisitorTests : IntegrationContext
+    public class BoolNotVisitorTests : OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
 
@@ -65,7 +65,7 @@ namespace DocumentDbTests.Reading.Linq
             }
         }
 
-        public BoolNotVisitorTests(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        public BoolNotVisitorTests(ITestOutputHelper output)
         {
             _output = output;
         }

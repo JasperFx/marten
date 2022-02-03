@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Marten.Testing.Bugs
 {
-    public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: IntegrationContext
+    public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugIntegrationContext
     {
         [Fact]
         public void with_flag_as_true()
@@ -128,8 +128,6 @@ namespace Marten.Testing.Bugs
             public int Take { get; set; } = 15;
         }
 
-        public Bug_605_unary_expressions_in_where_clause_of_compiled_query(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+
     }
 }

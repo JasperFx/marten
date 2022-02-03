@@ -63,7 +63,7 @@ public class QuestParty
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestParty.cs#L8-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 New in Marten 1.2 is the ability to use `Event<T>` metadata within your projections, assuming that you're not trying to run the aggregations inline.
@@ -118,7 +118,7 @@ public class QuestPartyWithEvents
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/QuestPartyWithEvents.cs#L9-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/QuestPartyWithEvents.cs#L8-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpartywithevents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Aggregates Across Multiple Streams
@@ -163,7 +163,7 @@ using (var session = store.OpenSession())
         .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/event_store_quickstart.cs#L81-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/event_store_quickstart.cs#L81-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with
@@ -193,7 +193,7 @@ var store = DocumentStore.For(_ =>
     _.Projections.SelfAggregate<QuestParty>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/Projections/inline_aggregation_by_stream_with_multiples.cs#L24-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_aggregation_by_stream_with_multiples.cs#L24-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 At this point, you would be able to query against `QuestParty` as just another document type.

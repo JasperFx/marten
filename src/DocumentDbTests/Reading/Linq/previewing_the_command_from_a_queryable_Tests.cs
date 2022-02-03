@@ -8,15 +8,15 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Linq
 {
-    public class previewing_the_command_from_a_queryable_Tests : IntegrationContext
+    public class previewing_the_command_from_a_queryable_Tests : OneOffConfigurationsContext
     {
-        protected virtual string ExpectedSchema => "public";
+
         [Fact]
         public void preview_basic_select_command()
         {
             var cmd = theSession.Query<Target>().ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe($"select d.id, d.data from {ExpectedSchema}.mt_doc_target as d");
+            cmd.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d");
             cmd.Parameters.Any().ShouldBeFalse();
         }
 
@@ -25,7 +25,7 @@ namespace DocumentDbTests.Reading.Linq
         {
             var cmd = theSession.Query<Target>().Where(x => x.Number == 3 && x.Double > 2).ToCommand(FetchType.FetchMany);
 
-            cmd.CommandText.ShouldBe($"select d.id, d.data from {ExpectedSchema}.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
+            cmd.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d where (CAST(d.data ->> 'Number' as integer) = :p0 and CAST(d.data ->> 'Double' as double precision) > :p1)");
 
             cmd.Parameters.Count.ShouldBe(2);
             cmd.Parameters["p0"].Value.ShouldBe(3);
@@ -37,7 +37,7 @@ namespace DocumentDbTests.Reading.Linq
         {
             var cmd = theSession.Query<Target>().ToCommand(FetchType.Count);
 
-            cmd.CommandText.ShouldBe($"select count(*) as number from {ExpectedSchema}.mt_doc_target as d");
+            cmd.CommandText.ShouldBe($"select count(*) as number from {SchemaName}.mt_doc_target as d");
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace DocumentDbTests.Reading.Linq
         {
             var cmd = theSession.Query<Target>().ToCommand(FetchType.Any);
 
-            cmd.CommandText.ShouldBe($"select TRUE as result from {ExpectedSchema}.mt_doc_target as d LIMIT :p0");
+            cmd.CommandText.ShouldBe($"select TRUE as result from {SchemaName}.mt_doc_target as d LIMIT :p0");
         }
 
         [Fact]
@@ -53,21 +53,17 @@ namespace DocumentDbTests.Reading.Linq
         {
             var cmd = theSession.Query<Target>().OrderBy(x => x.Double).ToCommand(FetchType.FetchOne);
 
-            cmd.CommandText.Trim().ShouldBe($"select d.id, d.data from {ExpectedSchema}.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
+            cmd.CommandText.Trim().ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d order by CAST(d.data ->> 'Double' as double precision) LIMIT :p0");
         }
 
-        public previewing_the_command_from_a_queryable_Tests(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
+
     }
 
     public class previewing_the_command_from_a_queryable_in_a_different_schema_Tests : previewing_the_command_from_a_queryable_Tests
     {
-        protected override string ExpectedSchema => "other";
-
-        public previewing_the_command_from_a_queryable_in_a_different_schema_Tests(DefaultStoreFixture fixture) : base(fixture)
+        public previewing_the_command_from_a_queryable_in_a_different_schema_Tests()
         {
-            StoreOptions(_ => _.DatabaseSchemaName = ExpectedSchema);
+            StoreOptions(_ => _.DatabaseSchemaName = SchemaName);
         }
     }
 }

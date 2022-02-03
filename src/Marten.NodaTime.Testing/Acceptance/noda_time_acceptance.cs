@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.NodaTime.Testing.TestData;
 using Marten.Services.Json;
-using Marten.Testing.Events.Projections;
 using Marten.Testing.Harness;
 using NodaTime;
 using Shouldly;
@@ -16,6 +15,31 @@ using Xunit;
 
 namespace Marten.NodaTime.Testing.Acceptance
 {
+    public class MonsterSlayed
+    {
+        public Guid QuestId { get; set; }
+        public string Name { get; set; }
+
+        protected bool Equals(MonsterSlayed other)
+        {
+            return QuestId.Equals(other.QuestId) && Name == other.Name;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((MonsterSlayed) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(QuestId, Name);
+        }
+    }
+
+
     public class noda_time_acceptance: OneOffConfigurationsContext
     {
         public void noda_time_default_setup()
@@ -98,7 +122,9 @@ namespace Marten.NodaTime.Testing.Acceptance
                 _.UseDefaultSerialization(serializerType: serializerType);
                 _.UseNodaTime();
                 _.DatabaseSchemaName = "NodaTime";
-            });
+            }, true);
+
+            theStore.Advanced.Clean.CompletelyRemoveAll();
 
             var dateTime = DateTime.UtcNow;
             var localDateTime = LocalDateTime.FromDateTime(dateTime);
@@ -172,7 +198,7 @@ namespace Marten.NodaTime.Testing.Acceptance
             {
                 _.UseDefaultSerialization(serializerType: serializerType);
                 _.UseNodaTime();
-            });
+            }, true);
 
             var startDate = DateTime.UtcNow;
 
@@ -187,7 +213,7 @@ namespace Marten.NodaTime.Testing.Acceptance
             using (var session = theStore.OpenSession())
             {
                 session.Events.Append(streamId, @event);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
                 var streamState = session.Events.FetchStreamState(streamId);
                 var streamState2 = await session.Events.FetchStreamStateAsync(streamId);

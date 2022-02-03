@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Marten.PLv8.Patching;
 using Marten.Schema;
 using Marten.Storage;
-using Marten.Testing.CoreFunctionality;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;

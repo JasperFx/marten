@@ -41,7 +41,7 @@ namespace OldEventNamespace
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_old_event_namespace' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L16-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_old_event_namespace' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 to:
@@ -64,7 +64,7 @@ namespace NewEventNamespace
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L31-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_namespace' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L33-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_namespace' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It's enough to register new event type as follows:
@@ -78,7 +78,7 @@ options.Events.AddEventTypes(new[] {typeof(NewEventNamespace.OrderStatusChanged)
 
 var store = new DocumentStore(options);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L70-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_namespace_migration_options' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L72-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_namespace_migration_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 After that Marten will automatically perform a matching based on the type name (that didn't change) - `order_status_changed`.
@@ -109,7 +109,7 @@ namespace NewEventNamespace
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L49-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_type_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L51-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_new_event_type_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 it's needed to register mapping using old event type name (`order_status_changed`) as follows:
@@ -124,7 +124,7 @@ options.EventGraph
 
 var store = new DocumentStore(options);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Events/SchemaChange/NamespaceChange.cs#L81-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_type_name_migration_options' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/SchemaChange/NamespaceChange.cs#L83-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_type_name_migration_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

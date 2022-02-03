@@ -8,7 +8,6 @@ using Marten.Events.Projections;
 using Marten.PLv8.Patching;
 using Marten.Storage;
 using Marten.Testing.Documents;
-using Marten.Testing.Events;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -938,4 +937,39 @@ namespace Marten.PLv8.Testing.Patching
             return expected;
         }
     }
+
+    public class Quest
+    {
+        public Guid Id { get; set; }
+    }
+
+    public class QuestStarted
+    {
+        public string Name { get; set; }
+        public Guid Id { get; set; }
+
+        public override string ToString()
+        {
+            return $"Quest {Name} started";
+        }
+
+        protected bool Equals(QuestStarted other)
+        {
+            return Name == other.Name && Id.Equals(other.Id);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((QuestStarted) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Id);
+        }
+    }
+
 }

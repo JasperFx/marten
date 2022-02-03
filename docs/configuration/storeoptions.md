@@ -94,7 +94,7 @@ public class OrganizationRegistry: MartenRegistry
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/MartenRegistryTests.cs#L136-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_organizationregistry' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L137-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_organizationregistry' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
@@ -109,7 +109,7 @@ var store = DocumentStore.For(opts =>
     opts.Connection(ConnectionSource.ConnectionString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/MartenRegistryTests.cs#L169-L178' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_including_a_custom_martenregistry' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L170-L179' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_including_a_custom_martenregistry' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that you could happily use multiple `MartenRegistry` classes in larger applications if that is advantageous.
@@ -131,7 +131,7 @@ var store = DocumentStore.For(opts =>
         .For<User>().Duplicate(x => x.UserName);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/MartenRegistryTests.cs#L151-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_storeoptions_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L152-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_storeoptions_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Attributes
@@ -202,7 +202,7 @@ public class ConfiguresItself
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentMappingTests.cs#L124-L135' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-generic' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L125-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-generic' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `DocumentMapping` type is the core configuration class representing how a document type is persisted or
@@ -226,7 +226,7 @@ public class ConfiguresItselfSpecifically
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentMappingTests.cs#L137-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-specifically' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L138-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-specifically' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Document Policies
@@ -328,5 +328,5 @@ var store = DocumentStore.For(_ =>
     _.NameDataLength = 100;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ConfigurationTests/StoreOptionsTests.cs#L284-L293' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L284-L293' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

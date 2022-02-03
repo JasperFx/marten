@@ -14,7 +14,7 @@ using User = Marten.Testing.Documents.User;
 
 namespace DocumentDbTests.Reading.Includes
 {
-    public class end_to_end_query_with_include : IntegrationContext
+    public class end_to_end_query_with_include : OneOffConfigurationsContext
     {
         private readonly ITestOutputHelper _output;
 
@@ -915,7 +915,7 @@ namespace DocumentDbTests.Reading.Includes
             }
         }
 
-        public end_to_end_query_with_include(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+        public end_to_end_query_with_include(ITestOutputHelper output) 
         {
             _output = output;
 

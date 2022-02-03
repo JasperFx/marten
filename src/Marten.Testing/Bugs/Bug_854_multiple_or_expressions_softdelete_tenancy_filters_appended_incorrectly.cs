@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Marten.Testing.Linq;
 using Xunit;
 
 namespace Marten.Testing.Bugs

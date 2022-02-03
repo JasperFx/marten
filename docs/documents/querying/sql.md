@@ -50,7 +50,7 @@ a document body, but in that case you will need to supply the full SQL statement
 var sumResults = await session
     .QueryAsync<int>("select count(*) from mt_doc_target");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/CoreFunctionality/query_by_sql.cs#L352-L357' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_full_sql' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L369-L374' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_full_sql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic rules for how Marten handles user-supplied queries are:
