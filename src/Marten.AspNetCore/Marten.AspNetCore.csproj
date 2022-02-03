@@ -4,7 +4,7 @@
         <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
 
         <Description>Helpers for Marten-backed AspNetCore applications</Description>
-        <VersionPrefix>5.0.0-alpha.4</VersionPrefix>
+        <VersionPrefix>5.0.0-alpha.5</VersionPrefix>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
