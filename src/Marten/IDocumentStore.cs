@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Events.Daemon;
 using Marten.Schema;
 using Marten.Services;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Weasel.Core.Migrations;
 using IsolationLevel = System.Data.IsolationLevel;
@@ -17,6 +18,11 @@ namespace Marten
     /// </summary>
     public interface IDocumentStore: IDisposable
     {
+        /// <summary>
+        /// Access to custom schema features in this Marten-enabled Postgresql database
+        /// </summary>
+        StorageFeatures Storage { get; }
+
         /// <summary>
         /// Information about the current configuration of this IDocumentStore
         /// </summary>
