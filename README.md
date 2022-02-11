@@ -73,9 +73,16 @@ See more in [Contribution Guidelines](CONTRIBUTING.md).
 
 ### xUnit.Net Specs
 
+The tests for the main library are now broken into three testing projects:
+
+1. `CoreTests` -- basic services like retries, schema management basics
+1. `DocumentDbTests` -- anything specific to the document database features of Marten
+1. `EventSourcingTests` -- anything specific to the event sourcing features of Marten
+
 To aid in integration testing, Marten.Testing has a couple reusable base classes that can be use
 to make integration testing through Postgresql be more efficient and allow the xUnit.Net tests
 to run in parallel for better throughput.
+
 
 - `IntegrationContext` -- if most of the tests will use an out of the box configuration
   (i.e., no fluent interface configuration of any document types), use this base type. Warning though,
@@ -84,12 +91,12 @@ to run in parallel for better throughput.
 - `DestructiveIntegrationContext` -- similar to `IntegrationContext`, but will wipe out any and all
   Postgresql schema objects in the `public` schema between tests. Use this sparingly please.
 - `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
-  the `DocumentStore`, this context is appropriate. You will need to decorate any of these
-  test classes with the `[Collection]` attribute, typically using the schema name for the
-  collection name as a convention
+  the `DocumentStore`, this context is appropriate. You do *not* need to decorate any of these
+  test classes with the `[Collection]` attribute. This fixture will use an isolated schema using the name of the 
+  test fixture type as the schema name
 - `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
   configuration, and this context is a specialization of `OneOffConfigurationsContext` for
-  the *bugs* schema.
+  the *bugs* schema. 
 - `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
   `DocumentStore` configuration. You'd need to write a subclass of `StoreFixture`, then use
   `StoreContext<YourNewStoreFixture>` as the base class to share the `DocumentStore` between
