@@ -54,7 +54,6 @@ All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
 
 By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
 
-
 ```cs
 StoreOptions.DatabaseSchemaName = "other";
 ```
