@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace CoreTests.Bugs
 {
     public class Bug_1296_sessionlistener_updates : IntegrationContext
     {

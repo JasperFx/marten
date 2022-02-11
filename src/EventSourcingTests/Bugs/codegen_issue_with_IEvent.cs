@@ -5,7 +5,7 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace EventSourcingTests.Bugs
 {
     public class CodeGenIEventIssue : BugIntegrationContext
     {
