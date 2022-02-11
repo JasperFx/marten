@@ -31,7 +31,7 @@ namespace martenbuild
 
             var disableTestParallelization = GetEnvironmentVariable("disable_test_parallelization");
 
-            Target("ci", DependsOn("connection", "default"));
+            Target("ci", DependsOn("setup-test-parallelization", "connection", "default"));
 
             Target("default", DependsOn("mocha", "test"));
 
@@ -177,7 +177,8 @@ namespace martenbuild
                   "src/Marten.Testing",
                   "src/Marten.NodaTime.Testing",
                   "src/EventSourcingTests",
-                  "src/DocumentDbTests"
+                  "src/DocumentDbTests",
+                  "src/CoreTests",
                 };
 
                 foreach (var item in test_projects)

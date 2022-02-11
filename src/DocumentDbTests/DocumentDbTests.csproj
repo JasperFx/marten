@@ -153,6 +153,24 @@
       <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
         <Link>SchemaMigrationExtensions.cs</Link>
       </Compile>
+      <Compile Remove="Internal\Generated\DocumentStorage\TaskProvider74835621.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\RouteDetailsProvider784762106.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\RootProvider493946136.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\MyClassProvider52903863.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\DocWithUintProvider1372666391.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\DocWithArraysProvider1391541541.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\CarProvider343829114.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameStartsWithCompiledQuerySource2116019653.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameEndsWithCompiledQuerySource628653900.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameContainsCompiledQuerySource893470325.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersCompiledQuerySource272805147.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersAndParamCompiledQuerySource813614947.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyFunnyTargetQueryCompiledQuerySource1643467126.cs" />
+      <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyCompiledNestedQueryCompiledQuerySource970855369.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Internal\Generated\EventStore" />
     </ItemGroup>
 
     <PropertyGroup>
