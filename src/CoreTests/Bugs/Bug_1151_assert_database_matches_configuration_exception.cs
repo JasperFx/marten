@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace CoreTests.Bugs
 {
     public class Bug_1151_assert_db_matches_config_exception: BugIntegrationContext
     {

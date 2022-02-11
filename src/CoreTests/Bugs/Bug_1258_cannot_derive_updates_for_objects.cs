@@ -9,7 +9,7 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace CoreTests.Bugs
 {
     public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
     {

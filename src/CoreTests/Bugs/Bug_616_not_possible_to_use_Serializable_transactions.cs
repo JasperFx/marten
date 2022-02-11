@@ -1,11 +1,10 @@
 using System;
 using System.Data;
 using Marten.Exceptions;
-using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace CoreTests.Bugs
 {
     public class Bug616Account
     {

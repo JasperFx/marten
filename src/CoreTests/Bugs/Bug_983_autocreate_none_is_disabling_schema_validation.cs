@@ -1,13 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Weasel.Core;
 using Weasel.Core.Migrations;
-using Weasel.Postgresql;
 using Xunit;
 
-namespace Marten.Testing.Bugs
+namespace CoreTests.Bugs
 {
     [Obsolete("This should be in Weasel")]
     public class Bug_983_autocreate_none_is_disabling_schema_validation: BugIntegrationContext
