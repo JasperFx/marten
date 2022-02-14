@@ -12,11 +12,16 @@ namespace Marten.Linq.Parsing
 {
     public class MartenQueryParser: IQueryParser
     {
-        public static readonly MartenQueryParser Flyweight = new MartenQueryParser(r => r.Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode)));
+        public static readonly MartenQueryParser Flyweight = new MartenQueryParser(r =>
+        {
+            r.Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode));
+            r.Register(OrderByComparerExpressionNode.SupportedMethods, typeof(OrderByComparerExpressionNode));
+        });
 
         public static readonly MartenQueryParser TransformQueryFlyweight = new MartenQueryParser(r =>
         {
             r.Register(IncludeExpressionNode.SupportedMethods, typeof(IncludeExpressionNode));
+            r.Register(OrderByComparerExpressionNode.SupportedMethods, typeof(OrderByComparerExpressionNode));
             r.Register(StatsExpressionNode.SupportedMethods, typeof(StatsExpressionNode));
         });
 
