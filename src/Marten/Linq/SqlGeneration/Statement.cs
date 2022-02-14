@@ -45,7 +45,7 @@ namespace Marten.Linq.SqlGeneration
         public string ExportName { get; protected set; }
 
 
-        public IList<Ordering> Orderings { get; protected set; } = new List<Ordering>();
+        public IList<(Ordering Ordering, bool CaseInsensitive)> Orderings { get; protected set; } = new List<(Ordering, bool)>();
         public IFieldMapping Fields { get; }
 
         public IList<WhereClause> WhereClauses { get; } = new List<WhereClause>();
@@ -93,13 +93,27 @@ namespace Marten.Linq.SqlGeneration
             }
         }
 
-        protected void writeOrderByFragment(CommandBuilder sql, Ordering clause)
+        protected void writeOrderByFragment(CommandBuilder sql, Ordering clause, bool caseInsensitive)
         {
             var field = Fields.FieldFor(clause.Expression);
             var locator = field.ToOrderExpression(clause.Expression);
+
+            if (caseInsensitive)
+            {
+                sql.Append("lower(");
+            }
+
             sql.Append(locator);
 
-            if (clause.OrderingDirection == OrderingDirection.Desc) sql.Append(" desc");
+            if (caseInsensitive)
+            {
+                sql.Append(")");
+            }
+
+            if (clause.OrderingDirection == OrderingDirection.Desc)
+            {
+                sql.Append(" desc");
+            }
         }
 
         protected virtual ISqlFragment buildWhereFragment(IMartenSession session)
@@ -119,11 +133,11 @@ namespace Marten.Linq.SqlGeneration
             if (Orderings.Any())
             {
                 sql.Append(" order by ");
-                writeOrderByFragment(sql, Orderings[0]);
+                writeOrderByFragment(sql, Orderings[0].Ordering, Orderings[0].CaseInsensitive);
                 for (var i = 1; i < Orderings.Count; i++)
                 {
                     sql.Append(", ");
-                    writeOrderByFragment(sql, Orderings[i]);
+                    writeOrderByFragment(sql, Orderings[i].Ordering, Orderings[i].CaseInsensitive);
                 }
             }
         }
