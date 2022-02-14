@@ -127,7 +127,7 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "insert into public.mt_events (data, type, mt_dotnet_type, seq_id, id, stream_id, version, timestamp, tenant_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        public const string SQL = "insert into end_to_end_event_capture_and_fetching_the_stream_tests.mt_events (data, type, mt_dotnet_type, seq_id, id, stream_id, version, timestamp, tenant_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 
         public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
@@ -169,7 +169,7 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "insert into public.mt_streams (id, type, version, tenant_id) values (?, ?, ?, ?)";
+        public const string SQL = "insert into end_to_end_event_capture_and_fetching_the_stream_tests.mt_streams (id, type, version, tenant_id) values (?, ?, ?, ?)";
 
 
         public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
@@ -201,7 +201,7 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "select id, version, type, timestamp, created as timestamp, is_archived from public.mt_streams where id = ?";
+        public const string SQL = "select id, version, type, timestamp, created as timestamp, is_archived from end_to_end_event_capture_and_fetching_the_stream_tests.mt_streams where id = ?";
 
 
         public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)
@@ -263,7 +263,7 @@ namespace Marten.Generated.EventStore
         }
 
 
-        public const string SQL = "update public.mt_streams set version = ? where id = ? and version = ?";
+        public const string SQL = "update end_to_end_event_capture_and_fetching_the_stream_tests.mt_streams set version = ? where id = ? and version = ?";
 
 
         public override void ConfigureCommand(Weasel.Postgresql.CommandBuilder builder, Marten.Internal.IMartenSession session)

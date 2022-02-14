@@ -9,7 +9,7 @@ Marten allows you to add Linq parsing and querying support for your own custom m
 Using the (admittedly contrived) example from Marten's tests, say that you want to reuse a small part of a `Where()` clause across
 different queries for "IsBlue()." First, write the method you want to be recognized by Marten's Linq support:
 
-<<< @/../src/Marten.Testing/Linq/using_custom_Linq_parser_plugins_Tests.cs#sample_IsBlue
+<<< @/../src/DocumentDbTests/Reading/Linq/using_custom_Linq_parser_plugins_Tests.cs#sample_IsBlue
 
 Note a couple things here:
 

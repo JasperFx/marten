@@ -45,14 +45,14 @@ namespace Marten.Generated.EventStore
         {
             switch (@event)
             {
-                case Marten.Events.IEvent<EventSourcingTests.MembersJoined> event_MembersJoined25:
-                    aggregate.Apply(event_MembersJoined25.Data);
+                case Marten.Events.IEvent<EventSourcingTests.MembersJoined> event_MembersJoined505:
+                    aggregate.Apply(event_MembersJoined505.Data);
                     break;
-                case Marten.Events.IEvent<EventSourcingTests.MembersDeparted> event_MembersDeparted26:
-                    aggregate.Apply(event_MembersDeparted26.Data);
+                case Marten.Events.IEvent<EventSourcingTests.MembersDeparted> event_MembersDeparted506:
+                    aggregate.Apply(event_MembersDeparted506.Data);
                     break;
-                case Marten.Events.IEvent<EventSourcingTests.QuestStarted> event_QuestStarted27:
-                    aggregate.Apply(event_QuestStarted27.Data);
+                case Marten.Events.IEvent<EventSourcingTests.QuestStarted> event_QuestStarted507:
+                    aggregate.Apply(event_QuestStarted507.Data);
                     break;
             }
 
@@ -90,17 +90,17 @@ namespace Marten.Generated.EventStore
         {
             switch (evt)
             {
-                case Marten.Events.IEvent<EventSourcingTests.MembersJoined> event_MembersJoined28:
+                case Marten.Events.IEvent<EventSourcingTests.MembersJoined> event_MembersJoined508:
                     aggregate ??= new EventSourcingTests.Projections.QuestParty();
-                    aggregate.Apply(event_MembersJoined28.Data);
+                    aggregate.Apply(event_MembersJoined508.Data);
                     return aggregate;
-                case Marten.Events.IEvent<EventSourcingTests.MembersDeparted> event_MembersDeparted29:
+                case Marten.Events.IEvent<EventSourcingTests.MembersDeparted> event_MembersDeparted509:
                     aggregate ??= new EventSourcingTests.Projections.QuestParty();
-                    aggregate.Apply(event_MembersDeparted29.Data);
+                    aggregate.Apply(event_MembersDeparted509.Data);
                     return aggregate;
-                case Marten.Events.IEvent<EventSourcingTests.QuestStarted> event_QuestStarted30:
+                case Marten.Events.IEvent<EventSourcingTests.QuestStarted> event_QuestStarted510:
                     aggregate ??= new EventSourcingTests.Projections.QuestParty();
-                    aggregate.Apply(event_QuestStarted30.Data);
+                    aggregate.Apply(event_QuestStarted510.Data);
                     return aggregate;
             }
 

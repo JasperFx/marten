@@ -30,7 +30,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public const string COMMAND_TEXT = "select public.mt_upsert_questparty(?, ?, ?, ?)";
+        public const string COMMAND_TEXT = "select end_to_end_event_capture_and_fetching_the_stream_tests.mt_upsert_questparty(?, ?, ?, ?)";
 
 
         public override string CommandText()
@@ -99,7 +99,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public const string COMMAND_TEXT = "select public.mt_insert_questparty(?, ?, ?, ?)";
+        public const string COMMAND_TEXT = "select end_to_end_event_capture_and_fetching_the_stream_tests.mt_insert_questparty(?, ?, ?, ?)";
 
 
         public override string CommandText()
@@ -168,7 +168,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public const string COMMAND_TEXT = "select public.mt_update_questparty(?, ?, ?, ?)";
+        public const string COMMAND_TEXT = "select end_to_end_event_capture_and_fetching_the_stream_tests.mt_update_questparty(?, ?, ?, ?)";
 
 
         public override string CommandText()
@@ -765,15 +765,15 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public const string MAIN_LOADER_SQL = "COPY public.mt_doc_questparty(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
+        public const string MAIN_LOADER_SQL = "COPY end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
 
         public const string TEMP_LOADER_SQL = "COPY mt_doc_questparty_temp(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
 
-        public const string COPY_NEW_DOCUMENTS_SQL = "insert into public.mt_doc_questparty (\"id\", \"data\", \"mt_version\", \"mt_dotnet_type\", mt_last_modified) (select mt_doc_questparty_temp.\"id\", mt_doc_questparty_temp.\"data\", mt_doc_questparty_temp.\"mt_version\", mt_doc_questparty_temp.\"mt_dotnet_type\", transaction_timestamp() from mt_doc_questparty_temp left join public.mt_doc_questparty on mt_doc_questparty_temp.id = public.mt_doc_questparty.id where public.mt_doc_questparty.id is null)";
+        public const string COPY_NEW_DOCUMENTS_SQL = "insert into end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty (\"id\", \"data\", \"mt_version\", \"mt_dotnet_type\", mt_last_modified) (select mt_doc_questparty_temp.\"id\", mt_doc_questparty_temp.\"data\", mt_doc_questparty_temp.\"mt_version\", mt_doc_questparty_temp.\"mt_dotnet_type\", transaction_timestamp() from mt_doc_questparty_temp left join end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty on mt_doc_questparty_temp.id = end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty.id where end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty.id is null)";
 
-        public const string OVERWRITE_SQL = "update public.mt_doc_questparty target SET data = source.data, mt_version = source.mt_version, mt_dotnet_type = source.mt_dotnet_type, mt_last_modified = transaction_timestamp() FROM mt_doc_questparty_temp source WHERE source.id = target.id";
+        public const string OVERWRITE_SQL = "update end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty target SET data = source.data, mt_version = source.mt_version, mt_dotnet_type = source.mt_dotnet_type, mt_last_modified = transaction_timestamp() FROM mt_doc_questparty_temp source WHERE source.id = target.id";
 
-        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_questparty_temp as select * from public.mt_doc_questparty limit 0";
+        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_questparty_temp as select * from end_to_end_event_capture_and_fetching_the_stream_tests.mt_doc_questparty limit 0";
 
 
         public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, EventSourcingTests.Projections.QuestParty document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Baseline;
 using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
+using LamarCodeGeneration;
 using Marten;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -656,6 +657,11 @@ namespace EventSourcingTests
                 _.Events.TenancyStyle = tenancyStyle;
 
                 _.AutoCreateSchemaObjects = AutoCreate.All;
+
+                if (tenancyStyle == TenancyStyle.Single)
+                {
+                    _.GeneratedCodeMode = TypeLoadMode.Auto;
+                }
 
                 if (tenancyStyle == TenancyStyle.Conjoined)
                     _.Policies.AllDocumentsAreMultiTenanted();
