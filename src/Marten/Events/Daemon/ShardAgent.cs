@@ -192,6 +192,9 @@ namespace Marten.Events.Daemon
                 logger.LogError(e, "Failure while trying to process updates for event range {EventRange} for projection shard '{ShardName}'", @group, Name);
             }, @group:@group).ConfigureAwait(false);
 
+            // This has failed, so get out of here.
+            if (batch == null) return;
+
             // Executing the SQL commands for the ProjectionUpdateBatch
             await TryAction(async () =>
             {
@@ -199,7 +202,7 @@ namespace Marten.Events.Daemon
 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    _logger.LogDebug("Shard '{ShardName}': Configured batch {Group}", Name, @group);
+                    _logger.LogDebug("Shard '{ShardName}': Successfully processed batch {Group}", Name, @group);
                 }
             }, _cancellation, (logger, e) =>
             {
@@ -387,7 +390,7 @@ namespace Marten.Events.Daemon
 
         public async Task ExecuteBatch(ProjectionUpdateBatch batch)
         {
-            if (_cancellation.IsCancellationRequested) return;
+            if (_cancellation.IsCancellationRequested || batch == null) return;
 
             await batch.Queue.Completion.ConfigureAwait(false);
 
