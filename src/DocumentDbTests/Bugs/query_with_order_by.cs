@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Linq;
-
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-
 using Shouldly;
-
 using Xunit;
 
-namespace Marten.Testing.Linq
+namespace DocumentDbTests.Bugs
 {
-    [ControlledQueryStoryteller]
     public class query_with_order_by: IntegrationContext
     {
         public query_with_order_by(DefaultStoreFixture fixture): base(fixture)
