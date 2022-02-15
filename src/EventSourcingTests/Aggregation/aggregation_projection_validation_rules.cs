@@ -123,6 +123,17 @@ namespace EventSourcingTests.Aggregation
         }
 
         [Fact]
+        public void blow_on_soft_deleted_aggregates()
+        {
+            var projection = new AllGood();
+            var options = new StoreOptions();
+            options.Schema.For<MyAggregate>().SoftDeleted();
+
+            var errors = projection.ValidateConfiguration(options).ToArray();
+            errors.Single().ShouldBe("AggregateProjection cannot support aggregates that are soft-deleted");
+        }
+
+        [Fact]
         public void find_bad_method_names_that_are_not_ignored()
         {
             var projection = new BadMethodName();

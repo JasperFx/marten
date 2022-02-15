@@ -374,6 +374,13 @@ namespace Marten.Events.Aggregation
                 yield return
                     $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(T).FullNameInCode()} ({mapping.TenancyStyle})";
             }
+
+            if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
+            {
+                yield return
+                    $"AggregateProjection cannot support aggregates that are soft-deleted";
+            }
+
         }
 
         protected virtual IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
