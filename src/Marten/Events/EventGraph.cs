@@ -140,7 +140,7 @@ namespace Marten.Events
         public string DatabaseSchemaName
         {
             get => _databaseSchemaName ?? Options.DatabaseSchemaName;
-            set => _databaseSchemaName = value;
+            set => _databaseSchemaName = value.ToLowerInvariant();
         }
 
         IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;

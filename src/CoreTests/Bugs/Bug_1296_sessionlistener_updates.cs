@@ -8,7 +8,7 @@ using Xunit;
 
 namespace CoreTests.Bugs
 {
-    public class Bug_1296_sessionlistener_updates : IntegrationContext
+    public class Bug_1296_sessionlistener_updates : BugIntegrationContext
     {
         [Fact]
         public void bug()
@@ -55,8 +55,5 @@ namespace CoreTests.Bugs
             }
         }
 
-        public Bug_1296_sessionlistener_updates(DefaultStoreFixture fixture) : base(fixture)
-        {
-        }
     }
 }

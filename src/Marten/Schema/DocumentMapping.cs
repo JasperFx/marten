@@ -151,7 +151,7 @@ namespace Marten.Schema
         public string DatabaseSchemaName
         {
             get { return _databaseSchemaName ?? StoreOptions.DatabaseSchemaName; }
-            set { _databaseSchemaName = value; }
+            set { _databaseSchemaName = value.ToLowerInvariant(); }
         }
 
         public EnumStorage EnumStorage
