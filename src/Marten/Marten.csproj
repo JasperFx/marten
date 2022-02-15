@@ -71,8 +71,5 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj" />
-    </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>
