@@ -658,11 +658,6 @@ namespace EventSourcingTests
 
                 _.AutoCreateSchemaObjects = AutoCreate.All;
 
-                if (tenancyStyle == TenancyStyle.Single)
-                {
-                    _.GeneratedCodeMode = TypeLoadMode.Auto;
-                }
-
                 if (tenancyStyle == TenancyStyle.Conjoined)
                     _.Policies.AllDocumentsAreMultiTenanted();
 

@@ -246,8 +246,6 @@ namespace Marten.Events.Projections
 
             assemblyGenerator.ReferenceAssembly(typeof(IMartenSession).Assembly);
             assemblyGenerator.Compile(_assembly);
-
-            Debug.WriteLine(_inlineType.SourceCode);
         }
 
         protected override IEnumerable<Type> publishedTypes()

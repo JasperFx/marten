@@ -18,7 +18,6 @@
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
-        <ProjectReference Include="..\TestingSupport\TestingSupport.csproj" />
     </ItemGroup>
 
 

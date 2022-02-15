@@ -288,7 +288,9 @@ namespace Marten.Events.Aggregation
             foreach (var slot in _shouldDeleteMethods.Methods)
                 eventHandlers[slot.EventType].Deletion = new ShouldDeleteFrame(slot);
 
-            var patternMatching = new EventTypePatternMatchFrame(eventHandlers.OfType<EventProcessingFrame>().ToList());
+            var frames = eventHandlers.OfType<EventProcessingFrame>().ToList();
+            frames.Sort(new EventTypeComparer());
+            var patternMatching = new EventTypePatternMatchFrame(frames);
             method.Frames.Add(patternMatching);
 
             method.Frames.Code("return aggregate;");
