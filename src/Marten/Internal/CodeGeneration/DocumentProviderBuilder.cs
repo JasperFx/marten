@@ -73,9 +73,11 @@ namespace Marten.Internal.CodeGeneration
 
             buildProviderType(assembly, queryOnly, bulkWriterType, lightweight, identityMap, dirtyTracking);
 
-            var types = new[] { typeof(IDocumentStorage<>), _mapping.DocumentType, };
+            var types = new[] { typeof(IDocumentStorage<>), _mapping.DocumentType, _mapping.IdStrategy.GetType()};
 
             assembly.Rules.ReferenceTypes(types);
+
+
         }
 
         public DocumentProvider<T> BuildProvider<T>()
