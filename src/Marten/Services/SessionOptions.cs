@@ -17,7 +17,7 @@ namespace Marten.Services
             Mode = mode;
             Tenant ??= TenantId != null ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
 
-            if (!store.Options.Advanced.DefaultTenantUsageEnabled &&
+            if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
                 Tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
             {
                 throw new DefaultTenantUsageDisabledException();
@@ -229,6 +229,13 @@ namespace Marten.Services
         public System.Transactions.Transaction? DotNetTransaction { get; private set; }
 
         internal bool OwnsConnection { get; set; } = true;
+
+        /// <summary>
+        /// If set to true, this allows a session to be opened for "any"
+        /// tenant even if the StoreOptions.Advanced.DefaultTenantUsageEnabled is disabled normally
+        /// in this DocumentStore
+        /// </summary>
+        public bool AllowAnyTenant { get; set; }
 
         public static SessionOptions ForConnection(NpgsqlConnection connection)
         {

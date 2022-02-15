@@ -21,7 +21,7 @@ namespace Marten.AsyncDaemon.Testing.Resiliency
         {
         }
 
-        [Fact]
+        [Fact] // Rerun this test if it fails. I think that thread exhaustion nails this sometimes
         public async Task projections_can_continue_with_handled_exceptions()
         {
             var projection1 = new SometimesFailingProjection("one");

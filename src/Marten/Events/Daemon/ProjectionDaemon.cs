@@ -256,7 +256,7 @@ namespace Marten.Events.Daemon
             var shards = source.AsyncProjectionShards(_store);
 
             // Teardown the current state
-            var session = _store.LightweightSession();
+            var session = _store.OpenSession(new SessionOptions{AllowAnyTenant = true, Tracking = DocumentTracking.None});
             await using (session.ConfigureAwait(false))
             {
                 source.Options.Teardown(session);
@@ -436,7 +436,9 @@ namespace Marten.Events.Daemon
             try
             {
                 var deadLetterEvent = new DeadLetterEvent(@event, shardName, exception);
-                var session = _store.LightweightSession();
+                var session =
+                    _store.OpenSession(new SessionOptions { AllowAnyTenant = true, Tracking = DocumentTracking.None });
+
                 await using (session.ConfigureAwait(false))
                 {
                     session.Store(deadLetterEvent);

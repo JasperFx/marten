@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Baseline.Dates;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
@@ -25,7 +26,7 @@ namespace Marten.Events.Daemon
             _store = store;
             _filters = filters;
 
-            using var session = (QuerySession)_store.QuerySession();
+            using var session = (QuerySession)_store.QuerySession(new SessionOptions{AllowAnyTenant = true});
             _storage = session.EventStorage();
             _statement = new EventStatement(_storage) {Filters = _filters};
 
@@ -44,7 +45,7 @@ namespace Marten.Events.Daemon
 
         public async Task Load(ShardName projectionShardName, EventRange range, CancellationToken token)
         {
-            using var session = (QuerySession)_store.QuerySession();
+            using var session = (QuerySession)_store.QuerySession(new SessionOptions{AllowAnyTenant = true});
 
             // There's an assumption here that this method is only called sequentially
             // and never at the same time on the same instance

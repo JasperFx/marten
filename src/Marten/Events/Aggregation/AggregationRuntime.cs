@@ -9,6 +9,7 @@ using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 #nullable enable
@@ -148,12 +149,8 @@ namespace Marten.Events.Aggregation
 
         public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, EventRange range, CancellationToken cancellationToken)
         {
-            IReadOnlyList<TenantSliceGroup<TDoc, TId>> groups;
-
-            using (var session = store.QuerySession())
-            {
-                groups = await Slicer.SliceAsyncEvents(session, range.Events, store.Tenancy).ConfigureAwait(false);
-            }
+            await using var session = store.QuerySession(new SessionOptions{AllowAnyTenant = true});
+            var groups = await Slicer.SliceAsyncEvents(session, range.Events, store.Tenancy).ConfigureAwait(false);
 
             return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
         }

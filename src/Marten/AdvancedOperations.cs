@@ -14,6 +14,7 @@ using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Services;
 using Weasel.Core;
 using Weasel.Postgresql;
 
@@ -142,7 +143,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
             var handler = new OneResultHandler<ShardState>(statement,
                 new ShardStateSelector(), true, false);
 
-            var session = (QuerySession)_store.QuerySession();
+            var session = (QuerySession)_store.QuerySession(new SessionOptions{AllowAnyTenant = true});
             await using var _ = session.ConfigureAwait(false);
 
             var progress = await session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);

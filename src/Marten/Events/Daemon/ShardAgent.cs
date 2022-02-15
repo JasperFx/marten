@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
+using Marten.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
@@ -16,6 +17,11 @@ namespace Marten.Events.Daemon
     /// </summary>
     internal class ShardAgent : IShardAgent, IObserver<ShardState>
     {
+        private static readonly SessionOptions DefaultSessionOptions = new SessionOptions
+        {
+            AllowAnyTenant = true, Tracking = DocumentTracking.None
+        };
+
         private readonly DocumentStore _store;
         private readonly AsyncProjectionShard _projectionShard;
         private readonly ILogger _logger;
@@ -384,7 +390,7 @@ namespace Marten.Events.Daemon
 
         public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
         {
-            var session = _store.LightweightSession();
+            var session = _store.OpenSession(DefaultSessionOptions);
             return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, group.Range, group.Cancellation);
         }
 
@@ -396,7 +402,7 @@ namespace Marten.Events.Daemon
 
             if (_cancellation.IsCancellationRequested) return;
 
-            var session = (DocumentSessionBase)_store.LightweightSession();
+            var session = (DocumentSessionBase)_store.OpenSession(DefaultSessionOptions);
             await using (session.ConfigureAwait(false))
             {
                 try
