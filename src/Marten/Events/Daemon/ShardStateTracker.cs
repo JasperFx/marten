@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using Baseline.Dates;
+using Baseline.ImTools;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
@@ -10,11 +11,13 @@ namespace Marten.Events.Daemon
     /// <summary>
     /// Observable for progress and action updates for all running asynchronous projection shards
     /// </summary>
-    public class ShardStateTracker: IObservable<ShardState>, IDisposable
+    public class ShardStateTracker: IObservable<ShardState>, IObserver<ShardState>, IDisposable
     {
         private readonly ILogger _logger;
         private ImmutableList<IObserver<ShardState>> _listeners = ImmutableList<IObserver<ShardState>>.Empty;
         private readonly ActionBlock<ShardState> _block;
+        private readonly IDisposable _subscription;
+        private ImHashMap<string, ShardState> _states = ImHashMap<string, ShardState>.Empty;
 
         public ShardStateTracker(ILogger logger)
         {
@@ -24,6 +27,22 @@ namespace Marten.Events.Daemon
                 EnsureOrdered = true,
                 MaxDegreeOfParallelism = 1
             });
+
+            _subscription = Subscribe(this);
+        }
+
+        void IObserver<ShardState>.OnCompleted()
+        {
+
+        }
+
+        void IObserver<ShardState>.OnError(Exception error)
+        {
+        }
+
+        void IObserver<ShardState>.OnNext(ShardState value)
+        {
+            _states = _states.AddOrUpdate(value.ShardName, value);
         }
 
         /// <summary>
@@ -68,6 +87,11 @@ namespace Marten.Events.Daemon
         /// <returns></returns>
         public Task<ShardState> WaitForShardState(ShardState expected, TimeSpan? timeout = null)
         {
+            if (_states.TryFind(expected.ShardName, out var state))
+            {
+                if (state.Equals(expected)) return Task.FromResult(state);
+            }
+
             timeout ??= 1.Minutes();
             var listener = new ShardStatusWatcher(this, expected, timeout.Value);
             return listener.Task;
@@ -94,6 +118,11 @@ namespace Marten.Events.Daemon
         /// <returns></returns>
         public Task<ShardState> WaitForShardState(ShardName name, long sequence, TimeSpan? timeout = null)
         {
+            if (_states.TryFind(name.Identity, out var state))
+            {
+                if (state.Sequence >= sequence) return Task.FromResult(state);
+            }
+
             return WaitForShardState(new ShardState(name.Identity, sequence), timeout);
         }
 
@@ -133,6 +162,7 @@ namespace Marten.Events.Daemon
 
         void IDisposable.Dispose()
         {
+            _subscription.Dispose();
             _block.Complete();
         }
 

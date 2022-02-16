@@ -262,7 +262,9 @@ namespace Marten.Events.Daemon
                 source.Options.Teardown(session);
 
                 foreach (var shard in shards)
+                {
                     session.QueueOperation(new DeleteProjectionProgress(_store.Events, shard.Name.Identity));
+                }
 
                 await session.SaveChangesAsync(token).ConfigureAwait(false);
             }

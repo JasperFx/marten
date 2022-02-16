@@ -123,7 +123,7 @@ namespace Marten.AsyncDaemon.Testing
 
             //Wait for shards and highwater agent to catchup on the events
             await agent.Tracker.WaitForShardState(new ShardState("CarView:All", expectedSequence), 15.Seconds());
-            await agent.Tracker.WaitForShardState(new ShardState("TruckView:All", expectedSequence), 15.Seconds()); // Will fail on this line
+            await agent.Tracker.WaitForShardState(new ShardState("TruckView:All", expectedSequence), 15.Seconds());
             await agent.Tracker.WaitForHighWaterMark(expectedSequence);
 
 
