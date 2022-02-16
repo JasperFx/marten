@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
-using Marten.Services;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -47,6 +45,7 @@ namespace Marten.Storage
         /// <param name="documentType"></param>
         void EnsureStorageExists(Type documentType);
 
+#if NETSTANDARD2_0
         /// <summary>
         ///     Ensures that the IDocumentStorage object for a document type is ready
         ///     and also attempts to update the database schema for any detected changes
@@ -56,6 +55,17 @@ namespace Marten.Storage
         /// <param name="token"></param>
         /// <returns></returns>
         Task EnsureStorageExistsAsync(Type featureType, CancellationToken token = default);
+        #else
+        /// <summary>
+        ///     Ensures that the IDocumentStorage object for a document type is ready
+        ///     and also attempts to update the database schema for any detected changes
+        /// </summary>
+        /// <param name="featureType"></param>
+        /// <param name="???"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        ValueTask EnsureStorageExistsAsync(Type featureType, CancellationToken token = default);
+#endif
 
         /// <summary>
         ///     Set the minimum sequence number for a Hilo sequence for a specific document type

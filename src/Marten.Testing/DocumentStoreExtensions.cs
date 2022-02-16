@@ -18,7 +18,11 @@ namespace Marten.Testing
         /// <param name="store"></param>
         /// <param name="storageType"></param>
         /// <returns></returns>
+#if NET
+        public static ValueTask EnsureStorageExistsAsync(this DocumentStore store, Type storageType, CancellationToken token = default) => store.Tenancy.Default.Database.EnsureStorageExistsAsync(storageType, token);
+        #else
         public static Task EnsureStorageExistsAsync(this DocumentStore store, Type storageType, CancellationToken token = default) => store.Tenancy.Default.Database.EnsureStorageExistsAsync(storageType, token);
+#endif
 
         /// <summary>
         /// Strictly a testing helper to guarantee that the database storage for

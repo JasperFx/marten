@@ -27,7 +27,7 @@ namespace Marten.Testing.Examples
             // Or instead, write a separate sql script
             // to the named directory
             // for each type of document
-            store.Schema.WriteDatabaseCreationScriptByType("sql");
+            await store.Schema.WriteScriptsByType("sql");
 
             // or just see it
             var sql = store.Schema.ToDatabaseScript();
