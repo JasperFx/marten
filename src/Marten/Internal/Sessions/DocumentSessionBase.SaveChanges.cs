@@ -1,14 +1,22 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Npgsql;
+using Weasel.Core;
 
 #nullable enable
 namespace Marten.Internal.Sessions
 {
     public abstract partial class DocumentSessionBase
     {
+        private IEnumerable<Type> operationDocumentTypes()
+        {
+            return _workTracker.Operations().Select(x => x.DocumentType).Where(x => x != null).Distinct();
+        }
+
         public void SaveChanges()
         {
             assertNotDisposed();
@@ -23,6 +31,14 @@ namespace Marten.Internal.Sessions
 
             Options.EventGraph.ProcessEvents(this);
             _workTracker.Sort(Options);
+
+            if (Options.AutoCreateSchemaObjects != AutoCreate.None)
+            {
+                foreach (var operationType in operationDocumentTypes())
+                {
+                    Database.EnsureStorageExists(operationType);
+                }
+            }
 
             foreach (var listener in Listeners)
             {
@@ -60,6 +76,14 @@ namespace Marten.Internal.Sessions
 
             await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
             _workTracker.Sort(Options);
+
+            if (Options.AutoCreateSchemaObjects != AutoCreate.None)
+            {
+                foreach (var operationType in operationDocumentTypes())
+                {
+                    await Database.EnsureStorageExistsAsync(operationType, token).ConfigureAwait(false);
+                }
+            }
 
 
             foreach (var listener in Listeners)

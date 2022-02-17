@@ -64,16 +64,16 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
         public void DeleteDocumentsByType(Type documentType)
         {
-            // TODO -- let's get rid of the Law of Demeter stuff here
+            EnsureStorageExists(documentType);
             var storage = Providers.StorageFor(documentType);
             storage.TruncateDocumentStorage(this);
         }
 
-        public Task DeleteDocumentsByTypeAsync(Type documentType)
+        public async Task DeleteDocumentsByTypeAsync(Type documentType)
         {
-            // TODO -- let's get rid of the Law of Demeter stuff here
+            await EnsureStorageExistsAsync(documentType).ConfigureAwait(false);
             var storage = Providers.StorageFor(documentType);
-            return storage.TruncateDocumentStorageAsync(this);
+            await storage.TruncateDocumentStorageAsync(this).ConfigureAwait(false);
         }
 
         public void DeleteDocumentsExcept(params Type[] documentTypes)
@@ -81,7 +81,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
             var documentMappings = _options.Storage.AllDocumentMappings.Where<DocumentMapping>(x => !documentTypes.Contains(x.DocumentType));
             foreach (var mapping in documentMappings)
             {
-                // TODO -- let's get rid of the Law of Demeter stuff here
                 var storage = Providers.StorageFor(mapping.DocumentType);
                 storage.TruncateDocumentStorage(this);
             }

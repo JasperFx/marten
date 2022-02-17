@@ -34,6 +34,8 @@ namespace Marten.Internal.Sessions
                 throw new ArgumentNullException(nameof(entity));
             }
 
+            Database.EnsureStorageExists(typeof(T));
+
             var storage = StorageFor<T>();
             var id = storage.IdentityFor(entity);
             var handler = new EntityMetadataQueryHandler(id, storage);
@@ -41,7 +43,7 @@ namespace Marten.Internal.Sessions
             return ExecuteHandler(handler);
         }
 
-        public Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default) where T : notnull
+        public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default) where T : notnull
         {
             assertNotDisposed();
             if (entity == null)
@@ -50,10 +52,11 @@ namespace Marten.Internal.Sessions
             }
 
             var storage = StorageFor<T>();
+            await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
             var id = storage.IdentityFor(entity);
             var handler = new EntityMetadataQueryHandler(id, storage);
 
-            return ExecuteHandlerAsync(handler, token);
+            return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
     }

@@ -51,15 +51,36 @@ namespace Marten.Linq
             var builder = new LinqHandlerBuilder(this, _session, expression);
             var handler = builder.BuildHandler<TResult>();
 
+            ensureStorageExists(builder);
+
             return ExecuteHandler(handler);
         }
 
-        public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token)
+        private void ensureStorageExists(LinqHandlerBuilder builder)
+        {
+            foreach (var documentType in builder.DocumentTypes())
+            {
+                _session.Database.EnsureStorageExists(documentType);
+            }
+        }
+
+        private async ValueTask ensureStorageExistsAsync(LinqHandlerBuilder builder,
+            CancellationToken cancellationToken)
+        {
+            foreach (var documentType in builder.DocumentTypes())
+            {
+                await _session.Database.EnsureStorageExistsAsync(documentType, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token)
         {
             var builder = new LinqHandlerBuilder(this, _session, expression);
             var handler = builder.BuildHandler<TResult>();
 
-            return ExecuteHandlerAsync(handler, token);
+            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+
+            return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         public TResult Execute<TResult>(Expression expression, ResultOperatorBase op)
@@ -67,21 +88,27 @@ namespace Marten.Linq
             var builder = new LinqHandlerBuilder(this, _session, expression, op);
             var handler = builder.BuildHandler<TResult>();
 
+            ensureStorageExists(builder);
+
             return ExecuteHandler(handler);
         }
 
-        public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token, ResultOperatorBase op)
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken token, ResultOperatorBase op)
         {
             var builder = new LinqHandlerBuilder(this, _session, expression, op);
             var handler = builder.BuildHandler<TResult>();
 
-            return ExecuteHandlerAsync(handler, token);
+            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+
+            return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         public async Task<int> StreamJson<TResult>(Stream stream, Expression expression, CancellationToken token, ResultOperatorBase op)
         {
             var builder = new LinqHandlerBuilder(this, _session, expression, op);
             var handler = builder.BuildHandler<TResult>();
+
+            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
 
             var cmd = _session.BuildCommand(handler);
 
@@ -111,6 +138,8 @@ namespace Marten.Linq
             var builder = new LinqHandlerBuilder(this, _session, expression);
             builder.BuildDatabaseStatement();
 
+            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+
             var selector = (ISelector<T>)builder.CurrentStatement.SelectClause.BuildSelector(_session);
             var statement = builder.TopStatement;
 
@@ -123,13 +152,15 @@ namespace Marten.Linq
             }
         }
 
-        public Task<int> StreamMany(Expression expression, Stream destination, CancellationToken token)
+        public async Task<int> StreamMany(Expression expression, Stream destination, CancellationToken token)
         {
             var builder = BuildLinqHandler(expression);
 
+            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
+
             var command = builder.TopStatement.BuildCommand();
 
-            return _session.StreamMany(command, destination, token);
+            return await _session.StreamMany(command, destination, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -144,16 +175,18 @@ namespace Marten.Linq
             return builder;
         }
 
-        public Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)
+        public async Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)
         {
             var builder = new LinqHandlerBuilder(this, _session, expression);
             builder.BuildDatabaseStatement();
+
+            await ensureStorageExistsAsync(builder, token).ConfigureAwait(false);
 
             var statement = builder.TopStatement;
             statement.Current().Limit = 1;
             var command = statement.BuildCommand();
 
-            return _session.StreamOne(command, destination, token);
+            return await _session.StreamOne(command, destination, token).ConfigureAwait(false);
         }
     }
 }

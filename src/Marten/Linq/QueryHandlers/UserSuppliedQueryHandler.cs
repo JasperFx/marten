@@ -22,22 +22,23 @@ namespace Marten.Linq.QueryHandlers
         private readonly object[] _parameters;
         private readonly ISelector<T> _selector;
         private readonly string _sql;
-        private readonly bool _sqlContainsCustomSelect;
         private readonly ISelectClause _selectClause;
 
         public UserSuppliedQueryHandler(IMartenSession session, string sql, object[] parameters)
         {
             _sql = sql;
             _parameters = parameters;
-            _sqlContainsCustomSelect = _sql.Contains("select", StringComparison.OrdinalIgnoreCase);
+            SqlContainsCustomSelect = _sql.Contains("select", StringComparison.OrdinalIgnoreCase);
 
             _selectClause = GetSelectClause(session);
             _selector = (ISelector<T>) _selectClause.BuildSelector(session);
         }
 
+        public bool SqlContainsCustomSelect { get; }
+
         public void ConfigureCommand(CommandBuilder builder, IMartenSession session)
         {
-            if (!_sqlContainsCustomSelect)
+            if (!SqlContainsCustomSelect)
             {
                 _selectClause.WriteSelectClause(builder);
 
@@ -130,7 +131,7 @@ namespace Marten.Linq.QueryHandlers
                 return typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>("", "", typeof(T));
             }
 
-            if (_sqlContainsCustomSelect)
+            if (SqlContainsCustomSelect)
             {
                 return new DataSelectClause<T>("", "");
             }

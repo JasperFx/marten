@@ -130,6 +130,9 @@ namespace Marten.Events.Aggregation
             var slices = await Slicer.SliceInlineActions(operations, filteredStreams, Tenancy).ConfigureAwait(false);
 
             var martenSession = (DocumentSessionBase)operations;
+
+            await martenSession.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
             foreach (var slice in slices)
             {
                 IStorageOperation? operation;

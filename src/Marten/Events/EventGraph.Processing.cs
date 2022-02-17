@@ -7,6 +7,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Schema.Identity;
+using Weasel.Core;
 
 namespace Marten.Events
 {
@@ -17,6 +18,11 @@ namespace Marten.Events
             if (!session.WorkTracker.Streams.Any())
             {
                 return;
+            }
+
+            if (Options.AutoCreateSchemaObjects != AutoCreate.None)
+            {
+                session.Database.EnsureStorageExists(typeof(IEvent));
             }
 
             var storage = session.EventStorage();
@@ -68,6 +74,11 @@ namespace Marten.Events
             if (!session._workTracker.Streams.Any())
             {
                 return;
+            }
+
+            if (Options.AutoCreateSchemaObjects != AutoCreate.None)
+            {
+                await session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
             }
 
             var fetcher = new EventSequenceFetcher(this, session.WorkTracker.Streams.Sum(x => x.Events.Count));

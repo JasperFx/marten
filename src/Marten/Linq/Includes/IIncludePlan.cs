@@ -1,3 +1,4 @@
+using System;
 using Marten.Internal;
 using Marten.Linq.SqlGeneration;
 
@@ -14,5 +15,7 @@ namespace Marten.Linq.Includes
         string LeftJoinExpression { get; }
         string ExpressionName { get; }
         Statement BuildStatement(string tempTableName);
+
+        Type DocumentType { get; }
     }
 }

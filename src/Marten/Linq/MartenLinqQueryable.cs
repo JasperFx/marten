@@ -226,6 +226,11 @@ namespace Marten.Linq
             builder.BuildDiagnosticCommand(fetchType, sql);
             command.CommandText = sql.ToString();
 
+            foreach (var documentType in builder.DocumentTypes())
+            {
+                Session.Database.EnsureStorageExists(documentType);
+            }
+
             Session._connection.Apply(command);
 
             return command;

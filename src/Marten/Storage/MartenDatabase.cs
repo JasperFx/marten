@@ -36,9 +36,7 @@ namespace Marten.Storage
 
             resetSequences();
 
-            Providers = options.AutoCreateSchemaObjects == AutoCreate.None
-                ? options.Providers
-                : new StorageCheckingProviderGraph(this, options.Providers);
+            Providers = options.Providers;
         }
 
 
@@ -64,10 +62,6 @@ namespace Marten.Storage
         {
             base.ResetSchemaExistenceChecks();
             resetSequences();
-            if (Providers is StorageCheckingProviderGraph)
-            {
-                Providers = new StorageCheckingProviderGraph(this, _options.Providers);
-            }
         }
 
         public IDocumentStorage<T> StorageFor<T>()

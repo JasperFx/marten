@@ -25,17 +25,31 @@ namespace Marten.Internal.Sessions
         public IReadOnlyList<T> Query<T>(string sql, params object[] parameters)
         {
             assertNotDisposed();
+
             var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
+
+            if (!handler.SqlContainsCustomSelect)
+            {
+                Database.EnsureStorageExists(typeof(T));
+            }
+
             var provider = new MartenLinqQueryProvider(this);
             return provider.ExecuteHandler(handler);
         }
 
-        public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
+        public async Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
         {
             assertNotDisposed();
+
             var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
+
+            if (!handler.SqlContainsCustomSelect)
+            {
+                await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
+            }
+
             var provider = new MartenLinqQueryProvider(this);
-            return provider.ExecuteHandlerAsync(handler, token);
+            return await provider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, params object[] parameters)

@@ -34,18 +34,22 @@ namespace Marten
 
         private string? findJsonById<T, TId>(TId id) where T : notnull where TId : notnull
         {
+            _session.Database.EnsureStorageExists(typeof(T));
+
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.TenantId);
 
             return _session.LoadOne(command, LinqConstants.StringValueSelector);
         }
 
-        private Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token) where T : notnull where TId : notnull
+        private async Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token) where T : notnull where TId : notnull
         {
+            await _session.Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
+
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.TenantId);
 
-            return _session.LoadOneAsync(command, LinqConstants.StringValueSelector, token);
+            return await _session.LoadOneAsync(command, LinqConstants.StringValueSelector, token).ConfigureAwait(false);
         }
 
         public string? FindById<T>(int id) where T : class
@@ -83,12 +87,13 @@ namespace Marten
             return streamJsonById<T, int>(id, destination, token);
         }
 
-        private Task<bool> streamJsonById<T, TId>(TId id, Stream destination, CancellationToken token) where T : class where TId : notnull
+        private async Task<bool> streamJsonById<T, TId>(TId id, Stream destination, CancellationToken token) where T : class where TId : notnull
         {
+            await _session.Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
             var storage = _session.QueryStorageFor<T, TId>();
             var command = storage.BuildLoadCommand(id, _session.TenantId);
 
-            return _session.StreamOne(command, destination, token);
+            return await _session.StreamOne(command, destination, token).ConfigureAwait(false);
         }
 
         public Task<bool> StreamById<T>(long id, Stream destination, CancellationToken token = default) where T : class

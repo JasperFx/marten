@@ -36,6 +36,8 @@ namespace Marten.Storage
             }
             else
             {
+                _tenant.Database.EnsureStorageExists(typeof(T));
+
                 using var conn = _tenant.Database.CreateConnection();
                 conn.Open();
                 var tx = conn.BeginTransaction();
@@ -62,6 +64,8 @@ namespace Marten.Storage
             }
             else
             {
+                await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
+
                 using var conn = _tenant.Database.CreateConnection();
                 await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
@@ -290,13 +294,15 @@ namespace Marten.Storage
             public void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent,
                 BulkInsertMode mode)
             {
+                parent._tenant.Database.EnsureStorageExists(typeof(T));
                 parent.bulkInsertDocuments(_documents, batchSize, connection, mode);
             }
 
-            public Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent, BulkInsertMode mode,
+            public async Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent, BulkInsertMode mode,
                 CancellationToken cancellation)
             {
-                return parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, cancellation);
+                await parent._tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(true);
+                await parent.bulkInsertDocumentsAsync(_documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
             }
         }
 

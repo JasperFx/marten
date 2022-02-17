@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using Baseline;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Weasel.Postgresql;
 using Marten.Services;
 using Npgsql;
+using Weasel.Core;
 
 namespace Marten.Events.Daemon
 {
@@ -23,6 +25,8 @@ namespace Marten.Events.Daemon
         private readonly CancellationToken _token;
         private readonly IList<Page> _pages = new List<Page>();
         private Page _current;
+
+        private readonly List<Type> _documentTypes = new List<Type>();
 
         internal ProjectionUpdateBatch(EventGraph events, DocumentSessionBase session, EventRange range, CancellationToken token)
         {
@@ -52,6 +56,8 @@ namespace Marten.Events.Daemon
 
             _current.Append(operation);
 
+            _documentTypes.Fill(operation.DocumentType);
+
             if (_current.Count >= _session.Options.UpdateBatchSize)
             {
                 startNewPage(_session);
@@ -78,6 +84,14 @@ namespace Marten.Events.Daemon
         async Task IUpdateBatch.ApplyChangesAsync(IMartenSession session, CancellationToken token)
         {
             if (_token.IsCancellationRequested) return;
+
+            if (session.Options.AutoCreateSchemaObjects != AutoCreate.None)
+            {
+                foreach (var documentType in _documentTypes)
+                {
+                    await session.Database.EnsureStorageExistsAsync(documentType, token).ConfigureAwait(false);
+                }
+            }
 
             var exceptions = new List<Exception>();
             foreach (var page in _pages)

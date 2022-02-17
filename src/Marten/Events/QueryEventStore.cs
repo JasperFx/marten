@@ -154,8 +154,6 @@ namespace Marten.Events
 
         public IMartenQueryable<T> QueryRawEventDataOnly<T>()
         {
-            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
-
             _store.Events.AddEventType(typeof(T));
 
             return _session.Query<T>();
@@ -163,8 +161,6 @@ namespace Marten.Events
 
         public IMartenQueryable<IEvent> QueryAllRawEvents()
         {
-            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
-
             return _session.Query<IEvent>();
         }
 
@@ -192,12 +188,12 @@ namespace Marten.Events
             return _session.ExecuteHandler(handler);
         }
 
-        public Task<IEvent> LoadAsync(Guid id, CancellationToken token = default)
+        public async Task<IEvent> LoadAsync(Guid id, CancellationToken token = default)
         {
-            _tenant.Database.EnsureStorageExists(typeof(StreamAction));
+            await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
 
             var handler = new SingleEventQueryHandler(id, _session.EventStorage());
-            return _session.ExecuteHandlerAsync(handler, token);
+            return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         public StreamState FetchStreamState(Guid streamId)

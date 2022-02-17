@@ -176,6 +176,7 @@ namespace Marten.Events
         public async Task AppendOptimistic(string streamKey, CancellationToken token, params object[] events)
         {
             _store.Events.EnsureAsStringStorage(_session);
+            await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
                 .With("id", streamKey);
@@ -223,6 +224,7 @@ namespace Marten.Events
         public async Task AppendOptimistic(Guid streamId, CancellationToken token, params object[] events)
         {
             _store.Events.EnsureAsGuidStorage(_session);
+            await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id")
                 .With("id", streamId);
@@ -241,6 +243,7 @@ namespace Marten.Events
         public async Task AppendExclusive(string streamKey, CancellationToken token, params object[] events)
         {
             _store.Events.EnsureAsStringStorage(_session);
+            await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
                 .With("id", streamKey);
@@ -261,6 +264,7 @@ namespace Marten.Events
         public async Task AppendExclusive(Guid streamId, CancellationToken token, params object[] events)
         {
             _store.Events.EnsureAsGuidStorage(_session);
+            await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var cmd = new NpgsqlCommand($"select version from {_store.Events.DatabaseSchemaName}.mt_streams where id = :id for update")
                 .With("id", streamId);

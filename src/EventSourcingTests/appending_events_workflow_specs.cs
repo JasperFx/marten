@@ -442,7 +442,7 @@ namespace EventSourcingTests
                 builder.Append("select 1");
             }
 
-            public Type DocumentType => GetType();
+            public Type DocumentType => null;
             public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
             {
                 throw new DivideByZeroException("Boom!");

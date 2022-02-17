@@ -16,6 +16,7 @@ using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Marten.Util;
+using Microsoft.CodeAnalysis.VisualBasic;
 using Npgsql;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
@@ -31,6 +32,9 @@ namespace Marten.Linq.Parsing
 
         private MartenLinqQueryProvider _provider;
 
+        private Type _documentType;
+
+        // START HERE -- TRACK WHICH DOCUMENTS ARE INVOLVED
         internal LinqHandlerBuilder(MartenLinqQueryProvider provider, IMartenSession session,
             Expression expression, ResultOperatorBase additionalOperator = null, bool forCompiled = false)
         {
@@ -42,7 +46,8 @@ namespace Marten.Linq.Parsing
 
             if (additionalOperator != null) Model.ResultOperators.Add(additionalOperator);
 
-            var storage = session.StorageFor(Model.MainFromClause.ItemType);
+            _documentType = Model.MainFromClause.ItemType;
+            var storage = session.StorageFor(_documentType);
             TopStatement = CurrentStatement = new DocumentStatement(storage);
 
 
@@ -57,6 +62,16 @@ namespace Marten.Linq.Parsing
             }
 
             wrapIncludes(_provider.AllIncludes);
+        }
+
+        public IEnumerable<Type> DocumentTypes()
+        {
+            yield return _documentType;
+
+            foreach (var plan in _provider.AllIncludes)
+            {
+                yield return plan.DocumentType;
+            }
         }
 
         private void readQueryModel(QueryModel queryModel, IDocumentStorage storage, bool considerSelectors,

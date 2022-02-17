@@ -78,7 +78,7 @@ namespace DocumentDbTests.Writing
             }
 
             var count = session.Connection.CreateCommand()
-                .Sql("select count(*) from mt_doc_target where mt_last_modified is null")
+                .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
                 .ExecuteScalar();
 
             count.ShouldBe(0);
@@ -149,7 +149,7 @@ namespace DocumentDbTests.Writing
             SpecificationExtensions.ShouldNotBeNull(theSession.Load<Target>(data[0].Id));
 
             var count = theSession.Connection.CreateCommand()
-                .Sql("select count(*) from mt_doc_target where mt_last_modified is null")
+                .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
                 .ExecuteScalar();
 
             count.ShouldBe(0);
@@ -236,7 +236,7 @@ namespace DocumentDbTests.Writing
             }
 
             var count = session.Connection.CreateCommand()
-                .Sql("select count(*) from mt_doc_target where mt_last_modified is null")
+                .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
                 .ExecuteScalar();
 
             count.ShouldBe(0);

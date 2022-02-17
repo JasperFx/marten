@@ -23,6 +23,8 @@ namespace Marten.Services.BatchQuerying
         private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
         private readonly QuerySession _parent;
 
+        private readonly List<Type> _documentTypes = new List<Type>();
+
         public BatchedQuery(QuerySession parent)
         {
             _parent = parent;
@@ -52,16 +54,24 @@ namespace Marten.Services.BatchQuerying
 
         public IBatchLoadByKeys<TDoc> LoadMany<TDoc>() where TDoc : class
         {
+            _documentTypes.Add(typeof(TDoc));
             return new BatchLoadByKeys<TDoc>(this);
         }
 
         public Task<IReadOnlyList<T>> Query<T>(string sql, params object[] parameters) where T : class
         {
-            return AddItem(new UserSuppliedQueryHandler<T>(_parent, sql, parameters));
+            var handler = new UserSuppliedQueryHandler<T>(_parent, sql, parameters);
+            if (!handler.SqlContainsCustomSelect)
+            {
+                _documentTypes.Add(typeof(T));
+            }
+
+            return AddItem(handler);
         }
 
         public IBatchedQueryable<T> Query<T>() where T : class
         {
+            _documentTypes.Add(typeof(T));
             return new BatchedQueryable<T>(this, _parent.Query<T>());
         }
 
@@ -70,6 +80,11 @@ namespace Marten.Services.BatchQuerying
             if (!_items.Any())
             {
                 return;
+            }
+
+            foreach (var type in _documentTypes.Distinct())
+            {
+                await _parent.Database.EnsureStorageExistsAsync(type, token).ConfigureAwait(false);
             }
 
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
@@ -99,29 +114,33 @@ namespace Marten.Services.BatchQuerying
                 return;
             }
 
+            foreach (var type in _documentTypes.Distinct())
+            {
+                _parent.Database.EnsureStorageExists(type);
+            }
+
             var command = _parent.BuildCommand(_items.Select(x => x.Handler));
 
 
-            using (var reader = _parent.ExecuteReader(command))
+            using var reader = _parent.ExecuteReader(command);
+            _items[0].Read(reader, _parent);
+
+            foreach (var item in _items.Skip(1))
             {
-                _items[0].Read(reader, _parent);
+                var hasNext = reader.NextResult();
 
-                foreach (var item in _items.Skip(1))
+                if (!hasNext)
                 {
-                    var hasNext = reader.NextResult();
-
-                    if (!hasNext)
-                    {
-                        throw new InvalidOperationException("There is no next result to read over.");
-                    }
-
-                    item.Read(reader, _parent);
+                    throw new InvalidOperationException("There is no next result to read over.");
                 }
+
+                item.Read(reader, _parent);
             }
         }
 
         public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query)
         {
+            _documentTypes.Add(typeof(TDoc));
             // Smelly downcast, but we'll allow it
             var source = _parent.DocumentStore.As<DocumentStore>().GetCompiledQuerySourceFor(query, _parent);
             var handler = (IQueryHandler<TResult>)source.Build(query, _parent);
@@ -132,12 +151,14 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IEvent> Load(Guid id)
         {
+            _documentTypes.Add(typeof(IEvent));
             var handler = new SingleEventQueryHandler(id, _parent.EventStorage());
             return AddItem(handler);
         }
 
         public Task<StreamState> FetchStreamState(Guid streamId)
         {
+            _documentTypes.Add(typeof(IEvent));
             var handler = _parent.EventStorage()
                 .QueryForStream(StreamAction.ForReference(streamId, _parent.TenantId));
 
@@ -146,6 +167,7 @@ namespace Marten.Services.BatchQuerying
 
         public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null, long fromVersion = 0)
         {
+            _documentTypes.Add(typeof(IEvent));
             var selector = _parent.EventStorage();
             var statement = new EventStatement(selector)
             {
@@ -167,6 +189,7 @@ namespace Marten.Services.BatchQuerying
 
         private Task<T> load<T, TId>(TId id) where T : class where TId : notnull
         {
+            _documentTypes.Add(typeof(T));
             var storage = _parent.StorageFor<T>();
             if (storage is IDocumentStorage<T, TId> s)
             {

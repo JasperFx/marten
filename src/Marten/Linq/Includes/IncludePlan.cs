@@ -21,6 +21,8 @@ namespace Marten.Linq.Includes
             _callback = callback;
         }
 
+        public Type DocumentType => typeof(T);
+
         public IField ConnectingField { get; }
 
         public int Index

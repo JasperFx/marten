@@ -86,14 +86,34 @@ namespace Marten.Internal.Storage
 
         public void TruncateDocumentStorage(IMartenDatabase database)
         {
-            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
-            database.RunSql(sql);
+            try
+            {
+                var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
+                database.RunSql(sql);
+            }
+            catch (PostgresException e)
+            {
+                if (!e.Message.Contains("does not exist"))
+                {
+                    throw;
+                }
+            }
         }
 
-        public Task TruncateDocumentStorageAsync(IMartenDatabase database)
+        public async Task TruncateDocumentStorageAsync(IMartenDatabase database)
         {
             var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
-            return database.RunSqlAsync(sql);
+            try
+            {
+                await database.RunSqlAsync(sql).ConfigureAwait(false);
+            }
+            catch (PostgresException e)
+            {
+                if (!e.Message.Contains("does not exist"))
+                {
+                    throw;
+                }
+            }
         }
 
         public void SetIdentity(T document, TId identity)
