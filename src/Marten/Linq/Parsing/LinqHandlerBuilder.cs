@@ -30,9 +30,9 @@ namespace Marten.Linq.Parsing
         private readonly IMartenSession _session;
 
 
-        private MartenLinqQueryProvider _provider;
+        private readonly MartenLinqQueryProvider _provider;
 
-        private Type _documentType;
+        private readonly Type _documentType;
 
         // START HERE -- TRACK WHICH DOCUMENTS ARE INVOLVED
         internal LinqHandlerBuilder(MartenLinqQueryProvider provider, IMartenSession session,
@@ -304,6 +304,8 @@ namespace Marten.Linq.Parsing
 
         public void BuildDiagnosticCommand(FetchType fetchType, CommandBuilder sql)
         {
+            BuildDatabaseStatement();
+
             switch (fetchType)
             {
                 case FetchType.Any:
@@ -318,8 +320,6 @@ namespace Marten.Linq.Parsing
                     CurrentStatement.Limit = 1;
                     break;
             }
-
-            TopStatement.CompileStructure(_session);
 
             TopStatement.Configure(sql);
         }

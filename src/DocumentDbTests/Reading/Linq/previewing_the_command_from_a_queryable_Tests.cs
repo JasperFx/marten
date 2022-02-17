@@ -5,19 +5,37 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading.Linq
 {
     public class previewing_the_command_from_a_queryable_Tests : OneOffConfigurationsContext
     {
+        private readonly ITestOutputHelper _output;
+
+        public previewing_the_command_from_a_queryable_Tests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
         [Fact]
         public void preview_basic_select_command()
         {
             var cmd = theSession.Query<Target>().ToCommand(FetchType.FetchMany);
 
+            _output.WriteLine(cmd.CommandText);
+
             cmd.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d");
             cmd.Parameters.Any().ShouldBeFalse();
+        }
+
+        [Fact]
+        public void preview_select_many()
+        {
+            var cmd = theSession.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag)
+                .ToCommand(FetchType.FetchMany);
+
+            _output.WriteLine(cmd.CommandText);
         }
 
         [Fact]
@@ -59,11 +77,4 @@ namespace DocumentDbTests.Reading.Linq
 
     }
 
-    public class previewing_the_command_from_a_queryable_in_a_different_schema_Tests : previewing_the_command_from_a_queryable_Tests
-    {
-        public previewing_the_command_from_a_queryable_in_a_different_schema_Tests()
-        {
-            StoreOptions(_ => _.DatabaseSchemaName = SchemaName);
-        }
-    }
 }
