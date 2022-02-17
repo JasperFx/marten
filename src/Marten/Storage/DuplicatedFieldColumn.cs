@@ -21,5 +21,10 @@ namespace Marten.Storage
         {
             return $"{base.AddColumnSql(table)}update {table.Identifier} set {_field.UpdateSqlFragment()};";
         }
+
+        public override string AlterColumnTypeSql(Table table, TableColumn changeActual)
+        {
+            return $"alter table {table.Identifier} drop column {Name};{AddColumnSql(table)}";
+        }
     }
 }
