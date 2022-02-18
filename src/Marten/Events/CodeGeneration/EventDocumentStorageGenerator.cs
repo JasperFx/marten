@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using Baseline;
 using LamarCodeGeneration;
@@ -16,7 +14,6 @@ using Marten.Events.Querying;
 using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
-using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -30,14 +27,14 @@ namespace Marten.Events.CodeGeneration
         private const string StreamStateSelectorTypeName = "GeneratedStreamStateQueryHandler";
         private const string InsertStreamOperationName = "GeneratedInsertStream";
         private const string UpdateStreamVersionOperationName = "GeneratedStreamVersionOperation";
-        private const string EventDocumentStorageTypeName = "GeneratedEventDocumentStorage";
+        internal const string EventDocumentStorageTypeName = "GeneratedEventDocumentStorage";
 
         /// <summary>
-        /// Only for testing support
+        ///     Only for testing support
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        public static (EventDocumentStorage, string) GenerateStorage(StoreOptions options)
+        public static EventDocumentStorage GenerateStorage(StoreOptions options)
         {
             var assembly =
                 new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace + ".EventStore"));
@@ -49,39 +46,7 @@ namespace Marten.Events.CodeGeneration
             compiler.Compile(assembly);
 
 
-            var writer = new StringWriter();
-            foreach (var generatedType in assembly.GeneratedTypes)
-            {
-                writer.WriteLine($"    // {generatedType.TypeName}");
-                writer.WriteLine(generatedType.SourceCode);
-                writer.WriteLine();
-            }
-
-
-            var code = writer.ToString();
-
-            var storage = (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
-
-            return (storage, code);
-        }
-
-        public static DocumentProvider<IEvent> BuildProvider(StoreOptions options)
-        {
-            var (storage, code) = GenerateStorage(options);
-
-            return new DocumentProvider<IEvent>(null, storage, storage, storage, storage);
-        }
-
-        public static DocumentProvider<IEvent> BuildProviderFromAssembly(Assembly assembly, StoreOptions options)
-        {
-            var storageType = assembly.ExportedTypes.FirstOrDefault(x => x.CanBeCastTo<EventDocumentStorage>());
-            if (storageType == null)
-            {
-                return null;
-            }
-
-            var storage = (EventDocumentStorage)Activator.CreateInstance(storageType, options);
-            return new DocumentProvider<IEvent>(null, storage, storage, storage, storage);
+            return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
         }
 
         public static GeneratedType AssembleTypes(StoreOptions options, GeneratedAssembly assembly)
@@ -92,10 +57,11 @@ namespace Marten.Events.CodeGeneration
 
             buildSelectorMethods(options, builderType);
 
-            buildAppendEventOperation(options.EventGraph, assembly);
+            var appendEventOperationType = buildAppendEventOperation(options.EventGraph, assembly);
 
             builderType.MethodFor(nameof(EventDocumentStorage.AppendEvent))
-                .Frames.Code($"return new Marten.Generated.EventStore.AppendEventOperation(stream, e);");
+                .Frames.ReturnNewGeneratedTypeObject(appendEventOperationType, "stream", "e");
+
 
             buildInsertStream(builderType, assembly, options.EventGraph);
 
@@ -162,7 +128,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             builderType.MethodFor(nameof(EventDocumentStorage.UpdateStreamVersion))
-                .Frames.Code($"return new Marten.Generated.EventStore.{UpdateStreamVersionOperationName}({{0}});",
+                .Frames.Code($"return new {assembly.Namespace}.{UpdateStreamVersionOperationName}({{0}});",
                     Use.Type<StreamAction>());
 
             return operationType;
@@ -184,7 +150,7 @@ namespace Marten.Events.CodeGeneration
 
             builderType.MethodFor(nameof(EventDocumentStorage.QueryForStream))
                 .Frames.Code(
-                    $"return new Marten.Generated.EventStore.{StreamStateSelectorTypeName}({arguments.Join(", ")});");
+                    $"return new {builderType.ParentAssembly.Namespace}.{StreamStateSelectorTypeName}({arguments.Join(", ")});");
         }
 
         private static GeneratedType buildStreamQueryHandlerType(EventGraph graph, GeneratedAssembly assembly)
@@ -219,17 +185,17 @@ namespace Marten.Events.CodeGeneration
             sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 1, x => x.Version);
             async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 1, x => x.Version);
 
-            sync.Frames.Call<StreamStateQueryHandler>(x => x.SetAggregateType(null, null, null), @call =>
+            sync.Frames.Call<StreamStateQueryHandler>(x => x.SetAggregateType(null, null, null), call =>
             {
-                @call.IsLocal = true;
+                call.IsLocal = true;
             });
 
 #pragma warning disable 4014
             async.Frames.Call<StreamStateQueryHandler>(
-                x => x.SetAggregateTypeAsync(null, null, null, CancellationToken.None), @call =>
+                x => x.SetAggregateTypeAsync(null, null, null, CancellationToken.None), call =>
 #pragma warning restore 4014
                 {
-                    @call.IsLocal = true;
+                    call.IsLocal = true;
                 });
 
             sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 3, x => x.LastTimestamp);
@@ -261,10 +227,10 @@ namespace Marten.Events.CodeGeneration
             var setter = streamQueryHandlerType.AddStringConstant("SQL", sql);
 
             var configureCommand = streamQueryHandlerType.MethodFor("ConfigureCommand");
-            configureCommand.Frames.Call<CommandBuilder>(x => x.AppendWithParameters(""), @call =>
+            configureCommand.Frames.Call<CommandBuilder>(x => x.AppendWithParameters(""), call =>
             {
-                @call.Arguments[0] = setter;
-                @call.ReturnAction = ReturnAction.Initialize;
+                call.Arguments[0] = setter;
+                call.ReturnAction = ReturnAction.Initialize;
             });
 
             var idDbType = graph.StreamIdentity == StreamIdentity.AsGuid ? DbType.Guid : DbType.String;
@@ -334,7 +300,7 @@ namespace Marten.Events.CodeGeneration
             }
 
             builderType.MethodFor(nameof(EventDocumentStorage.InsertStream))
-                .Frames.Code($"return new Marten.Generated.EventStore.{InsertStreamOperationName}(stream);");
+                .Frames.ReturnNewGeneratedTypeObject(operationType, "stream");
 
             return operationType;
         }

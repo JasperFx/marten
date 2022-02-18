@@ -61,7 +61,7 @@ namespace EventSourcingTests
             @case.StartNewStream(new TestOutputMartenLogger(_output));
             using var query = @case.Store.QuerySession();
 
-            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var handler = builder.QueryForStream(@case.ToEventStream());
 
             var state = await query.As<QuerySession>().ExecuteHandlerAsync(handler, CancellationToken.None);
@@ -76,7 +76,7 @@ namespace EventSourcingTests
             @case.StartNewStream();
             using var query = @case.Store.QuerySession();
 
-            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var handler = builder.QueryForStream(@case.ToEventStream());
 
             var state = query.As<QuerySession>().ExecuteHandler(handler);
@@ -88,11 +88,11 @@ namespace EventSourcingTests
         public async Task can_insert_a_new_stream(TestCase @case)
         {
             // This is just forcing the store to start the event storage
-            @case.Store.Advanced.Clean.CompletelyRemoveAll();
+            await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
             @case.StartNewStream();
 
             var stream = @case.CreateNewStream();
-            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var op = builder.InsertStream(stream);
 
             using var session = @case.Store.LightweightSession();
@@ -111,7 +111,7 @@ namespace EventSourcingTests
             stream.ExpectedVersionOnServer = 4;
             stream.Version = 10;
 
-            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var op = builder.UpdateStreamVersion(stream);
 
             using var session = @case.Store.LightweightSession();
@@ -136,7 +136,7 @@ namespace EventSourcingTests
             stream.ExpectedVersionOnServer = 3; // it's actually 4, so this should fail
             stream.Version = 10;
 
-            var (builder, _) = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+            var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
             var op = builder.UpdateStreamVersion(stream);
 
             using var session = @case.Store.LightweightSession();

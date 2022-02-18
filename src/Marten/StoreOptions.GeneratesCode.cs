@@ -9,7 +9,7 @@ using Marten.Schema;
 
 namespace Marten
 {
-    public partial class StoreOptions: IGeneratesCode
+    public partial class StoreOptions: ICodeFileCollection
     {
         public IReadOnlyList<ICodeFile> BuildFiles()
         {
@@ -20,7 +20,7 @@ namespace Marten
                 .ToList();
         }
 
-        string IGeneratesCode.ChildNamespace { get; } = "DocumentStorage";
+        string ICodeFileCollection.ChildNamespace { get; } = "DocumentStorage";
 
         /// <summary>
         /// The main application assembly. By default this is the entry assembly for the application,
@@ -35,7 +35,6 @@ namespace Marten
             {
                 TypeLoadMode = GeneratedCodeMode,
 
-                // TODO -- WATCH THIS! ONLY VALID FOR MULTI-TARGETED PROJECTS
                 GeneratedCodeOutputPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
                     .AppendPath("Internal", "Generated"),
                 ApplicationAssembly = ApplicationAssembly

@@ -16,7 +16,7 @@ namespace CoreTests
     {
         private readonly Container theContainer;
 
-        // TODO -- need to register additional IGeneratesCode for the new store
+        // TODO -- need to register additional ICodeFileCollection for the new store
         // TODO -- chained option to add an async daemon for each store
         // TODO -- post-configure options
         // TODO -- LATER, chain IInitialData
@@ -50,9 +50,9 @@ namespace CoreTests
         }
 
         [Fact]
-        public void should_have_a_single_IGeneratesCode_registration_for_secondary_stores()
+        public void should_have_a_single_ICodeFileCollection_registration_for_secondary_stores()
         {
-            theContainer.Model.InstancesOf<IGeneratesCode>()
+            theContainer.Model.InstancesOf<ICodeFileCollection>()
                 .Count(x => x.ImplementationType == typeof(SecondaryDocumentStores)).ShouldBe(1);
         }
 

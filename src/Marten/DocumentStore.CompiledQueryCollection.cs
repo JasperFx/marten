@@ -53,14 +53,14 @@ namespace Marten
         }
     }
 
-    public partial class DocumentStore : IGeneratesCode
+    public partial class DocumentStore : ICodeFileCollection
     {
         private readonly CompiledQueryCollection _lightweightCompiledQueries;
         private readonly CompiledQueryCollection _identityMapCompiledQueries;
         private readonly CompiledQueryCollection _dirtyTrackedCompiledQueries;
         private readonly CompiledQueryCollection _queryOnlyCompiledQueries;
 
-        IReadOnlyList<ICodeFile> IGeneratesCode.BuildFiles()
+        IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
         {
             using var lightweight = (QuerySession)LightweightSession();
             using var identityMap = (QuerySession)OpenSession();
@@ -76,7 +76,7 @@ namespace Marten
             }).ToList();
         }
 
-        string IGeneratesCode.ChildNamespace { get; } = "CompiledQueries";
+        string ICodeFileCollection.ChildNamespace { get; } = "CompiledQueries";
 
         internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
             QuerySession session)

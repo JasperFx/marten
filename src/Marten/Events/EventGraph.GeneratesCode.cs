@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using LamarCodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
-using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
+using Marten.Util;
 
 namespace Marten.Events
 {
@@ -42,9 +42,11 @@ namespace Marten.Events
         public string FileName => _projection.GetType().ToSuffixedTypeName("RuntimeSupport");
     }
 
-    public partial class EventGraph : IGeneratesCode, ICodeFile
+    public partial class EventGraph : ICodeFileCollection, ICodeFile
     {
-        IReadOnlyList<ICodeFile> IGeneratesCode.BuildFiles()
+        private Type _storageType;
+
+        IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
         {
             var list = new List<ICodeFile> { this };
 
@@ -57,7 +59,7 @@ namespace Marten.Events
 
         internal DocumentProvider<IEvent> Provider { get; private set; }
 
-        string IGeneratesCode.ChildNamespace { get; } = "EventStore";
+        string ICodeFileCollection.ChildNamespace { get; } = "EventStore";
 
         void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
         {
@@ -67,7 +69,19 @@ namespace Marten.Events
         public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
             string containingNamespace)
         {
-            Provider = EventDocumentStorageGenerator.BuildProviderFromAssembly(assembly, Options);
+            var storageType = assembly.FindPreGeneratedType(@containingNamespace,
+                EventDocumentStorageGenerator.EventDocumentStorageTypeName);
+
+            if (storageType == null)
+            {
+                Provider = null;
+            }
+            else
+            {
+                var storage = (EventDocumentStorage)Activator.CreateInstance(storageType, Options);
+                Provider = new DocumentProvider<IEvent>(null, storage, storage, storage, storage);
+            }
+
             return Provider != null;
         }
 

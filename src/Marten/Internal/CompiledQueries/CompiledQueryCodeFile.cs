@@ -2,9 +2,8 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Baseline;
 using LamarCodeGeneration;
-using Marten.Internal.Sessions;
+using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries
 {
@@ -43,7 +42,7 @@ namespace Marten.Internal.CompiledQueries
         public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
             string containingNamespace)
         {
-            _sourceType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == _typeName);
+            _sourceType = assembly.FindPreGeneratedType(@containingNamespace, _typeName);
             return _sourceType != null;
         }
 

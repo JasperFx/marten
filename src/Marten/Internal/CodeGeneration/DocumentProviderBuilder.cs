@@ -9,6 +9,7 @@ using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
+using Marten.Util;
 using Npgsql;
 using CommandExtensions = Weasel.Postgresql.CommandExtensions;
 
@@ -33,14 +34,14 @@ namespace Marten.Internal.CodeGeneration
         public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
             string containingNamespace)
         {
-            _providerType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == ProviderName);
+            _providerType = assembly.FindPreGeneratedType(containingNamespace, ProviderName);
             return Task.FromResult(_providerType != null);
         }
 
         public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
             string containingNamespace)
         {
-            _providerType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == ProviderName);
+            _providerType = assembly.FindPreGeneratedType(containingNamespace, ProviderName);
             return _providerType != null;
         }
 
