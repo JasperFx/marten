@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using LamarCodeGeneration;
+using LamarCompiler;
+
+namespace Marten.Internal
+{
+    internal class SecondaryDocumentStores : IGeneratesCode
+    {
+        private readonly List<ICodeFile> _files = new List<ICodeFile>();
+
+        public IReadOnlyList<ICodeFile> BuildFiles()
+        {
+            return _files;
+        }
+
+        public string ChildNamespace { get; } = "Stores";
+
+        public void Add(IStoreConfig config)
+        {
+            _files.Add(config);
+            config.Parent = this;
+        }
+    }
+
+
+
+    internal interface IStoreConfig : ICodeFile
+    {
+        SecondaryDocumentStores Parent { get; set; }
+    }
+
+    internal class SecondaryStoreConfig<T> : ICodeFile, IStoreConfig where T : IDocumentStore
+    {
+        private readonly Func<IServiceProvider, StoreOptions> _configuration;
+        private readonly string _className;
+        private Type _storeType;
+
+        public SecondaryStoreConfig(Func<IServiceProvider, StoreOptions> configuration)
+        {
+            _configuration = configuration;
+            _className = typeof(T).ToSuffixedTypeName("Implementation");
+        }
+
+        public SecondaryDocumentStores Parent { get; set; }
+
+        public T Build(IServiceProvider provider)
+        {
+            // TODO -- need a way to post-configure these babies
+            var options = _configuration(provider);
+            var rules = options.CreateGenerationRules();
+
+            this.InitializeSynchronously(rules, Parent, provider);
+
+            return (T)Activator.CreateInstance(_storeType, options);
+        }
+
+        public void AssembleTypes(GeneratedAssembly assembly)
+        {
+            var type = assembly.AddType(_className, typeof(DocumentStore));
+            type.Implements<T>();
+        }
+
+        public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services, string containingNamespace)
+        {
+            return Task.FromResult(AttachTypesSynchronously(rules, assembly, services, containingNamespace));
+        }
+
+        public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+            string containingNamespace)
+        {
+            _storeType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == _className);
+            return _storeType != null;
+        }
+
+        public string FileName => _className;
+    }
+}

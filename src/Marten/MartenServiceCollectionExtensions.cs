@@ -1,9 +1,9 @@
 using System;
+using System.Linq;
 using LamarCodeGeneration;
-using LamarCodeGeneration.Model;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
-using Marten.Schema;
+using Marten.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -126,6 +126,56 @@ namespace Marten
             return services.AddMarten(options);
         }
 
+        /// <summary>
+        /// Add a secondary IDocumentStore service to the container using only
+        /// an interface "T" that should directly inherit from IDocumentStore
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configure"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services, Action<StoreOptions> configure) where T : class, IDocumentStore
+        {
+            return services.AddMartenStore<T>((s =>
+            {
+                var options = new StoreOptions();
+                configure(options);
+
+                return options;
+            }));
+        }
+
+        /// <summary>
+        /// Add a secondary IDocumentStore service to the container using only
+        /// an interface "T" that should directly inherit from IDocumentStore
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configure"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services, Func<IServiceProvider, StoreOptions> configure) where T : class, IDocumentStore
+        {
+            var stores = services.Select(x => x.ImplementationInstance).OfType<SecondaryDocumentStores>().FirstOrDefault();
+            if (stores == null)
+            {
+                stores = new SecondaryDocumentStores();
+                services.AddSingleton<IGeneratesCode>(stores);
+            }
+
+            var config = new SecondaryStoreConfig<T>(configure);
+            stores.Add(config);
+
+            services.AddSingleton<T>(s => config.Build(s));
+
+            return new MartenStoreExpression<T>();
+        }
+
+        public class MartenStoreExpression<T> where T : IDocumentStore
+        {
+            // TODO -- add the async daemon?
+            // TODO -- add initial data
+        }
+
         public class MartenConfigurationExpression
         {
             private readonly StoreOptions? _options;
@@ -195,9 +245,6 @@ namespace Marten
 
                 return store;
             }
-
-
-
         }
     }
 
