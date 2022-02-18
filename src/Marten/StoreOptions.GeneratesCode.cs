@@ -28,6 +28,8 @@ namespace Marten
         /// </summary>
         public Assembly ApplicationAssembly { get; set; } = Assembly.GetEntryAssembly();
 
+        public bool SourceCodeWritingEnabled { get; set; } = true;
+
 
         internal GenerationRules CreateGenerationRules()
         {
@@ -37,7 +39,8 @@ namespace Marten
 
                 GeneratedCodeOutputPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
                     .AppendPath("Internal", "Generated"),
-                ApplicationAssembly = ApplicationAssembly
+                ApplicationAssembly = ApplicationAssembly,
+                SourceCodeWritingEnabled = SourceCodeWritingEnabled
             };
 
             rules.ReferenceAssembly(GetType().Assembly);
