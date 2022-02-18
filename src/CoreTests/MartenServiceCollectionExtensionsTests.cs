@@ -159,9 +159,6 @@ namespace CoreTests
             provider.ShouldBeSameAs(container);
 
             store.Options.Events.DatabaseSchemaName.ShouldBe("random");
-
-
-
         }
 
         public class SpecialBuilder: ISessionFactory

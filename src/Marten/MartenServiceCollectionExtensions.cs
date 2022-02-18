@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Weasel.Core;
+
 #nullable enable
 namespace Marten
 {
@@ -245,6 +247,20 @@ namespace Marten
 
                 return store;
             }
+
+            public MartenConfigurationExpression OptimizeArtifactWorkflow()
+            {
+
+                return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
+            }
+
+            public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
+            {
+                var configure = new OptimizedArtifactsWorkflow(typeLoadMode);
+                Services.AddSingleton<IConfigureMarten>(configure);
+
+                return this;
+            }
         }
     }
 
@@ -328,6 +344,35 @@ namespace Marten
         public void Configure(IServiceProvider services, StoreOptions options)
         {
             _configure(services, options);
+        }
+    }
+
+    internal class OptimizedArtifactsWorkflow: IConfigureMarten
+    {
+        private readonly TypeLoadMode _productionMode;
+
+        public OptimizedArtifactsWorkflow(TypeLoadMode productionMode)
+        {
+            _productionMode = productionMode;
+        }
+
+        public void Configure(IServiceProvider services, StoreOptions options)
+        {
+            var environment = services.GetRequiredService<IHostEnvironment>();
+
+            if (environment.IsDevelopment())
+            {
+                options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+                options.GeneratedCodeMode = TypeLoadMode.Auto;
+            }
+            else
+            {
+                options.AutoCreateSchemaObjects = AutoCreate.None;
+                options.GeneratedCodeMode = _productionMode;
+
+
+                options.SourceCodeWritingEnabled = false;
+            }
         }
     }
 }

@@ -28,6 +28,10 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
 
     <ItemGroup>
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
