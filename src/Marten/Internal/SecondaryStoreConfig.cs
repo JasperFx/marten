@@ -5,10 +5,11 @@ using System.Reflection;
 using System.Threading.Tasks;
 using LamarCodeGeneration;
 using LamarCompiler;
+using Marten.Util;
 
 namespace Marten.Internal
 {
-    internal class SecondaryDocumentStores : IGeneratesCode
+    internal class SecondaryDocumentStores : ICodeFileCollection
     {
         private readonly List<ICodeFile> _files = new List<ICodeFile>();
 
@@ -72,7 +73,7 @@ namespace Marten.Internal
         public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
             string containingNamespace)
         {
-            _storeType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == _className);
+            _storeType = assembly.FindPreGeneratedType(containingNamespace, _className);
             return _storeType != null;
         }
 

@@ -6,23 +6,20 @@ using Baseline;
 using LamarCodeGeneration;
 using LamarCodeGeneration.Frames;
 using LamarCodeGeneration.Model;
-using LamarCompiler;
-using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
-using Weasel.Postgresql;
 using Marten.Schema.Arguments;
 using Marten.Util;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.CompiledQueries
 {
     internal class CompiledQuerySourceBuilder
     {
+        private readonly DocumentTracking _documentTracking;
         private readonly CompiledQueryPlan _plan;
         private readonly StoreOptions _storeOptions;
-        private readonly DocumentTracking _documentTracking;
         private readonly string _typeName;
 
         public CompiledQuerySourceBuilder(CompiledQueryPlan plan, StoreOptions storeOptions,
@@ -34,7 +31,7 @@ namespace Marten.Internal.CompiledQueries
             _typeName = documentTracking + plan.QueryType.ToSuffixedTypeName("CompiledQuerySource");
         }
 
-        public (GeneratedType, GeneratedType) AssembleTypes(GeneratedAssembly assembly)
+        public void AssembleTypes(GeneratedAssembly assembly)
         {
             assembly.UsingNamespaces.Fill("System");
 
@@ -42,30 +39,28 @@ namespace Marten.Internal.CompiledQueries
                          typeof(IDocumentStorage<>),
                          _plan.QueryType,
                          _plan.OutputType))
-            {
                 assembly.Rules.Assemblies.Fill(referencedAssembly);
-            }
 
             var handlerType = determineHandlerType();
 
             var hardcoded = new HardCodedParameters(_plan);
             var compiledHandlerType = buildHandlerType(assembly, handlerType, hardcoded);
 
-            var sourceType = buildSourceType(assembly, handlerType, compiledHandlerType);
-
-            return (sourceType, compiledHandlerType);
+            buildSourceType(assembly, handlerType, compiledHandlerType);
         }
 
         public ICompiledQuerySource Build(Type sourceType)
         {
             var hardcoded = new HardCodedParameters(_plan);
 
-            return (ICompiledQuerySource)Activator.CreateInstance(sourceType, new object[] {hardcoded, _plan.HandlerPrototype});
+            return (ICompiledQuerySource)Activator.CreateInstance(sourceType, hardcoded, _plan.HandlerPrototype);
         }
 
-        private GeneratedType buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
+        private void buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
             GeneratedType compiledHandlerType)
         {
+            var rules = _storeOptions.CreateGenerationRules();
+
             var sourceBaseType = typeof(CompiledQuerySource<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
             var sourceType = assembly.AddType(_typeName, sourceBaseType);
 
@@ -81,7 +76,7 @@ namespace Marten.Internal.CompiledQueries
 
                     var statistics = _plan.StatisticsMember == null ? "null" : $"query.{_plan.StatisticsMember.Name}";
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.CompiledQueries.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
+                        $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({innerField.Usage}, query, {statistics}, _hardcoded);");
                     break;
 
                 case CompiledSourceType.Stateless:
@@ -89,7 +84,7 @@ namespace Marten.Internal.CompiledQueries
                     sourceType.AllInjectedFields.Add(inner);
 
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.CompiledQueries.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
+                        $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({inner.Usage}, query, _hardcoded);");
                     break;
 
                 case CompiledSourceType.Complex:
@@ -97,17 +92,15 @@ namespace Marten.Internal.CompiledQueries
                     sourceType.AllInjectedFields.Add(innerField2);
 
                     buildHandler.Frames.Code(
-                        $"return new Marten.Generated.CompiledQueries.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
+                        $"return new {assembly.Namespace}.{compiledHandlerType.TypeName}({innerField2.Usage}, query, _hardcoded);");
                     break;
             }
-
-            return sourceType;
         }
 
         private GeneratedType buildHandlerType(GeneratedAssembly assembly,
             CompiledSourceType handlerType, HardCodedParameters hardcoded)
         {
-            var queryTypeName =  _documentTracking + _plan.QueryType.ToSuffixedTypeName("CompiledQuery");
+            var queryTypeName = _documentTracking + _plan.QueryType.ToSuffixedTypeName("CompiledQuery");
             var baseType = determineBaseType(handlerType);
             var type = assembly.AddType(queryTypeName, baseType);
 
@@ -151,7 +144,8 @@ namespace Marten.Internal.CompiledQueries
 
                 method.Frames.Code(
                     $"var includeWriters = new {typeof(IIncludeReader).FullNameInCode()}[]{readerArray};");
-                method.Frames.Code($"var included = new {includeHandlerType.FullNameInCode()}(({constructorHandlerType.FullNameInCode()}){handlerName}, includeWriters);");
+                method.Frames.Code(
+                    $"var included = new {includeHandlerType.FullNameInCode()}(({constructorHandlerType.FullNameInCode()}){handlerName}, includeWriters);");
 
                 handlerName = "included";
             }
@@ -164,19 +158,22 @@ namespace Marten.Internal.CompiledQueries
             var memberType = member.GetMemberType();
             if (memberType.Closes(typeof(Action<>)))
             {
-                return $"{typeof(Include).FullNameInCode()}.{nameof(Include.ReaderToAction)}(session, _query.{member.Name})";
+                return
+                    $"{typeof(Include).FullNameInCode()}.{nameof(Include.ReaderToAction)}(session, _query.{member.Name})";
             }
 
             if (memberType.Closes(typeof(IList<>)))
             {
-                return $"{typeof(Include).FullNameInCode()}.{nameof(Include.ReaderToList)}(session, _query.{member.Name})";
+                return
+                    $"{typeof(Include).FullNameInCode()}.{nameof(Include.ReaderToList)}(session, _query.{member.Name})";
             }
 
             if (memberType.Closes(typeof(IDictionary<,>)))
             {
                 var includeType = memberType.GetGenericArguments().Last();
                 var idType = memberType.GetGenericArguments().First();
-                return $"{typeof(Include).FullNameInCode()}.{nameof(Include.ReaderToDictionary)}<{includeType.FullNameInCode()},{idType.FullNameInCode()}>(session, _query.{member.Name})";
+                return
+                    $"{typeof(Include).FullNameInCode()}.{nameof(Include.ReaderToDictionary)}<{includeType.FullNameInCode()},{idType.FullNameInCode()}>(session, _query.{member.Name})";
             }
 
             throw new ArgumentOutOfRangeException();
@@ -191,10 +188,7 @@ namespace Marten.Internal.CompiledQueries
             method.Frames.Code($"var parameters = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}});",
                 Use.Type<CommandBuilder>(), correctedCommandText);
 
-            foreach (var parameter in _plan.Parameters)
-            {
-                parameter.GenerateCode(method, _storeOptions);
-            }
+            foreach (var parameter in _plan.Parameters) parameter.GenerateCode(method, _storeOptions);
 
             if (hardcoded.HasTenantId)
             {
@@ -234,12 +228,13 @@ namespace Marten.Internal.CompiledQueries
 
             if (_plan.HandlerPrototype is IMaybeStatefulHandler h)
             {
-                if (h.DependsOnDocumentSelector()) return CompiledSourceType.Cloneable;
-
+                if (h.DependsOnDocumentSelector())
+                {
+                    return CompiledSourceType.Cloneable;
+                }
             }
 
             return CompiledSourceType.Stateless;
         }
-
     }
 }

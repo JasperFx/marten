@@ -105,8 +105,8 @@ namespace Marten
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
 
-            services.AddSingleton<IGeneratesCode>(s => s.GetRequiredService<StoreOptions>());
-            services.AddSingleton<IGeneratesCode>(s => s.GetRequiredService<StoreOptions>().EventGraph);
+            services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>());
+            services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>().EventGraph);
 
             return new MartenConfigurationExpression(services, null);
         }
@@ -159,7 +159,7 @@ namespace Marten
             if (stores == null)
             {
                 stores = new SecondaryDocumentStores();
-                services.AddSingleton<IGeneratesCode>(stores);
+                services.AddSingleton<ICodeFileCollection>(stores);
             }
 
             var config = new SecondaryStoreConfig<T>(configure);
