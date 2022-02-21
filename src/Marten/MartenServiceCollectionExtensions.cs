@@ -232,12 +232,20 @@ namespace Marten
             }
 
 
-            // TODO -- add the async daemon?
+            /// <summary>
+            /// Adds the optimized artifact workflow to the store "T"
+            /// </summary>
+            /// <returns></returns>
             public MartenStoreExpression<T> OptimizeArtifactWorkflow()
             {
                 return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
             }
 
+            /// <summary>
+            /// Adds the optimized artifact workflow to the store "T"
+            /// </summary>
+            /// <param name="typeLoadMode"></param>
+            /// <returns></returns>
             public MartenStoreExpression<T> OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
             {
                 Services.AddSingleton<IConfigureMarten<T>>(new OptimizedArtifactsWorkflow<T>(typeLoadMode));
@@ -328,12 +336,21 @@ namespace Marten
                 return store;
             }
 
+            /// <summary>
+            /// Adds the optimized artifact workflow to this store. TODO -- LINK TO DOCS
+            /// </summary>
+            /// <returns></returns>
             public MartenConfigurationExpression OptimizeArtifactWorkflow()
             {
 
                 return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
             }
 
+            /// <summary>
+            /// Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode. TODO -- LINK TO DOCS
+            /// </summary>
+            /// <param name="typeLoadMode"></param>
+            /// <returns></returns>
             public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
             {
                 var configure = new OptimizedArtifactsWorkflow(typeLoadMode);
