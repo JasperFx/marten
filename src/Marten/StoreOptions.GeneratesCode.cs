@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
+using Microsoft.Extensions.Hosting;
 
 namespace Marten
 {
@@ -30,6 +32,22 @@ namespace Marten
 
         public bool SourceCodeWritingEnabled { get; set; } = true;
 
+        // This would only be set for "additional" document stores
+        internal string StoreName { get; set; }
+
+        /// <summary>
+        /// Root folder where generated code should be placed. By default, this is the IHostEnvironment.ContentRootPath
+        /// </summary>
+        public string GeneratedCodeOutputPath { get; set; } = AppContext.BaseDirectory;
+
+        internal void ReadHostEnvironment(IHostEnvironment environment)
+        {
+            GeneratedCodeOutputPath = environment.ContentRootPath;
+            if (environment.ApplicationName.IsNotEmpty())
+            {
+                ApplicationAssembly = Assembly.Load(environment.ApplicationName) ?? Assembly.GetEntryAssembly();
+            }
+        }
 
         internal GenerationRules CreateGenerationRules()
         {
@@ -37,11 +55,17 @@ namespace Marten
             {
                 TypeLoadMode = GeneratedCodeMode,
 
-                GeneratedCodeOutputPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
+                GeneratedCodeOutputPath = GeneratedCodeOutputPath
                     .AppendPath("Internal", "Generated"),
                 ApplicationAssembly = ApplicationAssembly,
                 SourceCodeWritingEnabled = SourceCodeWritingEnabled
             };
+
+            if (StoreName.IsNotEmpty())
+            {
+                rules.GeneratedNamespace += "." + StoreName;
+                rules.GeneratedCodeOutputPath = Path.Combine(rules.GeneratedCodeOutputPath, StoreName);
+            }
 
             rules.ReferenceAssembly(GetType().Assembly);
             rules.ReferenceAssembly(Assembly.GetEntryAssembly());

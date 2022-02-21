@@ -1,13 +1,18 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using Lamar;
 using LamarCodeGeneration;
 using Marten;
 using Marten.Internal;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace CoreTests
@@ -32,6 +37,7 @@ namespace CoreTests
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
+                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 });
 
                 services.AddMartenStore<ISecondStore>(opts =>
@@ -82,6 +88,160 @@ namespace CoreTests
         public void Dispose()
         {
             theContainer?.Dispose();
+        }
+    }
+
+    public class additional_document_store_registration_and_optimized_artifact_workflow
+    {
+        [Fact]
+        public void all_the_defaults()
+        {
+            using var container = Container.For(services =>
+            {
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                services.AddMartenStore<IFirstStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "first_store";
+                });
+            });
+
+
+            var store = container.GetInstance<IFirstStore>().As<DocumentStore>();
+
+            var rules = store.Options.CreateGenerationRules();
+
+            store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
+            store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Dynamic);
+
+            rules.GeneratedNamespace.ShouldBe("Marten.Generated.IFirstStore");
+            rules.GeneratedCodeOutputPath.ShouldEndWith(Path.Combine("Internal", "Generated", "IFirstStore"));
+            rules.SourceCodeWritingEnabled.ShouldBeTrue();
+
+        }
+
+        [Fact]
+        public void using_optimized_mode_in_development()
+        {
+            using var host = new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "first_store";
+                    }).OptimizeArtifactWorkflow();
+                })
+                .UseEnvironment("Development")
+                .Start();
+
+
+            var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+
+            var rules = store.Options.CreateGenerationRules();
+
+            store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
+            store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
+
+            rules.GeneratedNamespace.ShouldBe("Marten.Generated.IFirstStore");
+            rules.GeneratedCodeOutputPath.ShouldEndWith(Path.Combine("Internal", "Generated", "IFirstStore"));
+            rules.SourceCodeWritingEnabled.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void using_optimized_mode_in_production()
+        {
+            using var host = new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "first_store";
+                    }).OptimizeArtifactWorkflow();
+                })
+                .UseEnvironment("Production")
+                .Start();
+
+
+            var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+
+            var rules = store.Options.CreateGenerationRules();
+
+            store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+            store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
+
+            rules.GeneratedNamespace.ShouldBe("Marten.Generated.IFirstStore");
+            rules.GeneratedCodeOutputPath.ShouldEndWith(Path.Combine("Internal", "Generated", "IFirstStore"));
+            rules.SourceCodeWritingEnabled.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void picks_up_application_assembly_and_content_directory_from_IHostEnvironment()
+        {
+            var environment = new TestHostEnvironment();
+
+            using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString);
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                    });
+
+                    services.AddSingleton<IHostEnvironment>(environment);
+                })
+                .Build();
+
+            var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+            store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
+            store.Options.GeneratedCodeOutputPath.ShouldBe(environment.ContentRootPath.ToFullPath());
+
+            var rules = store.Options.CreateGenerationRules();
+            rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
+            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("Internal", "Generated", "IFirstStore"));
+        }
+
+        [Fact]
+        public void using_optimized_mode_in_production_override_type_load_mode()
+        {
+            using var host = new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    // Have to help .net here understand what the environment *should* be
+                    services.AddSingleton<IHostEnvironment>(new TestHostEnvironment
+                    {
+                        EnvironmentName = "Production"
+                    });
+
+
+                    services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "first_store";
+                    }).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                })
+                .Start();
+
+
+            var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+
+            var rules = store.Options.CreateGenerationRules();
+
+            store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+            store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Static);
+
+            rules.GeneratedNamespace.ShouldBe("Marten.Generated.IFirstStore");
+            rules.GeneratedCodeOutputPath.ShouldEndWith(Path.Combine("Internal", "Generated", "IFirstStore"));
+            rules.SourceCodeWritingEnabled.ShouldBeFalse();
         }
     }
 
