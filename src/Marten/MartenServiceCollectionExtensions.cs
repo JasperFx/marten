@@ -44,6 +44,36 @@ namespace Marten
         }
 
         /// <summary>
+        /// Apply additional configuration to a Marten DocumentStore of type "T". This is applied *after*
+        /// AddMartenStore<T>(), but before the actual DocumentStore for "T" is initialized
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public static IServiceCollection ConfigureMarten<T>(this IServiceCollection services,
+            Action<IServiceProvider, StoreOptions> configure) where T : IDocumentStore
+        {
+            var configureMarten = new LambdaConfigureMarten<T>(configure);
+            services.AddSingleton<IConfigureMarten<T>>(configureMarten);
+            return services;
+        }
+
+        /// <summary>
+        /// Apply additional configuration to a Marten DocumentStore of type "T". This is applied *after*
+        /// AddMartenStore<T>(), but before the actual DocumentStore for "T" is initialized
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public static IServiceCollection ConfigureMarten<T>(this IServiceCollection services,
+            Action<StoreOptions> configure) where T : IDocumentStore
+        {
+            var configureMarten = new LambdaConfigureMarten<T>((s, opts) => configure(opts));
+            services.AddSingleton<IConfigureMarten<T>>(configureMarten);
+            return services;
+        }
+
+        /// <summary>
         /// Add Marten IDocumentStore, IDocumentSession, and IQuerySession service registrations
         /// to your application with the given Postgresql connection string and Marten
         /// defaults
@@ -381,6 +411,13 @@ namespace Marten
         public void Configure(IServiceProvider services, StoreOptions options)
         {
             _configure(services, options);
+        }
+    }
+
+    internal class LambdaConfigureMarten<T>: LambdaConfigureMarten, IConfigureMarten<T> where T : IDocumentStore
+    {
+        public LambdaConfigureMarten(Action<IServiceProvider, StoreOptions> configure) : base(configure)
+        {
         }
     }
 

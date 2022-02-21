@@ -243,6 +243,34 @@ namespace CoreTests
             rules.GeneratedCodeOutputPath.ShouldEndWith(Path.Combine("Internal", "Generated", "IFirstStore"));
             rules.SourceCodeWritingEnabled.ShouldBeFalse();
         }
+
+        [Fact]
+        public void use_secondary_options_configure_against_additional_store()
+        {
+            using var host = new HostBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "first_store";
+                    });
+
+                    // Override configuration of IFirstStore
+                    services.ConfigureMarten<IFirstStore>(opts =>
+                    {
+                        opts.AutoCreateSchemaObjects = AutoCreate.None;
+                    });
+                })
+                .Start();
+
+
+            var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+            store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+
+        }
     }
 
     public interface IFirstStore : IDocumentStore{}
