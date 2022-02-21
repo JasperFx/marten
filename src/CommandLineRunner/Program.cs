@@ -16,6 +16,11 @@ using Weasel.Core;
 
 namespace CommandLineRunner
 {
+    public interface IOtherStore : IDocumentStore
+    {
+
+    }
+
     #region sample_configuring_pre_build_types
 
     public class Program
@@ -30,6 +35,13 @@ namespace CommandLineRunner
             return Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddMartenStore<IOtherStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.RegisterDocumentType<Target>();
+                        opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                    });
+
                     services.AddMarten(opts =>
                     {
                         opts.AutoCreateSchemaObjects = AutoCreate.All;

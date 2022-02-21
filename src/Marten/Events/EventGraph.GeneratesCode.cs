@@ -46,6 +46,8 @@ namespace Marten.Events
     {
         private Type _storageType;
 
+        public GenerationRules Rules => Options.CreateGenerationRules();
+
         IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
         {
             var list = new List<ICodeFile> { this };

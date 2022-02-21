@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
@@ -143,6 +144,7 @@ namespace Marten
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
             services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
 
+            services.AddSingleton<ICodeFileCollection>(s => (ICodeFileCollection)s.GetRequiredService<IDocumentStore>());
             services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>());
             services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>().EventGraph);
 
@@ -197,13 +199,25 @@ namespace Marten
             if (stores == null)
             {
                 stores = new SecondaryDocumentStores();
-                services.AddSingleton<ICodeFileCollection>(stores);
+                services.AddSingleton(stores);
+                // I'm not proud of this, but you need the IServiceProvider in order to
+                // build the generation rules
+                services.AddSingleton<ICodeFileCollection>(s =>
+                {
+                    stores.Services = s;
+                    return stores;
+                });
             }
 
             var config = new SecondaryStoreConfig<T>(configure);
             stores.Add(config);
 
             services.AddSingleton<T>(s => config.Build(s));
+
+            services.AddSingleton<ICodeFileCollection>(s => (ICodeFileCollection)s.GetRequiredService<T>());
+            services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<T>().As<DocumentStore>().Options);
+            services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<T>().As<DocumentStore>().Options.EventGraph);
+
 
             return new MartenStoreExpression<T>(services);
         }
@@ -219,7 +233,6 @@ namespace Marten
 
 
             // TODO -- add the async daemon?
-            // TODO -- add initial data
             public MartenStoreExpression<T> OptimizeArtifactWorkflow()
             {
                 return OptimizeArtifactWorkflow(TypeLoadMode.Auto);

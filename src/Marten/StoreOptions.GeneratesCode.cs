@@ -13,6 +13,8 @@ namespace Marten
 {
     public partial class StoreOptions: ICodeFileCollection
     {
+        private GenerationRules _rules;
+
         public IReadOnlyList<ICodeFile> BuildFiles()
         {
             Storage.BuildAllMappings();
@@ -21,6 +23,8 @@ namespace Marten
                 .Select(x => new DocumentProviderBuilder(x, this))
                 .ToList();
         }
+
+        GenerationRules ICodeFileCollection.Rules => CreateGenerationRules();
 
         string ICodeFileCollection.ChildNamespace { get; } = "DocumentStorage";
 
