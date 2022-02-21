@@ -60,6 +60,8 @@ namespace Marten
         private readonly CompiledQueryCollection _dirtyTrackedCompiledQueries;
         private readonly CompiledQueryCollection _queryOnlyCompiledQueries;
 
+        public GenerationRules Rules => Options.CreateGenerationRules();
+
         IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
         {
             using var lightweight = (QuerySession)LightweightSession();

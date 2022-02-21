@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Baseline;
 using LamarCodeGeneration;
 using LamarCompiler;
 using Marten.Util;
@@ -13,19 +15,33 @@ namespace Marten.Internal
 {
     internal class SecondaryDocumentStores : ICodeFileCollection
     {
-        private readonly List<ICodeFile> _files = new List<ICodeFile>();
+        private readonly List<IStoreConfig> _files = new List<IStoreConfig>();
 
         public IReadOnlyList<ICodeFile> BuildFiles()
         {
             return _files;
         }
 
+        public IServiceProvider Services { get; set; }
         public string ChildNamespace { get; } = "Stores";
 
         public void Add(IStoreConfig config)
         {
             _files.Add(config);
             config.Parent = this;
+        }
+
+
+        public GenerationRules Rules
+        {
+            get
+            {
+                var rules = _files.FirstOrDefault().BuildStoreOptions(Services).CreateGenerationRules();
+
+                rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
+
+                return rules;
+            }
         }
     }
 
@@ -34,6 +50,7 @@ namespace Marten.Internal
     internal interface IStoreConfig : ICodeFile
     {
         SecondaryDocumentStores Parent { get; set; }
+        StoreOptions BuildStoreOptions(IServiceProvider provider);
     }
 
     public interface IConfigureMarten<T> : IConfigureMarten where T : IDocumentStore
@@ -57,6 +74,19 @@ namespace Marten.Internal
 
         public T Build(IServiceProvider provider)
         {
+            var options = BuildStoreOptions(provider);
+
+            var rules = options.CreateGenerationRules();
+            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
+            rules.GeneratedNamespace = "Marten.Generated.Stores";
+
+            this.InitializeSynchronously(rules, Parent, provider);
+
+            return (T)Activator.CreateInstance(_storeType, options);
+        }
+
+        public StoreOptions BuildStoreOptions(IServiceProvider provider)
+        {
             var options = _configuration(provider);
             options.StoreName = typeof(T).Name;
 
@@ -72,11 +102,7 @@ namespace Marten.Internal
                 options.ReadHostEnvironment(environment);
             }
 
-            var rules = options.CreateGenerationRules();
-
-            this.InitializeSynchronously(rules, Parent, provider);
-
-            return (T)Activator.CreateInstance(_storeType, options);
+            return options;
         }
 
         public void AssembleTypes(GeneratedAssembly assembly)
