@@ -20,14 +20,15 @@ namespace Marten.Events.Daemon
     /// </summary>
     public class AsyncProjectionHostedService : IHostedService
     {
-        private readonly IDocumentStore _store;
         private readonly ILogger<AsyncProjectionHostedService> _logger;
 
         public AsyncProjectionHostedService(IDocumentStore store, ILogger<AsyncProjectionHostedService> logger)
         {
-            _store = store;
+            Store = store;
             _logger = logger;
         }
+
+        internal IDocumentStore Store { get; }
 
         internal IProjectionDaemon Agent { get; private set; }
 
@@ -35,7 +36,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            switch (_store.Options.Events.Daemon.AsyncMode)
+            switch (Store.Options.Events.Daemon.AsyncMode)
             {
                 case DaemonMode.Disabled:
                     return;
@@ -43,13 +44,13 @@ namespace Marten.Events.Daemon
                     Coordinator = new SoloCoordinator();
                     break;
                 case DaemonMode.HotCold:
-                    Coordinator = new HotColdCoordinator(_store, (DaemonSettings) _store.Options.Events.Daemon, _logger);
+                    Coordinator = new HotColdCoordinator(Store, (DaemonSettings) Store.Options.Events.Daemon, _logger);
                     break;
             }
 
             try
             {
-                Agent = _store.BuildProjectionDaemon(_logger);
+                Agent = Store.BuildProjectionDaemon(_logger);
                 await Coordinator.Start(Agent, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -61,7 +62,7 @@ namespace Marten.Events.Daemon
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_store.Options.Events.Daemon.AsyncMode == DaemonMode.Disabled)
+            if (Store.Options.Events.Daemon.AsyncMode == DaemonMode.Disabled)
             {
                 return;
             }

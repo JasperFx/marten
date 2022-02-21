@@ -238,8 +238,8 @@ namespace Marten
             /// <returns></returns>
             public MartenStoreExpression<T> AddAsyncDaemon(DaemonMode mode)
             {
-                Services.ConfigureMarten(opts => opts.Projections.AsyncMode = mode);
-                Services.AddSingleton<IHostedService, AsyncProjectionHostedService>();
+                Services.ConfigureMarten<T>(opts => opts.Projections.AsyncMode = mode);
+                Services.AddSingleton<IHostedService, AsyncProjectionHostedService<T>>();
 
                 return this;
             }

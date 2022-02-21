@@ -6,6 +6,8 @@ using Baseline;
 using Lamar;
 using LamarCodeGeneration;
 using Marten;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -269,6 +271,36 @@ namespace CoreTests
 
             var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
             store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+
+        }
+
+        [Fact]
+        public void bootstrap_async_daemon_for_secondary_store()
+        {
+            using var host = new HostBuilder()
+
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+
+                    services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "first_store";
+                    }).AddAsyncDaemon(DaemonMode.HotCold);
+
+
+                })
+                .Start();
+
+            var store = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+            store.Options.Projections.AsyncMode.ShouldBe(DaemonMode.HotCold);
+
+            var hostedService = host.Services.GetServices<IHostedService>()
+                .OfType<AsyncProjectionHostedService<IFirstStore>>().Single();
+
+            (hostedService.Store is IFirstStore).ShouldBeTrue();
+
 
         }
     }
