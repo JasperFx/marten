@@ -5,6 +5,7 @@ using LamarCodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
+using Marten.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -264,6 +265,17 @@ namespace Marten
 
                 return this;
             }
+
+            /// <summary>
+            /// Adds a hosted service to your .Net application that will attempt to apply any detected database changes before the
+            /// rest of the application starts running
+            /// </summary>
+            /// <returns></returns>
+            public MartenStoreExpression<T> ApplyAllDatabaseChangesOnStartup()
+            {
+                Services.Insert(0, new ServiceDescriptor(typeof(IHostedService), typeof(ApplyChangesOnStartup<T>), ServiceLifetime.Singleton));
+                return this;
+            }
         }
 
         public class MartenConfigurationExpression
@@ -286,6 +298,17 @@ namespace Marten
             public MartenConfigurationExpression BuildSessionsWith<T>(ServiceLifetime lifetime = ServiceLifetime.Singleton ) where T : class, ISessionFactory
             {
                 Services.Add(new ServiceDescriptor(typeof(ISessionFactory), typeof(T), lifetime));
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a hosted service to your .Net application that will attempt to apply any detected database changes before the
+            /// rest of the application starts running
+            /// </summary>
+            /// <returns></returns>
+            public MartenConfigurationExpression ApplyAllDatabaseChangesOnStartup()
+            {
+                Services.Insert(0, new ServiceDescriptor(typeof(IHostedService), typeof(ApplyChangesOnStartup), ServiceLifetime.Singleton));
                 return this;
             }
 

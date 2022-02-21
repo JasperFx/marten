@@ -60,6 +60,12 @@ namespace Marten
         /// </summary>
         public readonly MartenRegistry Schema;
 
+        /// <summary>
+        /// Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making
+        /// schema changes from multiple application nodes
+        /// </summary>
+        public int ApplyChangesLockId { get; set; } = 4004;
+
 
         private ImHashMap<Type, IFieldMapping> _childFieldMappings = ImHashMap<Type, IFieldMapping>.Empty;
 

@@ -9,6 +9,7 @@ using Marten;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -302,6 +303,32 @@ namespace CoreTests
             (hostedService.Store is IFirstStore).ShouldBeTrue();
 
 
+        }
+
+        [Fact]
+        public async Task apply_changes_on_startup()
+        {
+            await using var container = Container.For(x =>
+            {
+                x.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.RegisterDocumentType<User>();
+                    })
+                    .ApplyAllDatabaseChangesOnStartup();
+            });
+
+            var store = container.GetInstance<IFirstStore>();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+            var instance = container.Model.For<IHostedService>().Instances.First();
+            instance.ImplementationType.ShouldBe(typeof(ApplyChangesOnStartup<IFirstStore>));
+            instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
+
+            // Just a smoke test here
+            await container.GetAllInstances<IHostedService>().First().StartAsync(default);
+
+            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
     }
 

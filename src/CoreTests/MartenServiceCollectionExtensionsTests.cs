@@ -1,10 +1,14 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Baseline;
 using Lamar;
 using Marten;
 using Marten.Internal.Sessions;
+using Marten.Services;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -125,6 +129,32 @@ namespace CoreTests
             ShouldHaveAllTheExpectedRegistrations(container);
 
             container.GetInstance<IDocumentStore>().ShouldBeSameAs(store);
+        }
+
+        [Fact]
+        public async Task apply_changes_on_startup()
+        {
+            await using var container = Container.For(x =>
+            {
+                x.AddMarten(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.RegisterDocumentType<User>();
+                    })
+                    .ApplyAllDatabaseChangesOnStartup();
+            });
+
+            var store = container.GetInstance<IDocumentStore>();
+            await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+            var instance = container.Model.For<IHostedService>().Instances.First();
+            instance.ImplementationType.ShouldBe(typeof(ApplyChangesOnStartup));
+            instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
+
+            // Just a smoke test here
+            await container.GetAllInstances<IHostedService>().First().StartAsync(default);
+
+            await store.Schema.AssertDatabaseMatchesConfigurationAsync();
         }
 
         [Fact]
