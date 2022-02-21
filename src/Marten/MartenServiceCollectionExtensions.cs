@@ -88,6 +88,12 @@ namespace Marten
                     configure.Configure(s, options);
                 }
 
+                var environment = s.GetService<IHostEnvironment>();
+                if (environment != null)
+                {
+                    options.ReadHostEnvironment(environment);
+                }
+
                 return options;
             });
 
@@ -169,13 +175,44 @@ namespace Marten
 
             services.AddSingleton<T>(s => config.Build(s));
 
-            return new MartenStoreExpression<T>();
+            return new MartenStoreExpression<T>(services);
         }
 
         public class MartenStoreExpression<T> where T : IDocumentStore
         {
+            public IServiceCollection Services { get; }
+
+            public MartenStoreExpression(IServiceCollection services)
+            {
+                Services = services;
+            }
+
+
             // TODO -- add the async daemon?
             // TODO -- add initial data
+            public MartenStoreExpression<T> OptimizeArtifactWorkflow()
+            {
+                return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
+            }
+
+            public MartenStoreExpression<T> OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
+            {
+                Services.AddSingleton<IConfigureMarten<T>>(new OptimizedArtifactsWorkflow<T>(typeLoadMode));
+                return this;
+            }
+
+            /// <summary>
+            /// Register the Async Daemon hosted service to continuously attempt to update asynchronous event projections
+            /// </summary>
+            /// <param name="mode"></param>
+            /// <returns></returns>
+            public MartenStoreExpression<T> AddAsyncDaemon(DaemonMode mode)
+            {
+                Services.ConfigureMarten(opts => opts.Projections.AsyncMode = mode);
+                Services.AddSingleton<IHostedService, AsyncProjectionHostedService>();
+
+                return this;
+            }
         }
 
         public class MartenConfigurationExpression
@@ -373,6 +410,14 @@ namespace Marten
 
                 options.SourceCodeWritingEnabled = false;
             }
+        }
+    }
+
+    internal class OptimizedArtifactsWorkflow<T>: OptimizedArtifactsWorkflow, IConfigureMarten<T>
+        where T : IDocumentStore
+    {
+        public OptimizedArtifactsWorkflow(TypeLoadMode productionMode) : base(productionMode)
+        {
         }
     }
 }

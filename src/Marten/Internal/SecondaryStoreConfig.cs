@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using LamarCodeGeneration;
 using LamarCompiler;
 using Marten.Util;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Marten.Internal
 {
@@ -34,6 +36,11 @@ namespace Marten.Internal
         SecondaryDocumentStores Parent { get; set; }
     }
 
+    public interface IConfigureMarten<T> : IConfigureMarten where T : IDocumentStore
+    {
+
+    }
+
     internal class SecondaryStoreConfig<T> : ICodeFile, IStoreConfig where T : IDocumentStore
     {
         private readonly Func<IServiceProvider, StoreOptions> _configuration;
@@ -50,8 +57,21 @@ namespace Marten.Internal
 
         public T Build(IServiceProvider provider)
         {
-            // TODO -- need a way to post-configure these babies
             var options = _configuration(provider);
+            options.StoreName = typeof(T).Name;
+
+            var configures = provider.GetServices<IConfigureMarten<T>>();
+            foreach (var configure in configures)
+            {
+                configure.Configure(provider, options);
+            }
+
+            var environment = provider.GetService<IHostEnvironment>();
+            if (environment != null)
+            {
+                options.ReadHostEnvironment(environment);
+            }
+
             var rules = options.CreateGenerationRules();
 
             this.InitializeSynchronously(rules, Parent, provider);

@@ -1,9 +1,13 @@
 using System;
+using System.IO;
+using System.Reflection;
+using Baseline;
 using Lamar;
 using Marten;
 using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
@@ -63,6 +67,48 @@ namespace CoreTests
             });
 
             ShouldHaveAllTheExpectedRegistrations(container);
+        }
+
+        [Fact]
+        public void picks_up_application_assembly_and_content_directory_from_IHostEnvironment()
+        {
+            var environment = new TestHostEnvironment();
+
+            using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString);
+
+                    services.AddSingleton<IHostEnvironment>(environment);
+                }).Build();
+
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+            store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
+            var projectPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
+            var expectedGeneratedCodeOutputPath = projectPath.ToFullPath();
+            store.Options.GeneratedCodeOutputPath.ShouldBe(expectedGeneratedCodeOutputPath);
+
+            var rules = store.Options.CreateGenerationRules();
+            rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
+            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("Internal", "Generated"));
+        }
+
+        [Fact]
+        public void no_error_if_IHostEnvironment_does_not_exist()
+        {
+            using var host = Host.CreateDefaultBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(ConnectionSource.ConnectionString);
+                }).Build();
+
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+            store.Options.ApplicationAssembly.ShouldBe(Assembly.GetEntryAssembly());
+            store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar));
+
+            var rules = store.Options.CreateGenerationRules();
+            rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
+            rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath.AppendPath("Internal", "Generated"));
         }
 
         [Fact]

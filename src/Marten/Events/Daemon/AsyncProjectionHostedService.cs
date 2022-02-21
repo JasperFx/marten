@@ -7,6 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Daemon
 {
+    internal class AsyncProjectionHostedService<T> : AsyncProjectionHostedService where T : IDocumentStore
+    {
+        public AsyncProjectionHostedService(T store, ILogger<AsyncProjectionHostedService> logger) : base(store, logger)
+        {
+        }
+    }
+
     /// <summary>
     /// Registered automatically by Marten if the async projection daemon is enabled
     /// to start and stop asynchronous projections on application start and shutdown
