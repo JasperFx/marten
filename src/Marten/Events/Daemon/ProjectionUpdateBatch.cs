@@ -294,6 +294,11 @@ namespace Marten.Events.Daemon
             throw new NotSupportedException();
         }
 
+        public void EjectAll()
+        {
+            throw new NotSupportedException();
+        }
+
         public async ValueTask CloseSession()
         {
             foreach (var page in _pages)

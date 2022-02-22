@@ -85,6 +85,12 @@ namespace Marten
         /// <param name="tenantId"></param>
         /// <returns></returns>
         new ITenantOperations ForTenant(string tenantId);
+
+        /// <summary>
+        /// Remove all queued operations in this unit of work, but will not impact any existing identity map. I.e., all document stores,
+        /// event appends, etc.
+        /// </summary>
+        void EjectAllPendingChanges();
     }
 
     public interface ILoadByKeys<TDoc>

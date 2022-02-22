@@ -17,5 +17,6 @@ namespace Marten.Services
         bool TryFindStream(string streamKey, out StreamAction stream);
         bool TryFindStream(Guid streamId, out StreamAction stream);
         bool HasOutstandingWork();
+        void EjectAll();
     }
 }

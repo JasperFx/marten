@@ -29,6 +29,12 @@ namespace Marten.Internal.Sessions
             _workTracker = workTracker;
         }
 
+        public void EjectAllPendingChanges()
+        {
+            _workTracker.EjectAll();
+            ChangeTrackers.Clear();
+        }
+
         internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
 
         internal ISessionWorkTracker WorkTracker => _workTracker;

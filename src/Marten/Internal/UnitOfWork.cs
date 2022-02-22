@@ -351,6 +351,13 @@ namespace Marten.Internal
             return _operations.Any() || Streams.Any() || _eventOperations.Any();
         }
 
+        public void EjectAll()
+        {
+            _operations.Clear();
+            _eventOperations.Clear();
+            Streams.Clear();
+        }
+
         public bool TryFindStream(string streamKey, out StreamAction stream)
         {
             stream = Streams
