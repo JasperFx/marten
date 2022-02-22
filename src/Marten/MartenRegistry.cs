@@ -31,6 +31,11 @@ namespace Marten
         private readonly IList<Action<DocumentMapping<T>>> _alterations
             = new List<Action<DocumentMapping<T>>>();
 
+        internal Action<DocumentMapping<T>> AlterFirst
+        {
+            set => _alterations.Insert(0, value);
+        }
+
         internal Action<DocumentMapping<T>> Alter
         {
             set => _alterations.Add(value);
@@ -126,7 +131,7 @@ namespace Marten
             /// <returns></returns>
             public DocumentMappingExpression<T> DocumentAlias(string alias)
             {
-                _builder.Alter = m => m.Alias = alias;
+                _builder.AlterFirst = m => m.Alias = alias;
                 return this;
             }
 
