@@ -34,6 +34,20 @@ namespace Marten
         }
 
         /// <summary>
+        /// Deletes all current document and event data, then (re)applies the configured
+        /// initial data
+        /// </summary>
+        public async Task ResetAllData()
+        {
+            await Clean.DeleteAllDocumentsAsync().ConfigureAwait(false);
+            await Clean.DeleteAllEventDataAsync().ConfigureAwait(false);
+            foreach (var initialData in _store.Options.InitialData)
+            {
+                await initialData.Populate(_store).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         ///     Set the minimum sequence number for a Hilo sequence for a specific document type
         ///     to the specified floor. Useful for migrating data between databases
         /// </summary>

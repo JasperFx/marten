@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,10 @@ namespace Marten.Testing.Harness
             _output.WriteLine("Executing DDL change:");
             _output.WriteLine(sql);
             _output.WriteLine(String.Empty);
+
+            Debug.WriteLine("Executing DDL change:");
+            Debug.WriteLine(sql);
+            Debug.WriteLine(String.Empty);
         }
 
         public void LogSuccess(NpgsqlCommand command)
@@ -35,6 +40,12 @@ namespace Marten.Testing.Harness
             foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
             {
                 _output.WriteLine($"  {p.ParameterName}: {p.Value}");
+            }
+
+            Debug.WriteLine(command.CommandText);
+            foreach (var p in command.Parameters.OfType<NpgsqlParameter>())
+            {
+                Debug.WriteLine($"  {p.ParameterName}: {p.Value}");
             }
         }
 

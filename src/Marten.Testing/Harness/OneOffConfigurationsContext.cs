@@ -69,8 +69,6 @@ namespace Marten.Testing.Harness
 
             configure(options);
 
-            _store = new DocumentStore(options);
-
             if (cleanAll)
             {
                 using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
@@ -81,6 +79,10 @@ namespace Marten.Testing.Harness
                 }
 
             }
+
+            _store = new DocumentStore(options);
+
+
 
             _disposables.Add(_store);
 
