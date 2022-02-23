@@ -20,6 +20,12 @@ namespace Marten.AsyncDaemon.Testing.TestingSupport
             var message = $"{typeof(T).NameInCode()}/{logLevel}: {formatter(state, exception)}";
             Debug.WriteLine(message);
             _output.WriteLine(message);
+
+            if (exception != null)
+            {
+                Debug.WriteLine(exception);
+                _output.WriteLine(exception.ToString());
+            }
         }
 
         public bool IsEnabled(LogLevel logLevel)

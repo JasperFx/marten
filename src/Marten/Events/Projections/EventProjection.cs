@@ -197,7 +197,7 @@ namespace Marten.Events.Projections
 
         internal override IProjection Build(DocumentStore store)
         {
-            if (_inlineType == null)
+            if (_inlineType == null || _inlineType.CompiledType == null)
             {
                 Compile();
             }

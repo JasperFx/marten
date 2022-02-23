@@ -30,11 +30,11 @@ namespace Marten.Events.Daemon
         private IProjectionDaemon _daemon;
 
 
-        public HotColdCoordinator(IDocumentStore store, DaemonSettings settings, ILogger logger)
+        public HotColdCoordinator(Tenant tenant, DaemonSettings settings, ILogger logger)
         {
             _settings = settings;
             _logger = logger;
-            _tenant = store.As<DocumentStore>().Tenancy.Default;
+            _tenant = tenant;
         }
 
         private void startPollingForOwnership()

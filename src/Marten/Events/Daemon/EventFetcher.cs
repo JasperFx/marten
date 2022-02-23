@@ -6,6 +6,7 @@ using Baseline.Dates;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon
@@ -16,21 +17,28 @@ namespace Marten.Events.Daemon
     internal class EventFetcher : IDisposable
     {
         private readonly IDocumentStore _store;
+        private readonly Tenant _tenant;
         private readonly ISqlFragment[] _filters;
         private IEventStorage _storage;
-        private EventStatement _statement;
-        private IQueryHandler<IReadOnlyList<IEvent>> _handler;
+        private readonly EventStatement _statement;
+        private readonly IQueryHandler<IReadOnlyList<IEvent>> _handler;
 
-        public EventFetcher(IDocumentStore store, ISqlFragment[] filters)
+        public EventFetcher(IDocumentStore store, Tenant tenant, ISqlFragment[] filters)
         {
             _store = store;
+            _tenant = tenant;
             _filters = filters;
 
-            using var session = (QuerySession)_store.QuerySession(new SessionOptions{AllowAnyTenant = true});
+            using var session = querySession();
             _storage = session.EventStorage();
             _statement = new EventStatement(_storage) {Filters = _filters};
 
             _handler = new ListQueryHandler<IEvent>(_statement, _storage);
+        }
+
+        private QuerySession querySession()
+        {
+            return (QuerySession)_store.QuerySession(new SessionOptions{Tenant = _tenant, AllowAnyTenant = true});
         }
 
         private void teardown()
@@ -45,7 +53,7 @@ namespace Marten.Events.Daemon
 
         public async Task Load(ShardName projectionShardName, EventRange range, CancellationToken token)
         {
-            using var session = (QuerySession)_store.QuerySession(new SessionOptions{AllowAnyTenant = true});
+            using var session = querySession();
 
             // There's an assumption here that this method is only called sequentially
             // and never at the same time on the same instance

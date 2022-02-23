@@ -220,9 +220,10 @@ namespace Marten
         {
             logger ??= new NulloLogger();
 
-            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(Tenancy.Default), Events);
+            var tenant = Tenancy.Default;
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(tenant), Events);
 
-            return new ProjectionDaemon(this, detector, logger);
+            return new ProjectionDaemon(this, tenant, detector, logger);
         }
 
         /// <summary>

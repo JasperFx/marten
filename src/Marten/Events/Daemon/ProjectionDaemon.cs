@@ -12,6 +12,7 @@ using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Services;
+using Marten.Storage;
 using Microsoft.Extensions.Logging;
 #nullable enable
 namespace Marten.Events.Daemon
@@ -28,10 +29,11 @@ namespace Marten.Events.Daemon
         private readonly DocumentStore _store;
         private INodeCoordinator? _coordinator;
 
-        public ProjectionDaemon(DocumentStore store, IHighWaterDetector detector, ILogger logger)
+        public ProjectionDaemon(DocumentStore store, Tenant tenant, IHighWaterDetector detector, ILogger logger)
         {
             _cancellation = new CancellationTokenSource();
             _store = store;
+            Tenant = tenant;
             _logger = logger;
 
             Tracker = new ShardStateTracker(logger);
@@ -40,9 +42,12 @@ namespace Marten.Events.Daemon
             Settings = store.Options.Projections;
         }
 
-        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events), logger)
+        // Only for testing
+        public ProjectionDaemon(DocumentStore store, ILogger logger) : this(store, store.Tenancy.Default, new HighWaterDetector(new AutoOpenSingleQueryRunner(store.Tenancy.Default), store.Events), logger)
         {
         }
+
+        public Tenant Tenant { get; }
 
         public Task UseCoordinator(INodeCoordinator coordinator)
         {

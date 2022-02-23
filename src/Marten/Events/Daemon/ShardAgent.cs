@@ -19,10 +19,7 @@ namespace Marten.Events.Daemon
     /// </summary>
     internal class ShardAgent : IShardAgent, IObserver<ShardState>
     {
-        private static readonly SessionOptions DefaultSessionOptions = new SessionOptions
-        {
-            AllowAnyTenant = true, Tracking = DocumentTracking.None
-        };
+        private SessionOptions _sessionOptions;
 
         private readonly DocumentStore _store;
         private readonly AsyncProjectionShard _projectionShard;
@@ -130,6 +127,11 @@ namespace Marten.Events.Daemon
         {
             _logger.LogInformation("Starting projection agent for '{ShardName}'", _projectionShard.Name);
 
+            _sessionOptions = new SessionOptions
+            {
+                Tenant = daemon.Tenant, AllowAnyTenant = true, Tracking = DocumentTracking.None
+            };
+
             var singleFileOptions = new ExecutionDataflowBlockOptions
             {
                 EnsureOrdered = true,
@@ -144,7 +146,7 @@ namespace Marten.Events.Daemon
             _daemon = daemon;
 
 
-            _fetcher = new EventFetcher(_store, _projectionShard.EventFilters);
+            _fetcher = new EventFetcher(_store, _daemon.Tenant, _projectionShard.EventFilters);
             _grouping = new TransformBlock<EventRange, EventRangeGroup>(groupEventRange, singleFileOptions);
 
 
@@ -392,7 +394,7 @@ namespace Marten.Events.Daemon
 
         public ProjectionUpdateBatch StartNewBatch(EventRangeGroup group)
         {
-            var session = _store.OpenSession(DefaultSessionOptions);
+            var session = _store.OpenSession(_sessionOptions);
             return new ProjectionUpdateBatch(_store.Events, (DocumentSessionBase) session, group.Range, group.Cancellation);
         }
 
@@ -404,7 +406,9 @@ namespace Marten.Events.Daemon
 
             if (_cancellation.IsCancellationRequested) return;
 
-            var session = (DocumentSessionBase)_store.OpenSession(DefaultSessionOptions);
+
+
+            var session = (DocumentSessionBase)_store.OpenSession(_sessionOptions);
             await using (session.ConfigureAwait(false))
             {
                 try

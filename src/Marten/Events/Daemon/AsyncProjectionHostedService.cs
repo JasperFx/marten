@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,11 +25,11 @@ namespace Marten.Events.Daemon
 
         public AsyncProjectionHostedService(IDocumentStore store, ILogger<AsyncProjectionHostedService> logger)
         {
-            Store = store;
+            Store = store.As<DocumentStore>();
             _logger = logger;
         }
 
-        internal IDocumentStore Store { get; }
+        internal DocumentStore Store { get; }
 
         internal IProjectionDaemon Agent { get; private set; }
 
@@ -36,7 +37,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            switch (Store.Options.Events.Daemon.AsyncMode)
+            switch (Store.Options.Projections.AsyncMode)
             {
                 case DaemonMode.Disabled:
                     return;
@@ -44,7 +45,7 @@ namespace Marten.Events.Daemon
                     Coordinator = new SoloCoordinator();
                     break;
                 case DaemonMode.HotCold:
-                    Coordinator = new HotColdCoordinator(Store, (DaemonSettings) Store.Options.Events.Daemon, _logger);
+                    Coordinator = new HotColdCoordinator(Store.Tenancy.Default, (DaemonSettings) Store.Options.Projections, _logger);
                     break;
             }
 
@@ -62,7 +63,7 @@ namespace Marten.Events.Daemon
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (Store.Options.Events.Daemon.AsyncMode == DaemonMode.Disabled)
+            if (Store.Options.Projections.AsyncMode == DaemonMode.Disabled)
             {
                 return;
             }

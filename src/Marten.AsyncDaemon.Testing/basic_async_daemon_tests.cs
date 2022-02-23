@@ -64,7 +64,7 @@ namespace Marten.AsyncDaemon.Testing
         [Fact]
         public async Task event_fetcher_simple_case()
         {
-            using var fetcher = new EventFetcher(theStore, new ISqlFragment[0]);
+            using var fetcher = new EventFetcher(theStore, theStore.Tenancy.Default, new ISqlFragment[0]);
 
             NumberOfStreams = 10;
             await PublishSingleThreaded();
@@ -92,7 +92,7 @@ namespace Marten.AsyncDaemon.Testing
             NumberOfStreams = 10;
             await PublishSingleThreaded();
 
-            using var fetcher1 = new EventFetcher(theStore, new ISqlFragment[0]);
+            using var fetcher1 = new EventFetcher(theStore, theStore.Tenancy.Default, new ISqlFragment[0]);
 
             var shardName = new ShardName("name");
             var range1 = new EventRange(shardName, 0, NumberOfEvents);
@@ -104,7 +104,7 @@ namespace Marten.AsyncDaemon.Testing
             uniqueTypeCount.ShouldBe(5);
 
             var filter = new EventTypeFilter(theStore.Events, new Type[] {typeof(Travel), typeof(Arrival)});
-            using var fetcher2 = new EventFetcher(theStore, new ISqlFragment[]{filter});
+            using var fetcher2 = new EventFetcher(theStore, theStore.Tenancy.Default, new ISqlFragment[]{filter});
 
             var range2 = new EventRange(shardName, 0, NumberOfEvents);
             await fetcher2.Load(shardName, range2, CancellationToken.None);
