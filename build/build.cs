@@ -197,6 +197,8 @@ namespace martenbuild
                   "src/EventSourcingTests",
                   "src/DocumentDbTests",
                   "src/CoreTests",
+                  "src/Marten.PLv8.Testing",
+                  "src/Marten.AspNetCore.Testing"
                 };
 
                 foreach (var item in test_projects)
