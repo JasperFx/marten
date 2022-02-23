@@ -53,6 +53,9 @@ namespace martenbuild
                     $"build src/Marten.Testing/Marten.Testing.csproj --framework {_framework} --configuration {configuration}");
             });
 
+            Target("test-base-lib", DependsOn("compile"), () =>
+                RunTests("Marten.Testing"));
+
             Target("compile-noda-time", DependsOn("clean"), () =>
                 Run("dotnet", $"build src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj --framework {_framework} --configuration {configuration}"));
 
@@ -62,9 +65,26 @@ namespace martenbuild
             Target("compile-aspnetcore", DependsOn("clean"), () =>
                 RunTests("Marten.AspNetCore.Testing"));
 
-
             Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
                 RunTests("Marten.AspNetCore.Testing"));
+
+            Target("compile-core-tests", DependsOn("clean"), () =>
+                Run("dotnet", $"build src/CoreTests/CoreTests.csproj --framework {_framework} --configuration {configuration}"));
+
+            Target("test-core", DependsOn("compile-core-tests"), () =>
+                RunTests("CoreTests"));
+
+            Target("compile-document-db-tests", DependsOn("clean"), () =>
+                Run("dotnet", $"build src/DocumentDbTests/DocumentDbTests.csproj --framework {_framework} --configuration {configuration}"));
+
+            Target("test-document-db", DependsOn("compile-document-db-tests"), () =>
+                RunTests("DocumentDbTests"));
+
+            Target("compile-event-sourcing-tests", DependsOn("clean"), () =>
+                Run("dotnet", $"build src/EventSourcingTests/EventSourcingTests.csproj --framework {_framework} --configuration {configuration}"));
+
+            Target("test-event-sourcing", DependsOn("compile-event-sourcing-tests"), () =>
+                RunTests("EventSourcingTests"));
 
             Target("test-codegen", () =>
             {
@@ -74,27 +94,21 @@ namespace martenbuild
                 Run("dotnet", $"run -- test", projectPath);
             });
 
-            Target("test-marten", DependsOn("compile", "test-noda-time"), () =>
-            {
-                RunTests("Marten.Testing");
-                RunTests("CoreTests");
-                RunTests("DocumentDbTests");
-                RunTests("EventSourcingTests");
-            });
-
             Target("rebuild-database", () =>
             {
                 Run("docker", "compose down");
                 Run("docker", "compose up -d");
             });
 
-            Target("test-plv8", DependsOn("compile"), () =>
+            Target("compile-plv8", DependsOn("clean"), () =>
+                Run("dotnet", $"build src/Marten.PLv8.Testing/Marten.PLv8.Testing.csproj --framework {_framework} --configuration {configuration}"));
+
+            Target("test-plv8", DependsOn("compile", "compile-plv8"), () =>
                 RunTests("Marten.PLv8.Testing"));
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
-            Target("test", DependsOn("test-marten", "test-noda-time", "test-plv8", "test-aspnetcore"));
-
+            Target("test", DependsOn("test-base-lib", "test-document-db", "test-event-sourcing", "test-noda-time", "test-plv8", "test-aspnetcore"));
 
             Target("install-mdsnippets", IgnoreIfFailed(() =>
                 Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
@@ -171,6 +185,8 @@ namespace martenbuild
                 {
                     Console.WriteLine("disable_test_parallelization env var not set, this step is ignored.");
                     return;
+                } else {
+                    Console.WriteLine($"disable_test_parallelization={disableTestParallelization}");
                 }
 
                 var test_projects = new string[] {
