@@ -63,7 +63,7 @@ namespace martenbuild
                 RunTests("Marten.NodaTime.Testing"));
 
             Target("compile-aspnetcore", DependsOn("clean"), () =>
-                RunTests("Marten.AspNetCore.Testing"));
+                Run("dotnet", $"build src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj --framework {_framework} --configuration {configuration}"));
 
             Target("test-aspnetcore", DependsOn("compile-aspnetcore"), () =>
                 RunTests("Marten.AspNetCore.Testing"));
@@ -108,7 +108,9 @@ namespace martenbuild
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
-            Target("test", DependsOn("test-base-lib", "test-noda-time", "test-plv8", "test-aspnetcore", "test-document-db", "test-event-sourcing"));
+            Target("test", DependsOn("test-base-lib", "test-document-db", "test-event-sourcing"));
+
+            Target("test-extension-libs", DependsOn("test-noda-time", "test-plv8", "test-aspnetcore"));
 
             Target("install-mdsnippets", IgnoreIfFailed(() =>
                 Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
