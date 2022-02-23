@@ -108,7 +108,7 @@ namespace martenbuild
 
 
             // JDM -- I removed test-codegen temporarily during V5 work
-            Target("test", DependsOn("test-base-lib", "test-document-db", "test-event-sourcing", "test-noda-time", "test-plv8", "test-aspnetcore"));
+            Target("test", DependsOn("test-base-lib", "test-noda-time", "test-plv8", "test-aspnetcore", "test-document-db", "test-event-sourcing"));
 
             Target("install-mdsnippets", IgnoreIfFailed(() =>
                 Run("dotnet", $"tool install -g MarkdownSnippets.Tool")
