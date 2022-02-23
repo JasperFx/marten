@@ -63,7 +63,7 @@ namespace Marten.Events.Daemon
 
         public async Task StartDaemon()
         {
-            await _store.Tenancy.Default.Database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+            await Tenant.Database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
             await _highWater.Start().ConfigureAwait(false);
         }
 
