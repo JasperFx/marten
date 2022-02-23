@@ -158,7 +158,8 @@ namespace Marten.Events.Daemon
             // just to keep tracking correct
             _loader.LinkTo(_grouping, e => e.Events != null);
 
-            var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, _cancellation).ConfigureAwait(false);
+            // TODO -- THIS WILL NOT WORK WITH MULTI-TENANTED DATABASES!!!!
+            var lastCommitted = await _store.Advanced.ProjectionProgressFor(_projectionShard.Name, token:_cancellation).ConfigureAwait(false);
 
             foreach (var storageType in _source.Options.StorageTypes)
             {

@@ -61,8 +61,8 @@ namespace CoreTests
         [Fact]
         public void should_have_a_single_ICodeFileCollection_registration_for_secondary_stores()
         {
-            theContainer.Model.InstancesOf<ICodeFileCollection>()
-                .Count(x => x.ImplementationType == typeof(SecondaryDocumentStores)).ShouldBe(1);
+            theContainer.GetAllInstances<ICodeFileCollection>().OfType<SecondaryDocumentStores>()
+                .Count().ShouldBe(1);
         }
 
         [Fact]
