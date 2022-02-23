@@ -187,7 +187,7 @@ namespace CoreTests
         [Fact]
         public void picks_up_application_assembly_and_content_directory_from_IHostEnvironment()
         {
-            var environment = new TestHostEnvironment();
+            var environment = new MartenHostEnvironment();
 
             using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
                 .ConfigureServices(services =>
@@ -218,7 +218,7 @@ namespace CoreTests
                 .ConfigureServices(services =>
                 {
                     // Have to help .net here understand what the environment *should* be
-                    services.AddSingleton<IHostEnvironment>(new TestHostEnvironment
+                    services.AddSingleton<IHostEnvironment>(new MartenHostEnvironment
                     {
                         EnvironmentName = "Production"
                     });
@@ -231,6 +231,8 @@ namespace CoreTests
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "first_store";
                     }).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+
+                    services.SetApplicationProject(typeof(IFirstStore).Assembly);
                 })
                 .Start();
 

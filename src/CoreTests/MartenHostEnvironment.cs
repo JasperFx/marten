@@ -5,9 +5,9 @@ using Microsoft.Extensions.Hosting;
 
 namespace CoreTests
 {
-    public class TestHostEnvironment : IHostEnvironment
+    internal class MartenHostEnvironment : IHostEnvironment
     {
-        public string ApplicationName { get; set; } = typeof(TestHostEnvironment).Assembly.GetName().Name;
+        public string ApplicationName { get; set; } = typeof(MartenHostEnvironment).Assembly.GetName().Name;
 
         public IFileProvider ContentRootFileProvider { get; set; } =
             new PhysicalFileProvider(AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory());

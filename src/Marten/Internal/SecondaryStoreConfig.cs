@@ -75,11 +75,16 @@ namespace Marten.Internal
         public T Build(IServiceProvider provider)
         {
             var options = BuildStoreOptions(provider);
+            var environment = provider.GetService<IHostEnvironment>();
+            if (environment != null)
+            {
+                options.ReadHostEnvironment(environment);
+            }
 
             var rules = options.CreateGenerationRules();
-            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
-            rules.GeneratedNamespace = "Marten.Generated.Stores";
 
+
+            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
             this.InitializeSynchronously(rules, Parent, provider);
 
             return (T)Activator.CreateInstance(_storeType, options);

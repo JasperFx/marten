@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Baseline;
 using Lamar;
 using Marten;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -76,7 +77,7 @@ namespace CoreTests
         [Fact]
         public void picks_up_application_assembly_and_content_directory_from_IHostEnvironment()
         {
-            var environment = new TestHostEnvironment();
+            var environment = new MartenHostEnvironment();
 
             using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
                 .ConfigureServices(services =>

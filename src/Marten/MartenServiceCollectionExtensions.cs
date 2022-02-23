@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Baseline;
 using LamarCodeGeneration;
 using Marten.Events.Daemon;
@@ -17,6 +19,60 @@ namespace Marten
 {
     public static class MartenServiceCollectionExtensions
     {
+        /// <summary>
+        /// Meant for testing scenarios to "help" .Net understand where the IHostEnvironment for the
+        /// Host. You may have to specify the relative path to the entry project folder from the AppContext.BaseDirectory
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <param name="hintPath"></param>
+        /// <returns></returns>
+        public static IHostBuilder UseApplicationProject(this IHostBuilder builder, Assembly assembly,
+            string? hintPath = null)
+        {
+            return builder.ConfigureServices((c, services) => services.SetApplicationProject(assembly, hintPath));
+        }
+
+        /// <summary>
+        /// Meant for testing scenarios to "help" .Net understand where the IHostEnvironment for the
+        /// Host. You may have to specify the relative path to the entry project folder from the AppContext.BaseDirectory
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="assembly"></param>
+        /// <param name="hintPath"></param>
+        /// <returns></returns>
+        public static IServiceCollection SetApplicationProject(this IServiceCollection services, Assembly assembly,
+            string? hintPath = null)
+        {
+            var environment = services.Select(x => x.ImplementationInstance)
+                .OfType<IHostEnvironment>().LastOrDefault();
+
+            environment.ApplicationName = assembly.GetName().Name;
+
+            string path = AppContext.BaseDirectory.ToFullPath();
+            if (hintPath.IsNotEmpty())
+            {
+                path.AppendPath(hintPath).ToFullPath();
+            }
+            else
+            {
+                path = path.TrimEnd(Path.DirectorySeparatorChar);
+                while (!path.EndsWith("bin"))
+                {
+                    path = path.ParentDirectory();
+                }
+
+                // Go up once to get to the test project directory, then up again to the "src" level,
+                // then "down" to the application directory
+                path = path.ParentDirectory().ParentDirectory().AppendPath(environment.ApplicationName);
+            }
+
+            return services;
+
+        }
+
+
+
         /// <summary>
         /// Apply additional configuration to a Marten DocumentStore. This is applied *after*
         /// AddMarten(), but before the DocumentStore is initialized
