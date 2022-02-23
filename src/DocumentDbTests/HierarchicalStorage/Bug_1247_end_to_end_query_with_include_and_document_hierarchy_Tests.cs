@@ -20,7 +20,7 @@ namespace DocumentDbTests.HierarchicalStorage
             DocumentTracking = DocumentTracking.IdentityOnly;
         }
 
-        // [Fact] flaky in CI
+        [Fact]
         public void include_to_list_using_outer_join()
         {
             var user1 = new User();
@@ -35,24 +35,22 @@ namespace DocumentDbTests.HierarchicalStorage
             theSession.Store(issue1, issue2, issue3, issue4);
             theSession.SaveChanges();
 
-            using (var query = theStore.QuerySession())
-            {
-                query.Logger = new TestOutputMartenLogger(_output);
+            using var query = theStore.QuerySession();
+            query.Logger = new TestOutputMartenLogger(_output);
 
-                var list = new List<User>();
+            var list = new List<User>();
 
-                var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
+            var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
 
-                list.Count.ShouldBe(2);
+            list.Count.ShouldBe(2);
 
-                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-                list.Any(x => x.Id == user2.Id).ShouldBeTrue();
+            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
 
-                issues.Length.ShouldBe(4);
-            }
+            issues.Length.ShouldBe(4);
         }
 
-        // [Fact] flaky in CI
+        [Fact]
         public async Task include_to_list_using_outer_join_async()
         {
             var user1 = new User();
@@ -65,21 +63,19 @@ namespace DocumentDbTests.HierarchicalStorage
 
             theSession.Store(user1, user2);
             theSession.Store(issue1, issue2, issue3, issue4);
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
 
-            using (var query = theStore.QuerySession())
-            {
-                var list = new List<User>();
+            await using var query = theStore.QuerySession();
+            var list = new List<User>();
 
-                var issues = await query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToListAsync();
+            var issues = await query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToListAsync();
 
-                list.Count.ShouldBe(2);
+            list.Count.ShouldBe(2);
 
-                list.Any(x => x.Id == user1.Id).ShouldBeTrue();
-                list.Any(x => x.Id == user2.Id).ShouldBeTrue();
+            list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+            list.Any(x => x.Id == user2.Id).ShouldBeTrue();
 
-                issues.Count.ShouldBe(4);
-            }
+            issues.Count.ShouldBe(4);
         }
 
     }

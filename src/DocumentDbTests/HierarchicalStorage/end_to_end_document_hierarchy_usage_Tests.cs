@@ -4,7 +4,6 @@ using Xunit;
 
 namespace DocumentDbTests.HierarchicalStorage
 {
-    [Collection("hierarchy")]
     public class end_to_end_document_hierarchy_usage_Tests: OneOffConfigurationsContext
     {
         protected AdminUser admin1 = new AdminUser
