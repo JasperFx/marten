@@ -2,12 +2,15 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Baseline;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
+
+#nullable enable
 
 namespace Marten.Storage
 {
@@ -233,17 +236,19 @@ END; $$;
             await tx.CommitAsync().ConfigureAwait(false);
         }
 
-        public void DeleteSingleEventStream(Guid streamId)
+
+
+        public void DeleteSingleEventStream(Guid streamId, string? tenantId = null)
         {
-            DeleteSingleEventStream<Guid>(streamId);
+            DeleteSingleEventStream<Guid>(streamId, tenantId);
         }
 
-        public void DeleteSingleEventStream(string streamId)
+        public void DeleteSingleEventStream(string streamId, string? tenantId = null)
         {
-            DeleteSingleEventStream<string>(streamId);
+            DeleteSingleEventStream<string>(streamId, tenantId);
         }
 
-        private void DeleteSingleEventStream<T>(T streamId)
+        private void DeleteSingleEventStream<T>(T streamId, string? tenantId = null)
         {
             if (typeof(T) != _options.EventGraph.GetStreamIdType())
             {
@@ -264,9 +269,9 @@ END; $$;
             var cmd = conn.CreateCommand($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
             cmd.AddNamedParameter("id", streamId);
 
-            if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
+            if (_options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
             {
-                cmd.AddNamedParameter("tenantId", TenantId);
+                cmd.AddNamedParameter("tenantId", tenantId);
             }
 
             conn.Open();
@@ -274,17 +279,17 @@ END; $$;
             cmd.ExecuteNonQuery();
         }
 
-        public Task DeleteSingleEventStreamAsync(Guid streamId)
+        public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null)
         {
-            return DeleteSingleEventStreamAsync<Guid>(streamId);
+            return DeleteSingleEventStreamAsync<Guid>(streamId, tenantId);
         }
 
-        public Task DeleteSingleEventStreamAsync(string streamId)
+        public Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null)
         {
-            return DeleteSingleEventStreamAsync<string>(streamId);
+            return DeleteSingleEventStreamAsync<string>(streamId, tenantId);
         }
 
-        private async Task DeleteSingleEventStreamAsync<T>(T streamId)
+        private async Task DeleteSingleEventStreamAsync<T>(T streamId, string? tenantId = null)
         {
             if (typeof(T) != _options.EventGraph.GetStreamIdType())
             {
@@ -305,9 +310,9 @@ END; $$;
             var cmd = conn.CreateCommand($"delete from {_options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {_options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
             cmd.AddNamedParameter("id", streamId);
 
-            if (_options.Events.TenancyStyle == TenancyStyle.Conjoined)
+            if (_options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
             {
-                cmd.AddNamedParameter("tenantId", TenantId);
+                cmd.AddNamedParameter("tenantId", tenantId);
             }
 
             await conn.OpenAsync().ConfigureAwait(false);

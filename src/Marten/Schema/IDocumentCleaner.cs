@@ -80,28 +80,32 @@ namespace Marten.Schema
         /// not impact projected documents. USE WITH CAUTION!
         /// </summary>
         /// <param name="streamId"></param>
-        void DeleteSingleEventStream(Guid streamId);
+        /// <param name="tenantId">Optional tenant id for conjoined multi-tenancy</param>
+        void DeleteSingleEventStream(Guid streamId, string? tenantId = null);
 
         /// <summary>
         /// Deletes all stream and event data for the designated streamId. Will
         /// not impact projected documents. USE WITH CAUTION!
         /// </summary>
         /// <param name="streamId"></param>
-        Task DeleteSingleEventStreamAsync(Guid streamId);
+        /// <param name="tenantId">Optional tenant id for conjoined multi-tenancy</param>
+        Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null);
 
         /// <summary>
         /// Deletes all stream and event data for the designated streamId. Will
         /// not impact projected documents. USE WITH CAUTION!
         /// </summary>
         /// <param name="streamId"></param>
-        void DeleteSingleEventStream(string streamId);
+        /// <param name="tenantId">Optional tenant id for conjoined multi-tenancy</param>
+        void DeleteSingleEventStream(string streamId, string? tenantId = null);
 
         /// <summary>
         /// Deletes all stream and event data for the designated streamId. Will
         /// not impact projected documents. USE WITH CAUTION!
         /// </summary>
         /// <param name="streamId"></param>
-        Task DeleteSingleEventStreamAsync(string streamId);
+        /// <param name="tenantId">Optional tenant id for conjoined multi-tenancy</param>
+        Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null);
 
 
     }
