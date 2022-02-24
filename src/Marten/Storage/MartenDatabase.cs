@@ -23,7 +23,6 @@ namespace Marten.Storage
 {
     public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     {
-        private readonly IConnectionFactory _factory;
         private readonly StorageFeatures _features;
 
 
@@ -32,12 +31,11 @@ namespace Marten.Storage
         private Lazy<SequenceFactory> _sequences;
 
         // TODO -- need to name the databases some how
-        public MartenDatabase(StoreOptions options, IConnectionFactory factory)
-            : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, "Marten", factory.Create)
+        public MartenDatabase(StoreOptions options, IConnectionFactory factory, string identifier)
+            : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, factory.Create)
         {
             _features = options.Storage;
             _options = options;
-            _factory = factory;
 
             resetSequences();
 
