@@ -9,7 +9,7 @@ namespace Marten.Storage
     {
         public DefaultTenancy(IConnectionFactory factory, StoreOptions options): base(options)
         {
-            Default = new Tenant(DefaultTenantId, new MartenDatabase(options, factory, DefaultTenantId));
+            Default = new Tenant(DefaultTenantId, new MartenDatabase(options, factory));
         }
 
         public Tenant GetTenant(string tenantId)

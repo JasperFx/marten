@@ -32,10 +32,9 @@ namespace Marten.Storage
         private Lazy<SequenceFactory> _sequences;
 
         // TODO -- need to name the databases some how
-        public MartenDatabase(StoreOptions options, IConnectionFactory factory, string tenantId)
+        public MartenDatabase(StoreOptions options, IConnectionFactory factory)
             : base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, "Marten", factory.Create)
         {
-            TenantId = tenantId;
             _features = options.Storage;
             _options = options;
             _factory = factory;
@@ -44,9 +43,6 @@ namespace Marten.Storage
 
             Providers = options.Providers;
         }
-
-
-        public string TenantId { get; }
 
         public ISequences Sequences => _sequences.Value;
 
