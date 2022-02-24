@@ -34,6 +34,7 @@ jobs:
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: ${{ env.pg_db }}
+          NAMEDATALEN: 150
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

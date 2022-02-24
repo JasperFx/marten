@@ -15,18 +15,25 @@ resources:
         - 5432:5432
       env:
         POSTGRES_HOST_AUTH_METHOD: trust
+        NAMEDATALEN: 150
     - container: pg11
       image: ionx/postgres-plv8:11.5
       ports:
         - 5432:5432
+      env:
+        NAMEDATALEN: 150
     - container: pg10
       image: ionx/postgres-plv8:10.6
       ports:
         - 5432:5432
+      env:
+        NAMEDATALEN: 150
     - container: pg9_6
       image: mysticmind/postgres-plv8:9.6-1.4
       ports:
         - 5432:5432
+      env:
+        NAMEDATALEN: 150
 
 variables:
   config: Release
