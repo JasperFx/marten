@@ -17,7 +17,7 @@ namespace Marten.Events.Aggregation
             }).ToList());
         }
 
-        public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession,
+        public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession,
             List<IEvent> events, ITenancy tenancy)
         {
             var list = new List<TenantSliceGroup<TDoc, string>>();
@@ -25,7 +25,7 @@ namespace Marten.Events.Aggregation
 
             foreach (var tenantGroup in byTenant)
             {
-                var tenant = tenancy.GetTenant(tenantGroup.Key);
+                var tenant = await tenancy.GetTenantAsync(tenantGroup.Key).ConfigureAwait(false);
 
                 var slices = tenantGroup
                     .GroupBy(x => x.StreamKey)
@@ -36,7 +36,7 @@ namespace Marten.Events.Aggregation
                 list.Add(group);
             }
 
-            return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>>(list);
+            return list;
         }
 
     }

@@ -74,10 +74,10 @@ namespace Marten.Events.Projections
             if (_groupByTenant)
             {
                 var byTenant = events.GroupBy(x => x.TenantId);
-                var groupTasks = byTenant.Select(tGroup =>
+                var groupTasks = byTenant.Select(async tGroup =>
                 {
-                    var tenant = tenancy.GetTenant(tGroup.Key);
-                    return groupSingleTenant(tenant, querySession.ForTenant(tGroup.Key), tGroup.ToList());
+                    var tenant = await tenancy.GetTenantAsync(tGroup.Key).ConfigureAwait(false);
+                    return await groupSingleTenant(tenant, querySession.ForTenant(tGroup.Key), tGroup.ToList()).ConfigureAwait(false);
                 });
 
                 var list = new List<TenantSliceGroup<TDoc, TId>>();

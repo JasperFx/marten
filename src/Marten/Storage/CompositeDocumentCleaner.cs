@@ -88,14 +88,15 @@ namespace Marten.Storage
             DeleteSingleEventStreamAsync(streamId, tenantId).GetAwaiter().GetResult();
         }
 
-        public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null)
+        public async Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null)
         {
             if (tenantId.IsEmpty())
             {
-                return applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId));
+                await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId)).ConfigureAwait(false);
             }
 
-            return _tenancy.GetTenant(tenantId).Database.DeleteSingleEventStreamAsync(streamId, tenantId);
+            var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+            await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId).ConfigureAwait(false);
         }
 
         public void DeleteSingleEventStream(string streamId, string? tenantId = null)
@@ -103,14 +104,15 @@ namespace Marten.Storage
             DeleteSingleEventStreamAsync(streamId, tenantId).GetAwaiter().GetResult();
         }
 
-        public Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null)
+        public async Task DeleteSingleEventStreamAsync(string streamId, string? tenantId = null)
         {
             if (tenantId.IsEmpty())
             {
-                return applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId));
+                await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId)).ConfigureAwait(false);
             }
 
-            return _tenancy.GetTenant(tenantId).Database.DeleteSingleEventStreamAsync(streamId, tenantId);
+            var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+            await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId).ConfigureAwait(false);
         }
     }
 }

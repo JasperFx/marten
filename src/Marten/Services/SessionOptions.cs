@@ -58,7 +58,7 @@ namespace Marten.Services
         internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store, CommandRunnerMode mode, CancellationToken token)
         {
             Mode = mode;
-            Tenant ??= TenantId != null ? store.Tenancy.GetTenant(TenantId) : store.Tenancy.Default;
+            Tenant ??= TenantId != null ? await store.Tenancy.GetTenantAsync(TenantId).ConfigureAwait(false) : store.Tenancy.Default;
 
             if (!store.Options.Advanced.DefaultTenantUsageEnabled &&
                 Tenant.TenantId == Marten.Storage.Tenancy.DefaultTenantId)
