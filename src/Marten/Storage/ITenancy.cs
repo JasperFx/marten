@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Baseline.ImTools;
 using Marten.Schema;
 using Npgsql;
@@ -91,9 +92,10 @@ namespace Marten.Storage
             }
         }
 
-        public IReadOnlyList<IDatabase> BuildDatabases()
+        public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
         {
-            return _databases.Enumerate().Select(x => x.Value).ToList();
+            var databases = _databases.Enumerate().Select(x => x.Value).ToList();
+            return new ValueTask<IReadOnlyList<IDatabase>>(databases);
         }
 
         public Tenant GetTenant(string tenantId)
