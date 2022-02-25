@@ -56,14 +56,14 @@ namespace DocumentDbTests.MultiTenancy
         {
             using (var red = theStore.QuerySession("Red"))
             {
-                SpecificationExtensions.ShouldNotBeNull(red.Load<Target>(targetRed1.Id));
-                SpecificationExtensions.ShouldBeNull(red.Load<Target>(targetBlue1.Id));
+                red.Load<Target>(targetRed1.Id).ShouldNotBeNull();
+                red.Load<Target>(targetBlue1.Id).ShouldBeNull();
             }
 
             using (var blue = theStore.QuerySession("Blue"))
             {
-                SpecificationExtensions.ShouldNotBeNull(blue.Load<Target>(targetBlue1.Id));
-                SpecificationExtensions.ShouldBeNull(blue.Load<Target>(targetRed1.Id));
+                blue.Load<Target>(targetBlue1.Id).ShouldNotBeNull();
+                blue.Load<Target>(targetRed1.Id).ShouldBeNull();
             }
         }
 

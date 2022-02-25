@@ -74,9 +74,10 @@ namespace Marten
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="floor"></param>
-        public Task ResetHiloSequenceFloor<T>(string tenantId, long floor)
+        public async Task ResetHiloSequenceFloor<T>(string tenantId, long floor)
         {
-            return _store.Tenancy.GetTenant(tenantId).Database.ResetHiloSequenceFloor<T>(floor);
+            var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+            await tenant.Database.ResetHiloSequenceFloor<T>(floor).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -94,7 +95,7 @@ namespace Marten
         {
             var database = tenantId == null
                 ? _store.Tenancy.Default.Database
-                : _store.Tenancy.GetTenant(tenantId).Database;
+                : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false)).Database;
 
             var sql = $@"
 select count(*) from {_store.Events.DatabaseSchemaName}.mt_events;
@@ -149,7 +150,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         {
             var database = tenantId == null
                 ? _store.Tenancy.Default.Database
-                : _store.Tenancy.GetTenant(tenantId).Database;
+                : (await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(true)).Database;
             await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
             var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
@@ -173,7 +174,7 @@ select last_value from {_store.Events.DatabaseSchemaName}.mt_events_sequence;
         public async Task<long> ProjectionProgressFor(ShardName name, string? tenantId = null,
             CancellationToken token = default)
         {
-            var tenant = tenantId == null ? _store.Tenancy.Default : _store.Tenancy.GetTenant(tenantId);
+            var tenant = tenantId == null ? _store.Tenancy.Default : await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
             var database = tenant.Database;
             await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 

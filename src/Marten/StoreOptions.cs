@@ -512,6 +512,22 @@ namespace Marten
                 });
             }
         }
+
+        /// <summary>
+        /// Opt into a multi-tenancy per database strategy where all databases
+        /// are on the same Postgresql server instance
+        /// </summary>
+        /// <param name="masterConnectionString"></param>
+        /// <returns></returns>
+        public ISingleServerMultiTenancy MultiTenantedWithSingleServer(string masterConnectionString)
+        {
+            var tenancy = new SingleServerMultiTenancy(masterConnectionString, this);
+            Tenancy = tenancy;
+
+            return tenancy;
+        }
+
+
     }
 
     internal class LambdaDocumentPolicy: IDocumentPolicy

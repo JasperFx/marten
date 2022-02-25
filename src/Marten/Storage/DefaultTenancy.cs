@@ -21,6 +21,10 @@ namespace Marten.Storage
         public Tenant Default { get; }
 
         public IDocumentCleaner Cleaner => Default.Database;
+        public ValueTask<Tenant> GetTenantAsync(string tenantId)
+        {
+            return new ValueTask<Tenant>(GetTenant(tenantId));
+        }
 
         public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
         {

@@ -230,7 +230,7 @@ namespace DocumentDbTests.Metadata
             session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
 
             var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
-            ShouldBeStringTestExtensions.ShouldBe(loaded.TenantId, tenant);
+            loaded.TenantId.ShouldBe(tenant);
             (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan<TimeSpan>(TimeSpan.FromMinutes(1));
         }
 

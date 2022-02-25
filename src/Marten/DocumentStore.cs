@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +10,6 @@ using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
-using Marten.Exceptions;
-using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
@@ -47,7 +46,7 @@ namespace Marten
                 databaseGenerator.CreateDatabases(Tenancy, options.CreateDatabases);
             }
 
-            Schema = Tenancy.Default.Database;
+            Schema = Tenancy.Default?.Database;
 
             Storage.PostProcessConfiguration();
             Events.AssertValidity(this);
@@ -122,12 +121,12 @@ namespace Marten
             return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
         }
 
-        public Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
+        public async Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
             BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
             CancellationToken cancellation = default)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
-            return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
+            var bulkInsertion = new BulkInsertion(await Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false), Options);
+            await bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
         }
 
         public Task BulkInsertDocumentsAsync(IEnumerable<object> documents,
@@ -138,12 +137,12 @@ namespace Marten
             return bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation);
         }
 
-        public Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents,
+        public async Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents,
             BulkInsertMode mode = BulkInsertMode.InsertsOnly,
             int batchSize = 1000, CancellationToken cancellation = default)
         {
-            var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(tenantId), Options);
-            return bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation);
+            var bulkInsertion = new BulkInsertion(await Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false), Options);
+            await bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
         }
 
         public IDiagnostics Diagnostics { get; }

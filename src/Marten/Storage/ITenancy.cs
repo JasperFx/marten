@@ -15,6 +15,7 @@ namespace Marten.Storage
         Tenant Default { get; }
         IDocumentCleaner Cleaner { get; }
 
+        ValueTask<Tenant> GetTenantAsync(string tenantId);
     }
 
     public class UnknownTenantIdException: Exception
@@ -37,7 +38,7 @@ namespace Marten.Storage
         public DatabaseExpression AddDatabase(string connectionString, string databaseIdentifier = null)
         {
             var builder = new NpgsqlConnectionStringBuilder(connectionString);
-            var identifier = databaseIdentifier ?? builder.Database;
+            var identifier = databaseIdentifier ?? $"{builder.Database}@{builder.Host}";
 
             var database = new MartenDatabase(Options, new ConnectionFactory(connectionString), identifier);
             _databases = _databases.AddOrUpdate(identifier, database);
@@ -110,5 +111,9 @@ namespace Marten.Storage
 
         public Tenant Default { get; private set; }
         public IDocumentCleaner Cleaner { get; }
+        public ValueTask<Tenant> GetTenantAsync(string tenantId)
+        {
+            return new ValueTask<Tenant>(GetTenant(tenantId));
+        }
     }
 }
