@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Schema;
 using Weasel.Core.Migrations;
 
@@ -21,9 +22,9 @@ namespace Marten.Storage
 
         public IDocumentCleaner Cleaner => Default.Database;
 
-        public IReadOnlyList<IDatabase> BuildDatabases()
+        public ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
         {
-            return new IDatabase[] { Default.Database };
+            return new ValueTask<IReadOnlyList<IDatabase>>(new IDatabase[] { Default.Database });
         }
     }
 }

@@ -248,7 +248,7 @@ namespace Marten
         }
 
         /// <summary>
-        ///     Supply a source for the connection string to a Postgresql database
+        /// Supply a source for the connection string to a Postgresql database
         /// </summary>
         /// <param name="connectionSource"></param>
         public void Connection(Func<string> connectionSource)

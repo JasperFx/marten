@@ -16,12 +16,13 @@ namespace Marten.Storage
 
         public void DeleteAllDocuments()
         {
-            throw new NotImplementedException();
+            DeleteAllDocumentsAsync().GetAwaiter().GetResult();
         }
 
         private async Task applyToAll(Func<IMartenDatabase, Task> func)
         {
-            foreach (IMartenDatabase database in _tenancy.BuildDatabases())
+            var databases = await _tenancy.BuildDatabases().ConfigureAwait(false);
+            foreach (IMartenDatabase database in databases)
             {
                 await func(database).ConfigureAwait(false);
             }

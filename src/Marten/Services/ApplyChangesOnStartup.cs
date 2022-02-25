@@ -27,7 +27,7 @@ namespace Marten.Services
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            foreach (PostgresqlDatabase database in Store.Tenancy.BuildDatabases())
+            foreach (PostgresqlDatabase database in await Store.Tenancy.BuildDatabases().ConfigureAwait(false))
             {
                 await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate).ConfigureAwait(false);
             }
