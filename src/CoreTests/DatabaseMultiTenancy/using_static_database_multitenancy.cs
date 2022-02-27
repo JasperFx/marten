@@ -11,15 +11,31 @@ using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Migrations;
 using Xunit;
 
 namespace CoreTests.DatabaseMultiTenancy
 {
     [Collection("multi-tenancy")]
-    public class using_per_database_multitenancy : IAsyncLifetime
+    public class using_static_database_multitenancy: IAsyncLifetime
     {
         private IHost _host;
         private IDocumentStore theStore;
+
+        private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+        {
+            var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
+
+            var exists = await conn.DatabaseExists(databaseName);
+            if (!exists)
+            {
+                await new DatabaseSpecification().BuildDatabase(conn, databaseName);
+            }
+
+            builder.Database = databaseName;
+
+            return builder.ConnectionString;
+        }
 
         public async Task InitializeAsync()
         {
@@ -27,16 +43,21 @@ namespace CoreTests.DatabaseMultiTenancy
             await conn.OpenAsync();
 
 
+            var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
+            var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+            var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
 
             _host = await Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
                     services.AddMarten(opts =>
                     {
-                        opts
-                            .MultiTenantedWithSingleServer(ConnectionSource.ConnectionString)
-                            .WithTenants("tenant1", "tenant2").InDatabaseNamed("database1")
-                            .WithTenants("tenant3", "tenant4"); // own database
+                        opts.MultiTenantedDatabases(x =>
+                        {
+                            x.AddMultipleTenantDatabase(db1ConnectionString,"database1").ForTenants("tenant1", "tenant2");
+                            x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
+                            x.AddSingleTenantDatabase(tenant4ConnectionString,"tenant4");
+                        });
 
 
                         opts.RegisterDocumentType<User>();
@@ -52,6 +73,7 @@ namespace CoreTests.DatabaseMultiTenancy
         {
             return _host.StopAsync();
         }
+
 
         [Fact]
         public void default_tenant_usage_is_disabled()

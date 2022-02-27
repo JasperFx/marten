@@ -27,7 +27,8 @@ namespace Marten.Services
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            foreach (PostgresqlDatabase database in await Store.Tenancy.BuildDatabases().ConfigureAwait(false))
+            var databases = Store.Tenancy.BuildDatabases().ConfigureAwait(false);
+            foreach (PostgresqlDatabase database in await databases)
             {
                 await database.ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate).ConfigureAwait(false);
             }
@@ -38,9 +39,17 @@ namespace Marten.Services
             return Task.CompletedTask;
         }
 
-        public Task<bool> TryAttainLock(NpgsqlConnection conn)
+        public async Task<bool> TryAttainLock(NpgsqlConnection conn)
         {
-            return conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId);
+            if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false)) return true;
+            await Task.Delay(50).ConfigureAwait(false);
+            if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false)) return true;
+            await Task.Delay(100).ConfigureAwait(false);
+            if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false)) return true;
+            await Task.Delay(250).ConfigureAwait(false);
+            if (await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId).ConfigureAwait(false)) return true;
+
+            return false;
         }
 
         public Task ReleaseLock(NpgsqlConnection conn)

@@ -521,13 +521,27 @@ namespace Marten
         /// <returns></returns>
         public ISingleServerMultiTenancy MultiTenantedWithSingleServer(string masterConnectionString)
         {
+            Advanced.DefaultTenantUsageEnabled = false;
             var tenancy = new SingleServerMultiTenancy(masterConnectionString, this);
             Tenancy = tenancy;
 
             return tenancy;
         }
 
+        /// <summary>
+        /// Opt into multi-tenancy per database strategy where all the
+        /// databases and tenants have to be statically configured at
+        /// bootstrapping time
+        /// </summary>
+        /// <param name="configure"></param>
+        public void MultiTenantedDatabases(Action<IStaticMultiTenancy> configure)
+        {
+            Advanced.DefaultTenantUsageEnabled = false;
+            var tenancy = new StaticMultiTenancy(this);
+            Tenancy = tenancy;
 
+            configure(tenancy);
+        }
     }
 
     internal class LambdaDocumentPolicy: IDocumentPolicy
