@@ -333,5 +333,60 @@ namespace Marten.Events
         /// </summary>
         /// <param name="streamKey"></param>
         void ArchiveStream(string streamKey);
+
+        /// <summary>
+        /// Apply a single header to multiple events in the current session.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="events"></param>
+        /// <remarks>
+        /// Metadata is applied after session-wide metadata and will override any conflicting keys/values.
+        /// </remarks>
+        void ApplyHeader(string key, object? value, params object[] events);
+
+        /// <summary>
+        /// Apply a collection of headers to multiple events in the current session.
+        /// Setting value to null will remove the override.
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="events"></param>
+        /// <remarks>
+        /// Metadata is applied after session-wide metadata and will override any conflicting keys/values.
+        /// </remarks>
+        void ApplyHeaders(IDictionary<string, object> headers, params object[] events);
+
+        /// <summary>
+        /// Apply a correlation id to multiple events in the current session.
+        /// Setting to null will remove the override.
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="events"></param>
+        /// <remarks>
+        /// Metadata is applied after session-wide metadata and will override any conflicting keys/values.
+        /// </remarks>
+        void ApplyCorrelationId(string? correlationId, params object[] events);
+
+        /// <summary>
+        /// Apply a causation id to multiple events in the current session.
+        /// Setting to null will remove the override.
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="events"></param>
+        /// <remarks>
+        /// Metadata is applied after session-wide metadata and will override any conflicting keys/values.
+        /// </remarks>
+        void ApplyCausationId(string? causationId, params object[] events);
+
+        /// <summary>
+        /// Apply metadata from an existing event to an event in the current session.
+        /// CorrelationId, CausationId and Headers will be applied.
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="events"></param>
+        /// <remarks>
+        /// Metadata is applied after session-wide metadata and will override any conflicting keys/values.
+        /// </remarks>
+        void CopyMetadata(IEventMetadata metadata, object @event);
     }
 }

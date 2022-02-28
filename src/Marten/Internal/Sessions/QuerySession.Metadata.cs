@@ -21,6 +21,11 @@ namespace Marten.Internal.Sessions
         /// </summary>
         public Dictionary<string, object>? Headers { get; protected set; }
 
+        /// <summary>
+        ///     This is meant to be lazy created, and can be null
+        /// </summary>
+        public IDictionary<object, MetadataOverrides>? EventMetadataOverrides { get; protected set; }
+
         public Guid? VersionFor<TDoc>(TDoc entity) where TDoc : notnull
         {
             return StorageFor<TDoc>().VersionFor(entity, this);

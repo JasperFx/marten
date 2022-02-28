@@ -6,7 +6,7 @@ using Marten.Storage;
 namespace Marten.Events
 {
     #region sample_IEvent
-    public interface IEvent
+    public interface IEvent : IEventMetadata
     {
         /// <summary>
         /// Unique identifier for the event. Uses a sequential Guid
@@ -67,6 +67,15 @@ namespace Marten.Events
         string DotNetTypeName { get; set; }
 
         /// <summary>
+        /// Has this event been archived and no longer applicable
+        /// to projected views
+        /// </summary>
+        bool IsArchived { get; set; }
+    }
+
+    public interface IEventMetadata
+    {
+        /// <summary>
         /// Optional metadata describing the causation id
         /// </summary>
         string? CausationId { get; set; }
@@ -94,12 +103,6 @@ namespace Marten.Events
         /// <param name="key"></param>
         /// <returns></returns>
         object? GetHeader(string key);
-
-        /// <summary>
-        /// Has this event been archived and no longer applicable
-        /// to projected views
-        /// </summary>
-        bool IsArchived { get; set; }
     }
 
     #endregion

@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Baseline;
 using Marten.Events.Archiving;
-using Marten.Events.Querying;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
-using Marten.Linq;
 using Marten.Schema.Identity;
 using Marten.Storage;
 using Npgsql;
@@ -292,6 +289,89 @@ namespace Marten.Events
         {
             var op = new ArchiveStreamOperation(_store.Events, streamKey);
             _session.QueueOperation(op);
+        }
+
+        public void ApplyHeader(string key, object? value, params object[] events)
+        {
+            foreach (var @event in events)
+            {
+                var overrides = _session.GetOrCreateEventMetadataOverrides(@event);
+
+                if (value is null && overrides.Headers is null)
+                {
+                    continue;
+                }
+                
+                overrides.Headers ??= new Dictionary<string, object>();
+
+                if (value is null)
+                {
+                    overrides.Headers.Remove(key);
+                    return;
+                }
+
+                overrides.Headers.Add(key, value);
+            }
+        }
+
+        public void ApplyHeaders(IDictionary<string, object> headers, params object[] events)
+        {
+            foreach (var @event in events)
+            {
+                var overrides = _session.GetOrCreateEventMetadataOverrides(@event);
+
+                if (overrides.Headers is null)
+                {
+                    overrides.Headers = new Dictionary<string, object>(headers);
+                    continue;
+                }
+
+                foreach (var header in headers)
+                {
+                    overrides.Headers.Add(header.Key, header.Value);
+                }
+            }
+        }
+
+        public void ApplyCorrelationId(string? correlationId, params object[] events)
+        {
+            foreach (var @event in events)
+            {
+                var overrides = _session.GetOrCreateEventMetadataOverrides(@event);
+                overrides.CorrelationId = correlationId;
+            }
+        }
+
+        public void ApplyCausationId(string? causationId, params object[] events)
+        {
+            foreach (var @event in events)
+            {
+                var overrides = _session.GetOrCreateEventMetadataOverrides(@event);
+                overrides.CausationId = causationId;
+            }
+        }
+
+        public void CopyMetadata(IEventMetadata metadata, object @event)
+        {
+            var overrides = _session.GetOrCreateEventMetadataOverrides(@event);
+            overrides.CorrelationId = metadata.CorrelationId ?? overrides.CorrelationId;
+            overrides.CausationId = metadata.CausationId ?? overrides.CausationId;
+
+            if (metadata.Headers is null)
+            {
+                return;
+            }
+
+            if (overrides.Headers is null)
+            {
+                overrides.Headers = new Dictionary<string, object>(metadata.Headers);
+                return;
+            }
+
+            foreach (var header in metadata.Headers)
+            {
+                overrides.Headers.Add(header.Key, header.Value);
+            }
         }
     }
 }

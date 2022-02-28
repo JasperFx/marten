@@ -66,6 +66,12 @@ namespace Marten.Internal
         Dictionary<string, object>? Headers { get; }
 
         /// <summary>
+        /// Optional overridden metadata values for specific events in this unit of work.
+        /// This may be null.
+        /// </summary>
+        IDictionary<object, MetadataOverrides>? EventMetadataOverrides { get; }
+
+        /// <summary>
         /// Execute a single command against the database with this session's connection
         /// </summary>
         /// <param name="cmd"></param>

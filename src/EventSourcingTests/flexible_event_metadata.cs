@@ -213,6 +213,127 @@ namespace EventSourcingTests
             }
         }
 
+        #region sample_event_metadata_overrides
+
+        [Fact]
+        public async Task check_event_metadata_overrides()
+        {
+            StoreOptions(_ => _.Events.MetadataConfig.EnableAll());
+
+            const string correlationId = "test-correlation-id";
+            theSession.CorrelationId = correlationId;
+
+            const string causationId = "test-causation-id";
+            theSession.CausationId = causationId;
+
+            const string userDefinedMetadata1Name = "my-header-1";
+            const string userDefinedMetadata1Value = "my-header-1-value";
+            theSession.SetHeader(userDefinedMetadata1Name, userDefinedMetadata1Value);
+            const string userDefinedMetadata2Name = "my-header-2";
+            const string userDefinedMetadata2Value = "my-header-2-value";
+            theSession.SetHeader(userDefinedMetadata2Name, userDefinedMetadata2Value);
+
+
+            // override the correlation ids
+            const string correlationIdOverride = "override-correlation-id";
+            theSession.Events.ApplyCorrelationId(correlationIdOverride, started, joined);
+
+            // override the causation ids
+            const string causationIdOverride = "override-causation-id";
+            theSession.Events.ApplyCausationId(causationIdOverride, started, joined);
+
+            // update an existing header on one event
+            const string overrideMetadata1Value = "my-header-1-override-value";
+            theSession.Events.ApplyHeader(userDefinedMetadata1Name, overrideMetadata1Value, started);
+
+            // add a new header on one event
+            const string overrideMetadata3Name = "my-header-override";
+            const string overrideMetadata3Value = "my-header-override-value";
+            theSession.Events.ApplyHeader(overrideMetadata3Name, overrideMetadata3Value, slayed);
+
+            // actually add the events to the session
+            // this can be done before or after metadata overrides are applied
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started, joined, slayed).Id;
+            await theSession.SaveChangesAsync();
+
+            var events = await theSession.Events.FetchStreamAsync(streamId);
+
+            events[0].CorrelationId.ShouldBe(correlationIdOverride);
+            events[1].CorrelationId.ShouldBe(correlationIdOverride);
+            events[2].CorrelationId.ShouldBe(correlationId);
+
+            events[0].CausationId.ShouldBe(causationIdOverride);
+            events[1].CausationId.ShouldBe(causationIdOverride);
+            events[2].CausationId.ShouldBe(causationId);
+
+            events[0].GetHeader(userDefinedMetadata1Name).ToString().ShouldBe(overrideMetadata1Value);
+            events[0].GetHeader(userDefinedMetadata2Name).ToString().ShouldBe(userDefinedMetadata2Value);
+            events[0].GetHeader(overrideMetadata3Name).ShouldBeNull();
+
+            events[1].GetHeader(userDefinedMetadata1Name).ToString().ShouldBe(userDefinedMetadata1Value);
+            events[1].GetHeader(userDefinedMetadata2Name).ToString().ShouldBe(userDefinedMetadata2Value);
+            events[1].GetHeader(overrideMetadata3Name).ShouldBeNull();
+
+            events[2].GetHeader(userDefinedMetadata1Name).ToString().ShouldBe(userDefinedMetadata1Value);
+            events[2].GetHeader(userDefinedMetadata2Name).ToString().ShouldBe(userDefinedMetadata2Value);
+            events[2].GetHeader(overrideMetadata3Name).ToString().ShouldBe(overrideMetadata3Value);
+        }
+
+        #endregion
+
+        [Fact]
+        public async Task check_copy_metadata_from_existing_record()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.MetadataConfig.EnableAll();
+                _.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            });
+
+            const string correlationId = "test-correlation-id";
+            theSession.CorrelationId = correlationId;
+
+            const string causationId = "test-causation-id";
+            theSession.CausationId = causationId;
+
+            const string userDefinedMetadata1Name = "my-header-1";
+            const string userDefinedMetadata1Value = "my-header-1-value";
+            theSession.SetHeader(userDefinedMetadata1Name, userDefinedMetadata1Value);
+            const string userDefinedMetadata2Name = "my-header-2";
+            const string userDefinedMetadata2Value = "my-header-2-value";
+            theSession.SetHeader(userDefinedMetadata2Name, userDefinedMetadata2Value);
+
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started).Id;
+            await theSession.SaveChangesAsync();
+            
+            // reset manually because session wont clear metadata unless disposed
+            theSession.CorrelationId = null;
+            theSession.CausationId = null;
+            theSession.SetHeader(userDefinedMetadata1Name, null);
+            theSession.SetHeader(userDefinedMetadata2Name, null);
+
+            var writtenStarted = (await theSession.Events.FetchStreamAsync(streamId))[0];
+
+            theSession.Events.CopyMetadata(writtenStarted, slayed);
+            theSession.Events.Append(streamId, joined, slayed);
+            await theSession.SaveChangesAsync();
+
+            var events = await theSession.Events.FetchStreamAsync(streamId);
+            var writtenJoined = events[1];
+            var writtenSlayed = events[2];
+
+            writtenJoined.CorrelationId.ShouldBeNull();
+            writtenJoined.CausationId.ShouldBeNull();
+            writtenJoined.GetHeader(userDefinedMetadata1Name).ShouldBeNull();
+            writtenJoined.GetHeader(userDefinedMetadata2Name).ShouldBeNull();
+
+            writtenSlayed.CorrelationId.ShouldBe(correlationId);
+            writtenSlayed.CausationId.ShouldBe(causationId);
+            writtenSlayed.GetHeader(userDefinedMetadata1Name).ToString().ShouldBe(userDefinedMetadata1Value);
+            writtenSlayed.GetHeader(userDefinedMetadata2Name).ToString().ShouldBe(userDefinedMetadata2Value);
+        }
 
         [Fact]
         public async Task check_writing_empty_headers_system_text_json()

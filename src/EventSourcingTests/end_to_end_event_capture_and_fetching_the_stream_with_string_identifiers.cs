@@ -455,6 +455,7 @@ namespace EventSourcingTests
             Options.Events.AddEventType(typeof(MembersJoined));
             Options.Events.AddEventType(typeof(MembersDeparted));
             Options.Events.AddEventType(typeof(QuestStarted));
+            Options.Events.MetadataConfig.EnableAll();
         }
     }
 

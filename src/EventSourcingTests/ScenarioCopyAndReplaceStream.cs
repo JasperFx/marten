@@ -1,7 +1,8 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests
@@ -48,6 +49,9 @@ namespace EventSourcingTests
 
                 var transformedEvents = events.SelectMany(x =>
                 {
+                    // Reapply existing metadata
+                    session.Events.CopyMetadata(x, x.Data);
+
                     switch (x.Data)
                     {
                         case MonsterSlayed monster:
@@ -65,19 +69,35 @@ namespace EventSourcingTests
                     return new[] { x.Data };
                 }).Where(x => x != null).ToArray();
 
+                // Add "moved from" header to all events being written to new stream 
+                session.Events.ApplyHeader("moved from", started.Name, transformedEvents);
+
                 var moveTo = $"{started.Name} without Trolls";
-                // We copy the transformed events to a new stream
-                session.Events.StartStream<Quest>(moveTo, transformedEvents);
-                // And additionally mark the old stream as moved. Furthermore, we assert on the new expected stream version to guard against any racing updates
+                // Mark the old stream as moved.
+                // This is done first in order for inline projections to handle the StreamMovedTo event before the moved events
+                // Furthermore, we assert on the new expected stream version to guard against any racing updates
                 session.Events.Append(started.Name, events.Count + 1, new StreamMovedTo
                 {
                     To = moveTo
                 });
 
+
+                // We copy the transformed events to a new stream
+                session.Events.StartStream<Quest>(moveTo, transformedEvents);
+
                 // Transactionally update the streams.
                 session.SaveChanges();
             }
             #endregion
+
+            using (var session = theStore.OpenSession())
+            {
+                var events = session.Events.FetchStream($"{started.Name} without Trolls");
+                foreach (var @event in events)
+                {
+                    @event.GetHeader("moved from").ToString().ShouldBe(started.Name);
+                }
+            }
         }
 
         #region sample_scenario-copyandtransformstream-newevent

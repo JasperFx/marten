@@ -316,19 +316,30 @@ namespace Marten.Events
 
         private static void ProcessMetadata(IEvent @event, EventGraph graph, IMartenSession session)
         {
+            MetadataOverrides? overrides = null;
+            session.EventMetadataOverrides?.TryGetValue(@event.Data, out overrides);
+
             if (graph.Metadata.CausationId.Enabled)
             {
-                @event.CausationId ??= session.CausationId;
+                @event.CausationId ??= overrides?.CausationId ?? session.CausationId;
             }
 
             if (graph.Metadata.CorrelationId.Enabled)
             {
-                @event.CorrelationId = session.CorrelationId;
+                @event.CorrelationId = overrides?.CorrelationId ?? session.CorrelationId;
             }
 
             if (!graph.Metadata.Headers.Enabled) return;
-            if (!(session.Headers?.Count > 0)) return;
-            foreach (var header in session.Headers)
+            if (session.Headers?.Count > 0)
+            {
+                foreach (var header in session.Headers)
+                {
+                    @event.SetHeader(header.Key, header.Value);
+                }
+            }
+
+            if (!(overrides?.Headers?.Count > 0)) return;
+            foreach (var header in overrides.Headers)
             {
                 @event.SetHeader(header.Key, header.Value);
             }

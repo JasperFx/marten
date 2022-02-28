@@ -23,7 +23,7 @@ using (var session = theStore.OpenSession())
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L31-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L32-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, we introduce a new event type to expand the `MembersJoined` to a series of events, one for each member.
@@ -54,10 +54,10 @@ public class MemberJoined
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L83-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-newevent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L103-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-newevent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Lastly, we want trolls (`MonsterSlayed`) removed from our stream. However, the stream is a series of ordered, immutable data, with no functionality to patch or otherwise modify existing data. Instead of trying to mutate the stream, we can use the copy and transform pattern to introduce a new event stream. We do this by copying the existing stream to a new one, while applying any needed transforms to the event data being copied.
+Lastly, we want trolls (`MonsterSlayed`) removed from our stream. However, the stream is a series of ordered, immutable data, with no functionality to patch or otherwise modify existing data. Instead of trying to mutate the stream, we can use the copy and transform pattern to introduce a new event stream. We do this by copying the existing stream to a new one, while applying any needed transforms to the event data being copied. We also make sure to copy any metadata from the original events, and apply a new header to the events to track which stream they came from.
 
 <!-- snippet: sample_scenario-copyandtransformstream-transform -->
 <a id='snippet-sample_scenario-copyandtransformstream-transform'></a>
@@ -68,6 +68,9 @@ using (var session = theStore.OpenSession())
 
     var transformedEvents = events.SelectMany(x =>
     {
+        // Reapply existing metadata
+        session.Events.CopyMetadata(x, x.Data);
+
         switch (x.Data)
         {
             case MonsterSlayed monster:
@@ -85,20 +88,26 @@ using (var session = theStore.OpenSession())
         return new[] { x.Data };
     }).Where(x => x != null).ToArray();
 
+    // Add "moved from" header to all events being written to new stream 
+    session.Events.ApplyHeader("moved from", started.Name, transformedEvents);
+
     var moveTo = $"{started.Name} without Trolls";
-    // We copy the transformed events to a new stream
-    session.Events.StartStream<Quest>(moveTo, transformedEvents);
-    // And additionally mark the old stream as moved. Furthermore, we assert on the new expected stream version to guard against any racing updates
+    // Mark the old stream as moved.
+    // This is done first in order for inline projections to handle the StreamMovedTo event before the moved events
+    // Furthermore, we assert on the new expected stream version to guard against any racing updates
     session.Events.Append(started.Name, events.Count + 1, new StreamMovedTo
     {
         To = moveTo
     });
 
+    // We copy the transformed events to a new stream
+    session.Events.StartStream<Quest>(moveTo, transformedEvents);
+
     // Transactionally update the streams.
     session.SaveChanges();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L44-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-transform' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L45-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-transform' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As the new stream is produced, within the same transaction we introduce an event dictating the stream being copied to have been moved. This should serve as an indication to no longer append new events into the stream. Furthermore, it ensures that the underlying stream being copied has not changed during the copy & transform process (as we assert on the expected stream version).
@@ -111,5 +120,5 @@ public class StreamMovedTo
     public string To { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L108-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-streammoved' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L128-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-streammoved' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

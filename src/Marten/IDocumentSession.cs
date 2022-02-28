@@ -65,11 +65,12 @@ namespace Marten
         string? LastModifiedBy { get; set; }
 
         /// <summary>
-        /// Set an optional user defined metadata value by key
+        /// Set an optional user defined metadata value by key.
+        /// If the value is null then the key is removed.
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        void SetHeader(string key, object value);
+        void SetHeader(string key, object? value);
 
         /// <summary>
         /// Get an optional user defined metadata value by key

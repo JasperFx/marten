@@ -202,9 +202,20 @@ namespace Marten.Internal.Sessions
             ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
         }
 
-        public void SetHeader(string key, object value)
+        public void SetHeader(string key, object? value)
         {
+            if (value is null && Headers is null)
+            {
+                return;
+            }
+
             Headers ??= new Dictionary<string, object>();
+
+            if (value is null)
+            {
+                Headers.Remove(key);
+                return;
+            }
 
             Headers[key] = value;
         }
@@ -212,6 +223,20 @@ namespace Marten.Internal.Sessions
         public object? GetHeader(string key)
         {
             return Headers?.TryGetValue(key, out var value) ?? false ? value : null;
+        }
+
+        public MetadataOverrides GetOrCreateEventMetadataOverrides(object @event)
+        {
+            if (EventMetadataOverrides?.TryGetValue(@event, out var overrides) ?? false)
+            {
+                return overrides;
+            }
+
+            EventMetadataOverrides ??= new Dictionary<object, MetadataOverrides>();
+
+            var newOverride = new MetadataOverrides(@event);
+            EventMetadataOverrides[@event] = newOverride;
+            return newOverride;
         }
 
         /// <summary>
