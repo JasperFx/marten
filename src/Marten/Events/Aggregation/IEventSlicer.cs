@@ -12,9 +12,9 @@ namespace Marten.Events.Aggregation
         /// </summary>
         /// <param name="querySession"></param>
         /// <param name="streams"></param>
-        /// <param name="tenancy"></param>
         /// <returns></returns>
-        ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams, ITenancy tenancy);
+        ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,
+            IEnumerable<StreamAction> streams);
 
         /// <summary>
         /// This is called by the asynchronous projection runner

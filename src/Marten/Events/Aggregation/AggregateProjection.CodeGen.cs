@@ -157,14 +157,19 @@ namespace Marten.Events.Aggregation
             }
             else if (_inlineGeneratedType == null)
             {
-                AssembleTypes(new GeneratedAssembly(new GenerationRules(SchemaConstants.MartenGeneratedNamespace)), store.Options);
+                var rules = store.Options.CreateGenerationRules();
+                AssembleTypes(new GeneratedAssembly(rules), store.Options);
             }
 
             var storage = store.Options.Providers.StorageFor<T>().Lightweight;
             var slicer = buildEventSlicer(store.Options);
 
             var inline = (IAggregationRuntime)Activator.CreateInstance(_inlineType, store, this, slicer,
-                store.Options.Tenancy, storage, this);
+                storage, this);
+
+            /*
+ {Void .ctor(Marten.IDocumentStore, Marten.Events.Aggregation.IAggregateProjection, Marten.Events.Aggregation.IEventSlicer`2[Marten.AsyncDaemon.Testing.Day,System.Int32], Marten.Storage.ITenancy, Marten.Internal.Storage.IDocumentStorage`2[Marten.AsyncDaemon.Testing.Day,System.Int32], Marten.AsyncDaemon.Testing.DayProjection)}
+             */
 
             foreach (var setter in _inlineGeneratedType.Setters)
             {

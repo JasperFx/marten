@@ -76,7 +76,7 @@ namespace Marten.Generated.EventStore
         private readonly Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> _storage;
         private readonly Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> _aggregateProjection;
 
-        public AggregateProjectionInlineHandler973344970(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> storage, Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> aggregateProjection) : base(store, projection, slicer, tenancy, storage)
+        public AggregateProjectionInlineHandler973344970(Marten.IDocumentStore store, Marten.Events.Aggregation.IAggregateProjection projection, Marten.Events.Aggregation.IEventSlicer<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> slicer, Marten.Storage.ITenancy tenancy, Marten.Internal.Storage.IDocumentStorage<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity, System.Guid> storage, Marten.Events.Aggregation.AggregateProjection<EventSourcingTests.Bugs.Bug_2025_event_inheritance_in_projection.Identity> aggregateProjection) : base(store, projection, slicer, storage)
         {
             _store = store;
             _projection = projection;
