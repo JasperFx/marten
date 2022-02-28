@@ -4,7 +4,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Weasel.Core;
-using Weasel.Postgresql;
 
 #nullable enable
 namespace Marten
@@ -40,7 +39,7 @@ namespace Marten
         /// </summary>
         /// <param name="document"></param>
         /// <returns></returns>
-        string ToJson(object document);
+        string ToJson(object? document);
 
         /// <summary>
         /// Deserialize a JSON string stream into an object of type T
@@ -88,7 +87,7 @@ namespace Marten
         /// </summary>
         /// <param name="document"></param>
         /// <returns></returns>
-        string ToCleanJson(object document);
+        string ToCleanJson(object? document);
 
         /// <summary>
         /// Just gotta tell Marten if enum's are stored

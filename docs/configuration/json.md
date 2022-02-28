@@ -43,7 +43,7 @@ public interface ISerializer
     /// </summary>
     /// <param name="document"></param>
     /// <returns></returns>
-    string ToJson(object document);
+    string ToJson(object? document);
 
     /// <summary>
     /// Deserialize a JSON string stream into an object of type T
@@ -91,7 +91,7 @@ public interface ISerializer
     /// </summary>
     /// <param name="document"></param>
     /// <returns></returns>
-    string ToCleanJson(object document);
+    string ToCleanJson(object? document);
 
     /// <summary>
     /// Just gotta tell Marten if enum's are stored
@@ -119,7 +119,7 @@ public interface ISerializer
     ValueCasting ValueCasting { get; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L14-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L13-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it
@@ -152,7 +152,7 @@ private readonly JsonSerializer _serializer = new()
     ContractResolver = new JsonNetContractResolver()
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Services/JsonNetSerializer.cs#L39-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_newtonsoft-configuration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Services/JsonNetSerializer.cs#L40-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_newtonsoft-configuration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To customize the Newtonsoft.Json serialization, you need to explicitly supply an instance of Marten's `JsonNetSerializer` as shown below:
@@ -366,7 +366,7 @@ public class JilSerializer : ISerializer
 
     public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
 
-    public string ToJson(object document)
+    public string ToJson(object? document)
     {
         return JSON.Serialize(document, _options);
     }
@@ -413,7 +413,7 @@ public class JilSerializer : ISerializer
         return new (FromJson(type, reader, index));
     }
 
-    public string ToCleanJson(object document)
+    public string ToCleanJson(object? document)
     {
         return ToJson(document);
     }
@@ -426,7 +426,7 @@ public class JilSerializer : ISerializer
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L14-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L15-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
@@ -442,7 +442,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer<TestsSerializer>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L92-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/performance_tuning.cs#L93-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Optimizing for Performance in Marten](http://jeremydmiller.com/2015/11/09/optimizing-for-performance-in-marten/)

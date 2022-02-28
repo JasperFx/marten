@@ -213,7 +213,6 @@ namespace EventSourcingTests
             }
         }
 
-
         [Fact]
         public async Task check_writing_empty_headers_system_text_json()
         {
@@ -228,8 +227,7 @@ namespace EventSourcingTests
             await theSession.SaveChangesAsync();
             // Should not throw System.NullReferenceException here
         }
-
-
+        
         [Fact]
         public async Task check_writing_empty_headers_newtonsoft_json()
         {

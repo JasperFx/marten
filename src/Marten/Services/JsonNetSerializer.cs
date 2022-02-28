@@ -12,6 +12,7 @@ using Newtonsoft.Json.Converters;
 using Weasel.Core;
 using ConstructorHandling = Newtonsoft.Json.ConstructorHandling;
 
+#nullable enable
 namespace Marten.Services
 {
     /// <summary>
@@ -68,7 +69,7 @@ namespace Marten.Services
             _withTypes.TypeNameHandling = TypeNameHandling.Objects;
         }
 
-        public string ToJson(object document)
+        public string ToJson(object? document)
         {
             var writer = new StringWriter();
             ToJson(document, writer);
@@ -76,7 +77,7 @@ namespace Marten.Services
             return writer.ToString();
         }
 
-        private void ToJson(object document, TextWriter writer)
+        private void ToJson(object? document, TextWriter writer)
         {
             using var jsonWriter = new JsonTextWriter(writer)
             {
@@ -98,7 +99,7 @@ namespace Marten.Services
                 CloseInput = false
             };
 
-            return _serializer.Deserialize<T>(jsonReader);
+            return _serializer.Deserialize<T>(jsonReader)!;
         }
 
         public T FromJson<T>(DbDataReader reader, int index)
@@ -156,7 +157,7 @@ namespace Marten.Services
             return new (FromJson(type, reader, index));
         }
 
-        public string ToCleanJson(object document)
+        public string ToCleanJson(object? document)
         {
             var writer = new StringWriter();
 
