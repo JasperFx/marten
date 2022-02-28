@@ -89,6 +89,7 @@ namespace Marten.Events.Projections
                 return list;
             }
 
+            // TODO -- this will not work in database multi-tenancy
             var group = await groupSingleTenant(tenancy.Default, querySession, events).ConfigureAwait(false);
 
             return new List<TenantSliceGroup<TDoc, TId>> {group};

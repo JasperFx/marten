@@ -70,7 +70,7 @@ namespace Marten.Events.Daemon
         public async Task WaitForNonStaleData(TimeSpan timeout)
         {
             var stopWatch = Stopwatch.StartNew();
-            var statistics = await _store.Advanced.FetchEventStoreStatistics().ConfigureAwait(false);
+            var statistics = await Tenant.Database.FetchEventStoreStatistics().ConfigureAwait(false);
 
             while (stopWatch.Elapsed < timeout)
             {

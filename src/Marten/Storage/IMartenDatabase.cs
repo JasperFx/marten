@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
+using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
@@ -95,5 +97,42 @@ namespace Marten.Storage
         /// <param name="database"></param>
         /// <returns></returns>
         public Task<IReadOnlyList<DbObjectName>> SchemaTables();
+
+        /// <summary>
+        ///     Fetch the current size of the event store tables, including the current value
+        ///     of the event sequence number
+        /// </summary>
+        /// <param name="tenantId">
+        ///     Specify the database containing this tenant id. If omitted, this method uses the default
+        ///     database
+        /// </param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<EventStoreStatistics> FetchEventStoreStatistics(
+            CancellationToken token = default);
+
+        /// <summary>
+        ///     Check the current progress of all asynchronous projections
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="tenantId">
+        ///     Specify the database containing this tenant id. If omitted, this method uses the default
+        ///     database
+        /// </param>
+        /// <returns></returns>
+        Task<IReadOnlyList<ShardState>> AllProjectionProgress(
+            CancellationToken token = default);
+
+        /// <summary>
+        ///     Check the current progress of a single projection or projection shard
+        /// </summary>
+        /// <param name="tenantId">
+        ///     Specify the database containing this tenant id. If omitted, this method uses the default
+        ///     database
+        /// </param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<long> ProjectionProgressFor(ShardName name,
+            CancellationToken token = default);
     }
 }
