@@ -72,7 +72,7 @@ namespace Marten.Events.TestSupport
 
             if (_store.Options.Projections.HasAnyAsyncProjections())
             {
-                Daemon = _store.BuildProjectionDaemon();
+                Daemon = await _store.BuildProjectionDaemonAsync().ConfigureAwait(false);
                 await Daemon.StartAllShards().ConfigureAwait(false);
             }
 

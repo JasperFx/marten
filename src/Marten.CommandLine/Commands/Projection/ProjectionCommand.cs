@@ -69,7 +69,7 @@ namespace Marten.CommandLine.Commands.Projection
                 return true;
             }
 
-            var daemon = store.BuildProjectionDaemon();
+            var daemon = await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
             await daemon.StartDaemon().ConfigureAwait(false);
 
             var highWater = daemon.Tracker.HighWaterMark;
@@ -142,7 +142,7 @@ namespace Marten.CommandLine.Commands.Projection
             Console.WriteLine(shutdownMessage);
 
 
-            var daemon = store.BuildProjectionDaemon();
+            var daemon = await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
             daemon.Tracker.Subscribe(new ProjectionWatcher(_completion.Task, shards));
 
             foreach (var shard in shards)

@@ -51,7 +51,7 @@ namespace Marten.Events.Daemon
 
             try
             {
-                Agent = Store.BuildProjectionDaemon(_logger);
+                Agent = await Store.BuildProjectionDaemonAsync(logger:_logger).ConfigureAwait(false);
                 await Coordinator.Start(Agent, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)

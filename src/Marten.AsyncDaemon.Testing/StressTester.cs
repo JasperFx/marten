@@ -62,7 +62,7 @@ namespace Marten.AsyncDaemon.Testing
             };
             timer.Start();
 
-            using var daemon = store.BuildProjectionDaemon(logger);
+            using var daemon = await store.BuildProjectionDaemonAsync(logger:logger);
             await daemon.StartAllShards();
 
             long lastCount = 0;
@@ -71,8 +71,8 @@ namespace Marten.AsyncDaemon.Testing
                 await Task.Delay(250, stopping.Token);
                 using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
                 await conn.OpenAsync(stopping.Token);
-                var count = (long)await conn.CreateCommand("select count(*) from pg_stat_activity;")
-                    .ExecuteScalarAsync();
+                var count = (long)(await conn.CreateCommand("select count(*) from pg_stat_activity;")
+                    .ExecuteScalarAsync(stopping.Token))!;
 
                 if (count != lastCount)
                 {

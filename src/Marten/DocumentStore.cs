@@ -10,6 +10,7 @@ using LamarCodeGeneration;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
@@ -215,14 +216,38 @@ namespace Marten
             return session;
         }
 
-        public IProjectionDaemon BuildProjectionDaemon(ILogger? logger = null)
+        public IProjectionDaemon BuildProjectionDaemon(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null)
         {
+            if (!Options.Advanced.DefaultTenantUsageEnabled && tenantIdOrDatabaseIdentifier.IsEmpty())
+            {
+                throw new DefaultTenantUsageDisabledException();
+            }
+
             logger ??= new NulloLogger();
 
-            var tenant = Tenancy.Default;
-            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(tenant.Database), Events);
+            var database = tenantIdOrDatabaseIdentifier.IsEmpty()
+                ? Options.Tenancy.Default.Database
+                : Options.Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events);
 
-            return new ProjectionDaemon(this, tenant.Database, detector, logger);
+            return new ProjectionDaemon(this, database, detector, logger);
+        }
+
+        public async ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(string? tenantIdOrDatabaseIdentifier = null, ILogger? logger = null)
+        {
+            if (!Options.Advanced.DefaultTenantUsageEnabled && tenantIdOrDatabaseIdentifier.IsEmpty())
+            {
+                throw new DefaultTenantUsageDisabledException();
+            }
+
+            logger ??= new NulloLogger();
+
+            var database = tenantIdOrDatabaseIdentifier.IsEmpty()
+                ? Options.Tenancy.Default.Database
+                : (await Options.Tenancy.GetTenantAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false)).Database;
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(database), Events);
+
+            return new ProjectionDaemon(this, database, detector, logger);
         }
 
         /// <summary>

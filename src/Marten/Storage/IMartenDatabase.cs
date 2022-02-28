@@ -8,6 +8,7 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;

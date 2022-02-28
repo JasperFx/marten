@@ -3,8 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Progress;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
+using Microsoft.Extensions.Logging;
 using Weasel.Postgresql;
 
 namespace Marten.Storage
@@ -122,6 +125,13 @@ select last_value from {_options.Events.DatabaseSchemaName}.mt_events_sequence;
             return state?.Sequence ?? 0;
         }
 
+        internal IProjectionDaemon BuildProjectionDaemon(DocumentStore store, ILogger? logger = null)
+        {
+            logger ??= new NulloLogger();
 
+            var detector = new HighWaterDetector(new AutoOpenSingleQueryRunner(this), _options.EventGraph);
+
+            return new ProjectionDaemon(store, this, detector, logger);
+        }
     }
 }
