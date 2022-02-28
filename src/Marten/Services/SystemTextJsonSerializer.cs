@@ -60,6 +60,11 @@ namespace Marten.Services
 
         public string ToJson(object document)
         {
+            if (document is null)
+            {
+                // Cannot call "GetType()" on null, so mimic Newtonsoft.Json behaviour
+                return "null";
+            }
             return JsonSerializer.Serialize(document, document.GetType(), _options);
         }
 

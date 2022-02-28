@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten;
+using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -212,5 +213,36 @@ namespace EventSourcingTests
             }
         }
 
+
+        [Fact]
+        public async Task check_writing_empty_headers_system_text_json()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.MetadataConfig.EnableAll();
+                _.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            });
+
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started).Id;
+            await theSession.SaveChangesAsync();
+            // Should not throw System.NullReferenceException here
+        }
+
+
+        [Fact]
+        public async Task check_writing_empty_headers_newtonsoft_json()
+        {
+            StoreOptions(_ =>
+            {
+                _.Events.MetadataConfig.EnableAll();
+                _.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+            });
+
+            var streamId = theSession.Events
+                .StartStream<QuestParty>(started).Id;
+            await theSession.SaveChangesAsync();
+            // Should not throw System.NullReferenceException here
+        }
     }
 }
