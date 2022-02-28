@@ -9,6 +9,7 @@ using Marten.Util;
 using Weasel.Core;
 using Weasel.Postgresql;
 
+#nullable enable
 namespace Marten.Testing
 {
     #region sample_JilSerializer
@@ -19,7 +20,7 @@ namespace Marten.Testing
 
         public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
 
-        public string ToJson(object document)
+        public string ToJson(object? document)
         {
             return JSON.Serialize(document, _options);
         }
@@ -66,7 +67,7 @@ namespace Marten.Testing
             return new (FromJson(type, reader, index));
         }
 
-        public string ToCleanJson(object document)
+        public string ToCleanJson(object? document)
         {
             return ToJson(document);
         }

@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Data.Common;
 using System.IO;
 using System.Text.Json;
@@ -11,8 +10,8 @@ using Marten.Services.Json;
 using Marten.Util;
 using Npgsql;
 using Weasel.Core;
-using Weasel.Postgresql;
 
+#nullable enable
 namespace Marten.Services
 {
     /// <summary>
@@ -58,7 +57,7 @@ namespace Marten.Services
             configure(_withTypes);
         }
 
-        public string ToJson(object document)
+        public string ToJson(object? document)
         {
             if (document is null)
             {
@@ -112,7 +111,7 @@ namespace Marten.Services
             return await FromJsonAsync(type, stream, cancellationToken).ConfigureAwait(false);
         }
 
-        public string ToCleanJson(object document)
+        public string ToCleanJson(object? document)
         {
             return JsonSerializer.Serialize(document, _clean);
         }
